@@ -67,55 +67,90 @@ sx_var_set() {
 	unset __sx_var_set_opt __sx_var_set_prefix __sx_var_set_suffix __sx_var_set_arg
 }
 
-### sx_var_list_set - 設定されている変数の一覧を表示する
+### sx_var_list_set - 設定されている変数の一覧を取得する
 ##
 ## 使い方:
-##   sx_var_list_set
+##   sx_var_list_set 結果変数名
+##
+## 説明:
+##   現在のシェルで設定されている全ての変数名（重複除去済み）をスペース区切りの文字列として取得し、
+##   指定された結果変数に格納する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-#sx_var_list_set() {
-#	if ! sx_var_name_check "${1-}"; then
-#		return "${SX_EX_USAGE}"
-#	fi
-#
-#	__sx_var_list_set_list=$(set)
-#
-#	readonly -p | while IFS=' =' read -r __sx_var_list_ro_type __sx_var_list_ro_name __sx_var_list_ro_val; do
-#	while str_contain "${__sx_var_list_set_list}" "${SH_CHAR_LF}"; do
-#		${__sx_var_list_set_list%%${$SH}}
-#	set | while IFS='=' read -r __sx_var_list_set_name __sx_var_list_set_val; do
-#		sx_var_is_set "${__sx_var_list_set_name}" || continue
-#
-#		sx_str_contain "${__sx_var_list_set_list-}" " ${__sx_var_list_set_name} " && continue
-#
-#		printf '%s\n' "${__sx_var_list_set_name}"
-#		__sx_var_list_set_list="${__sx_var_list_set_list:- }${__sx_var_list_set_name} "
-#	done
-#
-#	unset __sx_var_list_set_name __sx_var_list_set_val __sx_var_list_set_list
-#}
+##   64  引数不正 (SX_EX_USAGE)
+sx_var_list_set() {
+	if ! sx_var_name_check "${1-}"; then
+		return "${SX_EX_USAGE}"
+	fi
 
-### sx_var_list_readonly - 読み取り専用変数の一覧を表示する
-##
-## 使い方:
-##   sx_var_list_readonly
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-sx_var_list_readonly() {
-	readonly -p | while IFS=' =' read -r __sx_var_list_ro_type __sx_var_list_ro_name __sx_var_list_ro_val; do
-		case "${__sx_var_list_ro_type}" in
-			readonly) sx_var_is_readonly "${__sx_var_list_ro_name}" || continue;;
-			*) continue;;
-		esac
+	__sx_var_list_set_name="${1}"
+	__sx_var_list_set_ret=' '
+	__sx_var_list_set_IFS="${IFS}"
+	IFS="${SX_CHAR_LF}"
 
-		sx_str_contain "${__sx_var_list_ro_list-}" " ${__sx_var_list_ro_name} " && continue
+	for __sx_var_list_set_vn in $(set); do
+		__sx_var_list_set_vn="${__sx_var_list_set_vn%%=*}"
 
-		printf '%s\n' "${__sx_var_list_ro_name}"
-		__sx_var_list_ro_list="${__sx_var_list_ro_list:- }${__sx_var_list_ro_name} "
+		if
+			sx_var_name_check "${__sx_var_list_set_vn}" && \
+			sx_var_is_set "${__sx_var_list_set_vn}" && \
+			! sx_str_contain "${__sx_var_list_set_ret}" " ${__sx_var_list_set_vn} "
+		then
+			__sx_var_list_set_ret="${__sx_var_list_set_ret}${__sx_var_list_set_vn} "
+		fi
 	done
-	unset __sx_var_list_ro_type __sx_var_list_ro_name __sx_var_list_ro_val __sx_var_list_ro_list
+
+	IFS="${__sx_var_list_set_IFS}"
+	__sx_var_list_set_ret="${__sx_var_list_set_ret# }"
+	__sx_var_list_set_ret="${__sx_var_list_set_ret% }"
+
+	eval "${__sx_var_list_set_name}=\"\${__sx_var_list_set_ret}\""
+
+	unset __sx_var_list_set_name __sx_var_list_set_ret __sx_var_list_set_vn __sx_var_list_set_IFS
+}
+
+### sx_var_list_readonly - 読み取り専用変数の一覧を取得する
+##
+## 使い方:
+##   sx_var_list_readonly 結果変数名
+##
+## 説明:
+##   現在のシェルで読み取り専用として設定されている全ての変数名（重複除去済み）を
+##   スペース区切りの文字列として取得し、指定された結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+sx_var_list_readonly() {
+	if ! sx_var_name_check "${1-}"; then
+		return "${SX_EX_USAGE}"
+	fi
+
+	__sx_var_list_readonly_name="${1}"
+	__sx_var_list_readonly_ret=' '
+	__sx_var_list_readonly_IFS="${IFS}"
+	IFS="${SX_CHAR_LF}"
+
+	for __sx_var_list_readonly_vn in $(set); do
+		__sx_var_list_readonly_vn="${__sx_var_list_readonly_vn%%=*}"
+
+		if
+			sx_var_name_check "${__sx_var_list_readonly_vn}" && \
+			sx_var_is_readonly "${__sx_var_list_readonly_vn}" && \
+			! sx_str_contain "${__sx_var_list_readonly_ret}" " ${__sx_var_list_readonly_vn} "
+		then
+			__sx_var_list_readonly_ret="${__sx_var_list_readonly_ret}${__sx_var_list_readonly_vn} "
+		fi
+	done
+
+	IFS="${__sx_var_list_readonly_IFS}"
+	__sx_var_list_readonly_ret="${__sx_var_list_readonly_ret# }"
+	__sx_var_list_readonly_ret="${__sx_var_list_readonly_ret% }"
+
+	eval "${__sx_var_list_readonly_name}=\"\${__sx_var_list_readonly_ret}\""
+
+	unset __sx_var_list_readonly_name __sx_var_list_readonly_ret __sx_var_list_readonly_vn __sx_var_list_readonly_IFS
 }
 
 ### sx_var_copy - 変数の値を別の変数にコピーする
