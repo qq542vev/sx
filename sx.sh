@@ -437,6 +437,42 @@ sx_num_is_pint() {
 	unset __sx_num_is_pint_arg
 }
 
+### sx_num_is_le - 引数が昇順（等号を含む）に並んでいるか確認する
+##
+## 使い方:
+##   sx_num_is_le [数値1 [数値2 ...]]
+##
+## 終了ステータス:
+##    0  数値1 <= 数値2 <= ... である (SX_EX_OK)
+##    1  条件を満たさない、または数値でない引数が含まれる
+sx_num_is_le() {
+	while sx_str_eq "${2+X}" X; do
+		if { sx_str_eq "$((${1} <= ${2}))" 0; } 2>/dev/null; then
+			return 1
+		fi
+
+		shift
+	done
+}
+
+### sx_num_is_lt - 引数が厳密な昇順に並んでいるか確認する
+##
+## 使い方:
+##   sx_num_is_lt [数値1 [数値2 ...]]
+##
+## 終了ステータス:
+##    0  数値1 < 数値2 < ... である (SX_EX_OK)
+##    1  条件を満たさない、または数値でない引数が含まれる
+sx_num_is_lt() {
+	while sx_str_eq "${2+X}" X; do
+		if { sx_str_eq "$((${1} < ${2}))" 0; } 2>/dev/null; then
+			return 1
+		fi
+
+		shift
+	done
+}
+
 ### sx_arr_is_writable - 配列の指定範囲が書き込み可能か確認する
 ##
 ## 使い方:
