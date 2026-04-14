@@ -440,7 +440,12 @@ sx_num_is_pint() {
 ### sx_arr_is_writable - 配列の指定範囲が書き込み可能か確認する
 ##
 ## 使い方:
-##   sx_arr_is_writable 配列名 終了インデックス [開始インデックス]
+##   sx_arr_is_writable 配列名 [[終了インデックス [開始インデックス]] ...]
+##
+## 説明:
+##   指定された配列の要素および長さ保持変数 (${配列名}_len) が書き込み可能か確認する。
+##   インデックス範囲が指定されない場合は、0 から ${配列名}_len までの全要素を確認する。
+##   開始インデックスを省略した場合は 0 とみなされる。
 ##
 ## 終了ステータス:
 ##    0  すべて書き込み可能 (SX_EX_OK)
@@ -451,36 +456,38 @@ sx_arr_is_writable() {
 		return "${SX_EX_USAGE}"
 	fi
 
-	if sx_str_eq "${#}" 1 && eval sx_num_is_uint "\"\${${__sx_arr_push_name}_len:-}\""; then
-		
-	fi
-
 	__sx_arr_is_writable_name="${1}"
-	__sx_arr_is_writable_end="${2-}"
-	__sx_arr_is_writable_start="${3:-0}"
+	shift
 
-	if ! sx_num_is_uint "${__sx_arr_is_writable_end}" "${__sx_arr_is_writable_start}"; then
-		unset __sx_arr_is_writable_name __sx_arr_is_writable_end __sx_arr_is_writable_start
+	if sx_str_eq "${#}" 0 && eval sx_num_is_uint "\"\${${__sx_arr_is_writable_name}_len-}\""; then
+		eval set -- "\"\${${__sx_arr_is_writable_name}_len}\"" 0
+	elif ! sx_num_is_uint "${@}"; then
+		unset __sx_arr_is_writable_name
 		return "${SX_EX_USAGE}"
 	fi
 
-	# 長さ変数のチェック
 	if ! sx_var_is_writable "${__sx_arr_is_writable_name}_len"; then
-		unset __sx_arr_is_writable_name __sx_arr_is_writable_end __sx_arr_is_writable_start
+		unset __sx_arr_is_writable_name
 		return 1
 	fi
 
-	# 各要素のチェック
-	__sx_arr_is_writable_idx="${__sx_arr_is_writable_start}"
-	while [ "${__sx_arr_is_writable_idx}" -le "${__sx_arr_is_writable_end}" ]; do
-		if ! sx_var_is_writable "${__sx_arr_is_writable_name}_${__sx_arr_is_writable_idx}"; then
-			unset __sx_arr_is_writable_name __sx_arr_is_writable_end __sx_arr_is_writable_start __sx_arr_is_writable_idx
-			return 1
-		fi
-		__sx_arr_is_writable_idx=$((__sx_arr_is_writable_idx + 1))
+	while ! sx_str_eq "${#}" 0; do
+		eval "shift $((1 < ${#} ? 2 : 1));" set -- "${1}" "${2-0}" '"${@}"'
+
+		# 各要素のチェック
+		while sx_str_eq "$((${2} <= ${1}))" 1; do
+			if ! sx_var_is_writable "${__sx_arr_is_writable_name}_${2}"; then
+				unset __sx_arr_is_writable_name
+				return 1
+			fi
+
+			eval "shift $((1 < ${#} ? 2 : 1));" set -- "${1}" "$((${2} + 1))" '"${@}"'
+		done
+
+		shift 2
 	done
 
-	unset __sx_arr_is_writable_name __sx_arr_is_writable_end __sx_arr_is_writable_start __sx_arr_is_writable_idx
+	unset __sx_arr_is_writable_name
 	return "${SX_EX_OK}"
 }
 
