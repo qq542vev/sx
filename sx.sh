@@ -16,6 +16,9 @@ readonly SX_EX_PROTOCOL=76     # EX_PROTOCOL: remote error in protocol
 readonly SX_EX_NOPERM=77       # EX_NOPERM: permission denied
 readonly SX_EX_CONFIG=78       # EX_CONFIG: configuration error
 
+readonly SX_CHAR_LF='
+'
+
 ### sx_var_set - 変数に値を設定する
 ##
 ## 使い方:
@@ -54,9 +57,9 @@ sx_var_set() {
 
 	for __sx_var_set_arg in "${@}"; do
 		if sx_str_contain "${__sx_var_set_arg}" "="; then
-			eval "${__sx_var_set_prefix-}${__sx_var_set_arg%%=*}${__sx_var_set_suffix-}="'${__sx_var_set_arg#*=}';;
+			eval "${__sx_var_set_prefix-}${__sx_var_set_arg%%=*}${__sx_var_set_suffix-}="'${__sx_var_set_arg#*=}';
 		else
-			eval "${__sx_var_set_prefix-}${__sx_var_set_arg}${__sx_var_set_suffix-}=";;
+			eval "${__sx_var_set_prefix-}${__sx_var_set_arg}${__sx_var_set_suffix-}=";
 		fi
 	done
 
@@ -71,18 +74,27 @@ sx_var_set() {
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-sx_var_list_set() {
-	set | while IFS='=' read -r __sx_var_list_set_name __sx_var_list_set_val; do
-		sx_var_is_set "${__sx_var_list_set_name}" || continue
-
-		sx_str_contain "${__sx_var_list_set_list-}" " ${__sx_var_list_set_name} " && continue
-
-		printf '%s\n' "${__sx_var_list_set_name}"
-		__sx_var_list_set_list="${__sx_var_list_set_list:- }${__sx_var_list_set_name} "
-	done
-
-	unset __sx_var_list_set_name __sx_var_list_set_val __sx_var_list_set_list
-}
+#sx_var_list_set() {
+#	if ! sx_var_name_check "${1-}"; then
+#		return "${SX_EX_USAGE}"
+#	fi
+#
+#	__sx_var_list_set_list=$(set)
+#
+#	readonly -p | while IFS=' =' read -r __sx_var_list_ro_type __sx_var_list_ro_name __sx_var_list_ro_val; do
+#	while str_contain "${__sx_var_list_set_list}" "${SH_CHAR_LF}"; do
+#		${__sx_var_list_set_list%%${$SH}}
+#	set | while IFS='=' read -r __sx_var_list_set_name __sx_var_list_set_val; do
+#		sx_var_is_set "${__sx_var_list_set_name}" || continue
+#
+#		sx_str_contain "${__sx_var_list_set_list-}" " ${__sx_var_list_set_name} " && continue
+#
+#		printf '%s\n' "${__sx_var_list_set_name}"
+#		__sx_var_list_set_list="${__sx_var_list_set_list:- }${__sx_var_list_set_name} "
+#	done
+#
+#	unset __sx_var_list_set_name __sx_var_list_set_val __sx_var_list_set_list
+#}
 
 ### sx_var_list_readonly - 読み取り専用変数の一覧を表示する
 ##
@@ -296,6 +308,240 @@ sx_str_contain() {
 
 	unset __sx_str_contain_target __sx_str_contain_arg
 	return 1
+}
+
+### sx_str_start_with - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
+##
+## 使い方:
+##   sx_str_start_with 検索対象文字列 開始文字列1 [開始文字列2 ...]
+##
+## 終了ステータス:
+##    0  いずれかで始まっている (SX_EX_OK)
+##    1  一つも該当しない（または第二引数以降がない）
+##   64  引数が不足している (SX_EX_USAGE)
+sx_str_start_with() {
+	if sx_str_eq "${#}" 0; then
+		return "${SX_EX_USAGE}"
+	fi
+
+	__sx_str_sw_target="${1}"
+	shift
+
+	for __sx_str_sw_arg in "${@}"; do
+		case "${__sx_str_sw_target}" in
+			"${__sx_str_sw_arg}"*)
+				unset __sx_str_sw_target __sx_str_sw_arg
+				return "${SX_EX_OK}"
+				;;
+		esac
+	done
+
+	unset __sx_str_sw_target __sx_str_sw_arg
+	return 1
+}
+
+### sx_str_end_with - 第一引数が、第二引数以降のいずれかの文字列で終わっているか確認する
+##
+## 使い方:
+##   sx_str_end_with 検索対象文字列 終了文字列1 [終了文字列2 ...]
+##
+## 終了ステータス:
+##    0  いずれかで終わっている (SX_EX_OK)
+##    1  一つも該当しない（または第二引数以降がない）
+##   64  引数が不足している (SX_EX_USAGE)
+sx_str_end_with() {
+	if sx_str_eq "${#}" 0; then
+		return "${SX_EX_USAGE}"
+	fi
+
+	__sx_str_ew_target="${1}"
+	shift
+
+	for __sx_str_ew_arg in "${@}"; do
+		case "${__sx_str_ew_target}" in
+			*"${__sx_str_ew_arg}")
+				unset __sx_str_ew_target __sx_str_ew_arg
+				return "${SX_EX_OK}"
+				;;
+		esac
+	done
+
+	unset __sx_str_ew_target __sx_str_ew_arg
+	return 1
+}
+
+### sx_num_is_digit - すべての引数が数字のみで構成されている（空でない）か確認する
+##
+## 使い方:
+##   sx_num_is_digit [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて数字のみで構成されている (SX_EX_OK)
+##    1  数字以外が含まれる、または空文字列が含まれる
+sx_num_is_digit() {
+	for __sx_num_is_digit_arg in "${@}"; do
+		case "${__sx_num_is_digit_arg}" in
+			'' | *[!0-9]*)
+				unset __sx_num_is_digit_arg
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_num_is_digit_arg
+}
+
+### sx_num_is_uint - すべての引数が符号無しの整数（0 または正の整数）であるか確認する
+##
+## 使い方:
+##   sx_num_is_uint [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて符号無しの整数である (SX_EX_OK)
+##    1  符号無しの整数ではない値が含まれる
+sx_num_is_uint() {
+	sx_num_is_digit "${@}" || return 1
+
+	for __sx_num_is_uint_arg in "${@}"; do
+		case "${__sx_num_is_uint_arg}" in
+			0?*)
+				unset __sx_num_is_uint_arg
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_num_is_uint_arg
+}
+
+### sx_num_is_pint - すべての引数が正の整数（1 以上の整数）であるか確認する
+##
+## 使い方:
+##   sx_num_is_pint [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて正の整数である (SX_EX_OK)
+##    1  正の整数ではない値が含まれる
+sx_num_is_pint() {
+	sx_num_is_digit "${@}" || return 1
+
+	for __sx_num_is_pint_arg in "${@}"; do
+		case "${__sx_num_is_pint_arg}" in
+			0*)
+				unset __sx_num_is_pint_arg
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_num_is_pint_arg
+}
+
+### sx_arr_is_writable - 配列の指定範囲が書き込み可能か確認する
+##
+## 使い方:
+##   sx_arr_is_writable 配列名 終了インデックス [開始インデックス]
+##
+## 終了ステータス:
+##    0  すべて書き込み可能 (SX_EX_OK)
+##    1  書き込み不可が含まれる
+##   64  引数不正 (SX_EX_USAGE)
+sx_arr_is_writable() {
+	if ! sx_var_name_check "${1-}"; then
+		return "${SX_EX_USAGE}"
+	fi
+
+	if sx_str_eq "${#}" 1 && eval sx_num_is_uint "\"\${${__sx_arr_push_name}_len:-}\""; then
+		
+	fi
+
+	__sx_arr_is_writable_name="${1}"
+	__sx_arr_is_writable_end="${2-}"
+	__sx_arr_is_writable_start="${3:-0}"
+
+	if ! sx_num_is_uint "${__sx_arr_is_writable_end}" "${__sx_arr_is_writable_start}"; then
+		unset __sx_arr_is_writable_name __sx_arr_is_writable_end __sx_arr_is_writable_start
+		return "${SX_EX_USAGE}"
+	fi
+
+	# 長さ変数のチェック
+	if ! sx_var_is_writable "${__sx_arr_is_writable_name}_len"; then
+		unset __sx_arr_is_writable_name __sx_arr_is_writable_end __sx_arr_is_writable_start
+		return 1
+	fi
+
+	# 各要素のチェック
+	__sx_arr_is_writable_idx="${__sx_arr_is_writable_start}"
+	while [ "${__sx_arr_is_writable_idx}" -le "${__sx_arr_is_writable_end}" ]; do
+		if ! sx_var_is_writable "${__sx_arr_is_writable_name}_${__sx_arr_is_writable_idx}"; then
+			unset __sx_arr_is_writable_name __sx_arr_is_writable_end __sx_arr_is_writable_start __sx_arr_is_writable_idx
+			return 1
+		fi
+		__sx_arr_is_writable_idx=$((__sx_arr_is_writable_idx + 1))
+	done
+
+	unset __sx_arr_is_writable_name __sx_arr_is_writable_end __sx_arr_is_writable_start __sx_arr_is_writable_idx
+	return "${SX_EX_OK}"
+}
+
+__sx_arr_push() {
+	__sx_arr_push_name="${1}"
+	shift
+
+	# 現在の長さを取得（未設定や不正な値なら0とみなす）
+	if ! eval sx_num_is_uint "\"\${${__sx_arr_push_name}_len:-}\""; then
+		__sx_arr_push_idx=0
+	else
+		eval "__sx_arr_push_idx=\${${__sx_arr_push_name}_len}"
+	fi
+
+	# 値の追加
+	for __sx_arr_push_arg in "${@}"; do
+		eval "${__sx_arr_push_name}_${__sx_arr_push_idx}=\"\${__sx_arr_push_arg}\""
+		__sx_arr_push_idx=$((__sx_arr_push_idx + 1))
+	done
+
+	# 長さを更新
+	eval "${__sx_arr_push_name}_len=${__sx_arr_push_idx}"
+
+	unset __sx_arr_push_name __sx_arr_push_idx __sx_arr_push_arg
+}
+
+### sx_arr_push - 配列の末尾に要素を追加する
+##
+## 使い方:
+##   sx_arr_push 配列名 [値 ...]
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  配列名が無効 (SX_EX_USAGE)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
+sx_arr_push() {
+	if ! sx_var_name_check "${1-}"; then
+		return "${SX_EX_USAGE}"
+	fi
+
+	__sx_arr_push_v_name="${1}"
+
+	# 現在の長さを取得（未設定や不正な値なら0とみなす）
+	if ! eval sx_num_is_uint "\"\${${__sx_arr_push_v_name}_len:-}\""; then
+		__sx_arr_push_v_idx=0
+	else
+		eval "__sx_arr_push_v_idx=\${${__sx_arr_push_v_name}_len}"
+	fi
+
+	# 書き込み可能チェック（長さ変数と、追加される全要素）
+	if ! sx_arr_is_writable "${__sx_arr_push_v_name}" \
+		$((__sx_arr_push_v_idx + ${#} - 2)) "${__sx_arr_push_v_idx}"; then
+		unset __sx_arr_push_v_name __sx_arr_push_v_idx
+		return "${SX_EX_NOPERM}"
+	fi
+
+	__sx_arr_push "${@}"
+	__sx_arr_push_v_ret="${?}"
+
+	unset __sx_arr_push_v_name __sx_arr_push_v_idx
+	return "${__sx_arr_push_v_ret}"
 }
 
 ### sx_var_is_set - 変数が設定されているか確認する
