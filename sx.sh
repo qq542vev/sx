@@ -474,12 +474,12 @@ sx_num_is_lt() {
 ### sx_arr_is_writable - 配列の指定範囲が書き込み可能か確認する
 ##
 ## 使い方:
-##   sx_arr_is_writable 配列名 [[終了インデックス [開始インデックス]] ...]
+##   sx_arr_is_writable 配列名 [[開始インデックス [個数]] ...]
 ##
 ## 説明:
 ##   指定された配列の要素および長さ保持変数 (${配列名}_len) が書き込み可能か確認する。
-##   インデックス範囲が指定されない場合は、0 から ${配列名}_len までの全要素を確認する。
-##   開始インデックスを省略した場合は 0 とみなされる。
+##   引数なしの場合: 0 から ${配列名}_len までの全要素を確認。
+##   個数が省略された場合: 開始インデックスから ${配列名}_len までを確認。
 ##
 ## 終了ステータス:
 ##    0  すべて書き込み可能 (SX_EX_OK)
@@ -493,8 +493,8 @@ sx_arr_is_writable() {
 	__sx_arr_is_writable_name="${1}"
 	shift
 
-	if sx_str_eq "${#}" 0 && eval sx_num_is_uint "\"\${${__sx_arr_is_writable_name}_len-}\""; then
-		eval set -- "\"\${${__sx_arr_is_writable_name}_len}\"" 0
+	if sx_str_eq "${#}" 0; then
+		eval set -- 0
 	elif ! sx_num_is_uint "${@}"; then
 		unset __sx_arr_is_writable_name
 		return "${SX_EX_USAGE}"
@@ -506,46 +506,52 @@ sx_arr_is_writable() {
 	fi
 
 	while ! sx_str_eq "${#}" 0; do
-		eval "shift $((1 < ${#} ? 2 : 1));" set -- "${1}" "${2-0}" '"${@}"'
+		if sx_str_eq "${#}" 1; then
+			# 個数が省略された場合は末尾まで
+			eval set -- '"${1}"' "\"\${${__sx_arr_is_writable_name}_len-}\""
 
-		# 各要素のチェック
-		while sx_str_eq "$((${2} <= ${1}))" 1; do
-			if ! sx_var_is_writable "${__sx_arr_is_writable_name}_${2}"; then
+			if ! sx_num_is_uint "${2}" || ! sx_num_is_uint "${1}" "${2}"; then
+				set -- "${1}" 0
+			fi
+		else
+			eval 'shift 2;' set -- "${1}" "$((${1} + ${2}))" '"${@}"'
+		fi
+
+		while sx_num_is_lt "${1}" "${2}"; do
+			if ! sx_var_is_writable "${__sx_arr_is_writable_name}_${1}"; then
 				unset __sx_arr_is_writable_name
 				return 1
 			fi
 
-			eval "shift $((1 < ${#} ? 2 : 1));" set -- "${1}" "$((${2} + 1))" '"${@}"'
+			eval 'shift 2;' set -- "$((${1} + 1))" "${2}" '"${@}"'
 		done
 
 		shift 2
 	done
 
 	unset __sx_arr_is_writable_name
-	return "${SX_EX_OK}"
 }
 
 __sx_arr_push() {
-	__sx_arr_push_name="${1}"
+	__sx_arr_push_name_="${1}"
 	shift
 
+	eval "__sx_arr_push_idx_=\"\${${__sx_arr_push_name_}_len-}\""
 	# 現在の長さを取得（未設定や不正な値なら0とみなす）
-	if ! eval sx_num_is_uint "\"\${${__sx_arr_push_name}_len:-}\""; then
-		__sx_arr_push_idx=0
-	else
-		eval "__sx_arr_push_idx=\${${__sx_arr_push_name}_len}"
+	if ! sx_num_is_uint "${__sx_arr_push_idx_}"; then
+		__sx_arr_push_idx_=0
 	fi
 
 	# 値の追加
-	for __sx_arr_push_arg in "${@}"; do
-		eval "${__sx_arr_push_name}_${__sx_arr_push_idx}=\"\${__sx_arr_push_arg}\""
-		__sx_arr_push_idx=$((__sx_arr_push_idx + 1))
+	for __sx_arr_push_arg_ in "${@}"; do
+		eval "${__sx_arr_push_name_}_${__sx_arr_push_idx_}=\"\${__sx_arr_push_arg_}\""
+		__sx_arr_push_idx_=$((__sx_arr_push_idx_ + 1))
 	done
 
 	# 長さを更新
-	eval "${__sx_arr_push_name}_len=${__sx_arr_push_idx}"
+	eval "${__sx_arr_push_name_}_len=${__sx_arr_push_idx_}"
 
-	unset __sx_arr_push_name __sx_arr_push_idx __sx_arr_push_arg
+	unset __sx_arr_push_name_ __sx_arr_push_idx_ __sx_arr_push_arg_
 }
 
 ### sx_arr_push - 配列の末尾に要素を追加する
@@ -562,27 +568,23 @@ sx_arr_push() {
 		return "${SX_EX_USAGE}"
 	fi
 
-	__sx_arr_push_v_name="${1}"
+	__sx_arr_push_name="${1}"
+		eval "__sx_arr_push_len=\"\${${__sx_arr_push_name}_len-}\""
 
 	# 現在の長さを取得（未設定や不正な値なら0とみなす）
-	if ! eval sx_num_is_uint "\"\${${__sx_arr_push_v_name}_len:-}\""; then
-		__sx_arr_push_v_idx=0
-	else
-		eval "__sx_arr_push_v_idx=\${${__sx_arr_push_v_name}_len}"
+	if ! sx_num_is_uint "${__sx_arr_push_len}"; then
+		__sx_arr_push_len=0
 	fi
 
 	# 書き込み可能チェック（長さ変数と、追加される全要素）
-	if ! sx_arr_is_writable "${__sx_arr_push_v_name}" \
-		$((__sx_arr_push_v_idx + ${#} - 2)) "${__sx_arr_push_v_idx}"; then
-		unset __sx_arr_push_v_name __sx_arr_push_v_idx
+	if ! sx_arr_is_writable "${__sx_arr_push_name}" "${__sx_arr_push_len}" "$((${#} - 1 ))"; then
+		unset __sx_arr_push_name __sx_arr_push_len
 		return "${SX_EX_NOPERM}"
 	fi
 
 	__sx_arr_push "${@}"
-	__sx_arr_push_v_ret="${?}"
 
-	unset __sx_arr_push_v_name __sx_arr_push_v_idx
-	return "${__sx_arr_push_v_ret}"
+	unset __sx_arr_push_name __sx_arr_push_len
 }
 
 ### sx_var_is_set - 変数が設定されているか確認する
