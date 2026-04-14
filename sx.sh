@@ -532,6 +532,46 @@ sx_arr_is_writable() {
 	unset __sx_arr_is_writable_name
 }
 
+### __sx_str_split - 文字列を分割して配列に格納する（内部用）
+##
+## 使い方:
+##   __sx_str_split 配列名 [文字列 [区切り文字]] ...
+##
+## 説明:
+##   指定された文字列を区切り文字で分割し、sxライブラリ形式の配列として格納する。
+##   複数の「文字列と区切り文字」のペアを渡すことができ、その場合は一つの配列に
+##   順番に追加される。区切り文字が省略された場合はスペースが使用される。
+##   この関数は引数の検証や書き込み権限のチェックを行わない。
+__sx_str_split() {
+	__sx_str_split_name_="${1}"
+	shift
+
+	eval "${__sx_str_split_name_}_len=0"
+
+	while ! sx_str_eq "${#}" 0; do
+		__sx_str_split_str_="${1}"
+		__sx_str_split_sep_="${2- }"
+
+		while sx_str_contain "${__sx_str_split_str_}" "${__sx_str_split_sep_}"; do
+			__sx_arr_push "${__sx_str_split_name_}" "${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
+			__sx_str_split_str_="${__sx_str_split_str_#*${__sx_str_split_sep_}}"
+		done
+
+		__sx_arr_push "${__sx_str_split_name_}" "${__sx_str_split_str_}"
+		shift "$((${#} < 2 ? 1 : 2))"
+	done
+
+	unset __sx_str_split_name_ __sx_str_split_str_ __sx_str_split_sep_
+}
+
+### __sx_arr_push - 配列の末尾に要素を追加する（内部用）
+##
+## 使い方:
+##   __sx_arr_push 配列名 [値 ...]
+##
+## 説明:
+##   指定された配列の末尾に一つ以上の値を追加し、長さを更新する。
+##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_arr_push() {
 	__sx_arr_push_name_="${1}"
 	shift
