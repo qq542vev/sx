@@ -268,12 +268,10 @@ sx_str_any() {
 	shift
 
 	for __sx_str_any_arg in "${@}"; do
-		case "${__sx_str_any_target}" in
-			"${__sx_str_any_arg}")
-				unset __sx_str_any_target __sx_str_any_arg
-				return "${SX_EX_OK}"
-				;;
-		esac
+		if sx_str_eq "${__sx_str_any_target}" "${__sx_str_any_arg}"; then
+			unset __sx_str_any_target __sx_str_any_arg
+			return "${SX_EX_OK}"
+		fi
 	done
 
 	unset __sx_str_any_target __sx_str_any_arg
