@@ -19,6 +19,123 @@ readonly SX_EX_CONFIG=78       # EX_CONFIG: configuration error
 readonly SX_CHAR_LF='
 '
 
+# 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
+: "${SX_SIG:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
+
+### sx_var_is_arr - 指定された変数がsx配列であるか確認する
+##
+## 使い方:
+##   sx_var_is_arr 変数名1 [変数名2 ...]
+##
+## 終了ステータス:
+##    0  すべてsx配列である (SX_EX_OK)
+##    1  sx配列ではない変数が含まれる
+##   64  変数名が無効 (SX_EX_USAGE)
+sx_var_is_arr() {
+	if ! sx_var_name_check "${@}"; then
+		return "${SX_EX_USAGE}"
+	fi
+
+	for __sx_var_is_arr_arg_ in "${@}"; do
+		eval "__sx_var_is_arr_val_=\"\${${__sx_var_is_arr_arg_}-}\""
+		if ! sx_str_eq "${__sx_var_is_arr_val_}" "array-${SX_SIG}"; then
+			unset __sx_var_is_arr_arg_ __sx_var_is_arr_val_
+			return 1
+		fi
+
+		eval "__sx_var_is_arr_len_=\"\${${__sx_var_is_arr_arg_}_len-}\""
+		if ! sx_num_is_pint "${__sx_var_is_arr_len_}"; then
+			unset __sx_var_is_arr_arg_ __sx_var_is_arr_val_ __sx_var_is_arr_len_
+			return 1
+		fi
+	done
+
+	unset __sx_var_is_arr_arg_ __sx_var_is_arr_val_ __sx_var_is_arr_len_
+	return "${SX_EX_OK}"
+}
+
+### sx_var_list_related - 指定された変数に関連するすべての変数名を取得する
+##
+## 使い方:
+##   sx_var_list_related 結果変数名 検索対象1 [検索対象2 ...]
+##
+## 説明:
+##   指定された変数名、およびそれらがsx配列である場合に再帰的に含まれる
+##   すべての変数名（_len, _0, _1...）をスペース区切りの文字列として取得し、
+##   指定された結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+sx_var_list_related() {
+	if ! sx_var_name_check "${1-}"; then
+		return "${SX_EX_USAGE}"
+	fi
+
+	__sx_var_list_related_res="${1}"
+	shift
+
+	if ! sx_var_name_check "${@}"; then
+		unset __sx_var_list_related_res
+		return "${SX_EX_USAGE}"
+	fi
+
+	__sx_var_list_related_out=' '
+
+	while [ "${#}" -gt 0 ]; do
+		__sx_var_list_related_curr="${1}"
+		shift
+
+		if sx_str_contain "${__sx_var_list_related_out}" " ${__sx_var_list_related_curr} " || ! sx_var_is_set "${__sx_var_list_related_curr}"; then
+			continue
+		fi
+
+		__sx_var_list_related_out="${__sx_var_list_related_out}${__sx_var_list_related_curr} "
+
+		if sx_var_is_arr "${__sx_var_list_related_curr}"; then
+			eval "__sx_var_list_related_len=\"\${${__sx_var_list_related_curr}_len}\""
+			set -- "${@}" "${__sx_var_list_related_curr}_len"
+
+			__sx_var_list_related_i=0
+			while sx_num_is_lt "${__sx_var_list_related_i}" "${__sx_var_list_related_len}"; do
+				set -- "${@}" "${__sx_var_list_related_curr}_${__sx_var_list_related_i}"
+				__sx_var_list_related_i=$((__sx_var_list_related_i + 1))
+			done
+		fi
+	done
+
+	__sx_var_list_related_out="${__sx_var_list_related_out# }"
+	__sx_var_list_related_out="${__sx_var_list_related_out% }"
+	eval "${__sx_var_list_related_res}=\"\${__sx_var_list_related_out}\""
+
+	unset __sx_var_list_related_res __sx_var_list_related_out __sx_var_list_related_curr __sx_var_list_related_len __sx_var_list_related_i
+}
+
+### sx_var_unset - 変数または配列を関連要素を含めて削除する
+##
+## 使い方:
+##   sx_var_unset 名前1 [名前2 ...]
+##
+## 説明:
+##   指定された変数を削除する。対象がsx配列である場合は、その要素および
+##   長さ変数も含めて再帰的にすべて削除する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+sx_var_unset() {
+	if ! sx_var_name_check "${@}"; then
+		return "${SX_EX_USAGE}"
+	fi
+
+	sx_var_list_related __sx_var_unset_list "${@}"
+
+	# shellcheck disable=SC2086
+	unset ${__sx_var_unset_list}
+
+	unset __sx_var_unset_list
+}
+
 ### sx_var_set - 変数に値を設定する
 ##
 ## 使い方:
@@ -664,6 +781,41 @@ sx_arr_is_writable() {
 	unset __sx_arr_is_writable_name
 }
 
+#__sx_arr_copy() {
+#	# 引数の総数（現在の右端のインデックス）を取得
+#	__sx_var_copy_i_="${#}"
+#
+#	# 右端から順に、左隣の値を自分にコピーしていくループ
+#	while sx_num_is_lt 1 "${__sx_var_copy_i_}"; do
+#		# 位置パラメータから代入先(dest)と代入元(src)の変数名を取得
+#		eval "__sx_var_copy_dest_=\"\${${__sx_var_copy_i_}}\""
+#		eval "__sx_var_copy_src_=\"\${$((__sx_var_copy_i_ - 1))}\""
+#		eval "__sx_var_copy_len_=\"\${${__sx_var_copy_src_}_len}\""
+#
+#		__sx_var_copy_j_=0
+#		while ! sx_str_eq "${__sx_var_copy_j_}" "${__sx_var_copy_len_}" ; do
+#			eval "__sx_var_copy_val_=\"$\"${__sx_var_copy_src_}=\"\${$((__sx_var_copy_i_ - 1))}\""
+#			
+#			eval "${__sx_var_copy_dest}_"
+#		done
+#
+#		# コピー元が設定されている場合はその値を代入、未設定なら代入先もunsetする
+#		if sx_var_is_set "${__sx_var_copy_src_}"; then
+#			eval "${__sx_var_copy_dest_}=\"\${${__sx_var_copy_src_}}\""
+#		else
+#			unset "${__sx_var_copy_dest_}"
+#		fi
+#
+#		# インデックスを一つ左にずらす
+#		__sx_var_copy_i_="$((__sx_var_copy_i_ - 1))"
+#	done
+#
+#	# 内部用変数を掃除
+#	unset __sx_var_copy_i_ __sx_var_copy_dest_ __sx_var_copy_src_
+#
+#
+#}
+
 ### __sx_str_split - 文字列を分割して配列に格納する（内部用）
 ##
 ## 使い方:
@@ -749,7 +901,7 @@ sx_arr_push() {
 	fi
 
 	# 書き込み可能チェック（長さ変数と、追加される全要素）
-	if ! sx_arr_is_writable "${__sx_arr_push_name}" "${__sx_arr_push_len}" "$((${#} - 1 ))"; then
+	if ! sx_arr_is_writable "${__sx_arr_push_name}" "${__sx_arr_push_len}" "$((${#} - 1))"; then
 		unset __sx_arr_push_name __sx_arr_push_len
 		return "${SX_EX_NOPERM}"
 	fi
