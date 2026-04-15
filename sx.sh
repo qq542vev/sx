@@ -153,107 +153,149 @@ sx_var_list_readonly() {
 	unset __sx_var_list_readonly_name __sx_var_list_readonly_ret __sx_var_list_readonly_vn __sx_var_list_readonly_IFS
 }
 
-### sx_var_copy - 変数の値を別の変数にコピーする
+### sx_var_copy - 変数の値を右方向に連鎖コピーする
 ##
 ## 使い方:
-##   sx_var_copy コピー先=コピー元 ...
+##   sx_var_copy 源泉=先1=先2...
+##
+## 説明:
+##   v1=v2=v3 の場合、v1の値をv2に、v2の元の値をv3にコピーします（右シフト）。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##    1  コピー先が読み取り専用
 sx_var_copy() {
+	__sx_var_copy_IFS="${IFS}"
+	IFS='='
+
 	for __sx_var_copy_arg in "${@}"; do
-		if ! sx_str_contain "${__sx_var_copy_arg}" "="; then
-			unset __sx_var_copy_arg; return "${SX_EX_USAGE}"
+		# 1. バリデーションと書き込みチェック
+		# (IFS='=' なので、${__sx_var_copy_arg} は自動的に分割される)
+		if ! sx_var_name_check "${__sx_var_copy_arg%%=*}"; then
+			IFS="${__sx_var_copy_IFS}"
+			unset __sx_var_copy_arg __sx_var_copy_IFS
+			return "${SX_EX_USAGE}"
 		fi
 
-		if ! sx_var_name_check "${__sx_var_copy_arg#*=}" || ! sx_var_is_writable "${__sx_var_copy_arg%%=*}"; then
-			case "${?}" in
-				"${SX_EX_USAGE}")
-					unset __sx_var_copy_arg; return "${SX_EX_USAGE}"
-					;;
-				*)
-					unset __sx_var_copy_arg; return 1
-					;;
-			esac
+		# 2番目以降（コピー先）がすべて書き込み可能かチェック
+		if sx_str_contain "${__sx_var_copy_arg}" =; then
+			sx_var_is_writable ${__sx_var_copy_arg#*=} || {
+				set -- "${?}"
+				IFS="${__sx_var_copy_IFS}"
+				unset __sx_var_copy_arg __sx_var_copy_IFS
+				return "${1}"
+			}
 		fi
 	done
 
 	for __sx_var_copy_arg in "${@}"; do
-		if sx_var_is_set "${__sx_var_copy_arg#*=}"; then
-			eval "${__sx_var_copy_arg%%=*}=\${${__sx_var_copy_arg#*=}}"
-		else
-			unset "${__sx_var_copy_arg%%=*}"
-		fi
+		__sx_var_copy ${__sx_var_copy_arg}
 	done
 
-	unset __sx_var_copy_arg
+	IFS="${__sx_var_copy_IFS}"
+	unset __sx_var_copy_arg __sx_var_copy_IFS
 }
 
-### sx_var_move - 変数を移動（リネーム）する
+### __sx_var_copy - 変数の値を右方向に連鎖代入する（内部用）
 ##
 ## 使い方:
-##   sx_var_move 移動先=移動元 ...
+##   __sx_var_copy 変数名1 変数名2 [変数名3 ...]
+##
+## 説明:
+##   与えられた変数名のリストに対して、右方向への連鎖コピー（右シフト）を行う。
+##   例: v1 v2 v3 -> v2にv1の値を、v3にv2の元の値を代入する。
+##
+## 仕組み:
+##   一時変数を使わずに玉突きを解決するため、引数の末尾（右側）から順に
+##   「左隣の値を自分に上書きする」という処理を繰り返す。
+##   この関数は sx_var_copy から呼び出されることを前提としており、
+##   引数はIFSで分割済みの位置パラメータとして受け取る。
+__sx_var_copy() {
+	# 引数の総数（現在の右端のインデックス）を取得
+	__sx_var_copy_i_="${#}"
+
+	# 右端から順に、左隣の値を自分にコピーしていくループ
+	while sx_num_is_lt 1 "${__sx_var_copy_i_}"; do
+		# 位置パラメータから代入先(dest)と代入元(src)の変数名を取得
+		eval "__sx_var_copy_dest_=\"\${${__sx_var_copy_i_}}\""
+		eval "__sx_var_copy_src_=\"\${$((__sx_var_copy_i_ - 1))}\""
+
+		# コピー元が設定されている場合はその値を代入、未設定なら代入先もunsetする
+		if sx_var_is_set "${__sx_var_copy_src_}"; then
+			eval "${__sx_var_copy_dest_}=\"\${${__sx_var_copy_src_}}\""
+		else
+			unset "${__sx_var_copy_dest_}"
+		fi
+
+		# インデックスを一つ左にずらす
+		__sx_var_copy_i_="$((__sx_var_copy_i_ - 1))"
+	done
+
+	# 内部用変数を掃除
+	unset __sx_var_copy_i_ __sx_var_copy_dest_ __sx_var_copy_src_
+}
+
+### sx_var_move - 変数を右方向に連鎖移動する
+##
+## 使い方:
+##   sx_var_move 源泉=先1=先2...
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##    1  移動先が読み取り専用
 sx_var_move() {
-	for __sx_var_move_arg in "${@}"; do
-		if ! sx_var_is_writable "${__sx_var_move_arg%%=*}"; then
-			case "${?}" in
-				"${SX_EX_USAGE}")
-					unset __sx_var_move_arg; return "${SX_EX_USAGE}"
-					;;
-				*)
-					unset __sx_var_move_arg; return 1
-					;;
-			esac
-		fi
-	done
-
-	sx_var_copy "${@}"
+	sx_var_copy "${@}" || return "${?}"
 
 	for __sx_var_move_arg in "${@}"; do
-		unset "${__sx_var_move_arg#*=}"
+		unset "${__sx_var_move_arg%%=*}"
 	done
 
 	unset __sx_var_move_arg
 }
 
-### sx_var_swap - 2つの変数の値を入れ替える
+### sx_var_swap - 変数を右方向にローテーションする
 ##
 ## 使い方:
-##   sx_var_swap 変数1=変数2 ...
+##   sx_var_swap 変数1=変数2=変数3...
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##    1  変数が読み取り専用
 sx_var_swap() {
+	__sx_var_swap_IFS="${IFS}"
+
 	for __sx_var_swap_arg in "${@}"; do
-		if ! sx_var_is_writable "${__sx_var_swap_arg%%=*}" || ! sx_var_is_writable "${__sx_var_swap_arg#*=}"; then
-			case "${?}" in
-				"${SX_EX_USAGE}")
-					unset __sx_var_swap_arg; return "${SX_EX_USAGE}"
-					;;
-				*)
-					unset __sx_var_swap_arg; return 1
-					;;
-			esac
+		IFS='='
+		set -- ${__sx_var_swap_arg}
+		IFS="${__sx_var_swap_IFS}"
+
+		if [ "${#}" -lt 2 ]; then
+			return "${SX_EX_USAGE}"
 		fi
 
-		if sx_var_move "__sx_var_swap_tmp=${__sx_var_swap_arg%%=*}" && \
-		   sx_var_move "${__sx_var_swap_arg%%=*}=${__sx_var_swap_arg#*=}" && \
-		   sx_var_move "${__sx_var_swap_arg#*=}=__sx_var_swap_tmp"; then
-			:
+		# 全員が書き込み可能かチェック（ローテーションのため源泉も含む）
+		sx_var_is_writable "${@}" || return 1
+
+		# 1. 最後（右端）の値を退避
+		eval "__sx_var_swap_last_vn=\"\${$#}\""
+		eval "__sx_var_swap_tmp=\"\${${__sx_var_swap_last_vn}-}\""
+		__sx_var_swap_set=0
+		sx_var_is_set "${__sx_var_swap_last_vn}" && __sx_var_swap_set=1
+
+		# 2. 右シフト実行
+		sx_var_copy "${__sx_var_swap_arg}"
+
+		# 3. 退避した値を一番左（源泉）に入れる
+		if [ "${__sx_var_swap_set}" -eq 1 ]; then
+			eval "${1}=\"\${__sx_var_swap_tmp}\""
 		else
-			unset __sx_var_swap_arg __sx_var_swap_tmp; return "${?}"
+			unset "${1}"
 		fi
 	done
-	unset __sx_var_swap_arg __sx_var_swap_tmp
+	unset __sx_var_swap_arg __sx_var_swap_tmp __sx_var_swap_set __sx_var_swap_IFS __sx_var_swap_last_vn
 }
 
 ### sx_str_eq - すべての引数が文字列として一致するか確認する
@@ -729,16 +771,23 @@ sx_var_is_empty() {
 ### sx_var_is_writable - 変数が書き込み可能か確認する
 ##
 ## 使い方:
-##   sx_var_is_writable 変数名
+##   sx_var_is_writable 変数名1 [変数名2 ...]
 ##
 ## 終了ステータス:
-##    0  書き込み可能 (SX_EX_OK)
-##    1  読み取り専用
+##    0  すべて書き込み可能 (SX_EX_OK)
+##    1  読み取り専用が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_writable() {
-	sx_var_name_check "${1}" || return "${SX_EX_USAGE}"
+	for __sx_var_is_writable_arg in "${@}"; do
+		sx_var_name_check "${__sx_var_is_writable_arg}" || return "${SX_EX_USAGE}"
 
-	(eval "${1}=") 2>/dev/null || return 1
+		if ! (eval "${__sx_var_is_writable_arg}=\"\${${__sx_var_is_writable_arg}-}\"") 2>/dev/null; then
+			unset __sx_var_is_writable_arg
+			return 1
+		fi
+	done
+
+	unset __sx_var_is_writable_arg
 }
 
 ### sx_var_is_readonly - 変数が読み取り専用か確認する
