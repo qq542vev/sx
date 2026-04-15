@@ -762,65 +762,99 @@ sx_arr_push() {
 ### sx_var_is_set - 変数が設定されているか確認する
 ##
 ## 使い方:
-##   sx_var_is_set 変数名
+##   sx_var_is_set 変数名1 [変数名2 ...]
 ##
 ## 終了ステータス:
-##    0  設定されている (SX_EX_OK)
-##    1  設定されていない
+##    0  すべて設定されている (SX_EX_OK)
+##    1  未設定の変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_set() {
-	sx_var_name_check "${1}" || return "${SX_EX_USAGE}"
-
-	eval "case \"\${${1}+X}\" in '') return 1;; esac"
+	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_set "${@}"
 }
 
-### sx_var_is_unset - 変数が設定されていないか確認する
+### __sx_var_is_set - 変数が設定されているか確認する（内部用）
 ##
 ## 使い方:
-##   sx_var_is_unset 変数名
+##   __sx_var_is_set 変数名1 [変数名2 ...]
 ##
-## 終了ステータス:
-##    0  設定されていない (SX_EX_OK)
-##    1  設定されている
-##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_is_unset() {
-	sx_var_name_check "${1}" || return "${SX_EX_USAGE}"
+## 説明:
+##   引数で指定されたすべての変数が設定されているか確認する。
+##   引数チェックは行わない。
+__sx_var_is_set() {
+	for __sx_var_is_set_arg_ in "${@}"; do
+		if eval sx_str_eq "\"\${${__sx_var_is_set_arg_}+X}\"" '""'; then
+			unset __sx_var_is_set_arg_
+			return 1
+		fi
 
-	eval "case \"\${${1}+X}\" in 'X') return 1;; esac"
+		unset __sx_var_is_set_arg_
+	done
 }
 
 ### sx_var_has_value - 変数が値を持ち、かつ空でないか確認する
 ##
 ## 使い方:
-##   sx_var_has_value 変数名
+##   sx_var_has_value 変数名1 [変数名2 ...]
 ##
 ## 終了ステータス:
-##    0  値があり、空でない (SX_EX_OK)
-##    1  設定されていない、または空
+##    0  すべて値があり、空でない (SX_EX_OK)
+##    1  設定されていない、または空の変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_has_value() {
-	sx_var_is_set "${1}" || return "${?}"
-
-	if eval sx_str_eq "\"\${${1}}\"" "''"; then
-		return 1
-	fi
+	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_has_value "${@}"
 }
 
+### __sx_var_has_value - 変数が値を持ち、かつ空でないか確認する（内部用）
+##
+## 使い方:
+##   __sx_var_has_value 変数名1 [変数名2 ...]
+##
+## 説明:
+##   引数で指定されたすべての変数が値を持ち、空でないか確認する。
+##   引数チェックは行わない。
+__sx_var_has_value() {
+	for __sx_var_has_value_arg_ in "${@}"; do
+		if eval ! sx_str_eq "\"\${${__sx_var_has_value_arg_}:+X}\"" X; then
+			unset __sx_var_has_value_arg_
+			return 1
+		fi
+
+		unset __sx_var_has_value_arg_
+	done
+}
 ### sx_var_is_empty - 変数が設定されており、かつ空か確認する
 ##
 ## 使い方:
-##   sx_var_is_empty 変数名
+##   sx_var_is_empty 変数名1 [変数名2 ...]
 ##
 ## 終了ステータス:
-##    0  空である (SX_EX_OK)
-##    1  設定されていない、または空でない
+##    0  すべて空である (SX_EX_OK)
+##    1  設定されていない、または空でない変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_empty() {
-	sx_var_is_set "${1}" || return "${?}"
+	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_empty "${@}"
+}
 
-	if ! eval sx_str_eq "\"\${${1}}\"" "''"; then
-		return 1
-	fi
+### __sx_var_is_empty - 変数が設定されており、かつ空か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_empty 変数名1 [変数名2 ...]
+##
+## 説明:
+##   引数で指定されたすべての変数が空（かつ設定済み）か確認する。
+##   引数チェックは行わない。
+__sx_var_is_empty() {
+	for __sx_var_is_empty_arg_ in "${@}"; do
+		if eval ! sx_str_eq "\"\${${__sx_var_is_empty_arg_}+X}\${${__sx_var_is_empty_arg_}-}\"" X; then
+			unset __sx_var_is_empty_arg_
+			return 1
+		fi
+
+		unset __sx_var_is_empty_arg_
+	done
 }
 
 ### sx_var_is_writable - 変数が書き込み可能か確認する
@@ -833,43 +867,79 @@ sx_var_is_empty() {
 ##    1  読み取り専用が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_writable() {
-	for __sx_var_is_writable_arg in "${@}"; do
-		sx_var_name_check "${__sx_var_is_writable_arg}" || return "${SX_EX_USAGE}"
+	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_writable "${@}"
+}
 
-		if ! (eval "${__sx_var_is_writable_arg}=\"\${${__sx_var_is_writable_arg}-}\"") 2>/dev/null; then
-			unset __sx_var_is_writable_arg
+### __sx_var_is_writable - 変数が書き込み可能か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_writable 変数名1 [変数名2 ...]
+##
+## 説明:
+##   引数で指定されたすべての変数が書き込み可能か確認する。
+##   引数チェックは行わない。
+__sx_var_is_writable() {
+	for __sx_var_is_writable_arg_ in "${@}"; do
+		if ! (eval "${__sx_var_is_writable_arg_}"=) 2>/dev/null; then
+			unset __sx_var_is_writable_arg_
 			return 1
 		fi
-	done
 
-	unset __sx_var_is_writable_arg
+		unset __sx_var_is_writable_arg_
+	done
 }
 
 ### sx_var_is_readonly - 変数が読み取り専用か確認する
 ##
 ## 使い方:
-##   sx_var_is_readonly 変数名
+##   sx_var_is_readonly 変数名1 [変数名2 ...]
 ##
 ## 終了ステータス:
-##    0  読み取り専用 (SX_EX_OK)
-##    1  書き込み可能
+##    0  すべて読み取り専用 (SX_EX_OK)
+##    1  書き込み可能な変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_readonly() {
-	sx_var_name_check "${1}" || return "${SX_EX_USAGE}"
+	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_readonly "${@}"
+}
 
-	(! eval "${1}=") 2>/dev/null || return 1
+### __sx_var_is_readonly - 変数が読み取り専用か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_readonly 変数名1 [変数名2 ...]
+##
+## 説明:
+##   引数で指定されたすべての変数が読み取り専用か確認する。
+##   引数チェックは行わない。
+__sx_var_is_readonly() {
+	for __sx_var_is_readonly_arg_ in "${@}"; do
+		if (eval "${__sx_var_is_readonly_arg_}"=) 2>/dev/null; then
+			unset __sx_var_is_readonly_arg_
+			return 1
+		fi
+
+		unset __sx_var_is_readonly_arg_
+	done
 }
 
 ### sx_var_name_check - 変数名として有効か確認する
 ##
 ## 使い方:
-##   sx_var_name_check 文字列
+##   sx_var_name_check [文字列1 [文字列2 ...]]
 ##
 ## 終了ステータス:
-##    0  有効な変数名 (SX_EX_OK)
-##    1  無効な変数名
+##    0  すべて有効な変数名 (SX_EX_OK)
+##    1  無効な変数名が含まれる
 sx_var_name_check() {
-	case "${1}" in
-		'' | [0-9]* | *[!_A-Za-z0-9]*) return 1;;
-	esac
+	for __sx_var_name_check_arg in "${@}"; do
+		case "${__sx_var_name_check_arg}" in
+			'' | [0-9]* | *[!_A-Za-z0-9]*)
+				unset __sx_var_name_check_arg
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_var_name_check_arg
 }
