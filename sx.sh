@@ -1030,16 +1030,9 @@ sx_var_is_writable() {
 ##
 ## 説明:
 ##   引数で指定されたすべての変数が書き込み可能か確認する。
-##   引数チェックは行わない。
+##   サブシェルの生成を最小限にするため、一括で検証を行う。
 __sx_var_is_writable() {
-	for __sx_var_is_writable_arg_ in "${@}"; do
-		if ! (eval "${__sx_var_is_writable_arg_}"=) 2>/dev/null; then
-			unset __sx_var_is_writable_arg_
-			return 1
-		fi
-
-		unset __sx_var_is_writable_arg_
-	done
+	( unset -v "$@" ) 2>/dev/null || return 1
 }
 
 ### sx_var_is_readonly - 変数が読み取り専用か確認する
