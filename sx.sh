@@ -22,6 +22,37 @@ readonly SX_CHAR_LF='
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
 : "${SX_SIG:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
 
+### __sx_call_with_ifs - IFS を一時的に変更してコマンドを実行する（内部用）
+##
+## 使い方:
+##   __sx_call_with_ifs 新しいIFS コマンド [引数 ...]
+##
+## 説明:
+##   指定された IFS のもとで、残りの引数を単語分割（Word Splitting）を伴って実行する。
+__sx_call_with_ifs() {
+	if ! __sx_var_is_writable IFS; then
+		return "${SX_EX_NOPERM}"
+	fi
+
+	__sx_call_with_ifs_old_="${IFS-}"
+	__sx_call_with_ifs_set_="${IFS+X}"
+
+	IFS="${1}"
+	shift
+
+	# クォートなしの ${*} により、変更後の IFS で分割して実行する
+	{ ${*} && set -- "${?}"; } || set -- "${?}"
+
+	if sx_str_eq "${__sx_call_with_ifs_set_}" X; then
+		IFS="${__sx_call_with_ifs_old_}"
+	else
+		unset IFS
+	fi
+
+	unset __sx_call_with_ifs_old_ __sx_call_with_ifs_set_
+	return "${1}"
+}
+
 ### sx_var_is_arr - 指定された変数がsx配列であるか確認する
 ##
 ## 使い方:
@@ -76,13 +107,8 @@ __sx_var_is_arr() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_list_related() {
-	if ! sx_var_name_check "${1-}" "${@}"; then
-		return "${SX_EX_USAGE}"
-	fi
-
-	if ! sx_var_is_writable "${1}"; then
-		return "${SX_EX_NOPERM}"
-	fi
+	sx_var_name_check "${1-}" "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_writable "${1}" || return "${SX_EX_NOPERM}"
 
 	__sx_var_list_related "${@}"
 }
@@ -145,81 +171,76 @@ __sx_var_list_related() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  削除不可能な変数が含まれる (SX_EX_NOPERM)
 sx_var_unset() {
-	if ! sx_var_name_check "${@}"; then
-		return "${SX_EX_USAGE}"
-	fi
-
+	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
 	sx_var_list_related __sx_var_unset_list "${@}"
 
-	if sx_var_is_set IFS; then
-		__sx_var_unset_IFS="${IFS}"
+	# リストの内容（変数名）がすべて書き込み可能か一括チェック
+	# (IFS のチェックは __sx_call_with_ifs の内部で行われる)
+	if ! __sx_call_with_ifs ' ' __sx_var_is_writable "${__sx_var_unset_list}"; then
+		unset __sx_var_unset_list
+		return "${SX_EX_NOPERM}"
 	fi
 
-	IFS=' '
+	# スペース区切りで一括削除を実行
+	__sx_call_with_ifs ' ' unset -v "${__sx_var_unset_list}"
 
-	if __sx_var_is_writable ${__sx_var_unset_list}; then
-		unset ${__sx_var_unset_list}
-		set -- 0
-	else
-		set -- "${SX_EX_NOPERM}"
-	fi
-
-	if sx_var_is_set __sx_var_unset_IFS; then
-		IFS="${__sx_var_unset_IFS}"
-	else
-		unset IFS
-	fi
-
-	unset __sx_var_unset_list __sx_var_unset_IFS
-	return "${1}"
+	unset __sx_var_unset_list
 }
 
-### sx_var_set - 変数に値を設定する
+__sx_var_unset() {
+	sx_var_list_related __sx_var_unset_list_ "${@}"
+
+	# 書き込み権限等のチェックは行わず、強制的に削除
+	__sx_call_with_ifs ' ' unset -v "${__sx_var_unset_list_}"
+
+	unset __sx_var_unset_list_
+}
+
+### sx_var_set - 変数に値を設定、または削除する
 ##
 ## 使い方:
-##   sx_var_set [-p プレフィックス] [-s サフィックス] [名前=値 ...]
+##   sx_var_set [名前=値 | 名前 ...]
 ##
-## オプション:
-##   -p プレフィックス  設定する変数名の先頭に付与する文字列
-##   -s サフィックス    設定する変数名の末尾に付与する文字列
+## 説明:
+##   指定された変数に値を設定する。= を含まない名前のみが指定された場合は、
+##   その変数を削除（unset）する。対象が sx 配列である場合は、
+##   関連するすべての要素（_len, _0, _1...）も再帰的に削除される。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##    1  読み取り専用変数への書き込み失敗
+##   77  読み取り専用変数への操作失敗 (SX_EX_NOPERM)
 sx_var_set() {
-	sx_var_move __sx_var_set_OPTARG=OPTARG __sx_var_set_OPTIND=OPTIND
+	__sx_var_set_var=' '
 
-	while getopts p:s: __sx_var_set_opt; do
-		case "${__sx_var_set_opt}" in
-			p) __sx_var_set_prefix="${OPTARG}";;
-			s) __sx_var_set_suffix="${OPTARG}";;
-			*)
-				sx_var_move OPTARG=__sx_var_set_OPTARG OPTIND=__sx_var_set_OPTIND
-				unset __sx_var_set_opt __sx_var_set_prefix __sx_var_set_suffix
-				return "${SX_EX_USAGE}"
-				;;
+	for __sx_var_set_arg in "${@}"; do
+		__sx_var_set_var="${__sx_var_set_var}${__sx_var_set_arg%%=*} "
+	done
+
+	__sx_call_with_ifs ' ' sx_var_is_writable "${__sx_var_set_var}" || {
+		case "${?}" in
+			1) set -- "${SX_EX_NOPERM}";;
+			*) set -- "${?}";;
 		esac
-	done
 
-	shift "$((OPTIND - 1))"
+		unset __sx_var_set_arg __sx_var_set_var
+		return "${1}"
+	}
 
-	for __sx_var_set_arg in "${@}"; do
-		if ! sx_var_is_writable "${__sx_var_set_prefix-}${__sx_var_set_arg%%=*}${__sx_var_set_suffix-}"; then
-			eval 'unset __sx_var_set_opt __sx_var_set_prefix __sx_var_set_suffix __sx_var_set_arg;' return "${?}"
-		fi
-	done
+	__sx_var_set "${@}"
+	unset __sx_var_set_arg __sx_var_set_var
+}
 
-	for __sx_var_set_arg in "${@}"; do
-		if sx_str_contain "${__sx_var_set_arg}" "="; then
-			eval "${__sx_var_set_prefix-}${__sx_var_set_arg%%=*}${__sx_var_set_suffix-}="'${__sx_var_set_arg#*=}';
+__sx_var_set() {
+	for __sx_var_set_arg_ in "${@}"; do
+		if sx_str_contain "${__sx_var_set_arg_}" "="; then
+			eval "${__sx_var_set_arg_%%=*}="'"${__sx_var_set_arg_#*=}"'
 		else
-			eval "${__sx_var_set_prefix-}${__sx_var_set_arg}${__sx_var_set_suffix-}=";
+			__sx_var_unset "${__sx_var_set_arg_}"
 		fi
 	done
 
-	sx_var_move OPTARG=__sx_var_set_OPTARG OPTIND=__sx_var_set_OPTIND
-	unset __sx_var_set_opt __sx_var_set_prefix __sx_var_set_suffix __sx_var_set_arg
+	unset __sx_var_set_arg_
 }
 
 ### sx_var_list_set - 設定されている変数の一覧を取得する
