@@ -137,10 +137,13 @@ __sx_var_list_related() {
 ## 説明:
 ##   指定された変数を削除する。対象がsx配列である場合は、その要素および
 ##   長さ変数も含めて再帰的にすべて削除する。
+##   一つでも削除不可能な変数（読み取り専用など）が含まれる場合は、
+##   どの変数も削除せずにエラーを返す。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   77  削除不可能な変数が含まれる (SX_EX_NOPERM)
 sx_var_unset() {
 	if ! sx_var_name_check "${@}"; then
 		return "${SX_EX_USAGE}"
@@ -148,10 +151,27 @@ sx_var_unset() {
 
 	sx_var_list_related __sx_var_unset_list "${@}"
 
-	# shellcheck disable=SC2086
-	unset ${__sx_var_unset_list}
+	if sx_var_is_set IFS; then
+		__sx_var_unset_IFS="${IFS}"
+	fi
 
-	unset __sx_var_unset_list
+	IFS=' '
+
+	if __sx_var_is_writable ${__sx_var_unset_list}; then
+		unset ${__sx_var_unset_list}
+		set -- 0
+	else
+		set -- "${SX_EX_NOPERM}"
+	fi
+
+	if sx_var_is_set __sx_var_unset_IFS; then
+		IFS="${__sx_var_unset_IFS}"
+	else
+		unset IFS
+	fi
+
+	unset __sx_var_unset_list __sx_var_unset_IFS
+	return "${1}"
 }
 
 ### sx_var_set - 変数に値を設定する
