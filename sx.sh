@@ -36,22 +36,29 @@ sx_var_is_arr() {
 		return "${SX_EX_USAGE}"
 	fi
 
-	for __sx_var_is_arr_arg_ in "${@}"; do
-		eval "__sx_var_is_arr_val_=\"\${${__sx_var_is_arr_arg_}-}\""
-		if ! sx_str_eq "${__sx_var_is_arr_val_}" "array-${SX_SIG}"; then
-			unset __sx_var_is_arr_arg_ __sx_var_is_arr_val_
-			return 1
-		fi
+	__sx_var_is_arr "${@}"
+}
 
-		eval "__sx_var_is_arr_len_=\"\${${__sx_var_is_arr_arg_}_len-}\""
-		if ! sx_num_is_pint "${__sx_var_is_arr_len_}"; then
-			unset __sx_var_is_arr_arg_ __sx_var_is_arr_val_ __sx_var_is_arr_len_
+### __sx_var_is_arr - 指定された変数がsx配列であるか確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_arr 変数名1 [変数名2 ...]
+##
+## 説明:
+##   変数の値（シグネチャ）と長さ変数の妥当性をチェックする。
+##   引数チェックは行わない。
+__sx_var_is_arr() {
+	for __sx_var_is_arr_arg_ in "${@}"; do
+		if
+			! eval sx_str_eq "\"\${${__sx_var_is_arr_arg_}-}\"" '"array-${SX_SIG}"' ||
+			! eval sx_num_is_uint "\"\${${__sx_var_is_arr_arg_}_len-}\""
+		then
+			unset __sx_var_is_arr_arg_
 			return 1
 		fi
 	done
 
-	unset __sx_var_is_arr_arg_ __sx_var_is_arr_val_ __sx_var_is_arr_len_
-	return "${SX_EX_OK}"
+	unset __sx_var_is_arr_arg_
 }
 
 ### sx_var_list_related - 指定された変数に関連するすべての変数名を取得する
@@ -67,48 +74,59 @@ sx_var_is_arr() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_list_related() {
-	if ! sx_var_name_check "${1-}"; then
+	if ! sx_var_name_check "${1-}" "${@}"; then
 		return "${SX_EX_USAGE}"
 	fi
 
-	__sx_var_list_related_res="${1}"
+	if ! sx_var_is_writable "${1}"; then
+		return "${SX_EX_NOPERM}"
+	fi
+
+	__sx_var_list_related "${@}"
+}
+
+### __sx_var_list_related - 指定された変数に関連するすべての変数名を取得する（内部用）
+##
+## 使い方:
+##   __sx_var_list_related 結果変数名 検索対象1 [検索対象2 ...]
+##
+## 説明:
+##   位置パラメータをキューとして利用し、非再帰的に関連変数を収集する。
+##   引数チェックは行わない。
+__sx_var_list_related() {
+	__sx_var_list_related_res_="${1}"
 	shift
 
-	if ! sx_var_name_check "${@}"; then
-		unset __sx_var_list_related_res
-		return "${SX_EX_USAGE}"
-	fi
+	__sx_var_list_related_out_=' '
 
-	__sx_var_list_related_out=' '
-
-	while [ "${#}" -gt 0 ]; do
-		__sx_var_list_related_curr="${1}"
-		shift
-
-		if sx_str_contain "${__sx_var_list_related_out}" " ${__sx_var_list_related_curr} " || ! sx_var_is_set "${__sx_var_list_related_curr}"; then
+	while ! sx_str_eq "${#}" 0; do
+		if sx_str_contain "${__sx_var_list_related_out_}" " ${1} " || ! sx_var_is_set "${1}"; then
+			shift
 			continue
 		fi
 
-		__sx_var_list_related_out="${__sx_var_list_related_out}${__sx_var_list_related_curr} "
+		__sx_var_list_related_out_="${__sx_var_list_related_out_}${1} "
 
-		if sx_var_is_arr "${__sx_var_list_related_curr}"; then
-			eval "__sx_var_list_related_len=\"\${${__sx_var_list_related_curr}_len}\""
-			set -- "${@}" "${__sx_var_list_related_curr}_len"
+		if __sx_var_is_arr "${1}"; then
+			eval "__sx_var_list_related_len_=\"\${${1}_len}\""
+			set -- "${@}" "${1}_len"
 
-			__sx_var_list_related_i=0
-			while sx_num_is_lt "${__sx_var_list_related_i}" "${__sx_var_list_related_len}"; do
-				set -- "${@}" "${__sx_var_list_related_curr}_${__sx_var_list_related_i}"
-				__sx_var_list_related_i=$((__sx_var_list_related_i + 1))
+			__sx_var_list_related_i_=0
+			while ! sx_str_eq "${__sx_var_list_related_i_}" "${__sx_var_list_related_len_}"; do
+				set -- "${@}" "${1}_${__sx_var_list_related_i_}"
+				__sx_var_list_related_i_=$((__sx_var_list_related_i_ + 1))
 			done
 		fi
+
+		shift
 	done
 
-	__sx_var_list_related_out="${__sx_var_list_related_out# }"
-	__sx_var_list_related_out="${__sx_var_list_related_out% }"
-	eval "${__sx_var_list_related_res}=\"\${__sx_var_list_related_out}\""
+	__sx_var_list_related_out_="${__sx_var_list_related_out_# }"
+	eval "${__sx_var_list_related_res_}=\"\${__sx_var_list_related_out_% }\""
 
-	unset __sx_var_list_related_res __sx_var_list_related_out __sx_var_list_related_curr __sx_var_list_related_len __sx_var_list_related_i
+	unset __sx_var_list_related_res_ __sx_var_list_related_out_ __sx_var_list_related_len_ __sx_var_list_related_i_
 }
 
 ### sx_var_unset - 変数または配列を関連要素を含めて削除する
@@ -1032,7 +1050,7 @@ sx_var_is_writable() {
 ##   引数で指定されたすべての変数が書き込み可能か確認する。
 ##   サブシェルの生成を最小限にするため、一括で検証を行う。
 __sx_var_is_writable() {
-	( unset -v "$@" ) 2>/dev/null || return 1
+	( unset -v "${@}" ) 2>/dev/null || return 1
 }
 
 ### sx_var_is_readonly - 変数が読み取り専用か確認する
