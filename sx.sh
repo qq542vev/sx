@@ -945,6 +945,19 @@ __sx_str_split() {
 	unset __sx_str_split_name_ __sx_str_split_str_ __sx_str_split_sep_
 }
 
+### sx_arr_gen - 配列を初期化し、要素を追加する
+##
+## 使い方:
+##   sx_arr_gen 配列名 [値 ...]
+##
+## 説明:
+##   指定された配列を新規に作成（または既存の配列を削除して再作成）し、
+##   引数で指定された値を要素として追加する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
 sx_arr_gen() {
 	sx_var_rw_all "${1-}" || case "${?}" in
 		1) return "${SX_EX_NOPERM}";;
@@ -958,6 +971,14 @@ sx_arr_gen() {
 	__sx_arr_gen "${@}"
 }
 
+### __sx_arr_gen - 配列を初期化し、要素を追加する（内部用）
+##
+## 使い方:
+##   __sx_arr_gen 配列名 [値 ...]
+##
+## 説明:
+##   指定された配列を新規に作成し、引数で指定された値を要素として追加する。
+##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_arr_gen() {
 	__sx_var_unset "${1}"
 	eval "${1}=\"\${SX_SIG_ARR}\""
