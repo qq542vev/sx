@@ -169,7 +169,7 @@ __sx_var_list_related() {
 	__sx_var_list_related_out_=' '
 
 	while ! sx_str_eq "${#}" 0; do
-		if sx_str_contain "${__sx_var_list_related_out_}" " ${1} " || ! sx_var_is_set "${1}"; then
+		if sx_str_contain "${__sx_var_list_related_out_}" " ${1} "; then
 			shift
 			continue
 		fi
@@ -828,50 +828,54 @@ sx_num_is_lt() {
 ##    1  書き込み不可が含まれる
 ##   64  引数不正 (SX_EX_USAGE)
 sx_arr_is_rw() {
-	if ! sx_var_name_check "${1-}"; then
-		return "${SX_EX_USAGE}"
-	fi
+	__sx_var_is_rw IFS || return "${SX_EX_NOPERM}"
+	sx_var_name_check "${1-}" || return "${SX_EX_USAGE}"
 
 	__sx_arr_is_rw_name="${1}"
 	shift
 
-	if sx_str_eq "${#}" 0; then
-		eval set -- 0
-	elif ! sx_num_is_uint "${@}"; then
+	if ! sx_num_is_uint "${@}"; then
 		unset __sx_arr_is_rw_name
 		return "${SX_EX_USAGE}"
 	fi
 
-	if ! sx_var_is_rw "${__sx_arr_is_rw_name}_len"; then
-		unset __sx_arr_is_rw_name
-		return 1
+	set -- "${__sx_arr_is_rw_name}" "${@}"
+	unset __sx_arr_is_rw_name
+
+	__sx_arr_is_rw "${@}" || return "${?}"
+}
+
+__sx_arr_is_rw() {
+	__sx_arr_is_rw_name_="${1}"
+	__sx_arr_is_rw_chk_="${1}_len "
+	shift
+
+	! sx_str_eq "${#}" 0 || set -- 0
+
+	if sx_str_eq "$((${#} % 2))" 1; then
+		if sx_var_is_arr "${__sx_arr_is_rw_name_}"; then
+			# 個数が省略された場合は末尾まで
+			eval set -- '"${@}"' "\$((${__sx_arr_is_rw_name_}_len - \${${#}}))"
+		else
+			set -- "${@}" 0
+		fi
 	fi
 
 	while ! sx_str_eq "${#}" 0; do
-		if sx_str_eq "${#}" 1; then
-			# 個数が省略された場合は末尾まで
-			eval set -- '"${1}"' "\"\${${__sx_arr_is_rw_name}_len-}\""
-
-			if ! sx_num_is_uint "${2}" || ! sx_num_is_uint "${1}" "${2}"; then
-				set -- "${1}" 0
-			fi
-		else
-			eval 'shift 2;' set -- "${1}" "$((${1} + ${2}))" '"${@}"'
-		fi
+		eval 'shift 2;' set -- "${1}" "$((${1} + ${2}))" '"${@}"'
 
 		while sx_num_is_lt "${1}" "${2}"; do
-			if ! sx_var_is_rw "${__sx_arr_is_rw_name}_${1}"; then
-				unset __sx_arr_is_rw_name
-				return 1
-			fi
-
+			__sx_arr_is_rw_chk_="${__sx_arr_is_rw_chk_}${__sx_arr_is_rw_name_}_${1} "
 			eval 'shift 2;' set -- "$((${1} + 1))" "${2}" '"${@}"'
 		done
 
 		shift 2
 	done
 
-	unset __sx_arr_is_rw_name
+	set -- "${__sx_arr_is_rw_chk_}"
+	unset __sx_arr_is_rw_name_ __sx_arr_is_rw_chk_
+
+	__sx_call_with_ifs ' ' sx_var_is_rw_all "${1}" || return "${?}"
 }
 
 #__sx_arr_copy() {
