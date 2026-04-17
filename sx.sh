@@ -1,3 +1,6 @@
+#!/bin/sh
+# shellcheck shell=sh
+
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0           # EX_OK: successful termination
 readonly SX_EX_USAGE=64        # EX_USAGE: command line usage error
@@ -22,6 +25,11 @@ readonly SX_CHAR_LF='
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
 : "${SX_SIG:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
 
+sx_call_with_ifs() {
+	__sx_var_is_writable IFS || return "${SX_EX_NOPERM}"
+
+	__sx_call_with_ifs "${@}"
+}
 ### __sx_call_with_ifs - IFS を一時的に変更してコマンドを実行する（内部用）
 ##
 ## 使い方:
@@ -30,18 +38,18 @@ readonly SX_CHAR_LF='
 ## 説明:
 ##   指定された IFS のもとで、残りの引数を単語分割（Word Splitting）を伴って実行する。
 __sx_call_with_ifs() {
-	if ! __sx_var_is_writable IFS; then
-		return "${SX_EX_NOPERM}"
-	fi
-
 	__sx_call_with_ifs_old_="${IFS-}"
 	__sx_call_with_ifs_set_="${IFS+X}"
+	__sx_call_with_ifs_opts_="${-}"
 
+	set -f
 	IFS="${1}"
 	shift
+	set -- ${*}
 
-	# クォートなしの ${*} により、変更後の IFS で分割して実行する
-	{ ${*} && set -- "${?}"; } || set -- "${?}"
+	if ! sx_str_contain "${__sx_call_with_ifs_opts_}" f; then
+		set +f
+	fi
 
 	if sx_str_eq "${__sx_call_with_ifs_set_}" X; then
 		IFS="${__sx_call_with_ifs_old_}"
@@ -49,8 +57,8 @@ __sx_call_with_ifs() {
 		unset IFS
 	fi
 
-	unset __sx_call_with_ifs_old_ __sx_call_with_ifs_set_
-	return "${1}"
+	unset __sx_call_with_ifs_old_ __sx_call_with_ifs_set_ __sx_call_with_ifs_opts_
+	"${@}" || return "${?}"
 }
 
 ### sx_var_is_writable_all - 指定された変数およびその関連要素がすべて書き込み可能か確認する
@@ -1162,3 +1170,4 @@ sx_var_name_check() {
 	done
 
 	unset __sx_var_name_check_arg
+}
