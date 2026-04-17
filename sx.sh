@@ -245,32 +245,33 @@ __sx_var_unset() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  読み取り専用変数への操作失敗 (SX_EX_NOPERM)
 sx_var_set() {
-	__sx_var_set_var=' '
+	__sx_var_set_chk=' '
 
 	for __sx_var_set_arg in "${@}"; do
-		__sx_var_set_var="${__sx_var_set_var}${__sx_var_set_arg%%=*} "
+		sx_var_name_check "${__sx_var_set_arg%%=*}" || return "${SX_EX_USAGE}"
+		__sx_var_set_chk="${__sx_var_set_chk}${__sx_var_set_arg%%=*} "
 	done
 
-	__sx_call_with_ifs ' ' sx_var_is_rw "${__sx_var_set_var}" || {
+	sx_call_with_ifs ' ' __sx_var_is_rw_all "${__sx_var_set_chk}" || {
 		case "${?}" in
 			1) set -- "${SX_EX_NOPERM}";;
 			*) set -- "${?}";;
 		esac
 
-		unset __sx_var_set_arg __sx_var_set_var
+		unset __sx_var_set_arg __sx_var_set_chk
 		return "${1}"
 	}
 
+	unset __sx_var_set_arg __sx_var_set_chk
 	__sx_var_set "${@}"
-	unset __sx_var_set_arg __sx_var_set_var
 }
 
 __sx_var_set() {
 	for __sx_var_set_arg_ in "${@}"; do
-		if sx_str_contain "${__sx_var_set_arg_}" "="; then
+		__sx_var_unset "${__sx_var_set_arg_}"
+
+		if sx_str_contain "${__sx_var_set_arg_}" =; then
 			eval "${__sx_var_set_arg_%%=*}="'"${__sx_var_set_arg_#*=}"'
-		else
-			__sx_var_unset "${__sx_var_set_arg_}"
 		fi
 	done
 
