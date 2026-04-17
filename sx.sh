@@ -23,7 +23,8 @@ readonly SX_CHAR_LF='
 '
 
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
-: "${SX_SIG:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
+: "${SX_SIG_BASE:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
+: "${SX_SIG_ARR:=array-${SX_SIG_BASE}}"
 
 ### sx_call_with_ifs - IFS を一時的に変更してコマンドを実行する
 ##
@@ -121,7 +122,7 @@ sx_var_is_arr() {
 __sx_var_is_arr() {
 	for __sx_var_is_arr_arg_ in "${@}"; do
 		if
-			! eval sx_str_eq "\"\${${__sx_var_is_arr_arg_}-}\"" '"array-${SX_SIG}"' ||
+			! eval sx_str_eq "\"\${${__sx_var_is_arr_arg_}-}\"" '"${SX_SIG_ARR}"' ||
 			! eval sx_num_is_uint "\"\${${__sx_var_is_arr_arg_}_len-}\""
 		then
 			unset __sx_var_is_arr_arg_
@@ -846,7 +847,7 @@ sx_arr_is_rw() {
 
 __sx_arr_is_rw() {
 	__sx_arr_is_rw_name_="${1}"
-	__sx_arr_is_rw_chk_="${1}_len "
+	__sx_arr_is_rw_chk_="${1} ${1}_len "
 	shift
 
 	! sx_str_eq "${#}" 0 || set -- 0
@@ -944,8 +945,6 @@ __sx_str_split() {
 	unset __sx_str_split_name_ __sx_str_split_str_ __sx_str_split_sep_
 }
 
-: <<EOF
-実装中
 sx_arr_gen() {
 	sx_var_rw_all "${1-}" || case "${?}" in
 		1) return "${SX_EX_NOPERM}";;
@@ -961,38 +960,9 @@ sx_arr_gen() {
 
 __sx_arr_gen() {
 	__sx_var_unset "${1}"
+	eval "${1}=\"\${SX_SIG_ARR}\""
 	eval "${1}_len=$((${#} - 1))"
 	__sx_arr_push "${@}"
-}
-EOF
-### __sx_arr_push - 配列の末尾に要素を追加する（内部用）
-##
-## 使い方:
-##   __sx_arr_push 配列名 [値 ...]
-##
-## 説明:
-##   指定された配列の末尾に一つ以上の値を追加し、長さを更新する。
-##   この関数は引数の検証や書き込み権限のチェックを行わない。
-__sx_arr_push() {
-	__sx_arr_push_name_="${1}"
-	shift
-
-	eval "__sx_arr_push_idx_=\"\${${__sx_arr_push_name_}_len-}\""
-	# 現在の長さを取得（未設定や不正な値なら0とみなす）
-	if ! sx_num_is_uint "${__sx_arr_push_idx_}"; then
-		__sx_arr_push_idx_=0
-	fi
-
-	# 値の追加
-	for __sx_arr_push_arg_ in "${@}"; do
-		eval "${__sx_arr_push_name_}_${__sx_arr_push_idx_}=\"\${__sx_arr_push_arg_}\""
-		__sx_arr_push_idx_=$((__sx_arr_push_idx_ + 1))
-	done
-
-	# 長さを更新
-	eval "${__sx_arr_push_name_}_len=${__sx_arr_push_idx_}"
-
-	unset __sx_arr_push_name_ __sx_arr_push_idx_ __sx_arr_push_arg_
 }
 
 ### sx_arr_push - 配列の末尾に要素を追加する
@@ -1005,27 +975,37 @@ __sx_arr_push() {
 ##   64  配列名が無効 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 sx_arr_push() {
-	if ! sx_var_name_check "${1-}"; then
-		return "${SX_EX_USAGE}"
-	fi
-
-	__sx_arr_push_name="${1}"
-		eval "__sx_arr_push_len=\"\${${__sx_arr_push_name}_len-}\""
-
-	# 現在の長さを取得（未設定や不正な値なら0とみなす）
-	if ! sx_num_is_uint "${__sx_arr_push_len}"; then
-		__sx_arr_push_len=0
-	fi
-
-	# 書き込み可能チェック（長さ変数と、追加される全要素）
-	if ! sx_arr_is_rw "${__sx_arr_push_name}" "${__sx_arr_push_len}" "$((${#} - 1))"; then
-		unset __sx_arr_push_name __sx_arr_push_len
-		return "${SX_EX_NOPERM}"
-	fi
+	sx_var_name_check "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_arr "${1}" || return "${SX_EX_DATAERR}"
+	sx_arr_is_rw "${1}" "\"\${${1}_len}\"" "$((${#} - 1))" || return "${SX_EX_NOPERM}"
 
 	__sx_arr_push "${@}"
+}
 
-	unset __sx_arr_push_name __sx_arr_push_len
+### __sx_arr_push - 配列の末尾に要素を追加する（内部用）
+##
+## 使い方:
+##   __sx_arr_push 配列名 [値 ...]
+##
+## 説明:
+##   指定された配列の末尾に一つ以上の値を追加し、長さを更新する。
+##   この関数は引数の検証や書き込み権限のチェックを行わない。
+__sx_arr_push() {
+	eval "__sx_arr_push_i_=\"\${${1}_len}\""
+
+__sx_arr_push_arr_="${1}"
+	shift
+
+	# 値の追加
+	for __sx_arr_push_arg_ in "${@}"; do
+		eval "${__sx_arr_push_arr_}_${__sx_arr_push_i_}=\"\${__sx_arr_push_arg_}\""
+		__sx_arr_push_i_="$((__sx_arr_push_i_ + 1))"
+	done
+
+	# 長さを更新
+	eval "${__sx_arr_push_arr_}_len=${__sx_arr_push_i_}"
+
+	unset __sx_arr_push_i_ __sx_arr_push_arr_ __sx_arr_push_arg_
 }
 
 ### sx_var_is_set - 変数が設定されているか確認する
