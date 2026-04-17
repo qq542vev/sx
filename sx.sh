@@ -34,7 +34,7 @@ readonly SX_CHAR_LF='
 ##   指定された IFS のもとで、残りの引数を単語分割（Word Splitting）を伴って実行する。
 sx_call_with_ifs() {
 	sx_str_eq "${2:+X}" X || return "${SX_EX_USAGE}"
-	__sx_var_is_writable IFS || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw IFS || return "${SX_EX_NOPERM}"
 
 	__sx_call_with_ifs "${@}"
 }
@@ -71,27 +71,27 @@ __sx_call_with_ifs() {
 	"${@}" || return "${?}"
 }
 
-### sx_var_is_writable_all - 指定された変数およびその関連要素がすべて書き込み可能か確認する
+### sx_var_is_rw_all - 指定された変数およびその関連要素がすべて書き込み可能か確認する
 ##
 ## 使い方:
-##   sx_var_is_writable_all 名前1 [名前2 ...]
+##   sx_var_is_rw_all 名前1 [名前2 ...]
 ##
 ## 終了ステータス:
 ##    0  すべて書き込み可能 (SX_EX_OK)
 ##    1  読み取り専用が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_is_writable_all() {
+sx_var_is_rw_all() {
 	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
 
-	__sx_var_is_writable_all "${@}"
+	__sx_var_is_rw_all "${@}"
 }
 
-__sx_var_is_writable_all() {
-	__sx_var_list_related __sx_var_is_writable_all_list_ "${@}"
+__sx_var_is_rw_all() {
+	__sx_var_list_related __sx_var_is_rw_all_list_ "${@}"
 
-	{ __sx_call_with_ifs ' ' __sx_var_is_writable "${__sx_var_is_writable_all_list_}" && set -- "${?}"; } || set -- "${?}"
+	{ __sx_call_with_ifs ' ' __sx_var_is_rw "${__sx_var_is_rw_all_list_}" && set -- "${?}"; } || set -- "${?}"
 
-	unset __sx_var_is_writable_all_list_
+	unset __sx_var_is_rw_all_list_
 	return "${1}"
 }
 ### sx_var_is_arr - 指定された変数がsx配列であるか確認する
@@ -149,7 +149,7 @@ __sx_var_is_arr() {
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_list_related() {
 	sx_var_name_check "${1-}" "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_writable "${1}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1}" || return "${SX_EX_NOPERM}"
 
 	__sx_var_list_related "${@}"
 }
@@ -213,7 +213,7 @@ __sx_var_list_related() {
 ##   77  削除不可能な変数が含まれる (SX_EX_NOPERM)
 sx_var_unset() {
 	# リストの内容（変数名）がすべて書き込み可能か一括チェック
-	sx_var_is_writable_all "${@}" || case "${?}" in
+	sx_var_is_rw_all "${@}" || case "${?}" in
 		1) return "${SX_EX_NOPERM}";;
 		*) return "${?}";;
 	esac
@@ -251,7 +251,7 @@ sx_var_set() {
 		__sx_var_set_var="${__sx_var_set_var}${__sx_var_set_arg%%=*} "
 	done
 
-	__sx_call_with_ifs ' ' sx_var_is_writable "${__sx_var_set_var}" || {
+	__sx_call_with_ifs ' ' sx_var_is_rw "${__sx_var_set_var}" || {
 		case "${?}" in
 			1) set -- "${SX_EX_NOPERM}";;
 			*) set -- "${?}";;
@@ -320,10 +320,10 @@ sx_var_list_set() {
 	unset __sx_var_list_set_name __sx_var_list_set_ret __sx_var_list_set_vn __sx_var_list_set_IFS
 }
 
-### sx_var_list_readonly - 読み取り専用変数の一覧を取得する
+### sx_var_list_ro - 読み取り専用変数の一覧を取得する
 ##
 ## 使い方:
-##   sx_var_list_readonly 結果変数名
+##   sx_var_list_ro 結果変数名
 ##
 ## 説明:
 ##   現在のシェルで読み取り専用として設定されている全ての変数名（重複除去済み）を
@@ -332,35 +332,35 @@ sx_var_list_set() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-sx_var_list_readonly() {
+sx_var_list_ro() {
 	if ! sx_var_name_check "${1-}"; then
 		return "${SX_EX_USAGE}"
 	fi
 
-	__sx_var_list_readonly_name="${1}"
-	__sx_var_list_readonly_ret=' '
-	__sx_var_list_readonly_IFS="${IFS}"
+	__sx_var_list_ro_name="${1}"
+	__sx_var_list_ro_ret=' '
+	__sx_var_list_ro_IFS="${IFS}"
 	IFS="${SX_CHAR_LF}"
 
-	for __sx_var_list_readonly_vn in $(set); do
-		__sx_var_list_readonly_vn="${__sx_var_list_readonly_vn%%=*}"
+	for __sx_var_list_ro_vn in $(set); do
+		__sx_var_list_ro_vn="${__sx_var_list_ro_vn%%=*}"
 
 		if
-			sx_var_name_check "${__sx_var_list_readonly_vn}" && \
-			sx_var_is_readonly "${__sx_var_list_readonly_vn}" && \
-			! sx_str_contain "${__sx_var_list_readonly_ret}" " ${__sx_var_list_readonly_vn} "
+			sx_var_name_check "${__sx_var_list_ro_vn}" && \
+			sx_var_is_ro "${__sx_var_list_ro_vn}" && \
+			! sx_str_contain "${__sx_var_list_ro_ret}" " ${__sx_var_list_ro_vn} "
 		then
-			__sx_var_list_readonly_ret="${__sx_var_list_readonly_ret}${__sx_var_list_readonly_vn} "
+			__sx_var_list_ro_ret="${__sx_var_list_ro_ret}${__sx_var_list_ro_vn} "
 		fi
 	done
 
-	IFS="${__sx_var_list_readonly_IFS}"
-	__sx_var_list_readonly_ret="${__sx_var_list_readonly_ret# }"
-	__sx_var_list_readonly_ret="${__sx_var_list_readonly_ret% }"
+	IFS="${__sx_var_list_ro_IFS}"
+	__sx_var_list_ro_ret="${__sx_var_list_ro_ret# }"
+	__sx_var_list_ro_ret="${__sx_var_list_ro_ret% }"
 
-	eval "${__sx_var_list_readonly_name}=\"\${__sx_var_list_readonly_ret}\""
+	eval "${__sx_var_list_ro_name}=\"\${__sx_var_list_ro_ret}\""
 
-	unset __sx_var_list_readonly_name __sx_var_list_readonly_ret __sx_var_list_readonly_vn __sx_var_list_readonly_IFS
+	unset __sx_var_list_ro_name __sx_var_list_ro_ret __sx_var_list_ro_vn __sx_var_list_ro_IFS
 }
 
 ### sx_var_copy - 変数の値を右方向に連鎖コピーする
@@ -389,7 +389,7 @@ sx_var_copy() {
 		fi
 
 		# 2番目以降（コピー先）がすべて書き込み可能かチェック
-		! sx_str_contain "${__sx_var_copy_arg}" = || sx_var_is_writable ${__sx_var_copy_arg#*=} || {
+		! sx_str_contain "${__sx_var_copy_arg}" = || sx_var_is_rw ${__sx_var_copy_arg#*=} || {
 			set -- "${?}"
 			__sx_var_move __sx_var_copy_IFS IFS
 			unset __sx_var_copy_arg
@@ -467,7 +467,7 @@ sx_var_move() {
 		esac
 
 		# 書き込みチェック
-		sx_var_is_writable ${__sx_var_move_arg} || {
+		sx_var_is_rw ${__sx_var_move_arg} || {
 			set -- "${?}"
 			__sx_var_move __sx_var_move_IFS IFS
 			unset __sx_var_move_arg
@@ -522,7 +522,7 @@ sx_var_swap() {
 		esac
 
 		# 書き込みチェック
-		sx_var_is_writable ${__sx_var_swap_arg} || {
+		sx_var_is_rw ${__sx_var_swap_arg} || {
 			set -- "${?}"
 			__sx_var_move __sx_var_swap_IFS IFS
 			unset __sx_var_swap_arg
@@ -813,10 +813,10 @@ sx_num_is_lt() {
 	done
 }
 
-### sx_arr_is_writable - 配列の指定範囲が書き込み可能か確認する
+### sx_arr_is_rw - 配列の指定範囲が書き込み可能か確認する
 ##
 ## 使い方:
-##   sx_arr_is_writable 配列名 [[開始インデックス [個数]] ...]
+##   sx_arr_is_rw 配列名 [[開始インデックス [個数]] ...]
 ##
 ## 説明:
 ##   指定された配列の要素および長さ保持変数 (${配列名}_len) が書き込み可能か確認する。
@@ -827,30 +827,30 @@ sx_num_is_lt() {
 ##    0  すべて書き込み可能 (SX_EX_OK)
 ##    1  書き込み不可が含まれる
 ##   64  引数不正 (SX_EX_USAGE)
-sx_arr_is_writable() {
+sx_arr_is_rw() {
 	if ! sx_var_name_check "${1-}"; then
 		return "${SX_EX_USAGE}"
 	fi
 
-	__sx_arr_is_writable_name="${1}"
+	__sx_arr_is_rw_name="${1}"
 	shift
 
 	if sx_str_eq "${#}" 0; then
 		eval set -- 0
 	elif ! sx_num_is_uint "${@}"; then
-		unset __sx_arr_is_writable_name
+		unset __sx_arr_is_rw_name
 		return "${SX_EX_USAGE}"
 	fi
 
-	if ! sx_var_is_writable "${__sx_arr_is_writable_name}_len"; then
-		unset __sx_arr_is_writable_name
+	if ! sx_var_is_rw "${__sx_arr_is_rw_name}_len"; then
+		unset __sx_arr_is_rw_name
 		return 1
 	fi
 
 	while ! sx_str_eq "${#}" 0; do
 		if sx_str_eq "${#}" 1; then
 			# 個数が省略された場合は末尾まで
-			eval set -- '"${1}"' "\"\${${__sx_arr_is_writable_name}_len-}\""
+			eval set -- '"${1}"' "\"\${${__sx_arr_is_rw_name}_len-}\""
 
 			if ! sx_num_is_uint "${2}" || ! sx_num_is_uint "${1}" "${2}"; then
 				set -- "${1}" 0
@@ -860,8 +860,8 @@ sx_arr_is_writable() {
 		fi
 
 		while sx_num_is_lt "${1}" "${2}"; do
-			if ! sx_var_is_writable "${__sx_arr_is_writable_name}_${1}"; then
-				unset __sx_arr_is_writable_name
+			if ! sx_var_is_rw "${__sx_arr_is_rw_name}_${1}"; then
+				unset __sx_arr_is_rw_name
 				return 1
 			fi
 
@@ -871,7 +871,7 @@ sx_arr_is_writable() {
 		shift 2
 	done
 
-	unset __sx_arr_is_writable_name
+	unset __sx_arr_is_rw_name
 }
 
 #__sx_arr_copy() {
@@ -941,6 +941,27 @@ __sx_str_split() {
 	unset __sx_str_split_name_ __sx_str_split_str_ __sx_str_split_sep_
 }
 
+: <<EOF
+実装中
+sx_arr_gen() {
+	sx_var_rw_all "${1-}" || case "${?}" in
+		1) return "${SX_EX_NOPERM}";;
+		*) return "${?}";;
+	esac
+
+	if ! sx_arr_is_rw "${1}" 0 "$((${#} - 1))"; then
+		return "${SX_EX_NOPERM}"
+	fi
+
+	__sx_arr_gen "${@}"
+}
+
+__sx_arr_gen() {
+	__sx_var_unset "${1}"
+	eval "${1}_len=$((${#} - 1))"
+	__sx_arr_push "${@}"
+}
+EOF
 ### __sx_arr_push - 配列の末尾に要素を追加する（内部用）
 ##
 ## 使い方:
@@ -994,7 +1015,7 @@ sx_arr_push() {
 	fi
 
 	# 書き込み可能チェック（長さ変数と、追加される全要素）
-	if ! sx_arr_is_writable "${__sx_arr_push_name}" "${__sx_arr_push_len}" "$((${#} - 1))"; then
+	if ! sx_arr_is_rw "${__sx_arr_push_name}" "${__sx_arr_push_len}" "$((${#} - 1))"; then
 		unset __sx_arr_push_name __sx_arr_push_len
 		return "${SX_EX_NOPERM}"
 	fi
@@ -1102,62 +1123,62 @@ __sx_var_is_empty() {
 	done
 }
 
-### sx_var_is_writable - 変数が書き込み可能か確認する
+### sx_var_is_rw - 変数が書き込み可能か確認する
 ##
 ## 使い方:
-##   sx_var_is_writable 変数名1 [変数名2 ...]
+##   sx_var_is_rw 変数名1 [変数名2 ...]
 ##
 ## 終了ステータス:
 ##    0  すべて書き込み可能 (SX_EX_OK)
 ##    1  読み取り専用が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_is_writable() {
+sx_var_is_rw() {
 	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_writable "${@}"
+	__sx_var_is_rw "${@}"
 }
 
-### __sx_var_is_writable - 変数が書き込み可能か確認する（内部用）
+### __sx_var_is_rw - 変数が書き込み可能か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_var_is_writable 変数名1 [変数名2 ...]
+##   __sx_var_is_rw 変数名1 [変数名2 ...]
 ##
 ## 説明:
 ##   引数で指定されたすべての変数が書き込み可能か確認する。
 ##   サブシェルの生成を最小限にするため、一括で検証を行う。
-__sx_var_is_writable() {
+__sx_var_is_rw() {
 	( unset -v "${@}" ) 2>/dev/null || return 1
 }
 
-### sx_var_is_readonly - 変数が読み取り専用か確認する
+### sx_var_is_ro - 変数が読み取り専用か確認する
 ##
 ## 使い方:
-##   sx_var_is_readonly 変数名1 [変数名2 ...]
+##   sx_var_is_ro 変数名1 [変数名2 ...]
 ##
 ## 終了ステータス:
 ##    0  すべて読み取り専用 (SX_EX_OK)
 ##    1  書き込み可能な変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_is_readonly() {
+sx_var_is_ro() {
 	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_readonly "${@}"
+	__sx_var_is_ro "${@}"
 }
 
-### __sx_var_is_readonly - 変数が読み取り専用か確認する（内部用）
+### __sx_var_is_ro - 変数が読み取り専用か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_var_is_readonly 変数名1 [変数名2 ...]
+##   __sx_var_is_ro 変数名1 [変数名2 ...]
 ##
 ## 説明:
 ##   引数で指定されたすべての変数が読み取り専用か確認する。
 ##   引数チェックは行わない。
-__sx_var_is_readonly() {
-	for __sx_var_is_readonly_arg_ in "${@}"; do
-		if (eval "${__sx_var_is_readonly_arg_}"=) 2>/dev/null; then
-			unset __sx_var_is_readonly_arg_
+__sx_var_is_ro() {
+	for __sx_var_is_ro_arg_ in "${@}"; do
+		if (eval "${__sx_var_is_ro_arg_}"=) 2>/dev/null; then
+			unset __sx_var_is_ro_arg_
 			return 1
 		fi
 
-		unset __sx_var_is_readonly_arg_
+		unset __sx_var_is_ro_arg_
 	done
 }
 
