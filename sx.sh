@@ -25,11 +25,20 @@ readonly SX_CHAR_LF='
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
 : "${SX_SIG:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
 
+### sx_call_with_ifs - IFS を一時的に変更してコマンドを実行する
+##
+## 使い方:
+##   sx_call_with_ifs 新しいIFS コマンド [引数 ...]
+##
+## 説明:
+##   指定された IFS のもとで、残りの引数を単語分割（Word Splitting）を伴って実行する。
 sx_call_with_ifs() {
+	sx_str_eq "${2:+X}" X || return "${SX_EX_USAGE}"
 	__sx_var_is_writable IFS || return "${SX_EX_NOPERM}"
 
 	__sx_call_with_ifs "${@}"
 }
+
 ### __sx_call_with_ifs - IFS を一時的に変更してコマンドを実行する（内部用）
 ##
 ## 使い方:
@@ -41,11 +50,12 @@ __sx_call_with_ifs() {
 	__sx_call_with_ifs_old_="${IFS-}"
 	__sx_call_with_ifs_set_="${IFS+X}"
 	__sx_call_with_ifs_opts_="${-}"
+	__sx_call_with_ifs_cmd_="${2}"
+	IFS="${1}"
+	shift 2
 
 	set -f
-	IFS="${1}"
-	shift
-	set -- ${*}
+	set -- "${__sx_call_with_ifs_cmd_}" ${*}
 
 	if ! sx_str_contain "${__sx_call_with_ifs_opts_}" f; then
 		set +f
@@ -57,7 +67,7 @@ __sx_call_with_ifs() {
 		unset IFS
 	fi
 
-	unset __sx_call_with_ifs_old_ __sx_call_with_ifs_set_ __sx_call_with_ifs_opts_
+	unset __sx_call_with_ifs_old_ __sx_call_with_ifs_set_ __sx_call_with_ifs_opts_ __sx_call_with_ifs_cmd_
 	"${@}" || return "${?}"
 }
 
