@@ -64,14 +64,18 @@ __sx_call_with_ifs() {
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_writable_all() {
 	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_list_related __sx_var_is_writable_all_list "${@}"
 
-	{ __sx_call_with_ifs ' ' __sx_var_is_writable "${__sx_var_is_writable_all_list}" && set -- "${?}"; } || set -- "${?}"
-
-	unset __sx_var_is_writable_all_list
-	return "${1}"
+	__sx_var_is_writable_all "${@}"
 }
 
+__sx_var_is_writable_all() {
+	__sx_var_list_related __sx_var_is_writable_all_list_ "${@}"
+
+	{ __sx_call_with_ifs ' ' __sx_var_is_writable "${__sx_var_is_writable_all_list_}" && set -- "${?}"; } || set -- "${?}"
+
+	unset __sx_var_is_writable_all_list_
+	return "${1}"
+}
 ### sx_var_is_arr - 指定された変数がsx配列であるか確認する
 ##
 ## 使い方:
@@ -190,20 +194,13 @@ __sx_var_list_related() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  削除不可能な変数が含まれる (SX_EX_NOPERM)
 sx_var_unset() {
-	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
-	sx_var_list_related __sx_var_unset_list "${@}"
-
 	# リストの内容（変数名）がすべて書き込み可能か一括チェック
-	# (IFS のチェックは __sx_call_with_ifs の内部で行われる)
-	if ! __sx_call_with_ifs ' ' __sx_var_is_writable "${__sx_var_unset_list}"; then
-		unset __sx_var_unset_list
-		return "${SX_EX_NOPERM}"
-	fi
+	sx_var_is_writable_all "${@}" || case "${?}" in
+		1) return "${SX_EX_NOPERM}";;
+		*) return "${?}";;
+	esac
 
-	# スペース区切りで一括削除を実行
-	__sx_call_with_ifs ' ' unset -v "${__sx_var_unset_list}"
-
-	unset __sx_var_unset_list
+	__sx_var_unset "${@}"
 }
 
 __sx_var_unset() {
@@ -1165,4 +1162,3 @@ sx_var_name_check() {
 	done
 
 	unset __sx_var_name_check_arg
-}
