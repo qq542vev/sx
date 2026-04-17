@@ -53,6 +53,25 @@ __sx_call_with_ifs() {
 	return "${1}"
 }
 
+### sx_var_is_writable_all - 指定された変数およびその関連要素がすべて書き込み可能か確認する
+##
+## 使い方:
+##   sx_var_is_writable_all 名前1 [名前2 ...]
+##
+## 終了ステータス:
+##    0  すべて書き込み可能 (SX_EX_OK)
+##    1  読み取り専用が含まれる
+##   64  変数名が無効 (SX_EX_USAGE)
+sx_var_is_writable_all() {
+	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_list_related __sx_var_is_writable_all_list "${@}"
+
+	{ __sx_call_with_ifs ' ' __sx_var_is_writable "${__sx_var_is_writable_all_list}" && set -- "${?}"; } || set -- "${?}"
+
+	unset __sx_var_is_writable_all_list
+	return "${1}"
+}
+
 ### sx_var_is_arr - 指定された変数がsx配列であるか確認する
 ##
 ## 使い方:
