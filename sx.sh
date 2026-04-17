@@ -58,7 +58,7 @@ __sx_call_with_ifs() {
 	set -f
 	set -- "${__sx_call_with_ifs_cmd_}" ${*}
 
-	if ! sx_str_contain "${__sx_call_with_ifs_opts_}" f; then
+	if ! sx_str_has "${__sx_call_with_ifs_opts_}" f; then
 		set +f
 	fi
 
@@ -82,13 +82,13 @@ __sx_call_with_ifs() {
 ##    1  読み取り専用が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_rw_all() {
-	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_var_is_rw_all "${@}" || return "${?}"
 }
 
 __sx_var_is_rw_all() {
-	__sx_var_list_related __sx_var_is_rw_all_list_ "${@}"
+	__sx_var_list_dep __sx_var_is_rw_all_list_ "${@}"
 	set -- "${__sx_var_is_rw_all_list_}"
 	unset __sx_var_is_rw_all_list_
 
@@ -104,7 +104,7 @@ __sx_var_is_rw_all() {
 ##    1  sx配列ではない変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_arr() {
-	if ! sx_var_name_check "${@}"; then
+	if ! sx_var_is_name "${@}"; then
 		return "${SX_EX_USAGE}"
 	fi
 
@@ -133,10 +133,10 @@ __sx_var_is_arr() {
 	unset __sx_var_is_arr_arg_
 }
 
-### sx_var_list_related - 指定された変数に関連するすべての変数名を取得する
+### sx_var_list_dep - 指定された変数に関連するすべての変数名を取得する
 ##
 ## 使い方:
-##   sx_var_list_related 結果変数名 検索対象1 [検索対象2 ...]
+##   sx_var_list_dep 結果変数名 検索対象1 [検索対象2 ...]
 ##
 ## 説明:
 ##   指定された変数名、およびそれらがsx配列である場合に再帰的に含まれる
@@ -147,53 +147,53 @@ __sx_var_is_arr() {
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_var_list_related() {
-	sx_var_name_check "${1-}" "${@}" || return "${SX_EX_USAGE}"
+sx_var_list_dep() {
+	sx_var_is_name "${1-}" "${@}" || return "${SX_EX_USAGE}"
 	__sx_var_is_rw "${1}" || return "${SX_EX_NOPERM}"
 
-	__sx_var_list_related "${@}"
+	__sx_var_list_dep "${@}"
 }
 
-### __sx_var_list_related - 指定された変数に関連するすべての変数名を取得する（内部用）
+### __sx_var_list_dep - 指定された変数に関連するすべての変数名を取得する（内部用）
 ##
 ## 使い方:
-##   __sx_var_list_related 結果変数名 検索対象1 [検索対象2 ...]
+##   __sx_var_list_dep 結果変数名 検索対象1 [検索対象2 ...]
 ##
 ## 説明:
 ##   位置パラメータをキューとして利用し、非再帰的に関連変数を収集する。
 ##   引数チェックは行わない。
-__sx_var_list_related() {
-	__sx_var_list_related_res_="${1}"
+__sx_var_list_dep() {
+	__sx_var_list_dep_res_="${1}"
 	shift
 
-	__sx_var_list_related_out_=' '
+	__sx_var_list_dep_out_=' '
 
 	while ! sx_str_eq "${#}" 0; do
-		if sx_str_contain "${__sx_var_list_related_out_}" " ${1} "; then
+		if sx_str_has "${__sx_var_list_dep_out_}" " ${1} "; then
 			shift
 			continue
 		fi
 
-		__sx_var_list_related_out_="${__sx_var_list_related_out_}${1} "
+		__sx_var_list_dep_out_="${__sx_var_list_dep_out_}${1} "
 
 		if __sx_var_is_arr "${1}"; then
-			eval "__sx_var_list_related_len_=\"\${${1}_len}\""
+			eval "__sx_var_list_dep_len_=\"\${${1}_len}\""
 			set -- "${@}" "${1}_len"
 
-			__sx_var_list_related_i_=0
-			while ! sx_str_eq "${__sx_var_list_related_i_}" "${__sx_var_list_related_len_}"; do
-				set -- "${@}" "${1}_${__sx_var_list_related_i_}"
-				__sx_var_list_related_i_=$((__sx_var_list_related_i_ + 1))
+			__sx_var_list_dep_i_=0
+			while ! sx_str_eq "${__sx_var_list_dep_i_}" "${__sx_var_list_dep_len_}"; do
+				set -- "${@}" "${1}_${__sx_var_list_dep_i_}"
+				__sx_var_list_dep_i_=$((__sx_var_list_dep_i_ + 1))
 			done
 		fi
 
 		shift
 	done
 
-	__sx_var_list_related_out_="${__sx_var_list_related_out_# }"
-	eval "${__sx_var_list_related_res_}=\"\${__sx_var_list_related_out_% }\""
+	__sx_var_list_dep_out_="${__sx_var_list_dep_out_# }"
+	eval "${__sx_var_list_dep_res_}=\"\${__sx_var_list_dep_out_% }\""
 
-	unset __sx_var_list_related_res_ __sx_var_list_related_out_ __sx_var_list_related_len_ __sx_var_list_related_i_
+	unset __sx_var_list_dep_res_ __sx_var_list_dep_out_ __sx_var_list_dep_len_ __sx_var_list_dep_i_
 }
 
 ### sx_var_unset - 変数または配列を関連要素を含めて削除する
@@ -222,7 +222,7 @@ sx_var_unset() {
 }
 
 __sx_var_unset() {
-	sx_var_list_related __sx_var_unset_list_ "${@}"
+	sx_var_list_dep __sx_var_unset_list_ "${@}"
 
 	# 書き込み権限等のチェックは行わず、強制的に削除
 	__sx_call_with_ifs ' ' unset -v "${__sx_var_unset_list_}"
@@ -248,7 +248,7 @@ sx_var_set() {
 	__sx_var_set_chk=' '
 
 	for __sx_var_set_arg in "${@}"; do
-		sx_var_name_check "${__sx_var_set_arg%%=*}" || return "${SX_EX_USAGE}"
+		sx_var_is_name "${__sx_var_set_arg%%=*}" || return "${SX_EX_USAGE}"
 		__sx_var_set_chk="${__sx_var_set_chk}${__sx_var_set_arg%%=*} "
 	done
 
@@ -270,7 +270,7 @@ __sx_var_set() {
 	for __sx_var_set_arg_ in "${@}"; do
 		__sx_var_unset "${__sx_var_set_arg_}"
 
-		if sx_str_contain "${__sx_var_set_arg_}" =; then
+		if sx_str_has "${__sx_var_set_arg_}" =; then
 			eval "${__sx_var_set_arg_%%=*}="'"${__sx_var_set_arg_#*=}"'
 		fi
 	done
@@ -291,7 +291,7 @@ __sx_var_set() {
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 sx_var_list_set() {
-	if ! sx_var_name_check "${1-}"; then
+	if ! sx_var_is_name "${1-}"; then
 		return "${SX_EX_USAGE}"
 	fi
 
@@ -304,9 +304,9 @@ sx_var_list_set() {
 		__sx_var_list_set_vn="${__sx_var_list_set_vn%%=*}"
 
 		if
-			sx_var_name_check "${__sx_var_list_set_vn}" && \
+			sx_var_is_name "${__sx_var_list_set_vn}" && \
 			sx_var_is_set "${__sx_var_list_set_vn}" && \
-			! sx_str_contain "${__sx_var_list_set_ret}" " ${__sx_var_list_set_vn} "
+			! sx_str_has "${__sx_var_list_set_ret}" " ${__sx_var_list_set_vn} "
 		then
 			__sx_var_list_set_ret="${__sx_var_list_set_ret}${__sx_var_list_set_vn} "
 		fi
@@ -334,7 +334,7 @@ sx_var_list_set() {
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 sx_var_list_ro() {
-	if ! sx_var_name_check "${1-}"; then
+	if ! sx_var_is_name "${1-}"; then
 		return "${SX_EX_USAGE}"
 	fi
 
@@ -347,9 +347,9 @@ sx_var_list_ro() {
 		__sx_var_list_ro_vn="${__sx_var_list_ro_vn%%=*}"
 
 		if
-			sx_var_name_check "${__sx_var_list_ro_vn}" && \
+			sx_var_is_name "${__sx_var_list_ro_vn}" && \
 			sx_var_is_ro "${__sx_var_list_ro_vn}" && \
-			! sx_str_contain "${__sx_var_list_ro_ret}" " ${__sx_var_list_ro_vn} "
+			! sx_str_has "${__sx_var_list_ro_ret}" " ${__sx_var_list_ro_vn} "
 		then
 			__sx_var_list_ro_ret="${__sx_var_list_ro_ret}${__sx_var_list_ro_vn} "
 		fi
@@ -383,14 +383,14 @@ sx_var_copy() {
 	for __sx_var_copy_arg in "${@}"; do
 		# 1. バリデーションと書き込みチェック
 		# (IFS='=' なので、${__sx_var_copy_arg} は自動的に分割される)
-		if sx_str_end_with "${__sx_var_copy_arg}" = || ! sx_var_name_check "${__sx_var_copy_arg%%=*}"; then
+		if sx_str_ew "${__sx_var_copy_arg}" = || ! sx_var_is_name "${__sx_var_copy_arg%%=*}"; then
 			__sx_var_move __sx_var_copy_IFS IFS
 			unset __sx_var_copy_arg
 			return "${SX_EX_USAGE}"
 		fi
 
 		# 2番目以降（コピー先）がすべて書き込み可能かチェック
-		! sx_str_contain "${__sx_var_copy_arg}" = || sx_var_is_rw ${__sx_var_copy_arg#*=} || {
+		! sx_str_has "${__sx_var_copy_arg}" = || sx_var_is_rw ${__sx_var_copy_arg#*=} || {
 			set -- "${?}"
 			__sx_var_move __sx_var_copy_IFS IFS
 			unset __sx_var_copy_arg
@@ -621,46 +621,46 @@ sx_str_any() {
 	return 1
 }
 
-### sx_str_contain - 第一引数に、第二引数以降のいずれかの文字列が含まれているか確認する
+### sx_str_has - 第一引数に、第二引数以降のいずれかの文字列が含まれているか確認する
 ##
 ## 使い方:
-##   sx_str_contain 検索対象文字列 含まれるべき文字列1 [含まれるべき文字列2 ...]
+##   sx_str_has 検索対象文字列 含まれるべき文字列1 [含まれるべき文字列2 ...]
 ##
 ## 終了ステータス:
 ##    0  いずれかが含まれている (SX_EX_OK)
 ##    1  一つも含まれていない（または第二引数以降がない）
 ##   64  引数が不足している (SX_EX_USAGE)
-sx_str_contain() {
+sx_str_has() {
 	if sx_str_eq "${#}" 0; then
 		return "${SX_EX_USAGE}"
 	fi
 
-	__sx_str_contain_target="${1}"
+	__sx_str_has_target="${1}"
 	shift
 
-	for __sx_str_contain_arg in "${@}"; do
-		case "${__sx_str_contain_target}" in
-			*"${__sx_str_contain_arg}"*)
-				unset __sx_str_contain_target __sx_str_contain_arg
+	for __sx_str_has_arg in "${@}"; do
+		case "${__sx_str_has_target}" in
+			*"${__sx_str_has_arg}"*)
+				unset __sx_str_has_target __sx_str_has_arg
 				return "${SX_EX_OK}"
 				;;
 		esac
 	done
 
-	unset __sx_str_contain_target __sx_str_contain_arg
+	unset __sx_str_has_target __sx_str_has_arg
 	return 1
 }
 
-### sx_str_start_with - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
+### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
 ##
 ## 使い方:
-##   sx_str_start_with 検索対象文字列 開始文字列1 [開始文字列2 ...]
+##   sx_str_sw 検索対象文字列 開始文字列1 [開始文字列2 ...]
 ##
 ## 終了ステータス:
 ##    0  いずれかで始まっている (SX_EX_OK)
 ##    1  一つも該当しない（または第二引数以降がない）
 ##   64  引数が不足している (SX_EX_USAGE)
-sx_str_start_with() {
+sx_str_sw() {
 	if sx_str_eq "${#}" 0; then
 		return "${SX_EX_USAGE}"
 	fi
@@ -681,16 +681,16 @@ sx_str_start_with() {
 	return 1
 }
 
-### sx_str_end_with - 第一引数が、第二引数以降のいずれかの文字列で終わっているか確認する
+### sx_str_ew - 第一引数が、第二引数以降のいずれかの文字列で終わっているか確認する
 ##
 ## 使い方:
-##   sx_str_end_with 検索対象文字列 終了文字列1 [終了文字列2 ...]
+##   sx_str_ew 検索対象文字列 終了文字列1 [終了文字列2 ...]
 ##
 ## 終了ステータス:
 ##    0  いずれかで終わっている (SX_EX_OK)
 ##    1  一つも該当しない（または第二引数以降がない）
 ##   64  引数が不足している (SX_EX_USAGE)
-sx_str_end_with() {
+sx_str_ew() {
 	if sx_str_eq "${#}" 0; then
 		return "${SX_EX_USAGE}"
 	fi
@@ -830,7 +830,7 @@ sx_num_is_lt() {
 ##   64  引数不正 (SX_EX_USAGE)
 sx_arr_is_rw() {
 	__sx_var_is_rw IFS || return "${SX_EX_NOPERM}"
-	sx_var_name_check "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
 
 	__sx_arr_is_rw_name="${1}"
 	shift
@@ -934,7 +934,7 @@ __sx_str_split() {
 		__sx_str_split_str_="${1}"
 		__sx_str_split_sep_="${2- }"
 
-		while sx_str_contain "${__sx_str_split_str_}" "${__sx_str_split_sep_}"; do
+		while sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}"; do
 			__sx_arr_push "${__sx_str_split_name_}" "${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
 			__sx_str_split_str_="${__sx_str_split_str_#*${__sx_str_split_sep_}}"
 		done
@@ -997,7 +997,7 @@ __sx_arr_gen() {
 ##   64  配列名が無効 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 sx_arr_push() {
-	sx_var_name_check "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
 	__sx_var_is_arr "${1}" || return "${SX_EX_DATAERR}"
 	sx_arr_is_rw "${1}" "\"\${${1}_len}\"" "$((${#} - 1))" || return "${SX_EX_NOPERM}"
 
@@ -1040,7 +1040,7 @@ __sx_arr_push_arr_="${1}"
 ##    1  未設定の変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_set() {
-	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 	__sx_var_is_set "${@}" || return "${?}"
 }
 
@@ -1063,38 +1063,39 @@ __sx_var_is_set() {
 	done
 }
 
-### sx_var_has_value - 変数が値を持ち、かつ空でないか確認する
+### sx_var_has_val - 変数が値を持ち、かつ空でないか確認する
 ##
 ## 使い方:
-##   sx_var_has_value 変数名1 [変数名2 ...]
+##   sx_var_has_val 変数名1 [変数名2 ...]
 ##
 ## 終了ステータス:
 ##    0  すべて値があり、空でない (SX_EX_OK)
 ##    1  設定されていない、または空の変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_has_value() {
-	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_has_value "${@}" || return "${?}"
+sx_var_has_val() {
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_has_val "${@}" || return "${?}"
 }
 
-### __sx_var_has_value - 変数が値を持ち、かつ空でないか確認する（内部用）
+### __sx_var_has_val - 変数が値を持ち、かつ空でないか確認する（内部用）
 ##
 ## 使い方:
-##   __sx_var_has_value 変数名1 [変数名2 ...]
+##   __sx_var_has_val 変数名1 [変数名2 ...]
 ##
 ## 説明:
 ##   引数で指定されたすべての変数が値を持ち、空でないか確認する。
 ##   引数チェックは行わない。
-__sx_var_has_value() {
-	for __sx_var_has_value_arg_ in "${@}"; do
-		if eval ! sx_str_eq "\"\${${__sx_var_has_value_arg_}:+X}\"" X; then
-			unset __sx_var_has_value_arg_
+__sx_var_has_val() {
+	for __sx_var_has_val_arg_ in "${@}"; do
+		if eval ! sx_str_eq "\"\${${__sx_var_has_val_arg_}:+X}\"" X; then
+			unset __sx_var_has_val_arg_
 			return 1
 		fi
 
-		unset __sx_var_has_value_arg_
+		unset __sx_var_has_val_arg_
 	done
 }
+
 ### sx_var_is_empty - 変数が設定されており、かつ空か確認する
 ##
 ## 使い方:
@@ -1105,7 +1106,7 @@ __sx_var_has_value() {
 ##    1  設定されていない、または空でない変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_empty() {
-	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 	__sx_var_is_empty "${@}" || return "${?}"
 }
 
@@ -1138,7 +1139,7 @@ __sx_var_is_empty() {
 ##    1  読み取り専用が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_rw() {
-	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 	__sx_var_is_rw "${@}" || return "${?}"
 }
 
@@ -1164,7 +1165,7 @@ __sx_var_is_rw() {
 ##    1  書き込み可能な変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_ro() {
-	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 	__sx_var_is_ro "${@}" || return "${?}"
 }
 
@@ -1187,23 +1188,23 @@ __sx_var_is_ro() {
 	done
 }
 
-### sx_var_name_check - 変数名として有効か確認する
+### sx_var_is_name - 変数名として有効か確認する
 ##
 ## 使い方:
-##   sx_var_name_check [文字列1 [文字列2 ...]]
+##   sx_var_is_name [文字列1 [文字列2 ...]]
 ##
 ## 終了ステータス:
 ##    0  すべて有効な変数名 (SX_EX_OK)
 ##    1  無効な変数名が含まれる
-sx_var_name_check() {
-	for __sx_var_name_check_arg in "${@}"; do
-		case "${__sx_var_name_check_arg}" in
+sx_var_is_name() {
+	for __sx_var_is_name_arg in "${@}"; do
+		case "${__sx_var_is_name_arg}" in
 			'' | [0-9]* | *[!_A-Za-z0-9]*)
-				unset __sx_var_name_check_arg
+				unset __sx_var_is_name_arg
 				return 1
 				;;
 		esac
 	done
 
-	unset __sx_var_name_check_arg
+	unset __sx_var_is_name_arg
 }
