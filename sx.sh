@@ -36,7 +36,7 @@ sx_call_with_ifs() {
 	sx_str_eq "${2:+X}" X || return "${SX_EX_USAGE}"
 	__sx_var_is_rw IFS || return "${SX_EX_NOPERM}"
 
-	__sx_call_with_ifs "${@}"
+	__sx_call_with_ifs "${@}" || return "${?}"
 }
 
 ### __sx_call_with_ifs - IFS を一時的に変更してコマンドを実行する（内部用）
@@ -83,16 +83,15 @@ __sx_call_with_ifs() {
 sx_var_is_rw_all() {
 	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
 
-	__sx_var_is_rw_all "${@}"
+	__sx_var_is_rw_all "${@}" || return "${?}"
 }
 
 __sx_var_is_rw_all() {
 	__sx_var_list_related __sx_var_is_rw_all_list_ "${@}"
-
-	{ __sx_call_with_ifs ' ' __sx_var_is_rw "${__sx_var_is_rw_all_list_}" && set -- "${?}"; } || set -- "${?}"
-
+	set -- "${__sx_var_is_rw_all_list_}"
 	unset __sx_var_is_rw_all_list_
-	return "${1}"
+
+	__sx_call_with_ifs ' ' __sx_var_is_rw "${1}" || return "${?}"
 }
 ### sx_var_is_arr - 指定された変数がsx配列であるか確認する
 ##
@@ -108,7 +107,7 @@ sx_var_is_arr() {
 		return "${SX_EX_USAGE}"
 	fi
 
-	__sx_var_is_arr "${@}"
+	__sx_var_is_arr "${@}" || return "${?}"
 }
 
 ### __sx_var_is_arr - 指定された変数がsx配列であるか確認する（内部用）
@@ -1040,7 +1039,7 @@ sx_arr_push() {
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_set() {
 	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_set "${@}"
+	__sx_var_is_set "${@}" || return "${?}"
 }
 
 ### __sx_var_is_set - 変数が設定されているか確認する（内部用）
@@ -1073,7 +1072,7 @@ __sx_var_is_set() {
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_has_value() {
 	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_has_value "${@}"
+	__sx_var_has_value "${@}" || return "${?}"
 }
 
 ### __sx_var_has_value - 変数が値を持ち、かつ空でないか確認する（内部用）
@@ -1105,7 +1104,7 @@ __sx_var_has_value() {
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_empty() {
 	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_empty "${@}"
+	__sx_var_is_empty "${@}" || return "${?}"
 }
 
 ### __sx_var_is_empty - 変数が設定されており、かつ空か確認する（内部用）
@@ -1138,7 +1137,7 @@ __sx_var_is_empty() {
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_rw() {
 	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_rw "${@}"
+	__sx_var_is_rw "${@}" || return "${?}"
 }
 
 ### __sx_var_is_rw - 変数が書き込み可能か確認する（内部用）
@@ -1164,7 +1163,7 @@ __sx_var_is_rw() {
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_ro() {
 	sx_var_name_check "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_ro "${@}"
+	__sx_var_is_ro "${@}" || return "${?}"
 }
 
 ### __sx_var_is_ro - 変数が読み取り専用か確認する（内部用）
