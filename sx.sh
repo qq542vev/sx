@@ -83,6 +83,7 @@ __sx_call_with_ifs() {
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_rw_all() {
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_rw IFS || return "${SX_EX_NOPERM}"
 
 	__sx_var_is_rw_all "${@}" || return "${?}"
 }
@@ -93,6 +94,26 @@ __sx_var_is_rw_all() {
 	unset __sx_var_is_rw_all_list_
 
 	__sx_call_with_ifs ' ' __sx_var_is_rw "${1}" || return "${?}"
+}
+
+### sx_var_rw_chk - 指定された変数名（および配列要素）が書き込み可能か確認する
+##
+## 使い方:
+##   sx_var_rw_chk 名前1 [名前2 ...]
+##
+## 説明:
+##   指定された変数が有効な名前であり、かつすべて書き込み可能かを確認する。
+##   読み取り専用が含まれる場合は SX_EX_NOPERM を返す。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  書き込み不可 (SX_EX_NOPERM)
+sx_var_rw_chk() {
+	sx_var_is_rw_all "${@}" || case "${?}" in
+		1) return "${SX_EX_NOPERM}";;
+		*) return "${?}";;
+	esac
 }
 ### sx_var_is_arr - 指定された変数がsx配列であるか確認する
 ##
@@ -148,8 +169,7 @@ __sx_var_is_arr() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_list_dep() {
-	sx_var_is_name "${1-}" "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_rw "${1}" || return "${SX_EX_NOPERM}"
+	sx_var_rw_chk "${1-}" || return "${?}"
 
 	__sx_var_list_dep "${@}"
 }
@@ -163,6 +183,7 @@ sx_var_list_dep() {
 ##   位置パラメータをキューとして利用し、非再帰的に関連変数を収集する。
 ##   引数チェックは行わない。
 __sx_var_list_dep() {
+	__sx_var_unset "${1}"
 	__sx_var_list_dep_res_="${1}"
 	shift
 
@@ -213,21 +234,29 @@ __sx_var_list_dep() {
 ##   77  削除不可能な変数が含まれる (SX_EX_NOPERM)
 sx_var_unset() {
 	# リストの内容（変数名）がすべて書き込み可能か一括チェック
-	sx_var_is_rw_all "${@}" || case "${?}" in
-		1) return "${SX_EX_NOPERM}";;
-		*) return "${?}";;
-	esac
+	sx_var_rw_chk "${@}" || return "${?}"
 
 	__sx_var_unset "${@}"
 }
 
 __sx_var_unset() {
-	sx_var_list_dep __sx_var_unset_list_ "${@}"
+	while ! sx_str_eq "${#}" 0; do
+		if __sx_var_is_arr "${1}"; then
+			eval "__sx_var_unset_len_=\"\${${1}_len}\""
+			set -- "${@}" "${1}_len"
 
-	# 書き込み権限等のチェックは行わず、強制的に削除
-	__sx_call_with_ifs ' ' unset -v "${__sx_var_unset_list_}"
+			__sx_var_unset_i_=0
+			while ! sx_str_eq "${__sx_var_unset_i_}" "${__sx_var_unset_len_}"; do
+				set -- "${@}" "${1}_${__sx_var_unset_i_}"
+				__sx_var_unset_i_=$((__sx_var_unset_i_ + 1))
+			done
+		fi
 
-	unset __sx_var_unset_list_
+		unset -v "${1}"
+		shift
+	done
+
+	unset __sx_var_unset_len_ __sx_var_unset_i_
 }
 
 ### sx_var_set - 変数に値を設定、または削除する
@@ -245,19 +274,14 @@ __sx_var_unset() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  読み取り専用変数への操作失敗 (SX_EX_NOPERM)
 sx_var_set() {
-	__sx_var_set_chk=' '
+	__sx_var_set_chk=''
 
 	for __sx_var_set_arg in "${@}"; do
-		sx_var_is_name "${__sx_var_set_arg%%=*}" || return "${SX_EX_USAGE}"
-		__sx_var_set_chk="${__sx_var_set_chk}${__sx_var_set_arg%%=*} "
+		__sx_var_set_chk="${__sx_var_set_arg%%=*}=${__sx_var_set_chk}"
 	done
 
-	sx_call_with_ifs ' ' __sx_var_is_rw_all "${__sx_var_set_chk}" || {
-		case "${?}" in
-			1) set -- "${SX_EX_NOPERM}";;
-			*) set -- "${?}";;
-		esac
-
+	sx_call_with_ifs = sx_var_rw_chk "${__sx_var_set_chk}" || {
+		set -- "${?}"
 		unset __sx_var_set_arg __sx_var_set_chk
 		return "${1}"
 	}
@@ -268,7 +292,7 @@ sx_var_set() {
 
 __sx_var_set() {
 	for __sx_var_set_arg_ in "${@}"; do
-		__sx_var_unset "${__sx_var_set_arg_}"
+		__sx_var_unset "${__sx_var_set_arg_%%=*}"
 
 		if sx_str_has "${__sx_var_set_arg_}" =; then
 			eval "${__sx_var_set_arg_%%=*}="'"${__sx_var_set_arg_#*=}"'
@@ -291,9 +315,9 @@ __sx_var_set() {
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 sx_var_list_set() {
-	if ! sx_var_is_name "${1-}"; then
-		return "${SX_EX_USAGE}"
-	fi
+	sx_var_rw_chk "${1-}" || return "${?}"
+
+	__sx_var_unset "${1}"
 
 	__sx_var_list_set_name="${1}"
 	__sx_var_list_set_ret=' '
@@ -334,9 +358,8 @@ sx_var_list_set() {
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 sx_var_list_ro() {
-	if ! sx_var_is_name "${1-}"; then
-		return "${SX_EX_USAGE}"
-	fi
+	sx_var_rw_chk "${1-}" || return "${?}"
+	__sx_var_unset "${1}"
 
 	__sx_var_list_ro_name="${1}"
 	__sx_var_list_ro_ret=' '
@@ -711,6 +734,71 @@ sx_str_ew() {
 	return 1
 }
 
+sx_str_sub() {
+	sx_var_rw_chk "${1-}" || return "${?}"
+
+	# 1:変数名, 2:文字列, 3:パターン, 4:置換後, 5:回数制限, 6:方向(f/b)
+	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-2147483647}" "${6-f}"
+
+	sx_num_is_uint "${5}" || return "${SX_EX_USAGE}"
+	sx_str_any "${6}" f b || return "${SX_EX_USAGE}"
+
+	__sx_str_sub "${@}"
+}
+
+__sx_str_sub() {
+	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-2147483647}" "${6-f}"
+	__sx_var_unset "${1}"
+	__sx_str_sub_res_="${1}"
+	__sx_str_sub_str_="${2}"
+	__sx_str_sub_pat_="${3}"
+	__sx_str_sub_rep_="${4}"
+	__sx_str_sub_lim_="${5}"
+	__sx_str_sub_dir_="${6}"
+
+	# パターンが空の場合は、元の文字列をそのまま結果変数に格納して終了
+	if sx_str_eq "${__sx_str_sub_pat_}" ""; then
+		eval "${__sx_str_sub_res_}=\"\${__sx_str_sub_str_}\""
+		unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_dir_
+		return 0
+	fi
+
+	__sx_str_sub_out_=""
+	__sx_str_sub_i_=0
+
+	if sx_str_eq "${__sx_str_sub_dir_}" b; then
+		# 後ろ向き置換 (Backward)
+		while
+			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
+			sx_num_is_lt "${__sx_str_sub_i_}" "${__sx_str_sub_lim_}"
+		do
+			# 「置換文字」＋「後ろの部分」＋「これまでの蓄積」を結合
+			__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_##*"${__sx_str_sub_pat_}"}${__sx_str_sub_out_}"
+			# 残りの文字列を更新（右端のパターンより前を残す）
+			__sx_str_sub_str_="${__sx_str_sub_str_%"${__sx_str_sub_pat_}"*}"
+			__sx_str_sub_i_=$((__sx_str_sub_i_ + 1))
+		done
+		# 最後に残った左側の部分を結合
+		__sx_str_sub_out_="${__sx_str_sub_str_}${__sx_str_sub_out_}"
+	else
+		# 前向き置換 (Forward)
+		while
+			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
+			sx_num_is_lt "${__sx_str_sub_i_}" "${__sx_str_sub_lim_}"
+		do
+			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%%"${__sx_str_sub_pat_}"*}${__sx_str_sub_rep_}"
+			__sx_str_sub_str_="${__sx_str_sub_str_#*"${__sx_str_sub_pat_}"}"
+			__sx_str_sub_i_=$((__sx_str_sub_i_ + 1))
+		done
+		__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_}"
+	fi
+
+	# 安全に代入 (eval 内で値を展開せず、変数の参照として渡す)
+	eval "${__sx_str_sub_res_}=\"\${__sx_str_sub_out_}\""
+
+	# 内部変数のクリーニング
+	unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_dir_ __sx_str_sub_out_ __sx_str_sub_i_
+}
 ### sx_num_is_digit - すべての引数が数字のみで構成されている（空でない）か確認する
 ##
 ## 使い方:
@@ -960,10 +1048,7 @@ __sx_str_split() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 sx_arr_gen() {
-	sx_var_rw_all "${1-}" || case "${?}" in
-		1) return "${SX_EX_NOPERM}";;
-		*) return "${?}";;
-	esac
+	sx_var_rw_chk "${1-}" || return "${?}"
 
 	if ! sx_arr_is_rw "${1}" 0 "$((${#} - 1))"; then
 		return "${SX_EX_NOPERM}"
@@ -983,7 +1068,7 @@ sx_arr_gen() {
 __sx_arr_gen() {
 	__sx_var_unset "${1}"
 	eval "${1}=\"\${SX_SIG_ARR}\""
-	eval "${1}_len=$((${#} - 1))"
+	eval "${1}_len=0"
 	__sx_arr_push "${@}"
 }
 
