@@ -489,7 +489,7 @@ __sx_var_copyb() {
 		__sx_var_unset "${__sx_var_copyb_dest}"
 		__sx_var_list_dep __sx_var_copyb_ls_ "${__sx_var_copyb_src_}"
 
-			__sx_arg_str __sx_var_copyb_esc_ "${@}"
+			__sx_arg_quote __sx_var_copyb_esc_ "${@}"
 			eval set -- "${__sx_var_copyb_ls_}"
 
 			for __sx_var_copyb_name_ in "${@}"; do
@@ -1359,7 +1359,7 @@ __sx_var_copylsb() {
 
 	__sx_var_copylsb_out_=
 	__sx_var_copylsb_i_="${#}"
-	__sx_arg_str __sx_var_copylsb_esc_ "${@}"
+	__sx_arg_quote __sx_var_copylsb_esc_ "${@}"
 
 	while sx_num_is_lt 1 "${__sx_var_copylsb_i_}"; do
 		eval "__sx_var_copylsb_dest_=\"\${${__sx_var_copylsb_i_}}\""
@@ -1384,45 +1384,86 @@ sx_util_eval() {
 	eval "${1}"
 }
 
-sx_arg_str() {
+### sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する
+##
+## 使い方:
+##   sx_arg_quote 結果変数名 [値 ...]
+##
+## 説明:
+##   指定された値をそれぞれシングルクォートで囲み（内部のシングルクォートはエスケープ）、
+##   スペース区切りで順方向に結合した文字列を作成して結果変数に格納する。
+##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_quote() {
 	sx_var_rw_chk "${1-}" || return "${?}"
 
-	__sx_arg_str "${@}"
+	__sx_arg_quote "${@}"
 }
 
-__sx_arg_str() {
-	__sx_arg_str_out_=
-	__sx_arg_str_res_="${1}"
+### __sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する（内部用）
+##
+## 使い方:
+##   __sx_arg_quote 結果変数名 [値 ...]
+##
+## 説明:
+##   引数チェックを行わずにクォート結合処理を行う。
+__sx_arg_quote() {
+	__sx_arg_quote_out_=
+	__sx_arg_quote_res_="${1}"
 	shift
 
-	for __sx_arg_str_arg_ in "${@}"; do
-		__sx_str_sub __sx_arg_str_esc_ "${__sx_arg_str_arg_}" "'" "'\\''"
-		__sx_arg_str_out_="${__sx_arg_str_out_} '${__sx_arg_str_esc_}'"
+	for __sx_arg_quote_arg_ in "${@}"; do
+		__sx_str_sub __sx_arg_quote_esc_ "${__sx_arg_quote_arg_}" "'" "'\\''"
+		__sx_arg_quote_out_="${__sx_arg_quote_out_} '${__sx_arg_quote_esc_}'"
 	done
 
-	eval "${__sx_arg_str_res_}=\"\${__sx_arg_str_out_# }\""
+	eval "${__sx_arg_quote_res_}=\"\${__sx_arg_quote_out_# }\""
 
-	unset __sx_arg_str_res_ __sx_arg_str_out_ __sx_arg_str_arg_ __sx_arg_str_esc_
+	unset __sx_arg_quote_res_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
 }
 
 
-sx_arg_rev() {
+### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する
+##
+## 使い方:
+##   sx_arg_rquote 結果変数名 [値 ...]
+##
+## 説明:
+##   指定された値をそれぞれシングルクォートで囲み、
+##   逆順（最後の引数が先頭）にスペース区切りで結合した文字列を作成して結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_rquote() {
 	sx_var_rw_chk "${1-}" || return "${?}"
 
-	__sx_arg_rev "${@}"
+	__sx_arg_rquote "${@}"
 }
 
-__sx_arg_rev() {
-	__sx_arg_rev_out_=
-	__sx_arg_rev_res_="${1}"
+### __sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
+##
+## 使い方:
+##   __sx_arg_rquote 結果変数名 [値 ...]
+##
+## 説明:
+##   引数チェックを行わずに逆順クォート結合処理を行う。
+__sx_arg_rquote() {
+	__sx_arg_rquote_out_=
+	__sx_arg_rquote_res_="${1}"
 	shift
 
-	for __sx_arg_rev_arg_ in "${@}"; do
-		__sx_str_sub __sx_arg_rev_esc_ "${__sx_arg_rev_arg_}" "'" "'\\''"
-		__sx_arg_rev_out_=" '${__sx_arg_rev_esc_}'${__sx_arg_rev_out_}"
+	for __sx_arg_rquote_arg_ in "${@}"; do
+		__sx_str_sub __sx_arg_rquote_esc_ "${__sx_arg_rquote_arg_}" "'" "'\\''"
+		__sx_arg_rquote_out_=" '${__sx_arg_rquote_esc_}'${__sx_arg_rquote_out_}"
 	done
 
-	eval "${__sx_arg_rev_res_}=\"\${__sx_arg_rev_out_# }\""
+	eval "${__sx_arg_rquote_res_}=\"\${__sx_arg_rquote_out_# }\""
 
-	unset __sx_arg_rev_res_ __sx_arg_rev_out_ __sx_arg_rev_arg_ __sx_arg_rev_esc_
+	unset __sx_arg_rquote_res_ __sx_arg_rquote_out_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
 }
