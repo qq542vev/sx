@@ -1063,8 +1063,8 @@ __sx_str_split() {
 		__sx_str_split_sep_="${2- }"
 
 		while sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}"; do
-			__sx_arr_push "${__sx_str_split_name_}" "${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
-			__sx_str_split_str_="${__sx_str_split_str_#*${__sx_str_split_sep_}}"
+			__sx_arr_push "${__sx_str_split_name_}" "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"
+			__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
 		done
 
 		__sx_arr_push "${__sx_str_split_name_}" "${__sx_str_split_str_}"
@@ -1384,6 +1384,48 @@ sx_util_eval() {
 	eval "${1}"
 }
 
+### sx_arg_join - 引数を指定された区切り文字で結合する
+##
+## 使い方:
+##   sx_arg_join 結果変数名 区切り文字 [値 ...]
+##
+## 説明:
+##   指定された値を区切り文字で結合した文字列を作成して結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_join() {
+	sx_var_rw_chk "${1-}" || return "${?}"
+
+	__sx_arg_join "${@}"
+}
+
+### __sx_arg_join - 引数を指定された区切り文字で結合する（内部用）
+##
+## 使い方:
+##   __sx_arg_join 結果変数名 区切り文字 [値 ...]
+##
+## 説明:
+##   引数チェックを行わずに結合処理を行う。
+__sx_arg_join() {
+	sx_var_unset "${1}"
+	__sx_arg_join_res_="${1}"
+	__sx_arg_join_sep_="${2-}"
+	__sx_arg_join_out_=
+	shift "$((1 < ${#} ? 2 : 1))"
+
+
+	for __sx_arg_join_arg_ in "${@}"; do
+		__sx_arg_join_out_="${__sx_arg_join_out_}${__sx_arg_join_sep_}${__sx_arg_join_arg_}"
+	done
+
+	eval "${__sx_arg_join_res_}=\"\${__sx_arg_join_out_#\"\${__sx_arg_join_sep_}\"}\""
+
+	unset __sx_arg_join_res_ __sx_arg_join_sep_ __sx_arg_join_out_ __sx_arg_join_arg_
+}
+
 ### sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する
 ##
 ## 使い方:
@@ -1412,6 +1454,7 @@ sx_arg_quote() {
 ## 説明:
 ##   引数チェックを行わずにクォート結合処理を行う。
 __sx_arg_quote() {
+	sx_var_unset "${1}"
 	__sx_arg_quote_out_=
 	__sx_arg_quote_res_="${1}"
 	shift
@@ -1454,6 +1497,7 @@ sx_arg_rquote() {
 ## 説明:
 ##   引数チェックを行わずに逆順クォート結合処理を行う。
 __sx_arg_rquote() {
+	sx_var_unset "${1}"
 	__sx_arg_rquote_out_=
 	__sx_arg_rquote_res_="${1}"
 	shift
