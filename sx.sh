@@ -21,6 +21,35 @@ readonly SX_EX_CONFIG=78       # EX_CONFIG: configuration error
 
 readonly SX_CHAR_LF='
 '
+readonly SX_CHAR_TAB='	'
+readonly SX_CHAR_CR=''
+
+# 数値定数 (32bit / 64bit 整数限界)
+readonly SX_NUM_I32_MAX=2147483647
+readonly SX_NUM_I32_MIN=-2147483648
+readonly SX_NUM_U32_MAX=4294967295
+readonly SX_NUM_I64_MAX=9223372036854775807
+readonly SX_NUM_I64_MIN=-9223372036854775808
+readonly SX_NUM_U64_MAX=18446744073709551615
+
+# 浮動小数点数限界 (IEEE 754 準拠)
+readonly SX_NUM_DBL_MAX='1.7976931348623157e+308'
+readonly SX_NUM_DBL_MIN='2.2250738585072014e-308'
+readonly SX_NUM_DBL_EPSILON='2.2204460492503131e-16'
+readonly SX_NUM_FLT_MAX='3.402823466e+38'
+readonly SX_NUM_FLT_MIN='1.175494351e-38'
+readonly SX_NUM_FLT_EPSILON='1.192092896e-07'
+
+# 数学定数 (bc などの外部コマンド利用時用)
+readonly SX_NUM_PI='3.14159265358979323846'
+readonly SX_NUM_TAU='6.28318530717958647692'
+readonly SX_NUM_E='2.71828182845904523536'
+readonly SX_NUM_SQRT2='1.41421356237309504880'
+readonly SX_NUM_SQRT3='1.73205080756887729352'
+readonly SX_NUM_SQRT5='2.23606797749978969640'
+readonly SX_NUM_PHI='1.61803398874989484820'
+readonly SX_NUM_LN2='0.69314718055994530941'
+readonly SX_NUM_LN10='2.30258509299404568401'
 
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
 : "${SX_SIG_BASE:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
@@ -400,26 +429,24 @@ sx_var_list_ro() {
 ##    1  コピー先が読み取り専用
 ##   64  引数不正 (SX_EX_USAGE)
 sx_var_copy() {
-	__sx_var_copy_IFS='='
-	__sx_var_swap IFS __sx_var_copy_IFS
+__sx_var_copy_chk=''
 
 	for __sx_var_copy_arg in "${@}"; do
-		# 1. バリデーションと書き込みチェック
-		# (IFS='=' なので、${__sx_var_copy_arg} は自動的に分割される)
-		if sx_str_ew "${__sx_var_copy_arg}" = || ! sx_var_is_name "${__sx_var_copy_arg%%=*}"; then
-			__sx_var_move __sx_var_copy_IFS IFS
-			unset __sx_var_copy_arg
+		if ! sx_var_is_name "${__sx_var_copy_arg%%=*}"; then
+			unset __sx_var_copy_chk __sx_var_copy_arg
 			return "${SX_EX_USAGE}"
 		fi
 
-		# 2番目以降（コピー先）がすべて書き込み可能かチェック
-		! sx_str_has "${__sx_var_copy_arg}" = || sx_var_is_rw ${__sx_var_copy_arg#*=} || {
-			set -- "${?}"
-			__sx_var_move __sx_var_copy_IFS IFS
-			unset __sx_var_copy_arg
-			return "${1}"
-		}
+		if sx_str_has "${__sx_var_copy_arg}" =; then
+			__sx_var_copy_chk="${__sx_var_copy_arg#*=}=${__sx_var_copy_chk}"
+		fi
 	done
+
+	sx_call_with_ifs = sx_var_rw_chk "${__sx_var_copy_chk}" || {
+		set -- "${?}"
+		unset __sx_var_copy_chk __sx_var_copy_arg
+		return "${1}"
+	}
 
 	for __sx_var_copy_arg in "${@}"; do
 		__sx_var_copy ${__sx_var_copy_arg}
@@ -429,10 +456,16 @@ sx_var_copy() {
 	unset __sx_var_copy_arg
 }
 
-### __sx_var_copy - 変数の値を右方向に連鎖代入する（内部用）
+__sx_var_copy() {
+	for __sx_var_copy_arg_ in "${@}"; do
+		sx_call_with_ifs = sx_var_copyb "${__sx_var_copy_arg_}"
+	done
+}
+
+### __sx_var_copyb - 変数の値を右方向に連鎖代入する（内部用）
 ##
 ## 使い方:
-##   __sx_var_copy 変数名1 変数名2 [変数名3 ...]
+##   __sx_var_copyb 変数名1 変数名2 [変数名3 ...]
 ##
 ## 説明:
 ##   与えられた変数名のリストに対して、右方向への連鎖コピー（右シフト）を行う。
@@ -441,31 +474,38 @@ sx_var_copy() {
 ## 仕組み:
 ##   一時変数を使わずに玉突きを解決するため、引数の末尾（右側）から順に
 ##   「左隣の値を自分に上書きする」という処理を繰り返す。
-##   この関数は sx_var_copy から呼び出されることを前提としており、
+##   この関数は __sx_var_copy から呼び出されることを前提としており、
 ##   引数はIFSで分割済みの位置パラメータとして受け取る。
-__sx_var_copy() {
+__sx_var_copyb() {
 	# 引数の総数（現在の右端のインデックス）を取得
-	__sx_var_copy_i_="${#}"
+	__sx_var_copyb_i_="${#}"
 
 	# 右端から順に、左隣の値を自分にコピーしていくループ
-	while sx_num_is_lt 1 "${__sx_var_copy_i_}"; do
+	while sx_num_is_lt 1 "${__sx_var_copyb_i_}"; do
 		# 位置パラメータから代入先(dest)と代入元(src)の変数名を取得
-		eval "__sx_var_copy_dest_=\"\${${__sx_var_copy_i_}}\""
-		eval "__sx_var_copy_src_=\"\${$((__sx_var_copy_i_ - 1))}\""
+		eval "__sx_var_copyb_dest_=\"\${${__sx_var_copyb_i_}}\""
+		eval "__sx_var_copyb_src_=\"\${$((__sx_var_copyb_i_ - 1))}\""
 
-		# コピー元が設定されている場合はその値を代入、未設定なら代入先もunsetする
-		if sx_var_is_set "${__sx_var_copy_src_}"; then
-			eval "${__sx_var_copy_dest_}=\"\${${__sx_var_copy_src_}}\""
-		else
-			unset "${__sx_var_copy_dest_}"
-		fi
+		__sx_var_unset "${__sx_var_copyb_dest}"
+		__sx_var_list_dep __sx_var_copyb_ls_ "${__sx_var_copyb_src_}"
+
+			__sx_arg_str __sx_var_copyb_esc_ "${@}"
+			eval set -- "${__sx_var_copyb_ls_}"
+
+			for __sx_var_copyb_name_ in "${@}"; do
+				if sx_var_is_set "${__sx_var_copyb_name_}"; then
+					eval "${__sx_var_copyb_dest_}${__sx_var_copyb_name_#${__sx_var_copyb_src_}}=\"\${${__sx_var_copyb_name_}}\""
+				fi
+			done
+
+			eval set -- "${__sx_var_copyb_esc_}"
 
 		# インデックスを一つ左にずらす
-		__sx_var_copy_i_="$((__sx_var_copy_i_ - 1))"
+		__sx_var_copyb_i_="$((__sx_var_copyb_i_ - 1))"
 	done
 
 	# 内部用変数を掃除
-	unset __sx_var_copy_i_ __sx_var_copy_dest_ __sx_var_copy_src_
+	unset __sx_var_copyb_i_ __sx_var_copyb_dest_ __sx_var_copyb_src_ __sx_var_copyb_list_  __sx_var_copyb_esc_ __sx_var_copyb_name_
 }
 
 ### sx_var_move - 変数を右方向に連鎖移動する
@@ -1273,6 +1313,7 @@ __sx_var_is_ro() {
 	done
 }
 
+
 ### sx_var_is_name - 変数名として有効か確認する
 ##
 ## 使い方:
@@ -1292,4 +1333,96 @@ sx_var_is_name() {
 	done
 
 	unset __sx_var_is_name_arg
+}
+
+
+__sx_var_copyls() {
+	__sx_var_unset "${1}"
+	__sx_var_copyls_res_="${1}"
+	shift
+
+	__sx_var_copyls_out_=
+
+	for __sx_var_copyls_arg_ in "${@}"; do
+		__sx_call_with_ifs = __sx_var_copylsb = __sx_var_copyls_tmp "${__sx_var_copyls_arg_}"
+		__sx_var_copyls_out_="${__sx_var_copyls_out_} ${__sx_var_copyls_tmp}"
+	done
+
+	eval "${__sx_var_copyls_res_}=\"\${__sx_var_copyls_out_}\""
+	unset __sx_var_copyls_res_ __sx_var_copyls_out_ __sx_var_copyls_tmp_
+}
+
+__sx_var_copylsb() {
+	__sx_var_unset "${1}"
+	__sx_var_copylsb_res="${1}"
+	shift
+
+	__sx_var_copylsb_out_=
+	__sx_var_copylsb_i_="${#}"
+	__sx_arg_str __sx_var_copylsb_esc_ "${@}"
+
+	while sx_num_is_lt 1 "${__sx_var_copylsb_i_}"; do
+		eval "__sx_var_copylsb_dest_=\"\${${__sx_var_copylsb_i_}}\""
+		eval "__sx_var_copylsb_src_=\"\${$((__sx_var_copylsb_i_ - 1))}\""
+
+		__sx_var_list_dep __sx_var_copylsb_ls_ "${__sx_var_copylsb_src_}"
+		eval set -- "${__sx_var_copylsb_ls_}"
+
+		for __sx_var_copylsb_name_ in ${@}; do
+		__sx_var_copylsb_out_="${__sx_var_copylsb_out_} ${__sx_var_copylsb_dest_}${__sx_var_copylsb_name_#${__sx_var_copylsb_src_}}=${__sx_var_copylsb_name_}"
+		done
+
+		eval set -- "${__sx_var_copylsb_esc_}"
+		__sx_var_copylsb_i_="$((__sx_var_copylsb_i_ - 1))"
+	done
+
+	eval "${__sx_var_copylsb_res_}=\"\${__sx_var_copylsb_out_}\""
+	unset __sx_var_copylsb_res_ __sx_var_copylsb_out_ __sx_var_copylsb_i_ __sx_var_copylsb_esc_ __sx_var_copylsb_ls_ __sx_var_copylsb_name_
+}
+
+sx_util_eval() {
+	eval "${1}"
+}
+
+sx_arg_str() {
+	sx_var_rw_chk "${1-}" || return "${?}"
+
+	__sx_arg_str "${@}"
+}
+
+__sx_arg_str() {
+	__sx_arg_str_out_=
+	__sx_arg_str_res_="${1}"
+	shift
+
+	for __sx_arg_str_arg_ in "${@}"; do
+		__sx_str_sub __sx_arg_str_esc_ "${__sx_arg_str_arg_}" "'" "'\\''"
+		__sx_arg_str_out_="${__sx_arg_str_out_} '${__sx_arg_str_esc_}'"
+	done
+
+	eval "${__sx_arg_str_res_}=\"\${__sx_arg_str_out_# }\""
+
+	unset __sx_arg_str_res_ __sx_arg_str_out_ __sx_arg_str_arg_ __sx_arg_str_esc_
+}
+
+
+sx_arg_rev() {
+	sx_var_rw_chk "${1-}" || return "${?}"
+
+	__sx_arg_rev "${@}"
+}
+
+__sx_arg_rev() {
+	__sx_arg_rev_out_=
+	__sx_arg_rev_res_="${1}"
+	shift
+
+	for __sx_arg_rev_arg_ in "${@}"; do
+		__sx_str_sub __sx_arg_rev_esc_ "${__sx_arg_rev_arg_}" "'" "'\\''"
+		__sx_arg_rev_out_=" '${__sx_arg_rev_esc_}'${__sx_arg_rev_out_}"
+	done
+
+	eval "${__sx_arg_rev_res_}=\"\${__sx_arg_rev_out_# }\""
+
+	unset __sx_arg_rev_res_ __sx_arg_rev_out_ __sx_arg_rev_arg_ __sx_arg_rev_esc_
 }
