@@ -348,7 +348,7 @@ __sx_var_set() {
 		fi
 	done
 
-	unset __sx_var_set_arg_
+	unset __sx_var_set_arg_ __sx_var_set_vn_
 }
 
 ### sx_var_list_set - 設定されている変数の一覧を取得する
@@ -365,7 +365,7 @@ __sx_var_set() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_list_set() {
-	sx_var_rw_chk "${1-}" || return "${?}"
+	sx_var_rw_chk "${1-}" IFS || return "${?}"
 
 	__sx_var_list_set "${@}"
 }
@@ -416,7 +416,7 @@ __sx_var_list_set() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_list_ro() {
-	sx_var_rw_chk "${1-}" || return "${?}"
+	sx_var_rw_chk "${1-}" IFS || return "${?}"
 
 	__sx_var_list_ro "${@}"
 }
@@ -1144,7 +1144,7 @@ __sx_arr_gen() {
 sx_arr_push() {
 	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
 	__sx_var_is_arr "${1}" || return "${SX_EX_DATAERR}"
-	sx_arr_is_rw "${1}" "\"\${${1}_len}\"" "$((${#} - 1))" || return "${SX_EX_NOPERM}"
+	eval sx_arr_is_rw "${1}" "\"\${${1}_len}\"" "$((${#} - 1))" || return "${SX_EX_NOPERM}"
 
 	__sx_arr_push "${@}"
 }
@@ -1508,7 +1508,6 @@ __sx_arg_quote() {
 
 	unset __sx_arg_quote_res_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
 }
-
 
 ### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する
 ##
