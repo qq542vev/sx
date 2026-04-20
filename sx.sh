@@ -209,7 +209,6 @@ sx_var_list_dep() {
 ##   位置パラメータをキューとして利用し、非再帰的に関連変数を収集する。
 ##   引数チェックは行わない。
 __sx_var_list_dep() {
-	__sx_var_unset "${1}"
 	__sx_var_list_dep_res_="${1}"
 	shift
 
@@ -238,7 +237,7 @@ __sx_var_list_dep() {
 	done
 
 	__sx_var_list_dep_out_="${__sx_var_list_dep_out_# }"
-	eval "${__sx_var_list_dep_res_}=\"\${__sx_var_list_dep_out_% }\""
+	__sx_var_set "${__sx_var_list_dep_res_}=${__sx_var_list_dep_out_% }"
 
 	unset __sx_var_list_dep_res_ __sx_var_list_dep_out_ __sx_var_list_dep_len_ __sx_var_list_dep_i_
 }
@@ -318,10 +317,11 @@ sx_var_set() {
 
 __sx_var_set() {
 	for __sx_var_set_arg_ in "${@}"; do
-		__sx_var_unset "${__sx_var_set_arg_%%=*}"
+		__sx_var_set_vn_="${__sx_var_set_arg_%%=*}"
+		__sx_var_unset "${__sx_var_set_vn_%%=*}"
 
-		if sx_str_has "${__sx_var_set_arg_}" =; then
-			eval "${__sx_var_set_arg_%%=*}="'"${__sx_var_set_arg_#*=}"'
+		if ! sx_str_eq "${__sx_var_set_vn_}" "${__sx_var_set_arg_}"; then
+			eval "${__sx_var_set_vn_}="'"${__sx_var_set_arg_#*=}"'
 		fi
 	done
 
@@ -366,7 +366,7 @@ __sx_var_list_set() {
 	'
 
 	__sx_var_list_set_out_="${__sx_var_list_set_out_# }"
-	eval "${__sx_var_list_set_res_}=\"\${__sx_var_list_set_out_% }\""
+	__sx_var_set "${__sx_var_list_set_res_}=${__sx_var_list_set_out_% }"
 	unset __sx_var_list_set_set_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
 }
 
@@ -409,7 +409,7 @@ __sx_var_list_ro() {
 	'
 
 	__sx_var_list_ro_out_="${__sx_var_list_ro_out_# }"
-	eval "${__sx_var_list_ro_res_}=\"\${__sx_var_list_ro_out_% }\""
+	__sx_var_set "${__sx_var_list_ro_res_}=${__sx_var_list_ro_out_% }"
 	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
 }
 
@@ -461,7 +461,7 @@ __sx_var_copy() {
 		eval "__sx_var_copy_src_=\"\${$((__sx_var_copy_i_ - 1))}\""
 		eval "__sx_var_copy_dest_=\"\${${__sx_var_copy_i_}}\""
 
-		sx_var_unset "${__sx_var_copy_dest_}"
+		__sx_var_unset "${__sx_var_copy_dest_}"
 		__sx_var_copyls __sx_var_copy_ls_ "${__sx_var_copy_src_}" "${__sx_var_copy_dest_}"
 		eval set -- "${__sx_var_copy_ls_}"
 
@@ -710,7 +710,6 @@ sx_str_sub() {
 
 __sx_str_sub() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-2147483647}" "${6-f}"
-	__sx_var_unset "${1}"
 	__sx_str_sub_res_="${1}"
 	__sx_str_sub_str_="${2}"
 	__sx_str_sub_pat_="${3}"
@@ -720,7 +719,7 @@ __sx_str_sub() {
 
 	# パターンが空の場合は、元の文字列をそのまま結果変数に格納して終了
 	if sx_str_eq "${__sx_str_sub_pat_}" ''; then
-		eval "${__sx_str_sub_res_}=\"\${__sx_str_sub_str_}\""
+		__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_str_}"
 		unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_dir_
 		return 0
 	fi
@@ -756,7 +755,7 @@ __sx_str_sub() {
 	fi
 
 	# 安全に代入 (eval 内で値を展開せず、変数の参照として渡す)
-	eval "${__sx_str_sub_res_}=\"\${__sx_str_sub_out_}\""
+	__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_out_}"
 
 	# 内部変数のクリーニング
 	unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_dir_ __sx_str_sub_out_ __sx_str_sub_i_
@@ -1019,9 +1018,7 @@ sx_arr_gen() {
 ##   指定された配列を新規に作成し、引数で指定された値を要素として追加する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_arr_gen() {
-	__sx_var_unset "${1}"
-	eval "${1}=\"\${SX_SIG_ARR}\""
-	eval "${1}_len=0"
+	__sx_var_set "${1}=${SX_SIG_ARR}" "${1}_len=0"
 	__sx_arr_push "${@}"
 }
 
@@ -1257,7 +1254,6 @@ sx_var_copyls() {
 
 __sx_var_copyls() {
 	__sx_var_copyls_res_="${1}"
-	__sx_var_unset "${1}"
 	shift
 
 	__sx_var_copyls_out_=
@@ -1279,7 +1275,7 @@ __sx_var_copyls() {
 		__sx_var_copyls_i_="$((__sx_var_copyls_i_ - 1))"
 	done
 
-	eval "${__sx_var_copyls_res_}=\"\${__sx_var_copyls_out_}\""
+	__sx_var_set "${__sx_var_copyls_res_}=${__sx_var_copyls_out_}"
 	unset __sx_var_copyls_res_ __sx_var_copyls_out_ __sx_var_copyls_i_ __sx_var_copyls_esc_ __sx_var_copyls_ls_ __sx_var_copyls_name_
 }
 
@@ -1313,7 +1309,6 @@ sx_arg_join() {
 ## 説明:
 ##   引数チェックを行わずに結合処理を行う。
 __sx_arg_join() {
-	sx_var_unset "${1}"
 	__sx_arg_join_res_="${1}"
 	__sx_arg_join_sep_="${2-}"
 	__sx_arg_join_out_=
@@ -1323,7 +1318,7 @@ __sx_arg_join() {
 		__sx_arg_join_out_="${__sx_arg_join_out_}${__sx_arg_join_sep_}${__sx_arg_join_arg_}"
 	done
 
-	eval "${__sx_arg_join_res_}=\"\${__sx_arg_join_out_#\"\${__sx_arg_join_sep_}\"}\""
+	__sx_var_set "${__sx_arg_join_res_}=${__sx_arg_join_out_#${__sx_arg_join_sep_}}"
 
 	unset __sx_arg_join_res_ __sx_arg_join_sep_ __sx_arg_join_out_ __sx_arg_join_arg_
 }
@@ -1356,7 +1351,6 @@ sx_arg_quote() {
 ## 説明:
 ##   引数チェックを行わずにクォート結合処理を行う。
 __sx_arg_quote() {
-	sx_var_unset "${1}"
 	__sx_arg_quote_out_=
 	__sx_arg_quote_res_="${1}"
 	shift
@@ -1366,7 +1360,7 @@ __sx_arg_quote() {
 		__sx_arg_quote_out_="${__sx_arg_quote_out_} '${__sx_arg_quote_esc_}'"
 	done
 
-	eval "${__sx_arg_quote_res_}=\"\${__sx_arg_quote_out_# }\""
+	__sx_var_set "${__sx_arg_quote_res_}=${__sx_arg_quote_out_# }"
 
 	unset __sx_arg_quote_res_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
 }
@@ -1399,7 +1393,6 @@ sx_arg_rquote() {
 ## 説明:
 ##   引数チェックを行わずに逆順クォート結合処理を行う。
 __sx_arg_rquote() {
-	sx_var_unset "${1}"
 	__sx_arg_rquote_out_=
 	__sx_arg_rquote_res_="${1}"
 	shift
@@ -1409,7 +1402,7 @@ __sx_arg_rquote() {
 		__sx_arg_rquote_out_=" '${__sx_arg_rquote_esc_}'${__sx_arg_rquote_out_}"
 	done
 
-	eval "${__sx_arg_rquote_res_}=\"\${__sx_arg_rquote_out_# }\""
+	__sx_var_set "${__sx_arg_rquote_res_}=${__sx_arg_rquote_out_# }"
 
 	unset __sx_arg_rquote_res_ __sx_arg_rquote_out_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
 }
