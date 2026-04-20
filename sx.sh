@@ -264,6 +264,14 @@ sx_var_unset() {
 	__sx_var_unset "${@}"
 }
 
+### __sx_var_unset - 変数または配列を関連要素を含めて削除する（内部用）
+##
+## 使い方:
+##   __sx_var_unset 名前1 [名前2 ...]
+##
+## 説明:
+##   sx_var_unset の内部実装。
+##   引数チェックは行わない。
 __sx_var_unset() {
 	while ! sx_str_eq "${#}" 0; do
 		if __sx_var_is_arr "${1}"; then
@@ -315,6 +323,14 @@ sx_var_set() {
 	__sx_var_set "${@}"
 }
 
+### __sx_var_set - 変数に値を設定、または削除する（内部用）
+##
+## 使い方:
+##   __sx_var_set [名前=値 | 名前 ...]
+##
+## 説明:
+##   sx_var_set の内部実装。
+##   引数チェックは行わない。
 __sx_var_set() {
 	for __sx_var_set_arg_ in "${@}"; do
 		__sx_var_set_vn_="${__sx_var_set_arg_%%=*}"
@@ -346,6 +362,14 @@ sx_var_list_set() {
 	__sx_var_list_set "${@}"
 }
 
+### __sx_var_list_set - 設定されている変数の一覧を取得する（内部用）
+##
+## 使い方:
+##   __sx_var_list_set 結果変数名
+##
+## 説明:
+##   sx_var_list_set の内部実装。
+##   引数チェックは行わない。
 __sx_var_list_set() {
 	__sx_var_list_set_set_="$(set)"
 	__sx_var_list_set_res_="${1}"
@@ -388,6 +412,14 @@ sx_var_list_ro() {
 	__sx_var_list_ro "${@}"
 }
 
+### __sx_var_list_ro - 読み取り専用変数の一覧を取得する（内部用）
+##
+## 使い方:
+##   __sx_var_list_ro 結果変数名
+##
+## 説明:
+##   sx_var_list_ro の内部実装。
+##   引数チェックは行わない。
 __sx_var_list_ro() {
 	__sx_var_list_ro_res_="${1}"
 	__sx_var_list_ro_out_=' '
@@ -700,6 +732,20 @@ sx_str_ew() {
 	return 1
 }
 
+### sx_str_sub - 文字列内のパターンを置換する
+##
+## 使い方:
+##   sx_str_sub 結果変数名 元文字列 検索パターン 置換文字列 [回数制限 [方向(f/b)]]
+##
+## 説明:
+##   元文字列の中に含まれる検索パターンを、置換文字列に置き換えて結果変数に格納する。
+##   回数制限を指定すると、その回数分だけ置換を行う（デフォルトはすべて）。
+##   方向を 'f' (Forward) にすると前方から、'b' (Backward) にすると後方から置換する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_str_sub() {
 	sx_var_rw_chk "${1-}" || return "${?}"
 
@@ -708,6 +754,14 @@ sx_str_sub() {
 	__sx_str_sub "${@}"
 }
 
+### __sx_str_sub - 文字列内のパターンを置換する（内部用）
+##
+## 使い方:
+##   __sx_str_sub 結果変数名 元文字列 検索パターン 置換文字列 [回数制限 [方向(f/b)]]
+##
+## 説明:
+##   sx_str_sub の内部実装。
+##   引数チェックは行わない。
 __sx_str_sub() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-2147483647}" "${6-f}"
 	__sx_str_sub_res_="${1}"
@@ -921,6 +975,14 @@ sx_arr_is_rw() {
 	__sx_arr_is_rw "${@}" || return "${?}"
 }
 
+### __sx_arr_is_rw - 配列の指定範囲が書き込み可能か確認する（内部用）
+##
+## 使い方:
+##   __sx_arr_is_rw 配列名 [開始インデックス [個数]]
+##
+## 説明:
+##   sx_arr_is_rw の内部実装。
+##   引数チェックは行わない。
 __sx_arr_is_rw() {
 	__sx_arr_is_rw_name_="${1}"
 	__sx_arr_is_rw_chk_="${1} ${1}_len "
@@ -1245,6 +1307,20 @@ sx_var_is_name() {
 	unset __sx_var_is_name_arg
 }
 
+### sx_var_copyls - 変数のコピー用代入式リストを生成する
+##
+## 使い方:
+##   sx_var_copyls 結果変数名 源泉1 先1 [源泉2 先2 ...]
+##
+## 説明:
+##   指定された源泉変数を先変数にコピーするための、スペース区切りの代入式（先=源泉）リストを生成する。
+##   源泉が sx 配列である場合は、関連するすべての要素も含めてリストに含める。
+##   生成されたリストは sx_var_set や eval set -- 等で利用できる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_copyls() {
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 	sx_var_rw_chk "${1-}" || return "${?}"
@@ -1252,6 +1328,14 @@ sx_var_copyls() {
 	__sx_var_copyls "${@}"
 }
 
+### __sx_var_copyls - 変数のコピー用代入式リストを生成する（内部用）
+##
+## 使い方:
+##   __sx_var_copyls 結果変数名 源泉1 先1 [源泉2 先2 ...]
+##
+## 説明:
+##   sx_var_copyls の内部実装。
+##   引数チェックは行わない。
 __sx_var_copyls() {
 	__sx_var_copyls_res_="${1}"
 	shift
@@ -1279,6 +1363,14 @@ __sx_var_copyls() {
 	unset __sx_var_copyls_res_ __sx_var_copyls_out_ __sx_var_copyls_i_ __sx_var_copyls_esc_ __sx_var_copyls_ls_ __sx_var_copyls_name_
 }
 
+### sx_util_eval - 文字列をシェルコマンドとして実行する
+##
+## 使い方:
+##   sx_util_eval コマンド文字列
+##
+## 説明:
+##   引数で渡された文字列を eval を用いて実行する。
+##   直接的な eval の使用を避け、意図を明確にするためのラッパー。
 sx_util_eval() {
 	eval "${1}"
 }
