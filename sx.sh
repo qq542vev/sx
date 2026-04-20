@@ -347,25 +347,27 @@ sx_var_list_set() {
 }
 
 __sx_var_list_set() {
-	__sx_var_list_set_res="${1}"
-	__sx_var_list_set_out=' '
+	__sx_var_list_set_set_="$(set)"
+	__sx_var_list_set_res_="${1}"
+	__sx_var_list_set_out_=' '
 
 	IFS="${SX_CHAR_LF}" sx_util_eval '
-		for __sx_var_list_set_vn in $(set); do
-			sx_str_has "${__sx_var_list_set_vn}" = || continue
-			__sx_var_list_set_vn="${__sx_var_list_set_vn%%=*}"
+		for __sx_var_list_set_ln_ in ${__sx_var_list_set_set_}; do
+			__sx_var_list_set_vn_="${__sx_var_list_set_ln_%%=*}"
 
 			if
-				sx_var_is_set "${__sx_var_list_set_vn}" &&
-				! sx_str_has "${__sx_var_list_set_out}" " ${__sx_var_list_set_vn} "
-		then
-				__sx_var_list_set_out="${__sx_var_list_set_out}${__sx_var_list_set_vn} "
+				! sx_str_eq "${__sx_var_list_set_vn_}" "${__sx_var_list_set_ln_}" &&
+				sx_var_is_set "${__sx_var_list_set_vn_}" &&
+				! sx_str_has "${__sx_var_list_set_out_}" " ${__sx_var_list_set_vn_} "
+			then
+				__sx_var_list_set_out_="${__sx_var_list_set_out_}${__sx_var_list_set_vn_} "
 			fi
 		done
 	'
 
-	eval "${__sx_var_list_set_res}=\"\${__sx_var_list_set_out}\""
-	unset __sx_var_list_set_res __sx_var_list_set_out __sx_var_list_set_vn
+	__sx_var_list_set_out_="${__sx_var_list_set_out_# }"
+	eval "${__sx_var_list_set_res_}=\"\${__sx_var_list_set_out_% }\""
+	unset __sx_var_list_set_set_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
 }
 
 ### sx_var_list_ro - 読み取り専用変数の一覧を取得する
@@ -382,32 +384,33 @@ __sx_var_list_set() {
 ##   64  引数不正 (SX_EX_USAGE)
 sx_var_list_ro() {
 	sx_var_rw_chk "${1-}" || return "${?}"
-	__sx_var_unset "${1}"
 
-	__sx_var_list_ro_name="${1}"
-	__sx_var_list_ro_ret=' '
-	__sx_var_list_ro_IFS="${IFS}"
-	IFS="${SX_CHAR_LF}"
+	__sx_var_list_ro "${@}"
+}
 
-	for __sx_var_list_ro_vn in $(set); do
-		__sx_var_list_ro_vn="${__sx_var_list_ro_vn%%=*}"
+__sx_var_list_ro() {
+	__sx_var_list_ro_res_="${1}"
+	__sx_var_list_ro_out_=' '
 
-		if
-			sx_var_is_name "${__sx_var_list_ro_vn}" && \
-			sx_var_is_ro "${__sx_var_list_ro_vn}" && \
-			! sx_str_has "${__sx_var_list_ro_ret}" " ${__sx_var_list_ro_vn} "
-		then
-			__sx_var_list_ro_ret="${__sx_var_list_ro_ret}${__sx_var_list_ro_vn} "
-		fi
-	done
+	IFS="${SX_CHAR_LF}" sx_util_eval '
+		for __sx_var_list_ro_ln_ in $(readonly -p); do
+			__sx_var_list_ro_vn_="${__sx_var_list_ro_ln_#readonly }"
+			__sx_var_list_ro_vn_="${__sx_var_list_ro_vn_%%=*}"
 
-	IFS="${__sx_var_list_ro_IFS}"
-	__sx_var_list_ro_ret="${__sx_var_list_ro_ret# }"
-	__sx_var_list_ro_ret="${__sx_var_list_ro_ret% }"
+			if
+				! sx_str_eq "${__sx_var_list_ro_vn_}" "${__sx_var_list_ro_ln_}" &&
+				sx_var_is_name "${__sx_var_list_ro_vn_}" &&
+				sx_var_is_ro "${__sx_var_list_ro_vn_}" &&
+				! sx_str_has "${__sx_var_list_ro_out_}" " ${__sx_var_list_ro_vn_} "
+			then
+				__sx_var_list_ro_out_="${__sx_var_list_ro_out_}${__sx_var_list_ro_vn_} "
+			fi
+		done
+	'
 
-	eval "${__sx_var_list_ro_name}=\"\${__sx_var_list_ro_ret}\""
-
-	unset __sx_var_list_ro_name __sx_var_list_ro_ret __sx_var_list_ro_vn __sx_var_list_ro_IFS
+	__sx_var_list_ro_out_="${__sx_var_list_ro_out_# }"
+	eval "${__sx_var_list_ro_res_}=\"\${__sx_var_list_ro_out_% }\""
+	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
 }
 
 ### sx_var_copy - 変数の値を右方向に連鎖コピーする
@@ -551,7 +554,7 @@ __sx_var_swap() {
 
 	eval __sx_var_copy "\"\${${#}}\"" __sx_var_swap_last_
 	__sx_var_move "${@}"
-	__sx_var_copy sx_var_swap_last_ "${1}"
+	__sx_var_copy __sx_var_swap_last_ "${1}"
 
 	__sx_var_unset __sx_var_swap_last_
 }
