@@ -1120,36 +1120,95 @@ __sx_arr_is_rw() {
 	sx_var_is_rw_all "${@}" || return "${?}"
 }
 
-### __sx_str_split - 文字列を分割して配列に格納する（内部用）
+### sx_str_split - 文字列を分割して配列に格納する
 ##
 ## 使い方:
-##   __sx_str_split 配列名 [文字列 [区切り文字]] ...
+##   sx_str_split 配列名 [文字列 [区切り文字 [分割回数 [方向(f/b)]]]]
 ##
 ## 説明:
 ##   指定された文字列を区切り文字で分割し、sxライブラリ形式の配列として格納する。
-##   複数の「文字列と区切り文字」のペアを渡すことができ、その場合は一つの配列に
-##   順番に追加される。区切り文字が省略された場合はスペースが使用される。
-##   この関数は引数の検証や書き込み権限のチェックを行わない。
-__sx_str_split() {
-	__sx_str_split_name_="${1}"
+##   分割回数（limit）が指定された場合、最大でその回数分だけ分割を行う。
+##   方向を 'f' (Forward) にすると前方から、'b' (Backward) にすると後方から分割する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
+sx_str_split() {
+	{ sx_num_is_uint "${4-0}" && sx_str_any "${5-f}" f b; } || return "${SX_EX_USAGE}"
+
+	__sx_str_split_arr="${1-}"
 	shift
 
-	eval "${__sx_str_split_name_}_len=0"
+	__sx_str_split __sx_str_split_tmp "${@}"
+	sx_var_copy __sx_str_split_tmp "${__sx_str_split_arr}" || {
+		set -- "${?}"
+		unset __sx_str_split_arr
+		__sx_var_unset __sx_str_split_tmp
+		return "${1}"
+	}
 
-	while ! sx_str_eq "${#}" 0; do
-		__sx_str_split_str_="${1}"
-		__sx_str_split_sep_="${2- }"
+	unset __sx_str_split_arr
+	__sx_var_unset __sx_str_split_tmp
+}
 
-		while sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}"; do
-			__sx_arr_push "${__sx_str_split_name_}" "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"
-			__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
+### __sx_str_split - 文字列を分割して配列に格納する（内部用）
+##
+## 使い方:
+##   __sx_str_split 配列名 [文字列 [区切り文字 [分割回数 [方向(f/b)]]]]
+##
+## 説明:
+##   指定された文字列を区切り文字で分割し、sxライブラリ形式の配列として格納する。
+##   分割回数（limit）が指定された場合、最大でその回数分だけ分割を行う。
+##   方向が 'f' (Forward) の場合は前方から、'b' (Backward) の場合は後方から分割する。
+##   この関数は引数の検証や書き込み権限のチェックを行わない。
+__sx_str_split() {
+	__sx_str_split_arr_="${1}"
+	__sx_str_split_str_="${2-}"
+	__sx_str_split_sep_="${3-}"
+	__sx_str_split_lim_="${4-2147483647}"
+	__sx_str_split_dir_="${5-f}"
+	__sx_str_split_i_=0
+	__sx_str_split_out_=
+
+	if sx_str_eq "${__sx_str_split_sep_}" ''; then
+		__sx_arr_gen "${__sx_str_split_arr_}" "${__sx_str_split_str_}"
+		unset __sx_str_split_arr_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_dir_ __sx_str_split_i_ __sx_str_split_out_
+		return "${SX_EX_OK}"
+	fi
+
+	if sx_str_eq "${__sx_str_split_dir_}" b; then
+		while
+			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
+			sx_num_is_lt "${__sx_str_split_i_}" "${__sx_str_split_lim_}"
+		do
+			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}"
+			__sx_str_split_out_="${__sx_str_split_esc_} ${__sx_str_split_out_}"
+			__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
+			__sx_str_split_i_=$((__sx_str_split_i_ + 1))
 		done
 
-		__sx_arr_push "${__sx_str_split_name_}" "${__sx_str_split_str_}"
-		shift "$((${#} < 2 ? 1 : 2))"
-	done
+		__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
+		__sx_str_split_out_="${__sx_str_split_esc_} ${__sx_str_split_out_}"
+	else
+		while
+			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
+			sx_num_is_lt "${__sx_str_split_i_}" "${__sx_str_split_lim_}"
+		do
+			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"
+			__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
+			__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
+			__sx_str_split_i_=$((__sx_str_split_i_ + 1))
+		done
 
-	unset __sx_str_split_name_ __sx_str_split_str_ __sx_str_split_sep_
+		__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
+		__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
+	fi
+
+	# 一括で配列を生成
+	eval __sx_arr_gen "${__sx_str_split_arr_}" "${__sx_str_split_out_}"
+
+	unset __sx_str_split_arr_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_dir_ __sx_str_split_i_ __sx_str_split_out_ __sx_str_split_esc_
 }
 
 ### sx_arr_gen - 配列を初期化し、要素を追加する
