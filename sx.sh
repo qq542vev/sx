@@ -54,6 +54,31 @@ readonly SX_NUM_LN10='2.30258509299404568401'
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
 : "${SX_SIG_BASE:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
 : "${SX_SIG_ARR:=array-${SX_SIG_BASE}}"
+SX_SYS_REV=0
+
+### sx_var_touch - リビジョン番号を更新する
+##
+## 使い方:
+##   sx_var_touch 変数名
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
+sx_var_touch() {
+	sx_var_rw_chk "${@}" || return "${?}"
+
+	__sx_var_touch "${@}"
+}
+
+__sx_var_touch() {
+	for __sx_var_touch_arg_ in "${@}"; do
+		eval "${__sx_var_touch_arg_}=\"\${${__sx_var_touch_arg_}%:*}:\${SX_SYS_REV}\""
+		SX_SYS_REV=$((SX_SYS_REV + 1))
+	done
+
+	unset __sx_var_touch_arg_
+}
 
 ### sx_call_with_ifs - IFS を一時的に変更してコマンドを実行する
 ##
@@ -176,7 +201,7 @@ sx_var_is_arr() {
 __sx_var_is_arr() {
 	for __sx_var_is_arr_arg_ in "${@}"; do
 		if
-			! eval sx_str_eq "\"\${${__sx_var_is_arr_arg_}-}\"" '"${SX_SIG_ARR}"' ||
+			! eval sx_str_sw "\"\${${__sx_var_is_arr_arg_}-}\"" '"${SX_SIG_ARR}":' ||
 			! eval sx_num_is_uint "\"\${${__sx_var_is_arr_arg_}_len-}\""
 		then
 			unset __sx_var_is_arr_arg_
@@ -623,12 +648,8 @@ __sx_var_swap() {
 ##    0  すべて一致する (または引数が1つ以下)
 ##    1  一致しない文字列が含まれる
 sx_str_eq() {
-	case "${#}" in
-		0) return "${SX_EX_OK}";;
-	esac
-
-	__sx_str_eq_first="${1}"
-	shift
+	__sx_str_eq_first="${1-}"
+	shift "$((0 < $#))"
 
 	for __sx_str_eq_arg in "${@}"; do
 		case "${__sx_str_eq_arg}" in
@@ -658,17 +679,17 @@ sx_str_eq() {
 ##    0  いずれかと一致する (SX_EX_OK)
 ##    1  一つも一致しない
 sx_str_any() {
-	__sx_str_any_target="${1-}"
+	__sx_str_any_tgt="${1-}"
 	shift "$((0 < $#))"
 
 	for __sx_str_any_arg in "${@}"; do
-		if sx_str_eq "${__sx_str_any_target}" "${__sx_str_any_arg}"; then
-			unset __sx_str_any_target __sx_str_any_arg
+		if sx_str_eq "${__sx_str_any_tgt}" "${__sx_str_any_arg}"; then
+			unset __sx_str_any_tgt __sx_str_any_arg
 			return "${SX_EX_OK}"
 		fi
 	done
 
-	unset __sx_str_any_target __sx_str_any_arg
+	unset __sx_str_any_tgt __sx_str_any_arg
 	return 1
 }
 
@@ -688,19 +709,36 @@ sx_str_any() {
 ##    0  いずれかが含まれている (SX_EX_OK)
 ##    1  一致する文字列がない
 sx_str_has() {
-	__sx_str_has_target="${1-}"
+	__sx_str_has_tgt="${1-}"
 	shift "$((0 < $#))"
 
 	for __sx_str_has_arg in "${@}"; do
-		case "${__sx_str_has_target}" in
+		case "${__sx_str_has_tgt}" in
 			*"${__sx_str_has_arg}"*)
-				unset __sx_str_has_target __sx_str_has_arg
+				unset __sx_str_has_tgt __sx_str_has_arg
 				return "${SX_EX_OK}"
 				;;
 		esac
 	done
 
-	unset __sx_str_has_target __sx_str_has_arg
+	unset __sx_str_has_tgt __sx_str_has_arg
+	return 1
+}
+
+sx_str_match() {
+	__sx_str_match_tgt="${1-}"
+	shift "$((0 < $#))"
+
+	for __sx_str_match_arg in "${@}"; do
+		case "${__sx_str_match_tgt}" in
+			${__sx_str_match_arg})
+				unset __sx_str_match_tgt __sx_str_match_arg
+				return "${SX_EX_OK}"
+				;;
+		esac
+	done
+
+	unset __sx_str_match_tgt __sx_str_match_arg
 	return 1
 }
 
@@ -720,19 +758,19 @@ sx_str_has() {
 ##    0  いずれかの開始文字列で始まっている (SX_EX_OK)
 ##    1  一致する開始文字列がない
 sx_str_sw() {
-	__sx_str_sw_target="${1-}"
+	__sx_str_sw_tgt="${1-}"
 	shift "$((0 < $#))"
 
 	for __sx_str_sw_arg in "${@}"; do
-		case "${__sx_str_sw_target}" in
+		case "${__sx_str_sw_tgt}" in
 			"${__sx_str_sw_arg}"*)
-				unset __sx_str_sw_target __sx_str_sw_arg
+				unset __sx_str_sw_tgt __sx_str_sw_arg
 				return "${SX_EX_OK}"
 				;;
 		esac
 	done
 
-	unset __sx_str_sw_target __sx_str_sw_arg
+	unset __sx_str_sw_tgt __sx_str_sw_arg
 	return 1
 }
 
@@ -752,19 +790,19 @@ sx_str_sw() {
 ##    0  いずれかの終了文字列で終わっている (SX_EX_OK)
 ##    1  一致する終了文字列がない
 sx_str_ew() {
-	__sx_str_ew_target="${1-}"
+	__sx_str_ew_tgt="${1-}"
 	shift "$((0 < $#))"
 
 	for __sx_str_ew_arg in "${@}"; do
-		case "${__sx_str_ew_target}" in
+		case "${__sx_str_ew_tgt}" in
 			*"${__sx_str_ew_arg}")
-				unset __sx_str_ew_target __sx_str_ew_arg
+				unset __sx_str_ew_tgt __sx_str_ew_arg
 				return "${SX_EX_OK}"
 				;;
 		esac
 	done
 
-	unset __sx_str_ew_target __sx_str_ew_arg
+	unset __sx_str_ew_tgt __sx_str_ew_arg
 	return 1
 }
 
@@ -869,7 +907,7 @@ __sx_str_sub() {
 sx_uuid_is_uuid() {
 	for __sx_uuid_is_uuid_arg in "${@}"; do
 		case "${__sx_uuid_is_uuid_arg}" in
-			[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) :;;
+			[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) ;;
 			*)
 				unset __sx_uuid_is_uuid_arg
 				return 1
@@ -1105,11 +1143,8 @@ __sx_str_split() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 sx_arr_gen() {
-	sx_var_rw_chk "${1-}" || return "${?}"
-
-	if ! sx_arr_is_rw "${1}" 0 "$((${#} - 1))"; then
-		return "${SX_EX_NOPERM}"
-	fi
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_arr_is_rw "${1}" 0 "$((${#} - 1))" || return "${SX_EX_NOPERM}"
 
 	__sx_arr_gen "${@}"
 }
@@ -1123,7 +1158,7 @@ sx_arr_gen() {
 ##   指定された配列を新規に作成し、引数で指定された値を要素として追加する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_arr_gen() {
-	__sx_var_set "${1}=${SX_SIG_ARR}" "${1}_len=0"
+	__sx_var_set "${1}=${SX_SIG_ARR}:" "${1}_len=0"
 	__sx_arr_push "${@}"
 }
 
@@ -1171,6 +1206,7 @@ __sx_arr_push_arr_="${1}"
 
 	# 長さを更新
 	eval "${__sx_arr_push_arr_}_len=${__sx_arr_push_i_}"
+	__sx_var_touch "${__sx_arr_push_arr_}"
 
 	unset __sx_arr_push_i_ __sx_arr_push_arr_ __sx_arr_push_arg_
 }
@@ -1456,7 +1492,7 @@ __sx_arg_join() {
 	__sx_arg_join_res_="${1}"
 	__sx_arg_join_sep_="${2-}"
 	__sx_arg_join_out_=
-	shift "$((1 < ${#} ? 2 : 1))"
+	shift ${2+2}
 
 	for __sx_arg_join_arg_ in "${@}"; do
 		__sx_arg_join_out_="${__sx_arg_join_out_}${__sx_arg_join_sep_}${__sx_arg_join_arg_}"
