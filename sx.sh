@@ -1133,8 +1133,9 @@ sx_arr_is_rw() {
 ##   sx_arr_is_rw の内部実装。
 ##   引数チェックは行わない。
 __sx_arr_is_rw() {
+	__sx_var_is_rw "${1}" "${1}_len" || return "${?}"
 	__sx_arr_is_rw_name_="${1}"
-	__sx_arr_is_rw_chk_="${1} ${1}_len "
+	__sx_arr_is_rw_chk_=
 	shift
 
 	! sx_str_eq "${#}" 0 || set -- 0
@@ -1347,7 +1348,7 @@ __sx_arr_push() {
 ##   指定された sx 配列の末尾から要素を取り出し、結果変数に格納する。
 ##   結果変数名が複数指定された場合は、指定された順に末尾から順次ポップする。
 ##   結果変数名が省略された場合は、1 つの要素をポップして破棄する。
-##   空文字列 '' が結果変数名として指定された場合は、その要素をポップするが値は格納しない。
+##   - が結果変数名として指定された場合は、その要素をポップするが値は格納しない。
 ##   配列名が結果変数名に含まれている場合はエラーを返す。
 ##
 ## 終了ステータス:
@@ -1366,7 +1367,7 @@ sx_arr_pop() {
 	eval "__sx_arr_pop_len=\"\${${1}_len}\""
 	shift
 
-	! sx_str_eq "${#}" 0 || set -- ''
+	! sx_str_eq "${#}" 0 || set -- -
 
 	# 要素数チェック
 	sx_num_is_le "${#}" "${__sx_arr_pop_len}" || {
@@ -1389,7 +1390,7 @@ sx_arr_pop() {
 	for __sx_arr_pop_dest in "${@}"; do
 		__sx_arr_pop_i=$((__sx_arr_pop_i - 1))
 
-		! sx_str_eq "${__sx_arr_pop_dest}" '' || continue
+		! sx_str_eq "${__sx_arr_pop_dest}" - || continue
 
 		# pop中に配列以下の更新を禁止
 		if sx_str_match "${__sx_arr_pop_dest}" "${__sx_arr_pop_arr}" "${__sx_arr_pop_arr}_*"; then
@@ -1426,13 +1427,13 @@ __sx_arr_pop() {
 	eval "__sx_arr_pop_len_=\"\${${1}_len}\""
 	shift
 
-	! sx_str_eq "${#}" 0 || set -- ''
+	! sx_str_eq "${#}" 0 || set -- -
 
 	for __sx_arr_pop_dest_ in "${@}"; do
 		__sx_arr_pop_len_=$((__sx_arr_pop_len_ - 1))
 		__sx_arr_pop_src_="${__sx_arr_pop_arr_}_${__sx_arr_pop_len_}"
 
-		if ! sx_str_eq "${__sx_arr_pop_dest_}" ''; then
+		if ! sx_str_eq "${__sx_arr_pop_dest_}" -; then
 			__sx_var_copy "${__sx_arr_pop_src_}" "${__sx_arr_pop_dest_}"
 		fi
 
@@ -1682,7 +1683,7 @@ __sx_var_copyls() {
 	done
 
 	__sx_var_set "${__sx_var_copyls_res_}=${__sx_var_copyls_out_}"
-	unset __sx_var_copyls_res_ __sx_var_copyls_out_ __sx_var_copyls_i_ __sx_var_copyls_esc_ __sx_var_copyls_ls_ __sx_var_copyls_name_
+	unset __sx_var_copyls_res_ __sx_var_copyls_out_ __sx_var_copyls_i_ __sx_var_copyls_esc_ __sx_var_copyls_ls_ __sx_var_copyls_dest_ __sx_var_copyls_src_ __sx_var_copyls_name_
 }
 
 ### sx_util_eval - 文字列をシェルコマンドとして実行する
