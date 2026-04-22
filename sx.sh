@@ -488,6 +488,49 @@ __sx_var_list_ro() {
 	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
 }
 
+### sx_var_copy_is_rw - コピー先が構造を含めて書き込み可能か確認する
+##
+## 使い方:
+##   sx_var_copy_is_rw [変数名1 [変数名2 [変数名3 ...]]]
+##
+## 説明:
+##   与えられた変数名列に対して右方向の連鎖コピー（右シフト）を行った場合に、
+##   書き込み対象となる全ての変数（配列の子要素を含む）が書き込み可能か確認する。
+##   引数が 0 個または 1 個の場合は、書き込みが発生しないため成功する。
+##
+## 終了ステータス:
+##    0  すべて書き込み可能 (SX_EX_OK)
+##    1  書き込み不可が含まれる
+##   64  引数不正 (SX_EX_USAGE)
+sx_var_copy_is_rw() {
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_var_copy_is_rw "${@}" || return "${?}"
+}
+
+### __sx_var_copy_is_rw - コピー先が構造を含めて書き込み可能か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_copy_is_rw 変数名1 変数名2 [変数名3 ...]
+##
+## 説明:
+##   sx_var_copy_is_rw の内部実装。
+##   引数チェックは行わない。
+__sx_var_copy_is_rw() {
+	__sx_var_copyls __sx_var_copy_is_rw_ls_ "${@}"
+	eval set -- "${__sx_var_copy_is_rw_ls_}"
+
+	__sx_var_copy_is_rw_out_=
+	for __sx_var_copy_is_rw_arg_ in "${@}"; do
+		__sx_var_copy_is_rw_out_="${__sx_var_copy_is_rw_out_} ${__sx_var_copy_is_rw_arg_%%=*}"
+	done
+
+	eval set -- "${__sx_var_copy_is_rw_out_}"
+	unset __sx_var_copy_is_rw_ls_ __sx_var_copy_is_rw_out_ __sx_var_copy_is_rw_arg_
+
+	__sx_var_is_rw_all "${@}" || return "${?}"
+}
+
 ### sx_var_copy - 変数の値を右方向に連鎖コピーする
 ##
 ## 使い方:
@@ -531,35 +574,37 @@ sx_var_copy() {
 ##   例: v1 v2 v3 -> v2にv1の値を、v3にv2の元の値を代入する。
 ##
 __sx_var_copy() {
-	__sx_var_copy_i_="${#}"
-	sx_arg_quote __sx_var_copy_esc_ "${@}"
+	__sx_arg_quote __sx_var_copy_esc_ "${@}"
+	__sx_var_copyls __sx_var_copy_ls_ "${@}"
+	eval set -- "${__sx_var_copy_ls_}"
 
-	while sx_num_is_lt 1 "${__sx_var_copy_i_}"; do
-		eval "__sx_var_copy_src_=\"\${$((__sx_var_copy_i_ - 1))}\""
-		eval "__sx_var_copy_dest_=\"\${${__sx_var_copy_i_}}\""
+	# 1. 値のキャプチャと代入式の生成
+	__sx_var_copy_asg_=
 
-		__sx_var_unset "${__sx_var_copy_dest_}"
-		__sx_var_copyls __sx_var_copy_ls_ "${__sx_var_copy_src_}" "${__sx_var_copy_dest_}"
-		eval set -- "${__sx_var_copy_ls_}"
+	for __sx_var_copy_pair_ in "${@}"; do
+		__sx_var_copy_dest_="${__sx_var_copy_pair_%%=*}"
+		__sx_var_copy_src_="${__sx_var_copy_pair_#*=}"
 
-		for __sx_var_copy_arg_ in "${@}"; do
-			__sx_var_copy_src_="${__sx_var_copy_arg_#*=}"
-			__sx_var_copy_dest_="${__sx_var_copy_arg_%%=*}"
-
-			unset "${__sx_var_copy_dest_}"
-
-			if sx_var_is_set "${__sx_var_copy_src_}"; then
-				eval "${__sx_var_copy_dest_}=\"\${${__sx_var_copy_src_}}\""
-			fi
-		done
-
-		eval set -- "${__sx_var_copy_esc_}"
-		__sx_var_copy_i_=$((__sx_var_copy_i_ - 1))
+		if __sx_var_is_set "${__sx_var_copy_src_}"; then
+			eval __sx_arg_quote __sx_var_copy_qval_ "\"\${${__sx_var_copy_src_}}\""
+			__sx_var_copy_asg_="${__sx_var_copy_asg_} ${__sx_var_copy_dest_}=${__sx_var_copy_qval_}"
+		else
+			__sx_var_copy_asg_="${__sx_var_copy_asg_} ${__sx_var_copy_dest_}"
+		fi
 	done
 
+	# 2. 最初の引数以外を削除
+	eval set -- "${__sx_var_copy_esc_}"
+	shift "$((0 < $#))"
+
+	sx_var_unset "${@}"
+
+	# 3. 代入の実行
+	eval __sx_var_set "${__sx_var_copy_asg_}"
+
 	# 内部用変数を掃除
-	unset __sx_var_copy_i_ __sx_var_copy_esc_ __sx_var_copy_ls_ __sx_var_copy_arg_ __sx_var_copy_src_ __sx_var_copy_dest_
-	}
+	unset __sx_var_copy_esc_ __sx_var_copy_ls_ __sx_var_copy_asg_ __sx_var_copy_pair_ __sx_var_copy_dest_ __sx_var_copy_src_ __sx_var_copy_qval_
+}
 
 ### sx_var_move - 変数を右方向に連鎖移動する
 ##
@@ -1277,7 +1322,7 @@ sx_arr_push() {
 __sx_arr_push() {
 	eval "__sx_arr_push_i_=\"\${${1}_len}\""
 
-__sx_arr_push_arr_="${1}"
+	__sx_arr_push_arr_="${1}"
 	shift
 
 	# 値の追加
@@ -1291,6 +1336,113 @@ __sx_arr_push_arr_="${1}"
 	__sx_var_touch "${__sx_arr_push_arr_}"
 
 	unset __sx_arr_push_i_ __sx_arr_push_arr_ __sx_arr_push_arg_
+}
+
+### sx_arr_pop - 配列の末尾から要素を取り出す
+##
+## 使い方:
+##   sx_arr_pop 配列名 [結果変数名1 [結果変数名2 ...]]
+##
+## 説明:
+##   指定された sx 配列の末尾から要素を取り出し、結果変数に格納する。
+##   結果変数名が複数指定された場合は、指定された順に末尾から順次ポップする。
+##   結果変数名が省略された場合は、1 つの要素をポップして破棄する。
+##   空文字列 '' が結果変数名として指定された場合は、その要素をポップするが値は格納しない。
+##   配列名が結果変数名に含まれている場合はエラーを返す。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##    1  配列が空、または要素数が不足している
+##   64  配列名が無効、または結果変数名と重複している (SX_EX_USAGE)
+##   65  対象が sx 配列ではない (SX_EX_DATAERR)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
+sx_arr_pop() {
+	sx_var_is_arr "${1-}" || case "${?}" in
+		1) return "${SX_EX_DATAERR}";;
+		*) return "${?}";;
+	esac
+
+	__sx_arr_pop_arr="${1}"
+	eval "__sx_arr_pop_len=\"\${${1}_len}\""
+	shift
+
+	! sx_str_eq "${#}" 0 || set -- ''
+
+	# 要素数チェック
+	sx_num_is_le "${#}" "${__sx_arr_pop_len}" || {
+		unset __sx_arr_pop_arr __sx_arr_pop_len
+		return 1
+	}
+
+	# 配列の書き込み権限チェック
+	sx_arr_is_rw "${__sx_arr_pop_arr}" "$((__sx_arr_pop_len - ${#}))" "${#}" || {
+		case "${?}" in
+			1) set -- "${SX_EX_NOPERM}";;
+			*) set -- "${?}";;
+		esac
+
+		unset __sx_arr_pop_arr __sx_arr_pop_len
+		return "${1}"
+	}
+
+	__sx_arr_pop_i="${__sx_arr_pop_len}"
+	for __sx_arr_pop_dest in "${@}"; do
+		__sx_arr_pop_i=$((__sx_arr_pop_i - 1))
+
+		! sx_str_eq "${__sx_arr_pop_dest}" '' || continue
+
+		# pop中に配列以下の更新を禁止
+		if sx_str_match "${__sx_arr_pop_dest}" "${__sx_arr_pop_arr}" "${__sx_arr_pop_arr}_*"; then
+			unset __sx_arr_pop_arr __sx_arr_pop_len __sx_arr_pop_i __sx_arr_pop_dest
+			return "${SX_EX_USAGE}"
+		fi
+
+		sx_var_copy_is_rw "${__sx_arr_pop_arr}_${__sx_arr_pop_i}" "${__sx_arr_pop_dest}" || {
+			case "${?}" in
+				1) set -- "${SX_EX_NOPERM}";;
+				*) set -- "${?}";;
+			esac
+
+			unset __sx_arr_pop_arr __sx_arr_pop_len __sx_arr_pop_i __sx_arr_pop_dest
+			return "${1}"
+		}
+	done
+
+	set -- "${__sx_arr_pop_arr}" "${@}"
+	unset __sx_arr_pop_arr __sx_arr_pop_len __sx_arr_pop_i __sx_arr_pop_dest
+	__sx_arr_pop "${@}" || return "${?}"
+}
+
+### __sx_arr_pop - 配列の末尾から要素を取り出す（内部用）
+##
+## 使い方:
+##   __sx_arr_pop 配列名 [結果変数名1 ...]
+##
+## 説明:
+##   指定された配列の末尾から要素を取り出し、結果変数に格納する。
+##   この関数は引数の検証や書き込み権限のチェックを行わない。
+__sx_arr_pop() {
+	__sx_arr_pop_arr_="${1}"
+	eval "__sx_arr_pop_len_=\"\${${1}_len}\""
+	shift
+
+	! sx_str_eq "${#}" 0 || set -- ''
+
+	for __sx_arr_pop_dest_ in "${@}"; do
+		__sx_arr_pop_len_=$((__sx_arr_pop_len_ - 1))
+		__sx_arr_pop_src_="${__sx_arr_pop_arr_}_${__sx_arr_pop_len_}"
+
+		if ! sx_str_eq "${__sx_arr_pop_dest_}" ''; then
+			__sx_var_copy "${__sx_arr_pop_src_}" "${__sx_arr_pop_dest_}"
+		fi
+
+		__sx_var_unset "${__sx_arr_pop_src_}"
+	done
+
+	eval "${__sx_arr_pop_arr_}_len=${__sx_arr_pop_len_}"
+	__sx_var_touch "${__sx_arr_pop_arr_}"
+
+	unset __sx_arr_pop_arr_ __sx_arr_pop_len_ __sx_arr_pop_dest_ __sx_arr_pop_src_
 }
 
 ### sx_var_is_set - 変数が設定されているか確認する
