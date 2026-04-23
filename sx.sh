@@ -960,6 +960,52 @@ __sx_str_sub() {
 	unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_dir_ __sx_str_sub_out_ __sx_str_sub_i_
 }
 
+### sx_str_rep - 文字列を繰り返す
+##
+## 使い方:
+##   sx_str_rep 結果変数名 [元文字列 [繰り返し回数]]
+##
+## 説明:
+##   元文字列を指定された回数だけ繰り返して、結果変数に格納する。
+##   省略された引数は、元文字列が空文字列、繰り返し回数が 1 として扱われる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_rep() {
+	sx_var_rw_chk "${1-}" || return "${?}"
+
+	sx_num_is_uint "${3-1}" || return "${SX_EX_USAGE}"
+
+	__sx_str_rep "${@}"
+}
+
+### __sx_str_rep - 文字列を繰り返す（内部用）
+##
+## 使い方:
+##   __sx_str_rep 結果変数名 [元文字列 [繰り返し回数]]
+##
+## 説明:
+##   sx_str_rep の内部実装。
+##   引数チェックは行わない。
+__sx_str_rep() {
+	set -- "${1}" "${2-}" "${3-1}"
+	__sx_str_rep_out_=
+
+	while ! sx_str_eq "${3}" 0; do
+		if sx_str_eq "$((${3} % 2))" 1; then
+			__sx_str_rep_out_="${__sx_str_rep_out_}${2}"
+		fi
+
+		set -- "${1}" "${2}${2}" "$((${3} / 2))"
+	done
+
+	__sx_var_set "${1}=${__sx_str_rep_out_}"
+
+	unset __sx_str_rep_out_
+}
+
 ### sx_uuid_is_uuid - すべての引数が UUID 形式であるか確認する
 ##
 ## 使い方:
@@ -1133,7 +1179,7 @@ sx_arr_is_rw() {
 ##   sx_arr_is_rw の内部実装。
 ##   引数チェックは行わない。
 __sx_arr_is_rw() {
-	__sx_var_is_rw "${1}" "${1}_len" || return "${?}"
+	__sx_var_is_rw "${1}" "${1}_len" || return 1
 	__sx_arr_is_rw_name_="${1}"
 	__sx_arr_is_rw_chk_=
 	shift
@@ -1368,6 +1414,9 @@ sx_arr_pop() {
 	shift
 
 	! sx_str_eq "${#}" 0 || set -- -
+	__sx_arg_norm __sx_arr_pop_args - "${@}"
+	eval set -- "${__sx_arr_pop_args}"
+	unset __sx_arr_pop_args
 
 	# 要素数チェック
 	sx_num_is_le "${#}" "${__sx_arr_pop_len}" || {
@@ -1411,7 +1460,7 @@ sx_arr_pop() {
 
 	set -- "${__sx_arr_pop_arr}" "${@}"
 	unset __sx_arr_pop_arr __sx_arr_pop_len __sx_arr_pop_i __sx_arr_pop_dest
-	__sx_arr_pop "${@}" || return "${?}"
+	__sx_arr_pop0 "${@}" || return "${?}"
 }
 
 ### __sx_arr_pop - 配列の末尾から要素を取り出す（内部用）
@@ -1423,27 +1472,39 @@ sx_arr_pop() {
 ##   指定された配列の末尾から要素を取り出し、結果変数に格納する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_arr_pop() {
-	__sx_arr_pop_arr_="${1}"
-	eval "__sx_arr_pop_len_=\"\${${1}_len}\""
+	! sx_str_eq "${#}" 1 || set -- -
+	__sx_arg_norm __sx_arr_pop_args_ - "${@}"
+	eval set -- "${__sx_arr_pop_args_}"
+	unset __sx_arr_pop_args_
+
+	__sx_arr_pop0 "${@}" || return "${?}"
+}
+
+__sx_arr_pop0() {
+	__sx_arr_pop0_arr_="${1}"
+	eval "__sx_arr_pop0_len_=\"\${${1}_len}\""
 	shift
 
-	! sx_str_eq "${#}" 0 || set -- -
+	sx_num_is_le "${#}" "${__sx_arr_pop0_len_}" || {
+		unset __sx_arr_pop0_arr_ __sx_arr_pop0_len_
+		return 1
+	}
 
-	for __sx_arr_pop_dest_ in "${@}"; do
-		__sx_arr_pop_len_=$((__sx_arr_pop_len_ - 1))
-		__sx_arr_pop_src_="${__sx_arr_pop_arr_}_${__sx_arr_pop_len_}"
+	for __sx_arr_pop0_dest_ in "${@}"; do
+		__sx_arr_pop0_len_=$((__sx_arr_pop0_len_ - 1))
+		__sx_arr_pop0_src_="${__sx_arr_pop0_arr_}_${__sx_arr_pop0_len_}"
 
-		if ! sx_str_eq "${__sx_arr_pop_dest_}" -; then
-			__sx_var_copy "${__sx_arr_pop_src_}" "${__sx_arr_pop_dest_}"
+		if ! sx_str_eq "${__sx_arr_pop0_dest_}" -; then
+			__sx_var_copy "${__sx_arr_pop0_src_}" "${__sx_arr_pop0_dest_}"
 		fi
 
-		__sx_var_unset "${__sx_arr_pop_src_}"
+		__sx_var_unset "${__sx_arr_pop0_src_}"
 	done
 
-	eval "${__sx_arr_pop_arr_}_len=${__sx_arr_pop_len_}"
-	__sx_var_touch "${__sx_arr_pop_arr_}"
+	eval "${__sx_arr_pop0_arr_}_len=${__sx_arr_pop0_len_}"
+	__sx_var_touch "${__sx_arr_pop0_arr_}"
 
-	unset __sx_arr_pop_arr_ __sx_arr_pop_len_ __sx_arr_pop_dest_ __sx_arr_pop_src_
+	unset __sx_arr_pop0_arr_ __sx_arr_pop0_len_ __sx_arr_pop0_dest_ __sx_arr_pop0_src_
 }
 
 ### sx_var_is_set - 変数が設定されているか確認する
@@ -1568,6 +1629,7 @@ sx_var_is_rw() {
 ##   引数で指定されたすべての変数が書き込み可能か確認する。
 ##   サブシェルの生成を最小限にするため、一括で検証を行う。
 __sx_var_is_rw() {
+	! sx_str_eq "${#}" 0 || return 0
 	( unset -v "${@}" ) 2>/dev/null || return 1
 }
 
@@ -1819,4 +1881,35 @@ __sx_arg_rquote() {
 	__sx_var_set "${__sx_arg_rquote_res_}=${__sx_arg_rquote_out_# }"
 
 	unset __sx_arg_rquote_res_ __sx_arg_rquote_out_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
+}
+
+### __sx_arg_norm - 引数リスト内の数値をプレースホルダに展開して正規化する（内部用）
+##
+## 使い方:
+##   __sx_arg_norm 結果変数名 プレースホルダ [引数...]
+##
+## 説明:
+##   引数リストを走査し、数値 N があればそれを N 個のプレースホルダに展開する。
+##   数値以外の文字列はそのまま残す。
+__sx_arg_norm() {
+	__sx_arg_norm_res_="${1}"
+	sx_arg_quote __sx_arg_norm_pl_ "${2-}"
+	shift ${2+2}
+
+	__sx_arg_norm_out_=
+	for __sx_arg_norm_arg_ in "${@}"; do
+		if sx_num_is_uint "${__sx_arg_norm_arg_}"; then
+			# 数値 N を N 個のプレースホルダに展開
+			__sx_str_rep __sx_arg_norm_tmp_ " ${__sx_arg_norm_pl_}" "${__sx_arg_norm_arg_}"
+			__sx_arg_norm_out_="${__sx_arg_norm_out_}${__sx_arg_norm_tmp_}"
+		else
+			sx_arg_quote __sx_arg_norm_tmp_ "${__sx_arg_norm_arg_}"
+			__sx_arg_norm_out_="${__sx_arg_norm_out_} ${__sx_arg_norm_tmp_}"
+		fi
+	done
+
+	# 先頭の余計なスペースを削って結果変数に格納
+	__sx_var_set "${__sx_arg_norm_res_}=${__sx_arg_norm_out_# }"
+
+	unset __sx_arg_norm_res_ __sx_arg_norm_pl_ __sx_arg_norm_out_ __sx_arg_norm_arg_ __sx_arg_norm_tmp_
 }
