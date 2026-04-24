@@ -157,6 +157,14 @@ sx_var_is_rw_all() {
 	__sx_var_is_rw_all "${@}" || return "${?}"
 }
 
+### __sx_var_is_rw_all - 指定された変数および関連要素が書き込み可能か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_rw_all 名前1 [名前2 ...]
+##
+## 説明:
+##   sx_var_is_rw_all の内部実装。
+##   引数チェックは行わない。
 __sx_var_is_rw_all() {
 	__sx_var_list_dep __sx_var_is_rw_all_ls_ "${@}"
 	eval set -- "${__sx_var_is_rw_all_ls_}"
@@ -1533,6 +1541,14 @@ __sx_arr_pop() {
 	__sx_arr_pop0 "${@}" || return "${?}"
 }
 
+### __sx_arr_pop0 - 配列の末尾から要素をポップする実処理（内部用）
+##
+## 使い方:
+##   __sx_arr_pop0 配列名 [結果変数名 | - ...]
+##
+## 説明:
+##   配列の要素数チェック、コピー、削除、および長さとリビジョンの更新を行う。
+##   引数チェック（配列の存在確認や書き込み権限等）は事前に行われていることを前提とする。
 __sx_arr_pop0() {
 	__sx_arr_pop0_arr_="${1}"
 	eval "__sx_arr_pop0_len_=\"\${${1}_len}\""
@@ -1741,6 +1757,19 @@ sx_var_is_name() {
 	unset __sx_var_is_name_arg
 }
 
+### sx_var_copy_is_chain - 文字列が有効なコピー連鎖式であるか確認する
+##
+## 使い方:
+##   sx_var_copy_is_chain [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   引数で指定されたすべての文字列が、sx_var_copy 等で使用可能な
+##   有効な連鎖式（A-B-C または A=B=C）であるか、あるいは単一の有効な変数名
+##   であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて有効な形式である (SX_EX_OK)
+##    1  無効な形式が含まれる
 sx_var_copy_is_chain() {
 	for __sx_var_copy_is_chain_arg in "${@}"; do
 		if sx_str_has "${__sx_var_copy_is_chain_arg}" =; then
