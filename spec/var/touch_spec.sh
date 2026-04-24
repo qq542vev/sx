@@ -1,6 +1,6 @@
 Describe 'sx_var_touch'
   Include ./sx.sh
-  It 'updates the revision of a variable'
+  It '変数のリビジョンを更新する'
     sx_arr_gen myarr a
     old_val="${myarr}"
     When call sx_var_touch myarr

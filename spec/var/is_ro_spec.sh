@@ -1,18 +1,18 @@
 Describe 'sx_var_is_ro'
   Include ./sx.sh
-  It 'returns failure for writable variables'
+  It '書き込み可能な変数に対して失敗を返すこと'
     a=1
     When call sx_var_is_ro a
     The status should be failure
   End
 
-  It 'returns success for readonly variables'
+  It '読み取り専用の変数に対して成功を返すこと'
     readonly b_ro=2
     When call sx_var_is_ro b_ro
     The status should be success
   End
 
-  It 'returns failure for non-existent variables'
+  It '存在しない変数に対して失敗を返すこと'
     unset c_nonexistent
     When call sx_var_is_ro c_nonexistent
     The status should be failure

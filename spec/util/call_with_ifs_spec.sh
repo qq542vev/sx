@@ -1,6 +1,6 @@
 Describe 'sx_call_with_ifs'
   Include ./sx.sh
-  It 'executes a command with a temporary IFS'
+  It '一時的なIFSを使用してコマンドを実行すること'
     func() {
       echo "$#"
     }
@@ -9,7 +9,7 @@ Describe 'sx_call_with_ifs'
     The stdout should equal "3"
   End
 
-  It 'restores the original IFS'
+  It '元のIFSを復元すること'
     IFS=":"
     sx_call_with_ifs "," true
     The variable IFS should equal ":"

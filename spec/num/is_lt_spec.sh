@@ -1,11 +1,11 @@
 Describe 'sx_num_is_lt'
   Include ./sx.sh
-  It 'returns success if numbers are in strictly increasing order'
+  It '数値が厳密に増加順（昇順）である場合に成功を返すこと'
     When call sx_num_is_lt 1 2 3
     The status should be success
   End
 
-  It 'returns failure if numbers are not strictly increasing'
+  It '数値が厳密に増加順でない場合に失敗を返すこと'
     When call sx_num_is_lt 1 2 2 3
     The status should be failure
   End

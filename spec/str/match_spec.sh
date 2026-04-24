@@ -1,16 +1,16 @@
 Describe 'sx_str_match'
   Include ./sx.sh
-  It 'returns success if the first argument matches any subsequent pattern (glob)'
+  It '第1引数がそれ以降のいずれかのパターン（glob）に一致する場合に成功を返すこと'
     When call sx_str_match "file.txt" "*.txt" "*.md"
     The status should be success
   End
 
-  It 'returns failure if no pattern matches'
+  It 'どのパターンにも一致しない場合に失敗を返すこと'
     When call sx_str_match "file.txt" "*.md"
     The status should be failure
   End
 
-  It 'handles character classes in glob'
+  It 'glob内の文字クラスを処理できること'
     When call sx_str_match "file1" "file[0-9]"
     The status should be success
   End

@@ -1,11 +1,11 @@
 Describe 'sx_str_sw'
   Include ./sx.sh
-  It 'returns success if the first argument starts with any subsequent argument'
+  It '第1引数がそれ以降のいずれかの引数で始まる場合に成功を返すこと'
     When call sx_str_sw "hello world" "hell"
     The status should be success
   End
 
-  It 'returns failure if it does not start with any of the arguments'
+  It 'いずれの引数でも始まらない場合に失敗を返すこと'
     When call sx_str_sw "hello world" "world"
     The status should be failure
   End

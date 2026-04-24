@@ -1,13 +1,13 @@
 Describe 'sx_var_set'
   Include ./sx.sh
-  It 'sets multiple variables'
+  It '複数の変数を設定する'
     When call sx_var_set v1=a v2=b
     The status should be success
     The variable v1 should equal "a"
     The variable v2 should equal "b"
   End
 
-  It 'unsets variables if no value is provided'
+  It '値が指定されない場合、変数を未設定にする'
     v1=a v2=b
     When call sx_var_set v1 v2
     The status should be success
@@ -15,7 +15,7 @@ Describe 'sx_var_set'
     The variable v2 should be undefined
   End
 
-  It 'returns failure if any variable is readonly'
+  It 'いずれかの変数が読み取り専用の場合に失敗を返す'
     readonly r1_set=ro
     When call sx_var_set v3=c r1_set=err v4=d
     The status should equal 77

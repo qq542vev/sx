@@ -1,6 +1,6 @@
 Describe 'sx_var_list_ro'
   Include ./sx.sh
-  It 'returns a list of all readonly variables'
+  It 'すべての読み取り専用変数の一覧を返す'
     readonly MY_RO_VAR_1=ro
     MY_RW_VAR_1=rw
     When call sx_var_list_ro res

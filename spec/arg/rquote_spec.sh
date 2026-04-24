@@ -1,6 +1,6 @@
 Describe 'sx_arg_rquote'
   Include ./sx.sh
-  It 'encodes arguments in reverse order safely for eval'
+  It 'evalのために引数を逆順で安全にエンコードすること'
     set -- "first" "second" "third"
     When call sx_arg_rquote reversed_args "$@"
     The status should be success

@@ -1,6 +1,6 @@
 Describe 'sx_arg_quote'
   Include ./sx.sh
-  It 'encodes arguments safely for eval'
+  It 'evalのために引数を安全にエンコードすること'
     set -- "hello world" "it's me" 'back\slash' '"double quotes"'
     When call sx_arg_quote encoded_args "$@"
     The status should be success

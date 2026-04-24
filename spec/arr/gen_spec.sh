@@ -1,6 +1,6 @@
 Describe 'sx_arr_gen'
   Include ./sx.sh
-  It 'initializes a new array with values'
+  It '新しい配列を値で初期化すること'
     When call sx_arr_gen myarr "first" "second"
     The status should be success
     The variable myarr_len should equal 2
@@ -9,7 +9,7 @@ Describe 'sx_arr_gen'
     The variable myarr should start with "array-sx-sig-"
   End
 
-  It 're-initializes an existing array'
+  It '既存の配列を再初期化すること'
     sx_arr_gen myarr a b c
     When call sx_arr_gen myarr x
     The status should be success
