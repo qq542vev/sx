@@ -3,21 +3,21 @@
 
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0           # EX_OK: successful termination
-readonly SX_EX_USAGE=64        # EX_USAGE: command line usage error
-readonly SX_EX_DATAERR=65      # EX_DATAERR: data format error
-readonly SX_EX_NOINPUT=66      # EX_NOINPUT: cannot open input
-readonly SX_EX_NOUSER=67       # EX_NOUSER: addressee unknown
-readonly SX_EX_NOHOST=68       # EX_NOHOST: host name unknown
-readonly SX_EX_UNAVAILABLE=69  # EX_UNAVAILABLE: service unavailable
-readonly SX_EX_SOFTWARE=70     # EX_SOFTWARE: internal software error
-readonly SX_EX_OSERR=71        # EX_OSERR: system error (e.g., can't fork)
-readonly SX_EX_OSFILE=72       # EX_OSFILE: critical OS file missing
-readonly SX_EX_CANTCREAT=73    # EX_CANTCREAT: can't create (user) output file
-readonly SX_EX_IOERR=74        # EX_IOERR: input/output error
-readonly SX_EX_TEMPFAIL=75     # EX_TEMPFAIL: temp failure; user is invited to retry
-readonly SX_EX_PROTOCOL=76     # EX_PROTOCOL: remote error in protocol
-readonly SX_EX_NOPERM=77       # EX_NOPERM: permission denied
-readonly SX_EX_CONFIG=78       # EX_CONFIG: configuration error
+readonly SX_EX_USAGE=64       # EX_USAGE: command line usage error
+readonly SX_EX_DATAERR=65     # EX_DATAERR: data format error
+readonly SX_EX_NOINPUT=66     # EX_NOINPUT: cannot open input
+readonly SX_EX_NOUSER=67      # EX_NOUSER: addressee unknown
+readonly SX_EX_NOHOST=68      # EX_NOHOST: host name unknown
+readonly SX_EX_UNAVAILABLE=69 # EX_UNAVAILABLE: service unavailable
+readonly SX_EX_SOFTWARE=70    # EX_SOFTWARE: internal software error
+readonly SX_EX_OSERR=71       # EX_OSERR: system error (e.g., can't fork)
+readonly SX_EX_OSFILE=72      # EX_OSFILE: critical OS file missing
+readonly SX_EX_CANTCREAT=73   # EX_CANTCREAT: can't create (user) output file
+readonly SX_EX_IOERR=74       # EX_IOERR: input/output error
+readonly SX_EX_TEMPFAIL=75    # EX_TEMPFAIL: temp failure; user is invited to retry
+readonly SX_EX_PROTOCOL=76    # EX_PROTOCOL: remote error in protocol
+readonly SX_EX_NOPERM=77      # EX_NOPERM: permission denied
+readonly SX_EX_CONFIG=78      # EX_CONFIG: configuration error
 
 readonly SX_CHAR_LF='
 '
@@ -219,7 +219,7 @@ __sx_var_is_arr() {
 	for __sx_var_is_arr_arg_ in "${@}"; do
 		if
 			! eval sx_str_sw "\"\${${__sx_var_is_arr_arg_}-}\"" '"${SX_SIG_ARR}":' ||
-			! eval sx_num_is_uint "\"\${${__sx_var_is_arr_arg_}_len-}\""
+			! eval sx_num_is_nat0 "\"\${${__sx_var_is_arr_arg_}_len-}\""
 		then
 			unset __sx_var_is_arr_arg_
 			return 1
@@ -947,7 +947,7 @@ sx_str_ew() {
 sx_str_sub() {
 	sx_var_rw_chk "${1-}" || return "${?}"
 
-	{ sx_num_is_uint "${5-0}" && sx_str_any "${6-f}" f b; } || return "${SX_EX_USAGE}"
+	{ sx_num_is_nat0 "${5-0}" && sx_str_any "${6-f}" f b; } || return "${SX_EX_USAGE}"
 
 	__sx_str_sub "${@}"
 }
@@ -1029,7 +1029,7 @@ __sx_str_sub() {
 sx_str_rep() {
 	sx_var_rw_chk "${1-}" || return "${?}"
 
-	sx_num_is_uint "${3-1}" || return "${SX_EX_USAGE}"
+	sx_num_is_nat0 "${3-1}" || return "${SX_EX_USAGE}"
 
 	__sx_str_rep "${@}"
 }
@@ -1106,50 +1106,126 @@ sx_num_is_digit() {
 	unset __sx_num_is_digit_arg
 }
 
-### sx_num_is_uint - すべての引数が符号無しの整数（0 または正の整数）であるか確認する
+### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数）であるか確認する
 ##
 ## 使い方:
-##   sx_num_is_uint [文字列1 [文字列2 ...]]
+##   sx_num_is_nat0 [文字列1 [文字列2 ...]]
 ##
 ## 終了ステータス:
-##    0  すべて符号無しの整数である (SX_EX_OK)
-##    1  符号無しの整数ではない値が含まれる
-sx_num_is_uint() {
+##    0  すべて 0 以上の自然数である (SX_EX_OK)
+##    1  自然数ではない値が含まれる
+sx_num_is_nat0() {
 	sx_num_is_digit "${@}" || return 1
 
-	for __sx_num_is_uint_arg in "${@}"; do
-		case "${__sx_num_is_uint_arg}" in
+	for __sx_num_is_nat0_arg in "${@}"; do
+		case "${__sx_num_is_nat0_arg}" in
 			0?*)
-				unset __sx_num_is_uint_arg
+				unset __sx_num_is_nat0_arg
 				return 1
 				;;
 		esac
 	done
 
-	unset __sx_num_is_uint_arg
+	unset __sx_num_is_nat0_arg
 }
 
-### sx_num_is_pint - すべての引数が正の整数（1 以上の整数）であるか確認する
+### sx_num_is_nat1 - すべての引数が 1 以上の自然数（符号なし整数）であるか確認する
+##
+## 使い方:
+##   sx_num_is_nat1 [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて 1 以上の自然数である (SX_EX_OK)
+##    1  1 以上の自然数ではない値が含まれる
+sx_num_is_nat1() {
+	sx_num_is_digit "${@}" || return 1
+
+	for __sx_num_is_nat1_arg in "${@}"; do
+		case "${__sx_num_is_nat1_arg}" in
+			0*)
+				unset __sx_num_is_nat1_arg
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_num_is_nat1_arg
+}
+
+### sx_num_is_int - すべての引数が整数であるか確認する
+##
+## 使い方:
+##   sx_num_is_int [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   任意で符号（+ または -）を持つ整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて整数である (SX_EX_OK)
+##    1  整数ではない値が含まれる
+sx_num_is_int() {
+	for __sx_num_is_int_arg in "${@}"; do
+		__sx_num_is_int_tmp_="${__sx_num_is_int_arg#[+-]}"
+		if ! sx_num_is_nat0 "${__sx_num_is_int_tmp_}"; then
+			unset __sx_num_is_int_arg __sx_num_is_int_tmp_
+			return 1
+		fi
+	done
+
+	unset __sx_num_is_int_arg __sx_num_is_int_tmp_
+}
+
+### sx_num_is_pint - すべての引数が正の整数であるか確認する
 ##
 ## 使い方:
 ##   sx_num_is_pint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   任意で正の符号（+）を持つ、1 以上の整数であるかを確認する。
 ##
 ## 終了ステータス:
 ##    0  すべて正の整数である (SX_EX_OK)
 ##    1  正の整数ではない値が含まれる
 sx_num_is_pint() {
-	sx_num_is_digit "${@}" || return 1
-
 	for __sx_num_is_pint_arg in "${@}"; do
-		case "${__sx_num_is_pint_arg}" in
-			0*)
-				unset __sx_num_is_pint_arg
+		__sx_num_is_pint_tmp_="${__sx_num_is_pint_arg#+}"
+		if ! sx_num_is_nat1 "${__sx_num_is_pint_tmp_}"; then
+			unset __sx_num_is_pint_arg __sx_num_is_pint_tmp_
+			return 1
+		fi
+	done
+
+	unset __sx_num_is_pint_arg __sx_num_is_pint_tmp_
+}
+
+### sx_num_is_nint - すべての引数が負の整数であるか確認する
+##
+## 使い方:
+##   sx_num_is_nint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   負の符号（-）を必須で持ち、-1 以下の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて負の整数である (SX_EX_OK)
+##    1  負の整数ではない値が含まれる
+sx_num_is_nint() {
+	for __sx_num_is_nint_arg in "${@}"; do
+		case "${__sx_num_is_nint_arg}" in
+			-*)
+				if ! sx_num_is_nat1 "${__sx_num_is_nint_arg#-}"; then
+					unset __sx_num_is_nint_arg
+					return 1
+				fi
+				;;
+			*)
+				unset __sx_num_is_nint_arg
 				return 1
 				;;
 		esac
 	done
 
-	unset __sx_num_is_pint_arg
+	unset __sx_num_is_nint_arg
 }
 
 ### sx_num_is_le - 引数が昇順（等号を含む）に並んでいるか確認する
@@ -1212,7 +1288,7 @@ sx_arr_is_rw() {
 	__sx_arr_is_rw_name="${1}"
 	shift
 
-	if ! sx_num_is_uint "${@}"; then
+	if ! sx_num_is_nat0 "${@}"; then
 		unset __sx_arr_is_rw_name
 		return "${SX_EX_USAGE}"
 	fi
@@ -1280,7 +1356,7 @@ __sx_arr_is_rw() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 sx_str_split() {
-	{ sx_num_is_uint "${4-0}" && sx_str_any "${5-f}" f b; } || return "${SX_EX_USAGE}"
+	{ sx_num_is_nat0 "${4-0}" && sx_str_any "${5-f}" f b; } || return "${SX_EX_USAGE}"
 
 	__sx_str_split_arr="${1-}"
 	shift
@@ -2003,7 +2079,7 @@ __sx_arg_norm() {
 
 	__sx_arg_norm_out_=
 	for __sx_arg_norm_arg_ in "${@}"; do
-		if sx_num_is_uint "${__sx_arg_norm_arg_}"; then
+		if sx_num_is_nat0 "${__sx_arg_norm_arg_}"; then
 			# 数値 N を N 個のプレースホルダに展開
 			__sx_str_rep __sx_arg_norm_tmp_ " ${__sx_arg_norm_pl_}" "${__sx_arg_norm_arg_}"
 			__sx_arg_norm_out_="${__sx_arg_norm_out_}${__sx_arg_norm_tmp_}"
