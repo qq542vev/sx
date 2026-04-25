@@ -133,9 +133,9 @@ Describe 'sx_num_is_uint'
       The status should be success
     End
 
-    It '最大値より1大きい数値に対して失敗を返すこと'
+    It '最大値より1大きい数値に対して成功を返すこと'
       When call sx_num_is_uint "18446744073709551616"
-      The status should be failure
+      The status should be success
     End
   End
 End

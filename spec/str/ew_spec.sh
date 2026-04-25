@@ -29,9 +29,9 @@ Describe 'sx_str_ew'
       The status should be success
     End
 
-    It '空文字列を検索対象として指定した場合に成功を返すこと'
+    It '空文字列を検索対象として指定した場合に失敗を返すこと'
       When call sx_str_ew "" "hello"
-      The status should be success
+      The status should be failure
     End
 
     It '空文字列を検索対象と接尾辞の両方に指定した場合に成功を返すこと'
@@ -53,11 +53,6 @@ Describe 'sx_str_ew'
 
     It '文字列の末尾部分が一致する場合に成功を返すこと'
       When call sx_str_ew "hello world" "world"
-      The status should be success
-    End
-
-    It '文字列の一部が一致する場合に成功を返すこと'
-      When call sx_str_ew "hello world" "lo wo"
       The status should be success
     End
 

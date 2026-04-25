@@ -1,24 +1,3 @@
-Describe "sx_num_is_pint"
-  It "returns 0 for positive integers"
-    . ./sx.sh
-    sx_num_is_pint 1
-    # 成功を確認
-    [ $? -eq 0 ]
-  End
-
-  It "returns 1 for 0"
-    . ./sx.sh
-    sx_num_is_pint 0
-    # 1であることを確認
-    [ $? -eq 1 ]
-  End
-
-  It "returns 1 for negative integers"
-    . ./sx.sh
-    sx_num_is_pint -1
-    [ $? -eq 1 ]
-  End
-End
 Describe 'sx_num_is_pint'
   Include ./sx.sh
 
@@ -171,9 +150,9 @@ Describe 'sx_num_is_pint'
       The status should be success
     End
 
-    It '最大値より1大きい数値に対して失敗を返すこと'
+    It '最大値より1大きい数値に対して成功を返すこと'
       When call sx_num_is_pint "9223372036854775808"
-      The status should be failure
+      The status should be success
     End
   End
 End

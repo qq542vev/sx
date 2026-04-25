@@ -29,9 +29,9 @@ Describe 'sx_str_sw'
       The status should be success
     End
 
-    It '空文字列を検索対象として指定した場合に成功を返すこと'
+    It '空文字列を検索対象として指定した場合に失敗を返すこと'
       When call sx_str_sw "" "hello"
-      The status should be success
+      The status should be failure
     End
 
     It '空文字列を検索対象と接頭辞の両方に指定した場合に成功を返すこと'
@@ -185,11 +185,6 @@ Describe 'sx_str_sw'
   Context '特殊ケーステスト'
     It '検索対象が空文字列で接頭辞が空文字列の場合'
       When call sx_str_sw "" ""
-      The status should be success
-    End
-
-    It '検索対象が空文字列で接頭辞が非空の場合'
-      When call sx_str_sw "" "hello"
       The status should be success
     End
 

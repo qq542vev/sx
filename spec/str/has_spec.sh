@@ -156,6 +156,11 @@ Describe 'sx_str_has'
   End
 
   Context '引数の数テスト'
+    It '引数指定がない場合'
+      When call sx_str_has
+      The status should be failure
+    End
+
     It '検索対象文字列のみを指定した場合（検索パターンなし）'
       When call sx_str_has "hello"
       The status should be failure
