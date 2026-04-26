@@ -1229,8 +1229,8 @@ sx_num_is_nint() {
 sx_num_is_npint() {
 	for __sx_num_is_npint_arg in "${@}"; do
 		if
-			! sx_str_eq "${__sx_num_is_npint_arg}" +0 &&
-			! sx_num_is_nat0 "${__sx_num_is_npint_arg#-}"
+			! sx_str_any "${__sx_num_is_npint_arg}" 0 +0 -0 &&
+			! sx_num_is_nint "${__sx_num_is_npint_arg}"
 		then
 			unset __sx_num_is_npint_arg
 			return 1
@@ -1243,9 +1243,8 @@ sx_num_is_npint() {
 sx_num_is_nnint() {
 	for __sx_num_is_nnint_arg in "${@}"; do
 		if
-			! sx_str_eq "${__sx_num_is_nnint_arg}" -0 &&
-			{ ! sx_str_sw "${__sx_num_is_nint_arg}" - ||
-			! sx_num_is_nat0 "${__sx_num_is_nnint_arg#-}"; }
+			! sx_str_any "${__sx_num_is_nnint_arg}" 0 +0 -0 &&
+			! sx_num_is_pint "${__sx_num_is_nnint_arg}"
 		then
 			unset __sx_num_is_nnint_arg
 			return 1
@@ -1254,6 +1253,7 @@ sx_num_is_nnint() {
 
 	unset __sx_num_is_nnint_arg
 }
+
 ### sx_num_is_le - 引数が昇順（等号を含む）に並んでいるか確認する
 ##
 ## 使い方:
