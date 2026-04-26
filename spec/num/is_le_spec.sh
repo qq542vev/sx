@@ -10,8 +10,23 @@ Describe 'sx_num_is_le'
     The status should be failure
   End
 
-  It '非数値の入力に対して失敗を返すこと'
+  It '非数値の入力(後方)が含まれる場合に失敗を返すこと'
     When call sx_num_is_le 1 "a"
     The status should be failure
+  End
+
+  It '非数値の入力(前方)が含まれる場合に失敗を返すこと'
+    When call sx_num_is_le "a" 1
+    The status should be failure
+  End
+
+  It '1つの引数に対して成功を返すこと'
+    When call sx_num_is_le 1
+    The status should be success
+  End
+
+  It '引数がない場合に成功を返すこと'
+    When call sx_num_is_le
+    The status should be success
   End
 End

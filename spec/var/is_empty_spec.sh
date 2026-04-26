@@ -17,4 +17,9 @@ Describe 'sx_var_is_empty'
     When call sx_var_is_empty c
     The status should be failure
   End
+
+  It '無効な変数名に対して EX_USAGE を返すこと'
+    When call sx_var_is_empty "1invalid"
+    The status should equal 64
+  End
 End

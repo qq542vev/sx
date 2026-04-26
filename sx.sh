@@ -245,6 +245,7 @@ __sx_var_is_arr() {
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_list_dep() {
 	sx_var_rw_chk "${1-}" || return "${?}"
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_var_list_dep "${@}"
 }
@@ -715,7 +716,11 @@ sx_var_swap() {
 	unset __sx_var_swap_arg __sx_var_swap_tmp __sx_var_swap_out
 
 	__sx_var_copy_is_rw "${@}" || {
-		set -- "${?}"
+		case "${?}" in
+			1) set -- "${SX_EX_NOPERM}";;
+			*) set -- "${?}";;
+		esac
+
 		__sx_var_unset __sx_var_swap_arr
 		return "${1}"
 	}
@@ -1106,7 +1111,7 @@ sx_num_is_digit() {
 	unset __sx_num_is_digit_arg
 }
 
-### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数）であるか確認する
+### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
 ##
 ## 使い方:
 ##   sx_num_is_nat0 [文字列1 [文字列2 ...]]
@@ -1129,7 +1134,7 @@ sx_num_is_nat0() {
 	unset __sx_num_is_nat0_arg
 }
 
-### sx_num_is_nat1 - すべての引数が 1 以上の自然数（符号なし整数）であるか確認する
+### sx_num_is_nat1 - すべての引数が 1 以上の自然数（符号なし整数） であるか確認する
 ##
 ## 使い方:
 ##   sx_num_is_nat1 [文字列1 [文字列2 ...]]
@@ -1165,14 +1170,13 @@ sx_num_is_nat1() {
 ##    1  整数ではない値が含まれる
 sx_num_is_int() {
 	for __sx_num_is_int_arg in "${@}"; do
-		__sx_num_is_int_tmp_="${__sx_num_is_int_arg#[+-]}"
-		if ! sx_num_is_nat0 "${__sx_num_is_int_tmp_}"; then
-			unset __sx_num_is_int_arg __sx_num_is_int_tmp_
+		if ! sx_num_is_nat0 "${__sx_num_is_int_arg#[+-]}"; then
+			unset __sx_num_is_int_arg
 			return 1
 		fi
 	done
 
-	unset __sx_num_is_int_arg __sx_num_is_int_tmp_
+	unset __sx_num_is_int_arg
 }
 
 ### sx_num_is_pint - すべての引数が正の整数であるか確認する
@@ -1188,14 +1192,13 @@ sx_num_is_int() {
 ##    1  正の整数ではない値が含まれる
 sx_num_is_pint() {
 	for __sx_num_is_pint_arg in "${@}"; do
-		__sx_num_is_pint_tmp_="${__sx_num_is_pint_arg#+}"
-		if ! sx_num_is_nat1 "${__sx_num_is_pint_tmp_}"; then
-			unset __sx_num_is_pint_arg __sx_num_is_pint_tmp_
+		if ! sx_num_is_nat1 "${__sx_num_is_pint_arg#+}"; then
+			unset __sx_num_is_pint_arg
 			return 1
 		fi
 	done
 
-	unset __sx_num_is_pint_arg __sx_num_is_pint_tmp_
+	unset __sx_num_is_pint_arg
 }
 
 ### sx_num_is_nint - すべての引数が負の整数であるか確認する
@@ -1211,23 +1214,46 @@ sx_num_is_pint() {
 ##    1  負の整数ではない値が含まれる
 sx_num_is_nint() {
 	for __sx_num_is_nint_arg in "${@}"; do
-		case "${__sx_num_is_nint_arg}" in
-			-*)
-				if ! sx_num_is_nat1 "${__sx_num_is_nint_arg#-}"; then
-					unset __sx_num_is_nint_arg
-					return 1
-				fi
-				;;
-			*)
-				unset __sx_num_is_nint_arg
-				return 1
-				;;
-		esac
+		if
+			! sx_str_sw "${__sx_num_is_nint_arg}" - ||
+			! sx_num_is_nat1 "${__sx_num_is_nint_arg#-}"
+		then
+			unset __sx_num_is_nint_arg
+			return 1
+		fi
 	done
 
 	unset __sx_num_is_nint_arg
 }
 
+sx_num_is_npint() {
+	for __sx_num_is_npint_arg in "${@}"; do
+		if
+			! sx_str_eq "${__sx_num_is_npint_arg}" +0 &&
+			! sx_num_is_nat0 "${__sx_num_is_npint_arg#-}"
+		then
+			unset __sx_num_is_npint_arg
+			return 1
+		fi
+	done
+
+	unset __sx_num_is_npint_arg
+}
+
+sx_num_is_nnint() {
+	for __sx_num_is_nnint_arg in "${@}"; do
+		if
+			! sx_str_eq "${__sx_num_is_nnint_arg}" -0 &&
+			{ ! sx_str_sw "${__sx_num_is_nint_arg}" - ||
+			! sx_num_is_nat0 "${__sx_num_is_nnint_arg#-}"; }
+		then
+			unset __sx_num_is_nnint_arg
+			return 1
+		fi
+	done
+
+	unset __sx_num_is_nnint_arg
+}
 ### sx_num_is_le - 引数が昇順（等号を含む）に並んでいるか確認する
 ##
 ## 使い方:
@@ -1237,6 +1263,7 @@ sx_num_is_nint() {
 ##    0  数値1 <= 数値2 <= ... である (SX_EX_OK)
 ##    1  条件を満たさない、または数値でない引数が含まれる
 sx_num_is_le() {
+	sx_num_is_int "${@}" || return 1
 	while sx_str_eq "${2+X}" X; do
 		if { sx_str_eq "$((${1} <= ${2}))" 0; } 2>/dev/null; then
 			return 1
@@ -1255,6 +1282,7 @@ sx_num_is_le() {
 ##    0  数値1 < 数値2 < ... である (SX_EX_OK)
 ##    1  条件を満たさない、または数値でない引数が含まれる
 sx_num_is_lt() {
+	sx_num_is_int "${@}" || return 1
 	while sx_str_eq "${2+X}" X; do
 		if { sx_str_eq "$((${1} < ${2}))" 0; } 2>/dev/null; then
 			return 1
@@ -1362,7 +1390,7 @@ sx_str_split() {
 	shift
 
 	__sx_str_split __sx_str_split_tmp "${@}"
-	sx_var_copy __sx_str_split_tmp "${__sx_str_split_arr}" || {
+	sx_var_move "__sx_str_split_tmp-${__sx_str_split_arr}" || {
 		set -- "${?}"
 		unset __sx_str_split_arr
 		__sx_var_unset __sx_str_split_tmp
@@ -1370,7 +1398,6 @@ sx_str_split() {
 	}
 
 	unset __sx_str_split_arr
-	__sx_var_unset __sx_str_split_tmp
 }
 
 ### __sx_str_split - 文字列を分割して配列に格納する（内部用）
@@ -1802,7 +1829,7 @@ sx_var_is_ro() {
 ##   引数チェックは行わない。
 __sx_var_is_ro() {
 	for __sx_var_is_ro_arg_ in "${@}"; do
-		if (eval "${__sx_var_is_ro_arg_}"=) 2>/dev/null; then
+		if __sx_var_is_rw "${__sx_var_is_ro_arg_}"; then
 			unset __sx_var_is_ro_arg_
 			return 1
 		fi
@@ -1877,12 +1904,10 @@ sx_var_copy_is_chain() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_copyls() {
-	__sx_var_copyls_res="${1}"
-	shift
-
+	sx_var_rw_chk "${1-}" || return "${?}"
 	sx_var_copy_is_chain "${@}" || return "${SX_EX_USAGE}"
 
-	__sx_var_copyls "${__sx_var_copyls_res}" "${@}"
+	__sx_var_copyls "${@}"
 }
 
 ### __sx_var_copyls - 変数のコピー用代入式リストを生成する（内部用）

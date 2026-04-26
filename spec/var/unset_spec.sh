@@ -1,13 +1,13 @@
 Describe 'sx_var_unset'
   Include ./sx.sh
-  It '通常の変数を未設定にする'
+  It '通常の変数を未設定にすること'
     a=1
     When call sx_var_unset a
     The status should be success
     The variable a should be undefined
   End
 
-  It '配列とそのすべての要素を未設定にする'
+  It '配列とそのすべての要素を未設定にすること'
     sx_arr_gen myarr a b c
     When call sx_var_unset myarr
     The status should be success
@@ -17,9 +17,14 @@ Describe 'sx_var_unset'
     The variable myarr_2 should be undefined
   End
 
-  It '変数が読み取り専用の場合（未設定であっても）に失敗を返す'
+  It '変数が読み取り専用の場合（未設定であっても）に EX_NOPERM を返すこと'
     readonly ro_var_unset
     When call sx_var_unset ro_var_unset
     The status should equal 77
+  End
+
+  It '無効な変数名に対して EX_USAGE を返すこと'
+    When call sx_var_unset "invalid-name"
+    The status should equal 64
   End
 End
