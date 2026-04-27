@@ -54,6 +54,7 @@ readonly SX_NUM_LN10='2.30258509299404568401'
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
 : "${SX_SIG_BASE:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
 : "${SX_SIG_ARR:=array-${SX_SIG_BASE}}"
+: "${SX_CFG_SKIP_CHK:=0}"
 SX_SYS_REV=0
 
 ### sx_var_touch - リビジョン番号を更新する
@@ -66,7 +67,9 @@ SX_SYS_REV=0
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 sx_var_touch() {
-	sx_var_rw_chk "${@}" || return "${?}"
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_touch "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${@}" || return
 
 	__sx_var_touch "${@}"
 }
@@ -103,10 +106,11 @@ __sx_var_touch() {
 ##   77  IFS が書き込み不可 (SX_EX_NOPERM)
 ##   その他  実行したコマンドの終了ステータス
 sx_call_with_ifs() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_call_with_ifs "${@}" || return; return 0;; esac
 	sx_str_eq "${2:+X}" X || return "${SX_EX_USAGE}"
 	__sx_var_is_rw IFS || return "${SX_EX_NOPERM}"
 
-	__sx_call_with_ifs "${@}" || return "${?}"
+	__sx_call_with_ifs "${@}" || return
 }
 
 ### __sx_call_with_ifs - IFS を一時的に変更してコマンドを実行する（内部用）
@@ -139,7 +143,7 @@ __sx_call_with_ifs() {
 	fi
 
 	unset __sx_call_with_ifs_old_ __sx_call_with_ifs_set_ __sx_call_with_ifs_opts_ __sx_call_with_ifs_cmd_
-	"${@}" || return "${?}"
+	"${@}" || return
 }
 
 ### sx_var_is_rw_all - 指定された変数およびその関連要素がすべて書き込み可能か確認する
@@ -152,9 +156,11 @@ __sx_call_with_ifs() {
 ##    1  読み取り専用が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_rw_all() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw_all "${@}" || return; return 0;; esac
+
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 
-	__sx_var_is_rw_all "${@}" || return "${?}"
+	__sx_var_is_rw_all "${@}" || return
 }
 
 ### __sx_var_is_rw_all - 指定された変数および関連要素が書き込み可能か確認する（内部用）
@@ -170,7 +176,7 @@ __sx_var_is_rw_all() {
 	eval set -- "${__sx_var_is_rw_all_ls_}"
 	unset __sx_var_is_rw_all_ls_
 
-	__sx_var_is_rw "${@}" || return "${?}"
+	__sx_var_is_rw "${@}" || return
 }
 
 ### sx_var_rw_chk - 指定された変数名（および配列要素）が書き込み可能か確認する
@@ -189,7 +195,7 @@ __sx_var_is_rw_all() {
 sx_var_rw_chk() {
 	sx_var_is_rw_all "${@}" || case "${?}" in
 		1) return "${SX_EX_NOPERM}";;
-		*) return "${?}";;
+		*) return;;
 	esac
 }
 ### sx_var_is_arr - 指定された変数がsx配列であるか確認する
@@ -202,9 +208,11 @@ sx_var_rw_chk() {
 ##    1  sx配列ではない変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_arr() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_arr "${@}" || return; return 0;; esac
+
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 
-	__sx_var_is_arr "${@}" || return "${?}"
+	__sx_var_is_arr "${@}" || return
 }
 
 ### __sx_var_is_arr - 指定された変数がsx配列であるか確認する（内部用）
@@ -244,7 +252,9 @@ __sx_var_is_arr() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_list_dep() {
-	sx_var_rw_chk "${1-}" || return "${?}"
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_dep "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_var_list_dep "${@}"
@@ -308,8 +318,10 @@ __sx_var_list_dep() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  削除不可能な変数が含まれる (SX_EX_NOPERM)
 sx_var_unset() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unset "${@}" || return; return 0;; esac
+
 	# リストの内容（変数名）がすべて書き込み可能か一括チェック
-	sx_var_rw_chk "${@}" || return "${?}"
+	sx_var_rw_chk "${@}" || return
 
 	__sx_var_unset "${@}"
 }
@@ -357,6 +369,8 @@ __sx_var_unset() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  読み取り専用変数への操作失敗 (SX_EX_NOPERM)
 sx_var_set() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_set "${@}" || return; return 0;; esac
+
 	__sx_var_set_chk=
 
 	for __sx_var_set_arg in "${@}"; do
@@ -408,7 +422,9 @@ __sx_var_set() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_list_set() {
-	sx_var_rw_chk "${1-}" IFS || return "${?}"
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_set "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" IFS || return
 
 	__sx_var_list_set "${@}"
 }
@@ -459,7 +475,9 @@ __sx_var_list_set() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_list_ro() {
-	sx_var_rw_chk "${1-}" IFS || return "${?}"
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_ro "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" IFS || return
 
 	__sx_var_list_ro "${@}"
 }
@@ -511,9 +529,11 @@ __sx_var_list_ro() {
 ##    1  書き込み不可が含まれる
 ##   64  引数不正 (SX_EX_USAGE)
 sx_var_copy_is_rw() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_copy_is_rw "${@}" || return; return 0;; esac
+
 	sx_var_copy_is_chain "${@}" || return "${SX_EX_USAGE}"
 
-	__sx_var_copy_is_rw "${@}" || return "${?}"
+	__sx_var_copy_is_rw "${@}" || return
 }
 
 ### __sx_var_copy_is_rw - コピー先が構造を含めて書き込み可能か確認する（内部用）
@@ -536,7 +556,7 @@ __sx_var_copy_is_rw() {
 	eval set -- "${__sx_var_copy_is_rw_out_}"
 	unset __sx_var_copy_is_rw_ls_ __sx_var_copy_is_rw_out_ __sx_var_copy_is_rw_arg_
 
-	__sx_var_is_rw_all "${@}" || return "${?}"
+	__sx_var_is_rw_all "${@}" || return
 }
 
 ### sx_var_copy - 変数の値を連鎖コピーする
@@ -558,9 +578,11 @@ __sx_var_copy_is_rw() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  コピー先または関連要素が読み取り専用 (SX_EX_NOPERM)
 sx_var_copy() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_copy "${@}" || return; return 0;; esac
+
 	sx_var_copy_is_rw "${@}" || case "${?}" in
 		1) return "${SX_EX_NOPERM}";;
-		*) return "${?}";;
+		*) return;;
 	esac
 
 	__sx_var_copy "${@}"
@@ -633,9 +655,11 @@ __sx_var_copy() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  移動先または削除対象が読み取り専用 (SX_EX_NOPERM)
 sx_var_move() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_move "${@}" || return; return 0;; esac
+
 	sx_var_copy_is_rw "${@}" || case "${?}" in
 		1) return "${SX_EX_NOPERM}";;
-		*) return "${?}";;
+		*) return;;
 	esac
 
 	__sx_var_move_chk=
@@ -647,7 +671,7 @@ sx_var_move() {
 		fi
 	done
 
-	eval sx_var_rw_chk "${__sx_var_move_chk}" || return "${?}"
+	eval sx_var_rw_chk "${__sx_var_move_chk}" || return
 
 	__sx_var_copy "${@}"
 	eval sx_var_unset "${__sx_var_move_chk}"
@@ -668,9 +692,9 @@ __sx_var_move() {
 
 	for __sx_var_move_arg_ in "${@}"; do
 		if sx_str_has "${__sx_var_move_arg_}" =; then
-			sx_var_unset "${__sx_var_move_arg_##*=}"
+			__sx_var_unset "${__sx_var_move_arg_##*=}"
 		else
-			sx_var_unset "${__sx_var_move_arg_%%-*}"
+			__sx_var_unset "${__sx_var_move_arg_%%-*}"
 		fi
 	done
 
@@ -695,6 +719,8 @@ __sx_var_move() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 sx_var_swap() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_swap "${@}" || return; return 0;; esac
+
 	sx_var_copy_is_chain "${@}" || return "${SX_EX_USAGE}"
 	__sx_arr_gen __sx_var_swap_arr
 
@@ -950,7 +976,9 @@ sx_str_ew() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_str_sub() {
-	sx_var_rw_chk "${1-}" || return "${?}"
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
 
 	{ sx_num_is_nat0 "${5-0}" && sx_str_any "${6-f}" f b; } || return "${SX_EX_USAGE}"
 
@@ -988,7 +1016,7 @@ __sx_str_sub() {
 		# 後ろ向き置換 (Backward)
 		while
 			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
-			sx_num_is_lt "${__sx_str_sub_i_}" "${__sx_str_sub_lim_}"
+			__sx_num_is_lt "${__sx_str_sub_i_}" "${__sx_str_sub_lim_}"
 		do
 			# 「置換文字」＋「後ろの部分」＋「これまでの蓄積」を結合
 			__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_##*"${__sx_str_sub_pat_}"}${__sx_str_sub_out_}"
@@ -1002,7 +1030,7 @@ __sx_str_sub() {
 		# 前向き置換 (Forward)
 		while
 			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
-			sx_num_is_lt "${__sx_str_sub_i_}" "${__sx_str_sub_lim_}"
+			__sx_num_is_lt "${__sx_str_sub_i_}" "${__sx_str_sub_lim_}"
 		do
 			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%%"${__sx_str_sub_pat_}"*}${__sx_str_sub_rep_}"
 			__sx_str_sub_str_="${__sx_str_sub_str_#*"${__sx_str_sub_pat_}"}"
@@ -1032,7 +1060,9 @@ __sx_str_sub() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_str_rep() {
-	sx_var_rw_chk "${1-}" || return "${?}"
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
 
 	sx_num_is_nat0 "${3-1}" || return "${SX_EX_USAGE}"
 
@@ -1226,20 +1256,17 @@ sx_num_is_nint() {
 	unset __sx_num_is_nint_arg
 }
 
-sx_num_is_npint() {
-	for __sx_num_is_npint_arg in "${@}"; do
-		if
-			! sx_str_any "${__sx_num_is_npint_arg}" 0 +0 -0 &&
-			! sx_num_is_nint "${__sx_num_is_npint_arg}"
-		then
-			unset __sx_num_is_npint_arg
-			return 1
-		fi
-	done
-
-	unset __sx_num_is_npint_arg
-}
-
+### sx_num_is_nnint - すべての引数が非負整数（0以上の整数）であるか確認する
+##
+## 使い方:
+##   sx_num_is_nnint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   0（+0, -0 を含む）または正の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて非負整数である (SX_EX_OK)
+##    1  非負整数ではない値が含まれる
 sx_num_is_nnint() {
 	for __sx_num_is_nnint_arg in "${@}"; do
 		if
@@ -1254,6 +1281,31 @@ sx_num_is_nnint() {
 	unset __sx_num_is_nnint_arg
 }
 
+### sx_num_is_npint - すべての引数が非正整数（0以下の整数）であるか確認する
+##
+## 使い方:
+##   sx_num_is_npint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   0（+0, -0 を含む）または負の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて非正整数である (SX_EX_OK)
+##    1  非正整数ではない値が含まれる
+sx_num_is_npint() {
+	for __sx_num_is_npint_arg in "${@}"; do
+		if
+			! sx_str_any "${__sx_num_is_npint_arg}" 0 +0 -0 &&
+			! sx_num_is_nint "${__sx_num_is_npint_arg}"
+		then
+			unset __sx_num_is_npint_arg
+			return 1
+		fi
+	done
+
+	unset __sx_num_is_npint_arg
+}
+
 ### sx_num_is_le - 引数が昇順（等号を含む）に並んでいるか確認する
 ##
 ## 使い方:
@@ -1263,11 +1315,16 @@ sx_num_is_nnint() {
 ##    0  数値1 <= 数値2 <= ... である (SX_EX_OK)
 ##    1  条件を満たさない、または数値でない引数が含まれる
 sx_num_is_le() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_le "${@}" || return; return 0;; esac
+
 	sx_num_is_int "${@}" || return 1
+
+	__sx_num_is_le "${@}" || return
+}
+
+__sx_num_is_le() {
 	while sx_str_eq "${2+X}" X; do
-		if { sx_str_eq "$((${1} <= ${2}))" 0; } 2>/dev/null; then
-			return 1
-		fi
+		sx_str_eq "$((${1} <= ${2}))" 1 || return 1
 
 		shift
 	done
@@ -1282,16 +1339,20 @@ sx_num_is_le() {
 ##    0  数値1 < 数値2 < ... である (SX_EX_OK)
 ##    1  条件を満たさない、または数値でない引数が含まれる
 sx_num_is_lt() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_lt "${@}" || return; return 0;; esac
+
 	sx_num_is_int "${@}" || return 1
+
+	__sx_num_is_lt "${@}" || return
+}
+
+__sx_num_is_lt() {
 	while sx_str_eq "${2+X}" X; do
-		if { sx_str_eq "$((${1} < ${2}))" 0; } 2>/dev/null; then
-			return 1
-		fi
+		sx_str_eq "$((${1} < ${2}))" 1 || return 1
 
 		shift
 	done
 }
-
 ### sx_arr_is_rw - 配列の指定範囲が書き込み可能か確認する
 ##
 ## 使い方:
@@ -1311,6 +1372,8 @@ sx_num_is_lt() {
 ##    1  書き込み不可が含まれる
 ##   64  引数不正 (SX_EX_USAGE)
 sx_arr_is_rw() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_rw "${@}" || return; return 0;; esac
+
 	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
 
 	__sx_arr_is_rw_name="${1}"
@@ -1324,7 +1387,7 @@ sx_arr_is_rw() {
 	set -- "${__sx_arr_is_rw_name}" "${@}"
 	unset __sx_arr_is_rw_name
 
-	__sx_arr_is_rw "${@}" || return "${?}"
+	__sx_arr_is_rw "${@}" || return
 }
 
 ### __sx_arr_is_rw - 配列の指定範囲が書き込み可能か確認する（内部用）
@@ -1355,7 +1418,7 @@ __sx_arr_is_rw() {
 	while ! sx_str_eq "${#}" 0; do
 		eval 'shift 2;' set -- "${1}" "$((${1} + ${2}))" '"${@}"'
 
-		while sx_num_is_lt "${1}" "${2}"; do
+		while __sx_num_is_lt "${1}" "${2}"; do
 			__sx_arr_is_rw_chk_="${__sx_arr_is_rw_chk_}${__sx_arr_is_rw_name_}_${1} "
 			eval 'shift 2;' set -- "$((${1} + 1))" "${2}" '"${@}"'
 		done
@@ -1366,7 +1429,7 @@ __sx_arr_is_rw() {
 	eval set -- "${__sx_arr_is_rw_chk_}"
 	unset __sx_arr_is_rw_name_ __sx_arr_is_rw_chk_
 
-	sx_var_is_rw_all "${@}" || return "${?}"
+	sx_var_is_rw_all "${@}" || return
 }
 
 ### sx_str_split - 文字列を分割して配列に格納する
@@ -1384,6 +1447,8 @@ __sx_arr_is_rw() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 sx_str_split() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split "${@}" || return; return 0;; esac
+
 	{ sx_num_is_nat0 "${4-0}" && sx_str_any "${5-f}" f b; } || return "${SX_EX_USAGE}"
 
 	__sx_str_split_arr="${1-}"
@@ -1428,7 +1493,7 @@ __sx_str_split() {
 	if sx_str_eq "${__sx_str_split_dir_}" b; then
 		while
 			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
-			sx_num_is_lt "${__sx_str_split_i_}" "${__sx_str_split_lim_}"
+			__sx_num_is_lt "${__sx_str_split_i_}" "${__sx_str_split_lim_}"
 		do
 			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}"
 			__sx_str_split_out_="${__sx_str_split_esc_} ${__sx_str_split_out_}"
@@ -1441,7 +1506,7 @@ __sx_str_split() {
 	else
 		while
 			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
-			sx_num_is_lt "${__sx_str_split_i_}" "${__sx_str_split_lim_}"
+			__sx_num_is_lt "${__sx_str_split_i_}" "${__sx_str_split_lim_}"
 		do
 			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"
 			__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
@@ -1473,6 +1538,8 @@ __sx_str_split() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 sx_arr_gen() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_gen "${@}" || return; return 0;; esac
+
 	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
 	sx_arr_is_rw "${1}" 0 "$((${#} - 1))" || return "${SX_EX_NOPERM}"
 
@@ -1507,6 +1574,8 @@ __sx_arr_gen() {
 ##   65  対象が sx 配列ではない (SX_EX_DATAERR)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 sx_arr_push() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_push "${@}" || return; return 0;; esac
+
 	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
 	__sx_var_is_arr "${1}" || return "${SX_EX_DATAERR}"
 	eval sx_arr_is_rw "${1}" "\"\${${1}_len}\"" "$((${#} - 1))" || return "${SX_EX_NOPERM}"
@@ -1562,9 +1631,11 @@ __sx_arr_push() {
 ##   65  対象が sx 配列ではない (SX_EX_DATAERR)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 sx_arr_pop() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_pop "${@}" || return; return 0;; esac
+
 	sx_var_is_arr "${1-}" || case "${?}" in
 		1) return "${SX_EX_DATAERR}";;
-		*) return "${?}";;
+		*) return;;
 	esac
 
 	__sx_arr_pop_arr="${1}"
@@ -1577,7 +1648,7 @@ sx_arr_pop() {
 	unset __sx_arr_pop_args
 
 	# 要素数チェック
-	sx_num_is_le "${#}" "${__sx_arr_pop_len}" || {
+	__sx_num_is_le "${#}" "${__sx_arr_pop_len}" || {
 		unset __sx_arr_pop_arr __sx_arr_pop_len
 		return 1
 	}
@@ -1624,7 +1695,7 @@ sx_arr_pop() {
 
 	set -- "${__sx_arr_pop_arr}" "${@}"
 	unset __sx_arr_pop_arr __sx_arr_pop_len __sx_arr_pop_chk __sx_arr_pop_i __sx_arr_pop_dest
-	__sx_arr_pop0 "${@}" || return "${?}"
+	__sx_arr_pop0 "${@}" || return
 }
 
 ### __sx_arr_pop - 配列の末尾から要素を取り出す（内部用）
@@ -1641,7 +1712,7 @@ __sx_arr_pop() {
 	eval set -- "${__sx_arr_pop_args_}"
 	unset __sx_arr_pop_args_
 
-	__sx_arr_pop0 "${@}" || return "${?}"
+	__sx_arr_pop0 "${@}" || return
 }
 
 ### __sx_arr_pop0 - 配列の末尾から要素をポップする実処理（内部用）
@@ -1657,7 +1728,7 @@ __sx_arr_pop0() {
 	eval "__sx_arr_pop0_len_=\"\${${1}_len}\""
 	shift
 
-	sx_num_is_le "${#}" "${__sx_arr_pop0_len_}" || {
+	__sx_num_is_le "${#}" "${__sx_arr_pop0_len_}" || {
 		unset __sx_arr_pop0_arr_ __sx_arr_pop0_len_
 		return 1
 	}
@@ -1689,8 +1760,10 @@ __sx_arr_pop0() {
 ##    1  未設定の変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_set() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_set "${@}" || return; return 0;; esac
+
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_set "${@}" || return "${?}"
+	__sx_var_is_set "${@}" || return
 }
 
 ### __sx_var_is_set - 変数が設定されているか確認する（内部用）
@@ -1722,8 +1795,10 @@ __sx_var_is_set() {
 ##    1  設定されていない、または空の変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_has_val() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_has_val "${@}" || return; return 0;; esac
+
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_has_val "${@}" || return "${?}"
+	__sx_var_has_val "${@}" || return
 }
 
 ### __sx_var_has_val - 変数が値を持ち、かつ空でないか確認する（内部用）
@@ -1755,8 +1830,10 @@ __sx_var_has_val() {
 ##    1  設定されていない、または空でない変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_empty() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_empty "${@}" || return; return 0;; esac
+
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_empty "${@}" || return "${?}"
+	__sx_var_is_empty "${@}" || return
 }
 
 ### __sx_var_is_empty - 変数が設定されており、かつ空か確認する（内部用）
@@ -1788,8 +1865,10 @@ __sx_var_is_empty() {
 ##    1  読み取り専用が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_rw() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_rw "${@}" || return; return 0;; esac
+
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_rw "${@}" || return "${?}"
+	__sx_var_is_rw "${@}" || return
 }
 
 ### __sx_var_is_rw - 変数が書き込み可能か確認する（内部用）
@@ -1815,8 +1894,10 @@ __sx_var_is_rw() {
 ##    1  書き込み可能な変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_ro() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_ro "${@}" || return; return 0;; esac
+
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_ro "${@}" || return "${?}"
+	__sx_var_is_ro "${@}" || return
 }
 
 ### __sx_var_is_ro - 変数が読み取り専用か確認する（内部用）
@@ -1837,7 +1918,6 @@ __sx_var_is_ro() {
 		unset __sx_var_is_ro_arg_
 	done
 }
-
 
 ### sx_var_is_name - 変数名として有効か確認する
 ##
@@ -1904,7 +1984,9 @@ sx_var_copy_is_chain() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_var_copyls() {
-	sx_var_rw_chk "${1-}" || return "${?}"
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_copyls "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
 	sx_var_copy_is_chain "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_var_copyls "${@}"
@@ -1963,7 +2045,7 @@ __sx_var_copyls() {
 ##   引数で渡された文字列を eval を用いて実行する。
 ##   直接的な eval の使用を避け、意図を明確にするためのラッパー。
 sx_util_eval() {
-	eval "${1}" || return "${?}"
+	eval "${1}" || return
 }
 
 ### sx_arg_join - 引数を指定された区切り文字で結合する
@@ -1979,7 +2061,9 @@ sx_util_eval() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_arg_join() {
-	sx_var_rw_chk "${1-}" || return "${?}"
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_join "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
 
 	__sx_arg_join "${@}"
 }
@@ -2021,7 +2105,9 @@ __sx_arg_join() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_arg_quote() {
-	sx_var_rw_chk "${1-}" || return "${?}"
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
 
 	__sx_arg_quote "${@}"
 }
@@ -2062,7 +2148,9 @@ __sx_arg_quote() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_arg_rquote() {
-	sx_var_rw_chk "${1-}" || return "${?}"
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
 
 	__sx_arg_rquote "${@}"
 }
