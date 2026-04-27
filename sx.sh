@@ -57,39 +57,17 @@ readonly SX_NUM_LN10='2.30258509299404568401'
 : "${SX_CFG_SKIP_CHK:=0}"
 SX_SYS_REV=0
 
-### sx_var_touch - リビジョン番号を更新する
+
+### sx_util_eval - 文字列をシェルコマンドとして実行する
 ##
 ## 使い方:
-##   sx_var_touch 変数名
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  変数が読み取り専用 (SX_EX_NOPERM)
-sx_var_touch() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_touch "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${@}" || return
-
-	__sx_var_touch "${@}"
-}
-
-### __sx_var_touch - 変数のリビジョン番号を更新する（内部用）
-##
-## 使い方:
-##   __sx_var_touch 変数名1 [変数名2 ...]
+##   sx_util_eval コマンド文字列
 ##
 ## 説明:
-##   指定された変数の値に含まれるリビジョン番号（末尾の : 以降）を
-##   現在の SX_SYS_REV で更新し、SX_SYS_REV をインクリメントする。
-##   引数チェックは行わない。
-__sx_var_touch() {
-	for __sx_var_touch_arg_ in "${@}"; do
-		eval "${__sx_var_touch_arg_}=\"\${${__sx_var_touch_arg_}%:*}:\${SX_SYS_REV}\""
-		SX_SYS_REV=$((SX_SYS_REV + 1))
-	done
-
-	unset __sx_var_touch_arg_
+##   引数で渡された文字列を eval を用いて実行する。
+##   直接的な eval の使用を避け、意図を明確にするためのラッパー。
+sx_util_eval() {
+	eval "${1}" || return
 }
 
 ### sx_call_with_ifs - IFS を一時的に変更してコマンドを実行する
@@ -146,58 +124,391 @@ __sx_call_with_ifs() {
 	"${@}" || return
 }
 
-### sx_var_is_rw_all - 指定された変数およびその関連要素がすべて書き込み可能か確認する
+### sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する
 ##
 ## 使い方:
-##   sx_var_is_rw_all 名前1 [名前2 ...]
+##   sx_arg_quote 結果変数名 [値 ...]
+##
+## 説明:
+##   指定された値をそれぞれシングルクォートで囲み（内部のシングルクォートはエスケープ）、
+##   スペース区切りで順方向に結合した文字列を作成して結果変数に格納する。
+##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_quote() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	__sx_arg_quote "${@}"
+}
+
+### __sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する（内部用）
+##
+## 使い方:
+##   __sx_arg_quote 結果変数名 [値 ...]
+##
+## 説明:
+##   引数チェックを行わずにクォート結合処理を行う。
+__sx_arg_quote() {
+	__sx_arg_quote_out_=
+	__sx_arg_quote_res_="${1}"
+	shift
+
+	for __sx_arg_quote_arg_ in "${@}"; do
+		__sx_str_sub __sx_arg_quote_esc_ "${__sx_arg_quote_arg_}" "'" "'\\''"
+		__sx_arg_quote_out_="${__sx_arg_quote_out_} '${__sx_arg_quote_esc_}'"
+	done
+
+	__sx_var_set "${__sx_arg_quote_res_}=${__sx_arg_quote_out_# }"
+
+	unset __sx_arg_quote_res_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
+}
+
+### sx_arg_join - 引数を指定された区切り文字で結合する
+##
+## 使い方:
+##   sx_arg_join 結果変数名 区切り文字 [値 ...]
+##
+## 説明:
+##   指定された値を区切り文字で結合した文字列を作成して結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_join() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_join "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	__sx_arg_join "${@}"
+}
+
+### __sx_arg_join - 引数を指定された区切り文字で結合する（内部用）
+##
+## 使い方:
+##   __sx_arg_join 結果変数名 区切り文字 [値 ...]
+##
+## 説明:
+##   引数チェックを行わずに結合処理を行う。
+__sx_arg_join() {
+	__sx_arg_join_res_="${1}"
+	__sx_arg_join_sep_="${2-}"
+	__sx_arg_join_out_=
+	shift ${2+2}
+
+	for __sx_arg_join_arg_ in "${@}"; do
+		__sx_arg_join_out_="${__sx_arg_join_out_}${__sx_arg_join_sep_}${__sx_arg_join_arg_}"
+	done
+
+	__sx_var_set "${__sx_arg_join_res_}=${__sx_arg_join_out_#${__sx_arg_join_sep_}}"
+
+	unset __sx_arg_join_res_ __sx_arg_join_sep_ __sx_arg_join_out_ __sx_arg_join_arg_
+}
+
+### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する
+##
+## 使い方:
+##   sx_arg_rquote 結果変数名 [値 ...]
+##
+## 説明:
+##   指定された値をそれぞれシングルクォートで囲み、
+##   逆順（最後の引数が先頭）にスペース区切りで結合した文字列を作成して結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_rquote() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	__sx_arg_rquote "${@}"
+}
+
+### __sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
+##
+## 使い方:
+##   __sx_arg_rquote 結果変数名 [値 ...]
+##
+## 説明:
+##   引数チェックを行わずに逆順クォート結合処理を行う。
+__sx_arg_rquote() {
+	__sx_arg_rquote_out_=
+	__sx_arg_rquote_res_="${1}"
+	shift
+
+	for __sx_arg_rquote_arg_ in "${@}"; do
+		__sx_str_sub __sx_arg_rquote_esc_ "${__sx_arg_rquote_arg_}" "'" "'\\''"
+		__sx_arg_rquote_out_=" '${__sx_arg_rquote_esc_}'${__sx_arg_rquote_out_}"
+	done
+
+	__sx_var_set "${__sx_arg_rquote_res_}=${__sx_arg_rquote_out_# }"
+
+	unset __sx_arg_rquote_res_ __sx_arg_rquote_out_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
+}
+
+### __sx_arg_norm - 引数リスト内の数値をプレースホルダに展開して正規化する（内部用）
+##
+## 使い方:
+##   __sx_arg_norm 結果変数名 プレースホルダ [引数...]
+##
+## 説明:
+##   引数リストを走査し、数値 N があればそれを N 個のプレースホルダに展開する。
+##   数値以外の文字列はそのまま残す。
+__sx_arg_norm() {
+	__sx_arg_norm_res_="${1}"
+	sx_arg_quote __sx_arg_norm_pl_ "${2-}"
+	shift ${2+2}
+
+	__sx_arg_norm_out_=
+	for __sx_arg_norm_arg_ in "${@}"; do
+		if sx_num_is_nat0 "${__sx_arg_norm_arg_}"; then
+			# 数値 N を N 個のプレースホルダに展開
+			__sx_str_rep __sx_arg_norm_tmp_ " ${__sx_arg_norm_pl_}" "${__sx_arg_norm_arg_}"
+			__sx_arg_norm_out_="${__sx_arg_norm_out_}${__sx_arg_norm_tmp_}"
+		else
+			sx_arg_quote __sx_arg_norm_tmp_ "${__sx_arg_norm_arg_}"
+			__sx_arg_norm_out_="${__sx_arg_norm_out_} ${__sx_arg_norm_tmp_}"
+		fi
+	done
+
+	# 先頭の余計なスペースを削って結果変数に格納
+	__sx_var_set "${__sx_arg_norm_res_}=${__sx_arg_norm_out_# }"
+
+	unset __sx_arg_norm_res_ __sx_arg_norm_pl_ __sx_arg_norm_out_ __sx_arg_norm_arg_ __sx_arg_norm_tmp_
+}
+
+### sx_var_touch - リビジョン番号を更新する
+##
+## 使い方:
+##   sx_var_touch 変数名
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
+sx_var_touch() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_touch "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${@}" || return
+
+	__sx_var_touch "${@}"
+}
+
+### __sx_var_touch - 変数のリビジョン番号を更新する（内部用）
+##
+## 使い方:
+##   __sx_var_touch 変数名1 [変数名2 ...]
+##
+## 説明:
+##   指定された変数の値に含まれるリビジョン番号（末尾の : 以降）を
+##   現在の SX_SYS_REV で更新し、SX_SYS_REV をインクリメントする。
+##   引数チェックは行わない。
+__sx_var_touch() {
+	for __sx_var_touch_arg_ in "${@}"; do
+		eval "${__sx_var_touch_arg_}=\"\${${__sx_var_touch_arg_}%:*}:\${SX_SYS_REV}\""
+		SX_SYS_REV=$((SX_SYS_REV + 1))
+	done
+
+	unset __sx_var_touch_arg_
+}
+
+### sx_var_is_name - 変数名として有効か確認する
+##
+## 使い方:
+##   sx_var_is_name [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて有効な変数名 (SX_EX_OK)
+##    1  無効な変数名が含まれる
+sx_var_is_name() {
+	for __sx_var_is_name_arg in "${@}"; do
+		case "${__sx_var_is_name_arg}" in
+			'' | [0-9]* | *[!_A-Za-z0-9]*)
+				unset __sx_var_is_name_arg
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_var_is_name_arg
+}
+
+### sx_var_is_set - 変数が設定されているか確認する
+##
+## 使い方:
+##   sx_var_is_set 変数名1 [変数名2 ...]
+##
+## 終了ステータス:
+##    0  すべて設定されている (SX_EX_OK)
+##    1  未設定の変数が含まれる
+##   64  変数名が無効 (SX_EX_USAGE)
+sx_var_is_set() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_set "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_set "${@}" || return
+}
+
+### __sx_var_is_set - 変数が設定されているか確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_set 変数名1 [変数名2 ...]
+##
+## 説明:
+##   引数で指定されたすべての変数が設定されているか確認する。
+##   引数チェックは行わない。
+__sx_var_is_set() {
+	for __sx_var_is_set_arg_ in "${@}"; do
+		if eval sx_str_eq "\"\${${__sx_var_is_set_arg_}+X}\"" '""'; then
+			unset __sx_var_is_set_arg_
+			return 1
+		fi
+
+		unset __sx_var_is_set_arg_
+	done
+}
+
+### sx_var_has_val - 変数が値を持ち、かつ空でないか確認する
+##
+## 使い方:
+##   sx_var_has_val 変数名1 [変数名2 ...]
+##
+## 終了ステータス:
+##    0  すべて値があり、空でない (SX_EX_OK)
+##    1  設定されていない、または空の変数が含まれる
+##   64  変数名が無効 (SX_EX_USAGE)
+sx_var_has_val() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_has_val "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_has_val "${@}" || return
+}
+
+### __sx_var_has_val - 変数が値を持ち、かつ空でないか確認する（内部用）
+##
+## 使い方:
+##   __sx_var_has_val 変数名1 [変数名2 ...]
+##
+## 説明:
+##   引数で指定されたすべての変数が値を持ち、空でないか確認する。
+##   引数チェックは行わない。
+__sx_var_has_val() {
+	for __sx_var_has_val_arg_ in "${@}"; do
+		if eval ! sx_str_eq "\"\${${__sx_var_has_val_arg_}:+X}\"" X; then
+			unset __sx_var_has_val_arg_
+			return 1
+		fi
+
+		unset __sx_var_has_val_arg_
+	done
+}
+
+### sx_var_is_empty - 変数が設定されており、かつ空か確認する
+##
+## 使い方:
+##   sx_var_is_empty 変数名1 [変数名2 ...]
+##
+## 終了ステータス:
+##    0  すべて空である (SX_EX_OK)
+##    1  設定されていない、または空でない変数が含まれる
+##   64  変数名が無効 (SX_EX_USAGE)
+sx_var_is_empty() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_empty "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_empty "${@}" || return
+}
+
+### __sx_var_is_empty - 変数が設定されており、かつ空か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_empty 変数名1 [変数名2 ...]
+##
+## 説明:
+##   引数で指定されたすべての変数が空（かつ設定済み）か確認する。
+##   引数チェックは行わない。
+__sx_var_is_empty() {
+	for __sx_var_is_empty_arg_ in "${@}"; do
+		if eval ! sx_str_eq "\"\${${__sx_var_is_empty_arg_}+X}\${${__sx_var_is_empty_arg_}-}\"" X; then
+			unset __sx_var_is_empty_arg_
+			return 1
+		fi
+
+		unset __sx_var_is_empty_arg_
+	done
+}
+
+### sx_var_is_rw - 変数が書き込み可能か確認する
+##
+## 使い方:
+##   sx_var_is_rw 変数名1 [変数名2 ...]
 ##
 ## 終了ステータス:
 ##    0  すべて書き込み可能 (SX_EX_OK)
 ##    1  読み取り専用が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_is_rw_all() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw_all "${@}" || return; return 0;; esac
+sx_var_is_rw() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_rw "${@}" || return; return 0;; esac
 
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-
-	__sx_var_is_rw_all "${@}" || return
-}
-
-### __sx_var_is_rw_all - 指定された変数および関連要素が書き込み可能か確認する（内部用）
-##
-## 使い方:
-##   __sx_var_is_rw_all 名前1 [名前2 ...]
-##
-## 説明:
-##   sx_var_is_rw_all の内部実装。
-##   引数チェックは行わない。
-__sx_var_is_rw_all() {
-	__sx_var_list_dep __sx_var_is_rw_all_ls_ "${@}"
-	eval set -- "${__sx_var_is_rw_all_ls_}"
-	unset __sx_var_is_rw_all_ls_
-
 	__sx_var_is_rw "${@}" || return
 }
 
-### sx_var_rw_chk - 指定された変数名（および配列要素）が書き込み可能か確認する
+### __sx_var_is_rw - 変数が書き込み可能か確認する（内部用）
 ##
 ## 使い方:
-##   sx_var_rw_chk 名前1 [名前2 ...]
+##   __sx_var_is_rw 変数名1 [変数名2 ...]
 ##
 ## 説明:
-##   指定された変数が有効な名前であり、かつすべて書き込み可能かを確認する。
-##   読み取り専用が含まれる場合は SX_EX_NOPERM を返す。
+##   引数で指定されたすべての変数が書き込み可能か確認する。
+##   サブシェルの生成を最小限にするため、一括で検証を行う。
+__sx_var_is_rw() {
+	! sx_str_eq "${#}" 0 || return 0
+	( unset -v "${@}" ) 2>/dev/null || return 1
+}
+
+### sx_var_is_ro - 変数が読み取り専用か確認する
+##
+## 使い方:
+##   sx_var_is_ro 変数名1 [変数名2 ...]
 ##
 ## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  書き込み不可 (SX_EX_NOPERM)
-sx_var_rw_chk() {
-	sx_var_is_rw_all "${@}" || case "${?}" in
-		1) return "${SX_EX_NOPERM}";;
-		*) return;;
-	esac
+##    0  すべて読み取り専用 (SX_EX_OK)
+##    1  書き込み可能な変数が含まれる
+##   64  変数名が無効 (SX_EX_USAGE)
+sx_var_is_ro() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_ro "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_ro "${@}" || return
 }
+
+### __sx_var_is_ro - 変数が読み取り専用か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_ro 変数名1 [変数名2 ...]
+##
+## 説明:
+##   引数で指定されたすべての変数が読み取り専用か確認する。
+##   引数チェックは行わない。
+__sx_var_is_ro() {
+	for __sx_var_is_ro_arg_ in "${@}"; do
+		if __sx_var_is_rw "${__sx_var_is_ro_arg_}"; then
+			unset __sx_var_is_ro_arg_
+			return 1
+		fi
+
+		unset __sx_var_is_ro_arg_
+	done
+}
+
 ### sx_var_is_arr - 指定された変数がsx配列であるか確認する
 ##
 ## 使い方:
@@ -237,282 +548,84 @@ __sx_var_is_arr() {
 	unset __sx_var_is_arr_arg_
 }
 
-### sx_var_list_dep - 指定された変数に関連するすべての変数名を取得する
+### sx_var_rw_chk - 指定された変数名（および配列要素）が書き込み可能か確認する
 ##
 ## 使い方:
-##   sx_var_list_dep 結果変数名 検索対象1 [検索対象2 ...]
+##   sx_var_rw_chk 名前1 [名前2 ...]
 ##
 ## 説明:
-##   指定された変数名、およびそれらがsx配列である場合に再帰的に含まれる
-##   すべての変数名（_len, _0, _1...）をスペース区切りの文字列として取得し、
-##   指定された結果変数に格納する。
+##   指定された変数が有効な名前であり、かつすべて書き込み可能かを確認する。
+##   読み取り専用が含まれる場合は SX_EX_NOPERM を返す。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_var_list_dep() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_dep "${@}" || return; return 0;; esac
+##   77  書き込み不可 (SX_EX_NOPERM)
+sx_var_rw_chk() {
+	sx_var_is_rw_all "${@}" || case "${?}" in
+		1) return "${SX_EX_NOPERM}";;
+		*) return;;
+	esac
+}
 
-	sx_var_rw_chk "${1-}" || return
+### sx_var_is_rw_all - 指定された変数およびその関連要素がすべて書き込み可能か確認する
+##
+## 使い方:
+##   sx_var_is_rw_all 名前1 [名前2 ...]
+##
+## 終了ステータス:
+##    0  すべて書き込み可能 (SX_EX_OK)
+##    1  読み取り専用が含まれる
+##   64  変数名が無効 (SX_EX_USAGE)
+sx_var_is_rw_all() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw_all "${@}" || return; return 0;; esac
+
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 
-	__sx_var_list_dep "${@}"
+	__sx_var_is_rw_all "${@}" || return
 }
 
-### __sx_var_list_dep - 指定された変数に関連するすべての変数名を取得する（内部用）
+### __sx_var_is_rw_all - 指定された変数および関連要素が書き込み可能か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_var_list_dep 結果変数名 検索対象1 [検索対象2 ...]
+##   __sx_var_is_rw_all 名前1 [名前2 ...]
 ##
 ## 説明:
-##   位置パラメータをキューとして利用し、非再帰的に関連変数を収集する。
+##   sx_var_is_rw_all の内部実装。
 ##   引数チェックは行わない。
-__sx_var_list_dep() {
-	__sx_var_list_dep_res_="${1}"
-	shift
+__sx_var_is_rw_all() {
+	__sx_var_list_dep __sx_var_is_rw_all_ls_ "${@}"
+	eval set -- "${__sx_var_is_rw_all_ls_}"
+	unset __sx_var_is_rw_all_ls_
 
-	__sx_var_list_dep_out_=' '
-
-	while ! sx_str_eq "${#}" 0; do
-		if sx_str_has "${__sx_var_list_dep_out_}" " ${1} "; then
-			shift
-			continue
-		fi
-
-		__sx_var_list_dep_out_="${__sx_var_list_dep_out_}${1} "
-
-		if __sx_var_is_arr "${1}"; then
-			eval "__sx_var_list_dep_len_=\"\${${1}_len}\""
-			set -- "${@}" "${1}_len"
-
-			__sx_var_list_dep_i_=0
-			while ! sx_str_eq "${__sx_var_list_dep_i_}" "${__sx_var_list_dep_len_}"; do
-				set -- "${@}" "${1}_${__sx_var_list_dep_i_}"
-				__sx_var_list_dep_i_=$((__sx_var_list_dep_i_ + 1))
-			done
-		fi
-
-		shift
-	done
-
-	__sx_var_list_dep_out_="${__sx_var_list_dep_out_# }"
-	__sx_var_set "${__sx_var_list_dep_res_}=${__sx_var_list_dep_out_% }"
-
-	unset __sx_var_list_dep_res_ __sx_var_list_dep_out_ __sx_var_list_dep_len_ __sx_var_list_dep_i_
+	__sx_var_is_rw "${@}" || return
 }
 
-### sx_var_unset - 変数または配列を関連要素を含めて削除する
+### sx_var_copy_is_chain - 文字列が有効なコピー連鎖式であるか確認する
 ##
 ## 使い方:
-##   sx_var_unset 名前1 [名前2 ...]
+##   sx_var_copy_is_chain [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   指定された変数を削除する。対象がsx配列である場合は、その要素および
-##   長さ変数も含めて再帰的にすべて削除する。
-##   一つでも削除不可能な変数（読み取り専用など）が含まれる場合は、
-##   どの変数も削除せずにエラーを返す。
+##   引数で指定されたすべての文字列が、sx_var_copy 等で使用可能な
+##   有効な連鎖式（A-B-C または A=B=C）であるか、あるいは単一の有効な変数名
+##   であるかを確認する。
 ##
 ## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  削除不可能な変数が含まれる (SX_EX_NOPERM)
-sx_var_unset() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unset "${@}" || return; return 0;; esac
-
-	# リストの内容（変数名）がすべて書き込み可能か一括チェック
-	sx_var_rw_chk "${@}" || return
-
-	__sx_var_unset "${@}"
-}
-
-### __sx_var_unset - 変数または配列を関連要素を含めて削除する（内部用）
-##
-## 使い方:
-##   __sx_var_unset 名前1 [名前2 ...]
-##
-## 説明:
-##   sx_var_unset の内部実装。
-##   引数チェックは行わない。
-__sx_var_unset() {
-	while ! sx_str_eq "${#}" 0; do
-		if __sx_var_is_arr "${1}"; then
-			eval "__sx_var_unset_len_=\"\${${1}_len}\""
-			set -- "${@}" "${1}_len"
-
-			__sx_var_unset_i_=0
-			while ! sx_str_eq "${__sx_var_unset_i_}" "${__sx_var_unset_len_}"; do
-				set -- "${@}" "${1}_${__sx_var_unset_i_}"
-				__sx_var_unset_i_=$((__sx_var_unset_i_ + 1))
-			done
-		fi
-
-		unset -v "${1}"
-		shift
-	done
-
-	unset __sx_var_unset_len_ __sx_var_unset_i_
-}
-
-### sx_var_set - 変数に値を設定、または削除する
-##
-## 使い方:
-##   sx_var_set [名前=値 | 名前 ...]
-##
-## 説明:
-##   指定された変数に値を設定する。= を含まない名前のみが指定された場合は、
-##   その変数を削除（unset）する。対象が sx 配列である場合は、
-##   関連するすべての要素（_len, _0, _1...）も再帰的に削除される。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  読み取り専用変数への操作失敗 (SX_EX_NOPERM)
-sx_var_set() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_set "${@}" || return; return 0;; esac
-
-	__sx_var_set_chk=
-
-	for __sx_var_set_arg in "${@}"; do
-		__sx_var_set_chk="${__sx_var_set_arg%%=*}=${__sx_var_set_chk}"
-	done
-
-	sx_call_with_ifs = sx_var_rw_chk "${__sx_var_set_chk}" || {
-		set -- "${?}"
-		unset __sx_var_set_arg __sx_var_set_chk
-		return "${1}"
-	}
-
-	unset __sx_var_set_arg __sx_var_set_chk
-	__sx_var_set "${@}"
-}
-
-### __sx_var_set - 変数に値を設定、または削除する（内部用）
-##
-## 使い方:
-##   __sx_var_set [名前=値 | 名前 ...]
-##
-## 説明:
-##   sx_var_set の内部実装。
-##   引数チェックは行わない。
-__sx_var_set() {
-	for __sx_var_set_arg_ in "${@}"; do
-		__sx_var_set_vn_="${__sx_var_set_arg_%%=*}"
-		__sx_var_unset "${__sx_var_set_vn_%%=*}"
-
-		if ! sx_str_eq "${__sx_var_set_vn_}" "${__sx_var_set_arg_}"; then
-			eval "${__sx_var_set_vn_}="'"${__sx_var_set_arg_#*=}"'
+##    0  すべて有効な形式である (SX_EX_OK)
+##    1  無効な形式が含まれる
+sx_var_copy_is_chain() {
+	for __sx_var_copy_is_chain_arg in "${@}"; do
+		if sx_str_has "${__sx_var_copy_is_chain_arg}" =; then
+			! sx_str_match "${__sx_var_copy_is_chain_arg}" '*[!_0-9A-Za-z=]*' '*==*' '=*' '*=' '[0-9]*' '*=[0-9]*' || return 1
+		elif sx_str_has "${__sx_var_copy_is_chain_arg}" -; then
+			! sx_str_match "${__sx_var_copy_is_chain_arg}" '*[!_0-9A-Za-z-]*' '*--*' '-*' '*-' '[0-9]*' '*-[0-9]*' || return 1
+		else
+			sx_var_is_name "${__sx_var_copy_is_chain_arg}" || return 1
 		fi
 	done
 
-	unset __sx_var_set_arg_ __sx_var_set_vn_
-}
-
-### sx_var_list_set - 設定されている変数の一覧を取得する
-##
-## 使い方:
-##   sx_var_list_set 結果変数名
-##
-## 説明:
-##   現在のシェルで設定されている全ての変数名（重複除去済み）をスペース区切りの文字列として取得し、
-##   指定された結果変数に格納する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_var_list_set() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_set "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" IFS || return
-
-	__sx_var_list_set "${@}"
-}
-
-### __sx_var_list_set - 設定されている変数の一覧を取得する（内部用）
-##
-## 使い方:
-##   __sx_var_list_set 結果変数名
-##
-## 説明:
-##   sx_var_list_set の内部実装。
-##   引数チェックは行わない。
-__sx_var_list_set() {
-	__sx_var_list_set_set_="$(set)"
-	__sx_var_list_set_res_="${1}"
-	__sx_var_list_set_out_=' '
-
-	IFS="${SX_CHAR_LF}" sx_util_eval '
-		for __sx_var_list_set_ln_ in ${__sx_var_list_set_set_}; do
-			__sx_var_list_set_vn_="${__sx_var_list_set_ln_%%=*}"
-
-			if
-				! sx_str_eq "${__sx_var_list_set_vn_}" "${__sx_var_list_set_ln_}" &&
-				sx_var_is_set "${__sx_var_list_set_vn_}" &&
-				! sx_str_has "${__sx_var_list_set_out_}" " ${__sx_var_list_set_vn_} "
-			then
-				__sx_var_list_set_out_="${__sx_var_list_set_out_}${__sx_var_list_set_vn_} "
-			fi
-		done
-	'
-
-	__sx_var_list_set_out_="${__sx_var_list_set_out_# }"
-	__sx_var_set "${__sx_var_list_set_res_}=${__sx_var_list_set_out_% }"
-	unset __sx_var_list_set_set_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
-}
-
-### sx_var_list_ro - 読み取り専用変数の一覧を取得する
-##
-## 使い方:
-##   sx_var_list_ro 結果変数名
-##
-## 説明:
-##   現在のシェルで読み取り専用として設定されている全ての変数名（重複除去済み）を
-##   スペース区切りの文字列として取得し、指定された結果変数に格納する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_var_list_ro() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_ro "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" IFS || return
-
-	__sx_var_list_ro "${@}"
-}
-
-### __sx_var_list_ro - 読み取り専用変数の一覧を取得する（内部用）
-##
-## 使い方:
-##   __sx_var_list_ro 結果変数名
-##
-## 説明:
-##   sx_var_list_ro の内部実装。
-##   引数チェックは行わない。
-__sx_var_list_ro() {
-	__sx_var_list_ro_res_="${1}"
-	__sx_var_list_ro_out_=' '
-
-	IFS="${SX_CHAR_LF}" sx_util_eval '
-		for __sx_var_list_ro_ln_ in $(readonly -p); do
-			__sx_var_list_ro_vn_="${__sx_var_list_ro_ln_#readonly }"
-			__sx_var_list_ro_vn_="${__sx_var_list_ro_vn_%%=*}"
-
-			if
-				! sx_str_eq "${__sx_var_list_ro_vn_}" "${__sx_var_list_ro_ln_}" &&
-				sx_var_is_name "${__sx_var_list_ro_vn_}" &&
-				sx_var_is_ro "${__sx_var_list_ro_vn_}" &&
-				! sx_str_has "${__sx_var_list_ro_out_}" " ${__sx_var_list_ro_vn_} "
-			then
-				__sx_var_list_ro_out_="${__sx_var_list_ro_out_}${__sx_var_list_ro_vn_} "
-			fi
-		done
-	'
-
-	__sx_var_list_ro_out_="${__sx_var_list_ro_out_# }"
-	__sx_var_set "${__sx_var_list_ro_res_}=${__sx_var_list_ro_out_% }"
-	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
+	unset __sx_var_copy_is_chain_arg
 }
 
 ### sx_var_copy_is_rw - コピー先が構造を含めて書き込み可能か確認する
@@ -557,224 +670,6 @@ __sx_var_copy_is_rw() {
 	unset __sx_var_copy_is_rw_ls_ __sx_var_copy_is_rw_out_ __sx_var_copy_is_rw_arg_
 
 	__sx_var_is_rw_all "${@}" || return
-}
-
-### sx_var_copy - 変数の値を連鎖コピーする
-##
-## 使い方:
-##   sx_var_copy [連鎖式1 [連鎖式2 ...]]
-##
-## 説明:
-##   指定された連鎖式に従って、変数の値をコピーする。
-##   連鎖式には以下の形式が使用できる：
-##     A-B-C : 左から右へコピー (A -> B -> C)
-##     A=B=C : 右から左へコピー (A <- B <- C)
-##   例: v1-v2-v3 の場合、v1 の値を v2 に、v2 の元の値を v3 にコピーする。
-##   複数の連鎖式が指定された場合は、順次実行される。
-##   引数が単一の変数名の場合は、何もせず成功する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  コピー先または関連要素が読み取り専用 (SX_EX_NOPERM)
-sx_var_copy() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_copy "${@}" || return; return 0;; esac
-
-	sx_var_copy_is_rw "${@}" || case "${?}" in
-		1) return "${SX_EX_NOPERM}";;
-		*) return;;
-	esac
-
-	__sx_var_copy "${@}"
-}
-
-### __sx_var_copy - 変数の値を連鎖コピーする（内部用）
-##
-## 使い方:
-##   __sx_var_copy [連鎖式1 [連鎖式2 ...]]
-##
-## 説明:
-##   sx_var_copy の内部実装。
-##   引数チェックは行わない。
-__sx_var_copy() {
-	__sx_arg_quote __sx_var_copy_esc_ "${@}"
-	__sx_var_copyls __sx_var_copy_ls_ "${@}"
-	eval set -- "${__sx_var_copy_ls_}"
-
-	# 1. 値のキャプチャと代入式の生成
-	__sx_var_copy_asg_=
-
-	for __sx_var_copy_pair_ in "${@}"; do
-		__sx_var_copy_dest_="${__sx_var_copy_pair_%%=*}"
-		__sx_var_copy_src_="${__sx_var_copy_pair_#*=}"
-
-		if sx_var_is_set "${__sx_var_copy_src_}"; then
-			eval __sx_arg_quote __sx_var_copy_val_ "\"\${${__sx_var_copy_src_}}\""
-			__sx_var_copy_asg_="${__sx_var_copy_asg_} ${__sx_var_copy_dest_}=${__sx_var_copy_val_};"
-		else
-			__sx_var_copy_asg_="${__sx_var_copy_asg_} unset ${__sx_var_copy_dest_};"
-		fi
-	done
-
-	# 2. コピー先を削除
-	eval set -- "${__sx_var_copy_esc_}"
-	for __sx_var_copy_arg_ in "${@}"; do
-		if sx_str_has "${__sx_var_copy_arg_}" =; then
-			sx_str_sub __sx_var_copy_dests_ "${__sx_var_copy_arg_%=*}" = ' '
-			eval sx_var_unset "${__sx_var_copy_dests_}"
-		elif sx_str_has "${__sx_var_copy_arg_}" -; then
-			sx_str_sub __sx_var_copy_dests_ "${__sx_var_copy_arg_#*-}" - ' '
-			eval sx_var_unset "${__sx_var_copy_dests_}"
-		fi
-	done
-
-	# 3. 代入の実行
-	eval "${__sx_var_copy_asg_}"
-
-	# 内部用変数を掃除
-	unset __sx_var_copy_esc_ __sx_var_copy_ls_ __sx_var_copy_asg_ __sx_var_copy_pair_ __sx_var_copy_dest_ __sx_var_copy_src_ __sx_var_copy_val_ __sx_var_copy_dests_
-}
-
-### sx_var_move - 変数を連鎖移動する
-##
-## 使い方:
-##   sx_var_move [連鎖式1 [連鎖式2 ...]]
-##
-## 説明:
-##   指定された連鎖式に従って、変数の値を移動し、元の変数を削除する。
-##   連鎖式には以下の形式が使用できる：
-##     A-B-C : 左から右へ移動 (A -> B -> C)
-##     A=B=C : 右から左へ移動 (A <- B <- C)
-##   例: v1-v2-v3 の場合、v1 の値を v2 に、v2 の元の値を v3 に移し、
-##   最後に元のソースである v1 を削除する。
-##   複数の連鎖式が指定された場合は、順次実行される。
-##   引数が単一の変数名の場合は、その変数を削除する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  移動先または削除対象が読み取り専用 (SX_EX_NOPERM)
-sx_var_move() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_move "${@}" || return; return 0;; esac
-
-	sx_var_copy_is_rw "${@}" || case "${?}" in
-		1) return "${SX_EX_NOPERM}";;
-		*) return;;
-	esac
-
-	__sx_var_move_chk=
-	for __sx_var_move_arg in "${@}"; do
-		if sx_str_has "${__sx_var_move_arg}" =; then
-			__sx_var_move_chk="${__sx_var_move_chk} ${__sx_var_move_arg##*=}"
-		else
-			__sx_var_move_chk="${__sx_var_move_chk} ${__sx_var_move_arg%%-*}"
-		fi
-	done
-
-	eval sx_var_rw_chk "${__sx_var_move_chk}" || return
-
-	__sx_var_copy "${@}"
-	eval sx_var_unset "${__sx_var_move_chk}"
-
-	unset __sx_var_move_chk __sx_var_move_arg
-}
-
-### __sx_var_move - 変数を連鎖移動する（内部用）
-##
-## 使い方:
-##   __sx_var_move [連鎖式1 [連鎖式2 ...]]
-##
-## 説明:
-##   sx_var_move の内部実装。
-##   引数チェックは行わない。
-__sx_var_move() {
-	__sx_var_copy "${@}"
-
-	for __sx_var_move_arg_ in "${@}"; do
-		if sx_str_has "${__sx_var_move_arg_}" =; then
-			__sx_var_unset "${__sx_var_move_arg_##*=}"
-		else
-			__sx_var_unset "${__sx_var_move_arg_%%-*}"
-		fi
-	done
-
-	unset __sx_var_move_arg_
-}
-
-### sx_var_swap - 変数を連鎖的にローテーションする
-##
-## 使い方:
-##   sx_var_swap [連鎖式1 [連鎖式2 ...]]
-##
-## 説明:
-##   指定された連鎖式内の変数群をローテーションさせる。
-##   連鎖式には以下の形式が使用できる：
-##     A-B-C : 右方向に回転 (C の値を A に、A の値を B に、B の値を C に移動)
-##     A=B=C : 左方向に回転 (A の値を C に、C の値を B に、B の値を A に移動)
-##   例: v1-v2-v3 の場合、v3 の値を v1 に、v1 の値を v2 に、v2 の値を v3 に移動する。
-##   引数が単一の変数名の場合は、何もせず成功する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  変数が読み取り専用 (SX_EX_NOPERM)
-sx_var_swap() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_swap "${@}" || return; return 0;; esac
-
-	sx_var_copy_is_chain "${@}" || return "${SX_EX_USAGE}"
-	__sx_arr_gen __sx_var_swap_arr
-
-	__sx_var_swap_out=
-	for __sx_var_swap_arg in "${@}"; do
-		__sx_arr_push __sx_var_swap_arr ''
-		__sx_var_swap_tmp="__sx_var_swap_arr_$((__sx_var_swap_arr_len - 1))"
-
-		if sx_str_has "${__sx_var_swap_arg}" =; then
-			__sx_var_copy "${__sx_var_swap_arg%%=*}-${__sx_var_swap_tmp}"
-			__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_arg}=${__sx_var_swap_tmp}"
-		else
-			__sx_var_copy "${__sx_var_swap_arg##*-}-${__sx_var_swap_tmp}"
-			__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_tmp}-${__sx_var_swap_arg}"
-		fi
-	done
-
-	eval set -- "${__sx_var_swap_out}"
-	unset __sx_var_swap_arg __sx_var_swap_tmp __sx_var_swap_out
-
-	__sx_var_copy_is_rw "${@}" || {
-		case "${?}" in
-			1) set -- "${SX_EX_NOPERM}";;
-			*) set -- "${?}";;
-		esac
-
-		__sx_var_unset __sx_var_swap_arr
-		return "${1}"
-	}
-
-	__sx_var_copy "${@}"
-	__sx_var_unset __sx_var_swap_arr
-}
-
-### __sx_var_swap - 変数を連鎖的にローテーションする（内部用）
-##
-## 使い方:
-##   __sx_var_swap [連鎖式1 [連鎖式2 ...]]
-##
-## 説明:
-##   sx_var_swap の内部実装。
-##   引数チェックは行わない。
-__sx_var_swap() {
-	for __sx_var_swap_arg_ in "${@}"; do
-		if sx_str_has "${__sx_var_swap_arg_}" =; then
-			__sx_var_copy "${__sx_var_swap_arg_%%=*}-__sx_var_swap_tmp_"
-			__sx_var_move "${__sx_var_swap_arg_}=__sx_var_swap_tmp_"
-		else
-			__sx_var_copy "${__sx_var_swap_arg_##*-}-__sx_var_swap_tmp_"
-			__sx_var_move "__sx_var_swap_tmp_-${__sx_var_swap_arg_}"
-		fi
-	done
-
-	unset __sx_var_swap_arg_ __sx_var_swap_tmp_
 }
 
 ### sx_str_eq - すべての引数が文字列として一致するか確認する
@@ -956,241 +851,6 @@ sx_str_ew() {
 
 	unset __sx_str_ew_tgt __sx_str_ew_arg
 	return 1
-}
-
-### sx_str_sub - 文字列内のパターンを置換する
-##
-## 使い方:
-##   sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限 [方向(f/b)]]]]]
-##
-## 説明:
-##   元文字列の中に含まれる検索パターンを、置換文字列に置き換えて結果変数に格納する。
-##   省略された引数は、元文字列・検索パターン・置換文字列が空文字列、
-##   回数制限が 2147483647、方向が 'f' として扱われる。
-##   検索パターンが空文字列の場合は置換を行わず、元文字列をそのまま格納する。
-##   回数制限を指定すると、その回数分だけ置換を行う。
-##   方向を 'f' (Forward) にすると前方から、'b' (Backward) にすると後方から置換する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_sub() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" || return
-
-	{ sx_num_is_nat0 "${5-0}" && sx_str_any "${6-f}" f b; } || return "${SX_EX_USAGE}"
-
-	__sx_str_sub "${@}"
-}
-
-### __sx_str_sub - 文字列内のパターンを置換する（内部用）
-##
-## 使い方:
-##   __sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限 [方向(f/b)]]]]]
-##
-## 説明:
-##   sx_str_sub の内部実装。
-##   引数チェックは行わない。
-__sx_str_sub() {
-	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-2147483647}" "${6-f}"
-	__sx_str_sub_res_="${1}"
-	__sx_str_sub_str_="${2}"
-	__sx_str_sub_pat_="${3}"
-	__sx_str_sub_rep_="${4}"
-	__sx_str_sub_lim_="${5}"
-	__sx_str_sub_dir_="${6}"
-
-	# パターンが空の場合は、元の文字列をそのまま結果変数に格納して終了
-	if sx_str_eq "${__sx_str_sub_pat_}" ''; then
-		__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_str_}"
-		unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_dir_
-		return 0
-	fi
-
-	__sx_str_sub_out_=
-	__sx_str_sub_i_=0
-
-	if sx_str_eq "${__sx_str_sub_dir_}" b; then
-		# 後ろ向き置換 (Backward)
-		while
-			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
-			__sx_num_is_lt "${__sx_str_sub_i_}" "${__sx_str_sub_lim_}"
-		do
-			# 「置換文字」＋「後ろの部分」＋「これまでの蓄積」を結合
-			__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_##*"${__sx_str_sub_pat_}"}${__sx_str_sub_out_}"
-			# 残りの文字列を更新（右端のパターンより前を残す）
-			__sx_str_sub_str_="${__sx_str_sub_str_%"${__sx_str_sub_pat_}"*}"
-			__sx_str_sub_i_=$((__sx_str_sub_i_ + 1))
-		done
-		# 最後に残った左側の部分を結合
-		__sx_str_sub_out_="${__sx_str_sub_str_}${__sx_str_sub_out_}"
-	else
-		# 前向き置換 (Forward)
-		while
-			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
-			__sx_num_is_lt "${__sx_str_sub_i_}" "${__sx_str_sub_lim_}"
-		do
-			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%%"${__sx_str_sub_pat_}"*}${__sx_str_sub_rep_}"
-			__sx_str_sub_str_="${__sx_str_sub_str_#*"${__sx_str_sub_pat_}"}"
-			__sx_str_sub_i_=$((__sx_str_sub_i_ + 1))
-		done
-		__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_}"
-	fi
-
-	# 安全に代入 (eval 内で値を展開せず、変数の参照として渡す)
-	__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_out_}"
-
-	# 内部変数のクリーニング
-	unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_dir_ __sx_str_sub_out_ __sx_str_sub_i_
-}
-
-### sx_str_rep - 文字列を繰り返す
-##
-## 使い方:
-##   sx_str_rep 結果変数名 [元文字列 [繰り返し回数]]
-##
-## 説明:
-##   元文字列を指定された回数だけ繰り返して、結果変数に格納する。
-##   省略された引数は、元文字列が空文字列、繰り返し回数が 1 として扱われる。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_rep() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" || return
-
-	sx_num_is_nat0 "${3-1}" || return "${SX_EX_USAGE}"
-
-	__sx_str_rep "${@}"
-}
-
-### __sx_str_rep - 文字列を繰り返す（内部用）
-##
-## 使い方:
-##   __sx_str_rep 結果変数名 [元文字列 [繰り返し回数]]
-##
-## 説明:
-##   sx_str_rep の内部実装。
-##   引数チェックは行わない。
-__sx_str_rep() {
-	set -- "${1}" "${2-}" "${3-1}"
-	__sx_str_rep_out_=
-
-	while ! sx_str_eq "${3}" 0; do
-		if sx_str_eq "$((${3} % 2))" 1; then
-			__sx_str_rep_out_="${__sx_str_rep_out_}${2}"
-		fi
-
-		set -- "${1}" "${2}${2}" "$((${3} / 2))"
-	done
-
-	__sx_var_set "${1}=${__sx_str_rep_out_}"
-
-	unset __sx_str_rep_out_
-}
-
-### sx_str_substr - 文字列の指定した位置から指定した長さの部分文字列を取得する
-##
-## 使い方:
-##   sx_str_substr 結果変数名 [元文字列 [オフセット [長さ]]]
-##
-## 説明:
-##   元文字列のオフセット（0開始）から指定された長さ分だけ抽出し、結果変数に格納する。
-##   長さが省略された場合、または末尾を超える場合は末尾まで抽出する。
-##   オフセットが文字列長以上の場合は空文字列を返す。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_substr() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_substr "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" || return
-
-	sx_num_is_int "${3-0}" "${4-${SX_NUM_I32_MAX}}" || return "${SX_EX_USAGE}"
-
-	__sx_str_substr "${@}"
-}
-
-### __sx_str_substr - 文字列の部分文字列を取得する（内部用）
-##
-## 使い方:
-##   __sx_str_substr 結果変数名 [元文字列 [オフセット [長さ]]]
-##
-## 説明:
-##   sx_str_substr の内部実装。
-##   引数チェックは行わない。
-__sx_str_substr() {
-	__sx_str_substr_res_="${1}"
-	__sx_str_substr_str_="${2-}"
-	__sx_str_substr_off_="${3-0}"
-	__sx_str_substr_len_="${4-${SX_NUM_I32_MAX}}"
-	__sx_str_substr_total_="${#__sx_str_substr_str_}"
-
-	# オフセットの正規化 (負数は末尾から)
-	if __sx_num_is_lt "${__sx_str_substr_off_}" 0; then
-		__sx_str_substr_off_=$(((__sx_str_substr_off_ * -1) < __sx_str_substr_total_ ? __sx_str_substr_total_ + __sx_str_substr_off_ : 0))
-	fi
-
-	# 1. オフセット分をスキップ
-	if __sx_num_is_le "${__sx_str_substr_total_}" "${__sx_str_substr_off_}"; then
-		__sx_str_substr_str_=
-	else
-		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_off_}"
-		__sx_str_substr_str_="${__sx_str_substr_str_#${__sx_str_substr_qm_}}"
-	fi
-
-	# 長さの正規化 (負数は末尾から削る)
-	__sx_str_substr_total_="${#__sx_str_substr_str_}"
-	if __sx_num_is_le 0 "${__sx_str_substr_len_}"; then
-		__sx_str_substr_drop_=$((__sx_str_substr_len_ < __sx_str_substr_total_ ? __sx_str_substr_total_ - __sx_str_substr_len_ : 0))
-	else
-		__sx_str_substr_drop_=$((__sx_str_substr_len_ * -1))
-	fi
-
-	# 2. 指定長に切り詰め
-	if __sx_num_is_lt "${__sx_str_substr_drop_}" "${__sx_str_substr_total_}"; then
-		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_drop_}"
-		__sx_str_substr_str_="${__sx_str_substr_str_%${__sx_str_substr_qm_}}"
-	else
-		__sx_str_substr_str_=
-	fi
-
-	__sx_var_set "${__sx_str_substr_res_}=${__sx_str_substr_str_}"
-
-	unset __sx_str_substr_res_ __sx_str_substr_str_ __sx_str_substr_off_ __sx_str_substr_len_ __sx_str_substr_total_ __sx_str_substr_drop_ __sx_str_substr_qm_
-}
-
-### sx_uuid_is_uuid - すべての引数が UUID 形式であるか確認する
-##
-## 使い方:
-##   sx_uuid_is_uuid [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   引数で指定されたすべての文字列が、標準的な UUID 形式（8-4-4-4-12 の 16 進数）
-##   であるかを確認する。大文字と小文字は区別しない。
-##
-## 終了ステータス:
-##    0  すべて UUID 形式である (SX_EX_OK)
-##    1  UUID 形式ではない文字列が含まれる
-sx_uuid_is_uuid() {
-	for __sx_uuid_is_uuid_arg in "${@}"; do
-		case "${__sx_uuid_is_uuid_arg}" in
-			[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) ;;
-			*)
-				unset __sx_uuid_is_uuid_arg
-				return 1
-				;;
-		esac
-	done
-
-	unset __sx_uuid_is_uuid_arg
 }
 
 ### sx_num_is_digit - すべての引数が数字のみで構成されている（空でない）か確認する
@@ -1426,83 +1086,805 @@ __sx_num_is_lt() {
 		shift
 	done
 }
-### sx_arr_is_rw - 配列の指定範囲が書き込み可能か確認する
+
+### sx_uuid_is_uuid - すべての引数が UUID 形式であるか確認する
 ##
 ## 使い方:
-##   sx_arr_is_rw 配列名 [[開始インデックス [個数]] ...]
+##   sx_uuid_is_uuid [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   指定された名前に対応する配列要素範囲および長さ保持変数 (${配列名}_len) が
-##   書き込み可能か確認する。
-##   実体が sx 配列でない場合でも確認自体は可能で、その場合は指定された範囲の変数名と
-##   ${配列名}_len の書き込み可否を検査する。
-##   引数なしの場合: 配列名と ${配列名}_len に加え、sx 配列であれば 0 から末尾までの全要素を確認する。
-##   個数が省略された場合: sx 配列であれば開始インデックスから末尾までを確認し、
-##   sx 配列でなければその開始インデックス単体を確認する。
+##   引数で指定されたすべての文字列が、標準的な UUID 形式（8-4-4-4-12 の 16 進数）
+##   であるかを確認する。大文字と小文字は区別しない。
 ##
 ## 終了ステータス:
-##    0  すべて書き込み可能 (SX_EX_OK)
-##    1  書き込み不可が含まれる
-##   64  引数不正 (SX_EX_USAGE)
-sx_arr_is_rw() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_rw "${@}" || return; return 0;; esac
-
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
-
-	__sx_arr_is_rw_name="${1}"
-	shift
-
-	if ! sx_num_is_nat0 "${@}"; then
-		unset __sx_arr_is_rw_name
-		return "${SX_EX_USAGE}"
-	fi
-
-	set -- "${__sx_arr_is_rw_name}" "${@}"
-	unset __sx_arr_is_rw_name
-
-	__sx_arr_is_rw "${@}" || return
-}
-
-### __sx_arr_is_rw - 配列の指定範囲が書き込み可能か確認する（内部用）
-##
-## 使い方:
-##   __sx_arr_is_rw 配列名 [開始インデックス [個数]]
-##
-## 説明:
-##   sx_arr_is_rw の内部実装。
-##   引数チェックは行わない。
-__sx_arr_is_rw() {
-	__sx_var_is_rw "${1}" "${1}_len" || return 1
-	__sx_arr_is_rw_name_="${1}"
-	__sx_arr_is_rw_chk_=
-	shift
-
-	! sx_str_eq "${#}" 0 || set -- 0
-
-	if sx_str_eq "$((${#} % 2))" 0; then
-		:
-	elif sx_var_is_arr "${__sx_arr_is_rw_name_}"; then
-		# 個数が省略された場合は末尾まで
-		eval set -- '"${@}"' "\$((${__sx_arr_is_rw_name_}_len - \${${#}}))"
-	else
-		set -- "${@}" 0
-	fi
-
-	while ! sx_str_eq "${#}" 0; do
-		eval 'shift 2;' set -- "${1}" "$((${1} + ${2}))" '"${@}"'
-
-		while __sx_num_is_lt "${1}" "${2}"; do
-			__sx_arr_is_rw_chk_="${__sx_arr_is_rw_chk_}${__sx_arr_is_rw_name_}_${1} "
-			eval 'shift 2;' set -- "$((${1} + 1))" "${2}" '"${@}"'
-		done
-
-		shift 2
+##    0  すべて UUID 形式である (SX_EX_OK)
+##    1  UUID 形式ではない文字列が含まれる
+sx_uuid_is_uuid() {
+	for __sx_uuid_is_uuid_arg in "${@}"; do
+		case "${__sx_uuid_is_uuid_arg}" in
+			[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) ;;
+			*)
+				unset __sx_uuid_is_uuid_arg
+				return 1
+				;;
+		esac
 	done
 
-	eval set -- "${__sx_arr_is_rw_chk_}"
-	unset __sx_arr_is_rw_name_ __sx_arr_is_rw_chk_
+	unset __sx_uuid_is_uuid_arg
+}
 
-	sx_var_is_rw_all "${@}" || return
+### sx_var_set - 変数に値を設定、または削除する
+##
+## 使い方:
+##   sx_var_set [名前=値 | 名前 ...]
+##
+## 説明:
+##   指定された変数に値を設定する。= を含まない名前のみが指定された場合は、
+##   その変数を削除（unset）する。対象が sx 配列である場合は、
+##   関連するすべての要素（_len, _0, _1...）も再帰的に削除される。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  読み取り専用変数への操作失敗 (SX_EX_NOPERM)
+sx_var_set() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_set "${@}" || return; return 0;; esac
+
+	__sx_var_set_chk=
+
+	for __sx_var_set_arg in "${@}"; do
+		__sx_var_set_chk="${__sx_var_set_arg%%=*}=${__sx_var_set_chk}"
+	done
+
+	sx_call_with_ifs = sx_var_rw_chk "${__sx_var_set_chk}" || {
+		set -- "${?}"
+		unset __sx_var_set_arg __sx_var_set_chk
+		return "${1}"
+	}
+
+	unset __sx_var_set_arg __sx_var_set_chk
+	__sx_var_set "${@}"
+}
+
+### __sx_var_set - 変数に値を設定、または削除する（内部用）
+##
+## 使い方:
+##   __sx_var_set [名前=値 | 名前 ...]
+##
+## 説明:
+##   sx_var_set の内部実装。
+##   引数チェックは行わない。
+__sx_var_set() {
+	for __sx_var_set_arg_ in "${@}"; do
+		__sx_var_set_vn_="${__sx_var_set_arg_%%=*}"
+		__sx_var_unset "${__sx_var_set_vn_%%=*}"
+
+		if ! sx_str_eq "${__sx_var_set_vn_}" "${__sx_var_set_arg_}"; then
+			eval "${__sx_var_set_vn_}="'"${__sx_var_set_arg_#*=}"'
+		fi
+	done
+
+	unset __sx_var_set_arg_ __sx_var_set_vn_
+}
+
+### sx_var_unset - 変数または配列を関連要素を含めて削除する
+##
+## 使い方:
+##   sx_var_unset 名前1 [名前2 ...]
+##
+## 説明:
+##   指定された変数を削除する。対象がsx配列である場合は、その要素および
+##   長さ変数も含めて再帰的にすべて削除する。
+##   一つでも削除不可能な変数（読み取り専用など）が含まれる場合は、
+##   どの変数も削除せずにエラーを返す。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  削除不可能な変数が含まれる (SX_EX_NOPERM)
+sx_var_unset() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unset "${@}" || return; return 0;; esac
+
+	# リストの内容（変数名）がすべて書き込み可能か一括チェック
+	sx_var_rw_chk "${@}" || return
+
+	__sx_var_unset "${@}"
+}
+
+### __sx_var_unset - 変数または配列を関連要素を含めて削除する（内部用）
+##
+## 使い方:
+##   __sx_var_unset 名前1 [名前2 ...]
+##
+## 説明:
+##   sx_var_unset の内部実装。
+##   引数チェックは行わない。
+__sx_var_unset() {
+	while ! sx_str_eq "${#}" 0; do
+		if __sx_var_is_arr "${1}"; then
+			eval "__sx_var_unset_len_=\"\${${1}_len}\""
+			set -- "${@}" "${1}_len"
+
+			__sx_var_unset_i_=0
+			while ! sx_str_eq "${__sx_var_unset_i_}" "${__sx_var_unset_len_}"; do
+				set -- "${@}" "${1}_${__sx_var_unset_i_}"
+				__sx_var_unset_i_=$((__sx_var_unset_i_ + 1))
+			done
+		fi
+
+		unset -v "${1}"
+		shift
+	done
+
+	unset __sx_var_unset_len_ __sx_var_unset_i_
+}
+
+### sx_var_copy - 変数の値を連鎖コピーする
+##
+## 使い方:
+##   sx_var_copy [連鎖式1 [連鎖式2 ...]]
+##
+## 説明:
+##   指定された連鎖式に従って、変数の値をコピーする。
+##   連鎖式には以下の形式が使用できる：
+##     A-B-C : 左から右へコピー (A -> B -> C)
+##     A=B=C : 右から左へコピー (A <- B <- C)
+##   例: v1-v2-v3 の場合、v1 の値を v2 に、v2 の元の値を v3 にコピーする。
+##   複数の連鎖式が指定された場合は、順次実行される。
+##   引数が単一の変数名の場合は、何もせず成功する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  コピー先または関連要素が読み取り専用 (SX_EX_NOPERM)
+sx_var_copy() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_copy "${@}" || return; return 0;; esac
+
+	sx_var_copy_is_rw "${@}" || case "${?}" in
+		1) return "${SX_EX_NOPERM}";;
+		*) return;;
+	esac
+
+	__sx_var_copy "${@}"
+}
+
+### __sx_var_copy - 変数の値を連鎖コピーする（内部用）
+##
+## 使い方:
+##   __sx_var_copy [連鎖式1 [連鎖式2 ...]]
+##
+## 説明:
+##   sx_var_copy の内部実装。
+##   引数チェックは行わない。
+__sx_var_copy() {
+	__sx_arg_quote __sx_var_copy_esc_ "${@}"
+	__sx_var_copyls __sx_var_copy_ls_ "${@}"
+	eval set -- "${__sx_var_copy_ls_}"
+
+	# 1. 値のキャプチャと代入式の生成
+	__sx_var_copy_asg_=
+
+	for __sx_var_copy_pair_ in "${@}"; do
+		__sx_var_copy_dest_="${__sx_var_copy_pair_%%=*}"
+		__sx_var_copy_src_="${__sx_var_copy_pair_#*=}"
+
+		if sx_var_is_set "${__sx_var_copy_src_}"; then
+			eval __sx_arg_quote __sx_var_copy_val_ "\"\${${__sx_var_copy_src_}}\""
+			__sx_var_copy_asg_="${__sx_var_copy_asg_} ${__sx_var_copy_dest_}=${__sx_var_copy_val_};"
+		else
+			__sx_var_copy_asg_="${__sx_var_copy_asg_} unset ${__sx_var_copy_dest_};"
+		fi
+	done
+
+	# 2. コピー先を削除
+	eval set -- "${__sx_var_copy_esc_}"
+	for __sx_var_copy_arg_ in "${@}"; do
+		if sx_str_has "${__sx_var_copy_arg_}" =; then
+			sx_str_sub __sx_var_copy_dests_ "${__sx_var_copy_arg_%=*}" = ' '
+			eval sx_var_unset "${__sx_var_copy_dests_}"
+		elif sx_str_has "${__sx_var_copy_arg_}" -; then
+			sx_str_sub __sx_var_copy_dests_ "${__sx_var_copy_arg_#*-}" - ' '
+			eval sx_var_unset "${__sx_var_copy_dests_}"
+		fi
+	done
+
+	# 3. 代入の実行
+	eval "${__sx_var_copy_asg_}"
+
+	# 内部用変数を掃除
+	unset __sx_var_copy_esc_ __sx_var_copy_ls_ __sx_var_copy_asg_ __sx_var_copy_pair_ __sx_var_copy_dest_ __sx_var_copy_src_ __sx_var_copy_val_ __sx_var_copy_dests_
+}
+
+### sx_var_move - 変数を連鎖移動する
+##
+## 使い方:
+##   sx_var_move [連鎖式1 [連鎖式2 ...]]
+##
+## 説明:
+##   指定された連鎖式に従って、変数の値を移動し、元の変数を削除する。
+##   連鎖式には以下の形式が使用できる：
+##     A-B-C : 左から右へ移動 (A -> B -> C)
+##     A=B=C : 右から左へ移動 (A <- B <- C)
+##   例: v1-v2-v3 の場合、v1 の値を v2 に、v2 の元の値を v3 に移し、
+##   最後に元のソースである v1 を削除する。
+##   複数の連鎖式が指定された場合は、順次実行される。
+##   引数が単一の変数名の場合は、その変数を削除する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  移動先または削除対象が読み取り専用 (SX_EX_NOPERM)
+sx_var_move() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_move "${@}" || return; return 0;; esac
+
+	sx_var_copy_is_rw "${@}" || case "${?}" in
+		1) return "${SX_EX_NOPERM}";;
+		*) return;;
+	esac
+
+	__sx_var_move_chk=
+	for __sx_var_move_arg in "${@}"; do
+		if sx_str_has "${__sx_var_move_arg}" =; then
+			__sx_var_move_chk="${__sx_var_move_chk} ${__sx_var_move_arg##*=}"
+		else
+			__sx_var_move_chk="${__sx_var_move_chk} ${__sx_var_move_arg%%-*}"
+		fi
+	done
+
+	eval sx_var_rw_chk "${__sx_var_move_chk}" || return
+
+	__sx_var_copy "${@}"
+	eval sx_var_unset "${__sx_var_move_chk}"
+
+	unset __sx_var_move_chk __sx_var_move_arg
+}
+
+### __sx_var_move - 変数を連鎖移動する（内部用）
+##
+## 使い方:
+##   __sx_var_move [連鎖式1 [連鎖式2 ...]]
+##
+## 説明:
+##   sx_var_move の内部実装。
+##   引数チェックは行わない。
+__sx_var_move() {
+	__sx_var_copy "${@}"
+
+	for __sx_var_move_arg_ in "${@}"; do
+		if sx_str_has "${__sx_var_move_arg_}" =; then
+			__sx_var_unset "${__sx_var_move_arg_##*=}"
+		else
+			__sx_var_unset "${__sx_var_move_arg_%%-*}"
+		fi
+	done
+
+	unset __sx_var_move_arg_
+}
+
+### sx_var_swap - 変数を連鎖的にローテーションする
+##
+## 使い方:
+##   sx_var_swap [連鎖式1 [連鎖式2 ...]]
+##
+## 説明:
+##   指定された連鎖式内の変数群をローテーションさせる。
+##   連鎖式には以下の形式が使用できる：
+##     A-B-C : 右方向に回転 (C の値を A に、A の値を B に、B の値を C に移動)
+##     A=B=C : 左方向に回転 (A の値を C に、C の値を B に、B の値を A に移動)
+##   例: v1-v2-v3 の場合、v3 の値を v1 に、v1 の値を v2 に、v2 の値を v3 に移動する。
+##   引数が単一の変数名の場合は、何もせず成功する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
+sx_var_swap() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_swap "${@}" || return; return 0;; esac
+
+	sx_var_copy_is_chain "${@}" || return "${SX_EX_USAGE}"
+	__sx_arr_gen __sx_var_swap_arr
+
+	__sx_var_swap_out=
+	for __sx_var_swap_arg in "${@}"; do
+		__sx_arr_push __sx_var_swap_arr ''
+		__sx_var_swap_tmp="__sx_var_swap_arr_$((__sx_var_swap_arr_len - 1))"
+
+		if sx_str_has "${__sx_var_swap_arg}" =; then
+			__sx_var_copy "${__sx_var_swap_arg%%=*}-${__sx_var_swap_tmp}"
+			__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_arg}=${__sx_var_swap_tmp}"
+		else
+			__sx_var_copy "${__sx_var_swap_arg##*-}-${__sx_var_swap_tmp}"
+			__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_tmp}-${__sx_var_swap_arg}"
+		fi
+	done
+
+	eval set -- "${__sx_var_swap_out}"
+	unset __sx_var_swap_arg __sx_var_swap_tmp __sx_var_swap_out
+
+	__sx_var_copy_is_rw "${@}" || {
+		case "${?}" in
+			1) set -- "${SX_EX_NOPERM}";;
+			*) set -- "${?}";;
+		esac
+
+		__sx_var_unset __sx_var_swap_arr
+		return "${1}"
+	}
+
+	__sx_var_copy "${@}"
+	__sx_var_unset __sx_var_swap_arr
+}
+
+### __sx_var_swap - 変数を連鎖的にローテーションする（内部用）
+##
+## 使い方:
+##   __sx_var_swap [連鎖式1 [連鎖式2 ...]]
+##
+## 説明:
+##   sx_var_swap の内部実装。
+##   引数チェックは行わない。
+__sx_var_swap() {
+	for __sx_var_swap_arg_ in "${@}"; do
+		if sx_str_has "${__sx_var_swap_arg_}" =; then
+			__sx_var_copy "${__sx_var_swap_arg_%%=*}-__sx_var_swap_tmp_"
+			__sx_var_move "${__sx_var_swap_arg_}=__sx_var_swap_tmp_"
+		else
+			__sx_var_copy "${__sx_var_swap_arg_##*-}-__sx_var_swap_tmp_"
+			__sx_var_move "__sx_var_swap_tmp_-${__sx_var_swap_arg_}"
+		fi
+	done
+
+	unset __sx_var_swap_arg_ __sx_var_swap_tmp_
+}
+
+### sx_var_list_set - 設定されている変数の一覧を取得する
+##
+## 使い方:
+##   sx_var_list_set 結果変数名
+##
+## 説明:
+##   現在のシェルで設定されている全ての変数名（重複除去済み）をスペース区切りの文字列として取得し、
+##   指定された結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_var_list_set() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_set "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" IFS || return
+
+	__sx_var_list_set "${@}"
+}
+
+### __sx_var_list_set - 設定されている変数の一覧を取得する（内部用）
+##
+## 使い方:
+##   __sx_var_list_set 結果変数名
+##
+## 説明:
+##   sx_var_list_set の内部実装。
+##   引数チェックは行わない。
+__sx_var_list_set() {
+	__sx_var_list_set_set_="$(set)"
+	__sx_var_list_set_res_="${1}"
+	__sx_var_list_set_out_=' '
+
+	IFS="${SX_CHAR_LF}" sx_util_eval '
+		for __sx_var_list_set_ln_ in ${__sx_var_list_set_set_}; do
+			__sx_var_list_set_vn_="${__sx_var_list_set_ln_%%=*}"
+
+			if
+				! sx_str_eq "${__sx_var_list_set_vn_}" "${__sx_var_list_set_ln_}" &&
+				sx_var_is_set "${__sx_var_list_set_vn_}" &&
+				! sx_str_has "${__sx_var_list_set_out_}" " ${__sx_var_list_set_vn_} "
+			then
+				__sx_var_list_set_out_="${__sx_var_list_set_out_}${__sx_var_list_set_vn_} "
+			fi
+		done
+	'
+
+	__sx_var_list_set_out_="${__sx_var_list_set_out_# }"
+	__sx_var_set "${__sx_var_list_set_res_}=${__sx_var_list_set_out_% }"
+	unset __sx_var_list_set_set_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
+}
+
+### sx_var_list_ro - 読み取り専用変数の一覧を取得する
+##
+## 使い方:
+##   sx_var_list_ro 結果変数名
+##
+## 説明:
+##   現在のシェルで読み取り専用として設定されている全ての変数名（重複除去済み）を
+##   スペース区切りの文字列として取得し、指定された結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_var_list_ro() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_ro "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" IFS || return
+
+	__sx_var_list_ro "${@}"
+}
+
+### __sx_var_list_ro - 読み取り専用変数の一覧を取得する（内部用）
+##
+## 使い方:
+##   __sx_var_list_ro 結果変数名
+##
+## 説明:
+##   sx_var_list_ro の内部実装。
+##   引数チェックは行わない。
+__sx_var_list_ro() {
+	__sx_var_list_ro_res_="${1}"
+	__sx_var_list_ro_out_=' '
+
+	IFS="${SX_CHAR_LF}" sx_util_eval '
+		for __sx_var_list_ro_ln_ in $(readonly -p); do
+			__sx_var_list_ro_vn_="${__sx_var_list_ro_ln_#readonly }"
+			__sx_var_list_ro_vn_="${__sx_var_list_ro_vn_%%=*}"
+
+			if
+				! sx_str_eq "${__sx_var_list_ro_vn_}" "${__sx_var_list_ro_ln_}" &&
+				sx_var_is_name "${__sx_var_list_ro_vn_}" &&
+				sx_var_is_ro "${__sx_var_list_ro_vn_}" &&
+				! sx_str_has "${__sx_var_list_ro_out_}" " ${__sx_var_list_ro_vn_} "
+			then
+				__sx_var_list_ro_out_="${__sx_var_list_ro_out_}${__sx_var_list_ro_vn_} "
+			fi
+		done
+	'
+
+	__sx_var_list_ro_out_="${__sx_var_list_ro_out_# }"
+	__sx_var_set "${__sx_var_list_ro_res_}=${__sx_var_list_ro_out_% }"
+	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
+}
+
+### sx_var_list_dep - 指定された変数に関連するすべての変数名を取得する
+##
+## 使い方:
+##   sx_var_list_dep 結果変数名 検索対象1 [検索対象2 ...]
+##
+## 説明:
+##   指定された変数名、およびそれらがsx配列である場合に再帰的に含まれる
+##   すべての変数名（_len, _0, _1...）をスペース区切りの文字列として取得し、
+##   指定された結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_var_list_dep() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_dep "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_var_list_dep "${@}"
+}
+
+### __sx_var_list_dep - 指定された変数に関連するすべての変数名を取得する（内部用）
+##
+## 使い方:
+##   __sx_var_list_dep 結果変数名 検索対象1 [検索対象2 ...]
+##
+## 説明:
+##   位置パラメータをキューとして利用し、非再帰的に関連変数を収集する。
+##   引数チェックは行わない。
+__sx_var_list_dep() {
+	__sx_var_list_dep_res_="${1}"
+	shift
+
+	__sx_var_list_dep_out_=' '
+
+	while ! sx_str_eq "${#}" 0; do
+		if sx_str_has "${__sx_var_list_dep_out_}" " ${1} "; then
+			shift
+			continue
+		fi
+
+		__sx_var_list_dep_out_="${__sx_var_list_dep_out_}${1} "
+
+		if __sx_var_is_arr "${1}"; then
+			eval "__sx_var_list_dep_len_=\"\${${1}_len}\""
+			set -- "${@}" "${1}_len"
+
+			__sx_var_list_dep_i_=0
+			while ! sx_str_eq "${__sx_var_list_dep_i_}" "${__sx_var_list_dep_len_}"; do
+				set -- "${@}" "${1}_${__sx_var_list_dep_i_}"
+				__sx_var_list_dep_i_=$((__sx_var_list_dep_i_ + 1))
+			done
+		fi
+
+		shift
+	done
+
+	__sx_var_list_dep_out_="${__sx_var_list_dep_out_# }"
+	__sx_var_set "${__sx_var_list_dep_res_}=${__sx_var_list_dep_out_% }"
+
+	unset __sx_var_list_dep_res_ __sx_var_list_dep_out_ __sx_var_list_dep_len_ __sx_var_list_dep_i_
+}
+
+### sx_var_copyls - 変数のコピー用代入式リストを生成する
+##
+## 使い方:
+##   sx_var_copyls 結果変数名 [連鎖式1 [連鎖式2 ...]]
+##
+## 説明:
+##   与えられた連鎖式群に対するコピー処理で必要となる、
+##   スペース区切りの代入式リスト（例: "dest=src dest2=src2"）を生成して結果変数に格納する。
+##   コピー元が sx 配列である場合は、関連するすべての要素も含めてリストに含める。
+##   生成されたリストは eval set -- 等で利用できる。
+##   連鎖式が指定されない場合や引数が単一の変数名の場合は、空文字列を格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_var_copyls() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_copyls "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+	sx_var_copy_is_chain "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_var_copyls "${@}"
+}
+
+### __sx_var_copyls - 変数のコピー用代入式リストを生成する（内部用）
+##
+## 使い方:
+##   __sx_var_copyls 結果変数名 [変数名1 [変数名2 [変数名3 ...]]]
+##
+## 説明:
+##   sx_var_copyls の内部実装。
+##   変数名列から右方向連鎖コピー用の代入式リストを生成する。
+##   引数チェックは行わない。
+__sx_var_copyls() {
+	__sx_var_copyls_res_="${1}"
+	__sx_var_copyls_out_=
+	shift
+
+	for __sx_var_copyls_chain_ in "${@}"; do
+		if sx_str_has "${__sx_var_copyls_chain_}" =; then
+			sx_str_sub __sx_var_copyls_args_ "${__sx_var_copyls_chain_}" = ' '
+			eval sx_arg_rquote __sx_var_copyls_args_ "${__sx_var_copyls_args_}"
+		else
+			sx_str_sub __sx_var_copyls_args_ "${__sx_var_copyls_chain_}" - ' '
+		fi
+
+		eval set -- "${__sx_var_copyls_args_}"
+
+		for __sx_var_copyls_dest_ in "${@}"; do
+			if sx_var_is_set __sx_var_copyls_src_; then
+				__sx_var_list_dep __sx_var_copyls_ls_ "${__sx_var_copyls_src_}"
+				eval set -- "${__sx_var_copyls_ls_}"
+
+				for __sx_var_copyls_name_ in "${@}"; do
+					__sx_var_copyls_out_="${__sx_var_copyls_out_} ${__sx_var_copyls_dest_}${__sx_var_copyls_name_#${__sx_var_copyls_src_}}=${__sx_var_copyls_name_}"
+				done
+			fi
+
+			__sx_var_copyls_src_="${__sx_var_copyls_dest_}"
+		done
+
+		unset __sx_var_copyls_src_
+	done
+
+	__sx_var_set "${__sx_var_copyls_res_}=${__sx_var_copyls_out_}"
+	unset __sx_var_copyls_res_ __sx_var_copyls_out_ __sx_var_copyls_chain_ __sx_var_copyls_args_ __sx_var_copyls_ls_ __sx_var_copyls_dest_ __sx_var_copyls_name_
+}
+
+### sx_str_sub - 文字列内のパターンを置換する
+##
+## 使い方:
+##   sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限 [方向(f/b)]]]]]
+##
+## 説明:
+##   元文字列の中に含まれる検索パターンを、置換文字列に置き換えて結果変数に格納する。
+##   省略された引数は、元文字列・検索パターン・置換文字列が空文字列、
+##   回数制限が 2147483647、方向が 'f' として扱われる。
+##   検索パターンが空文字列の場合は置換を行わず、元文字列をそのまま格納する。
+##   回数制限を指定すると、その回数分だけ置換を行う。
+##   方向を 'f' (Forward) にすると前方から、'b' (Backward) にすると後方から置換する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_sub() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	{ sx_num_is_nat0 "${5-0}" && sx_str_any "${6-f}" f b; } || return "${SX_EX_USAGE}"
+
+	__sx_str_sub "${@}"
+}
+
+### __sx_str_sub - 文字列内のパターンを置換する（内部用）
+##
+## 使い方:
+##   __sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限 [方向(f/b)]]]]]
+##
+## 説明:
+##   sx_str_sub の内部実装。
+##   引数チェックは行わない。
+__sx_str_sub() {
+	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-2147483647}" "${6-f}"
+	__sx_str_sub_res_="${1}"
+	__sx_str_sub_str_="${2}"
+	__sx_str_sub_pat_="${3}"
+	__sx_str_sub_rep_="${4}"
+	__sx_str_sub_lim_="${5}"
+	__sx_str_sub_dir_="${6}"
+
+	# パターンが空の場合は、元の文字列をそのまま結果変数に格納して終了
+	if sx_str_eq "${__sx_str_sub_pat_}" ''; then
+		__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_str_}"
+		unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_dir_
+		return 0
+	fi
+
+	__sx_str_sub_out_=
+	__sx_str_sub_i_=0
+
+	if sx_str_eq "${__sx_str_sub_dir_}" b; then
+		# 後ろ向き置換 (Backward)
+		while
+			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
+			__sx_num_is_lt "${__sx_str_sub_i_}" "${__sx_str_sub_lim_}"
+		do
+			# 「置換文字」＋「後ろの部分」＋「これまでの蓄積」を結合
+			__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_##*"${__sx_str_sub_pat_}"}${__sx_str_sub_out_}"
+			# 残りの文字列を更新（右端のパターンより前を残す）
+			__sx_str_sub_str_="${__sx_str_sub_str_%"${__sx_str_sub_pat_}"*}"
+			__sx_str_sub_i_=$((__sx_str_sub_i_ + 1))
+		done
+		# 最後に残った左側の部分を結合
+		__sx_str_sub_out_="${__sx_str_sub_str_}${__sx_str_sub_out_}"
+	else
+		# 前向き置換 (Forward)
+		while
+			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
+			__sx_num_is_lt "${__sx_str_sub_i_}" "${__sx_str_sub_lim_}"
+		do
+			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%%"${__sx_str_sub_pat_}"*}${__sx_str_sub_rep_}"
+			__sx_str_sub_str_="${__sx_str_sub_str_#*"${__sx_str_sub_pat_}"}"
+			__sx_str_sub_i_=$((__sx_str_sub_i_ + 1))
+		done
+		__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_}"
+	fi
+
+	# 安全に代入 (eval 内で値を展開せず、変数の参照として渡す)
+	__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_out_}"
+
+	# 内部変数のクリーニング
+	unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_dir_ __sx_str_sub_out_ __sx_str_sub_i_
+}
+
+### sx_str_rep - 文字列を繰り返す
+##
+## 使い方:
+##   sx_str_rep 結果変数名 [元文字列 [繰り返し回数]]
+##
+## 説明:
+##   元文字列を指定された回数だけ繰り返して、結果変数に格納する。
+##   省略された引数は、元文字列が空文字列、繰り返し回数が 1 として扱われる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_rep() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	sx_num_is_nat0 "${3-1}" || return "${SX_EX_USAGE}"
+
+	__sx_str_rep "${@}"
+}
+
+### __sx_str_rep - 文字列を繰り返す（内部用）
+##
+## 使い方:
+##   __sx_str_rep 結果変数名 [元文字列 [繰り返し回数]]
+##
+## 説明:
+##   sx_str_rep の内部実装。
+##   引数チェックは行わない。
+__sx_str_rep() {
+	set -- "${1}" "${2-}" "${3-1}"
+	__sx_str_rep_out_=
+
+	while ! sx_str_eq "${3}" 0; do
+		if sx_str_eq "$((${3} % 2))" 1; then
+			__sx_str_rep_out_="${__sx_str_rep_out_}${2}"
+		fi
+
+		set -- "${1}" "${2}${2}" "$((${3} / 2))"
+	done
+
+	__sx_var_set "${1}=${__sx_str_rep_out_}"
+
+	unset __sx_str_rep_out_
+}
+
+### sx_str_substr - 文字列の指定した位置から指定した長さの部分文字列を取得する
+##
+## 使い方:
+##   sx_str_substr 結果変数名 [元文字列 [オフセット [長さ]]]
+##
+## 説明:
+##   元文字列のオフセット（0開始）から指定された長さ分だけ抽出し、結果変数に格納する。
+##   長さが省略された場合、または末尾を超える場合は末尾まで抽出する。
+##   オフセットが文字列長以上の場合は空文字列を返す。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_substr() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_substr "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	sx_num_is_int "${3-0}" "${4-${SX_NUM_I32_MAX}}" || return "${SX_EX_USAGE}"
+
+	__sx_str_substr "${@}"
+}
+
+### __sx_str_substr - 文字列の部分文字列を取得する（内部用）
+##
+## 使い方:
+##   __sx_str_substr 結果変数名 [元文字列 [オフセット [長さ]]]
+##
+## 説明:
+##   sx_str_substr の内部実装。
+##   引数チェックは行わない。
+__sx_str_substr() {
+	__sx_str_substr_res_="${1}"
+	__sx_str_substr_str_="${2-}"
+	__sx_str_substr_off_="${3-0}"
+	__sx_str_substr_len_="${4-${SX_NUM_I32_MAX}}"
+	__sx_str_substr_total_="${#__sx_str_substr_str_}"
+
+	# オフセットの正規化 (負数は末尾から)
+	if __sx_num_is_lt "${__sx_str_substr_off_}" 0; then
+		__sx_str_substr_off_=$(((__sx_str_substr_off_ * -1) < __sx_str_substr_total_ ? __sx_str_substr_total_ + __sx_str_substr_off_ : 0))
+	fi
+
+	# 1. オフセット分をスキップ
+	if __sx_num_is_le "${__sx_str_substr_total_}" "${__sx_str_substr_off_}"; then
+		__sx_str_substr_str_=
+	else
+		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_off_}"
+		__sx_str_substr_str_="${__sx_str_substr_str_#${__sx_str_substr_qm_}}"
+	fi
+
+	# 長さの正規化 (負数は末尾から削る)
+	__sx_str_substr_total_="${#__sx_str_substr_str_}"
+	if __sx_num_is_le 0 "${__sx_str_substr_len_}"; then
+		__sx_str_substr_drop_=$((__sx_str_substr_len_ < __sx_str_substr_total_ ? __sx_str_substr_total_ - __sx_str_substr_len_ : 0))
+	else
+		__sx_str_substr_drop_=$((__sx_str_substr_len_ * -1))
+	fi
+
+	# 2. 指定長に切り詰め
+	if __sx_num_is_lt "${__sx_str_substr_drop_}" "${__sx_str_substr_total_}"; then
+		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_drop_}"
+		__sx_str_substr_str_="${__sx_str_substr_str_%${__sx_str_substr_qm_}}"
+	else
+		__sx_str_substr_str_=
+	fi
+
+	__sx_var_set "${__sx_str_substr_res_}=${__sx_str_substr_str_}"
+
+	unset __sx_str_substr_res_ __sx_str_substr_str_ __sx_str_substr_off_ __sx_str_substr_len_ __sx_str_substr_total_ __sx_str_substr_drop_ __sx_str_substr_qm_
 }
 
 ### sx_str_split - 文字列を分割して配列に格納する
@@ -1823,460 +2205,82 @@ __sx_arr_pop0() {
 	unset __sx_arr_pop0_arr_ __sx_arr_pop0_len_ __sx_arr_pop0_dest_ __sx_arr_pop0_src_
 }
 
-### sx_var_is_set - 変数が設定されているか確認する
+### sx_arr_is_rw - 配列の指定範囲が書き込み可能か確認する
 ##
 ## 使い方:
-##   sx_var_is_set 変数名1 [変数名2 ...]
-##
-## 終了ステータス:
-##    0  すべて設定されている (SX_EX_OK)
-##    1  未設定の変数が含まれる
-##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_is_set() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_set "${@}" || return; return 0;; esac
-
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_set "${@}" || return
-}
-
-### __sx_var_is_set - 変数が設定されているか確認する（内部用）
-##
-## 使い方:
-##   __sx_var_is_set 変数名1 [変数名2 ...]
+##   sx_arr_is_rw 配列名 [[開始インデックス [個数]] ...]
 ##
 ## 説明:
-##   引数で指定されたすべての変数が設定されているか確認する。
-##   引数チェックは行わない。
-__sx_var_is_set() {
-	for __sx_var_is_set_arg_ in "${@}"; do
-		if eval sx_str_eq "\"\${${__sx_var_is_set_arg_}+X}\"" '""'; then
-			unset __sx_var_is_set_arg_
-			return 1
-		fi
-
-		unset __sx_var_is_set_arg_
-	done
-}
-
-### sx_var_has_val - 変数が値を持ち、かつ空でないか確認する
-##
-## 使い方:
-##   sx_var_has_val 変数名1 [変数名2 ...]
-##
-## 終了ステータス:
-##    0  すべて値があり、空でない (SX_EX_OK)
-##    1  設定されていない、または空の変数が含まれる
-##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_has_val() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_has_val "${@}" || return; return 0;; esac
-
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_has_val "${@}" || return
-}
-
-### __sx_var_has_val - 変数が値を持ち、かつ空でないか確認する（内部用）
-##
-## 使い方:
-##   __sx_var_has_val 変数名1 [変数名2 ...]
-##
-## 説明:
-##   引数で指定されたすべての変数が値を持ち、空でないか確認する。
-##   引数チェックは行わない。
-__sx_var_has_val() {
-	for __sx_var_has_val_arg_ in "${@}"; do
-		if eval ! sx_str_eq "\"\${${__sx_var_has_val_arg_}:+X}\"" X; then
-			unset __sx_var_has_val_arg_
-			return 1
-		fi
-
-		unset __sx_var_has_val_arg_
-	done
-}
-
-### sx_var_is_empty - 変数が設定されており、かつ空か確認する
-##
-## 使い方:
-##   sx_var_is_empty 変数名1 [変数名2 ...]
-##
-## 終了ステータス:
-##    0  すべて空である (SX_EX_OK)
-##    1  設定されていない、または空でない変数が含まれる
-##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_is_empty() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_empty "${@}" || return; return 0;; esac
-
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_empty "${@}" || return
-}
-
-### __sx_var_is_empty - 変数が設定されており、かつ空か確認する（内部用）
-##
-## 使い方:
-##   __sx_var_is_empty 変数名1 [変数名2 ...]
-##
-## 説明:
-##   引数で指定されたすべての変数が空（かつ設定済み）か確認する。
-##   引数チェックは行わない。
-__sx_var_is_empty() {
-	for __sx_var_is_empty_arg_ in "${@}"; do
-		if eval ! sx_str_eq "\"\${${__sx_var_is_empty_arg_}+X}\${${__sx_var_is_empty_arg_}-}\"" X; then
-			unset __sx_var_is_empty_arg_
-			return 1
-		fi
-
-		unset __sx_var_is_empty_arg_
-	done
-}
-
-### sx_var_is_rw - 変数が書き込み可能か確認する
-##
-## 使い方:
-##   sx_var_is_rw 変数名1 [変数名2 ...]
+##   指定された名前に対応する配列要素範囲および長さ保持変数 (${配列名}_len) が
+##   書き込み可能か確認する。
+##   実体が sx 配列でない場合でも確認自体は可能で、その場合は指定された範囲の変数名と
+##   ${配列名}_len の書き込み可否を検査する。
+##   引数なしの場合: 配列名と ${配列名}_len に加え、sx 配列であれば 0 から末尾までの全要素を確認する。
+##   個数が省略された場合: sx 配列であれば開始インデックスから末尾までを確認し、
+##   sx 配列でなければその開始インデックス単体を確認する。
 ##
 ## 終了ステータス:
 ##    0  すべて書き込み可能 (SX_EX_OK)
-##    1  読み取り専用が含まれる
-##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_is_rw() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_rw "${@}" || return; return 0;; esac
-
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_rw "${@}" || return
-}
-
-### __sx_var_is_rw - 変数が書き込み可能か確認する（内部用）
-##
-## 使い方:
-##   __sx_var_is_rw 変数名1 [変数名2 ...]
-##
-## 説明:
-##   引数で指定されたすべての変数が書き込み可能か確認する。
-##   サブシェルの生成を最小限にするため、一括で検証を行う。
-__sx_var_is_rw() {
-	! sx_str_eq "${#}" 0 || return 0
-	( unset -v "${@}" ) 2>/dev/null || return 1
-}
-
-### sx_var_is_ro - 変数が読み取り専用か確認する
-##
-## 使い方:
-##   sx_var_is_ro 変数名1 [変数名2 ...]
-##
-## 終了ステータス:
-##    0  すべて読み取り専用 (SX_EX_OK)
-##    1  書き込み可能な変数が含まれる
-##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_is_ro() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_ro "${@}" || return; return 0;; esac
-
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_ro "${@}" || return
-}
-
-### __sx_var_is_ro - 変数が読み取り専用か確認する（内部用）
-##
-## 使い方:
-##   __sx_var_is_ro 変数名1 [変数名2 ...]
-##
-## 説明:
-##   引数で指定されたすべての変数が読み取り専用か確認する。
-##   引数チェックは行わない。
-__sx_var_is_ro() {
-	for __sx_var_is_ro_arg_ in "${@}"; do
-		if __sx_var_is_rw "${__sx_var_is_ro_arg_}"; then
-			unset __sx_var_is_ro_arg_
-			return 1
-		fi
-
-		unset __sx_var_is_ro_arg_
-	done
-}
-
-### sx_var_is_name - 変数名として有効か確認する
-##
-## 使い方:
-##   sx_var_is_name [文字列1 [文字列2 ...]]
-##
-## 終了ステータス:
-##    0  すべて有効な変数名 (SX_EX_OK)
-##    1  無効な変数名が含まれる
-sx_var_is_name() {
-	for __sx_var_is_name_arg in "${@}"; do
-		case "${__sx_var_is_name_arg}" in
-			'' | [0-9]* | *[!_A-Za-z0-9]*)
-				unset __sx_var_is_name_arg
-				return 1
-				;;
-		esac
-	done
-
-	unset __sx_var_is_name_arg
-}
-
-### sx_var_copy_is_chain - 文字列が有効なコピー連鎖式であるか確認する
-##
-## 使い方:
-##   sx_var_copy_is_chain [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   引数で指定されたすべての文字列が、sx_var_copy 等で使用可能な
-##   有効な連鎖式（A-B-C または A=B=C）であるか、あるいは単一の有効な変数名
-##   であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて有効な形式である (SX_EX_OK)
-##    1  無効な形式が含まれる
-sx_var_copy_is_chain() {
-	for __sx_var_copy_is_chain_arg in "${@}"; do
-		if sx_str_has "${__sx_var_copy_is_chain_arg}" =; then
-			! sx_str_match "${__sx_var_copy_is_chain_arg}" '*[!_0-9A-Za-z=]*' '*==*' '=*' '*=' '[0-9]*' '*=[0-9]*' || return 1
-		elif sx_str_has "${__sx_var_copy_is_chain_arg}" -; then
-			! sx_str_match "${__sx_var_copy_is_chain_arg}" '*[!_0-9A-Za-z-]*' '*--*' '-*' '*-' '[0-9]*' '*-[0-9]*' || return 1
-		else
-			sx_var_is_name "${__sx_var_copy_is_chain_arg}" || return 1
-		fi
-	done
-
-	unset __sx_var_copy_is_chain_arg
-}
-
-### sx_var_copyls - 変数のコピー用代入式リストを生成する
-##
-## 使い方:
-##   sx_var_copyls 結果変数名 [連鎖式1 [連鎖式2 ...]]
-##
-## 説明:
-##   与えられた連鎖式群に対するコピー処理で必要となる、
-##   スペース区切りの代入式リスト（例: "dest=src dest2=src2"）を生成して結果変数に格納する。
-##   コピー元が sx 配列である場合は、関連するすべての要素も含めてリストに含める。
-##   生成されたリストは eval set -- 等で利用できる。
-##   連鎖式が指定されない場合や引数が単一の変数名の場合は、空文字列を格納する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
+##    1  書き込み不可が含まれる
 ##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_var_copyls() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_copyls "${@}" || return; return 0;; esac
+sx_arr_is_rw() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_rw "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
-	sx_var_copy_is_chain "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
 
-	__sx_var_copyls "${@}"
-}
-
-### __sx_var_copyls - 変数のコピー用代入式リストを生成する（内部用）
-##
-## 使い方:
-##   __sx_var_copyls 結果変数名 [変数名1 [変数名2 [変数名3 ...]]]
-##
-## 説明:
-##   sx_var_copyls の内部実装。
-##   変数名列から右方向連鎖コピー用の代入式リストを生成する。
-##   引数チェックは行わない。
-__sx_var_copyls() {
-	__sx_var_copyls_res_="${1}"
-	__sx_var_copyls_out_=
+	__sx_arr_is_rw_name="${1}"
 	shift
 
-	for __sx_var_copyls_chain_ in "${@}"; do
-		if sx_str_has "${__sx_var_copyls_chain_}" =; then
-			sx_str_sub __sx_var_copyls_args_ "${__sx_var_copyls_chain_}" = ' '
-			eval sx_arg_rquote __sx_var_copyls_args_ "${__sx_var_copyls_args_}"
-		else
-			sx_str_sub __sx_var_copyls_args_ "${__sx_var_copyls_chain_}" - ' '
-		fi
+	if ! sx_num_is_nat0 "${@}"; then
+		unset __sx_arr_is_rw_name
+		return "${SX_EX_USAGE}"
+	fi
 
-		eval set -- "${__sx_var_copyls_args_}"
+	set -- "${__sx_arr_is_rw_name}" "${@}"
+	unset __sx_arr_is_rw_name
 
-		for __sx_var_copyls_dest_ in "${@}"; do
-			if sx_var_is_set __sx_var_copyls_src_; then
-				__sx_var_list_dep __sx_var_copyls_ls_ "${__sx_var_copyls_src_}"
-				eval set -- "${__sx_var_copyls_ls_}"
+	__sx_arr_is_rw "${@}" || return
+}
 
-				for __sx_var_copyls_name_ in "${@}"; do
-					__sx_var_copyls_out_="${__sx_var_copyls_out_} ${__sx_var_copyls_dest_}${__sx_var_copyls_name_#${__sx_var_copyls_src_}}=${__sx_var_copyls_name_}"
-				done
-			fi
+### __sx_arr_is_rw - 配列の指定範囲が書き込み可能か確認する（内部用）
+##
+## 使い方:
+##   __sx_arr_is_rw 配列名 [開始インデックス [個数]]
+##
+## 説明:
+##   sx_arr_is_rw の内部実装。
+##   引数チェックは行わない。
+__sx_arr_is_rw() {
+	__sx_var_is_rw "${1}" "${1}_len" || return 1
+	__sx_arr_is_rw_name_="${1}"
+	__sx_arr_is_rw_chk_=
+	shift
 
-			__sx_var_copyls_src_="${__sx_var_copyls_dest_}"
+	! sx_str_eq "${#}" 0 || set -- 0
+
+	if sx_str_eq "$((${#} % 2))" 0; then
+		:
+	elif sx_var_is_arr "${__sx_arr_is_rw_name_}"; then
+		# 個数が省略された場合は末尾まで
+		eval set -- '"${@}"' "\$((${__sx_arr_is_rw_name_}_len - \${${#}}))"
+	else
+		set -- "${@}" 0
+	fi
+
+	while ! sx_str_eq "${#}" 0; do
+		eval 'shift 2;' set -- "${1}" "$((${1} + ${2}))" '"${@}"'
+
+		while __sx_num_is_lt "${1}" "${2}"; do
+			__sx_arr_is_rw_chk_="${__sx_arr_is_rw_chk_}${__sx_arr_is_rw_name_}_${1} "
+			eval 'shift 2;' set -- "$((${1} + 1))" "${2}" '"${@}"'
 		done
 
-		unset __sx_var_copyls_src_
+		shift 2
 	done
 
-	__sx_var_set "${__sx_var_copyls_res_}=${__sx_var_copyls_out_}"
-	unset __sx_var_copyls_res_ __sx_var_copyls_out_ __sx_var_copyls_chain_ __sx_var_copyls_args_ __sx_var_copyls_ls_ __sx_var_copyls_dest_ __sx_var_copyls_name_
+	eval set -- "${__sx_arr_is_rw_chk_}"
+	unset __sx_arr_is_rw_name_ __sx_arr_is_rw_chk_
+
+	sx_var_is_rw_all "${@}" || return
 }
 
-### sx_util_eval - 文字列をシェルコマンドとして実行する
-##
-## 使い方:
-##   sx_util_eval コマンド文字列
-##
-## 説明:
-##   引数で渡された文字列を eval を用いて実行する。
-##   直接的な eval の使用を避け、意図を明確にするためのラッパー。
-sx_util_eval() {
-	eval "${1}" || return
-}
-
-### sx_arg_join - 引数を指定された区切り文字で結合する
-##
-## 使い方:
-##   sx_arg_join 結果変数名 区切り文字 [値 ...]
-##
-## 説明:
-##   指定された値を区切り文字で結合した文字列を作成して結果変数に格納する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_join() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_join "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" || return
-
-	__sx_arg_join "${@}"
-}
-
-### __sx_arg_join - 引数を指定された区切り文字で結合する（内部用）
-##
-## 使い方:
-##   __sx_arg_join 結果変数名 区切り文字 [値 ...]
-##
-## 説明:
-##   引数チェックを行わずに結合処理を行う。
-__sx_arg_join() {
-	__sx_arg_join_res_="${1}"
-	__sx_arg_join_sep_="${2-}"
-	__sx_arg_join_out_=
-	shift ${2+2}
-
-	for __sx_arg_join_arg_ in "${@}"; do
-		__sx_arg_join_out_="${__sx_arg_join_out_}${__sx_arg_join_sep_}${__sx_arg_join_arg_}"
-	done
-
-	__sx_var_set "${__sx_arg_join_res_}=${__sx_arg_join_out_#${__sx_arg_join_sep_}}"
-
-	unset __sx_arg_join_res_ __sx_arg_join_sep_ __sx_arg_join_out_ __sx_arg_join_arg_
-}
-
-### sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する
-##
-## 使い方:
-##   sx_arg_quote 結果変数名 [値 ...]
-##
-## 説明:
-##   指定された値をそれぞれシングルクォートで囲み（内部のシングルクォートはエスケープ）、
-##   スペース区切りで順方向に結合した文字列を作成して結果変数に格納する。
-##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_quote() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" || return
-
-	__sx_arg_quote "${@}"
-}
-
-### __sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する（内部用）
-##
-## 使い方:
-##   __sx_arg_quote 結果変数名 [値 ...]
-##
-## 説明:
-##   引数チェックを行わずにクォート結合処理を行う。
-__sx_arg_quote() {
-	__sx_arg_quote_out_=
-	__sx_arg_quote_res_="${1}"
-	shift
-
-	for __sx_arg_quote_arg_ in "${@}"; do
-		__sx_str_sub __sx_arg_quote_esc_ "${__sx_arg_quote_arg_}" "'" "'\\''"
-		__sx_arg_quote_out_="${__sx_arg_quote_out_} '${__sx_arg_quote_esc_}'"
-	done
-
-	__sx_var_set "${__sx_arg_quote_res_}=${__sx_arg_quote_out_# }"
-
-	unset __sx_arg_quote_res_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
-}
-
-### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する
-##
-## 使い方:
-##   sx_arg_rquote 結果変数名 [値 ...]
-##
-## 説明:
-##   指定された値をそれぞれシングルクォートで囲み、
-##   逆順（最後の引数が先頭）にスペース区切りで結合した文字列を作成して結果変数に格納する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_rquote() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" || return
-
-	__sx_arg_rquote "${@}"
-}
-
-### __sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
-##
-## 使い方:
-##   __sx_arg_rquote 結果変数名 [値 ...]
-##
-## 説明:
-##   引数チェックを行わずに逆順クォート結合処理を行う。
-__sx_arg_rquote() {
-	__sx_arg_rquote_out_=
-	__sx_arg_rquote_res_="${1}"
-	shift
-
-	for __sx_arg_rquote_arg_ in "${@}"; do
-		__sx_str_sub __sx_arg_rquote_esc_ "${__sx_arg_rquote_arg_}" "'" "'\\''"
-		__sx_arg_rquote_out_=" '${__sx_arg_rquote_esc_}'${__sx_arg_rquote_out_}"
-	done
-
-	__sx_var_set "${__sx_arg_rquote_res_}=${__sx_arg_rquote_out_# }"
-
-	unset __sx_arg_rquote_res_ __sx_arg_rquote_out_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
-}
-
-### __sx_arg_norm - 引数リスト内の数値をプレースホルダに展開して正規化する（内部用）
-##
-## 使い方:
-##   __sx_arg_norm 結果変数名 プレースホルダ [引数...]
-##
-## 説明:
-##   引数リストを走査し、数値 N があればそれを N 個のプレースホルダに展開する。
-##   数値以外の文字列はそのまま残す。
-__sx_arg_norm() {
-	__sx_arg_norm_res_="${1}"
-	sx_arg_quote __sx_arg_norm_pl_ "${2-}"
-	shift ${2+2}
-
-	__sx_arg_norm_out_=
-	for __sx_arg_norm_arg_ in "${@}"; do
-		if sx_num_is_nat0 "${__sx_arg_norm_arg_}"; then
-			# 数値 N を N 個のプレースホルダに展開
-			__sx_str_rep __sx_arg_norm_tmp_ " ${__sx_arg_norm_pl_}" "${__sx_arg_norm_arg_}"
-			__sx_arg_norm_out_="${__sx_arg_norm_out_}${__sx_arg_norm_tmp_}"
-		else
-			sx_arg_quote __sx_arg_norm_tmp_ "${__sx_arg_norm_arg_}"
-			__sx_arg_norm_out_="${__sx_arg_norm_out_} ${__sx_arg_norm_tmp_}"
-		fi
-	done
-
-	# 先頭の余計なスペースを削って結果変数に格納
-	__sx_var_set "${__sx_arg_norm_res_}=${__sx_arg_norm_out_# }"
-
-	unset __sx_arg_norm_res_ __sx_arg_norm_pl_ __sx_arg_norm_out_ __sx_arg_norm_arg_ __sx_arg_norm_tmp_
-}
