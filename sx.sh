@@ -1094,6 +1094,79 @@ __sx_str_rep() {
 	unset __sx_str_rep_out_
 }
 
+### sx_str_substr - 文字列の指定した位置から指定した長さの部分文字列を取得する
+##
+## 使い方:
+##   sx_str_substr 結果変数名 [元文字列 [オフセット [長さ]]]
+##
+## 説明:
+##   元文字列のオフセット（0開始）から指定された長さ分だけ抽出し、結果変数に格納する。
+##   長さが省略された場合、または末尾を超える場合は末尾まで抽出する。
+##   オフセットが文字列長以上の場合は空文字列を返す。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_substr() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_substr "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	sx_num_is_int "${3-0}" "${4-${SX_NUM_I32_MAX}}" || return "${SX_EX_USAGE}"
+
+	__sx_str_substr "${@}"
+}
+
+### __sx_str_substr - 文字列の部分文字列を取得する（内部用）
+##
+## 使い方:
+##   __sx_str_substr 結果変数名 [元文字列 [オフセット [長さ]]]
+##
+## 説明:
+##   sx_str_substr の内部実装。
+##   引数チェックは行わない。
+__sx_str_substr() {
+	__sx_str_substr_res_="${1}"
+	__sx_str_substr_str_="${2-}"
+	__sx_str_substr_off_="${3-0}"
+	__sx_str_substr_len_="${4-${SX_NUM_I32_MAX}}"
+	__sx_str_substr_total_="${#__sx_str_substr_str_}"
+
+	# オフセットの正規化 (負数は末尾から)
+	if __sx_num_is_lt "${__sx_str_substr_off_}" 0; then
+		__sx_str_substr_off_=$(((__sx_str_substr_off_ * -1) < __sx_str_substr_total_ ? __sx_str_substr_total_ + __sx_str_substr_off_ : 0))
+	fi
+
+	# 1. オフセット分をスキップ
+	if __sx_num_is_le "${__sx_str_substr_total_}" "${__sx_str_substr_off_}"; then
+		__sx_str_substr_str_=
+	else
+		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_off_}"
+		__sx_str_substr_str_="${__sx_str_substr_str_#${__sx_str_substr_qm_}}"
+	fi
+
+	# 長さの正規化 (負数は末尾から削る)
+	__sx_str_substr_total_="${#__sx_str_substr_str_}"
+	if __sx_num_is_le 0 "${__sx_str_substr_len_}"; then
+		__sx_str_substr_drop_=$((__sx_str_substr_len_ < __sx_str_substr_total_ ? __sx_str_substr_total_ - __sx_str_substr_len_ : 0))
+	else
+		__sx_str_substr_drop_=$((__sx_str_substr_len_ * -1))
+	fi
+
+	# 2. 指定長に切り詰め
+	if __sx_num_is_lt "${__sx_str_substr_drop_}" "${__sx_str_substr_total_}"; then
+		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_drop_}"
+		__sx_str_substr_str_="${__sx_str_substr_str_%${__sx_str_substr_qm_}}"
+	else
+		__sx_str_substr_str_=
+	fi
+
+	__sx_var_set "${__sx_str_substr_res_}=${__sx_str_substr_str_}"
+
+	unset __sx_str_substr_res_ __sx_str_substr_str_ __sx_str_substr_off_ __sx_str_substr_len_ __sx_str_substr_total_ __sx_str_substr_drop_ __sx_str_substr_qm_
+}
+
 ### sx_uuid_is_uuid - すべての引数が UUID 形式であるか確認する
 ##
 ## 使い方:
