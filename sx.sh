@@ -292,41 +292,6 @@ __sx_arg_norm() {
 	unset __sx_arg_norm_res_ __sx_arg_norm_pl_ __sx_arg_norm_out_ __sx_arg_norm_arg_ __sx_arg_norm_tmp_
 }
 
-### sx_var_touch - リビジョン番号を更新する
-##
-## 使い方:
-##   sx_var_touch 変数名
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  変数が読み取り専用 (SX_EX_NOPERM)
-sx_var_touch() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_touch "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${@}" || return
-
-	__sx_var_touch "${@}"
-}
-
-### __sx_var_touch - 変数のリビジョン番号を更新する（内部用）
-##
-## 使い方:
-##   __sx_var_touch 変数名1 [変数名2 ...]
-##
-## 説明:
-##   指定された変数の値に含まれるリビジョン番号（末尾の : 以降）を
-##   現在の SX_SYS_REV で更新し、SX_SYS_REV をインクリメントする。
-##   引数チェックは行わない。
-__sx_var_touch() {
-	for __sx_var_touch_arg_ in "${@}"; do
-		eval "${__sx_var_touch_arg_}=\"\${${__sx_var_touch_arg_}%:*}:\${SX_SYS_REV}\""
-		SX_SYS_REV=$((SX_SYS_REV + 1))
-	done
-
-	unset __sx_var_touch_arg_
-}
-
 # ========================================
 #  VAR (Variable Checks)
 # ========================================
@@ -352,7 +317,7 @@ __sx_var_touch() {
 sx_var_copy() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_copy "${@}" || return; return 0;; esac
 
-	sx_var_copy_is_rw "${@}" || case "${?}" in
+	sx_var_is_copyable "${@}" || case "${?}" in
 		1) return "${SX_EX_NOPERM}";;
 		*) return;;
 	esac
@@ -370,7 +335,7 @@ sx_var_copy() {
 ##   引数チェックは行わない。
 __sx_var_copy() {
 	__sx_arg_quote __sx_var_copy_esc_ "${@}"
-	__sx_var_copyls __sx_var_copy_ls_ "${@}"
+	__sx_var_list_copy __sx_var_copy_ls_ "${@}"
 	eval set -- "${__sx_var_copy_ls_}"
 
 	# 1. 値のキャプチャと代入式の生成
@@ -405,77 +370,6 @@ __sx_var_copy() {
 
 	# 内部用変数を掃除
 	unset __sx_var_copy_esc_ __sx_var_copy_ls_ __sx_var_copy_asg_ __sx_var_copy_pair_ __sx_var_copy_dest_ __sx_var_copy_src_ __sx_var_copy_val_ __sx_var_copy_dests_
-}
-
-### sx_var_copy_is_chain - 文字列が有効なコピー連鎖式であるか確認する
-##
-## 使い方:
-##   sx_var_copy_is_chain [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   引数で指定されたすべての文字列が、sx_var_copy 等で使用可能な
-##   有効な連鎖式（A-B-C または A=B=C）であるか、あるいは単一の有効な変数名
-##   であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて有効な形式である (SX_EX_OK)
-##    1  無効な形式が含まれる
-sx_var_copy_is_chain() {
-	for __sx_var_copy_is_chain_arg in "${@}"; do
-		if sx_str_has "${__sx_var_copy_is_chain_arg}" =; then
-			! sx_str_match "${__sx_var_copy_is_chain_arg}" '*[!_0-9A-Za-z=]*' '*==*' '=*' '*=' '[0-9]*' '*=[0-9]*' || return 1
-		elif sx_str_has "${__sx_var_copy_is_chain_arg}" -; then
-			! sx_str_match "${__sx_var_copy_is_chain_arg}" '*[!_0-9A-Za-z-]*' '*--*' '-*' '*-' '[0-9]*' '*-[0-9]*' || return 1
-		else
-			sx_var_is_name "${__sx_var_copy_is_chain_arg}" || return 1
-		fi
-	done
-
-	unset __sx_var_copy_is_chain_arg
-}
-
-### sx_var_copy_is_rw - コピー先が構造を含めて書き込み可能か確認する
-##
-## 使い方:
-##   sx_var_copy_is_rw [連鎖式1 [連鎖式2 ...]]
-##
-## 説明:
-##   与えられた連鎖式群を実行した場合に、書き込み対象となる全ての変数
-##   （配列の子要素を含む）が書き込み可能か確認する。
-##
-## 終了ステータス:
-##    0  すべて書き込み可能 (SX_EX_OK)
-##    1  書き込み不可が含まれる
-##   64  引数不正 (SX_EX_USAGE)
-sx_var_copy_is_rw() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_copy_is_rw "${@}" || return; return 0;; esac
-
-	sx_var_copy_is_chain "${@}" || return "${SX_EX_USAGE}"
-
-	__sx_var_copy_is_rw "${@}" || return
-}
-
-### __sx_var_copy_is_rw - コピー先が構造を含めて書き込み可能か確認する（内部用）
-##
-## 使い方:
-##   __sx_var_copy_is_rw 変数名1 変数名2 [変数名3 ...]
-##
-## 説明:
-##   sx_var_copy_is_rw の内部実装。
-##   引数チェックは行わない。
-__sx_var_copy_is_rw() {
-	__sx_var_copyls __sx_var_copy_is_rw_ls_ "${@}"
-	eval set -- "${__sx_var_copy_is_rw_ls_}"
-
-	__sx_var_copy_is_rw_out_=
-	for __sx_var_copy_is_rw_arg_ in "${@}"; do
-		__sx_var_copy_is_rw_out_="${__sx_var_copy_is_rw_out_} ${__sx_var_copy_is_rw_arg_%%=*}"
-	done
-
-	eval set -- "${__sx_var_copy_is_rw_out_}"
-	unset __sx_var_copy_is_rw_ls_ __sx_var_copy_is_rw_out_ __sx_var_copy_is_rw_arg_
-
-	__sx_var_is_rw_all "${@}" || return
 }
 
 ### sx_var_is_arr - 指定された変数がsx配列であるか確認する
@@ -515,6 +409,77 @@ __sx_var_is_arr() {
 	done
 
 	unset __sx_var_is_arr_arg_
+}
+
+### sx_var_is_chain - 文字列が有効な連鎖式であるか確認する
+##
+## 使い方:
+##   sx_var_is_chain [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   引数で指定されたすべての文字列が、sx_var_copy 等で使用可能な
+##   有効な連鎖式（A-B-C または A=B=C）であるか、あるいは単一の有効な変数名
+##   であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて有効な形式である (SX_EX_OK)
+##    1  無効な形式が含まれる
+sx_var_is_chain() {
+	for __sx_var_is_chain_arg in "${@}"; do
+		if sx_str_has "${__sx_var_is_chain_arg}" =; then
+			! sx_str_match "${__sx_var_is_chain_arg}" '*[!_0-9A-Za-z=]*' '*==*' '=*' '*=' '[0-9]*' '*=[0-9]*' || return 1
+		elif sx_str_has "${__sx_var_is_chain_arg}" -; then
+			! sx_str_match "${__sx_var_is_chain_arg}" '*[!_0-9A-Za-z-]*' '*--*' '-*' '*-' '[0-9]*' '*-[0-9]*' || return 1
+		else
+			sx_var_is_name "${__sx_var_is_chain_arg}" || return 1
+		fi
+	done
+
+	unset __sx_var_is_chain_arg
+}
+
+### sx_var_is_copyable - コピー先が構造を含めて書き込み可能か確認する
+##
+## 使い方:
+##   sx_var_is_copyable [連鎖式1 [連鎖式2 ...]]
+##
+## 説明:
+##   与えられた連鎖式群を実行した場合に、書き込み対象となる全ての変数
+##   （配列の子要素を含む）が書き込み可能か確認する。
+##
+## 終了ステータス:
+##    0  すべて書き込み可能 (SX_EX_OK)
+##    1  書き込み不可が含まれる
+##   64  引数不正 (SX_EX_USAGE)
+sx_var_is_copyable() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_copyable "${@}" || return; return 0;; esac
+
+	sx_var_is_chain "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_copyable "${@}" || return
+}
+
+### __sx_var_is_copyable - コピー先が構造を含めて書き込み可能か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_copyable 変数名1 変数名2 [変数名3 ...]
+##
+## 説明:
+##   sx_var_is_copyable の内部実装。
+##   引数チェックは行わない。
+__sx_var_is_copyable() {
+	__sx_var_list_copy __sx_var_is_copyable_ls_ "${@}"
+	eval set -- "${__sx_var_is_copyable_ls_}"
+
+	__sx_var_is_copyable_out_=
+	for __sx_var_is_copyable_arg_ in "${@}"; do
+		__sx_var_is_copyable_out_="${__sx_var_is_copyable_out_} ${__sx_var_is_copyable_arg_%%=*}"
+	done
+
+	eval set -- "${__sx_var_is_copyable_out_}"
+	unset __sx_var_is_copyable_ls_ __sx_var_is_copyable_out_ __sx_var_is_copyable_arg_
+
+	__sx_var_is_rw_all "${@}" || return
 }
 
 ### sx_var_is_empty - 変数が設定されており、かつ空か確認する
@@ -763,6 +728,75 @@ sx_var_list_dep() {
 	__sx_var_list_dep "${@}"
 }
 
+### sx_var_list_copy - 変数のコピー用代入式リストを生成する
+##
+## 使い方:
+##   sx_var_list_copy 結果変数名 [連鎖式1 [連鎖式2 ...]]
+##
+## 説明:
+##   与えられた連鎖式群に対するコピー処理で必要となる、
+##   スペース区切りの代入式リスト（例: "dest=src dest2=src2"）を生成して結果変数に格納する。
+##   コピー元が sx 配列である場合は、関連するすべての要素も含めてリストに含める。
+##   生成されたリストは eval set -- 等で利用できる。
+##   連鎖式が指定されない場合や引数が単一の変数名の場合は、空文字列を格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_var_list_copy() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_copy "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+	sx_var_is_chain "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_var_list_copy "${@}"
+}
+
+### __sx_var_list_copy - 変数のコピー用代入式リストを生成する（内部用）
+##
+## 使い方:
+##   __sx_var_list_copy 結果変数名 [変数名1 [変数名2 [変数名3 ...]]]
+##
+## 説明:
+##   sx_var_list_copy の内部実装。
+##   変数名列から右方向連鎖コピー用の代入式リストを生成する。
+##   引数チェックは行わない。
+__sx_var_list_copy() {
+	__sx_var_list_copy_res_="${1}"
+	__sx_var_list_copy_out_=
+	shift
+
+	for __sx_var_list_copy_chain_ in "${@}"; do
+		if sx_str_has "${__sx_var_list_copy_chain_}" =; then
+			sx_str_sub __sx_var_list_copy_args_ "${__sx_var_list_copy_chain_}" = ' '
+			eval sx_arg_rquote __sx_var_list_copy_args_ "${__sx_var_list_copy_args_}"
+		else
+			sx_str_sub __sx_var_list_copy_args_ "${__sx_var_list_copy_chain_}" - ' '
+		fi
+
+		eval set -- "${__sx_var_list_copy_args_}"
+
+		for __sx_var_list_copy_dest_ in "${@}"; do
+			if sx_var_is_set __sx_var_list_copy_src_; then
+				__sx_var_list_dep __sx_var_list_copy_ls_ "${__sx_var_list_copy_src_}"
+				eval set -- "${__sx_var_list_copy_ls_}"
+
+				for __sx_var_list_copy_name_ in "${@}"; do
+					__sx_var_list_copy_out_="${__sx_var_list_copy_out_} ${__sx_var_list_copy_dest_}${__sx_var_list_copy_name_#${__sx_var_list_copy_src_}}=${__sx_var_list_copy_name_}"
+				done
+			fi
+
+			__sx_var_list_copy_src_="${__sx_var_list_copy_dest_}"
+		done
+
+		unset __sx_var_list_copy_src_
+	done
+
+	__sx_var_set "${__sx_var_list_copy_res_}=${__sx_var_list_copy_out_}"
+	unset __sx_var_list_copy_res_ __sx_var_list_copy_out_ __sx_var_list_copy_chain_ __sx_var_list_copy_args_ __sx_var_list_copy_ls_ __sx_var_list_copy_dest_ __sx_var_list_copy_name_
+}
+
 ### __sx_var_list_dep - 指定された変数に関連するすべての変数名を取得する（内部用）
 ##
 ## 使い方:
@@ -933,7 +967,7 @@ __sx_var_list_set() {
 sx_var_move() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_move "${@}" || return; return 0;; esac
 
-	sx_var_copy_is_rw "${@}" || case "${?}" in
+	sx_var_is_copyable "${@}" || case "${?}" in
 		1) return "${SX_EX_NOPERM}";;
 		*) return;;
 	esac
@@ -1071,7 +1105,7 @@ __sx_var_set() {
 sx_var_swap() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_swap "${@}" || return; return 0;; esac
 
-	sx_var_copy_is_chain "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_chain "${@}" || return "${SX_EX_USAGE}"
 	__sx_arr_gen __sx_var_swap_arr
 
 	__sx_var_swap_out=
@@ -1091,7 +1125,7 @@ sx_var_swap() {
 	eval set -- "${__sx_var_swap_out}"
 	unset __sx_var_swap_arg __sx_var_swap_tmp __sx_var_swap_out
 
-	__sx_var_copy_is_rw "${@}" || {
+	__sx_var_is_copyable "${@}" || {
 		case "${?}" in
 			1) set -- "${SX_EX_NOPERM}";;
 			*) set -- "${?}";;
@@ -1125,6 +1159,41 @@ __sx_var_swap() {
 	done
 
 	unset __sx_var_swap_arg_ __sx_var_swap_tmp_
+}
+
+### sx_var_touch - リビジョン番号を更新する
+##
+## 使い方:
+##   sx_var_touch 変数名
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
+sx_var_touch() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_touch "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${@}" || return
+
+	__sx_var_touch "${@}"
+}
+
+### __sx_var_touch - 変数のリビジョン番号を更新する（内部用）
+##
+## 使い方:
+##   __sx_var_touch 変数名1 [変数名2 ...]
+##
+## 説明:
+##   指定された変数の値に含まれるリビジョン番号（末尾の : 以降）を
+##   現在の SX_SYS_REV で更新し、SX_SYS_REV をインクリメントする。
+##   引数チェックは行わない。
+__sx_var_touch() {
+	for __sx_var_touch_arg_ in "${@}"; do
+		eval "${__sx_var_touch_arg_}=\"\${${__sx_var_touch_arg_}%:*}:\${SX_SYS_REV}\""
+		SX_SYS_REV=$((SX_SYS_REV + 1))
+	done
+
+	unset __sx_var_touch_arg_
 }
 
 ### sx_var_unset - 変数または配列を関連要素を含めて削除する
@@ -1638,75 +1707,6 @@ sx_uuid_is_uuid() {
 
 
 
-### sx_var_copyls - 変数のコピー用代入式リストを生成する
-##
-## 使い方:
-##   sx_var_copyls 結果変数名 [連鎖式1 [連鎖式2 ...]]
-##
-## 説明:
-##   与えられた連鎖式群に対するコピー処理で必要となる、
-##   スペース区切りの代入式リスト（例: "dest=src dest2=src2"）を生成して結果変数に格納する。
-##   コピー元が sx 配列である場合は、関連するすべての要素も含めてリストに含める。
-##   生成されたリストは eval set -- 等で利用できる。
-##   連鎖式が指定されない場合や引数が単一の変数名の場合は、空文字列を格納する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_var_copyls() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_copyls "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" || return
-	sx_var_copy_is_chain "${@}" || return "${SX_EX_USAGE}"
-
-	__sx_var_copyls "${@}"
-}
-
-### __sx_var_copyls - 変数のコピー用代入式リストを生成する（内部用）
-##
-## 使い方:
-##   __sx_var_copyls 結果変数名 [変数名1 [変数名2 [変数名3 ...]]]
-##
-## 説明:
-##   sx_var_copyls の内部実装。
-##   変数名列から右方向連鎖コピー用の代入式リストを生成する。
-##   引数チェックは行わない。
-__sx_var_copyls() {
-	__sx_var_copyls_res_="${1}"
-	__sx_var_copyls_out_=
-	shift
-
-	for __sx_var_copyls_chain_ in "${@}"; do
-		if sx_str_has "${__sx_var_copyls_chain_}" =; then
-			sx_str_sub __sx_var_copyls_args_ "${__sx_var_copyls_chain_}" = ' '
-			eval sx_arg_rquote __sx_var_copyls_args_ "${__sx_var_copyls_args_}"
-		else
-			sx_str_sub __sx_var_copyls_args_ "${__sx_var_copyls_chain_}" - ' '
-		fi
-
-		eval set -- "${__sx_var_copyls_args_}"
-
-		for __sx_var_copyls_dest_ in "${@}"; do
-			if sx_var_is_set __sx_var_copyls_src_; then
-				__sx_var_list_dep __sx_var_copyls_ls_ "${__sx_var_copyls_src_}"
-				eval set -- "${__sx_var_copyls_ls_}"
-
-				for __sx_var_copyls_name_ in "${@}"; do
-					__sx_var_copyls_out_="${__sx_var_copyls_out_} ${__sx_var_copyls_dest_}${__sx_var_copyls_name_#${__sx_var_copyls_src_}}=${__sx_var_copyls_name_}"
-				done
-			fi
-
-			__sx_var_copyls_src_="${__sx_var_copyls_dest_}"
-		done
-
-		unset __sx_var_copyls_src_
-	done
-
-	__sx_var_set "${__sx_var_copyls_res_}=${__sx_var_copyls_out_}"
-	unset __sx_var_copyls_res_ __sx_var_copyls_out_ __sx_var_copyls_chain_ __sx_var_copyls_args_ __sx_var_copyls_ls_ __sx_var_copyls_dest_ __sx_var_copyls_name_
-}
-
 # ========================================
 #  STR (String Operations)
 # ========================================
@@ -2203,7 +2203,7 @@ sx_arr_pop() {
 		__sx_arr_pop_chk="${__sx_arr_pop_chk} ${__sx_arr_pop_arr}_${__sx_arr_pop_i}-${__sx_arr_pop_dest}"
 	done
 
-	eval __sx_var_copy_is_rw "${__sx_arr_pop_chk}" || {
+	eval __sx_var_is_copyable "${__sx_arr_pop_chk}" || {
 		case "${?}" in
 			1) set -- "${SX_EX_NOPERM}";;
 			*) set -- "${?}";;
