@@ -1949,7 +1949,7 @@ __sx_str_split() {
 ##   元文字列の中に含まれる検索パターンを、置換文字列に置き換えて結果変数に格納する。
 ##   省略された引数は、元文字列・検索パターン・置換文字列が空文字列、
 ##   回数制限が 2147483647（無制限）として扱われる。
-##   検索パターンが空文字列の場合は置換を行わず、元文字列をそのまま格納する。
+##   検索パターンが空文字列の場合は、各文字の間および両端に置換文字列を挿入する。
 ##   回数制限（limit）が正の場合は前方から、負の場合は後方から指定された回数分だけ置換を行う。
 ##
 ## 終了ステータス:
@@ -1981,11 +1981,44 @@ __sx_str_sub() {
 	__sx_str_sub_lim_="${5-${SX_NUM_U32_MAX}}"
 	__sx_str_sub_out_=
 
-	# パターンが空の場合は、元の文字列をそのまま結果変数に格納して終了
+	# パターンが空の場合は、文字間および両端に挿入（回数制限に従う）
 	if sx_str_eq "${__sx_str_sub_pat_}" ''; then
-		__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_str_}"
-		unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_out_
-		return 0
+		__sx_str_sub_out_="${__sx_str_sub_str_}"
+
+		if sx_num_is_lt 0 "${__sx_str_sub_lim_}"; then
+			# 前向き挿入
+			__sx_str_sub_out_="${__sx_str_sub_rep_}"
+
+			while
+				! sx_str_eq "${__sx_str_sub_str_}" '' &&
+				! sx_str_eq "${__sx_str_sub_lim_}" 1
+			do
+				__sx_str_sub_next_="${__sx_str_sub_str_#?}"
+				__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%"${__sx_str_sub_next_}"}${__sx_str_sub_rep_}"
+				__sx_str_sub_lim_=$((__sx_str_sub_lim_ - 1))
+				__sx_str_sub_str_="${__sx_str_sub_next_}"
+			done
+
+			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_}"
+		elif sx_num_is_lt "${__sx_str_sub_lim_}" 0; then
+			__sx_str_sub_out_="${__sx_str_sub_rep_}"
+
+			while
+				! sx_str_eq "${__sx_str_sub_str_}" '' &&
+				! sx_str_eq "${__sx_str_sub_lim_}" -1
+			do
+				__sx_str_sub_next_="${__sx_str_sub_str_%?}"
+				__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_#"${__sx_str_sub_next_}"}${__sx_str_sub_out_}"
+				__sx_str_sub_lim_=$((__sx_str_sub_lim_ + 1))
+				__sx_str_sub_str_="${__sx_str_sub_next_}"
+			done
+
+			__sx_str_sub_out_="${__sx_str_sub_str_}${__sx_str_sub_out_}"
+		fi
+
+		__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_out_}"
+		unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_out_ __sx_str_sub_next_
+		return "${SX_EX_OK}"
 	fi
 
 	if sx_num_is_le 0 "${__sx_str_sub_lim_}"; then

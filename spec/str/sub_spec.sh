@@ -53,6 +53,38 @@ Describe 'sx_str_sub'
     End
   End
 
+  Context '空文字列パターンを置換する場合'
+    It 'すべて置換（文字間と両端に挿入）すること'
+      When call sx_str_sub res "abc" "" "X"
+      The variable res should equal "XaXbXcX"
+    End
+
+    It '前方制限1で先頭に挿入すること'
+      When call sx_str_sub res "abc" "" "X" 1
+      The variable res should equal "Xabc"
+    End
+
+    It '前方制限2で先頭と1文字目の後に挿入すること'
+      When call sx_str_sub res "abc" "" "X" 2
+      The variable res should equal "XaXbc"
+    End
+
+    It '後方制限1で末尾に挿入すること'
+      When call sx_str_sub res "abc" "" "X" -1
+      The variable res should equal "abcX"
+    End
+
+    It '後方制限2で末尾と最後の文字の前に挿入すること'
+      When call sx_str_sub res "abc" "" "X" -2
+      The variable res should equal "abXcX"
+    End
+
+    It '空文字列に対して置換すると置換文字列自身になること'
+      When call sx_str_sub res "" "" "X"
+      The variable res should equal "X"
+    End
+  End
+
   It '無効な引数（回数不正）に対して EX_USAGE を返すこと'
     When call sx_str_sub result "a.b" "." "_" "abc"
     The status should equal 64
