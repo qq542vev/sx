@@ -89,6 +89,7 @@ sx_util_eval() {
 ##   その他  実行したコマンドの終了ステータス
 sx_call_with_ifs() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_call_with_ifs "${@}" || return; return 0;; esac
+
 	sx_str_eq "${2:+X}" X || return "${SX_EX_USAGE}"
 	__sx_var_is_rw IFS || return "${SX_EX_NOPERM}"
 
@@ -1726,7 +1727,7 @@ sx_str_chunk() {
 
 	sx_var_rw_chk "${1-}" || return
 	{ sx_num_is_int "${3-0}" && ! sx_str_eq "${3-0}" 0; } || return "${SX_EX_USAGE}"
-	sx_num_is_nat0 "${4-${SX_NUM_U32_MAX}}" || return "${SX_EX_USAGE}"
+	sx_num_is_nat0 "${4-${SX_NUM_I32_MAX}}" || return "${SX_EX_USAGE}"
 
 	__sx_str_chunk "${@}"
 }
@@ -1743,22 +1744,21 @@ __sx_str_chunk() {
 	__sx_str_chunk_res_="${1}"
 	__sx_str_chunk_str_="${2-}"
 	__sx_str_chunk_len_="${3-1}"
-	__sx_str_chunk_lim_="${4-${SX_NUM_U32_MAX}}"
+	__sx_str_chunk_lim_="${4-${SX_NUM_I32_MAX}}"
 	__sx_str_chunk_out_=
-	__sx_str_rep __sx_str_chunk_qm_ '?' "${#__sx_str_chunk_str_}"
 
 	if __sx_num_is_lt 0 "${__sx_str_chunk_len_}"; then
 		# Forward
-		__sx_str_rep __sx_str_chunk_lqm_ '?' "${__sx_str_chunk_len_}"
+		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
 
 		while
-			sx_str_has "${__sx_str_chunk_qm_}" "${__sx_str_chunk_lqm_}" &&
+			__sx_num_is_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
 			! sx_str_eq "${__sx_str_chunk_lim_}" 0
 		do
-			__sx_str_chunk_qm_="${__sx_str_chunk_qm_#${__sx_str_chunk_lqm_}}"
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
+			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
+			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"
 			__sx_str_chunk_out_="${__sx_str_chunk_out_} ${__sx_str_chunk_esc_}"
-			__sx_str_chunk_str_="${__sx_str_chunk_str_#${__sx_str_chunk_lqm_}}"
+			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
 			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
 		done
 
@@ -1769,16 +1769,16 @@ __sx_str_chunk() {
 	else
 		# Backward
 		__sx_str_chunk_len_=$((__sx_str_chunk_len_ * -1))
-		__sx_str_rep __sx_str_chunk_lqm_ '?' "${__sx_str_chunk_len_}"
+		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
 
 		while
-			sx_str_has "${__sx_str_chunk_qm_}" "${__sx_str_chunk_lqm_}" &&
+			__sx_num_is_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
 			! sx_str_eq "${__sx_str_chunk_lim_}" 0
 		do
-			__sx_str_chunk_qm_="${__sx_str_chunk_qm_#${__sx_str_chunk_lqm_}}"
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
+			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
+			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_#${__sx_str_chunk_next_}}"
 			__sx_str_chunk_out_=" ${__sx_str_chunk_esc_}${__sx_str_chunk_out_}"
-			__sx_str_chunk_str_="${__sx_str_chunk_str_%${__sx_str_chunk_lqm_}}"
+			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
 			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
 		done
 
@@ -1789,7 +1789,7 @@ __sx_str_chunk() {
 	fi
 
 	__sx_var_set "${__sx_str_chunk_res_}=${__sx_str_chunk_out_# }"
-	unset __sx_str_chunk_res_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_lqm_
+	unset __sx_str_chunk_res_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_next_
 }
 
 ### sx_str_rep - 文字列を繰り返す
@@ -1859,7 +1859,7 @@ sx_str_split() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	sx_num_is_int "${4-${SX_NUM_U32_MAX}}" || return "${SX_EX_USAGE}"
+	sx_num_is_int "${4-${SX_NUM_I32_MAX}}" || return "${SX_EX_USAGE}"
 
 	__sx_str_split "${@}"
 }
@@ -1878,7 +1878,7 @@ __sx_str_split() {
 	__sx_str_split_res_="${1}"
 	__sx_str_split_str_="${2-}"
 	__sx_str_split_sep_="${3-}"
-	__sx_str_split_lim_="${4-${SX_NUM_U32_MAX}}"
+	__sx_str_split_lim_="${4-${SX_NUM_I32_MAX}}"
 	__sx_str_split_out_=
 
 	if sx_str_eq "${__sx_str_split_sep_}" ''; then
@@ -1960,7 +1960,7 @@ sx_str_sub() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	sx_num_is_int "${5-${SX_NUM_U32_MAX}}" || return "${SX_EX_USAGE}"
+	sx_num_is_int "${5-${SX_NUM_I32_MAX}}" || return "${SX_EX_USAGE}"
 
 	__sx_str_sub "${@}"
 }
@@ -1978,7 +1978,7 @@ __sx_str_sub() {
 	__sx_str_sub_str_="${2-}"
 	__sx_str_sub_pat_="${3-}"
 	__sx_str_sub_rep_="${4-}"
-	__sx_str_sub_lim_="${5-${SX_NUM_U32_MAX}}"
+	__sx_str_sub_lim_="${5-${SX_NUM_I32_MAX}}"
 	__sx_str_sub_out_=
 
 	# パターンが空の場合は、文字間および両端に挿入（回数制限に従う）
