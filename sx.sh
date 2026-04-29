@@ -1702,14 +1702,95 @@ sx_uuid_is_uuid() {
 }
 
 # ========================================
-#  VAR (Variable Operations)
-# ========================================
-
-
-
-# ========================================
 #  STR (String Operations)
 # ========================================
+
+### sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する
+##
+## 使い方:
+##   sx_str_chunk 結果変数名 [文字列 [長さ [分割回数]]]
+##
+## 説明:
+##   指定された文字列を、指定された長さ（文字数）ごとに区切り、
+##   各要素をシングルクォートで囲み、スペース区切りで結合した文字列として結果変数に格納する。
+##   長さが正の場合は前方から、負の場合は後方から区切る。
+##   分割回数が指定された場合、最大でその回数分だけ分割を行う。
+##   長さが 0 または省略された場合は、エラー (SX_EX_USAGE) となる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
+sx_str_chunk() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+	{ sx_num_is_int "${3-0}" && ! sx_str_eq "${3-0}" 0; } || return "${SX_EX_USAGE}"
+	sx_num_is_nat0 "${4-${SX_NUM_U32_MAX}}" || return "${SX_EX_USAGE}"
+
+	__sx_str_chunk "${@}"
+}
+
+### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
+##
+## 使い方:
+##   __sx_str_chunk 結果変数名 [文字列 [長さ [分割回数]]]
+##
+## 説明:
+##   sx_str_chunk の内部実装。
+##   引数チェックは行わない。
+__sx_str_chunk() {
+	__sx_str_chunk_res_="${1}"
+	__sx_str_chunk_str_="${2-}"
+	__sx_str_chunk_len_="${3-1}"
+	__sx_str_chunk_lim_="${4-${SX_NUM_U32_MAX}}"
+	__sx_str_chunk_out_=
+	__sx_str_rep __sx_str_chunk_qm_ '?' "${#__sx_str_chunk_str_}"
+
+	if __sx_num_is_lt 0 "${__sx_str_chunk_len_}"; then
+		# Forward
+		__sx_str_rep __sx_str_chunk_lqm_ '?' "${__sx_str_chunk_len_}"
+
+		while
+			sx_str_has "${__sx_str_chunk_qm_}" "${__sx_str_chunk_lqm_}" &&
+			! sx_str_eq "${__sx_str_chunk_lim_}" 0
+		do
+			__sx_str_chunk_qm_="${__sx_str_chunk_qm_#${__sx_str_chunk_lqm_}}"
+			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
+			__sx_str_chunk_out_="${__sx_str_chunk_out_} ${__sx_str_chunk_esc_}"
+			__sx_str_chunk_str_="${__sx_str_chunk_str_#${__sx_str_chunk_lqm_}}"
+			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
+		done
+
+		if ! sx_str_eq "${__sx_str_chunk_str_}" ''; then
+			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_}"
+			__sx_str_chunk_out_="${__sx_str_chunk_out_} ${__sx_str_chunk_esc_}"
+		fi
+	else
+		# Backward
+		__sx_str_chunk_len_=$((__sx_str_chunk_len_ * -1))
+		__sx_str_rep __sx_str_chunk_lqm_ '?' "${__sx_str_chunk_len_}"
+
+		while
+			sx_str_has "${__sx_str_chunk_qm_}" "${__sx_str_chunk_lqm_}" &&
+			! sx_str_eq "${__sx_str_chunk_lim_}" 0
+		do
+			__sx_str_chunk_qm_="${__sx_str_chunk_qm_#${__sx_str_chunk_lqm_}}"
+			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
+			__sx_str_chunk_out_=" ${__sx_str_chunk_esc_}${__sx_str_chunk_out_}"
+			__sx_str_chunk_str_="${__sx_str_chunk_str_%${__sx_str_chunk_lqm_}}"
+			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
+		done
+
+		if ! sx_str_eq "${__sx_str_chunk_str_}" ''; then
+			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_}"
+			__sx_str_chunk_out_=" ${__sx_str_chunk_esc_}${__sx_str_chunk_out_}"
+		fi
+	fi
+
+	__sx_var_set "${__sx_str_chunk_res_}=${__sx_str_chunk_out_# }"
+	unset __sx_str_chunk_res_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_lqm_
+}
 
 ### sx_str_rep - 文字列を繰り返す
 ##
@@ -1759,15 +1840,16 @@ __sx_str_rep() {
 	unset __sx_str_rep_out_
 }
 
-### sx_str_split - 文字列を分割して配列に格納する
+### sx_str_split - 文字列を分割して結果変数に格納する
 ##
 ## 使い方:
-##   sx_str_split 配列名 [文字列 [区切り文字 [分割回数 [方向(f/b)]]]]
+##   sx_str_split 結果変数名 [文字列 [区切り文字 [分割回数]]]
 ##
 ## 説明:
-##   指定された文字列を区切り文字で分割し、sxライブラリ形式の配列として格納する。
+##   指定された文字列を区切り文字で分割し、
+##   各要素をシングルクォートで囲み、スペース区切りで結合した文字列として結果変数に格納する。
 ##   分割回数（limit）が指定された場合、最大でその回数分だけ分割を行う。
-##   方向を 'f' (Forward) にすると前方から、'b' (Backward) にすると後方から分割する。
+##   分割回数が正の場合は前方から、負の場合は後方から分割する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -1776,178 +1858,68 @@ __sx_str_rep() {
 sx_str_split() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split "${@}" || return; return 0;; esac
 
-	{ sx_num_is_nat0 "${4-0}" && sx_str_any "${5-f}" f b; } || return "${SX_EX_USAGE}"
+	sx_var_rw_chk "${1-}" || return
+	sx_num_is_int "${4-${SX_NUM_U32_MAX}}" || return "${SX_EX_USAGE}"
 
-	__sx_str_split_arr="${1-}"
-	shift
-
-	__sx_str_split __sx_str_split_tmp "${@}"
-	sx_var_move "__sx_str_split_tmp-${__sx_str_split_arr}" || {
-		set -- "${?}"
-		unset __sx_str_split_arr
-		__sx_var_unset __sx_str_split_tmp
-		return "${1}"
-	}
-
-	unset __sx_str_split_arr
+	__sx_str_split "${@}"
 }
 
-### __sx_str_split - 文字列を分割して配列に格納する（内部用）
+### __sx_str_split - 文字列を分割して結果変数に格納する（内部用）
 ##
 ## 使い方:
-##   __sx_str_split 配列名 [文字列 [区切り文字 [分割回数 [方向(f/b)]]]]
+##   __sx_str_split 結果変数名 [文字列 [区切り文字 [分割回数]]]
 ##
 ## 説明:
-##   指定された文字列を区切り文字で分割し、sxライブラリ形式の配列として格納する。
+##   指定された文字列を区切り文字で分割し、結果変数に格納する。
 ##   分割回数（limit）が指定された場合、最大でその回数分だけ分割を行う。
-##   方向が 'f' (Forward) の場合は前方から、'b' (Backward) の場合は後方から分割する。
+##   分割回数が正の場合は前方から、負の場合は後方から分割する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_str_split() {
-	__sx_str_split_arr_="${1}"
+	__sx_str_split_res_="${1}"
 	__sx_str_split_str_="${2-}"
 	__sx_str_split_sep_="${3-}"
-	__sx_str_split_lim_="${4-2147483647}"
-	__sx_str_split_dir_="${5-f}"
-	__sx_str_split_i_=0
+	__sx_str_split_lim_="${4-${SX_NUM_U32_MAX}}"
 	__sx_str_split_out_=
 
 	if sx_str_eq "${__sx_str_split_sep_}" ''; then
-		__sx_arr_gen "${__sx_str_split_arr_}" "${__sx_str_split_str_}"
-		unset __sx_str_split_arr_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_dir_ __sx_str_split_i_ __sx_str_split_out_
+		__sx_arg_quote __sx_str_split_out_ "${__sx_str_split_str_}"
+		__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_}"
+		unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_out_
 		return "${SX_EX_OK}"
 	fi
 
-	if sx_str_eq "${__sx_str_split_dir_}" b; then
+	if __sx_num_is_le 0 "${__sx_str_split_lim_}"; then
 		while
 			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
-			__sx_num_is_lt "${__sx_str_split_i_}" "${__sx_str_split_lim_}"
-		do
-			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}"
-			__sx_str_split_out_="${__sx_str_split_esc_} ${__sx_str_split_out_}"
-			__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
-			__sx_str_split_i_=$((__sx_str_split_i_ + 1))
-		done
-
-		__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
-		__sx_str_split_out_="${__sx_str_split_esc_} ${__sx_str_split_out_}"
-	else
-		while
-			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
-			__sx_num_is_lt "${__sx_str_split_i_}" "${__sx_str_split_lim_}"
+			! sx_str_eq "${__sx_str_split_lim_}" 0
 		do
 			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"
 			__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
 			__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
-			__sx_str_split_i_=$((__sx_str_split_i_ + 1))
+			__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
 		done
 
 		__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
 		__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
-	fi
-
-	# 一括で配列を生成
-	eval __sx_arr_gen "${__sx_str_split_arr_}" "${__sx_str_split_out_}"
-
-	unset __sx_str_split_arr_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_dir_ __sx_str_split_i_ __sx_str_split_out_ __sx_str_split_esc_
-}
-
-### sx_str_chunk - 文字列を一定の長さで区切って配列に格納する
-##
-## 使い方:
-##   sx_str_chunk 配列名 [文字列 [長さ [分割回数]]]
-##
-## 説明:
-##   指定された文字列を、指定された長さ（文字数）ごとに区切り、sxライブラリ形式の配列として格納する。
-##   長さが正の場合は前方から、負の場合は後方から区切る。
-##   分割回数が指定された場合、最大でその回数分だけ分割を行う。
-##   長さが 0 または省略された場合は、エラー (SX_EX_USAGE) となる。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  変数が読み取り専用 (SX_EX_NOPERM)
-sx_str_chunk() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" || return
-	{ sx_num_is_int "${3-0}" && ! sx_str_eq "${3-0}" 0; } || return "${SX_EX_USAGE}"
-	sx_num_is_nat0 "${4-${SX_NUM_U32_MAX}}" || return "${SX_EX_USAGE}"
-
-	__sx_str_chunk_arr="${1-}"
-	shift
-
-	__sx_str_chunk __sx_str_chunk_tmp "${@}"
-	sx_var_move "__sx_str_chunk_tmp-${__sx_str_chunk_arr}" || {
-		set -- "${?}"
-		unset __sx_str_chunk_arr
-		__sx_var_unset __sx_str_chunk_tmp
-		return "${1}"
-	}
-
-	unset __sx_str_chunk_arr
-}
-
-### __sx_str_chunk - 文字列を一定の長さで区切って配列に格納する（内部用）
-##
-## 使い方:
-##   __sx_str_chunk 配列名 [文字列 [長さ [分割回数]]]
-##
-## 説明:
-##   sx_str_chunk の内部実装。
-##   引数チェックは行わない。
-__sx_str_chunk() {
-	__sx_str_chunk_arr_="${1}"
-	__sx_str_chunk_str_="${2-}"
-	__sx_str_chunk_len_="${3-1}"
-	__sx_str_chunk_lim_="${4-${SX_NUM_U32_MAX}}"
-	__sx_str_chunk_out_=
-	__sx_str_rep __sx_str_chunk_qm_ '?' "${#__sx_str_chunk_str_}"
-
-	if __sx_num_is_lt 0 "${__sx_str_chunk_len_}"; then
-		# Forward
-		__sx_str_rep __sx_str_chunk_lqm_ '?' "${__sx_str_chunk_len_}"
-
-		while
-			sx_str_has "${__sx_str_chunk_qm_}" "${__sx_str_chunk_lqm_}" &&
-			! sx_str_eq "${__sx_str_chunk_lim_}" 0
-		do
-			__sx_str_chunk_qm_="${__sx_str_chunk_qm_#${__sx_str_chunk_lqm_}}"
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
-			__sx_str_chunk_out_="${__sx_str_chunk_out_} ${__sx_str_chunk_esc_}"
-			__sx_str_chunk_str_="${__sx_str_chunk_str_#${__sx_str_chunk_lqm_}}"
-			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
-		done
-
-		if ! sx_str_eq "${__sx_str_chunk_str_}" ''; then
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_}"
-			__sx_str_chunk_out_="${__sx_str_chunk_out_} ${__sx_str_chunk_esc_}"
-		fi
 	else
-		# Backward
-		__sx_str_chunk_len_=$((__sx_str_chunk_len_ * -1))
-		__sx_str_rep __sx_str_chunk_lqm_ '?' "${__sx_str_chunk_len_}"
-
 		while
-			sx_str_has "${__sx_str_chunk_qm_}" "${__sx_str_chunk_lqm_}" &&
-			! sx_str_eq "${__sx_str_chunk_lim_}" 0
+			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
+			! sx_str_eq "${__sx_str_split_lim_}" 0
 		do
-			__sx_str_chunk_qm_="${__sx_str_chunk_qm_#${__sx_str_chunk_lqm_}}"
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
-			__sx_str_chunk_out_="${__sx_str_chunk_esc_} ${__sx_str_chunk_out_}"
-			__sx_str_chunk_str_="${__sx_str_chunk_str_%${__sx_str_chunk_lqm_}}"
-			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
+			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}"
+			__sx_str_split_out_=" ${__sx_str_split_esc_}${__sx_str_split_out_}"
+			__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
+			__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
 		done
 
-		if ! sx_str_eq "${__sx_str_chunk_str_}" ''; then
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_}"
-			__sx_str_chunk_out_="${__sx_str_chunk_esc_} ${__sx_str_chunk_out_}"
-		fi
+		__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
+		__sx_str_split_out_=" ${__sx_str_split_esc_}${__sx_str_split_out_}"
 	fi
 
-	eval __sx_arr_gen "${__sx_str_chunk_arr_}" "${__sx_str_chunk_out_}"
-
-	unset __sx_str_chunk_arr_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_lqm_
+	__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_# }"
+	unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_out_ __sx_str_split_esc_
 }
+
 
 ### sx_str_sub - 文字列内のパターンを置換する
 ##
