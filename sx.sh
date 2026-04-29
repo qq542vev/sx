@@ -1882,9 +1882,29 @@ __sx_str_split() {
 	__sx_str_split_out_=
 
 	if sx_str_eq "${__sx_str_split_sep_}" ''; then
-		__sx_arg_quote __sx_str_split_out_ "${__sx_str_split_str_}"
+		if __sx_num_is_lt 0 "${__sx_str_split_lim_}"; then
+			sx_str_eq "${__sx_str_split_lim_}" 1 || __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
+
+			if __sx_num_is_lt "${#__sx_str_split_str_}" "${__sx_str_split_lim_}"; then
+				__sx_str_split_out_="${__sx_str_split_out_} ''"
+			fi
+
+			__sx_str_split_out_="'' ${__sx_str_split_out_# }"
+		elif __sx_num_is_lt "${__sx_str_split_lim_}" 0; then
+			__sx_str_split_lim_=$((__sx_str_split_lim_ * -1))
+			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
+
+			if __sx_num_is_lt "${#__sx_str_split_str_}" "${__sx_str_split_lim_}"; then
+				__sx_str_split_out_="'' ${__sx_str_split_out_}"
+			fi
+
+			__sx_str_split_out_="${__sx_str_split_out_% } ''"
+		else
+			__sx_arg_quote __sx_str_split_out_ "${__sx_str_split_str_}"
+		fi
+
 		__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_}"
-		unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_out_
+		unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_out_ __sx_str_split_esc_
 		return "${SX_EX_OK}"
 	fi
 

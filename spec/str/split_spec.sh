@@ -29,4 +29,28 @@ Describe 'sx_str_split'
     The status should be success
     The variable res should equal "''"
   End
+
+  It '空文字を区切り文字とした場合に境界線モデルで分割すること'
+    When call sx_str_split res "abcde" ""
+    The status should be success
+    The variable res should equal "'' 'a' 'b' 'c' 'd' 'e' ''"
+  End
+
+  It '空文字を区切り文字として制限付きで前方から分割すること'
+    When call sx_str_split res "abcde" "" 3
+    The status should be success
+    The variable res should equal "'' 'a' 'b' 'cde'"
+  End
+
+  It '空文字を区切り文字として制限付きで後方から分割すること'
+    When call sx_str_split res "abcde" "" -3
+    The status should be success
+    The variable res should equal "'abc' 'd' 'e' ''"
+  End
+
+  It '空文字を空文字で分割した場合に2つの要素を返すこと'
+    When call sx_str_split res "" ""
+    The status should be success
+    The variable res should equal "'' ''"
+  End
 End
