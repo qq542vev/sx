@@ -1940,19 +1940,17 @@ __sx_str_split() {
 	unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_out_ __sx_str_split_esc_
 }
 
-
 ### sx_str_sub - 文字列内のパターンを置換する
 ##
 ## 使い方:
-##   sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限 [方向(f/b)]]]]]
+##   sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限]]]]
 ##
 ## 説明:
 ##   元文字列の中に含まれる検索パターンを、置換文字列に置き換えて結果変数に格納する。
 ##   省略された引数は、元文字列・検索パターン・置換文字列が空文字列、
-##   回数制限が 2147483647、方向が 'f' として扱われる。
+##   回数制限が 2147483647（無制限）として扱われる。
 ##   検索パターンが空文字列の場合は置換を行わず、元文字列をそのまま格納する。
-##   回数制限を指定すると、その回数分だけ置換を行う。
-##   方向を 'f' (Forward) にすると前方から、'b' (Backward) にすると後方から置換する。
+##   回数制限（limit）が正の場合は前方から、負の場合は後方から指定された回数分だけ置換を行う。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -1962,8 +1960,7 @@ sx_str_sub() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-
-	{ sx_num_is_nat0 "${5-0}" && sx_str_any "${6-f}" f b; } || return "${SX_EX_USAGE}"
+	sx_num_is_int "${5-${SX_NUM_U32_MAX}}" || return "${SX_EX_USAGE}"
 
 	__sx_str_sub "${@}"
 }
@@ -1971,62 +1968,54 @@ sx_str_sub() {
 ### __sx_str_sub - 文字列内のパターンを置換する（内部用）
 ##
 ## 使い方:
-##   __sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限 [方向(f/b)]]]]]
+##   __sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限]]]]
 ##
 ## 説明:
 ##   sx_str_sub の内部実装。
 ##   引数チェックは行わない。
 __sx_str_sub() {
-	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-2147483647}" "${6-f}"
 	__sx_str_sub_res_="${1}"
-	__sx_str_sub_str_="${2}"
-	__sx_str_sub_pat_="${3}"
-	__sx_str_sub_rep_="${4}"
-	__sx_str_sub_lim_="${5}"
-	__sx_str_sub_dir_="${6}"
+	__sx_str_sub_str_="${2-}"
+	__sx_str_sub_pat_="${3-}"
+	__sx_str_sub_rep_="${4-}"
+	__sx_str_sub_lim_="${5-${SX_NUM_U32_MAX}}"
+	__sx_str_sub_out_=
 
 	# パターンが空の場合は、元の文字列をそのまま結果変数に格納して終了
 	if sx_str_eq "${__sx_str_sub_pat_}" ''; then
 		__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_str_}"
-		unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_dir_
+		unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_out_
 		return 0
 	fi
 
-	__sx_str_sub_out_=
-	__sx_str_sub_i_=0
-
-	if sx_str_eq "${__sx_str_sub_dir_}" b; then
-		# 後ろ向き置換 (Backward)
-		while
-			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
-			__sx_num_is_lt "${__sx_str_sub_i_}" "${__sx_str_sub_lim_}"
-		do
-			# 「置換文字」＋「後ろの部分」＋「これまでの蓄積」を結合
-			__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_##*"${__sx_str_sub_pat_}"}${__sx_str_sub_out_}"
-			# 残りの文字列を更新（右端のパターンより前を残す）
-			__sx_str_sub_str_="${__sx_str_sub_str_%"${__sx_str_sub_pat_}"*}"
-			__sx_str_sub_i_=$((__sx_str_sub_i_ + 1))
-		done
-		# 最後に残った左側の部分を結合
-		__sx_str_sub_out_="${__sx_str_sub_str_}${__sx_str_sub_out_}"
-	else
+	if sx_num_is_le 0 "${__sx_str_sub_lim_}"; then
 		# 前向き置換 (Forward)
 		while
 			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
-			__sx_num_is_lt "${__sx_str_sub_i_}" "${__sx_str_sub_lim_}"
+			! sx_str_eq "${__sx_str_sub_lim_}" 0
 		do
 			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%%"${__sx_str_sub_pat_}"*}${__sx_str_sub_rep_}"
 			__sx_str_sub_str_="${__sx_str_sub_str_#*"${__sx_str_sub_pat_}"}"
-			__sx_str_sub_i_=$((__sx_str_sub_i_ + 1))
+			__sx_str_sub_lim_=$((__sx_str_sub_lim_ - 1))
 		done
+
 		__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_}"
+	else
+		# 後ろ向き置換 (Backward)
+		while
+			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
+			! sx_str_eq "${__sx_str_sub_lim_}" 0
+		do
+			__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_##*"${__sx_str_sub_pat_}"}${__sx_str_sub_out_}"
+			__sx_str_sub_str_="${__sx_str_sub_str_%"${__sx_str_sub_pat_}"*}"
+			__sx_str_sub_lim_=$((__sx_str_sub_lim_ + 1))
+		done
+
+		__sx_str_sub_out_="${__sx_str_sub_str_}${__sx_str_sub_out_}"
 	fi
 
-	# 安全に代入 (eval 内で値を展開せず、変数の参照として渡す)
 	__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_out_}"
-
-	# 内部変数のクリーニング
-	unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_dir_ __sx_str_sub_out_ __sx_str_sub_i_
+	unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_out_
 }
 
 ### sx_str_substr - 文字列の指定した位置から指定した長さの部分文字列を取得する

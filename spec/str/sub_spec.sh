@@ -31,35 +31,30 @@ Describe 'sx_str_sub'
     End
 
     It '制限1で前方から置換すること'
-      When call sx_str_sub res "a.b.c.d" "." "_" 1 f
+      When call sx_str_sub res "a.b.c.d" "." "_" 1
       The variable res should equal "a_b.c.d"
     End
 
     It '制限2で前方から置換すること'
-      When call sx_str_sub res "a.b.c.d" "." "_" 2 f
+      When call sx_str_sub res "a.b.c.d" "." "_" 2
       The variable res should equal "a_b_c.d"
     End
 
     It '制限1で後方から置換すること'
-      When call sx_str_sub res "a.b.c.d" "." "_" 1 b
+      When call sx_str_sub res "a.b.c.d" "." "_" -1
       # 期待値: a.b.c_d (後方から1つ)
       The variable res should equal "a.b.c_d"
     End
 
     It '制限2で後方から置換すること'
-      When call sx_str_sub res "a.b.c.d" "." "_" 2 b
+      When call sx_str_sub res "a.b.c.d" "." "_" -2
       # 期待値: a.b_c_d (後方から2つ)
       The variable res should equal "a.b_c_d"
     End
   End
 
-  It '無効な引数（方向不正）に対して EX_USAGE を返すこと'
-    When call sx_str_sub result "a.b" "." "_" 1 "x"
-    The status should equal 64
-  End
-
   It '無効な引数（回数不正）に対して EX_USAGE を返すこと'
-    When call sx_str_sub result "a.b" "." "_" "abc" f
+    When call sx_str_sub result "a.b" "." "_" "abc"
     The status should equal 64
   End
 
