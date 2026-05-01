@@ -1740,31 +1740,31 @@ sx_num_is_npint() {
 	unset __sx_num_is_npint_arg
 }
 
-### sx_num_is_le - 引数が昇順（等号を含む）に並んでいるか確認する
+### sx_num_le - 引数が昇順（等号を含む）に並んでいるか確認する
 ##
 ## 使い方:
-##   sx_num_is_le [数値1 [数値2 ...]]
+##   sx_num_le [数値1 [数値2 ...]]
 ##
 ## 終了ステータス:
 ##    0  数値1 <= 数値2 <= ... である (SX_EX_OK)
 ##    1  条件を満たさない、または数値でない引数が含まれる
-sx_num_is_le() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_le "${@}" || return; return 0;; esac
+sx_num_le() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_le "${@}" || return; return 0;; esac
 
 	sx_num_is_int "${@}" || return "${SX_EX_USAGE}"
 
-	__sx_num_is_le "${@}" || return
+	__sx_num_le "${@}" || return
 }
 
-### __sx_num_is_le - 引数が昇順（等号を含む）に並んでいるか確認する（内部用）
+### __sx_num_le - 引数が昇順（等号を含む）に並んでいるか確認する（内部用）
 ##
 ## 使い方:
-##   __sx_num_is_le [数値1 [数値2 ...]]
+##   __sx_num_le [数値1 [数値2 ...]]
 ##
 ## 説明:
-##   sx_num_is_le の内部実装。
+##   sx_num_le の内部実装。
 ##   引数チェックは行わない。
-__sx_num_is_le() {
+__sx_num_le() {
 	while sx_str_eq "${2+X}" X; do
 		sx_str_eq "$((${1} <= ${2}))" 1 || return 1
 
@@ -1772,31 +1772,31 @@ __sx_num_is_le() {
 	done
 }
 
-### sx_num_is_lt - 引数が厳密な昇順に並んでいるか確認する
+### sx_num_lt - 引数が厳密な昇順に並んでいるか確認する
 ##
 ## 使い方:
-##   sx_num_is_lt [数値1 [数値2 ...]]
+##   sx_num_lt [数値1 [数値2 ...]]
 ##
 ## 終了ステータス:
 ##    0  数値1 < 数値2 < ... である (SX_EX_OK)
 ##    1  条件を満たさない、または数値でない引数が含まれる
-sx_num_is_lt() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_lt "${@}" || return; return 0;; esac
+sx_num_lt() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_lt "${@}" || return; return 0;; esac
 
 	sx_num_is_int "${@}" || return "${SX_EX_USAGE}"
 
-	__sx_num_is_lt "${@}" || return
+	__sx_num_lt "${@}" || return
 }
 
-### __sx_num_is_lt - 引数が厳密な昇順に並んでいるか確認する（内部用）
+### __sx_num_lt - 引数が厳密な昇順に並んでいるか確認する（内部用）
 ##
 ## 使い方:
-##   __sx_num_is_lt [数値1 [数値2 ...]]
+##   __sx_num_lt [数値1 [数値2 ...]]
 ##
 ## 説明:
-##   sx_num_is_lt の内部実装。
+##   sx_num_lt の内部実装。
 ##   引数チェックは行わない。
-__sx_num_is_lt() {
+__sx_num_lt() {
 	while sx_str_eq "${2+X}" X; do
 		sx_str_eq "$((${1} < ${2}))" 1 || return 1
 
@@ -1804,31 +1804,31 @@ __sx_num_is_lt() {
 	done
 }
 
-### sx_num_is_eq - すべての引数が数値として等しいか確認する
+### sx_num_eq - すべての引数が数値として等しいか確認する
 ##
 ## 使い方:
-##   sx_num_is_eq [数値1 [数値2 ...]]
+##   sx_num_eq [数値1 [数値2 ...]]
 ##
 ## 終了ステータス:
 ##    0  すべて等しい (SX_EX_OK)
 ##    1  等しくない数値が含まれる
 ##   64  引数不正 (SX_EX_USAGE)
-sx_num_is_eq() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_eq "${@}" || return; return 0;; esac
+sx_num_eq() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_eq "${@}" || return; return 0;; esac
 
 	sx_num_is_int "${@}" || return "${SX_EX_USAGE}"
-	__sx_num_is_eq "${@}" || return
+	__sx_num_eq "${@}" || return
 }
 
-### __sx_num_is_eq - すべての引数が数値として等しいか確認する（内部用）
+### __sx_num_eq - すべての引数が数値として等しいか確認する（内部用）
 ##
 ## 使い方:
-##   __sx_num_is_eq [数値1 [数値2 ...]]
+##   __sx_num_eq [数値1 [数値2 ...]]
 ##
 ## 説明:
-##   sx_num_is_eq の内部実装。
+##   sx_num_eq の内部実装。
 ##   引数チェックは行わない。
-__sx_num_is_eq() {
+__sx_num_eq() {
 	while sx_str_eq "${2+X}" X; do
 		sx_str_eq "$((${1} == ${2}))" 1 || return 1
 
@@ -1919,7 +1919,7 @@ sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	{ sx_num_is_int "${3-1}" && ! __sx_num_is_eq "${3-1}" 0 && sx_num_is_nat0 "${4-${SX_NUM_I32_MAX}}"; } || return "${SX_EX_USAGE}"
+	{ sx_num_is_int "${3-1}" && ! __sx_num_eq "${3-1}" 0 && sx_num_is_nat0 "${4-${SX_NUM_I32_MAX}}"; } || return "${SX_EX_USAGE}"
 
 	__sx_str_chunk "${@}"
 }
@@ -1939,12 +1939,12 @@ __sx_str_chunk() {
 	__sx_str_chunk_lim_="$((${4-${SX_NUM_I32_MAX}}))"
 	__sx_str_chunk_out_=
 
-	if __sx_num_is_lt 0 "${__sx_str_chunk_len_}"; then
+	if __sx_num_lt 0 "${__sx_str_chunk_len_}"; then
 		# Forward
 		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
 
 		while
-			__sx_num_is_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
+			__sx_num_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
 			! sx_str_eq "${__sx_str_chunk_lim_}" 0
 		do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
@@ -1964,7 +1964,7 @@ __sx_str_chunk() {
 		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
 
 		while
-			__sx_num_is_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
+			__sx_num_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
 			! sx_str_eq "${__sx_str_chunk_lim_}" 0
 		do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
@@ -2255,19 +2255,19 @@ __sx_str_split() {
 	__sx_str_split_out_=
 
 	if sx_str_eq "${__sx_str_split_sep_}" ''; then
-		if __sx_num_is_lt 0 "${__sx_str_split_lim_}"; then
+		if __sx_num_lt 0 "${__sx_str_split_lim_}"; then
 			sx_str_eq "${__sx_str_split_lim_}" 1 || __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
 
-			if __sx_num_is_lt "${#__sx_str_split_str_}" "${__sx_str_split_lim_}"; then
+			if __sx_num_lt "${#__sx_str_split_str_}" "${__sx_str_split_lim_}"; then
 				__sx_str_split_out_="${__sx_str_split_out_} ''"
 			fi
 
 			__sx_str_split_out_="'' ${__sx_str_split_out_# }"
-		elif __sx_num_is_lt "${__sx_str_split_lim_}" 0; then
+		elif __sx_num_lt "${__sx_str_split_lim_}" 0; then
 			__sx_str_split_lim_=$((__sx_str_split_lim_ * -1))
 			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
 
-			if __sx_num_is_lt "${#__sx_str_split_str_}" "${__sx_str_split_lim_}"; then
+			if __sx_num_lt "${#__sx_str_split_str_}" "${__sx_str_split_lim_}"; then
 				__sx_str_split_out_="'' ${__sx_str_split_out_}"
 			fi
 
@@ -2281,7 +2281,7 @@ __sx_str_split() {
 		return "${SX_EX_OK}"
 	fi
 
-	if __sx_num_is_le 0 "${__sx_str_split_lim_}"; then
+	if __sx_num_le 0 "${__sx_str_split_lim_}"; then
 		while
 			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
 			! sx_str_eq "${__sx_str_split_lim_}" 0
@@ -2358,7 +2358,7 @@ __sx_str_sub() {
 	if sx_str_eq "${__sx_str_sub_pat_}" ''; then
 		__sx_str_sub_out_="${__sx_str_sub_str_}"
 
-		if sx_num_is_lt 0 "${__sx_str_sub_lim_}"; then
+		if sx_num_lt 0 "${__sx_str_sub_lim_}"; then
 			# 前向き挿入
 			__sx_str_sub_out_="${__sx_str_sub_rep_}"
 
@@ -2373,7 +2373,7 @@ __sx_str_sub() {
 			done
 
 			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_}"
-		elif sx_num_is_lt "${__sx_str_sub_lim_}" 0; then
+		elif sx_num_lt "${__sx_str_sub_lim_}" 0; then
 			__sx_str_sub_out_="${__sx_str_sub_rep_}"
 
 			while
@@ -2394,7 +2394,7 @@ __sx_str_sub() {
 		return "${SX_EX_OK}"
 	fi
 
-	if sx_num_is_le 0 "${__sx_str_sub_lim_}"; then
+	if sx_num_le 0 "${__sx_str_sub_lim_}"; then
 		# 前向き置換 (Forward)
 		while
 			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
@@ -2464,12 +2464,12 @@ __sx_str_substr() {
 	__sx_str_substr_total_="${#__sx_str_substr_str_}"
 
 	# オフセットの正規化 (負数は末尾から)
-	if __sx_num_is_lt "${__sx_str_substr_off_}" 0; then
+	if __sx_num_lt "${__sx_str_substr_off_}" 0; then
 		__sx_str_substr_off_=$(((__sx_str_substr_off_ * -1) < __sx_str_substr_total_ ? __sx_str_substr_total_ + __sx_str_substr_off_ : 0))
 	fi
 
 	# 1. オフセット分をスキップ
-	if __sx_num_is_le "${__sx_str_substr_total_}" "${__sx_str_substr_off_}"; then
+	if __sx_num_le "${__sx_str_substr_total_}" "${__sx_str_substr_off_}"; then
 		__sx_str_substr_str_=
 	else
 		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_off_}"
@@ -2478,14 +2478,14 @@ __sx_str_substr() {
 
 	# 長さの正規化 (負数は末尾から削る)
 	__sx_str_substr_total_="${#__sx_str_substr_str_}"
-	if __sx_num_is_le 0 "${__sx_str_substr_len_}"; then
+	if __sx_num_le 0 "${__sx_str_substr_len_}"; then
 		__sx_str_substr_drop_=$((__sx_str_substr_len_ < __sx_str_substr_total_ ? __sx_str_substr_total_ - __sx_str_substr_len_ : 0))
 	else
 		__sx_str_substr_drop_=$((__sx_str_substr_len_ * -1))
 	fi
 
 	# 2. 指定長に切り詰め
-	if __sx_num_is_lt "${__sx_str_substr_drop_}" "${__sx_str_substr_total_}"; then
+	if __sx_num_lt "${__sx_str_substr_drop_}" "${__sx_str_substr_total_}"; then
 		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_drop_}"
 		__sx_str_substr_str_="${__sx_str_substr_str_%${__sx_str_substr_qm_}}"
 	else
@@ -2632,7 +2632,7 @@ __sx_arr_is_rw() {
 	while ! sx_str_eq "${#}" 0; do
 		eval 'shift 2;' set -- "${1}" "$((${1} + ${2}))" '"${@}"'
 
-		while __sx_num_is_lt "${1}" "${2}"; do
+		while __sx_num_lt "${1}" "${2}"; do
 			__sx_arr_is_rw_chk_="${__sx_arr_is_rw_chk_}${__sx_arr_is_rw_name_}_${1} "
 			eval 'shift 2;' set -- "$((${1} + 1))" "${2}" '"${@}"'
 		done
@@ -2684,7 +2684,7 @@ sx_arr_pop() {
 	unset __sx_arr_pop_args
 
 	# 要素数チェック
-	__sx_num_is_le "${#}" "${__sx_arr_pop_len}" || {
+	__sx_num_le "${#}" "${__sx_arr_pop_len}" || {
 		unset __sx_arr_pop_arr __sx_arr_pop_len
 		return 1
 	}
@@ -2764,7 +2764,7 @@ __sx_arr_pop0() {
 	eval "__sx_arr_pop0_len_=\"\${${1}_len}\""
 	shift
 
-	__sx_num_is_le "${#}" "${__sx_arr_pop0_len_}" || {
+	__sx_num_le "${#}" "${__sx_arr_pop0_len_}" || {
 		unset __sx_arr_pop0_arr_ __sx_arr_pop0_len_
 		return 1
 	}

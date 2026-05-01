@@ -1,33 +1,33 @@
-Describe 'sx_num_is_lt'
+Describe 'sx_num_le'
   Include ./sx.sh
 
-  It '数値が厳密に増加順（昇順）である場合に成功を返すこと'
-    When call sx_num_is_lt 1 2 3
+  It '数値が非減少順（昇順または等しい）である場合に成功を返すこと'
+    When call sx_num_le 1 2 2 3
     The status should be success
   End
 
   It '各基数が混在していても正しく比較できること'
-    When call sx_num_is_lt "07" "0x8" "9" "012"
+    When call sx_num_le "07" "8" "0x9" "012" "10"
     The status should be success
   End
 
-  It '数値が厳密に増加順でない場合に失敗を返すこと'
-    When call sx_num_is_lt 1 2 2 3
+  It '数値が非減少順でない場合に失敗を返すこと'
+    When call sx_num_le 1 3 2
     The status should be failure
   End
 
   It '非数値の入力が含まれる場合に失敗を返すこと'
-    When call sx_num_is_lt 1 "a"
+    When call sx_num_le 1 "a"
     The status should be failure
   End
 
   It '1つの引数に対して成功を返すこと'
-    When call sx_num_is_lt "010"
+    When call sx_num_le "0x1"
     The status should be success
   End
 
   It '引数がない場合に成功を返すこと'
-    When call sx_num_is_lt
+    When call sx_num_le
     The status should be success
   End
 End
