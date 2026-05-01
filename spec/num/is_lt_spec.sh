@@ -1,7 +1,13 @@
 Describe 'sx_num_is_lt'
   Include ./sx.sh
+
   It '数値が厳密に増加順（昇順）である場合に成功を返すこと'
     When call sx_num_is_lt 1 2 3
+    The status should be success
+  End
+
+  It '各基数が混在していても正しく比較できること'
+    When call sx_num_is_lt "07" "0x8" "9" "012"
     The status should be success
   End
 
@@ -16,7 +22,7 @@ Describe 'sx_num_is_lt'
   End
 
   It '1つの引数に対して成功を返すこと'
-    When call sx_num_is_lt 1
+    When call sx_num_is_lt "010"
     The status should be success
   End
 

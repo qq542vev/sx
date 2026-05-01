@@ -1278,7 +1278,7 @@ __sx_num_is_base_nat0() {
 
 	for __sx_num_is_base_nat0_arg_ in "${@}"; do
 		case "${__sx_num_is_base_nat0_arg_}" in
-			${__sx_num_is_base_nat0_pfix_}*) ! sx_str_match "${__sx_num_is_base_nat0_arg_#"${__sx_num_is_base_nat0_pfix_}"}" '' '0?*' "*[!${__sx_num_is_base_nat0_char_}]*";;
+			${__sx_num_is_base_nat0_pfix_}*) ! sx_str_match "${__sx_num_is_base_nat0_arg_#${__sx_num_is_base_nat0_pfix_}}" '' '0?*' "*[!${__sx_num_is_base_nat0_char_}]*";;
 			*) ! :;;
 		esac || {
 			unset __sx_num_is_base_nat0_pfix_ __sx_num_is_base_nat0_char_ __sx_num_is_base_nat0_arg_
@@ -1305,7 +1305,7 @@ __sx_num_is_base_nat1() {
 
 	for __sx_num_is_base_nat1_arg_ in "${@}"; do
 		case "${__sx_num_is_base_nat1_arg_}" in
-			${__sx_num_is_base_nat1_pfix_}*) ! sx_str_match "${__sx_num_is_base_nat1_arg_#"${__sx_num_is_base_nat1_pfix_}"}" '' '0*' "*[!${__sx_num_is_base_nat1_char_}]*";;
+			${__sx_num_is_base_nat1_pfix_}*) ! sx_str_match "${__sx_num_is_base_nat1_arg_#${__sx_num_is_base_nat1_pfix_}}" '' '0*' "*[!${__sx_num_is_base_nat1_char_}]*";;
 			*) ! :;;
 		esac || {
 			unset __sx_num_is_base_nat1_pfix_ __sx_num_is_base_nat1_char_ __sx_num_is_base_nat1_arg_
@@ -1394,8 +1394,8 @@ __sx_num_is_base_nnint() {
 	shift
 
 	for __sx_num_is_base_nnint_arg_ in "${@}"; do
-		case "${__sx_num_is_base_nnint_arg_}" in
-			0 | +0 | -0) continue;;
+		case "${__sx_num_is_base_nnint_base_}${__sx_num_is_base_nnint_arg_}" in
+			800 | 8[+-]00 | 100 | 10[+-]0 | 160[xX]0 | 16[+-]0[xX]0) continue;;
 		esac
 
 		__sx_num_is_base_pint "${__sx_num_is_base_nnint_base_}" "${__sx_num_is_base_nnint_arg_}" || {
@@ -1418,8 +1418,8 @@ __sx_num_is_base_npint() {
 	shift
 
 	for __sx_num_is_base_npint_arg_ in "${@}"; do
-		case "${__sx_num_is_base_npint_arg_}" in
-			0 | +0 | -0) continue;;
+		case "${__sx_num_is_base_npint_base_}${__sx_num_is_base_npint_arg_}" in
+			800 | 8[+-]00 | 100 | 10[+-]0 | 160[xX]0 | 16[+-]0[xX]0) continue;;
 		esac
 
 		__sx_num_is_base_nint "${__sx_num_is_base_npint_base_}" "${__sx_num_is_base_npint_arg_}" || {
@@ -1443,6 +1443,7 @@ sx_num_is_nat0() {
 	for __sx_num_is_nat0_arg in "${@}"; do
 		case "${__sx_num_is_nat0_arg}" in
 			0[xX]*) __sx_num_is_base_nat0 16 "${__sx_num_is_nat0_arg}";;
+			0?*) __sx_num_is_base_nat0 8 "${__sx_num_is_nat0_arg}";;
 			*) __sx_num_is_base_nat0 10 "${__sx_num_is_nat0_arg}";;
 		esac || {
 			unset __sx_num_is_nat0_arg
@@ -1465,6 +1466,7 @@ sx_num_is_nat1() {
 	for __sx_num_is_nat1_arg in "${@}"; do
 		case "${__sx_num_is_nat1_arg}" in
 			0[xX]*) __sx_num_is_base_nat1 16 "${__sx_num_is_nat1_arg}";;
+			0?*) __sx_num_is_base_nat1 8 "${__sx_num_is_nat1_arg}";;
 			*) __sx_num_is_base_nat1 10 "${__sx_num_is_nat1_arg}";;
 		esac || {
 			unset __sx_num_is_nat1_arg
@@ -1558,7 +1560,7 @@ sx_num_is_nint() {
 sx_num_is_nnint() {
 	for __sx_num_is_nnint_arg in "${@}"; do
 		case "${__sx_num_is_nnint_arg}" in
-			0 | +0 | -0) continue;;
+			00 | [+-]00 | 0 | [+-]0 | 0[xX]0 | [+-]0[xX]0) continue;;
 		esac
 
 		sx_num_is_pint "${__sx_num_is_nnint_arg}" || {
@@ -1584,7 +1586,7 @@ sx_num_is_nnint() {
 sx_num_is_npint() {
 	for __sx_num_is_npint_arg in "${@}"; do
 		case "${__sx_num_is_npint_arg}" in
-			0 | +0 | -0) continue;;
+			00 | [+-]00 | 0 | [+-]0 | 0[xX]0 | [+-]0[xX]0) continue;;
 		esac
 
 		sx_num_is_nint "${__sx_num_is_npint_arg}" || {
