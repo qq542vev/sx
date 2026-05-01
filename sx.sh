@@ -1263,12 +1263,33 @@ __sx_var_unset() {
 # ========================================
 
 ### sx_num_is_base_nat0 - 指定された基数で0以上の自然数か確認する
+##
+## 使い方:
+##   sx_num_is_base_nat0 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が 0 以上の自然数（符号なし整数）であるか確認する。
+##   基数 8 および 16 では各々のプレフィックス（8: '0', 16: '0x'/'0X'）を必須とする。
+##   基数 10 ではプレフィックスを認めず、また 0 以外の数値における先行する 0 も認めない。
+##
+## 終了ステータス:
+##    0  すべて 0 以上の自然数である (SX_EX_OK)
+##    1  自然数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_base_nat0() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_base_nat0 "${@}"
 }
 
+### __sx_num_is_base_nat0 - 指定された基数で0以上の自然数か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_base_nat0 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_base_nat0 の内部実装。基数チェックを行わない。
 __sx_num_is_base_nat0() {
 	eval "
 		__sx_num_is_base_nat0_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
@@ -1289,13 +1310,33 @@ __sx_num_is_base_nat0() {
 	unset __sx_num_is_base_nat0_arg_ __sx_num_is_base_nat0_pfix_ __sx_num_is_base_nat0_char_
 }
 
+### sx_num_is_base_nat1 - 指定された基数で1以上の自然数か確認する
+##
+## 使い方:
+##   sx_num_is_base_nat1 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が 1 以上の自然数（符号なし整数）であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_base_nat0 に準ずる。
+##
+## 終了ステータス:
+##    0  すべて 1 以上の自然数である (SX_EX_OK)
+##    1  1 以上の自然数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_base_nat1() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_base_nat1 "${@}"
 }
 
-### sx_num_is_base_nat1 - 指定された基数で1以上の自然数か確認する
+### __sx_num_is_base_nat1 - 指定された基数で1以上の自然数か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_base_nat1 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_base_nat1 の内部実装。基数チェックを行わない。
 __sx_num_is_base_nat1() {
 	eval "
 		__sx_num_is_base_nat1_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
@@ -1317,12 +1358,32 @@ __sx_num_is_base_nat1() {
 }
 
 ### sx_num_is_base_int - 指定された基数で整数か確認する
+##
+## 使い方:
+##   sx_num_is_base_int 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が、任意で符号（+ または -）を持つ整数であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_base_nat0 に準ずる。
+##
+## 終了ステータス:
+##    0  すべて整数である (SX_EX_OK)
+##    1  整数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_base_int() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_base_int "${@}"
 }
 
+### __sx_num_is_base_int - 指定された基数で整数か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_base_int 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_base_int の内部実装。基数チェックを行わない。
 __sx_num_is_base_int() {
 	__sx_num_is_base_int_base_="${1}"
 	shift
@@ -1338,12 +1399,32 @@ __sx_num_is_base_int() {
 }
 
 ### sx_num_is_base_pint - 指定された基数で正の整数（1以上）か確認する
+##
+## 使い方:
+##   sx_num_is_base_pint 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が、任意で正の符号（+）を持つ 1 以上の整数であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_base_nat0 に準ずる。
+##
+## 終了ステータス:
+##    0  すべて正の整数である (SX_EX_OK)
+##    1  正の整数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_base_pint() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_base_pint "${@}"
 }
 
+### __sx_num_is_base_pint - 指定された基数で正の整数（1以上）か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_base_pint 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_base_pint の内部実装。基数チェックを行わない。
 __sx_num_is_base_pint() {
 	__sx_num_is_base_pint_base_="${1}"
 	shift
@@ -1359,12 +1440,32 @@ __sx_num_is_base_pint() {
 }
 
 ### sx_num_is_base_nint - 指定された基数で負の整数（-1以下）か確認する
+##
+## 使い方:
+##   sx_num_is_base_nint 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が、負の符号（-）を必須で持つ -1 以下の整数であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_base_nat0 に準ずる。
+##
+## 終了ステータス:
+##    0  すべて負の整数である (SX_EX_OK)
+##    1  負の整数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_base_nint() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_base_nint "${@}"
 }
 
+### __sx_num_is_base_nint - 指定された基数で負の整数（-1以下）か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_base_nint 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_base_nint の内部実装。基数チェックを行わない。
 __sx_num_is_base_nint() {
 	__sx_num_is_base_nint_base_="${1}"
 	shift
@@ -1383,12 +1484,32 @@ __sx_num_is_base_nint() {
 }
 
 ### sx_num_is_base_nnint - 指定された基数で非負整数（0以上）か確認する
+##
+## 使い方:
+##   sx_num_is_base_nnint 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が 0 以上の整数であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_base_nat0 に準ずる。
+##
+## 終了ステータス:
+##    0  すべて非負整数である (SX_EX_OK)
+##    1  非負整数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_base_nnint() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_base_nnint "${@}"
 }
 
+### __sx_num_is_base_nnint - 指定された基数で非負整数（0以上）か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_base_nnint 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_base_nnint の内部実装。基数チェックを行わない。
 __sx_num_is_base_nnint() {
 	__sx_num_is_base_nnint_base_="${1}"
 	shift
@@ -1408,11 +1529,32 @@ __sx_num_is_base_nnint() {
 }
 
 ### sx_num_is_base_npint - 指定された基数で非正整数（0以下）か確認する
+##
+## 使い方:
+##   sx_num_is_base_npint 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が 0 以下の整数であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_base_nat0 に準ずる。
+##
+## 終了ステータス:
+##    0  すべて非正整数である (SX_EX_OK)
+##    1  非正整数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_base_npint() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
 	__sx_num_is_base_npint "${@}"
 }
 
+### __sx_num_is_base_npint - 指定された基数で非正整数（0以下）か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_base_npint 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_base_npint の内部実装。基数チェックを行わない。
 __sx_num_is_base_npint() {
 	__sx_num_is_base_npint_base_="${1}"
 	shift
@@ -1614,6 +1756,14 @@ sx_num_is_le() {
 	__sx_num_is_le "${@}" || return
 }
 
+### __sx_num_is_le - 引数が昇順（等号を含む）に並んでいるか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_le [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_is_le の内部実装。
+##   引数チェックは行わない。
 __sx_num_is_le() {
 	while sx_str_eq "${2+X}" X; do
 		sx_str_eq "$((${1} <= ${2}))" 1 || return 1
@@ -1638,6 +1788,14 @@ sx_num_is_lt() {
 	__sx_num_is_lt "${@}" || return
 }
 
+### __sx_num_is_lt - 引数が厳密な昇順に並んでいるか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_lt [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_is_lt の内部実装。
+##   引数チェックは行わない。
 __sx_num_is_lt() {
 	while sx_str_eq "${2+X}" X; do
 		sx_str_eq "$((${1} < ${2}))" 1 || return 1
@@ -1646,6 +1804,15 @@ __sx_num_is_lt() {
 	done
 }
 
+### sx_num_is_eq - すべての引数が数値として等しいか確認する
+##
+## 使い方:
+##   sx_num_is_eq [数値1 [数値2 ...]]
+##
+## 終了ステータス:
+##    0  すべて等しい (SX_EX_OK)
+##    1  等しくない数値が含まれる
+##   64  引数不正 (SX_EX_USAGE)
 sx_num_is_eq() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_eq "${@}" || return; return 0;; esac
 
@@ -1653,6 +1820,14 @@ sx_num_is_eq() {
 	__sx_num_is_eq "${@}" || return
 }
 
+### __sx_num_is_eq - すべての引数が数値として等しいか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_eq [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_is_eq の内部実装。
+##   引数チェックは行わない。
 __sx_num_is_eq() {
 	while sx_str_eq "${2+X}" X; do
 		sx_str_eq "$((${1} == ${2}))" 1 || return 1
