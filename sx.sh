@@ -51,12 +51,18 @@ readonly SX_NUM_PHI='1.61803398874989484820'
 readonly SX_NUM_LN2='0.69314718055994530941'
 readonly SX_NUM_LN10='2.30258509299404568401'
 
+readonly SX_NUM_BASE8_PREFIX='0'
+readonly SX_NUM_BASE8_CHARS='01234567'
+readonly SX_NUM_BASE10_PREFIX=''
+readonly SX_NUM_BASE10_CHARS='0123456789'
+readonly SX_NUM_BASE16_PREFIX='0[xX]'
+readonly SX_NUM_BASE16_CHARS='0123456789ABCDEFabcdef'
+
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
 : "${SX_SIG_BASE:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
 : "${SX_SIG_ARR:=array-${SX_SIG_BASE}}"
 : "${SX_CFG_SKIP_CHK:=0}"
 SX_SYS_REV=0
-
 
 # ========================================
 #  UTIL (Utilities)
@@ -294,7 +300,7 @@ __sx_arg_norm() {
 }
 
 # ========================================
-#  VAR (Variable Checks)
+#  VAR (Variable)
 # ========================================
 
 ### sx_var_copy - 変数の値を連鎖コピーする
@@ -402,7 +408,7 @@ __sx_var_is_arr() {
 	for __sx_var_is_arr_arg_ in "${@}"; do
 		if
 			! eval sx_str_sw "\"\${${__sx_var_is_arr_arg_}-}\"" '"${SX_SIG_ARR}":' ||
-			! eval sx_num_is_nat0 "\"\${${__sx_var_is_arr_arg_}_len-}\""
+			! eval __sx_num_is_base_nat0 10 "\"\${${__sx_var_is_arr_arg_}_len-}\""
 		then
 			unset __sx_var_is_arr_arg_
 			return 1
@@ -427,13 +433,14 @@ __sx_var_is_arr() {
 ##    1  無効な形式が含まれる
 sx_var_is_chain() {
 	for __sx_var_is_chain_arg in "${@}"; do
-		if sx_str_has "${__sx_var_is_chain_arg}" =; then
-			! sx_str_match "${__sx_var_is_chain_arg}" '*[!_0-9A-Za-z=]*' '*==*' '=*' '*=' '[0-9]*' '*=[0-9]*' || return 1
-		elif sx_str_has "${__sx_var_is_chain_arg}" -; then
-			! sx_str_match "${__sx_var_is_chain_arg}" '*[!_0-9A-Za-z-]*' '*--*' '-*' '*-' '[0-9]*' '*-[0-9]*' || return 1
-		else
-			sx_var_is_name "${__sx_var_is_chain_arg}" || return 1
-		fi
+		case "${__sx_var_is_chain_arg}" in
+			*=*) ! sx_str_match "${__sx_var_is_chain_arg}" '*[!_0-9A-Za-z=]*' '*==*' '=*' '*=' '[0-9]*' '*=[0-9]*';;
+			*-*) ! sx_str_match "${__sx_var_is_chain_arg}" '*[!_0-9A-Za-z-]*' '*--*' '-*' '*-' '[0-9]*' '*-[0-9]*';;
+			*) sx_var_is_name "${__sx_var_is_chain_arg}";;
+		esac || {
+			unset __sx_var_is_chain_arg
+			return 1
+		}
 	done
 
 	unset __sx_var_is_chain_arg
@@ -493,7 +500,7 @@ __sx_var_is_copyable() {
 ##    1  設定されていない、または空でない変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_empty() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_empty "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_empty "${@}" || return; return 0;; esac
 
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 	__sx_var_is_empty "${@}" || return
@@ -549,7 +556,7 @@ sx_var_is_name() {
 ##    1  未設定の変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_set() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_set "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_set "${@}" || return; return 0;; esac
 
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 	__sx_var_is_set "${@}" || return
@@ -584,7 +591,7 @@ __sx_var_is_set() {
 ##    1  設定されていない、または空の変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_has_val() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_has_val "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_has_val "${@}" || return; return 0;; esac
 
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 	__sx_var_has_val "${@}" || return
@@ -619,7 +626,7 @@ __sx_var_has_val() {
 ##    1  書き込み可能な変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_ro() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_ro "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_ro "${@}" || return; return 0;; esac
 
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 	__sx_var_is_ro "${@}" || return
@@ -654,7 +661,7 @@ __sx_var_is_ro() {
 ##    1  読み取り専用が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_rw() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ver_is_rw "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw "${@}" || return; return 0;; esac
 
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 	__sx_var_is_rw "${@}" || return
@@ -946,6 +953,7 @@ __sx_var_list_set() {
 	__sx_var_set "${__sx_var_list_set_res_}=${__sx_var_list_set_out_% }"
 	unset __sx_var_list_set_set_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
 }
+
 ### sx_var_move - 変数を連鎖移動する
 ##
 ## 使い方:
@@ -975,14 +983,17 @@ sx_var_move() {
 
 	__sx_var_move_chk=
 	for __sx_var_move_arg in "${@}"; do
-		if sx_str_has "${__sx_var_move_arg}" =; then
-			__sx_var_move_chk="${__sx_var_move_chk} ${__sx_var_move_arg##*=}"
-		else
-			__sx_var_move_chk="${__sx_var_move_chk} ${__sx_var_move_arg%%-*}"
-		fi
+		case "${__sx_var_move_arg}" in
+			*=*) __sx_var_move_chk="${__sx_var_move_chk} ${__sx_var_move_arg##*=}";;
+			*) __sx_var_move_chk="${__sx_var_move_chk} ${__sx_var_move_arg%%-*}";;
+		esac
 	done
 
-	eval sx_var_rw_chk "${__sx_var_move_chk}" || return
+	eval sx_var_rw_chk "${__sx_var_move_chk}" || {
+		set -- "${?}"
+		unset __sx_var_move_chk __sx_var_move_arg
+		return "${1}"
+	}
 
 	__sx_var_copy "${@}"
 	eval sx_var_unset "${__sx_var_move_chk}"
@@ -1002,11 +1013,10 @@ __sx_var_move() {
 	__sx_var_copy "${@}"
 
 	for __sx_var_move_arg_ in "${@}"; do
-		if sx_str_has "${__sx_var_move_arg_}" =; then
-			__sx_var_unset "${__sx_var_move_arg_##*=}"
-		else
-			__sx_var_unset "${__sx_var_move_arg_%%-*}"
-		fi
+		case "${__sx_var_move_arg_}" in
+			*=*) __sx_var_unset "${__sx_var_move_arg_##*=}";;
+			*) __sx_var_unset "${__sx_var_move_arg_%%-*}";;
+		esac
 	done
 
 	unset __sx_var_move_arg_
@@ -1052,16 +1062,20 @@ sx_var_set() {
 	__sx_var_set_chk=
 
 	for __sx_var_set_arg in "${@}"; do
-		__sx_var_set_chk="${__sx_var_set_arg%%=*}=${__sx_var_set_chk}"
+		sx_var_is_name "${__sx_var_set_arg%%=*}" || {
+			unset __sx_var_set_arg __sx_var_set_chk
+			return "${SX_EX_USAGE}"
+		}
+
+		__sx_var_set_chk="${__sx_var_set_chk} ${__sx_var_set_arg%%=*}"
 	done
 
-	sx_call_with_ifs = sx_var_rw_chk "${__sx_var_set_chk}" || {
-		set -- "${?}"
-		unset __sx_var_set_arg __sx_var_set_chk
-		return "${1}"
+	eval sx_var_is_rw_all "${__sx_var_set_chk}" || {
+		unset  __sx_var_set_chk __sx_var_set_arg
+		return "${SX_EX_NOPERM}"
 	}
 
-	unset __sx_var_set_arg __sx_var_set_chk
+	unset  __sx_var_set_chk __sx_var_set_arg
 	__sx_var_set "${@}"
 }
 
@@ -1078,9 +1092,9 @@ __sx_var_set() {
 		__sx_var_set_vn_="${__sx_var_set_arg_%%=*}"
 		__sx_var_unset "${__sx_var_set_vn_%%=*}"
 
-		if ! sx_str_eq "${__sx_var_set_vn_}" "${__sx_var_set_arg_}"; then
-			eval "${__sx_var_set_vn_}="'"${__sx_var_set_arg_#*=}"'
-		fi
+		case "${__sx_var_set_arg_}" in
+			*=*) eval "${__sx_var_set_vn_}="'"${__sx_var_set_arg_#*=}"';;
+		esac
 	done
 
 	unset __sx_var_set_arg_ __sx_var_set_vn_
@@ -1127,13 +1141,8 @@ sx_var_swap() {
 	unset __sx_var_swap_arg __sx_var_swap_tmp __sx_var_swap_out
 
 	__sx_var_is_copyable "${@}" || {
-		case "${?}" in
-			1) set -- "${SX_EX_NOPERM}";;
-			*) set -- "${?}";;
-		esac
-
 		__sx_var_unset __sx_var_swap_arr
-		return "${1}"
+		return "${SX_EX_NOPERM}"
 	}
 
 	__sx_var_copy "${@}"
@@ -1250,7 +1259,438 @@ __sx_var_unset() {
 }
 
 # ========================================
-#  STR (String Checks)
+#  NUM (Numerical Operations)
+# ========================================
+
+### sx_num_is_base_nat0 - 指定された基数で0以上の自然数か確認する
+sx_num_is_base_nat0() {
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_base_nat0 "${@}"
+}
+
+__sx_num_is_base_nat0() {
+	eval "
+		__sx_num_is_base_nat0_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
+		__sx_num_is_base_nat0_char_=\"\${SX_NUM_BASE${1}_CHARS}\"
+	"
+	shift
+
+	for __sx_num_is_base_nat0_arg_ in "${@}"; do
+		case "${__sx_num_is_base_nat0_arg_}" in
+			${__sx_num_is_base_nat0_pfix_}*) ! sx_str_match "${__sx_num_is_base_nat0_arg_#"${__sx_num_is_base_nat0_pfix_}"}" '' '0?*' "*[!${__sx_num_is_base_nat0_char_}]*";;
+			*) ! :;;
+		esac || {
+			unset __sx_num_is_base_nat0_pfix_ __sx_num_is_base_nat0_char_ __sx_num_is_base_nat0_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_base_nat0_arg_ __sx_num_is_base_nat0_pfix_ __sx_num_is_base_nat0_char_
+}
+
+sx_num_is_base_nat1() {
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_base_nat1 "${@}"
+}
+
+### sx_num_is_base_nat1 - 指定された基数で1以上の自然数か確認する
+__sx_num_is_base_nat1() {
+	eval "
+		__sx_num_is_base_nat1_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
+		__sx_num_is_base_nat1_char_=\"\${SX_NUM_BASE${1}_CHARS}\"
+	"
+	shift
+
+	for __sx_num_is_base_nat1_arg_ in "${@}"; do
+		case "${__sx_num_is_base_nat1_arg_}" in
+			${__sx_num_is_base_nat1_pfix_}*) ! sx_str_match "${__sx_num_is_base_nat1_arg_#"${__sx_num_is_base_nat1_pfix_}"}" '' '0*' "*[!${__sx_num_is_base_nat1_char_}]*";;
+			*) ! :;;
+		esac || {
+			unset __sx_num_is_base_nat1_pfix_ __sx_num_is_base_nat1_char_ __sx_num_is_base_nat1_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_base_nat1_arg_ __sx_num_is_base_nat1_pfix_ __sx_num_is_base_nat1_char_
+}
+
+### sx_num_is_base_int - 指定された基数で整数か確認する
+sx_num_is_base_int() {
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_base_int "${@}"
+}
+
+__sx_num_is_base_int() {
+	__sx_num_is_base_int_base_="${1}"
+	shift
+
+	for __sx_num_is_base_int_arg_ in "${@}"; do
+		__sx_num_is_base_nat0 "${__sx_num_is_base_int_base_}" "${__sx_num_is_base_int_arg_#[+-]}" || {
+			unset __sx_num_is_base_int_base_ __sx_num_is_base_int_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_base_int_base_ __sx_num_is_base_int_arg_
+}
+
+### sx_num_is_base_pint - 指定された基数で正の整数（1以上）か確認する
+sx_num_is_base_pint() {
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_base_pint "${@}"
+}
+
+__sx_num_is_base_pint() {
+	__sx_num_is_base_pint_base_="${1}"
+	shift
+
+	for __sx_num_is_base_pint_arg_ in "${@}"; do
+		__sx_num_is_base_nat1 "${__sx_num_is_base_pint_base_}" "${__sx_num_is_base_pint_arg_#+}" || {
+			unset __sx_num_is_base_pint_base_ __sx_num_is_base_pint_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_base_pint_base_ __sx_num_is_base_pint_arg_
+}
+
+### sx_num_is_base_nint - 指定された基数で負の整数（-1以下）か確認する
+sx_num_is_base_nint() {
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_base_nint "${@}"
+}
+
+__sx_num_is_base_nint() {
+	__sx_num_is_base_nint_base_="${1}"
+	shift
+
+	for __sx_num_is_base_nint_arg_ in "${@}"; do
+		case "${__sx_num_is_base_nint_arg_}" in
+			-*) __sx_num_is_base_nat1 "${__sx_num_is_base_nint_base_}" "${__sx_num_is_base_nint_arg_#-}";;
+			*) ! :;;
+			esac || {
+				unset __sx_num_is_base_nint_base_ __sx_num_is_base_nint_arg_
+				return 1
+			}
+	done
+
+	unset __sx_num_is_base_nint_base_ __sx_num_is_base_nint_arg_
+}
+
+### sx_num_is_base_nnint - 指定された基数で非負整数（0以上）か確認する
+sx_num_is_base_nnint() {
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_base_nnint "${@}"
+}
+
+__sx_num_is_base_nnint() {
+	__sx_num_is_base_nnint_base_="${1}"
+	shift
+
+	for __sx_num_is_base_nnint_arg_ in "${@}"; do
+		case "${__sx_num_is_base_nnint_arg_}" in
+			0 | +0 | -0) continue;;
+		esac
+
+		__sx_num_is_base_pint "${__sx_num_is_base_nnint_base_}" "${__sx_num_is_base_nnint_arg_}" || {
+			unset __sx_num_is_base_nnint_base_ __sx_num_is_base_nnint_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_base_nnint_base_ __sx_num_is_base_nnint_arg_
+}
+
+### sx_num_is_base_npint - 指定された基数で非正整数（0以下）か確認する
+sx_num_is_base_npint() {
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+	__sx_num_is_base_npint "${@}"
+}
+
+__sx_num_is_base_npint() {
+	__sx_num_is_base_npint_base_="${1}"
+	shift
+
+	for __sx_num_is_base_npint_arg_ in "${@}"; do
+		case "${__sx_num_is_base_npint_arg_}" in
+			0 | +0 | -0) continue;;
+		esac
+
+		__sx_num_is_base_nint "${__sx_num_is_base_npint_base_}" "${__sx_num_is_base_npint_arg_}" || {
+			unset __sx_num_is_base_npint_base_ __sx_num_is_base_npint_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_base_npint_base_ __sx_num_is_base_npint_arg_
+}
+
+### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
+##
+## 使い方:
+##   sx_num_is_nat0 [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて 0 以上の自然数である (SX_EX_OK)
+##    1  自然数ではない値が含まれる
+sx_num_is_nat0() {
+	for __sx_num_is_nat0_arg in "${@}"; do
+		case "${__sx_num_is_nat0_arg}" in
+			0[xX]*) __sx_num_is_base_nat0 16 "${__sx_num_is_nat0_arg}";;
+			*) __sx_num_is_base_nat0 10 "${__sx_num_is_nat0_arg}";;
+		esac || {
+			unset __sx_num_is_nat0_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nat0_arg
+}
+
+### sx_num_is_nat1 - すべての引数が 1 以上の自然数（符号なし整数） であるか確認する
+##
+## 使い方:
+##   sx_num_is_nat1 [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて 1 以上の自然数である (SX_EX_OK)
+##    1  1 以上の自然数ではない値が含まれる
+sx_num_is_nat1() {
+	for __sx_num_is_nat1_arg in "${@}"; do
+		case "${__sx_num_is_nat1_arg}" in
+			0[xX]*) __sx_num_is_base_nat1 16 "${__sx_num_is_nat1_arg}";;
+			*) __sx_num_is_base_nat1 10 "${__sx_num_is_nat1_arg}";;
+		esac || {
+			unset __sx_num_is_nat1_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nat1_arg
+}
+
+### sx_num_is_int - すべての引数が整数であるか確認する
+##
+## 使い方:
+##   sx_num_is_int [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   任意で符号（+ または -）を持つ整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて整数である (SX_EX_OK)
+##    1  整数ではない値が含まれる
+sx_num_is_int() {
+	for __sx_num_is_int_arg in "${@}"; do
+		sx_num_is_nat0 "${__sx_num_is_int_arg#[+-]}" || {
+			unset __sx_num_is_int_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_int_arg
+}
+
+### sx_num_is_pint - すべての引数が正の整数であるか確認する
+##
+## 使い方:
+##   sx_num_is_pint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   任意で正の符号（+）を持つ、1 以上の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて正の整数である (SX_EX_OK)
+##    1  正の整数ではない値が含まれる
+sx_num_is_pint() {
+	for __sx_num_is_pint_arg in "${@}"; do
+		sx_num_is_nat1 "${__sx_num_is_pint_arg#+}" || {
+			unset __sx_num_is_pint_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_pint_arg
+}
+
+### sx_num_is_nint - すべての引数が負の整数であるか確認する
+##
+## 使い方:
+##   sx_num_is_nint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   負の符号（-）を必須で持ち、-1 以下の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて負の整数である (SX_EX_OK)
+##    1  負の整数ではない値が含まれる
+sx_num_is_nint() {
+	for __sx_num_is_nint_arg in "${@}"; do
+		case "${__sx_num_is_nint_arg}" in
+			-*) sx_num_is_nat1 "${__sx_num_is_nint_arg#-}";;
+			*) ! :;;
+		esac || {
+			unset __sx_num_is_nint_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nint_arg
+}
+
+### sx_num_is_nnint - すべての引数が非負整数（0以上の整数）であるか確認する
+##
+## 使い方:
+##   sx_num_is_nnint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   0（+0, -0 を含む）または正の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて非負整数である (SX_EX_OK)
+##    1  非負整数ではない値が含まれる
+sx_num_is_nnint() {
+	for __sx_num_is_nnint_arg in "${@}"; do
+		case "${__sx_num_is_nnint_arg}" in
+			0 | +0 | -0) continue;;
+		esac
+
+		sx_num_is_pint "${__sx_num_is_nnint_arg}" || {
+			unset __sx_num_is_nnint_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nnint_arg
+}
+
+### sx_num_is_npint - すべての引数が非正整数（0以下の整数）であるか確認する
+##
+## 使い方:
+##   sx_num_is_npint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   0（+0, -0 を含む）または負の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて非正整数である (SX_EX_OK)
+##    1  非正整数ではない値が含まれる
+sx_num_is_npint() {
+	for __sx_num_is_npint_arg in "${@}"; do
+		case "${__sx_num_is_npint_arg}" in
+			0 | +0 | -0) continue;;
+		esac
+
+		sx_num_is_nint "${__sx_num_is_npint_arg}" || {
+			unset __sx_num_is_npint_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_npint_arg
+}
+
+### sx_num_is_le - 引数が昇順（等号を含む）に並んでいるか確認する
+##
+## 使い方:
+##   sx_num_is_le [数値1 [数値2 ...]]
+##
+## 終了ステータス:
+##    0  数値1 <= 数値2 <= ... である (SX_EX_OK)
+##    1  条件を満たさない、または数値でない引数が含まれる
+sx_num_is_le() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_le "${@}" || return; return 0;; esac
+
+	sx_num_is_int "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_num_is_le "${@}" || return
+}
+
+__sx_num_is_le() {
+	while sx_str_eq "${2+X}" X; do
+		sx_str_eq "$((${1} <= ${2}))" 1 || return 1
+
+		shift
+	done
+}
+
+### sx_num_is_lt - 引数が厳密な昇順に並んでいるか確認する
+##
+## 使い方:
+##   sx_num_is_lt [数値1 [数値2 ...]]
+##
+## 終了ステータス:
+##    0  数値1 < 数値2 < ... である (SX_EX_OK)
+##    1  条件を満たさない、または数値でない引数が含まれる
+sx_num_is_lt() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_lt "${@}" || return; return 0;; esac
+
+	sx_num_is_int "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_num_is_lt "${@}" || return
+}
+
+__sx_num_is_lt() {
+	while sx_str_eq "${2+X}" X; do
+		sx_str_eq "$((${1} < ${2}))" 1 || return 1
+
+		shift
+	done
+}
+
+sx_num_is_eq() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_eq "${@}" || return; return 0;; esac
+
+	sx_num_is_int "${@}" || return "${SX_EX_USAGE}"
+	__sx_num_is_eq "${@}" || return
+}
+
+__sx_num_is_eq() {
+	while sx_str_eq "${2+X}" X; do
+		sx_str_eq "$((${1} == ${2}))" 1 || return 1
+
+		shift
+	done
+}
+
+# ========================================
+#  UUID (UUID Operations)
+# ========================================
+
+### sx_uuid_is_uuid - すべての引数が UUID 形式であるか確認する
+##
+## 使い方:
+##   sx_uuid_is_uuid [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   引数で指定されたすべての文字列が、標準的な UUID 形式（8-4-4-4-12 の 16 進数）
+##   であるかを確認する。大文字と小文字は区別しない。
+##
+## 終了ステータス:
+##    0  すべて UUID 形式である (SX_EX_OK)
+##    1  UUID 形式ではない文字列が含まれる
+sx_uuid_is_uuid() {
+	for __sx_uuid_is_uuid_arg in "${@}"; do
+		case "${__sx_uuid_is_uuid_arg}" in
+			[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) ;;
+			*)
+				unset __sx_uuid_is_uuid_arg
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_uuid_is_uuid_arg
+}
+
+# ========================================
+#  STR (String Operations)
 # ========================================
 
 ### sx_str_any - 第一引数が、後続引数のいずれかの文字列と完全に一致するか確認する
@@ -1280,6 +1720,91 @@ sx_str_any() {
 
 	unset __sx_str_any_tgt __sx_str_any_arg
 	return 1
+}
+
+### sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する
+##
+## 使い方:
+##   sx_str_chunk 結果変数名 [文字列 [長さ [分割回数]]]
+##
+## 説明:
+##   指定された文字列を、指定された長さ（文字数）ごとに区切り、
+##   各要素をシングルクォートで囲み、スペース区切りで結合した文字列として結果変数に格納する。
+##   長さが正の場合は前方から、負の場合は後方から区切る。
+##   分割回数が指定された場合、最大でその回数分だけ分割を行う。
+##   長さが 0 または省略された場合は、エラー (SX_EX_USAGE) となる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
+sx_str_chunk() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+	{ sx_num_is_int "${3-1}" && ! __sx_num_is_eq "${3-1}" 0 && sx_num_is_nat0 "${4-${SX_NUM_I32_MAX}}"; } || return "${SX_EX_USAGE}"
+
+	__sx_str_chunk "${@}"
+}
+
+### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
+##
+## 使い方:
+##   __sx_str_chunk 結果変数名 [文字列 [長さ [分割回数]]]
+##
+## 説明:
+##   sx_str_chunk の内部実装。
+##   引数チェックは行わない。
+__sx_str_chunk() {
+	__sx_str_chunk_res_="${1}"
+	__sx_str_chunk_str_="${2-}"
+	__sx_str_chunk_len_="$((${3-1}))"
+	__sx_str_chunk_lim_="$((${4-${SX_NUM_I32_MAX}}))"
+	__sx_str_chunk_out_=
+
+	if __sx_num_is_lt 0 "${__sx_str_chunk_len_}"; then
+		# Forward
+		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
+
+		while
+			__sx_num_is_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
+			! sx_str_eq "${__sx_str_chunk_lim_}" 0
+		do
+			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
+			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"
+			__sx_str_chunk_out_="${__sx_str_chunk_out_} ${__sx_str_chunk_esc_}"
+			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
+			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
+		done
+
+		if ! sx_str_eq "${__sx_str_chunk_str_}" ''; then
+			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_}"
+			__sx_str_chunk_out_="${__sx_str_chunk_out_} ${__sx_str_chunk_esc_}"
+		fi
+	else
+		# Backward
+		__sx_str_chunk_len_=$((__sx_str_chunk_len_ * -1))
+		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
+
+		while
+			__sx_num_is_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
+			! sx_str_eq "${__sx_str_chunk_lim_}" 0
+		do
+			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
+			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_#${__sx_str_chunk_next_}}"
+			__sx_str_chunk_out_=" ${__sx_str_chunk_esc_}${__sx_str_chunk_out_}"
+			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
+			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
+		done
+
+		if ! sx_str_eq "${__sx_str_chunk_str_}" ''; then
+			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_}"
+			__sx_str_chunk_out_=" ${__sx_str_chunk_esc_}${__sx_str_chunk_out_}"
+		fi
+	fi
+
+	__sx_var_set "${__sx_str_chunk_res_}=${__sx_str_chunk_out_# }"
+	unset __sx_str_chunk_res_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_next_
 }
 
 ### sx_str_eq - すべての引数が文字列として一致するか確認する
@@ -1371,6 +1896,69 @@ sx_str_has() {
 	return 1
 }
 
+### sx_str_is_hex - すべての引数が数字のみで構成されている（空でない）か確認する
+##
+## 使い方:
+##   sx_str_is_hex [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて数字のみで構成されている (SX_EX_OK)
+##    1  数字以外が含まれる、または空文字列が含まれる
+sx_str_is_hex() {
+	for __sx_str_is_hex_arg in "${@}"; do
+		case "${__sx_str_is_hex_arg}" in
+			'' | *[!0-9A-Fa-f]*)
+				unset __sx_str_is_hex_arg
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_str_is_hex_arg
+}
+
+### sx_str_is_num - すべての引数が数字のみで構成されている（空でない）か確認する
+##
+## 使い方:
+##   sx_str_is_num [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて数字のみで構成されている (SX_EX_OK)
+##    1  数字以外が含まれる、または空文字列が含まれる
+sx_str_is_num() {
+	for __sx_str_is_num_arg in "${@}"; do
+		case "${__sx_str_is_num_arg}" in
+			'' | *[!0-9]*)
+				unset __sx_str_is_num_arg
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_str_is_num_arg
+}
+
+### sx_str_is_oct - すべての引数が8進数（0-7）のみで構成されている（空でない）か確認する
+##
+## 使い方:
+##   sx_str_is_oct [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて8進数のみで構成されている (SX_EX_OK)
+##    1  8進数以外が含まれる、または空文字列が含まれる
+sx_str_is_oct() {
+	for __sx_str_is_oct_arg in "${@}"; do
+		case "${__sx_str_is_oct_arg}" in
+			'' | *[!0-7]*)
+				unset __sx_str_is_oct_arg
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_str_is_oct_arg
+}
+
 ### sx_str_match - 第一引数が、後続引数のいずれかのパターンにマッチするか確認する
 ##
 ## 使い方:
@@ -1402,396 +1990,6 @@ sx_str_match() {
 	return 1
 }
 
-### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
-##
-## 使い方:
-##   sx_str_sw [検索対象文字列 [開始文字列1 [開始文字列2 ...]]]
-##
-## 挙動:
-## - 検索対象文字列が省略された場合は空文字列とみなす
-## - 開始文字列は 0 個以上指定できる
-## - 第二引数以降のいずれかが検索対象文字列の接頭辞であれば成功する
-## - 開始文字列が 1 つも指定されなかった場合は失敗する
-## - 開始文字列に空文字列が含まれる場合は常に成功する
-##
-## 終了ステータス:
-##    0  いずれかの開始文字列で始まっている (SX_EX_OK)
-##    1  一致する開始文字列がない
-sx_str_sw() {
-	__sx_str_sw_tgt="${1-}"
-	shift "$((0 < $#))"
-
-	for __sx_str_sw_arg in "${@}"; do
-		case "${__sx_str_sw_tgt}" in
-			"${__sx_str_sw_arg}"*)
-				unset __sx_str_sw_tgt __sx_str_sw_arg
-				return "${SX_EX_OK}"
-				;;
-		esac
-	done
-
-	unset __sx_str_sw_tgt __sx_str_sw_arg
-	return 1
-}
-
-# ========================================
-#  NUM (Numerical Operations)
-# ========================================
-
-### sx_num_is_digit - すべての引数が数字のみで構成されている（空でない）か確認する
-##
-## 使い方:
-##   sx_num_is_digit [文字列1 [文字列2 ...]]
-##
-## 終了ステータス:
-##    0  すべて数字のみで構成されている (SX_EX_OK)
-##    1  数字以外が含まれる、または空文字列が含まれる
-sx_num_is_digit() {
-	for __sx_num_is_digit_arg in "${@}"; do
-		case "${__sx_num_is_digit_arg}" in
-			'' | *[!0-9]*)
-				unset __sx_num_is_digit_arg
-				return 1
-				;;
-		esac
-	done
-
-	unset __sx_num_is_digit_arg
-}
-
-### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
-##
-## 使い方:
-##   sx_num_is_nat0 [文字列1 [文字列2 ...]]
-##
-## 終了ステータス:
-##    0  すべて 0 以上の自然数である (SX_EX_OK)
-##    1  自然数ではない値が含まれる
-sx_num_is_nat0() {
-	sx_num_is_digit "${@}" || return 1
-
-	for __sx_num_is_nat0_arg in "${@}"; do
-		case "${__sx_num_is_nat0_arg}" in
-			0?*)
-				unset __sx_num_is_nat0_arg
-				return 1
-				;;
-		esac
-	done
-
-	unset __sx_num_is_nat0_arg
-}
-
-### sx_num_is_nat1 - すべての引数が 1 以上の自然数（符号なし整数） であるか確認する
-##
-## 使い方:
-##   sx_num_is_nat1 [文字列1 [文字列2 ...]]
-##
-## 終了ステータス:
-##    0  すべて 1 以上の自然数である (SX_EX_OK)
-##    1  1 以上の自然数ではない値が含まれる
-sx_num_is_nat1() {
-	sx_num_is_digit "${@}" || return 1
-
-	for __sx_num_is_nat1_arg in "${@}"; do
-		case "${__sx_num_is_nat1_arg}" in
-			0*)
-				unset __sx_num_is_nat1_arg
-				return 1
-				;;
-		esac
-	done
-
-	unset __sx_num_is_nat1_arg
-}
-
-### sx_num_is_int - すべての引数が整数であるか確認する
-##
-## 使い方:
-##   sx_num_is_int [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   任意で符号（+ または -）を持つ整数であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて整数である (SX_EX_OK)
-##    1  整数ではない値が含まれる
-sx_num_is_int() {
-	for __sx_num_is_int_arg in "${@}"; do
-		if ! sx_num_is_nat0 "${__sx_num_is_int_arg#[+-]}"; then
-			unset __sx_num_is_int_arg
-			return 1
-		fi
-	done
-
-	unset __sx_num_is_int_arg
-}
-
-### sx_num_is_pint - すべての引数が正の整数であるか確認する
-##
-## 使い方:
-##   sx_num_is_pint [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   任意で正の符号（+）を持つ、1 以上の整数であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて正の整数である (SX_EX_OK)
-##    1  正の整数ではない値が含まれる
-sx_num_is_pint() {
-	for __sx_num_is_pint_arg in "${@}"; do
-		if ! sx_num_is_nat1 "${__sx_num_is_pint_arg#+}"; then
-			unset __sx_num_is_pint_arg
-			return 1
-		fi
-	done
-
-	unset __sx_num_is_pint_arg
-}
-
-### sx_num_is_nint - すべての引数が負の整数であるか確認する
-##
-## 使い方:
-##   sx_num_is_nint [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   負の符号（-）を必須で持ち、-1 以下の整数であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて負の整数である (SX_EX_OK)
-##    1  負の整数ではない値が含まれる
-sx_num_is_nint() {
-	for __sx_num_is_nint_arg in "${@}"; do
-		if
-			! sx_str_sw "${__sx_num_is_nint_arg}" - ||
-			! sx_num_is_nat1 "${__sx_num_is_nint_arg#-}"
-		then
-			unset __sx_num_is_nint_arg
-			return 1
-		fi
-	done
-
-	unset __sx_num_is_nint_arg
-}
-
-### sx_num_is_nnint - すべての引数が非負整数（0以上の整数）であるか確認する
-##
-## 使い方:
-##   sx_num_is_nnint [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   0（+0, -0 を含む）または正の整数であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて非負整数である (SX_EX_OK)
-##    1  非負整数ではない値が含まれる
-sx_num_is_nnint() {
-	for __sx_num_is_nnint_arg in "${@}"; do
-		if
-			! sx_str_any "${__sx_num_is_nnint_arg}" 0 +0 -0 &&
-			! sx_num_is_pint "${__sx_num_is_nnint_arg}"
-		then
-			unset __sx_num_is_nnint_arg
-			return 1
-		fi
-	done
-
-	unset __sx_num_is_nnint_arg
-}
-
-### sx_num_is_npint - すべての引数が非正整数（0以下の整数）であるか確認する
-##
-## 使い方:
-##   sx_num_is_npint [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   0（+0, -0 を含む）または負の整数であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて非正整数である (SX_EX_OK)
-##    1  非正整数ではない値が含まれる
-sx_num_is_npint() {
-	for __sx_num_is_npint_arg in "${@}"; do
-		if
-			! sx_str_any "${__sx_num_is_npint_arg}" 0 +0 -0 &&
-			! sx_num_is_nint "${__sx_num_is_npint_arg}"
-		then
-			unset __sx_num_is_npint_arg
-			return 1
-		fi
-	done
-
-	unset __sx_num_is_npint_arg
-}
-
-### sx_num_is_le - 引数が昇順（等号を含む）に並んでいるか確認する
-##
-## 使い方:
-##   sx_num_is_le [数値1 [数値2 ...]]
-##
-## 終了ステータス:
-##    0  数値1 <= 数値2 <= ... である (SX_EX_OK)
-##    1  条件を満たさない、または数値でない引数が含まれる
-sx_num_is_le() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_le "${@}" || return; return 0;; esac
-
-	sx_num_is_int "${@}" || return 1
-
-	__sx_num_is_le "${@}" || return
-}
-
-__sx_num_is_le() {
-	while sx_str_eq "${2+X}" X; do
-		sx_str_eq "$((${1} <= ${2}))" 1 || return 1
-
-		shift
-	done
-}
-
-### sx_num_is_lt - 引数が厳密な昇順に並んでいるか確認する
-##
-## 使い方:
-##   sx_num_is_lt [数値1 [数値2 ...]]
-##
-## 終了ステータス:
-##    0  数値1 < 数値2 < ... である (SX_EX_OK)
-##    1  条件を満たさない、または数値でない引数が含まれる
-sx_num_is_lt() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_lt "${@}" || return; return 0;; esac
-
-	sx_num_is_int "${@}" || return 1
-
-	__sx_num_is_lt "${@}" || return
-}
-
-__sx_num_is_lt() {
-	while sx_str_eq "${2+X}" X; do
-		sx_str_eq "$((${1} < ${2}))" 1 || return 1
-
-		shift
-	done
-}
-
-# ========================================
-#  UUID (UUID Operations)
-# ========================================
-
-### sx_uuid_is_uuid - すべての引数が UUID 形式であるか確認する
-##
-## 使い方:
-##   sx_uuid_is_uuid [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   引数で指定されたすべての文字列が、標準的な UUID 形式（8-4-4-4-12 の 16 進数）
-##   であるかを確認する。大文字と小文字は区別しない。
-##
-## 終了ステータス:
-##    0  すべて UUID 形式である (SX_EX_OK)
-##    1  UUID 形式ではない文字列が含まれる
-sx_uuid_is_uuid() {
-	for __sx_uuid_is_uuid_arg in "${@}"; do
-		case "${__sx_uuid_is_uuid_arg}" in
-			[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) ;;
-			*)
-				unset __sx_uuid_is_uuid_arg
-				return 1
-				;;
-		esac
-	done
-
-	unset __sx_uuid_is_uuid_arg
-}
-
-# ========================================
-#  STR (String Operations)
-# ========================================
-
-### sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する
-##
-## 使い方:
-##   sx_str_chunk 結果変数名 [文字列 [長さ [分割回数]]]
-##
-## 説明:
-##   指定された文字列を、指定された長さ（文字数）ごとに区切り、
-##   各要素をシングルクォートで囲み、スペース区切りで結合した文字列として結果変数に格納する。
-##   長さが正の場合は前方から、負の場合は後方から区切る。
-##   分割回数が指定された場合、最大でその回数分だけ分割を行う。
-##   長さが 0 または省略された場合は、エラー (SX_EX_USAGE) となる。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  変数が読み取り専用 (SX_EX_NOPERM)
-sx_str_chunk() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" || return
-	{ sx_num_is_int "${3-0}" && ! sx_str_eq "${3-0}" 0; } || return "${SX_EX_USAGE}"
-	sx_num_is_nat0 "${4-${SX_NUM_I32_MAX}}" || return "${SX_EX_USAGE}"
-
-	__sx_str_chunk "${@}"
-}
-
-### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
-##
-## 使い方:
-##   __sx_str_chunk 結果変数名 [文字列 [長さ [分割回数]]]
-##
-## 説明:
-##   sx_str_chunk の内部実装。
-##   引数チェックは行わない。
-__sx_str_chunk() {
-	__sx_str_chunk_res_="${1}"
-	__sx_str_chunk_str_="${2-}"
-	__sx_str_chunk_len_="${3-1}"
-	__sx_str_chunk_lim_="${4-${SX_NUM_I32_MAX}}"
-	__sx_str_chunk_out_=
-
-	if __sx_num_is_lt 0 "${__sx_str_chunk_len_}"; then
-		# Forward
-		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
-
-		while
-			__sx_num_is_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
-			! sx_str_eq "${__sx_str_chunk_lim_}" 0
-		do
-			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"
-			__sx_str_chunk_out_="${__sx_str_chunk_out_} ${__sx_str_chunk_esc_}"
-			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
-			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
-		done
-
-		if ! sx_str_eq "${__sx_str_chunk_str_}" ''; then
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_}"
-			__sx_str_chunk_out_="${__sx_str_chunk_out_} ${__sx_str_chunk_esc_}"
-		fi
-	else
-		# Backward
-		__sx_str_chunk_len_=$((__sx_str_chunk_len_ * -1))
-		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
-
-		while
-			__sx_num_is_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
-			! sx_str_eq "${__sx_str_chunk_lim_}" 0
-		do
-			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_#${__sx_str_chunk_next_}}"
-			__sx_str_chunk_out_=" ${__sx_str_chunk_esc_}${__sx_str_chunk_out_}"
-			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
-			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
-		done
-
-		if ! sx_str_eq "${__sx_str_chunk_str_}" ''; then
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_}"
-			__sx_str_chunk_out_=" ${__sx_str_chunk_esc_}${__sx_str_chunk_out_}"
-		fi
-	fi
-
-	__sx_var_set "${__sx_str_chunk_res_}=${__sx_str_chunk_out_# }"
-	unset __sx_str_chunk_res_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_next_
-}
-
 ### sx_str_rep - 文字列を繰り返す
 ##
 ## 使い方:
@@ -1809,7 +2007,6 @@ sx_str_rep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-
 	sx_num_is_nat0 "${3-1}" || return "${SX_EX_USAGE}"
 
 	__sx_str_rep "${@}"
@@ -1824,7 +2021,7 @@ sx_str_rep() {
 ##   sx_str_rep の内部実装。
 ##   引数チェックは行わない。
 __sx_str_rep() {
-	set -- "${1}" "${2-}" "${3-1}"
+	set -- "${1}" "${2-}" "$((${3-1}))"
 	__sx_str_rep_out_=
 
 	while ! sx_str_eq "${3}" 0; do
@@ -1836,7 +2033,6 @@ __sx_str_rep() {
 	done
 
 	__sx_var_set "${1}=${__sx_str_rep_out_}"
-
 	unset __sx_str_rep_out_
 }
 
@@ -1878,7 +2074,7 @@ __sx_str_split() {
 	__sx_str_split_res_="${1}"
 	__sx_str_split_str_="${2-}"
 	__sx_str_split_sep_="${3-}"
-	__sx_str_split_lim_="${4-${SX_NUM_I32_MAX}}"
+	__sx_str_split_lim_="$((${4-${SX_NUM_I32_MAX}}))"
 	__sx_str_split_out_=
 
 	if sx_str_eq "${__sx_str_split_sep_}" ''; then
@@ -1978,7 +2174,7 @@ __sx_str_sub() {
 	__sx_str_sub_str_="${2-}"
 	__sx_str_sub_pat_="${3-}"
 	__sx_str_sub_rep_="${4-}"
-	__sx_str_sub_lim_="${5-${SX_NUM_I32_MAX}}"
+	__sx_str_sub_lim_="$((${5-${SX_NUM_I32_MAX}}))"
 	__sx_str_sub_out_=
 
 	# パターンが空の場合は、文字間および両端に挿入（回数制限に従う）
@@ -2086,8 +2282,8 @@ sx_str_substr() {
 __sx_str_substr() {
 	__sx_str_substr_res_="${1}"
 	__sx_str_substr_str_="${2-}"
-	__sx_str_substr_off_="${3-0}"
-	__sx_str_substr_len_="${4-${SX_NUM_I32_MAX}}"
+	__sx_str_substr_off_="$((${3-0}))"
+	__sx_str_substr_len_="$((${4-${SX_NUM_I32_MAX}}))"
 	__sx_str_substr_total_="${#__sx_str_substr_str_}"
 
 	# オフセットの正規化 (負数は末尾から)
@@ -2120,8 +2316,39 @@ __sx_str_substr() {
 	fi
 
 	__sx_var_set "${__sx_str_substr_res_}=${__sx_str_substr_str_}"
-
 	unset __sx_str_substr_res_ __sx_str_substr_str_ __sx_str_substr_off_ __sx_str_substr_len_ __sx_str_substr_total_ __sx_str_substr_drop_ __sx_str_substr_qm_
+}
+
+### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
+##
+## 使い方:
+##   sx_str_sw [検索対象文字列 [開始文字列1 [開始文字列2 ...]]]
+##
+## 挙動:
+## - 検索対象文字列が省略された場合は空文字列とみなす
+## - 開始文字列は 0 個以上指定できる
+## - 第二引数以降のいずれかが検索対象文字列の接頭辞であれば成功する
+## - 開始文字列が 1 つも指定されなかった場合は失敗する
+## - 開始文字列に空文字列が含まれる場合は常に成功する
+##
+## 終了ステータス:
+##    0  いずれかの開始文字列で始まっている (SX_EX_OK)
+##    1  一致する開始文字列がない
+sx_str_sw() {
+	__sx_str_sw_tgt="${1-}"
+	shift "$((0 < $#))"
+
+	for __sx_str_sw_arg in "${@}"; do
+		case "${__sx_str_sw_tgt}" in
+			"${__sx_str_sw_arg}"*)
+				unset __sx_str_sw_tgt __sx_str_sw_arg
+				return "${SX_EX_OK}"
+				;;
+		esac
+	done
+
+	unset __sx_str_sw_tgt __sx_str_sw_arg
+	return 1
 }
 
 # ========================================
@@ -2189,10 +2416,10 @@ sx_arr_is_rw() {
 	__sx_arr_is_rw_name="${1}"
 	shift
 
-	if ! sx_num_is_nat0 "${@}"; then
+	sx_num_is_nat0 "${@}" || {
 		unset __sx_arr_is_rw_name
 		return "${SX_EX_USAGE}"
-	fi
+	}
 
 	set -- "${__sx_arr_is_rw_name}" "${@}"
 	unset __sx_arr_is_rw_name
