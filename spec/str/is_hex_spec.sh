@@ -38,12 +38,22 @@ Describe 'sx_str_is_hex'
     The status should be failure
   End
 
+  It 'スペースが含まれる場合、失敗を返すこと'
+    When call sx_str_is_hex " abc"
+    The status should be failure
+  End
+
+  It '改行が含まれる場合、失敗を返すこと'
+    When call sx_str_is_hex "ab${SX_CHAR_LF}cd"
+    The status should be failure
+  End
+
   It 'いずれかの引数が 16 進数でない場合、失敗を返すこと'
     When call sx_str_is_hex "abc" "xyz" "123"
     The status should be failure
   End
 
-  It '引数がない場合、成功を返すこと（sx_num_is_digit との一貫性）'
+  It '引数がない場合、成功を返すこと'
     When call sx_str_is_hex
     The status should be success
   End
