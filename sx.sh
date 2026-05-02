@@ -2880,77 +2880,22 @@ __sx_arr_push() {
 	unset __sx_arr_push_i_ __sx_arr_push_arr_ __sx_arr_push_arg_
 }
 
-### sx_arr_has_idx - 配列に指定されたインデックスが存在するか確認する
+### sx_arr_at - 配列の要素を取得または存在確認する
 ##
 ## 使い方:
-##   sx_arr_has_idx 配列名 [インデックス ...]
+##   sx_arr_at 配列名 [結果変数名=インデックス | インデックス ...]
 ##
 ## 説明:
-##   指定された sx 配列に、引数で指定されたすべてのインデックス（0以上の整数）が
-##   存在するか（0 <= index < length）を確認する。
-##
-## 終了ステータス:
-##    0  すべてのインデックスが存在する (SX_EX_OK)
-##    1  一つ以上のインデックスが範囲外
-##   64  配列名が無効、またはインデックスが数値ではない (SX_EX_USAGE)
-##   65  対象が sx 配列ではない (SX_EX_DATAERR)
-sx_arr_has_idx() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_has_idx "${@}" || return; return 0;; esac
-
-	sx_var_is_arr "${1-}" || case "${?}" in
-		1) return "${SX_EX_DATAERR}";;
-		*) return "${?}";;
-	esac
-
-	__sx_arr_has_idx_name="${1}"
-	shift
-
-	sx_num_is_nat0 "${@}" || {
-		unset __sx_arr_has_idx_name
-		return "${SX_EX_USAGE}"
-	}
-
-	set -- "${__sx_arr_has_idx_name}" "${@}"
-	unset __sx_arr_has_idx_name
-
-	__sx_arr_has_idx "${@}" || return
-}
-
-### __sx_arr_has_idx - 配列に指定されたインデックスが存在するか確認する（内部用）
-##
-## 使い方:
-##   __sx_arr_has_idx 配列名 [インデックス ...]
-##
-## 説明:
-##   sx_arr_has_idx の内部実装。
-##   引数チェックは行わない。
-__sx_arr_has_idx() {
-	eval "__sx_arr_has_idx_len_=\"\${${1}_len:-0}\""
-	shift
-
-	for __sx_arr_has_idx_arg_ in "${@}"; do
-		__sx_num_lt "${__sx_arr_has_idx_arg_}" "${__sx_arr_has_idx_len_}" || {
-			unset __sx_arr_has_idx_len_ __sx_arr_has_idx_arg_
-			return 1
-		}
-	done
-
-	unset __sx_arr_has_idx_len_ __sx_arr_has_idx_arg_
-}
-
-### sx_arr_at - 配列の指定したインデックスの要素を取得する
-##
-## 使い方:
-##   sx_arr_at 配列名 [結果変数名=インデックス ...]
-##
-## 説明:
-##   指定された sx 配列から、指定されたインデックス（0開始）の要素を取得し、
-##   対応する結果変数に格納する。
-##   インデックスが一つでも範囲外の場合は、どの変数にも代入せずエラーを返す。
+##   指定された sx 配列から要素を取得または存在確認を行う。
+##   引数の形式によって挙動が異なる：
+##     1. 結果変数名=インデックス : 指定したインデックスの値を結果変数に格納する。
+##     2. インデックス           : そのインデックスが範囲内にあるか確認のみ行う。
+##   複数の引数を指定した場合、それらすべてが有効なインデックスであれば 0 を返し、
+##   代入も行われる。一つでも範囲外があれば 1 を返し、代入は一切行わない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##    1  インデックスが範囲外
+##    1  一つ以上のインデックスが範囲外
 ##   64  引数不正 (SX_EX_USAGE)
 ##   65  対象が sx 配列ではない (SX_EX_DATAERR)
 ##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
@@ -3003,6 +2948,10 @@ sx_arr_at() {
 	eval set -- "${__sx_arr_at_chk}"
 	unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
 
+	case "${#}" in
+		0) return "${SX_EX_OK}";;
+	esac
+
 	# 2. 書き込み可能性（構造を含む）の一括チェック
 	eval __sx_var_is_copyable "${@}" || {
 		return "${SX_EX_NOPERM}"
@@ -3034,11 +2983,14 @@ __sx_arr_at() {
 			return 1
 		}
 
-
 		case "${__sx_arr_at_pair_}" in *=*)
 			__sx_arr_at_chk_="${__sx_arr_at_chk_} ${__sx_arr_at_arr_}_${__sx_arr_at_i_}-${__sx_arr_at_pair_%%=*}"
 		;; esac
 	done
+
+	case "${__sx_arr_at_chk_}" in
+		'') return "${SX_EX_OK}";;
+	esac
 
 	eval __sx_var_copy "${__sx_arr_at_chk_}"
 	unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
