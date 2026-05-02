@@ -2571,6 +2571,171 @@ sx_str_sw() {
 	return 1
 }
 
+### sx_str_strim - 文字列の先頭から指定された文字セットを削除する
+##
+## 使い方:
+##   sx_str_strim 結果変数名 [文字列 [文字セット]]
+##
+## 説明:
+##   文字列の先頭にある、指定された文字セットに含まれる文字をすべて削除して結果変数に格納する。
+##   文字セットが省略された場合は、SX_STR_SPACE（空白文字すべて）が使用される。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_strim() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_strim "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	__sx_str_strim "${@}"
+}
+
+### __sx_str_strim - 文字列の先頭から指定された文字セットを削除する（内部用）
+##
+## 使い方:
+##   __sx_str_strim 結果変数名 [文字列 [文字セット]]
+##
+## 説明:
+##   sx_str_strim の内部実装。
+##   引数チェックは行わない。
+__sx_str_strim() {
+	__sx_str_strim_res_="${1}"
+	__sx_str_strim_str_="${2-}"
+	__sx_str_strim_set_="${3-${SX_STR_SPACE}}"
+
+	case "${__sx_str_strim_set_}" in
+		'')
+			__sx_var_set "${__sx_str_strim_res_}=${__sx_str_strim_str_}"
+			unset __sx_str_strim_res_ __sx_str_strim_str_ __sx_str_strim_set_
+			return
+			;;
+	esac
+
+	# ] と - を安全な位置に配置換え（正規化）
+	__sx_str_strim_safe_="${__sx_str_strim_set_}"
+	case "${__sx_str_strim_safe_}" in
+		*]* )
+			__sx_str_sub __sx_str_strim_safe_ "${__sx_str_strim_safe_}" "]" ""
+			__sx_str_strim_safe_="]${__sx_str_strim_safe_}"
+			;;
+	esac
+	case "${__sx_str_strim_safe_}" in
+		*-* )
+			__sx_str_sub __sx_str_strim_safe_ "${__sx_str_strim_safe_}" "-" ""
+			__sx_str_strim_safe_="${__sx_str_strim_safe_}-"
+			;;
+	esac
+
+	__sx_str_strim_pre_="${__sx_str_strim_str_%%[!${__sx_str_strim_safe_}]*}"
+	__sx_var_set "${__sx_str_strim_res_}=${__sx_str_strim_str_#"$__sx_str_strim_pre_"}"
+
+	unset __sx_str_strim_res_ __sx_str_strim_str_ __sx_str_strim_set_ __sx_str_strim_safe_ __sx_str_strim_pre_
+}
+
+### sx_str_etrim - 文字列の末尾から指定された文字セットを削除する
+##
+## 使い方:
+##   sx_str_etrim 結果変数名 [文字列 [文字セット]]
+##
+## 説明:
+##   文字列の末尾にある、指定された文字セットに含まれる文字をすべて削除して結果変数に格納する。
+##   文字セットが省略された場合は、SX_STR_SPACE（空白文字すべて）が使用される。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_etrim() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_etrim "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	__sx_str_etrim "${@}"
+}
+
+### __sx_str_etrim - 文字列の末尾から指定された文字セットを削除する（内部用）
+##
+## 使い方:
+##   __sx_str_etrim 結果変数名 [文字列 [文字セット]]
+##
+## 説明:
+##   sx_str_etrim の内部実装。
+##   引数チェックは行わない。
+__sx_str_etrim() {
+	__sx_str_etrim_res_="${1}"
+	__sx_str_etrim_str_="${2-}"
+	__sx_str_etrim_set_="${3-${SX_STR_SPACE}}"
+
+	case "${__sx_str_etrim_set_}" in
+		'')
+			__sx_var_set "${__sx_str_etrim_res_}=${__sx_str_etrim_str_}"
+			unset __sx_str_etrim_res_ __sx_str_etrim_str_ __sx_str_etrim_set_
+			return
+			;;
+	esac
+
+	__sx_str_etrim_safe_="${__sx_str_etrim_set_}"
+	case "${__sx_str_etrim_safe_}" in
+		*]* )
+			__sx_str_sub __sx_str_etrim_safe_ "${__sx_str_etrim_safe_}" "]" ""
+			__sx_str_etrim_safe_="]${__sx_str_etrim_safe_}"
+			;;
+	esac
+	case "${__sx_str_etrim_safe_}" in
+		*-* )
+			__sx_str_sub __sx_str_etrim_safe_ "${__sx_str_etrim_safe_}" "-" ""
+			__sx_str_etrim_safe_="${__sx_str_etrim_safe_}-"
+			;;
+	esac
+
+	__sx_str_etrim_suf_="${__sx_str_etrim_str_##*[!${__sx_str_etrim_safe_}]}"
+	__sx_var_set "${__sx_str_etrim_res_}=${__sx_str_etrim_str_%"$__sx_str_etrim_suf_"}"
+
+	unset __sx_str_etrim_res_ __sx_str_etrim_str_ __sx_str_etrim_set_ __sx_str_etrim_safe_ __sx_str_etrim_suf_
+}
+
+### sx_str_trim - 文字列の前後から指定された文字セットを削除する
+##
+## 使い方:
+##   sx_str_trim 結果変数名 [文字列 [文字セット]]
+##
+## 説明:
+##   文字列の前後にある、指定された文字セットに含まれる文字をすべて削除して結果変数に格納する。
+##   文字セットが省略された場合は、SX_STR_SPACE（空白文字すべて）が使用される。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_trim() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_trim "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	__sx_str_trim "${@}"
+}
+
+### __sx_str_trim - 文字列の前後から指定された文字セットを削除する（内部用）
+##
+## 使い方:
+##   __sx_str_trim 結果変数名 [文字列 [文字セット]]
+##
+## 説明:
+##   sx_str_trim の内部実装。
+##   引数チェックは行わない。
+__sx_str_trim() {
+	__sx_str_trim_res_="${1}"
+	__sx_str_trim_str_="${2-}"
+	__sx_str_trim_set_="${3-${SX_STR_SPACE}}"
+
+	__sx_str_strim __sx_str_trim_tmp_ "${__sx_str_trim_str_}" "${__sx_str_trim_set_}"
+	__sx_str_etrim "${__sx_str_trim_res_}" "${__sx_str_trim_tmp_}" "${__sx_str_trim_set_}"
+
+	unset __sx_str_trim_res_ __sx_str_trim_str_ __sx_str_trim_set_ __sx_str_trim_tmp_
+}
+
 # ========================================
 #  ARR (Array Operations)
 # ========================================
