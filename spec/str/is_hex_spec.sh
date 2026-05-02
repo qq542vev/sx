@@ -44,7 +44,7 @@ Describe 'sx_str_is_hex'
   End
 
   It '改行が含まれる場合、失敗を返すこと'
-    When call sx_str_is_hex "ab${SX_CHAR_LF}cd"
+    When call sx_str_is_hex "ab${SX_STR_LF}cd"
     The status should be failure
   End
 
