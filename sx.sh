@@ -2938,10 +2938,10 @@ __sx_arr_has_idx() {
 	unset __sx_arr_has_idx_len_ __sx_arr_has_idx_arg_
 }
 
-### sx_arr_get - 配列の指定したインデックスの要素を取得する
+### sx_arr_at - 配列の指定したインデックスの要素を取得する
 ##
 ## 使い方:
-##   sx_arr_get 配列名 [結果変数名=インデックス ...]
+##   sx_arr_at 配列名 [結果変数名=インデックス ...]
 ##
 ## 説明:
 ##   指定された sx 配列から、指定されたインデックス（0開始）の要素を取得し、
@@ -2954,8 +2954,8 @@ __sx_arr_has_idx() {
 ##   64  引数不正 (SX_EX_USAGE)
 ##   65  対象が sx 配列ではない (SX_EX_DATAERR)
 ##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
-sx_arr_get() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_get "${@}" || return; return 0;; esac
+sx_arr_at() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_at "${@}" || return; return 0;; esac
 
 	# 1. 配列の妥当性チェック
 	sx_var_is_arr "${1-}" || case "${?}" in
@@ -2963,45 +2963,45 @@ sx_arr_get() {
 		*) return "${?}";;
 	esac
 
-	__sx_arr_get_arr="${1}"
-	eval "__sx_arr_get_len=\"\${${1}_len}\""
+	__sx_arr_at_arr="${1}"
+	eval "__sx_arr_at_len=\"\${${1}_len}\""
 	shift
 
-	__sx_arr_get_chk=
-	for __sx_arr_get_pair in "${@}"; do
-		__sx_arr_get_dest="${__sx_arr_get_pair%%=*}"
-		__sx_arr_get_i="${__sx_arr_get_pair#*=}"
+	__sx_arr_at_chk=
+	for __sx_arr_at_pair in "${@}"; do
+		__sx_arr_at_dest="${__sx_arr_at_pair%%=*}"
+		__sx_arr_at_i="${__sx_arr_at_pair#*=}"
 
-		__sx_num_is_base_nat0 10 "${__sx_arr_get_i}" || {
-			unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_i
+		__sx_num_is_base_nat0 10 "${__sx_arr_at_i}" || {
+			unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
 			return "${SX_EX_USAGE}"
 		}
 
 		# 範囲チェック
-		__sx_num_lt "${__sx_arr_get_i}" "${__sx_arr_get_len}" || __sx_arr_get_err=
+		__sx_num_lt "${__sx_arr_at_i}" "${__sx_arr_at_len}" || __sx_arr_at_err=
 
-		case "${__sx_arr_get_pair}" in *=*)
+		case "${__sx_arr_at_pair}" in *=*)
 			# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
 			if
-				! sx_var_is_name "${__sx_arr_get_dest}" ||
-				sx_str_match "${__sx_arr_get_dest}" "${__sx_arr_get_arr}" "${__sx_arr_get_arr}_*"
+				! sx_var_is_name "${__sx_arr_at_dest}" ||
+				sx_str_match "${__sx_arr_at_dest}" "${__sx_arr_at_arr}" "${__sx_arr_at_arr}_*"
 			then
-				unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_i
+				unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
 				return "${SX_EX_USAGE}"
 			fi
 
 			# コピー連鎖式の構築 (src-dest)
-			__sx_arr_get_chk="${__sx_arr_get_chk} ${__sx_arr_get_arr}_${__sx_arr_get_i}-${__sx_arr_get_dest}"
+			__sx_arr_at_chk="${__sx_arr_at_chk} ${__sx_arr_at_arr}_${__sx_arr_at_i}-${__sx_arr_at_dest}"
 		;; esac
 	done
 
-	case "${__sx_arr_get_err+X}" in X)
-		unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_i __sx_arr_get_err
+	case "${__sx_arr_at_err+X}" in X)
+		unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i __sx_arr_at_err
 		return 1
 	;; esac
 
-	eval set -- "${__sx_arr_get_chk}"
-	unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_i
+	eval set -- "${__sx_arr_at_chk}"
+	unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
 
 	# 2. 書き込み可能性（構造を含む）の一括チェック
 	eval __sx_var_is_copyable "${@}" || {
@@ -3011,35 +3011,35 @@ sx_arr_get() {
 	__sx_var_copy "${@}"
 }
 
-### __sx_arr_get - 配列の要素を取得する（内部用）
+### __sx_arr_at - 配列の要素を取得する（内部用）
 ##
 ## 使い方:
-##   __sx_arr_get 配列名 [結果変数名=インデックス ...]
+##   __sx_arr_at 配列名 [結果変数名=インデックス ...]
 ##
 ## 説明:
-##   sx_arr_get の内部実装。
+##   sx_arr_at の内部実装。
 ##   引数チェックは行わない。
-__sx_arr_get() {
-	__sx_arr_get_chk_=
-	__sx_arr_get_arr_="${1}"
-	eval "__sx_arr_get_len_=\"\${${1}_len}\""
+__sx_arr_at() {
+	__sx_arr_at_chk_=
+	__sx_arr_at_arr_="${1}"
+	eval "__sx_arr_at_len_=\"\${${1}_len}\""
 	shift
 
-	for __sx_arr_get_pair_ in "${@}"; do
-		__sx_arr_get_i_="${__sx_arr_get_pair_#*=}"
+	for __sx_arr_at_pair_ in "${@}"; do
+		__sx_arr_at_i_="${__sx_arr_at_pair_#*=}"
 
 		# 範囲チェック
-		__sx_num_lt "${__sx_arr_get_i_}" "${__sx_arr_get_len_}" || {
-			unset __sx_arr_get_chk_ __sx_arr_get_arr_ __sx_arr_get_len_ __sx_arr_get_pair_ __sx_arr_get_i_
+		__sx_num_lt "${__sx_arr_at_i_}" "${__sx_arr_at_len_}" || {
+			unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
 			return 1
 		}
 
 
-		case "${__sx_arr_get_pair_}" in *=*)
-			__sx_arr_get_chk_="${__sx_arr_get_chk_} ${__sx_arr_get_arr_}_${__sx_arr_get_i_}-${__sx_arr_get_pair_%%=*}"
+		case "${__sx_arr_at_pair_}" in *=*)
+			__sx_arr_at_chk_="${__sx_arr_at_chk_} ${__sx_arr_at_arr_}_${__sx_arr_at_i_}-${__sx_arr_at_pair_%%=*}"
 		;; esac
 	done
 
-	eval __sx_var_copy "${__sx_arr_get_chk_}"
-	unset __sx_arr_get_chk_ __sx_arr_get_arr_ __sx_arr_get_len_ __sx_arr_get_pair_ __sx_arr_get_i_
+	eval __sx_var_copy "${__sx_arr_at_chk_}"
+	unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
 }

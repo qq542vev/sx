@@ -62,5 +62,4 @@ ar	gen	sx_arr_gen	Active
 ar	irw	sx_arr_is_rw	Active
 ar	pop	sx_arr_pop	Active
 ar	psh	sx_arr_push	Active
-ar	hidx	sx_arr_has_idx	Active
-ar	get	sx_arr_get	Active
+ar	at	sx_arr_at	Active
