@@ -1,102 +1,66 @@
-__sx_arg_join
-__sx_arg_norm
-__sx_arg_quote
-__sx_arg_rquote
-__sx_arr_gen
-__sx_arr_get
-__sx_arr_has_idx
-__sx_arr_is_rw
-__sx_arr_pop
-__sx_arr_push
-__sx_call_with_ifs
-__sx_num_eq
-__sx_num_is_base_int
-__sx_num_is_base_nint
-__sx_num_is_base_nnint
-__sx_num_is_base_npint
-__sx_num_is_base_pint
-__sx_num_le
-__sx_num_lt
-__sx_str_chunk
-__sx_str_rep
-__sx_str_split
-__sx_str_sub
-__sx_str_substr
-__sx_var_copy
-__sx_var_has_val
-__sx_var_is_arr
-__sx_var_is_copyable
-__sx_var_is_empty
-__sx_var_is_ro
-__sx_var_is_rw
-__sx_var_is_rw_all
-__sx_var_is_set
-__sx_var_list_copy
-__sx_var_list_dep
-__sx_var_list_ro
-__sx_var_list_set
-__sx_var_move
-__sx_var_set
-__sx_var_swap
-__sx_var_touch
-__sx_var_unset
-sx_arg_join
-sx_arg_quote
-sx_arg_rquote
-sx_arr_gen
-sx_arr_get
-sx_arr_has_idx
-sx_arr_is_rw
-sx_arr_pop
-sx_arr_push
-sx_call_with_ifs
-sx_num_eq
-sx_num_is_base_int
-sx_num_is_base_nint
-sx_num_is_base_nnint
-sx_num_is_base_npint
-sx_num_is_base_pint
-sx_num_is_int
-sx_num_is_nint
-sx_num_is_nnint
-sx_num_is_npint
-sx_num_is_pint
-sx_num_le
-sx_num_lt
-sx_str_any
-sx_str_chunk
-sx_str_eq
-sx_str_ew
-sx_str_has
-sx_str_is_digit
-sx_str_is_hex
-sx_str_is_oct
-sx_str_match
-sx_str_rep
-sx_str_split
-sx_str_sub
-sx_str_substr
-sx_str_sw
-sx_util_eval
-sx_uuid_is_uuid
-sx_var_copy
-sx_var_has_val
-sx_var_is_arr
-sx_var_is_chain
-sx_var_is_copyable
-sx_var_is_empty
-sx_var_is_name
-sx_var_is_ro
-sx_var_is_rw
-sx_var_is_rw_all
-sx_var_is_set
-sx_var_list_copy
-sx_var_list_dep
-sx_var_list_ro
-sx_var_list_set
-sx_var_move
-sx_var_rw_chk
-sx_var_set
-sx_var_swap
-sx_var_touch
-sx_var_unset
+ModuleID	FuncID	OriginalName	Status
+ut	eval	sx_util_eval	Active
+ut	cwif	sx_call_with_ifs	Active
+ag	join	sx_arg_join	Active
+ag	quot	sx_arg_quote	Active
+ag	rqt	sx_arg_rquote	Active
+ag	norm	__sx_arg_norm	Active
+vr	cp	sx_var_copy	Active
+vr	iarr	sx_var_is_arr	Active
+vr	ichn	sx_var_is_chain	Active
+vr	icpy	sx_var_is_copyable	Active
+vr	iemp	sx_var_is_empty	Active
+vr	inam	sx_var_is_name	Active
+vr	iset	sx_var_is_set	Active
+vr	hval	sx_var_has_val	Active
+vr	iro	sx_var_is_ro	Active
+vr	irw	sx_var_is_rw	Active
+vr	rwa	sx_var_is_rw_all	Active
+vr	ldep	sx_var_list_dep	Active
+vr	lcp	sx_var_list_copy	Active
+vr	lro	sx_var_list_ro	Active
+vr	lset	sx_var_list_set	Active
+vr	mv	sx_var_move	Active
+vr	rchk	sx_var_rw_chk	Active
+vr	set	sx_var_set	Active
+vr	swap	sx_var_swap	Active
+vr	tch	sx_var_touch	Active
+vr	unst	sx_var_unset	Active
+nm	eq	sx_num_eq	Active
+nm	bii	sx_num_is_base_int	Active
+nm	bn0	sx_num_is_base_nat0	Active
+nm	bn1	sx_num_is_base_nat1	Active
+nm	bni	sx_num_is_base_nint	Active
+nm	bnn	sx_num_is_base_nnint	Active
+nm	bnp	sx_num_is_base_npint	Active
+nm	bpi	sx_num_is_base_pint	Active
+nm	iint	sx_num_is_int	Active
+nm	nat0	sx_num_is_nat0	Active
+nm	nat1	sx_num_is_nat1	Active
+nm	nint	sx_num_is_nint	Active
+nm	nnin	sx_num_is_nnint	Active
+nm	npin	sx_num_is_npint	Active
+nm	pint	sx_num_is_pint	Active
+nm	le	sx_num_le	Active
+nm	lt	sx_num_lt	Active
+ud	isud	sx_uuid_is_uuid	Active
+st	any	sx_str_any	Active
+st	chnk	sx_str_chunk	Active
+st	eq	sx_str_eq	Active
+st	ew	sx_str_ew	Active
+st	has	sx_str_has	Active
+st	ihex	sx_str_is_hex	Active
+st	idgt	sx_str_is_digit	Active
+st	ioct	sx_str_is_oct	Active
+st	mtch	sx_str_match	Active
+st	rep	sx_str_rep	Active
+st	splt	sx_str_split	Active
+st	sub	sx_str_sub	Active
+st	subs	sx_str_substr	Active
+st	sw	sx_str_sw	Active
+ar	gen	sx_arr_gen	Active
+ar	irw	sx_arr_is_rw	Active
+ar	pop	sx_arr_pop	Active
+ar	psh	sx_arr_push	Active
+ar	hidx	sx_arr_has_idx	Active
+ar	get	sx_arr_get	Active

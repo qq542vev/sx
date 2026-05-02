@@ -60,7 +60,7 @@ readonly SX_STR_DIGIT='0123456789'
 readonly SX_STR_XDIGIT='0123456789ABCDEFabcdef'
 readonly SX_STR_UPPER='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 readonly SX_STR_LOWER='abcdefghijklmnopqrstuvwxyz'
-readonly SX_STR_PUNCT='!"#$%&'\''()*+,-./:;<=>?@[\]^_`{|}~''`]"'
+readonly SX_STR_PUNCT='!"#$%&'\''()*+,-./:;<=>?@[\]^_`{|}~'
 readonly SX_STR_ALPHA="${SX_STR_UPPER}${SX_STR_LOWER}"
 readonly SX_STR_ALNUM="${SX_STR_DIGIT}${SX_STR_ALPHA}"
 readonly SX_STR_WORD="_${SX_STR_ALNUM}"
@@ -2969,58 +2969,46 @@ sx_arr_get() {
 
 	__sx_arr_get_chk=
 	for __sx_arr_get_pair in "${@}"; do
-		case "${__sx_arr_get_pair}" in
-			*=*)
-				__sx_arr_get_dest="${__sx_arr_get_pair%%=*}"
-				__sx_arr_get_idx="${__sx_arr_get_pair#*=}"
+		__sx_arr_get_dest="${__sx_arr_get_pair%%=*}"
+		__sx_arr_get_i="${__sx_arr_get_pair#*=}"
 
-				# インデックスの数値妥当性チェック
-				if ! sx_num_is_nat0 "${__sx_arr_get_idx}"; then
-					unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_idx
-					return "${SX_EX_USAGE}"
-				fi
+		__sx_num_is_base_nat0 10 "${__sx_arr_get_i}" || {
+			unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_i
+			return "${SX_EX_USAGE}"
+		}
 
-				# 範囲チェック
-				if ! __sx_num_lt "${__sx_arr_get_idx}" "${__sx_arr_get_len}"; then
-					unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_idx
-					return 1
-				fi
+		# 範囲チェック
+		__sx_num_lt "${__sx_arr_get_i}" "${__sx_arr_get_len}" || __sx_arr_get_err=
 
-				# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
-				if
-					! sx_var_is_name "${__sx_arr_get_dest}" ||
-					sx_str_match "${__sx_arr_get_dest}" "${__sx_arr_get_arr}" "${__sx_arr_get_arr}_*"
-				then
-					unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_idx
-					return "${SX_EX_USAGE}"
-				fi
-
-				# コピー連鎖式の構築 (src-dest)
-				__sx_arr_get_chk="${__sx_arr_get_chk} ${__sx_arr_get_arr}_${__sx_arr_get_idx}-${__sx_arr_get_dest}"
-				;;
-			*)
-				unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_idx
+		case "${__sx_arr_get_pair}" in *=*)
+			# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
+			if
+				! sx_var_is_name "${__sx_arr_get_dest}" ||
+				sx_str_match "${__sx_arr_get_dest}" "${__sx_arr_get_arr}" "${__sx_arr_get_arr}_*"
+			then
+				unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_i
 				return "${SX_EX_USAGE}"
-				;;
-		esac
+			fi
+
+			# コピー連鎖式の構築 (src-dest)
+			__sx_arr_get_chk="${__sx_arr_get_chk} ${__sx_arr_get_arr}_${__sx_arr_get_i}-${__sx_arr_get_dest}"
+		;; esac
 	done
 
+	case "${__sx_arr_get_err+X}" in X)
+		unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_i __sx_arr_get_err
+		return 1
+	;; esac
+
+	eval set -- "${__sx_arr_get_chk}"
+	unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_i
+
 	# 2. 書き込み可能性（構造を含む）の一括チェック
-	if ! sx_str_eq "${__sx_arr_get_chk}" ''; then
-		eval sx_var_is_copyable "${__sx_arr_get_chk}" || {
-			set -- "${?}"
-			unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_idx
-			case "${1}" in
-				1) return "${SX_EX_NOPERM}";;
-				*) return "${1}";;
-			esac
-		}
-	fi
+	eval __sx_var_is_copyable "${@}" || {
+		return "${SX_EX_NOPERM}"
+	}
 
-	set -- "${__sx_arr_get_arr}" "${@}"
-	unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_idx
-
-	__sx_arr_get "${@}"
+	__sx_var_copy "${@}"
 }
 
 ### __sx_arr_get - 配列の要素を取得する（内部用）
@@ -3032,17 +3020,26 @@ sx_arr_get() {
 ##   sx_arr_get の内部実装。
 ##   引数チェックは行わない。
 __sx_arr_get() {
-	__sx_arr_get_chk_=""
+	__sx_arr_get_chk_=
 	__sx_arr_get_arr_="${1}"
+	eval "__sx_arr_get_len_=\"\${${1}_len}\""
 	shift
 
 	for __sx_arr_get_pair_ in "${@}"; do
-		__sx_arr_get_chk_="${__sx_arr_get_chk_} ${__sx_arr_get_arr_}_${__sx_arr_get_pair_#*=}-${__sx_arr_get_pair_%%=*}"
+		__sx_arr_get_i_="${__sx_arr_get_pair_#*=}"
+
+		# 範囲チェック
+		__sx_num_lt "${__sx_arr_get_i_}" "${__sx_arr_get_len_}" || {
+			unset __sx_arr_get_chk_ __sx_arr_get_arr_ __sx_arr_get_len_ __sx_arr_get_pair_ __sx_arr_get_i_
+			return 1
+		}
+
+
+		case "${__sx_arr_get_pair_}" in *=*)
+			__sx_arr_get_chk_="${__sx_arr_get_chk_} ${__sx_arr_get_arr_}_${__sx_arr_get_i_}-${__sx_arr_get_pair_%%=*}"
+		;; esac
 	done
 
-	if ! sx_str_eq "${__sx_arr_get_chk_}" ''; then
-		eval __sx_var_copy "${__sx_arr_get_chk_}"
-	fi
-
-	unset __sx_arr_get_chk_ __sx_arr_get_arr_ __sx_arr_get_pair_
+	eval __sx_var_copy "${__sx_arr_get_chk_}"
+	unset __sx_arr_get_chk_ __sx_arr_get_arr_ __sx_arr_get_len_ __sx_arr_get_pair_ __sx_arr_get_i_
 }
