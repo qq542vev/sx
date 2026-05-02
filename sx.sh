@@ -2879,3 +2879,61 @@ __sx_arr_push() {
 
 	unset __sx_arr_push_i_ __sx_arr_push_arr_ __sx_arr_push_arg_
 }
+
+### sx_arr_has_idx - 配列に指定されたインデックスが存在するか確認する
+##
+## 使い方:
+##   sx_arr_has_idx 配列名 [インデックス ...]
+##
+## 説明:
+##   指定された sx 配列に、引数で指定されたすべてのインデックス（0以上の整数）が
+##   存在するか（0 <= index < length）を確認する。
+##
+## 終了ステータス:
+##    0  すべてのインデックスが存在する (SX_EX_OK)
+##    1  一つ以上のインデックスが範囲外
+##   64  配列名が無効、またはインデックスが数値ではない (SX_EX_USAGE)
+##   65  対象が sx 配列ではない (SX_EX_DATAERR)
+sx_arr_has_idx() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_has_idx "${@}" || return; return 0;; esac
+
+	sx_var_is_arr "${1-}" || case "${?}" in
+		1) return "${SX_EX_DATAERR}";;
+		*) return "${?}";;
+	esac
+
+	__sx_arr_has_idx_name="${1}"
+	shift
+
+	sx_num_is_nat0 "${@}" || {
+		unset __sx_arr_has_idx_name
+		return "${SX_EX_USAGE}"
+	}
+
+	set -- "${__sx_arr_has_idx_name}" "${@}"
+	unset __sx_arr_has_idx_name
+
+	__sx_arr_has_idx "${@}" || return
+}
+
+### __sx_arr_has_idx - 配列に指定されたインデックスが存在するか確認する（内部用）
+##
+## 使い方:
+##   __sx_arr_has_idx 配列名 [インデックス ...]
+##
+## 説明:
+##   sx_arr_has_idx の内部実装。
+##   引数チェックは行わない。
+__sx_arr_has_idx() {
+	eval "__sx_arr_has_idx_len_=\"\${${1}_len:-0}\""
+	shift
+
+	for __sx_arr_has_idx_arg_ in "${@}"; do
+		__sx_num_lt "${__sx_arr_has_idx_arg_}" "${__sx_arr_has_idx_len_}" || {
+			unset __sx_arr_has_idx_len_ __sx_arr_has_idx_arg_
+			return 1
+		}
+	done
+
+	unset __sx_arr_has_idx_len_ __sx_arr_has_idx_arg_
+}
