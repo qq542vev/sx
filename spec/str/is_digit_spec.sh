@@ -38,7 +38,7 @@ Describe 'sx_str_is_digit'
   End
 
   It '改行が含まれる場合、失敗を返すこと'
-    When call sx_str_is_digit "12${SX_CHAR_LF}3"
+    When call sx_str_is_digit "12${SX_STR_LF}3"
     The status should be failure
   End
 

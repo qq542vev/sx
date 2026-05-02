@@ -420,7 +420,7 @@ __sx_var_copy() {
 	eval "${__sx_var_copy_asg_}"
 
 	# 内部用変数を掃除
-	unset __sx_var_copy_esc_ __sx_var_copy_ls_ __sx_var_copy_asg_ __sx_var_copy_pair_ __sx_var_copy_dest_ __sx_var_copy_src_ __sx_var_copy_val_ __sx_var_copy_dests_
+	unset __sx_var_copy_esc_ __sx_var_copy_ls_ __sx_var_copy_asg_ __sx_var_copy_pair_ __sx_var_copy_dest_ __sx_var_copy_src_ __sx_var_copy_val_ __sx_var_copy_dests_ __sx_var_copy_arg_
 }
 
 ### sx_var_is_arr - 指定された変数がsx配列であるか確認する
