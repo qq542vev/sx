@@ -2937,3 +2937,112 @@ __sx_arr_has_idx() {
 
 	unset __sx_arr_has_idx_len_ __sx_arr_has_idx_arg_
 }
+
+### sx_arr_get - 配列の指定したインデックスの要素を取得する
+##
+## 使い方:
+##   sx_arr_get 配列名 [結果変数名=インデックス ...]
+##
+## 説明:
+##   指定された sx 配列から、指定されたインデックス（0開始）の要素を取得し、
+##   対応する結果変数に格納する。
+##   インデックスが一つでも範囲外の場合は、どの変数にも代入せずエラーを返す。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##    1  インデックスが範囲外
+##   64  引数不正 (SX_EX_USAGE)
+##   65  対象が sx 配列ではない (SX_EX_DATAERR)
+##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
+sx_arr_get() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_get "${@}" || return; return 0;; esac
+
+	# 1. 配列の妥当性チェック
+	sx_var_is_arr "${1-}" || case "${?}" in
+		1) return "${SX_EX_DATAERR}";;
+		*) return "${?}";;
+	esac
+
+	__sx_arr_get_arr="${1}"
+	eval "__sx_arr_get_len=\"\${${1}_len}\""
+	shift
+
+	__sx_arr_get_chk=
+	for __sx_arr_get_pair in "${@}"; do
+		case "${__sx_arr_get_pair}" in
+			*=*)
+				__sx_arr_get_dest="${__sx_arr_get_pair%%=*}"
+				__sx_arr_get_idx="${__sx_arr_get_pair#*=}"
+
+				# インデックスの数値妥当性チェック
+				if ! sx_num_is_nat0 "${__sx_arr_get_idx}"; then
+					unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_idx
+					return "${SX_EX_USAGE}"
+				fi
+
+				# 範囲チェック
+				if ! __sx_num_lt "${__sx_arr_get_idx}" "${__sx_arr_get_len}"; then
+					unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_idx
+					return 1
+				fi
+
+				# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
+				if
+					! sx_var_is_name "${__sx_arr_get_dest}" ||
+					sx_str_match "${__sx_arr_get_dest}" "${__sx_arr_get_arr}" "${__sx_arr_get_arr}_*"
+				then
+					unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_idx
+					return "${SX_EX_USAGE}"
+				fi
+
+				# コピー連鎖式の構築 (src-dest)
+				__sx_arr_get_chk="${__sx_arr_get_chk} ${__sx_arr_get_arr}_${__sx_arr_get_idx}-${__sx_arr_get_dest}"
+				;;
+			*)
+				unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_idx
+				return "${SX_EX_USAGE}"
+				;;
+		esac
+	done
+
+	# 2. 書き込み可能性（構造を含む）の一括チェック
+	if ! sx_str_eq "${__sx_arr_get_chk}" ''; then
+		eval sx_var_is_copyable "${__sx_arr_get_chk}" || {
+			set -- "${?}"
+			unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_idx
+			case "${1}" in
+				1) return "${SX_EX_NOPERM}";;
+				*) return "${1}";;
+			esac
+		}
+	fi
+
+	set -- "${__sx_arr_get_arr}" "${@}"
+	unset __sx_arr_get_arr __sx_arr_get_len __sx_arr_get_chk __sx_arr_get_pair __sx_arr_get_dest __sx_arr_get_idx
+
+	__sx_arr_get "${@}"
+}
+
+### __sx_arr_get - 配列の要素を取得する（内部用）
+##
+## 使い方:
+##   __sx_arr_get 配列名 [結果変数名=インデックス ...]
+##
+## 説明:
+##   sx_arr_get の内部実装。
+##   引数チェックは行わない。
+__sx_arr_get() {
+	__sx_arr_get_chk_=""
+	__sx_arr_get_arr_="${1}"
+	shift
+
+	for __sx_arr_get_pair_ in "${@}"; do
+		__sx_arr_get_chk_="${__sx_arr_get_chk_} ${__sx_arr_get_arr_}_${__sx_arr_get_pair_#*=}-${__sx_arr_get_pair_%%=*}"
+	done
+
+	if ! sx_str_eq "${__sx_arr_get_chk_}" ''; then
+		eval __sx_var_copy "${__sx_arr_get_chk_}"
+	fi
+
+	unset __sx_arr_get_chk_ __sx_arr_get_arr_ __sx_arr_get_pair_
+}
