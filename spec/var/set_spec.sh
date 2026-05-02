@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_var_set'
   Include ./sx.sh
   It '複数の変数を設定すること'

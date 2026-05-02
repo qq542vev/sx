@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_str_match'
   Include ./sx.sh
   It '第1引数がそれ以降のいずれかのパターン（glob）に一致する場合に成功を返すこと'

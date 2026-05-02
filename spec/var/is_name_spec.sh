@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_var_is_name'
   Include ./sx.sh
   It '有効な変数名に対して成功を返すこと'

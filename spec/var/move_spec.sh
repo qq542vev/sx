@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_var_move'
   Include ./sx.sh
   It '右方向連鎖移動（v1-v2-v3）を実行すること'

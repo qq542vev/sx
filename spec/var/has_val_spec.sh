@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_var_has_val'
   Include ./sx.sh
   It 'すべての変数が空ではない値を持っている場合に成功を返すこと'

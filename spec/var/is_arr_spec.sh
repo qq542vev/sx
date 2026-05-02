@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_var_is_arr'
   Include ./sx.sh
   It 'sx配列に対して成功を返すこと'

@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_var_swap'
   Include ./sx.sh
   It '右方向に値を回転（v1-v2-v3 -> v3 v1 v2）させること'

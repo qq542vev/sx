@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_var_is_rw'
   Include ./sx.sh
   It '書き込み可能な変数の場合に成功を返すこと'

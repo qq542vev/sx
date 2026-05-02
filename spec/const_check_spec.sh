@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_const_check'
   Include ./sx.sh
   It 'SX_EX_USAGE が関数内で定義されていること'

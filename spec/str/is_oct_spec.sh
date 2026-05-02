@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 # shellcheck shell=sh
 
 Describe 'sx_str_is_oct'

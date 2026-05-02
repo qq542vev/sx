@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_arr_push'
   Include ./sx.sh
   BeforeEach 'sx_arr_gen myarr a'

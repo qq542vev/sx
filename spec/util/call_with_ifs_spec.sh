@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_call_with_ifs'
   Include ./sx.sh
   It '一時的なIFSを使用してコマンドを実行すること'

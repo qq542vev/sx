@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_str_rep'
   Include ./sx.sh
   It '指定された回数だけ文字列を繰り返すこと'

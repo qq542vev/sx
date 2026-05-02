@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_var_unset'
   Include ./sx.sh
   It '通常の変数を未設定にすること'

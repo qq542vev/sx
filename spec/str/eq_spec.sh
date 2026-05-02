@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_str_eq'
   Include ./sx.sh
   It 'すべての引数が等しい場合に成功を返すこと'

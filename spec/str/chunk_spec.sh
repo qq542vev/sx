@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe "sx_str_chunk"
   Include ./sx.sh
 

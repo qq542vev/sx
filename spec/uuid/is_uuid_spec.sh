@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_uuid_is_uuid'
   Include ./sx.sh
   It '有効なUUIDに対して成功を返すこと'

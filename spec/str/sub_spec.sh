@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_str_sub'
   Include ./sx.sh
   It 'パターンを文字列で置換すること'

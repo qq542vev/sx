@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_var_list_ro'
   Include ./sx.sh
   It 'すべての読み取り専用変数名の一覧を返すこと'

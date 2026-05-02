@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_str_split'
   Include ./sx.sh
   It '文字列を分割して結果変数に格納すること'

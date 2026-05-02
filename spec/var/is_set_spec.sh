@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_var_is_set'
   Include ./sx.sh
   It 'すべての変数が設定されている場合に成功を返すこと'

@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_var_touch'
   Include ./sx.sh
   It '変数のリビジョンを更新すること'
