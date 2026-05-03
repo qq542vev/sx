@@ -1272,6 +1272,59 @@ __sx_var_touch() {
 	unset __sx_var_touch_arg_
 }
 
+### sx_var_dump - 変数や配列の状態を文字列として取得する
+##
+## 使い方:
+##   sx_var_dump 結果変数名 名前1 [名前2 ...]
+##
+## 説明:
+##   指定された変数（または配列）の現在の状態を、代入式（name='value'）の
+##   形式で取得し、結果変数に格納する。配列の場合は関連する全要素を含む。
+##   変数が設定されていない場合は 'unset name' の形式となる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_var_dump() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_dump "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_var_dump "${@}"
+}
+
+### __sx_var_dump - 変数や配列の状態を文字列として取得する（内部用）
+##
+## 使い方:
+##   __sx_var_dump 結果変数名 名前1 [名前2 ...]
+##
+## 説明:
+##   sx_var_dump の内部実装。
+##   引数チェックは行わない。
+__sx_var_dump() {
+	__sx_var_dump_res_="${1}"
+	__sx_var_dump_out_=
+	shift
+
+	__sx_var_list_dep __sx_var_dump_ls_ "${@}"
+	eval set -- "${__sx_var_dump_ls_}"
+
+	for __sx_var_dump_vn_ in "${@}"; do
+		if sx_var_is_set "${__sx_var_dump_vn_}"; then
+			eval __sx_arg_quote __sx_var_dump_val_ "\"\${${__sx_var_dump_vn_}}\""
+			__sx_var_dump_out_="${__sx_var_dump_out_}${__sx_var_dump_vn_}=${__sx_var_dump_val_}${SX_STR_LF}"
+		else
+			__sx_var_dump_out_="${__sx_var_dump_out_}unset ${__sx_var_dump_vn_}${SX_STR_LF}"
+		fi
+	done
+
+	__sx_var_set "${__sx_var_dump_res_}=${__sx_var_dump_out_}"
+
+	unset __sx_var_dump_res_ __sx_var_dump_out_ __sx_var_dump_ls_ __sx_var_dump_vn_ __sx_var_dump_val_
+}
+
 ### sx_var_unset - 変数または配列を関連要素を含めて削除する
 ##
 ## 使い方:
