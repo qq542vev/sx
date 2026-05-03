@@ -2601,37 +2601,14 @@ sx_str_strim() {
 ##   sx_str_strim の内部実装。
 ##   引数チェックは行わない。
 __sx_str_strim() {
-	__sx_str_strim_res_="${1}"
-	__sx_str_strim_str_="${2-}"
-	__sx_str_strim_set_="${3-${SX_STR_SPACE}}"
+	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
 
-	case "${__sx_str_strim_set_}" in
-		'')
-			__sx_var_set "${__sx_str_strim_res_}=${__sx_str_strim_str_}"
-			unset __sx_str_strim_res_ __sx_str_strim_str_ __sx_str_strim_set_
-			return
-			;;
-	esac
+	case "${3}" in '')
+		__sx_var_set "${1}=${2}"
+		return
+	;; esac
 
-	# ] と - を安全な位置に配置換え（正規化）
-	__sx_str_strim_safe_="${__sx_str_strim_set_}"
-	case "${__sx_str_strim_safe_}" in
-		*]* )
-			__sx_str_sub __sx_str_strim_safe_ "${__sx_str_strim_safe_}" "]" ""
-			__sx_str_strim_safe_="]${__sx_str_strim_safe_}"
-			;;
-	esac
-	case "${__sx_str_strim_safe_}" in
-		*-* )
-			__sx_str_sub __sx_str_strim_safe_ "${__sx_str_strim_safe_}" "-" ""
-			__sx_str_strim_safe_="${__sx_str_strim_safe_}-"
-			;;
-	esac
-
-	__sx_str_strim_pre_="${__sx_str_strim_str_%%[!${__sx_str_strim_safe_}]*}"
-	__sx_var_set "${__sx_str_strim_res_}=${__sx_str_strim_str_#"$__sx_str_strim_pre_"}"
-
-	unset __sx_str_strim_res_ __sx_str_strim_str_ __sx_str_strim_set_ __sx_str_strim_safe_ __sx_str_strim_pre_
+	__sx_var_set "${1}=${2#"${2%%[!"${3}"]*}"}"
 }
 
 ### sx_str_etrim - 文字列の末尾から指定された文字セットを削除する
@@ -2664,36 +2641,14 @@ sx_str_etrim() {
 ##   sx_str_etrim の内部実装。
 ##   引数チェックは行わない。
 __sx_str_etrim() {
-	__sx_str_etrim_res_="${1}"
-	__sx_str_etrim_str_="${2-}"
-	__sx_str_etrim_set_="${3-${SX_STR_SPACE}}"
+	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
 
-	case "${__sx_str_etrim_set_}" in
-		'')
-			__sx_var_set "${__sx_str_etrim_res_}=${__sx_str_etrim_str_}"
-			unset __sx_str_etrim_res_ __sx_str_etrim_str_ __sx_str_etrim_set_
-			return
-			;;
-	esac
+	case "${3}" in '')
+		__sx_var_set "${1}=${2}"
+		return
+	;; esac
 
-	__sx_str_etrim_safe_="${__sx_str_etrim_set_}"
-	case "${__sx_str_etrim_safe_}" in
-		*]* )
-			__sx_str_sub __sx_str_etrim_safe_ "${__sx_str_etrim_safe_}" "]" ""
-			__sx_str_etrim_safe_="]${__sx_str_etrim_safe_}"
-			;;
-	esac
-	case "${__sx_str_etrim_safe_}" in
-		*-* )
-			__sx_str_sub __sx_str_etrim_safe_ "${__sx_str_etrim_safe_}" "-" ""
-			__sx_str_etrim_safe_="${__sx_str_etrim_safe_}-"
-			;;
-	esac
-
-	__sx_str_etrim_suf_="${__sx_str_etrim_str_##*[!${__sx_str_etrim_safe_}]}"
-	__sx_var_set "${__sx_str_etrim_res_}=${__sx_str_etrim_str_%"$__sx_str_etrim_suf_"}"
-
-	unset __sx_str_etrim_res_ __sx_str_etrim_str_ __sx_str_etrim_set_ __sx_str_etrim_safe_ __sx_str_etrim_suf_
+	__sx_var_set "${1}=${2%"${2##*[!"${3}"]}"}"
 }
 
 ### sx_str_trim - 文字列の前後から指定された文字セットを削除する
