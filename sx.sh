@@ -2052,6 +2052,46 @@ sx_str_eq() {
 	unset __sx_str_eq_first __sx_str_eq_arg
 }
 
+### sx_str_etrim - 文字列の末尾から指定された文字セットを削除する
+##
+## 使い方:
+##   sx_str_etrim 結果変数名 [文字列 [文字セット]]
+##
+## 説明:
+##   文字列の末尾にある、指定された文字セットに含まれる文字をすべて削除して結果変数に格納する。
+##   文字セットが省略された場合は、SX_STR_SPACE（空白文字すべて）が使用される。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_etrim() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_etrim "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	__sx_str_etrim "${@}"
+}
+
+### __sx_str_etrim - 文字列の末尾から指定された文字セットを削除する（内部用）
+##
+## 使い方:
+##   __sx_str_etrim 結果変数名 [文字列 [文字セット]]
+##
+## 説明:
+##   sx_str_etrim の内部実装。
+##   引数チェックは行わない。
+__sx_str_etrim() {
+	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
+
+	case "${3}" in '')
+		__sx_var_set "${1}=${2}"
+		return
+	;; esac
+
+	__sx_var_set "${1}=${2%"${2##*[!"${3}"]}"}"
+}
+
 ### sx_str_ew - 第一引数が、第二引数以降のいずれかの文字列で終わっているか確認する
 ##
 ## 使い方:
@@ -2539,38 +2579,6 @@ __sx_str_substr() {
 	unset __sx_str_substr_res_ __sx_str_substr_str_ __sx_str_substr_off_ __sx_str_substr_len_ __sx_str_substr_total_ __sx_str_substr_drop_ __sx_str_substr_qm_
 }
 
-### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
-##
-## 使い方:
-##   sx_str_sw [検索対象文字列 [開始文字列1 [開始文字列2 ...]]]
-##
-## 挙動:
-## - 検索対象文字列が省略された場合は空文字列とみなす
-## - 開始文字列は 0 個以上指定できる
-## - 第二引数以降のいずれかが検索対象文字列の接頭辞であれば成功する
-## - 開始文字列が 1 つも指定されなかった場合は失敗する
-## - 開始文字列に空文字列が含まれる場合は常に成功する
-##
-## 終了ステータス:
-##    0  いずれかの開始文字列で始まっている (SX_EX_OK)
-##    1  一致する開始文字列がない
-sx_str_sw() {
-	__sx_str_sw_tgt="${1-}"
-	shift "$((0 < $#))"
-
-	for __sx_str_sw_arg in "${@}"; do
-		case "${__sx_str_sw_tgt}" in
-			"${__sx_str_sw_arg}"*)
-				unset __sx_str_sw_tgt __sx_str_sw_arg
-				return "${SX_EX_OK}"
-				;;
-		esac
-	done
-
-	unset __sx_str_sw_tgt __sx_str_sw_arg
-	return 1
-}
-
 ### sx_str_strim - 文字列の先頭から指定された文字セットを削除する
 ##
 ## 使い方:
@@ -2610,45 +2618,36 @@ __sx_str_strim() {
 
 	__sx_var_set "${1}=${2#"${2%%[!"${3}"]*}"}"
 }
-
-### sx_str_etrim - 文字列の末尾から指定された文字セットを削除する
+### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
 ##
 ## 使い方:
-##   sx_str_etrim 結果変数名 [文字列 [文字セット]]
+##   sx_str_sw [検索対象文字列 [開始文字列1 [開始文字列2 ...]]]
 ##
-## 説明:
-##   文字列の末尾にある、指定された文字セットに含まれる文字をすべて削除して結果変数に格納する。
-##   文字セットが省略された場合は、SX_STR_SPACE（空白文字すべて）が使用される。
+## 挙動:
+## - 検索対象文字列が省略された場合は空文字列とみなす
+## - 開始文字列は 0 個以上指定できる
+## - 第二引数以降のいずれかが検索対象文字列の接頭辞であれば成功する
+## - 開始文字列が 1 つも指定されなかった場合は失敗する
+## - 開始文字列に空文字列が含まれる場合は常に成功する
 ##
 ## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_etrim() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_etrim "${@}" || return; return 0;; esac
+##    0  いずれかの開始文字列で始まっている (SX_EX_OK)
+##    1  一致する開始文字列がない
+sx_str_sw() {
+	__sx_str_sw_tgt="${1-}"
+	shift "$((0 < $#))"
 
-	sx_var_rw_chk "${1-}" || return
+	for __sx_str_sw_arg in "${@}"; do
+		case "${__sx_str_sw_tgt}" in
+			"${__sx_str_sw_arg}"*)
+				unset __sx_str_sw_tgt __sx_str_sw_arg
+				return "${SX_EX_OK}"
+				;;
+		esac
+	done
 
-	__sx_str_etrim "${@}"
-}
-
-### __sx_str_etrim - 文字列の末尾から指定された文字セットを削除する（内部用）
-##
-## 使い方:
-##   __sx_str_etrim 結果変数名 [文字列 [文字セット]]
-##
-## 説明:
-##   sx_str_etrim の内部実装。
-##   引数チェックは行わない。
-__sx_str_etrim() {
-	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
-
-	case "${3}" in '')
-		__sx_var_set "${1}=${2}"
-		return
-	;; esac
-
-	__sx_var_set "${1}=${2%"${2##*[!"${3}"]}"}"
+	unset __sx_str_sw_tgt __sx_str_sw_arg
+	return 1
 }
 
 ### sx_str_trim - 文字列の前後から指定された文字セットを削除する
@@ -2681,20 +2680,133 @@ sx_str_trim() {
 ##   sx_str_trim の内部実装。
 ##   引数チェックは行わない。
 __sx_str_trim() {
-	__sx_str_trim_res_="${1}"
-	__sx_str_trim_str_="${2-}"
-	__sx_str_trim_set_="${3-${SX_STR_SPACE}}"
+	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
 
-	__sx_str_strim __sx_str_trim_tmp_ "${__sx_str_trim_str_}" "${__sx_str_trim_set_}"
-	__sx_str_etrim "${__sx_str_trim_res_}" "${__sx_str_trim_tmp_}" "${__sx_str_trim_set_}"
+	__sx_str_strim __sx_str_trim_tmp_ "${2}" "${3}"
+	__sx_str_etrim "${1}" "${__sx_str_trim_tmp_}" "${3}"
 
-	unset __sx_str_trim_res_ __sx_str_trim_str_ __sx_str_trim_set_ __sx_str_trim_tmp_
+	unset __sx_str_trim_tmp_
 }
 
 # ========================================
 #  ARR (Array Operations)
 # ========================================
 
+### sx_arr_at - 配列の要素を取得または存在確認する
+##
+## 使い方:
+##   sx_arr_at 配列名 [結果変数名=インデックス | インデックス ...]
+##
+## 説明:
+##   指定された sx 配列から要素を取得または存在確認を行う。
+##   引数の形式によって挙動が異なる：
+##     1. 結果変数名=インデックス : 指定したインデックスの値を結果変数に格納する。
+##     2. インデックス           : そのインデックスが範囲内にあるか確認のみ行う。
+##   複数の引数を指定した場合、それらすべてが有効なインデックスであれば 0 を返し、
+##   代入も行われる。一つでも範囲外があれば 1 を返し、代入は一切行わない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##    1  一つ以上のインデックスが範囲外
+##   64  引数不正 (SX_EX_USAGE)
+##   65  対象が sx 配列ではない (SX_EX_DATAERR)
+##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
+sx_arr_at() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_at "${@}" || return; return 0;; esac
+
+	# 1. 配列の妥当性チェック
+	sx_var_is_arr "${1-}" || case "${?}" in
+		1) return "${SX_EX_DATAERR}";;
+		*) return "${?}";;
+	esac
+
+	__sx_arr_at_arr="${1}"
+	eval "__sx_arr_at_len=\"\${${1}_len}\""
+	shift
+
+	__sx_arr_at_chk=
+	for __sx_arr_at_pair in "${@}"; do
+		__sx_arr_at_dest="${__sx_arr_at_pair%%=*}"
+		__sx_arr_at_i="${__sx_arr_at_pair#*=}"
+
+		__sx_num_is_base_nat0 10 "${__sx_arr_at_i}" || {
+			unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
+			return "${SX_EX_USAGE}"
+		}
+
+		# 範囲チェック
+		__sx_num_lt "${__sx_arr_at_i}" "${__sx_arr_at_len}" || __sx_arr_at_err=
+
+		case "${__sx_arr_at_pair}" in *=*)
+			# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
+			if
+				! sx_var_is_name "${__sx_arr_at_dest}" ||
+				sx_str_match "${__sx_arr_at_dest}" "${__sx_arr_at_arr}" "${__sx_arr_at_arr}_*"
+			then
+				unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
+				return "${SX_EX_USAGE}"
+			fi
+
+			# コピー連鎖式の構築 (src-dest)
+			__sx_arr_at_chk="${__sx_arr_at_chk} ${__sx_arr_at_arr}_${__sx_arr_at_i}-${__sx_arr_at_dest}"
+		;; esac
+	done
+
+	case "${__sx_arr_at_err+X}" in X)
+		unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i __sx_arr_at_err
+		return 1
+	;; esac
+
+	eval set -- "${__sx_arr_at_chk}"
+	unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
+
+	case "${#}" in
+		0) return "${SX_EX_OK}";;
+	esac
+
+	# 2. 書き込み可能性（構造を含む）の一括チェック
+	eval __sx_var_is_copyable "${@}" || {
+		return "${SX_EX_NOPERM}"
+	}
+
+	__sx_var_copy "${@}"
+}
+
+### __sx_arr_at - 配列の要素を取得する（内部用）
+##
+## 使い方:
+##   __sx_arr_at 配列名 [結果変数名=インデックス ...]
+##
+## 説明:
+##   sx_arr_at の内部実装。
+##   引数チェックは行わない。
+__sx_arr_at() {
+	__sx_arr_at_chk_=
+	__sx_arr_at_arr_="${1}"
+	eval "__sx_arr_at_len_=\"\${${1}_len}\""
+	shift
+
+	for __sx_arr_at_pair_ in "${@}"; do
+		__sx_arr_at_i_="${__sx_arr_at_pair_#*=}"
+
+		# 範囲チェック
+		__sx_num_lt "${__sx_arr_at_i_}" "${__sx_arr_at_len_}" || {
+			unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
+			return 1
+		}
+
+		case "${__sx_arr_at_pair_}" in *=*)
+			__sx_arr_at_chk_="${__sx_arr_at_chk_} ${__sx_arr_at_arr_}_${__sx_arr_at_i_}-${__sx_arr_at_pair_%%=*}"
+		;; esac
+	done
+
+	case "${__sx_arr_at_chk_}" in
+		'') return "${SX_EX_OK}";;
+	esac
+
+	eval __sx_var_copy "${__sx_arr_at_chk_}"
+	unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
+}
 ### sx_arr_gen - 配列を初期化し、要素を追加する
 ##
 ## 使い方:
@@ -3000,118 +3112,121 @@ __sx_arr_push() {
 	unset __sx_arr_push_i_ __sx_arr_push_arr_ __sx_arr_push_arg_
 }
 
-### sx_arr_at - 配列の要素を取得または存在確認する
+### sx_arr_quote - 配列要素をシングルクォートで囲み、スペース区切りで結合する
 ##
 ## 使い方:
-##   sx_arr_at 配列名 [結果変数名=インデックス | インデックス ...]
+##   sx_arr_quote 結果変数名 配列名1 [配列名2 ...]
 ##
 ## 説明:
-##   指定された sx 配列から要素を取得または存在確認を行う。
-##   引数の形式によって挙動が異なる：
-##     1. 結果変数名=インデックス : 指定したインデックスの値を結果変数に格納する。
-##     2. インデックス           : そのインデックスが範囲内にあるか確認のみ行う。
-##   複数の引数を指定した場合、それらすべてが有効なインデックスであれば 0 を返し、
-##   代入も行われる。一つでも範囲外があれば 1 を返し、代入は一切行わない。
+##   指定されたすべての配列の要素をそれぞれシングルクォートで囲み（内部のシングルクォートはエスケープ）、
+##   スペース区切りで順方向に結合した文字列を作成して結果変数に格納する。
+##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##    1  一つ以上のインデックスが範囲外
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  対象が sx 配列ではない (SX_EX_DATAERR)
-##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
-sx_arr_at() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_at "${@}" || return; return 0;; esac
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arr_quote() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_quote "${@}" || return; return 0;; esac
 
-	# 1. 配列の妥当性チェック
-	sx_var_is_arr "${1-}" || case "${?}" in
-		1) return "${SX_EX_DATAERR}";;
-		*) return "${?}";;
-	esac
+	sx_var_rw_chk "${1-}" || return
 
-	__sx_arr_at_arr="${1}"
-	eval "__sx_arr_at_len=\"\${${1}_len}\""
+	__sx_arr_quote_res="${1}"
 	shift
 
-	__sx_arr_at_chk=
-	for __sx_arr_at_pair in "${@}"; do
-		__sx_arr_at_dest="${__sx_arr_at_pair%%=*}"
-		__sx_arr_at_i="${__sx_arr_at_pair#*=}"
-
-		__sx_num_is_base_nat0 10 "${__sx_arr_at_i}" || {
-			unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
-			return "${SX_EX_USAGE}"
-		}
-
-		# 範囲チェック
-		__sx_num_lt "${__sx_arr_at_i}" "${__sx_arr_at_len}" || __sx_arr_at_err=
-
-		case "${__sx_arr_at_pair}" in *=*)
-			# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
-			if
-				! sx_var_is_name "${__sx_arr_at_dest}" ||
-				sx_str_match "${__sx_arr_at_dest}" "${__sx_arr_at_arr}" "${__sx_arr_at_arr}_*"
-			then
-				unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
-				return "${SX_EX_USAGE}"
-			fi
-
-			# コピー連鎖式の構築 (src-dest)
-			__sx_arr_at_chk="${__sx_arr_at_chk} ${__sx_arr_at_arr}_${__sx_arr_at_i}-${__sx_arr_at_dest}"
-		;; esac
-	done
-
-	case "${__sx_arr_at_err+X}" in X)
-		unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i __sx_arr_at_err
-		return 1
-	;; esac
-
-	eval set -- "${__sx_arr_at_chk}"
-	unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
-
-	case "${#}" in
-		0) return "${SX_EX_OK}";;
-	esac
-
-	# 2. 書き込み可能性（構造を含む）の一括チェック
-	eval __sx_var_is_copyable "${@}" || {
-		return "${SX_EX_NOPERM}"
+	sx_var_is_arr "${@}" || {
+		unset __sx_arr_quote_res
+		return "${SX_EX_USAGE}"
 	}
 
-	__sx_var_copy "${@}"
+	__sx_arr_quote "${__sx_arr_quote_res}" "${@}"
+	unset __sx_arr_quote_res
 }
 
-### __sx_arr_at - 配列の要素を取得する（内部用）
+### __sx_arr_quote - 配列要素をシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
 ## 使い方:
-##   __sx_arr_at 配列名 [結果変数名=インデックス ...]
+##   __sx_arr_quote 結果変数名 配列名1 [配列名2 ...]
 ##
 ## 説明:
-##   sx_arr_at の内部実装。
+##   sx_arr_quote の内部実装。
 ##   引数チェックは行わない。
-__sx_arr_at() {
-	__sx_arr_at_chk_=
-	__sx_arr_at_arr_="${1}"
-	eval "__sx_arr_at_len_=\"\${${1}_len}\""
+__sx_arr_quote() {
+	__sx_arr_quote_out_=
+	__sx_arr_quote_res_="${1}"
 	shift
 
-	for __sx_arr_at_pair_ in "${@}"; do
-		__sx_arr_at_i_="${__sx_arr_at_pair_#*=}"
+	for __sx_arr_quote_arr_ in "${@}"; do
+		eval set -- 0 "\"\${${__sx_arr_quote_arr_}_len}\""
 
-		# 範囲チェック
-		__sx_num_lt "${__sx_arr_at_i_}" "${__sx_arr_at_len_}" || {
-			unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
-			return 1
-		}
+		while __sx_num_lt "${1}" "${2}"; do
+			eval __sx_arg_quote __sx_arr_quote_esc_ "\"\${${__sx_arr_quote_arr_}_${1}}\""
+			__sx_arr_quote_out_="${__sx_arr_quote_out_} ${__sx_arr_quote_esc_}"
 
-		case "${__sx_arr_at_pair_}" in *=*)
-			__sx_arr_at_chk_="${__sx_arr_at_chk_} ${__sx_arr_at_arr_}_${__sx_arr_at_i_}-${__sx_arr_at_pair_%%=*}"
-		;; esac
+			set -- "$((${1} + 1))" "${2}"
+		done
 	done
 
-	case "${__sx_arr_at_chk_}" in
-		'') return "${SX_EX_OK}";;
-	esac
+	__sx_var_set "${__sx_arr_quote_res_}=${__sx_arr_quote_out_# }"
 
-	eval __sx_var_copy "${__sx_arr_at_chk_}"
-	unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
+	unset __sx_arr_quote_res_ __sx_arr_quote_out_ __sx_arr_quote_arr_ __sx_arr_quote_esc_
+}
+
+### sx_arr_rquote - 配列要素を逆順にシングルクォートで囲み、スペース区切りで結合する
+##
+## 使い方:
+##   sx_arr_rquote 結果変数名 配列名1 [配列名2 ...]
+##
+## 説明:
+##   指定されたすべての配列の要素を、完全な逆順（最後の配列の最後の要素が先頭）で
+##   それぞれシングルクォートで囲み、スペース区切りで結合した文字列を作成して結果変数に格納する。
+##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arr_rquote() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_rquote "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+	__sx_arr_rquote_res="${1}"
+	shift
+	sx_var_is_arr "${@}" || {
+		unset __sx_arr_rquote_res
+		return "${SX_EX_USAGE}"
+	}
+
+	set -- "${__sx_arr_rquote_res}" "${@}"
+	unset __sx_arr_rquote_res
+	__sx_arr_rquote "${@}"
+}
+
+### __sx_arr_rquote - 配列要素を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
+##
+## 使い方:
+##   __sx_arr_rquote 結果変数名 配列名1 [配列名2 ...]
+##
+## 説明:
+##   sx_arr_rquote の内部実装。
+##   引数チェックは行わない。
+__sx_arr_rquote() {
+	__sx_arr_rquote_out_=
+	__sx_arr_rquote_res_="${1}"
+	shift
+
+	for __sx_arr_rquote_arr_ in "${@}"; do
+		eval set -- 0 "\"\${${__sx_arr_rquote_arr_}_len}\""
+
+		while __sx_num_lt "${1}" "${2}"; do
+			eval __sx_arg_quote __sx_arr_rquote_esc_ "\"\${${__sx_arr_rquote_arr_}_${1}}\""
+			__sx_arr_rquote_out_=" ${__sx_arr_rquote_esc_}${__sx_arr_rquote_out_}"
+
+			set -- "$((${1} + 1))" "${2}"
+		done
+	done
+
+	__sx_var_set "${__sx_arr_rquote_res_}=${__sx_arr_rquote_out_# }"
+
+	unset __sx_arr_rquote_res_ __sx_arr_rquote_out_ __sx_arr_rquote_arr_ __sx_arr_rquote_esc_
 }
