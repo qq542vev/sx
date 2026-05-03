@@ -124,95 +124,55 @@ sx_util_eval() {
 	eval "${1}" || return
 }
 
-### sx_call_with_ifs - IFS を一時的に変更してコマンドを実行する
+### sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する
 ##
 ## 使い方:
-##   sx_call_with_ifs 新しいIFS コマンド [引数 ...]
+##   IFS=',' sx_str_split_ifs 結果変数名 [文字列 ...]
 ##
 ## 説明:
-##   指定された IFS のもとで、残りの引数を単語分割（Word Splitting）を伴って実行する。
-##
-## 終了ステータス:
-##    0  実行したコマンドが成功
-##   64  引数不正 (SX_EX_USAGE)
-##   77  IFS が書き込み不可 (SX_EX_NOPERM)
-##   その他  実行したコマンドの終了ステータス
-sx_call_with_ifs() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_call_with_ifs "${@}" || return; return 0;; esac
-
-	sx_str_eq "${2:+X}" X || return "${SX_EX_USAGE}"
-	__sx_var_is_rw IFS || return "${SX_EX_NOPERM}"
-
-	__sx_call_with_ifs "${@}" || return
-}
-
-### __sx_call_with_ifs - IFS を一時的に変更してコマンドを実行する（内部用）
-##
-## 使い方:
-##   __sx_call_with_ifs 新しいIFS コマンド [引数 ...]
-##
-## 説明:
-##   指定された IFS のもとで、残りの引数を単語分割（Word Splitting）を伴って実行する。
-##   終了ステータスは実行したコマンドの終了ステータスに従う。
-__sx_call_with_ifs() {
-	__sx_call_with_ifs_old_="${IFS-}"
-	__sx_call_with_ifs_set_="${IFS+X}"
-	__sx_call_with_ifs_opts_="${-}"
-	__sx_call_with_ifs_cmd_="${2}"
-	IFS="${1}"
-	shift 2
-
-	set -f
-	set -- "${__sx_call_with_ifs_cmd_}" ${*}
-
-	if ! sx_str_has "${__sx_call_with_ifs_opts_}" f; then
-		set +f
-	fi
-
-	if sx_str_eq "${__sx_call_with_ifs_set_}" X; then
-		IFS="${__sx_call_with_ifs_old_}"
-	else
-		unset IFS
-	fi
-
-	unset __sx_call_with_ifs_old_ __sx_call_with_ifs_set_ __sx_call_with_ifs_opts_ __sx_call_with_ifs_cmd_
-	"${@}" || return
-}
-
-# ========================================
-#  ARG (Arguments)
-# ========================================
-
-### sx_arg_len - 引数の個数を取得する
-##
-## 使い方:
-##   sx_arg_len 結果変数名 [引数 ...]
-##
-## 説明:
-##   第2引数以降に渡された引数の個数を数え、その結果を結果変数に格納する。
+##   現在の IFS（内部フィールド区切り文字）を用いて、第2引数以降の文字列を
+##   単語分割（Word Splitting）し、各単語をシングルクォートで囲み、
+##   スペース区切りで結合した文字列として結果変数に格納する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_len() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_len "${@}" || return; return 0;; esac
+sx_str_split_ifs() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split_ifs "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
 
-	__sx_arg_len "${@}"
+	__sx_str_split_ifs "${@}" || return
 }
 
-### __sx_arg_len - 引数の個数を取得する（内部用）
+### __sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する（内部用）
 ##
 ## 使い方:
-##   __sx_arg_len 結果変数名 [引数 ...]
+##   __sx_str_split_ifs 結果変数名 [文字列 ...]
 ##
 ## 説明:
-##   引数チェックを行わずに個数の取得を行う。
-__sx_arg_len() {
-	__sx_var_set "${1}=$((${#} - 1))"
+##   引数チェックを行わずに単語分割処理を行う。
+__sx_str_split_ifs() {
+	__sx_str_split_ifs_res_="${1}"
+	__sx_str_split_ifs_opts_="${-}"
+	shift
+
+	set -f
+	set -- ${*}
+
+	if ! sx_str_has "${__sx_str_split_ifs_opts_}" f; then
+		set +f
+	fi
+
+	__sx_arg_quote "${__sx_str_split_ifs_res_}" "${@}"
+
+	unset __sx_str_split_ifs_res_ __sx_str_split_ifs_opts_
 }
+
+# ========================================
+#  ARG (Arguments)
+# ========================================
 
 ### sx_arg_join - 引数を指定された区切り文字で結合する
 ##
@@ -251,9 +211,40 @@ __sx_arg_join() {
 		__sx_arg_join_out_="${__sx_arg_join_out_}${__sx_arg_join_sep_}${__sx_arg_join_arg_}"
 	done
 
-	__sx_var_set "${__sx_arg_join_res_}=${__sx_arg_join_out_#${__sx_arg_join_sep_}}"
+	__sx_var_set "${__sx_arg_join_res_}=${__sx_arg_join_out_#"${__sx_arg_join_sep_}"}"
 
 	unset __sx_arg_join_res_ __sx_arg_join_sep_ __sx_arg_join_out_ __sx_arg_join_arg_
+}
+
+### sx_arg_len - 引数の個数を取得する
+##
+## 使い方:
+##   sx_arg_len 結果変数名 [引数 ...]
+##
+## 説明:
+##   第2引数以降に渡された引数の個数を数え、その結果を結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_len() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_len "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	__sx_arg_len "${@}"
+}
+
+### __sx_arg_len - 引数の個数を取得する（内部用）
+##
+## 使い方:
+##   __sx_arg_len 結果変数名 [引数 ...]
+##
+## 説明:
+##   引数チェックを行わずに個数の取得を行う。
+__sx_arg_len() {
+	__sx_var_set "${1}=$((${#} - 1))"
 }
 
 ### sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する
