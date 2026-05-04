@@ -1940,6 +1940,11 @@ __sx_num_is_iwidth() {
 	__sx_num_is_iwidth_bits_="${1}"
 	shift
 
+	sx_num_is_int "${@}" || {
+		unset __sx_num_is_iwidth_bits_
+		return 1
+	}
+
 	# 基数8/16のパラメータ計算
 	__sx_num_is_iwidth_xlen_=$(( __sx_num_is_iwidth_bits_ / 4 ))
 	__sx_num_is_iwidth_olenn_=$(( (__sx_num_is_iwidth_bits_ - 1) / 3 + 1 ))
@@ -1968,11 +1973,6 @@ __sx_num_is_iwidth() {
 	__sx_num_is_iwidth_dlen_=${#__sx_num_is_iwidth_dmax_}
 
 	for __sx_num_is_iwidth_arg_ in "${@}"; do
-		sx_num_is_int "${__sx_num_is_iwidth_arg_}" || {
-			unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
-			return 1
-		}
-
 		case "${__sx_num_is_iwidth_arg_}" in
 			-*) __sx_num_is_iwidth_sign_=-; __sx_num_is_iwidth_abs_=${__sx_num_is_iwidth_arg_#-} ;;
 			*)  __sx_num_is_iwidth_sign_=;  __sx_num_is_iwidth_abs_=${__sx_num_is_iwidth_arg_#+} ;;
