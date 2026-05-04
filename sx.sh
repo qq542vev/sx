@@ -1925,14 +1925,14 @@ __sx_num_lt() {
 ##    1  範囲外、または整数ではない値が含まれる
 ##   64  ビット幅指定が不正 (SX_EX_USAGE)
 sx_num_is_iwidth() {
-	case "${1-}" in
-		8 | 16 | 32 | 64 | 128) ;;
-		*) return "${SX_EX_USAGE}" ;;
-	esac
-
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_iwidth "${@}" || return; return 0;; esac
 
-	__sx_num_is_iwidth "${@}"
+	case "${1-}" in
+		8 | 16 | 32 | 64 | 128) ;;
+		*) return "${SX_EX_USAGE}";;
+	esac
+
+	__sx_num_is_iwidth "${@}" || return
 }
 
 ### __sx_num_is_iwidth - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する（内部用）
@@ -1979,19 +1979,80 @@ __sx_num_is_iwidth() {
 		esac
 
 		case "${__sx_num_is_iwidth_abs_}" in
-			0[xX]*) __sx_num_is_iwidth_base_=16; __sx_num_is_iwidth_abs_=${__sx_num_is_iwidth_abs_#??} ;;
-			0?*)    __sx_num_is_iwidth_base_=8;  __sx_num_is_iwidth_abs_=${__sx_num_is_iwidth_abs_#0} ;;
-			*)      __sx_num_is_iwidth_base_=10 ;;
-		esac
+			0[xX]*)
+				__sx_num_is_iwidth_abs_=${__sx_num_is_iwidth_abs_#??}
+				__sx_num_is_iwidth_len_=${#__sx_num_is_iwidth_abs_}
 
-		__sx_num_is_iwidth_len_=${#__sx_num_is_iwidth_abs_}
+				if __sx_num_lt "${__sx_num_is_iwidth_len_}" "${__sx_num_is_iwidth_xlen_}"; then
+					: # OK
+				elif __sx_num_lt "${__sx_num_is_iwidth_xlen_}" "${__sx_num_is_iwidth_len_}"; then
+					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+					return 1
+				else
+					case "${__sx_num_is_iwidth_sign_}${__sx_num_is_iwidth_abs_}" in
+						-[9a-fA-F]*)
+							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+							return 1
+							;;
+						-8*[!0]*)
+							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+							return 1
+							;;
+						[89a-fA-F]*)
+							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+							return 1
+							;;
+					esac
+				fi
+				;;
+			0?*)
+				__sx_num_is_iwidth_abs_=${__sx_num_is_iwidth_abs_#0}
+				__sx_num_is_iwidth_len_=${#__sx_num_is_iwidth_abs_}
 
-		case "${__sx_num_is_iwidth_base_}" in
-			10)
+				case "${__sx_num_is_iwidth_sign_}" in
+					-) __sx_num_is_iwidth_olen_="${__sx_num_is_iwidth_olenn_}"; __sx_num_is_iwidth_olead_="${__sx_num_is_iwidth_oleadn_}" ;;
+					*) __sx_num_is_iwidth_olen_="${__sx_num_is_iwidth_olenp_}"; __sx_num_is_iwidth_olead_="${__sx_num_is_iwidth_oleadp_}" ;;
+				esac
+
+				if __sx_num_lt "${__sx_num_is_iwidth_len_}" "${__sx_num_is_iwidth_olen_}"; then
+					: # OK
+				elif __sx_num_lt "${__sx_num_is_iwidth_olen_}" "${__sx_num_is_iwidth_len_}"; then
+					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+					return 1
+				else
+					case "${__sx_num_is_iwidth_sign_}" in
+						-)
+							case "${__sx_num_is_iwidth_abs_}" in
+								[$((${__sx_num_is_iwidth_olead_} + 1))-7]*)
+									unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+									return 1
+									;;
+								"${__sx_num_is_iwidth_olead_}"*[!0]*)
+									unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+									return 1
+									;;
+							esac
+							;;
+						*)
+							if ! sx_str_eq "${__sx_num_is_iwidth_olead_}" 7; then
+								case "${__sx_num_is_iwidth_abs_}" in
+									[$((${__sx_num_is_iwidth_olead_} + 1))-7]*)
+										unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+										return 1
+										;;
+								esac
+							fi
+							;;
+					esac
+				fi
+				;;
+			*)
+				__sx_num_is_iwidth_len_=${#__sx_num_is_iwidth_abs_}
+
 				if __sx_num_lt "${__sx_num_is_iwidth_len_}" "${__sx_num_is_iwidth_dlen_}"; then
 					: # OK
 				elif __sx_num_lt "${__sx_num_is_iwidth_dlen_}" "${__sx_num_is_iwidth_len_}"; then
-					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
 					return 1
 				else
 					case "${__sx_num_is_iwidth_sign_}" in
@@ -2019,123 +2080,17 @@ __sx_num_is_iwidth() {
 						if __sx_num_lt "$((1${__sx_num_is_iwidth_pa_}))" "$((1${__sx_num_is_iwidth_pb_}))"; then
 							break
 						elif __sx_num_lt "$((1${__sx_num_is_iwidth_pb_}))" "$((1${__sx_num_is_iwidth_pa_}))"; then
-							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
 							return 1
 						fi
 					done
 				fi
 				;;
-			16)
-				if __sx_num_lt "${__sx_num_is_iwidth_len_}" "${__sx_num_is_iwidth_xlen_}"; then
-					: # OK
-				elif __sx_num_lt "${__sx_num_is_iwidth_xlen_}" "${__sx_num_is_iwidth_len_}"; then
-					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
-					return 1
-				else
-					case "${__sx_num_is_iwidth_sign_}${__sx_num_is_iwidth_abs_}" in
-						-[9a-fA-F]*)
-							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
-							return 1
-							;;
-						-8*[!0]*)
-							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
-							return 1
-							;;
-						[89a-fA-F]*)
-							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
-							return 1
-							;;
-					esac
-				fi
-				;;
-			8)
-				case "${__sx_num_is_iwidth_sign_}" in
-					-) __sx_num_is_iwidth_olen_="${__sx_num_is_iwidth_olenn_}"; __sx_num_is_iwidth_olead_="${__sx_num_is_iwidth_oleadn_}" ;;
-					*) __sx_num_is_iwidth_olen_="${__sx_num_is_iwidth_olenp_}"; __sx_num_is_iwidth_olead_="${__sx_num_is_iwidth_oleadp_}" ;;
-				esac
-
-				if __sx_num_lt "${__sx_num_is_iwidth_len_}" "${__sx_num_is_iwidth_olen_}"; then
-					: # OK
-				elif __sx_num_lt "${__sx_num_is_iwidth_olen_}" "${__sx_num_is_iwidth_len_}"; then
-					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
-					return 1
-				else
-					case "${__sx_num_is_iwidth_sign_}" in
-						-)
-							case "${__sx_num_is_iwidth_abs_}" in
-								[$((${__sx_num_is_iwidth_olead_} + 1))-7]*)
-									unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
-									return 1
-									;;
-								"${__sx_num_is_iwidth_olead_}"*[!0]*)
-									unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
-									return 1
-									;;
-							esac
-							;;
-						*)
-							if ! sx_str_eq "${__sx_num_is_iwidth_olead_}" 7; then
-								case "${__sx_num_is_iwidth_abs_}" in
-									[$((${__sx_num_is_iwidth_olead_} + 1))-7]*)
-										unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
-										return 1
-										;;
-								esac
-							fi
-							;;
-					esac
-				fi
-				;;
 		esac
 	done
 
-	unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+	unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
 }
-
-### sx_num_is_i32 - すべての引数が 32bit 符号付き整数の範囲内か確認する
-##
-## 使い方:
-##   sx_num_is_i32 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   引数で指定されたすべての文字列が、32bit 符号付き整数 (-2147483648 ～ 2147483647)
-##   の範囲内であるかを確認する。8進数 (0...)、16進数 (0x...) 形式もサポートする。
-##
-## 終了ステータス:
-##    0  すべて範囲内である (SX_EX_OK)
-##    1  範囲外、または整数ではない値が含まれる
-sx_num_is_i32() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_iwidth 32 "${@}" || return; return 0;; esac
-
-	__sx_num_is_iwidth 32 "${@}"
-}
-
-### sx_num_is_i64 - すべての引数が 64bit 符号付き整数の範囲内か確認する
-##
-## 使い方:
-##   sx_num_is_i64 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   引数で指定されたすべての文字列が、64bit 符号付き整数 (-9223372036854775808 ～ 9223372036854775807)
-##   の範囲内であるかを確認する。8進数 (0...)、16進数 (0x...) 形式もサポートする。
-##
-## 終了ステータス:
-##    0  すべて範囲内である (SX_EX_OK)
-##    1  範囲外、または整数ではない値が含まれる
-sx_num_is_i64() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_iwidth 64 "${@}" || return; return 0;; esac
-
-	__sx_num_is_iwidth 64 "${@}"
-}
-
-### __sx_num_range_chk - 設定された数値範囲に基づいて検証を行う（内部用）
-__sx_num_range_chk() {
-	case "${SX_CFG_NUM_RANGE-}" in
-		8 | 16 | 32 | 64 | 128) __sx_num_is_iwidth "${SX_CFG_NUM_RANGE}" "${@}" ;;
-		*)  sx_num_is_int "${@}" ;;
-	esac
-}
-
 # ========================================
 #  UUID (UUID Operations)
 # ========================================
