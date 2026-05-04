@@ -106,6 +106,7 @@ readonly SX_NUM_BASE16_CHARS='0123456789ABCDEFabcdef'
 : "${SX_SIG_BASE:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
 : "${SX_SIG_ARR:=array-${SX_SIG_BASE}}"
 : "${SX_CFG_SKIP_CHK:=0}"
+: "${SX_CFG_NUM_RANGE:=32}"
 SX_SYS_REV=0
 
 # ========================================
@@ -124,51 +125,6 @@ sx_util_eval() {
 	eval "${1}" || return
 }
 
-### sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する
-##
-## 使い方:
-##   IFS=',' sx_str_split_ifs 結果変数名 [文字列 ...]
-##
-## 説明:
-##   現在の IFS（内部フィールド区切り文字）を用いて、第2引数以降の文字列を
-##   単語分割（Word Splitting）し、各単語をシングルクォートで囲み、
-##   スペース区切りで結合した文字列として結果変数に格納する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_split_ifs() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split_ifs "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" || return
-
-	__sx_str_split_ifs "${@}" || return
-}
-
-### __sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する（内部用）
-##
-## 使い方:
-##   __sx_str_split_ifs 結果変数名 [文字列 ...]
-##
-## 説明:
-##   引数チェックを行わずに単語分割処理を行う。
-__sx_str_split_ifs() {
-	__sx_str_split_ifs_res_="${1}"
-	__sx_str_split_ifs_opts_="${-}"
-	shift
-
-	set -f
-	set -- ${*}
-
-	if ! sx_str_has "${__sx_str_split_ifs_opts_}" f; then
-		set +f
-	fi
-
-	__sx_arg_quote "${__sx_str_split_ifs_res_}" "${@}"
-
-	unset __sx_str_split_ifs_res_ __sx_str_split_ifs_opts_
-}
 
 # ========================================
 #  ARG (Arguments)
@@ -443,6 +399,59 @@ __sx_var_copy() {
 
 	# 内部用変数を掃除
 	unset __sx_var_copy_esc_ __sx_var_copy_ls_ __sx_var_copy_asg_ __sx_var_copy_pair_ __sx_var_copy_dest_ __sx_var_copy_src_ __sx_var_copy_val_ __sx_var_copy_dests_ __sx_var_copy_arg_
+}
+
+### sx_var_dump - 変数や配列の状態を文字列として取得する
+##
+## 使い方:
+##   sx_var_dump 結果変数名 名前1 [名前2 ...]
+##
+## 説明:
+##   指定された変数（または配列）の現在の状態を、代入式（name='value'）の
+##   形式で取得し、結果変数に格納する。配列の場合は関連する全要素を含む。
+##   変数が設定されていない場合は 'unset name' の形式となる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_var_dump() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_dump "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_var_dump "${@}"
+}
+
+### __sx_var_dump - 変数や配列の状態を文字列として取得する（内部用）
+##
+## 使い方:
+##   __sx_var_dump 結果変数名 名前1 [名前2 ...]
+##
+## 説明:
+##   sx_var_dump の内部実装。
+##   引数チェックは行わない。
+__sx_var_dump() {
+	__sx_var_dump_res_="${1}"
+	__sx_var_dump_out_=
+	shift
+
+	__sx_var_list_dep __sx_var_dump_ls_ "${@}"
+	eval set -- "${__sx_var_dump_ls_}"
+
+	for __sx_var_dump_vn_ in "${@}"; do
+		if sx_var_is_set "${__sx_var_dump_vn_}"; then
+			eval __sx_arg_quote __sx_var_dump_val_ "\"\${${__sx_var_dump_vn_}}\""
+			__sx_var_dump_out_="${__sx_var_dump_out_}${__sx_var_dump_vn_}=${__sx_var_dump_val_}${SX_STR_LF}"
+		else
+			__sx_var_dump_out_="${__sx_var_dump_out_}unset ${__sx_var_dump_vn_}${SX_STR_LF}"
+		fi
+	done
+
+	__sx_var_set "${__sx_var_dump_res_}=${__sx_var_dump_out_}"
+
+	unset __sx_var_dump_res_ __sx_var_dump_out_ __sx_var_dump_ls_ __sx_var_dump_vn_ __sx_var_dump_val_
 }
 
 ### sx_var_is_arr - 指定された変数がsx配列であるか確認する
@@ -1272,59 +1281,6 @@ __sx_var_touch() {
 	unset __sx_var_touch_arg_
 }
 
-### sx_var_dump - 変数や配列の状態を文字列として取得する
-##
-## 使い方:
-##   sx_var_dump 結果変数名 名前1 [名前2 ...]
-##
-## 説明:
-##   指定された変数（または配列）の現在の状態を、代入式（name='value'）の
-##   形式で取得し、結果変数に格納する。配列の場合は関連する全要素を含む。
-##   変数が設定されていない場合は 'unset name' の形式となる。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_var_dump() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_dump "${@}" || return; return 0;; esac
-
-	sx_var_rw_chk "${1-}" || return
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-
-	__sx_var_dump "${@}"
-}
-
-### __sx_var_dump - 変数や配列の状態を文字列として取得する（内部用）
-##
-## 使い方:
-##   __sx_var_dump 結果変数名 名前1 [名前2 ...]
-##
-## 説明:
-##   sx_var_dump の内部実装。
-##   引数チェックは行わない。
-__sx_var_dump() {
-	__sx_var_dump_res_="${1}"
-	__sx_var_dump_out_=
-	shift
-
-	__sx_var_list_dep __sx_var_dump_ls_ "${@}"
-	eval set -- "${__sx_var_dump_ls_}"
-
-	for __sx_var_dump_vn_ in "${@}"; do
-		if sx_var_is_set "${__sx_var_dump_vn_}"; then
-			eval __sx_arg_quote __sx_var_dump_val_ "\"\${${__sx_var_dump_vn_}}\""
-			__sx_var_dump_out_="${__sx_var_dump_out_}${__sx_var_dump_vn_}=${__sx_var_dump_val_}${SX_STR_LF}"
-		else
-			__sx_var_dump_out_="${__sx_var_dump_out_}unset ${__sx_var_dump_vn_}${SX_STR_LF}"
-		fi
-	done
-
-	__sx_var_set "${__sx_var_dump_res_}=${__sx_var_dump_out_}"
-
-	unset __sx_var_dump_res_ __sx_var_dump_out_ __sx_var_dump_ls_ __sx_var_dump_vn_ __sx_var_dump_val_
-}
-
 ### sx_var_unset - 変数または配列を関連要素を含めて削除する
 ##
 ## 使い方:
@@ -1393,7 +1349,7 @@ __sx_var_unset() {
 sx_num_eq() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_eq "${@}" || return; return 0;; esac
 
-	sx_num_is_int "${@}" || return "${SX_EX_USAGE}"
+	__sx_num_range_chk "${@}" || return "${SX_EX_USAGE}"
 	__sx_num_eq "${@}" || return
 }
 
@@ -1901,7 +1857,7 @@ sx_num_is_pint() {
 sx_num_le() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_le "${@}" || return; return 0;; esac
 
-	sx_num_is_int "${@}" || return "${SX_EX_USAGE}"
+	__sx_num_range_chk "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_num_le "${@}" || return
 }
@@ -1933,7 +1889,7 @@ __sx_num_le() {
 sx_num_lt() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_lt "${@}" || return; return 0;; esac
 
-	sx_num_is_int "${@}" || return "${SX_EX_USAGE}"
+	__sx_num_range_chk "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_num_lt "${@}" || return
 }
@@ -1952,6 +1908,230 @@ __sx_num_lt() {
 
 		shift
 	done
+}
+
+### sx_num_is_iwidth - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
+##
+## 使い方:
+##   sx_num_is_iwidth ビット幅 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定されたビット幅 (8, 16, 32, 64, 128) において、
+##   後続のすべての引数が、その範囲内の符号付き整数であるか確認する。
+##   8進数 (0...)、16進数 (0x...) 形式もサポートする。
+##
+## 終了ステータス:
+##    0  すべて範囲内である (SX_EX_OK)
+##    1  範囲外、または整数ではない値が含まれる
+##   64  ビット幅指定が不正 (SX_EX_USAGE)
+sx_num_is_iwidth() {
+	case "${1-}" in
+		8 | 16 | 32 | 64 | 128) ;;
+		*) return "${SX_EX_USAGE}" ;;
+	esac
+
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_iwidth "${@}" || return; return 0;; esac
+
+	__sx_num_is_iwidth "${@}"
+}
+
+### __sx_num_is_iwidth - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する（内部用）
+__sx_num_is_iwidth() {
+	__sx_num_is_iwidth_bits_="${1}"
+	shift
+
+	# 基数8/16のパラメータ計算
+	__sx_num_is_iwidth_xlen_=$(( __sx_num_is_iwidth_bits_ / 4 ))
+	__sx_num_is_iwidth_olenn_=$(( (__sx_num_is_iwidth_bits_ - 1) / 3 + 1 ))
+	case $(( (__sx_num_is_iwidth_bits_ - 1) % 3 )) in
+		0) __sx_num_is_iwidth_oleadn_=1 ;;
+		1) __sx_num_is_iwidth_oleadn_=2 ;;
+		2) __sx_num_is_iwidth_oleadn_=4 ;;
+	esac
+	if sx_str_eq "${__sx_num_is_iwidth_oleadn_}" 1; then
+		__sx_num_is_iwidth_olenp_=$(( __sx_num_is_iwidth_olenn_ - 1 ))
+		__sx_num_is_iwidth_oleadp_=7
+	else
+		__sx_num_is_iwidth_olenp_="${__sx_num_is_iwidth_olenn_}"
+		__sx_num_is_iwidth_oleadp_=$(( __sx_num_is_iwidth_oleadn_ - 1 ))
+	fi
+
+	# 基数10のパラメータ設定
+	case "${__sx_num_is_iwidth_bits_}" in
+		8)   __sx_num_is_iwidth_dmax_=127; __sx_num_is_iwidth_dmin_=128; __sx_num_is_iwidth_dlen_=3 ;;
+		16)  __sx_num_is_iwidth_dmax_=32767; __sx_num_is_iwidth_dmin_=32768; __sx_num_is_iwidth_dlen_=5 ;;
+		32)  __sx_num_is_iwidth_dmax_=2147483647; __sx_num_is_iwidth_dmin_=2147483648; __sx_num_is_iwidth_dlen_=10 ;;
+		64)  __sx_num_is_iwidth_dmax_=9223372036854775807; __sx_num_is_iwidth_dmin_=9223372036854775808; __sx_num_is_iwidth_dlen_=19 ;;
+		128) __sx_num_is_iwidth_dmax_=170141183460469231731687303715884105727; __sx_num_is_iwidth_dmin_=170141183460469231731687303715884105728; __sx_num_is_iwidth_dlen_=39 ;;
+	esac
+
+	for __sx_num_is_iwidth_arg_ in "${@}"; do
+		sx_num_is_int "${__sx_num_is_iwidth_arg_}" || {
+			unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+			return 1
+		}
+
+		case "${__sx_num_is_iwidth_arg_}" in
+			-*) __sx_num_is_iwidth_sign_=-; __sx_num_is_iwidth_abs_=${__sx_num_is_iwidth_arg_#-} ;;
+			*)  __sx_num_is_iwidth_sign_=;  __sx_num_is_iwidth_abs_=${__sx_num_is_iwidth_arg_#+} ;;
+		esac
+
+		case "${__sx_num_is_iwidth_abs_}" in
+			0[xX]*) __sx_num_is_iwidth_base_=16; __sx_num_is_iwidth_abs_=${__sx_num_is_iwidth_abs_#??} ;;
+			0?*)    __sx_num_is_iwidth_base_=8;  __sx_num_is_iwidth_abs_=${__sx_num_is_iwidth_abs_#0} ;;
+			*)      __sx_num_is_iwidth_base_=10 ;;
+		esac
+
+		__sx_num_is_iwidth_len_=${#__sx_num_is_iwidth_abs_}
+
+		case "${__sx_num_is_iwidth_base_}" in
+			10)
+				if __sx_num_lt "${__sx_num_is_iwidth_len_}" "${__sx_num_is_iwidth_dlen_}"; then
+					: # OK
+				elif __sx_num_lt "${__sx_num_is_iwidth_dlen_}" "${__sx_num_is_iwidth_len_}"; then
+					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+					return 1
+				else
+					case "${__sx_num_is_iwidth_sign_}" in
+						-) __sx_num_is_iwidth_lim_="${__sx_num_is_iwidth_dmin_}" ;;
+						*) __sx_num_is_iwidth_lim_="${__sx_num_is_iwidth_dmax_}" ;;
+					esac
+					__sx_num_is_iwidth_a_="${__sx_num_is_iwidth_abs_}"
+					__sx_num_is_iwidth_b_="${__sx_num_is_iwidth_lim_}"
+					while case "${__sx_num_is_iwidth_a_}" in ?*) ;; *) ! : ;; esac; do
+						case "${__sx_num_is_iwidth_a_}" in
+							????????*)
+								__sx_num_is_iwidth_ra_="${__sx_num_is_iwidth_a_#????????}"
+								__sx_num_is_iwidth_pa_="${__sx_num_is_iwidth_a_%${__sx_num_is_iwidth_ra_}}"
+								__sx_num_is_iwidth_rb_="${__sx_num_is_iwidth_b_#????????}"
+								__sx_num_is_iwidth_pb_="${__sx_num_is_iwidth_b_%${__sx_num_is_iwidth_rb_}}"
+								__sx_num_is_iwidth_a_="${__sx_num_is_iwidth_ra_}"
+								__sx_num_is_iwidth_b_="${__sx_num_is_iwidth_rb_}"
+								;;
+							*)
+								__sx_num_is_iwidth_pa_="${__sx_num_is_iwidth_a_}"
+								__sx_num_is_iwidth_pb_="${__sx_num_is_iwidth_b_}"
+								__sx_num_is_iwidth_a_=
+								;;
+						esac
+						if __sx_num_lt "$((1${__sx_num_is_iwidth_pa_}))" "$((1${__sx_num_is_iwidth_pb_}))"; then
+							break
+						elif __sx_num_lt "$((1${__sx_num_is_iwidth_pb_}))" "$((1${__sx_num_is_iwidth_pa_}))"; then
+							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+							return 1
+						fi
+					done
+				fi
+				;;
+			16)
+				if __sx_num_lt "${__sx_num_is_iwidth_len_}" "${__sx_num_is_iwidth_xlen_}"; then
+					: # OK
+				elif __sx_num_lt "${__sx_num_is_iwidth_xlen_}" "${__sx_num_is_iwidth_len_}"; then
+					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+					return 1
+				else
+					case "${__sx_num_is_iwidth_sign_}${__sx_num_is_iwidth_abs_}" in
+						-[9a-fA-F]*)
+							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+							return 1
+							;;
+						-8*[!0]*)
+							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+							return 1
+							;;
+						[89a-fA-F]*)
+							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+							return 1
+							;;
+					esac
+				fi
+				;;
+			8)
+				case "${__sx_num_is_iwidth_sign_}" in
+					-) __sx_num_is_iwidth_olen_="${__sx_num_is_iwidth_olenn_}"; __sx_num_is_iwidth_olead_="${__sx_num_is_iwidth_oleadn_}" ;;
+					*) __sx_num_is_iwidth_olen_="${__sx_num_is_iwidth_olenp_}"; __sx_num_is_iwidth_olead_="${__sx_num_is_iwidth_oleadp_}" ;;
+				esac
+
+				if __sx_num_lt "${__sx_num_is_iwidth_len_}" "${__sx_num_is_iwidth_olen_}"; then
+					: # OK
+				elif __sx_num_lt "${__sx_num_is_iwidth_olen_}" "${__sx_num_is_iwidth_len_}"; then
+					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+					return 1
+				else
+					case "${__sx_num_is_iwidth_sign_}" in
+						-)
+							case "${__sx_num_is_iwidth_abs_}" in
+								[$((${__sx_num_is_iwidth_olead_} + 1))-7]*)
+									unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+									return 1
+									;;
+								"${__sx_num_is_iwidth_olead_}"*[!0]*)
+									unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+									return 1
+									;;
+							esac
+							;;
+						*)
+							if ! sx_str_eq "${__sx_num_is_iwidth_olead_}" 7; then
+								case "${__sx_num_is_iwidth_abs_}" in
+									[$((${__sx_num_is_iwidth_olead_} + 1))-7]*)
+										unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+										return 1
+										;;
+								esac
+							fi
+							;;
+					esac
+				fi
+				;;
+		esac
+	done
+
+	unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_base_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_a_ __sx_num_is_iwidth_b_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+}
+
+### sx_num_is_i32 - すべての引数が 32bit 符号付き整数の範囲内か確認する
+##
+## 使い方:
+##   sx_num_is_i32 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   引数で指定されたすべての文字列が、32bit 符号付き整数 (-2147483648 ～ 2147483647)
+##   の範囲内であるかを確認する。8進数 (0...)、16進数 (0x...) 形式もサポートする。
+##
+## 終了ステータス:
+##    0  すべて範囲内である (SX_EX_OK)
+##    1  範囲外、または整数ではない値が含まれる
+sx_num_is_i32() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_iwidth 32 "${@}" || return; return 0;; esac
+
+	__sx_num_is_iwidth 32 "${@}"
+}
+
+### sx_num_is_i64 - すべての引数が 64bit 符号付き整数の範囲内か確認する
+##
+## 使い方:
+##   sx_num_is_i64 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   引数で指定されたすべての文字列が、64bit 符号付き整数 (-9223372036854775808 ～ 9223372036854775807)
+##   の範囲内であるかを確認する。8進数 (0...)、16進数 (0x...) 形式もサポートする。
+##
+## 終了ステータス:
+##    0  すべて範囲内である (SX_EX_OK)
+##    1  範囲外、または整数ではない値が含まれる
+sx_num_is_i64() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_iwidth 64 "${@}" || return; return 0;; esac
+
+	__sx_num_is_iwidth 64 "${@}"
+}
+
+### __sx_num_range_chk - 設定された数値範囲に基づいて検証を行う（内部用）
+__sx_num_range_chk() {
+	case "${SX_CFG_NUM_RANGE-}" in
+		8 | 16 | 32 | 64 | 128) __sx_num_is_iwidth "${SX_CFG_NUM_RANGE}" "${@}" ;;
+		*)  sx_num_is_int "${@}" ;;
+	esac
 }
 
 # ========================================
@@ -2469,6 +2649,52 @@ __sx_str_split() {
 
 	__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_# }"
 	unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_out_ __sx_str_split_esc_
+}
+
+### sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する
+##
+## 使い方:
+##   IFS=',' sx_str_split_ifs 結果変数名 [文字列 ...]
+##
+## 説明:
+##   現在の IFS（内部フィールド区切り文字）を用いて、第2引数以降の文字列を
+##   単語分割（Word Splitting）し、各単語をシングルクォートで囲み、
+##   スペース区切りで結合した文字列として結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_split_ifs() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split_ifs "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	__sx_str_split_ifs "${@}" || return
+}
+
+### __sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する（内部用）
+##
+## 使い方:
+##   __sx_str_split_ifs 結果変数名 [文字列 ...]
+##
+## 説明:
+##   引数チェックを行わずに単語分割処理を行う。
+__sx_str_split_ifs() {
+	__sx_str_split_ifs_res_="${1}"
+	__sx_str_split_ifs_opts_="${-}"
+	shift
+
+	set -f
+	set -- ${*}
+
+	if ! sx_str_has "${__sx_str_split_ifs_opts_}" f; then
+		set +f
+	fi
+
+	__sx_arg_quote "${__sx_str_split_ifs_res_}" "${@}"
+
+	unset __sx_str_split_ifs_res_ __sx_str_split_ifs_opts_
 }
 
 ### sx_str_sub - 文字列内のパターンを置換する
