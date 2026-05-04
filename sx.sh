@@ -1958,12 +1958,14 @@ __sx_num_is_iwidth() {
 
 	# 基数10のパラメータ設定
 	case "${__sx_num_is_iwidth_bits_}" in
-		8)   __sx_num_is_iwidth_dmax_=127; __sx_num_is_iwidth_dmin_=128; __sx_num_is_iwidth_dlen_=3 ;;
-		16)  __sx_num_is_iwidth_dmax_=32767; __sx_num_is_iwidth_dmin_=32768; __sx_num_is_iwidth_dlen_=5 ;;
-		32)  __sx_num_is_iwidth_dmax_=2147483647; __sx_num_is_iwidth_dmin_=2147483648; __sx_num_is_iwidth_dlen_=10 ;;
-		64)  __sx_num_is_iwidth_dmax_=9223372036854775807; __sx_num_is_iwidth_dmin_=9223372036854775808; __sx_num_is_iwidth_dlen_=19 ;;
-		128) __sx_num_is_iwidth_dmax_=170141183460469231731687303715884105727; __sx_num_is_iwidth_dmin_=170141183460469231731687303715884105728; __sx_num_is_iwidth_dlen_=39 ;;
+		8)   __sx_num_is_iwidth_dmax_=127 ;;
+		16)  __sx_num_is_iwidth_dmax_=32767 ;;
+		32)  __sx_num_is_iwidth_dmax_=2147483647 ;;
+		64)  __sx_num_is_iwidth_dmax_=9223372036854775807 ;;
+		128) __sx_num_is_iwidth_dmax_=170141183460469231731687303715884105727 ;;
 	esac
+	__sx_num_is_iwidth_dmin_="${__sx_num_is_iwidth_dmax_%7}8"
+	__sx_num_is_iwidth_dlen_=${#__sx_num_is_iwidth_dmax_}
 
 	for __sx_num_is_iwidth_arg_ in "${@}"; do
 		sx_num_is_int "${__sx_num_is_iwidth_arg_}" || {
