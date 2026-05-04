@@ -1932,7 +1932,7 @@ sx_num_is_iwidth() {
 		*) return "${SX_EX_USAGE}";;
 	esac
 
-	__sx_num_is_iwidth "${@}"
+	__sx_num_is_iwidth "${@}" || return
 }
 
 ### __sx_num_is_iwidth - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する（内部用）
@@ -1984,11 +1984,11 @@ __sx_num_is_iwidth() {
 				__sx_num_is_iwidth_len_=${#__sx_num_is_iwidth_abs_}
 
 				if __sx_num_lt "${__sx_num_is_iwidth_xlen_}" "${__sx_num_is_iwidth_len_}"; then
-					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
 					return 1
 				elif sx_str_eq "${__sx_num_is_iwidth_xlen_}" "${__sx_num_is_iwidth_len_}"; then
 					case "${__sx_num_is_iwidth_sign_}${__sx_num_is_iwidth_abs_}" in -[9a-fA-F]* | -8*[!0]* | [89a-fA-F]*)
-						unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+						unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
 						return 1
 					;; esac
 				fi
@@ -2003,19 +2003,19 @@ __sx_num_is_iwidth() {
 				esac
 
 				if __sx_num_lt "${__sx_num_is_iwidth_olen_}" "${__sx_num_is_iwidth_len_}"; then
-					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
 					return 1
 				elif sx_str_eq "${__sx_num_is_iwidth_olen_}" "${__sx_num_is_iwidth_len_}"; then
 					case "${__sx_num_is_iwidth_sign_}" in
 						-)
 							case "${__sx_num_is_iwidth_abs_}" in [$((${__sx_num_is_iwidth_olead_} + 1))-7]* | "${__sx_num_is_iwidth_olead_}"*[!0]*)
-								unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+								unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
 								return 1
 							;; esac
 							;;
 						*)
 							case "${__sx_num_is_iwidth_abs_}" in [$((${__sx_num_is_iwidth_olead_} + 1))-7]*)
-								unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+								unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
 								return 1
 							;; esac
 							;;
@@ -2026,7 +2026,7 @@ __sx_num_is_iwidth() {
 				__sx_num_is_iwidth_len_=${#__sx_num_is_iwidth_abs_}
 
 				if __sx_num_lt "${__sx_num_is_iwidth_dlen_}" "${__sx_num_is_iwidth_len_}"; then
-					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
 					return 1
 				elif sx_str_eq "${__sx_num_is_iwidth_dlen_}" "${__sx_num_is_iwidth_len_}"; then
 					case "${__sx_num_is_iwidth_sign_}" in
@@ -2034,36 +2034,36 @@ __sx_num_is_iwidth() {
 						*) __sx_num_is_iwidth_lim_="${__sx_num_is_iwidth_dmax_}" ;;
 					esac
 
-					while case "${__sx_num_is_iwidth_abs_}" in ?*) ;; *) ! : ;; esac; do
+					while :; do
 						case "${__sx_num_is_iwidth_abs_}" in
 							?????????*)
 								__sx_num_is_iwidth_ra_="${__sx_num_is_iwidth_abs_#?????????}"
-								__sx_num_is_iwidth_pa_="${__sx_num_is_iwidth_abs_%${__sx_num_is_iwidth_ra_}}"
+								__sx_num_is_iwidth_abs_="${__sx_num_is_iwidth_abs_%"${__sx_num_is_iwidth_ra_}"}"
 								__sx_num_is_iwidth_rb_="${__sx_num_is_iwidth_lim_#?????????}"
-								__sx_num_is_iwidth_pb_="${__sx_num_is_iwidth_lim_%${__sx_num_is_iwidth_rb_}}"
-								__sx_num_is_iwidth_abs_="${__sx_num_is_iwidth_ra_}"
-								__sx_num_is_iwidth_lim_="${__sx_num_is_iwidth_rb_}"
+								__sx_num_is_iwidth_lim_="${__sx_num_is_iwidth_lim_%"${__sx_num_is_iwidth_rb_}"}"
 								;;
 							*)
-								__sx_num_is_iwidth_pa_="${__sx_num_is_iwidth_abs_}"
-								__sx_num_is_iwidth_pb_="${__sx_num_is_iwidth_lim_}"
-								__sx_num_is_iwidth_abs_=
+								__sx_num_is_iwidth_ra_=
+								__sx_num_is_iwidth_rb_=
 								;;
 						esac
 
-						if __sx_num_lt "$((1${__sx_num_is_iwidth_pa_}))" "$((1${__sx_num_is_iwidth_pb_}))"; then
-							break
-						elif __sx_num_lt "$((1${__sx_num_is_iwidth_pb_}))" "$((1${__sx_num_is_iwidth_pa_}))"; then
-							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+						if __sx_num_lt "${__sx_num_is_iwidth_lim_}" "${__sx_num_is_iwidth_abs_}"; then
+							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
 							return 1
+						elif __sx_num_lt "${__sx_num_is_iwidth_abs_}" "${__sx_num_is_iwidth_lim_}" || sx_str_eq "${__sx_num_is_iwidth_ra_}" ''; then
+							break
 						fi
+
+						__sx_num_is_iwidth_abs_="${__sx_num_is_iwidth_ra_}"
+						__sx_num_is_iwidth_lim_="${__sx_num_is_iwidth_rb_}"
 					done
 				fi
 				;;
 		esac
 	done
 
-	unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_pa_ __sx_num_is_iwidth_pb_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
+	unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_sign_ __sx_num_is_iwidth_abs_ __sx_num_is_iwidth_len_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_ __sx_num_is_iwidth_olen_ __sx_num_is_iwidth_olead_ __sx_num_is_iwidth_lim_ __sx_num_is_iwidth_ra_ __sx_num_is_iwidth_rb_
 }
 
 ### __sx_num_range_chk - 設定された数値範囲に基づいて検証を行う（内部用）
