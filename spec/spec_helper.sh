@@ -29,17 +29,33 @@ spec_helper_configure() {
 # 内部変数の漏洩をチェックする関数
 # __で始まる変数がsetの結果に残っているかを確認します。
 check_no_leak() {
-  # setの結果から "__変数名=値" の形式の行を抽出
-  # 内部関数定義が "name ()" や "name=()" となるシェルがあるため、
-  # 確実に変数と思われるもの（=を含み、()を含まない）に絞り込みます。
-  __check_leak_vars_=$(set | grep "^__[a-zA-Z0-9_]*=" | grep -v "(" || true)
+  __check_leak_vars_=""
+  # set の出力を 1 行ずつ読み込み、内部変数（__で始まる）を探します。
+  # 外部コマンド (grep) を使わず、シェルの組み込み機能のみで判定します。
+  # set の出力を直接パイプで渡すと、多くのシェルでループがサブシェル内になり
+  # __check_leak_vars_ の変更が反映されないため、ヒアドキュメントを使用します。
+  while IFS= read -r __line_; do
+    case "${__line_}" in
+      __check_leak_vars_=* | __line_=*) ;;
+      __[a-zA-Z0-9_]*=*)
+        # 関数定義（"name ()" など）を除外するため、 "(" を含まないことを確認
+        case "${__line_}" in
+          *"("* ) ;;
+          *) __check_leak_vars_="${__check_leak_vars_}${__line_}
+" ;;
+        esac
+        ;;
+    esac
+  done <<EOF
+$(set)
+EOF
 
-  if [ -n "$__check_leak_vars_" ]; then
+  if [ -n "${__check_leak_vars_}" ]; then
     # 漏洩している変数名を表示（デバッグ用）
     echo "Leaked internal variables:" >&2
-    echo "$__check_leak_vars_" >&2
-    unset __check_leak_vars_
+    echo "${__check_leak_vars_}" >&2
+    unset __check_leak_vars_ __line_
     return 1
   fi
-  unset __check_leak_vars_
+  unset __check_leak_vars_ __line_
 }
