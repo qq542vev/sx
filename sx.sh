@@ -68,13 +68,22 @@ readonly SX_STR_GRAPH="${SX_STR_PUNCT}${SX_STR_ALNUM}"
 readonly SX_STR_PRINT=" ${SX_STR_GRAPH}"
 readonly SX_STR_ASCII="${SX_STR_CNTRL}${SX_STR_GRAPH}"
 
-# 数値定数 (32bit / 64bit 整数限界)
+# 数値定数 (8bit / 16bit / 32bit / 64bit / 128bit 整数限界)
+readonly SX_NUM_I8_MAX=127
+readonly SX_NUM_I8_MIN=-128
+readonly SX_NUM_U8_MAX=255
+readonly SX_NUM_I16_MAX=32767
+readonly SX_NUM_I16_MIN=-32768
+readonly SX_NUM_U16_MAX=65535
 readonly SX_NUM_I32_MAX=2147483647
 readonly SX_NUM_I32_MIN=-2147483648
 readonly SX_NUM_U32_MAX=4294967295
 readonly SX_NUM_I64_MAX=9223372036854775807
 readonly SX_NUM_I64_MIN=-9223372036854775808
 readonly SX_NUM_U64_MAX=18446744073709551615
+readonly SX_NUM_I128_MAX=170141183460469231731687303715884105727
+readonly SX_NUM_I128_MIN=-170141183460469231731687303715884105728
+readonly SX_NUM_U128_MAX=340282366920938463463374607431768211455
 
 # 浮動小数点数限界 (IEEE 754 準拠)
 readonly SX_NUM_DBL_MAX='1.7976931348623157e+308'
@@ -2017,22 +2026,17 @@ __sx_num_is_int_width() {
 		return 1
 	}
 
-	# 基数8/16のパラメータ計算
-	__sx_num_is_int_width_xlen_=$((__sx_num_is_int_width_bits_ / 4 + 2))
+	# 基数8のパラメータ計算
 	__sx_num_is_int_width_olenn_=$(((__sx_num_is_int_width_bits_ - 1) / 3 + 2))
 	__sx_num_is_int_width_oleadn_=$((1 << ((__sx_num_is_int_width_bits_ - 1) % 3)))
 	__sx_num_is_int_width_olenp_=$((__sx_num_is_int_width_olenn_ - (__sx_num_is_int_width_oleadn_ == 1)))
 	__sx_num_is_int_width_oleadp_=$((__sx_num_is_int_width_oleadn_ == 1 ? 7 : __sx_num_is_int_width_oleadn_ - 1))
-
-	case "${__sx_num_is_int_width_bits_}" in
-		8)   __sx_num_is_int_width_dmax_=127;;
-		16)  __sx_num_is_int_width_dmax_=32767;;
-		32)  __sx_num_is_int_width_dmax_=2147483647;;
-		64)  __sx_num_is_int_width_dmax_=9223372036854775807;;
-		128) __sx_num_is_int_width_dmax_=170141183460469231731687303715884105727;;
-	esac
+	# 基数10のパラメータ計算
+		eval "__sx_num_is_int_width_dmax_=\"\${SX_NUM_I${__sx_num_is_int_width_bits_}_MAX}\""
 	__sx_num_is_int_width_dmin_="${__sx_num_is_int_width_dmax_%7}8"
 	__sx_num_is_int_width_dlen_=${#__sx_num_is_int_width_dmax_}
+	# 基数16のパラメータ計算
+	__sx_num_is_int_width_xlen_=$((__sx_num_is_int_width_bits_ / 4 + 2))
 
 	for __sx_num_is_int_width_arg_ in "${@}"; do
 		# $1: 値（符号正規化）, $2: 数値部分の長さ
