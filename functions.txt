@@ -57,8 +57,6 @@ sx_num_is_base_nint
 sx_num_is_base_nnint
 sx_num_is_base_npint
 sx_num_is_base_pint
-sx_num_is_i32
-sx_num_is_i64
 sx_num_is_int
 sx_num_is_iwidth
 sx_num_is_nint

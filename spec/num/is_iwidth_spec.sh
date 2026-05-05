@@ -94,4 +94,21 @@ Describe 'sx_num_is_iwidth'
       The status should equal 64
     End
   End
+
+  Context 'Common edge cases'
+    It 'validates 0 with various widths'
+      When call sx_num_is_iwidth 32 "0" "+0" "-0" "0x0" "00"
+      The status should be success
+    End
+
+    It 'detects invalid non-numeric strings'
+      When call sx_num_is_iwidth 32 "abc" "12a" "0xG" "08"
+      The status should be failure
+    End
+
+    It 'detects partial invalid strings in multiple arguments'
+      When call sx_num_is_iwidth 32 "123" "2147483648"
+      The status should be failure
+    End
+  End
 End

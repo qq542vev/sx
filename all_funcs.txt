@@ -34,8 +34,6 @@ nm	bni	sx_num_is_base_nint	Active
 nm	bnn	sx_num_is_base_nnint	Active
 nm	bnp	sx_num_is_base_npint	Active
 nm	bpi	sx_num_is_base_pint	Active
-nm	i32	sx_num_is_i32	Active
-nm	i64	sx_num_is_i64	Active
 nm	iint	sx_num_is_int	Active
 nm	iwdt	sx_num_is_iwidth	Active
 nm	nat0	sx_num_is_nat0	Active
