@@ -35,7 +35,8 @@ nm	bnn	sx_num_is_base_nnint	Active
 nm	bnp	sx_num_is_base_npint	Active
 nm	bpi	sx_num_is_base_pint	Active
 nm	iint	sx_num_is_int	Active
-nm	iwdt	sx_num_is_iwidth	Active
+nm	itwd	sx_num_is_int_width	Active
+nm	sxnt	sx_num_is_sxint	Active
 nm	nat0	sx_num_is_nat0	Active
 nm	nat1	sx_num_is_nat1	Active
 nm	nint	sx_num_is_nint	Active

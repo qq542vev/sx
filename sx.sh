@@ -1349,7 +1349,7 @@ __sx_var_unset() {
 sx_num_eq() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_eq "${@}" || return; return 0;; esac
 
-	__sx_num_range_chk "${@}" || return "${SX_EX_USAGE}"
+	__sx_num_is_sxint "${@}" || return "${SX_EX_USAGE}"
 	__sx_num_eq "${@}" || return
 }
 
@@ -1857,7 +1857,7 @@ sx_num_is_pint() {
 sx_num_le() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_le "${@}" || return; return 0;; esac
 
-	__sx_num_range_chk "${@}" || return "${SX_EX_USAGE}"
+	__sx_num_is_sxint "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_num_le "${@}" || return
 }
@@ -1889,7 +1889,7 @@ __sx_num_le() {
 sx_num_lt() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_lt "${@}" || return; return 0;; esac
 
-	__sx_num_range_chk "${@}" || return "${SX_EX_USAGE}"
+	__sx_num_is_sxint "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_num_lt "${@}" || return
 }
@@ -1910,10 +1910,10 @@ __sx_num_lt() {
 	done
 }
 
-### sx_num_is_iwidth - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
+### sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
 ##
 ## 使い方:
-##   sx_num_is_iwidth ビット幅 [文字列1 [文字列2 ...]]
+##   sx_num_is_int_width ビット幅 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
 ##   第一引数で指定されたビット幅 (8, 16, 32, 64, 128) において、
@@ -1924,47 +1924,47 @@ __sx_num_lt() {
 ##    0  すべて範囲内である (SX_EX_OK)
 ##    1  範囲外、または整数ではない値が含まれる
 ##   64  ビット幅指定が不正 (SX_EX_USAGE)
-sx_num_is_iwidth() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_iwidth "${@}" || return; return 0;; esac
+sx_num_is_int_width() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_width "${@}" || return; return 0;; esac
 
 	case "${1-}" in
 		8 | 16 | 32 | 64 | 128) ;;
 		*) return "${SX_EX_USAGE}";;
 	esac
 
-	__sx_num_is_iwidth "${@}" || return
+	__sx_num_is_int_width "${@}" || return
 }
 
-### __sx_num_is_iwidth - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する（内部用）
-__sx_num_is_iwidth() {
-	__sx_num_is_iwidth_bits_="${1}"
+### __sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する（内部用）
+__sx_num_is_int_width() {
+	__sx_num_is_int_width_bits_="${1}"
 	shift
 
 	sx_num_is_int "${@}" || {
-		unset __sx_num_is_iwidth_bits_
+		unset __sx_num_is_int_width_bits_
 		return 1
 	}
 
 	# 基数8/16のパラメータ計算
-	__sx_num_is_iwidth_xlen_=$((__sx_num_is_iwidth_bits_ / 4 + 2))
-	__sx_num_is_iwidth_olenn_=$(((__sx_num_is_iwidth_bits_ - 1) / 3 + 2))
-	__sx_num_is_iwidth_oleadn_=$((1 << ((__sx_num_is_iwidth_bits_ - 1) % 3)))
-	__sx_num_is_iwidth_olenp_=$((__sx_num_is_iwidth_olenn_ - (__sx_num_is_iwidth_oleadn_ == 1)))
-	__sx_num_is_iwidth_oleadp_=$((__sx_num_is_iwidth_oleadn_ == 1 ? 7 : __sx_num_is_iwidth_oleadn_ - 1))
+	__sx_num_is_int_width_xlen_=$((__sx_num_is_int_width_bits_ / 4 + 2))
+	__sx_num_is_int_width_olenn_=$(((__sx_num_is_int_width_bits_ - 1) / 3 + 2))
+	__sx_num_is_int_width_oleadn_=$((1 << ((__sx_num_is_int_width_bits_ - 1) % 3)))
+	__sx_num_is_int_width_olenp_=$((__sx_num_is_int_width_olenn_ - (__sx_num_is_int_width_oleadn_ == 1)))
+	__sx_num_is_int_width_oleadp_=$((__sx_num_is_int_width_oleadn_ == 1 ? 7 : __sx_num_is_int_width_oleadn_ - 1))
 
-	case "${__sx_num_is_iwidth_bits_}" in
-		8)   __sx_num_is_iwidth_dmax_=127;;
-		16)  __sx_num_is_iwidth_dmax_=32767;;
-		32)  __sx_num_is_iwidth_dmax_=2147483647;;
-		64)  __sx_num_is_iwidth_dmax_=9223372036854775807;;
-		128) __sx_num_is_iwidth_dmax_=170141183460469231731687303715884105727;;
+	case "${__sx_num_is_int_width_bits_}" in
+		8)   __sx_num_is_int_width_dmax_=127;;
+		16)  __sx_num_is_int_width_dmax_=32767;;
+		32)  __sx_num_is_int_width_dmax_=2147483647;;
+		64)  __sx_num_is_int_width_dmax_=9223372036854775807;;
+		128) __sx_num_is_int_width_dmax_=170141183460469231731687303715884105727;;
 	esac
-	__sx_num_is_iwidth_dmin_="${__sx_num_is_iwidth_dmax_%7}8"
-	__sx_num_is_iwidth_dlen_=${#__sx_num_is_iwidth_dmax_}
+	__sx_num_is_int_width_dmin_="${__sx_num_is_int_width_dmax_%7}8"
+	__sx_num_is_int_width_dlen_=${#__sx_num_is_int_width_dmax_}
 
-	for __sx_num_is_iwidth_arg_ in "${@}"; do
+	for __sx_num_is_int_width_arg_ in "${@}"; do
 		# $1: 値（符号正規化）, $2: 数値部分の長さ
-		set -- "${__sx_num_is_iwidth_arg_#+}" "${#__sx_num_is_iwidth_arg_}"
+		set -- "${__sx_num_is_int_width_arg_#+}" "${#__sx_num_is_int_width_arg_}"
 		case "${1}" in
 			+* | -*) set -- "${1}" "$((${2} - 1))";;
 		esac
@@ -1972,20 +1972,20 @@ __sx_num_is_iwidth() {
 		case "${1}" in
 			0[xX]* | -0[xX]*)
 				if
-					__sx_num_lt "${__sx_num_is_iwidth_xlen_}" "${2}" || {
-						sx_str_eq "${__sx_num_is_iwidth_xlen_}" "${2}" &&
+					__sx_num_lt "${__sx_num_is_int_width_xlen_}" "${2}" || {
+						sx_str_eq "${__sx_num_is_int_width_xlen_}" "${2}" &&
 						sx_str_match "${1}" '-0[xX][9a-fA-F]*' '-0[xX]8*[!0]*' '0[xX][89a-fA-F]*'
 					}
 				then
-					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_
+					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 					return 1
 				fi
 				;;
 			0?* | -0?*)
 				# $3: 制限長さ, $4: 制限先頭文字
 				case "${1}" in
-					-*) set -- "${1}" "${2}" "${__sx_num_is_iwidth_olenn_}" "${__sx_num_is_iwidth_oleadn_}";;
-					*)  set -- "${1}" "${2}" "${__sx_num_is_iwidth_olenp_}" "${__sx_num_is_iwidth_oleadp_}";;
+					-*) set -- "${1}" "${2}" "${__sx_num_is_int_width_olenn_}" "${__sx_num_is_int_width_oleadn_}";;
+					*)  set -- "${1}" "${2}" "${__sx_num_is_int_width_olenp_}" "${__sx_num_is_int_width_oleadp_}";;
 				esac
 
 				if
@@ -1994,19 +1994,19 @@ __sx_num_is_iwidth() {
 						sx_str_match "${1}" "-0[!1-${4}]*" "-0${4}*[!0]*" "0[!1-${4}-]*"
 					}
 				then
-					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_
+					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 					return 1
 				fi
 				;;
 			*)
-				if __sx_num_lt "${__sx_num_is_iwidth_dlen_}" "${2}"; then
-					unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_
+				if __sx_num_lt "${__sx_num_is_int_width_dlen_}" "${2}"; then
+					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 					return 1
-				elif sx_str_eq "${__sx_num_is_iwidth_dlen_}" "${2}"; then
+				elif sx_str_eq "${__sx_num_is_int_width_dlen_}" "${2}"; then
 					# $1: 絶対値, $2: 制限値
 					case "${1}" in
-						-*) set -- "${1#-}" "${__sx_num_is_iwidth_dmin_}";;
-						*)  set -- "${1}"   "${__sx_num_is_iwidth_dmax_}";;
+						-*) set -- "${1#-}" "${__sx_num_is_int_width_dmin_}";;
+						*)  set -- "${1}"   "${__sx_num_is_int_width_dmax_}";;
 					esac
 
 					while :; do
@@ -2024,7 +2024,7 @@ __sx_num_is_iwidth() {
 						esac
 
 						if __sx_num_lt "${2}" "${1}"; then
-							unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_
+							unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 							return 1
 						elif __sx_num_lt "${1}" "${2}" || sx_str_eq "${3}" ''; then
 							# 小さければ確定または残りがなければ終了
@@ -2039,15 +2039,28 @@ __sx_num_is_iwidth() {
 		esac
 	done
 
-	unset __sx_num_is_iwidth_arg_ __sx_num_is_iwidth_bits_ __sx_num_is_iwidth_dmax_ __sx_num_is_iwidth_dmin_ __sx_num_is_iwidth_dlen_ __sx_num_is_iwidth_xlen_ __sx_num_is_iwidth_olenn_ __sx_num_is_iwidth_oleadn_ __sx_num_is_iwidth_olenp_ __sx_num_is_iwidth_oleadp_
+	unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 }
 
-### __sx_num_range_chk - 設定された数値範囲に基づいて検証を行う（内部用）
-__sx_num_range_chk() {
+### sx_num_is_sxint - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
+##
+## 使い方:
+##   sx_num_is_sxint [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて標準範囲内の整数である (SX_EX_OK)
+##    1  範囲外、または整数でない値が含まれる
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_is_sxint() {
 	case "${SX_CFG_NUM_RANGE-}" in
-		8 | 16 | 32 | 64 | 128) __sx_num_is_iwidth "${SX_CFG_NUM_RANGE}" "${@}" ;;
-		*)  sx_num_is_int "${@}" ;;
+		8 | 16 | 32 | 64 | 128) __sx_num_is_sxint "${@}" || return;;
+		*) return "${SX_EX_CONFIG}";;
 	esac
+}
+
+### __sx_num_is_sxint - 設定された数値範囲に基づいて検証を行う（内部用）
+__sx_num_is_sxint() {
+		__sx_num_is_int_width "${SX_CFG_NUM_RANGE}" "${@}"
 }
 
 # ========================================

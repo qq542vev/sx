@@ -15,7 +15,7 @@ __sx_num_is_base_nint
 __sx_num_is_base_nnint
 __sx_num_is_base_npint
 __sx_num_is_base_pint
-__sx_num_is_iwidth
+__sx_num_is_int_width
 __sx_num_le
 __sx_num_lt
 __sx_str_chunk
@@ -58,7 +58,8 @@ sx_num_is_base_nnint
 sx_num_is_base_npint
 sx_num_is_base_pint
 sx_num_is_int
-sx_num_is_iwidth
+sx_num_is_int_width
+sx_num_is_sxint
 sx_num_is_nint
 sx_num_is_nnint
 sx_num_is_npint
