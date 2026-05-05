@@ -40,7 +40,7 @@ Describe 'sx_arg_len'
     The status should equal 64
   End
 
-  Describe 'SX_CFG_SKIP_CHK=1'
+  Describe '高速モード (SX_CFG_SKIP_CHK=1)'
     It 'チェックをスキップして個数をカウントすること'
       SX_CFG_SKIP_CHK=1
       When call sx_arg_len res "a" "b"
@@ -49,7 +49,7 @@ Describe 'sx_arg_len'
     End
   End
 
-  Describe '__sx_arg_len'
+  Describe '内部関数 (__sx_arg_len)'
     It '内部関数が正しくカウントすること'
       When call __sx_arg_len res "a" "b" "c" "d"
       The status should be success

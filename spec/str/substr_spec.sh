@@ -7,83 +7,83 @@ Describe 'sx_str_substr()'
 
   BeforeRun 'PATH=""'
 
-  It 'extracts substring from the middle'
+  It '文字列の中間から部分文字列を抽出すること'
     When call sx_str_substr res "abcdef" 2 3
     The variable res should equal "cde"
   End
 
-  It 'extracts from the beginning'
+  It '文字列の先頭から抽出すること'
     When call sx_str_substr res "abcdef" 0 3
     The variable res should equal "abc"
   End
 
-  It 'extracts until the end when length is omitted'
+  It '長さが省略された場合に末尾まで抽出すること'
     When call sx_str_substr res "abcdef" 2
     The variable res should equal "cdef"
   End
 
-  It 'extracts until the end when length exceeds remaining'
+  It '長さが残りを超える場合に末尾まで抽出すること'
     When call sx_str_substr res "abcdef" 4 10
     The variable res should equal "ef"
   End
 
-  It 'returns empty string when offset exceeds string length'
+  It 'オフセットが文字列長を超える場合に空文字列を返すこと'
     When call sx_str_substr res "abc" 5 2
     The variable res should equal ""
   End
 
-  It 'returns empty string when length is 0'
+  It '長さが0の場合に空文字列を返すこと'
     When call sx_str_substr res "abcdef" 2 0
     The variable res should equal ""
   End
 
-  It 'handles strings with metacharacters (*, ?, [)'
+  It 'メタ文字 (*, ?, [) を含む文字列を処理できること'
     When call sx_str_substr res "a*b?c[d" 1 3
     The variable res should equal "*b?"
   End
 
-  It 'handles empty source string'
+  It '空のソース文字列を処理できること'
     When call sx_str_substr res "" 0 5
     The variable res should equal ""
   End
 
-  It 'returns error for non-numeric offset'
+  It '数値ではないオフセットに対してエラーを返すこと'
     When call sx_str_substr res "abc" "x"
     The status should equal 64
   End
 
-  It 'returns error for non-numeric length'
+  It '数値ではない長さに対してエラーを返すこと'
     When call sx_str_substr res "abc" 1 "y"
     The status should equal 64
   End
 
-  It 'returns error for readonly result variable'
+  It '読み取り専用の結果変数に対してエラーを返すこと'
     readonly MYRO_SUBSTR=1
     When call sx_str_substr MYRO_SUBSTR "abc" 0 1
     The status should equal 77
   End
 
-  It 'extracts from the end with negative offset'
+  It '負のオフセットで末尾から抽出すること'
     When call sx_str_substr res "abcdef" -3
     The variable res should equal "def"
   End
 
-  It 'extracts from the beginning if negative offset exceeds total length'
+  It '負のオフセットが全長を超える場合に先頭から抽出すること'
     When call sx_str_substr res "abcdef" -10
     The variable res should equal "abcdef"
   End
 
-  It 'excludes trailing characters with negative length'
+  It '負の長さで末尾の文字を除外すること'
     When call sx_str_substr res "abcdef" 0 -2
     The variable res should equal "abcd"
   End
 
-  It 'handles both negative offset and negative length'
+  It '負のオフセットと負の長さの両方を処理できること'
     When call sx_str_substr res "abcdef" -4 -1
     The variable res should equal "cde"
   End
 
-  It 'returns empty string if negative length excludes all characters'
+  It '負の長さですべての文字が除外される場合に空文字列を返すこと'
     When call sx_str_substr res "abc" 1 -5
     The variable res should equal ""
   End

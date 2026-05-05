@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_var_copy'
   Include ./sx.sh
 
-  Describe 'sx_var_copy scalar'
+  Describe 'スカラー変数のコピー'
     It '単一のコピー (v1 -> v2) が成功すること'
       v1="val1"
       When call sx_var_copy v1-v2
@@ -44,7 +44,7 @@ Describe 'sx_var_copy'
     End
   End
 
-  Describe 'sx_var_copy array'
+  Describe '配列のコピー'
     It '配列構造全体がコピーされること'
       sx_arr_gen arr1 "a" "b"
       When call sx_var_copy arr1-arr2
@@ -67,7 +67,7 @@ Describe 'sx_var_copy'
     End
   End
 
-  Describe 'sx_var_copy errors'
+  Describe 'エラーケース'
     It '無効な連鎖式に対して EX_USAGE を返すこと'
       When call sx_var_copy "invalid-@name"
       The status should equal 64
