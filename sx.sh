@@ -1910,6 +1910,78 @@ __sx_num_lt() {
 	done
 }
 
+### sx_num_rel - 数値間の関係を確認する
+##
+## 使い方:
+##   sx_num_rel 数値1 演算子1 数値2 [演算子2 数値3 ...]
+##
+## 説明:
+##   数値と演算子を交互に指定し、すべての関係が満たされるかを確認する。
+##   演算子には以下が使用可能：
+##     eq, =   : 等しい
+##     ne, !=  : 等しくない
+##     lt, <   : 未満
+##     le, <=  : 以下
+##     gt, >   : より大きい
+##     ge, >=  : 以上
+##
+## 終了ステータス:
+##    0  すべての条件を満たす (SX_EX_OK)
+##    1  条件を満たさない引数が含まれる
+##   64  引数不正 (SX_EX_USAGE)
+sx_num_rel() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_rel "${@}" || return; return 0;; esac
+
+	sx_str_eq "$((${#} % 2))" 1 || return "${SX_EX_USAGE}"
+
+	__sx_num_rel_x=1
+	for __sx_num_rel_arg in "${@}"; do
+		if sx_str_eq "${__sx_num_rel_x}" 1; then
+			__sx_num_is_sxint "${__sx_num_rel_arg}" || {
+				unset __sx_num_rel_x __sx_num_rel_arg
+				return "${SX_EX_USAGE}"
+			}
+		else
+			case "${__sx_num_rel_arg}" in
+				eq | = | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') ;;
+				*) unset __sx_num_rel_x __sx_num_rel_arg; return "${SX_EX_USAGE}";;
+			esac
+		fi
+
+		__sx_num_rel_x=$((__sx_num_rel_x * -1))
+	done
+
+	unset __sx_num_rel_x __sx_num_rel_arg
+	__sx_num_rel "${@}" || return
+}
+
+### __sx_num_rel - 数値間の関係を確認する（内部用）
+__sx_num_rel() {
+	__sx_num_rel_lhs_="${1-}"
+	shift ${1+1}
+
+	while sx_str_eq "${2+X}" X; do
+		case "${1}" in
+			eq | '=')  __sx_num_rel_op_='==';;
+			ne | '!=') __sx_num_rel_op_='!=';;
+			lt | '<')  __sx_num_rel_op_='<';;
+			le | '<=') __sx_num_rel_op_='<=';;
+			gt | '>')  __sx_num_rel_op_='>';;
+			ge | '>=') __sx_num_rel_op_='>=';;
+		esac
+
+		sx_str_eq "$(( __sx_num_rel_lhs_ ${__sx_num_rel_op_} ${2} ))" 1 || {
+			unset __sx_num_rel_lhs_ __sx_num_rel_op_
+			return 1
+		}
+
+		__sx_num_rel_lhs_="${2}"
+		shift 2
+	done
+
+	unset __sx_num_rel_lhs_ __sx_num_rel_op_
+}
+
 ### sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
 ##
 ## 使い方:
@@ -2052,6 +2124,8 @@ __sx_num_is_int_width() {
 ##    1  範囲外、または整数でない値が含まれる
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_num_is_sxint() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sxint "${@}" || return; return 0;; esac
+
 	case "${SX_CFG_NUM_RANGE-}" in
 		8 | 16 | 32 | 64 | 128) __sx_num_is_sxint "${@}" || return;;
 		*) return "${SX_EX_CONFIG}";;
