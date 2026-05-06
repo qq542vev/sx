@@ -18,13 +18,13 @@ Describe 'sx_ex_remap'
     The status should equal 2
   End
 
-  It 'ワイルドカード (*) を使用して一致しないものをすべて変換すること'
-    When call sx_ex_remap 0:0 '*:64' -- sh -c 'exit 1'
+  It 'デフォルトマッピング (-) を使用して一致しないものをすべて変換すること'
+    When call sx_ex_remap 0:0 '-:64' -- sh -c 'exit 1'
     The status should equal 64
   End
 
-  It 'ワイルドカード (*) を使用しても一致するものがあれば優先されること'
-    When call sx_ex_remap 0:0 1:77 '*:64' -- sh -c 'exit 1'
+  It 'デフォルトマッピング (-) を使用しても一致するものがあれば優先されること'
+    When call sx_ex_remap 0:0 1:77 '-:64' -- sh -c 'exit 1'
     The status should equal 77
   End
 
@@ -59,8 +59,8 @@ Describe 'sx_ex_remap'
     The status should be success
   End
 
-  It 'コマンドが指定されていない場合は SX_EX_USAGE を返すこと'
+  It 'コマンドが指定されていない場合は 0 (SX_EX_OK) を返すこと'
     When call sx_ex_remap 1:64
-    The status should equal 64
+    The status should equal 0
   End
 End

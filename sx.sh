@@ -137,43 +137,81 @@ SX_SYS_REV=0
 ##   実行したコマンドの（マッピング後の）終了ステータスを返す。
 ##   コマンドが指定されていない場合は SX_EX_USAGE (64) を返す。
 sx_ex_remap() {
-	__sx_ex_remap_map_="|"
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_remap "${@}" || return; return 0;; esac
 
-	while [ "${#}" -gt 0 ]; do
+	for __sx_ex_remap_arg in "${@}"; do
+		case "${__sx_ex_remap_arg}" in
+			*:*) ;;
+			*) break;;
+		esac
+
+		sx_ex_is_status "${__sx_ex_remap_arg#*:}" || {
+			unset __sx_ex_remap_arg __sx_ex_remap_pat
+			return "${SX_EX_USAGE}"
+		}
+
+		__sx_ex_remap_pat="${__sx_ex_remap_arg%%:*}"
+
+		case "${__sx_ex_remap_pat}" in
+			-) ;;
+			*?-) sx_ex_is_status "${__sx_ex_remap_pat%-}" || ! :;;
+			-?*) sx_ex_is_status "${__sx_ex_remap_pat#-}" || ! :;;
+			*-*) sx_ex_is_status "${__sx_ex_remap_pat#*-}" "${__sx_ex_remap_arg%%-*}" || ! :;;
+			*) sx_ex_is_status "${__sx_ex_remap_pat#!}" || ! :;;
+		esac || {
+			unset __sx_ex_remap_arg __sx_ex_remap_pat
+			return "${SX_EX_USAGE}"
+		}
+	done
+
+	unset __sx_ex_remap_arg __sx_ex_remap_pat
+	__sx_ex_remap "${@}" || return
+}
+
+__sx_ex_remap() {
+	__sx_ex_remap_map_=
+
+	while ! sx_str_eq "${#}" 0; do
 		case "${1}" in
-			--)
-				shift; break ;;
-			[0-9]*:[0-9]* | '*':[0-9]*)
-				__sx_ex_remap_map_="${__sx_ex_remap_map_}${1}|"
-				shift ;;
-			*)
-				break ;;
+			--) shift; break;;
+			*:*)
+				__sx_ex_remap_map_="${__sx_ex_remap_map_} '${1}'"
+				shift
+				;;
+			*) break;;
 		esac
 	done
 
-	if [ "${#}" -eq 0 ]; then
-		unset __sx_ex_remap_map_
-		return "${SX_EX_USAGE:-64}"
-	fi
+	sx_arg_quote __sx_ex_remap_cmd_ "${@}"
+	set -- "${__sx_ex_remap_map_}" "${__sx_ex_remap_cmd_}"
+	unset __sx_ex_remap_map_ __sx_ex_remap_cmd_
 
-	"$@"
-	__sx_ex_remap_status_="${?}"
+	{ eval "${2}" && __sx_ex_remap_sts_="${?}"; } || __sx_ex_remap_sts_="${?}"
+	eval set -- "${1}"
 
-	__sx_ex_remap_new_status_="${__sx_ex_remap_status_}"
-	__sx_ex_remap_ast_="*"
-	case "${__sx_ex_remap_map_}" in
-		*"|${__sx_ex_remap_status_}:"*)
-			__sx_ex_remap_tmp_="${__sx_ex_remap_map_#*|${__sx_ex_remap_status_}:}"
-			__sx_ex_remap_new_status_="${__sx_ex_remap_tmp_%%|*}"
-			;;
-		*"|${__sx_ex_remap_ast_}:"*)
-			__sx_ex_remap_tmp_="${__sx_ex_remap_map_##*|${__sx_ex_remap_ast_}:}"
-			__sx_ex_remap_new_status_="${__sx_ex_remap_tmp_%%|*}"
-			;;
-	esac
+	for __sx_ex_remap_map_ in "${@}"; do
+		set -- "${__sx_ex_remap_map_%%:*}" "${__sx_ex_remap_map_#*:}"
 
-	set -- "${__sx_ex_remap_new_status_}"
-	unset __sx_ex_remap_map_ __sx_ex_remap_status_ __sx_ex_remap_tmp_ __sx_ex_remap_new_status_ __sx_ex_remap_ast_
+		case "${1}" in
+			"${__sx_ex_remap_sts_}") __sx_ex_remap_sts_="${2}"; break;;
+			*-*)
+				set -- "${@}" "${1%%-*}" "${1#*-}"
+				if __sx_num_le "${3:-0}" "${__sx_ex_remap_sts_}" "${4:-255}"; then
+					__sx_ex_remap_sts_="${2}"
+					break
+				fi
+				;;
+			!*)
+				if ! sx_str_eq "${1#!}" "${__sx_ex_remap_sts_}"; then
+					__sx_ex_remap_sts_="${2}"
+					break
+				fi
+				;;
+		esac
+	done
+
+	set -- "${__sx_ex_remap_sts_}"
+	unset __sx_ex_remap_sts_ __sx_ex_remap_map_
 	return "${1}"
 }
 
@@ -189,24 +227,16 @@ sx_ex_remap() {
 ##    0  すべて有効な終了ステータスである (SX_EX_OK)
 ##    1  範囲外、または整数でない値が含まれる
 sx_ex_is_status() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_is_status "${@}" || return; return 0;; esac
-
-	__sx_ex_is_status "${@}" || return
-}
-
-### __sx_ex_is_status - 有効な終了ステータスの検証を行う（内部用）
-__sx_ex_is_status() {
-	for __sx_ex_is_status_arg_ in "${@}"; do
-		case "${__sx_ex_is_status_arg_}" in
-			[0-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5]) ;;
-			*)
-				unset __sx_ex_is_status_arg_
-				return 1
-				;;
+	for __sx_ex_is_status_arg in "${@}"; do
+		case "${__sx_ex_is_status_arg}" in
+			[0-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5]) continue;;
 		esac
+
+		unset __sx_ex_is_status_arg
+		return 1
 	done
 
-	unset __sx_ex_is_status_arg_
+	unset __sx_ex_is_status_arg
 }
 
 ### sx_ex_is_err - すべての引数がエラーを示す終了ステータス（1-255）であるか確認する
@@ -221,24 +251,16 @@ __sx_ex_is_status() {
 ##    0  すべて 1-255 の範囲内である (SX_EX_OK)
 ##    1  範囲外、または整数でない値が含まれる
 sx_ex_is_err() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_is_err "${@}" || return; return 0;; esac
-
-	__sx_ex_is_err "${@}" || return
-}
-
-### __sx_ex_is_err - 1-255 の範囲の検証を行う（内部用）
-__sx_ex_is_err() {
-	for __sx_ex_is_err_arg_ in "${@}"; do
-		case "${__sx_ex_is_err_arg_}" in
-			[1-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5]) ;;
-			*)
-				unset __sx_ex_is_err_arg_
-				return 1
-				;;
+	for __sx_ex_is_err_arg in "${@}"; do
+		case "${__sx_ex_is_err_arg}" in
+			[1-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5]) continue;;
 		esac
+
+		unset __sx_ex_is_err_arg
+		return 1
 	done
 
-	unset __sx_ex_is_err_arg_
+	unset __sx_ex_is_err_arg
 }
 
 
