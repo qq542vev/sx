@@ -60,10 +60,9 @@ Describe 'sx_num_rel'
     The status should be success
   End
 
-  It '空の引数の場合に引数不正（64）を返すこと（本来は奇数個だが0は特殊扱い）'
-    # 現在の実装では 0 % 2 = 0 なので引数不正(64)になる
+  It '空の引数の場合に成功を返すこと（本来は奇数個だが0は特殊扱い）'
     When call sx_num_rel
-    The status should equal 64
+    The status should be success
   End
 
   Describe '別名演算子の確認'
