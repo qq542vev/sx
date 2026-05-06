@@ -9,6 +9,8 @@ __sx_arr_is_rw
 __sx_arr_pop
 __sx_arr_push
 __sx_call_with_ifs
+__sx_ex_is_err
+__sx_ex_is_status
 __sx_num_eq
 __sx_num_is_base_int
 __sx_num_is_base_nint
@@ -51,6 +53,9 @@ sx_arr_is_rw
 sx_arr_pop
 sx_arr_push
 sx_call_with_ifs
+sx_ex_is_err
+sx_ex_is_status
+sx_ex_remap
 sx_num_eq
 sx_num_is_base_int
 sx_num_is_base_nint

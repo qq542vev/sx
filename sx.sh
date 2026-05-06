@@ -177,6 +177,70 @@ sx_ex_remap() {
 	return "${1}"
 }
 
+### sx_ex_is_status - すべての引数が有効な終了ステータス（0-255）であるか確認する
+##
+## 使い方:
+##   sx_ex_is_status [値1 [値2 ...]]
+##
+## 説明:
+##   引数で指定されたすべての値が、0 以上 255 以下の整数（10進数）であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて有効な終了ステータスである (SX_EX_OK)
+##    1  範囲外、または整数でない値が含まれる
+sx_ex_is_status() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_is_status "${@}" || return; return 0;; esac
+
+	__sx_ex_is_status "${@}" || return
+}
+
+### __sx_ex_is_status - 有効な終了ステータスの検証を行う（内部用）
+__sx_ex_is_status() {
+	for __sx_ex_is_status_arg_ in "${@}"; do
+		case "${__sx_ex_is_status_arg_}" in
+			[0-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5]) ;;
+			*)
+				unset __sx_ex_is_status_arg_
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_ex_is_status_arg_
+}
+
+### sx_ex_is_err - すべての引数がエラーを示す終了ステータス（1-255）であるか確認する
+##
+## 使い方:
+##   sx_ex_is_err [値1 [値2 ...]]
+##
+## 説明:
+##   引数で指定されたすべての値が、1 以上 255 以下の整数（10進数）であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて 1-255 の範囲内である (SX_EX_OK)
+##    1  範囲外、または整数でない値が含まれる
+sx_ex_is_err() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_is_err "${@}" || return; return 0;; esac
+
+	__sx_ex_is_err "${@}" || return
+}
+
+### __sx_ex_is_err - 1-255 の範囲の検証を行う（内部用）
+__sx_ex_is_err() {
+	for __sx_ex_is_err_arg_ in "${@}"; do
+		case "${__sx_ex_is_err_arg_}" in
+			[1-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5]) ;;
+			*)
+				unset __sx_ex_is_err_arg_
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_ex_is_err_arg_
+}
+
 
 # ========================================
 #  UTIL (Utilities)
