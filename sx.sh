@@ -119,6 +119,66 @@ readonly SX_NUM_BASE16_CHARS='0123456789ABCDEFabcdef'
 SX_SYS_REV=0
 
 # ========================================
+#  EX (Exit Status)
+# ========================================
+
+### sx_ex_remap - 終了ステータスをマッピングしてコマンドを実行する
+##
+## 使い方:
+##   sx_ex_remap [置換元:置換先 ...] [--] コマンド [引数 ...]
+##
+## 説明:
+##   コマンドを実行し、その終了ステータスをマッピングに従って変換する。
+##   マッピングは '置換元:置換先' の形式で指定する。
+##   置換元に '*' を指定すると、他のマッピングに一致しなかったすべてのステータスに適用される。
+##   マッピングに一致しない場合は、元の終了ステータスが維持される。
+##
+## 終了ステータス:
+##   実行したコマンドの（マッピング後の）終了ステータスを返す。
+##   コマンドが指定されていない場合は SX_EX_USAGE (64) を返す。
+sx_ex_remap() {
+	__sx_ex_remap_map_="|"
+
+	while [ "${#}" -gt 0 ]; do
+		case "${1}" in
+			--)
+				shift; break ;;
+			[0-9]*:[0-9]* | '*':[0-9]*)
+				__sx_ex_remap_map_="${__sx_ex_remap_map_}${1}|"
+				shift ;;
+			*)
+				break ;;
+		esac
+	done
+
+	if [ "${#}" -eq 0 ]; then
+		unset __sx_ex_remap_map_
+		return "${SX_EX_USAGE:-64}"
+	fi
+
+	"$@"
+	__sx_ex_remap_status_="${?}"
+
+	__sx_ex_remap_new_status_="${__sx_ex_remap_status_}"
+	__sx_ex_remap_ast_="*"
+	case "${__sx_ex_remap_map_}" in
+		*"|${__sx_ex_remap_status_}:"*)
+			__sx_ex_remap_tmp_="${__sx_ex_remap_map_#*|${__sx_ex_remap_status_}:}"
+			__sx_ex_remap_new_status_="${__sx_ex_remap_tmp_%%|*}"
+			;;
+		*"|${__sx_ex_remap_ast_}:"*)
+			__sx_ex_remap_tmp_="${__sx_ex_remap_map_##*|${__sx_ex_remap_ast_}:}"
+			__sx_ex_remap_new_status_="${__sx_ex_remap_tmp_%%|*}"
+			;;
+	esac
+
+	set -- "${__sx_ex_remap_new_status_}"
+	unset __sx_ex_remap_map_ __sx_ex_remap_status_ __sx_ex_remap_tmp_ __sx_ex_remap_new_status_ __sx_ex_remap_ast_
+	return "${1}"
+}
+
+
+# ========================================
 #  UTIL (Utilities)
 # ========================================
 
