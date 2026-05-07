@@ -274,7 +274,7 @@ __sx_ex_get() {
 ### sx_ex_yield - 任意の終了ステータスを発生させる
 ##
 ## 使い方:
-##   sx_ex_yield [ステータス]
+##   sx_ex_yield [ステータス番号 | ステータス名]
 ##
 ## 説明:
 ##   指定された終了ステータス（0-255）を発生させる。
@@ -285,21 +285,15 @@ __sx_ex_get() {
 ##   引数が指定されない場合は 0 (SX_EX_OK) を返す。
 ##   ステータス値が 0-255 の範囲外、または整数でない場合は SX_EX_USAGE (64) を返す。
 sx_ex_yield() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) return "${1-0}";; esac
+	if sx_ex_is_status ${1+"${1}"}; then
+		return "${1-0}"
+	elif sx_ex_get "__sx_ex_yield_s=${1}"; then
+		set -- "${__sx_ex_yield_s}"
+		unset __sx_ex_yield_s
+		return "${1}"
+	fi
 
-	__sx_ex_yield_val_="${1-0}"
-	case "${__sx_ex_yield_val_}" in
-		[!0-9]*) eval "__sx_ex_yield_val_=\"\${SX_EX_${__sx_ex_yield_val_}-}\"";;
-	esac
-
-	sx_ex_is_status "${__sx_ex_yield_val_}" || {
-		unset __sx_ex_yield_val_
-		return "${SX_EX_USAGE}"
-	}
-
-	set -- "${__sx_ex_yield_val_}"
-	unset __sx_ex_yield_val_
-	return "${1}"
+	return "${SX_EX_USAGE}"
 }
 
 ### sx_ex_remap - 終了ステータスをマッピングしてコマンドを実行する

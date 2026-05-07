@@ -36,6 +36,21 @@ Describe 'sx_ex_yield'
       The status should equal 65
     End
 
+    It 'yields status by name (USAGE -> 64)'
+      When call sx_ex_yield USAGE
+      The status should equal 64
+    End
+
+    It 'yields status by name (NOPERM -> 77)'
+      When call sx_ex_yield NOPERM
+      The status should equal 77
+    End
+
+    It 'yields status by name (CONFIG -> 78)'
+      When call sx_ex_yield CONFIG
+      The status should equal 78
+    End
+
     It 'yields status by name (OK -> 0)'
       When call sx_ex_yield OK
       The status should be success
@@ -57,6 +72,16 @@ Describe 'sx_ex_yield'
       When call sx_ex_yield abc
       The status should equal 64
     End
+
+    It 'returns SX_EX_USAGE (64) for unknown name'
+      When call sx_ex_yield UNKNOWN
+      The status should equal 64
+    End
+
+    It 'returns SX_EX_USAGE (64) for lowercase name'
+      When call sx_ex_yield dataerr
+      The status should equal 64
+    End
   End
 
   Describe 'with SX_CFG_SKIP_CHK=1'
@@ -70,12 +95,6 @@ Describe 'sx_ex_yield'
       SX_CFG_SKIP_CHK=1
       When call sx_ex_yield
       The status should equal 0
-    End
-    
-    It 'yields 256 without validation (yash returns 256 as is)'
-      SX_CFG_SKIP_CHK=1
-      When call sx_ex_yield 256
-      The status should equal 256
     End
   End
 End
