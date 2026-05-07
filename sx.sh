@@ -2,22 +2,41 @@
 # shellcheck shell=sh
 
 # sysexits(3) compatible exit codes
-readonly SX_EX_OK=0           # EX_OK: successful termination
-readonly SX_EX_USAGE=64       # EX_USAGE: command line usage error
-readonly SX_EX_DATAERR=65     # EX_DATAERR: data format error
-readonly SX_EX_NOINPUT=66     # EX_NOINPUT: cannot open input
-readonly SX_EX_NOUSER=67      # EX_NOUSER: addressee unknown
-readonly SX_EX_NOHOST=68      # EX_NOHOST: host name unknown
-readonly SX_EX_UNAVAILABLE=69 # EX_UNAVAILABLE: service unavailable
-readonly SX_EX_SOFTWARE=70    # EX_SOFTWARE: internal software error
-readonly SX_EX_OSERR=71       # EX_OSERR: system error (e.g., can't fork)
-readonly SX_EX_OSFILE=72      # EX_OSFILE: critical OS file missing
-readonly SX_EX_CANTCREAT=73   # EX_CANTCREAT: can't create (user) output file
-readonly SX_EX_IOERR=74       # EX_IOERR: input/output error
-readonly SX_EX_TEMPFAIL=75    # EX_TEMPFAIL: temp failure; user is invited to retry
-readonly SX_EX_PROTOCOL=76    # EX_PROTOCOL: remote error in protocol
-readonly SX_EX_NOPERM=77      # EX_NOPERM: permission denied
-readonly SX_EX_CONFIG=78      # EX_CONFIG: configuration error
+readonly SX_EX_OK=0
+readonly SX_EX_USAGE=64
+readonly SX_EX_DATAERR=65
+readonly SX_EX_NOINPUT=66
+readonly SX_EX_NOUSER=67
+readonly SX_EX_NOHOST=68
+readonly SX_EX_UNAVAILABLE=69
+readonly SX_EX_SOFTWARE=70
+readonly SX_EX_OSERR=71
+readonly SX_EX_OSFILE=72
+readonly SX_EX_CANTCREAT=73
+readonly SX_EX_IOERR=74
+readonly SX_EX_TEMPFAIL=75
+readonly SX_EX_PROTOCOL=76
+readonly SX_EX_NOPERM=77
+readonly SX_EX_CONFIG=78
+
+readonly SX_EX_MSG0='EX_OK(0): successful termination'
+readonly SX_EX_MSG64='EX_USAGE(64): command line usage error'
+readonly SX_EX_MSG65='EX_DATAERR(65): data format error'
+readonly SX_EX_MSG66='EX_NOINPUT(66): cannot open input'
+readonly SX_EX_MSG67='EX_NOUSER(67): addressee unknown'
+readonly SX_EX_MSG68='EX_NOHOST(68): host name unknown'
+readonly SX_EX_MSG69='EX_UNAVAILABLE(69): service unavailable'
+readonly SX_EX_MSG70='EX_SOFTWARE(70): internal software error'
+readonly SX_EX_MSG71="EX_OSERR(71): system error (e.g., can't fork)"
+readonly SX_EX_MSG72='EX_OSFILE(72): critical OS file missing'
+readonly SX_EX_MSG73="EX_CANTCREAT(73): can't create (user) output file"
+readonly SX_EX_MSG74='EX_IOERR(74): input/output error'
+readonly SX_EX_MSG75='EX_TEMPFAIL(75): temp failure; user is invited to retry'
+readonly SX_EX_MSG76='EX_PROTOCOL(76): remote error in protocol'
+readonly SX_EX_MSG77='EX_NOPERM(77): permission denied'
+readonly SX_EX_MSG78='EX_CONFIG(78): configuration error'
+
+readonly SX_EX_MAP='OK:0 USAGE:64 DATAERR:65 NOINPUT:66 NOUSER:67 NOHOST:68 UNAVAILABLE:69 SOFTWARE:70 OSERR:71 OSFILE:72 CANTCREAT:73 IOERR:74 TEMPFAIL:75 PROTOCOL:76 NOPERM:77 CONFIG:78'
 
 readonly SX_STR_SOH=$'\cA'
 readonly SX_STR_STX=$'\cB'
@@ -169,6 +188,118 @@ sx_ex_is_status() {
 	done
 
 	unset __sx_ex_is_status_arg
+}
+
+### sx_ex_get - 終了ステータスの数値と名前を相互変換、または有効性を確認する
+##
+## 使い方:
+##   sx_ex_get [変数名=値 | 値 ...]
+##
+## 説明:
+##   引数として数値 (64 等) または名前 (DATAERR 等) を受け取り、その有効性を確認する。
+##   '変数名=値' の形式の場合は、解決された値（名前なら数値、数値なら名前）を
+##   結果変数に格納する。
+##
+## 終了ステータス:
+##    0  すべての値が有効である (SX_EX_OK)
+##    1  無効な名前、または範囲外の数値が含まれる
+##   64  引数の形式が不正、または結果変数名が無効 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_ex_get() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_get "${@}" || return; return 0;; esac
+
+	__sx_ex_get_chk=
+
+	for __sx_ex_get_arg in "${@}"; do
+		case "${__sx_ex_get_arg}" in *=*)
+			__sx_ex_get_vn="${__sx_ex_get_arg%%=*}"
+
+			sx_var_is_name "${__sx_ex_get_vn}" || {
+				unset __sx_ex_get_chk __sx_ex_get_arg __sx_ex_get_vn
+				return "${SX_EX_USAGE}"
+			}
+
+			__sx_ex_get_chk="${__sx_ex_get_chk} ${__sx_ex_get_vn}"
+		;; esac
+	done
+
+	eval sx_var_is_rw_all "${__sx_ex_get_chk}" || {
+		unset __sx_ex_get_chk __sx_ex_get_arg __sx_ex_get_vn
+		return "${SX_EX_NOPERM}"
+	}
+
+	unset __sx_ex_get_chk __sx_ex_get_arg __sx_ex_get_vn
+	__sx_ex_get "${@}" || return
+}
+
+__sx_ex_get() {
+	__sx_ex_get_out_=
+
+	for __sx_ex_get_arg_ in "${@}"; do
+		__sx_ex_get_in_="${__sx_ex_get_arg_#*=}"
+
+		case "${__sx_ex_get_in_}" in
+			*[!0-9A-Z]*)
+				unset __sx_ex_get_out_ __sx_ex_get_arg_ __sx_ex_get_in_ __sx_ex_get_val_
+				return 1
+				;;
+		esac
+
+		case " ${SX_EX_MAP} " in
+			*" ${__sx_ex_get_in_}:"*)
+				__sx_ex_get_val_=" ${SX_EX_MAP} "
+				__sx_ex_get_val_="${__sx_ex_get_val_#*" ${__sx_ex_get_in_}:"}"
+				__sx_ex_get_val_="${__sx_ex_get_val_%% *}"
+				;;
+			*":${__sx_ex_get_in_} "*)
+				__sx_ex_get_val_=" ${SX_EX_MAP} "
+				__sx_ex_get_val_="${__sx_ex_get_val_%":${__sx_ex_get_in_} "*}"
+				__sx_ex_get_val_="${__sx_ex_get_val_##* }"
+				;;
+			*)
+				unset __sx_ex_get_out_ __sx_ex_get_arg_ __sx_ex_get_in_ __sx_ex_get_val_
+				return 1
+				;;
+		esac
+
+		case "${__sx_ex_get_arg_}" in *=*)
+			__sx_ex_get_out_="${__sx_ex_get_out_} ${__sx_ex_get_arg_%%=*}=${__sx_ex_get_val_}"
+		;; esac
+	done
+
+	eval __sx_var_set "${__sx_ex_get_out_}"
+	unset __sx_ex_get_out_ __sx_ex_get_arg_ __sx_ex_get_in_ __sx_ex_get_val_
+}
+
+### sx_ex_yield - 任意の終了ステータスを発生させる
+##
+## 使い方:
+##   sx_ex_yield [ステータス]
+##
+## 説明:
+##   指定された終了ステータス（0-255）を発生させる。
+##   サブシェルを使用しないため、(exit n) よりも高速に動作する。
+##
+## 終了ステータス:
+##   指定されたステータスを返す。
+##   引数が指定されない場合は 0 (SX_EX_OK) を返す。
+##   ステータス値が 0-255 の範囲外、または整数でない場合は SX_EX_USAGE (64) を返す。
+sx_ex_yield() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) return "${1-0}";; esac
+
+	__sx_ex_yield_val_="${1-0}"
+	case "${__sx_ex_yield_val_}" in
+		[!0-9]*) eval "__sx_ex_yield_val_=\"\${SX_EX_${__sx_ex_yield_val_}-}\"";;
+	esac
+
+	sx_ex_is_status "${__sx_ex_yield_val_}" || {
+		unset __sx_ex_yield_val_
+		return "${SX_EX_USAGE}"
+	}
+
+	set -- "${__sx_ex_yield_val_}"
+	unset __sx_ex_yield_val_
+	return "${1}"
 }
 
 ### sx_ex_remap - 終了ステータスをマッピングしてコマンドを実行する
