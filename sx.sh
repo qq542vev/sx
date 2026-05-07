@@ -1516,7 +1516,8 @@ __sx_var_unset() {
 ## 終了ステータス:
 ##    0  すべて等しい (SX_EX_OK)
 ##    1  等しくない数値が含まれる
-##   64  引数不正 (SX_EX_USAGE)
+##   64  数値でない引数が含まれる、または範囲外 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_num_eq() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_eq "${@}" || return; return 0;; esac
 
@@ -2173,68 +2174,6 @@ __sx_num_is_sxint() {
 	__sx_num_is_int_width "${SX_CFG_NUM_RANGE}" "${@}"
 }
 
-### sx_num_le - 引数が昇順（等号を含む）に並んでいるか確認する
-##
-## 使い方:
-##   sx_num_le [数値1 [数値2 ...]]
-##
-## 終了ステータス:
-##    0  数値1 <= 数値2 <= ... である (SX_EX_OK)
-##    1  条件を満たさない、または数値でない引数が含まれる
-sx_num_le() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_le "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sxint "${@}" || return
-	__sx_num_le "${@}" || return
-}
-
-### __sx_num_le - 引数が昇順（等号を含む）に並んでいるか確認する（内部用）
-##
-## 使い方:
-##   __sx_num_le [数値1 [数値2 ...]]
-##
-## 説明:
-##   sx_num_le の内部実装。
-##   引数チェックは行わない。
-__sx_num_le() {
-	while sx_str_eq "${2+X}" X; do
-		sx_str_eq "$((${1} <= ${2}))" 1 || return 1
-
-		shift
-	done
-}
-
-### sx_num_lt - 引数が厳密な昇順に並んでいるか確認する
-##
-## 使い方:
-##   sx_num_lt [数値1 [数値2 ...]]
-##
-## 終了ステータス:
-##    0  数値1 < 数値2 < ... である (SX_EX_OK)
-##    1  条件を満たさない、または数値でない引数が含まれる
-sx_num_lt() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_lt "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sxint "${@}" || return
-	__sx_num_lt "${@}" || return
-}
-
-### __sx_num_lt - 引数が厳密な昇順に並んでいるか確認する（内部用）
-##
-## 使い方:
-##   __sx_num_lt [数値1 [数値2 ...]]
-##
-## 説明:
-##   sx_num_lt の内部実装。
-##   引数チェックは行わない。
-__sx_num_lt() {
-	while sx_str_eq "${2+X}" X; do
-		sx_str_eq "$((${1} < ${2}))" 1 || return 1
-
-		shift
-	done
-}
-
 ### sx_num_ge - 引数が降順（等号を含む）に並んでいるか確認する
 ##
 ## 使い方:
@@ -2242,7 +2181,9 @@ __sx_num_lt() {
 ##
 ## 終了ステータス:
 ##    0  数値1 >= 数値2 >= ... である (SX_EX_OK)
-##    1  条件を満たさない、または数値でない引数が含まれる
+##    1  条件を満たさない
+##   64  数値でない引数が含まれる、または範囲外 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_num_ge() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_ge "${@}" || return; return 0;; esac
 
@@ -2273,7 +2214,9 @@ __sx_num_ge() {
 ##
 ## 終了ステータス:
 ##    0  数値1 > 数値2 > ... である (SX_EX_OK)
-##    1  条件を満たさない、または数値でない引数が含まれる
+##    1  条件を満たさない
+##   64  数値でない引数が含まれる、または範囲外 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_num_gt() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_gt "${@}" || return; return 0;; esac
 
@@ -2292,6 +2235,72 @@ sx_num_gt() {
 __sx_num_gt() {
 	while sx_str_eq "${2+X}" X; do
 		sx_str_eq "$((${1} > ${2}))" 1 || return 1
+
+		shift
+	done
+}
+
+### sx_num_le - 引数が昇順（等号を含む）に並んでいるか確認する
+##
+## 使い方:
+##   sx_num_le [数値1 [数値2 ...]]
+##
+## 終了ステータス:
+##    0  数値1 <= 数値2 <= ... である (SX_EX_OK)
+##    1  条件を満たさない
+##   64  数値でない引数が含まれる、または範囲外 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_le() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_le "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sxint "${@}" || return
+	__sx_num_le "${@}" || return
+}
+
+### __sx_num_le - 引数が昇順（等号を含む）に並んでいるか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_le [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_le の内部実装。
+##   引数チェックは行わない。
+__sx_num_le() {
+	while sx_str_eq "${2+X}" X; do
+		sx_str_eq "$((${1} <= ${2}))" 1 || return 1
+
+		shift
+	done
+}
+
+### sx_num_lt - 引数が厳密な昇順に並んでいるか確認する
+##
+## 使い方:
+##   sx_num_lt [数値1 [数値2 ...]]
+##
+## 終了ステータス:
+##    0  数値1 < 数値2 < ... である (SX_EX_OK)
+##    1  条件を満たさない
+##   64  数値でない引数が含まれる、または範囲外 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_lt() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_lt "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sxint "${@}" || return
+	__sx_num_lt "${@}" || return
+}
+
+### __sx_num_lt - 引数が厳密な昇順に並んでいるか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_lt [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_lt の内部実装。
+##   引数チェックは行わない。
+__sx_num_lt() {
+	while sx_str_eq "${2+X}" X; do
+		sx_str_eq "$((${1} < ${2}))" 1 || return 1
 
 		shift
 	done
@@ -2455,6 +2464,7 @@ sx_str_any() {
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
@@ -2761,11 +2771,13 @@ sx_str_match() {
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_rep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	sx_num_is_nat0 "${3-1}" || return "${SX_EX_USAGE}"
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${3+"${3}"} || return
+	sx_num_is_nat0 ${3+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_rep "${@}"
 }
@@ -2809,6 +2821,7 @@ __sx_str_rep() {
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_split() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split "${@}" || return; return 0;; esac
 
@@ -2956,6 +2969,7 @@ __sx_str_split_ifs() {
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_sub() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return 0;; esac
 
@@ -3065,6 +3079,7 @@ __sx_str_sub() {
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_substr() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_substr "${@}" || return; return 0;; esac
 
