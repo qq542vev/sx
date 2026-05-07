@@ -112,10 +112,11 @@ readonly SX_NUM_BASE16_PREFIX='0[xX]'
 readonly SX_NUM_BASE16_CHARS='0123456789ABCDEFabcdef'
 
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
-: "${SX_SIG_BASE:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
-: "${SX_SIG_ARR:=array-${SX_SIG_BASE}}"
+: "${SX_CFG_SIG_BASE:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
+: "${SX_CFG_SIG_ARR:=array-${SX_CFG_SIG_BASE}}"
 : "${SX_CFG_SKIP_CHK:=0}"
 : "${SX_CFG_NUM_RANGE:=32}"
+: "${SX_CFG_SEP:=:::}"
 SX_SYS_REV=0
 
 # ========================================
@@ -173,7 +174,7 @@ sx_ex_is_status() {
 ### sx_ex_remap - 終了ステータスをマッピングしてコマンドを実行する
 ##
 ## 使い方:
-##   sx_ex_remap [置換元:置換先 ...] [--] コマンド [引数 ...]
+##   sx_ex_remap [置換元:置換先 ...] [:::] コマンド [引数 ...]
 ##
 ## 説明:
 ##   コマンドを実行し、その終了ステータスをマッピングに従って変換する。
@@ -196,6 +197,7 @@ sx_ex_remap() {
 
 	for __sx_ex_remap_arg in "${@}"; do
 		case "${__sx_ex_remap_arg}" in
+			"${SX_CFG_SEP}") break;;
 			*:*) ;;
 			*) break;;
 		esac
@@ -226,7 +228,7 @@ sx_ex_remap() {
 ### __sx_ex_remap - 終了ステータスのマッピングとコマンド実行を行う（内部用）
 ##
 ## 使い方:
-##   __sx_ex_remap [置換元:置換先 ...] [--] コマンド [引数 ...]
+##   __sx_ex_remap [置換元:置換先 ...] [:::] コマンド [引数 ...]
 ##
 ## 説明:
 ##   sx_ex_remap の内部実装。
@@ -237,7 +239,7 @@ __sx_ex_remap() {
 
 	while ! sx_str_eq "${#}" 0; do
 		case "${1}" in
-			--) shift; break;;
+			"${SX_CFG_SEP}") shift; break;;
 			*:*)
 				__sx_ex_remap_map_="${__sx_ex_remap_map_} '${1}'"
 				shift
@@ -573,7 +575,7 @@ __sx_var_copy() {
 ### sx_var_dump - 変数や配列の状態を文字列として取得する
 ##
 ## 使い方:
-##   sx_var_dump 結果変数名 名前1 [名前2 ...]
+##   sx_var_dump 結果変数名 [名前1 ...]
 ##
 ## 説明:
 ##   指定された変数（または配列）の現在の状態を、代入式（name='value'）の
@@ -596,7 +598,7 @@ sx_var_dump() {
 ### __sx_var_dump - 変数や配列の状態を文字列として取得する（内部用）
 ##
 ## 使い方:
-##   __sx_var_dump 結果変数名 名前1 [名前2 ...]
+##   __sx_var_dump 結果変数名 [名前1 ...]
 ##
 ## 説明:
 ##   sx_var_dump の内部実装。
@@ -643,7 +645,7 @@ sx_var_is_arr() {
 ### __sx_var_is_arr - 指定された変数がsx配列であるか確認する（内部用）
 ##
 ## 使い方:
-##   __sx_var_is_arr 変数名1 [変数名2 ...]
+##   __sx_var_is_arr [変数名1 ...]
 ##
 ## 説明:
 ##   変数の値（シグネチャ）と長さ変数の妥当性をチェックする。
@@ -651,7 +653,7 @@ sx_var_is_arr() {
 __sx_var_is_arr() {
 	for __sx_var_is_arr_arg_ in "${@}"; do
 		if
-			! eval sx_str_sw "\"\${${__sx_var_is_arr_arg_}-}\"" '"${SX_SIG_ARR}":' ||
+			! eval sx_str_sw "\"\${${__sx_var_is_arr_arg_}-}\"" '"${SX_CFG_SIG_ARR}":' ||
 			! eval __sx_num_is_base_nat0 10 "\"\${${__sx_var_is_arr_arg_}_len-}\""
 		then
 			unset __sx_var_is_arr_arg_
@@ -1518,7 +1520,7 @@ __sx_var_unset() {
 sx_num_eq() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_eq "${@}" || return; return 0;; esac
 
-	__sx_num_is_sxint "${@}" || return "${SX_EX_USAGE}"
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sxint "${@}" || return
 	__sx_num_eq "${@}" || return
 }
 
@@ -2182,8 +2184,7 @@ __sx_num_is_sxint() {
 sx_num_le() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_le "${@}" || return; return 0;; esac
 
-	__sx_num_is_sxint "${@}" || return "${SX_EX_USAGE}"
-
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sxint "${@}" || return
 	__sx_num_le "${@}" || return
 }
 
@@ -2214,8 +2215,7 @@ __sx_num_le() {
 sx_num_lt() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_lt "${@}" || return; return 0;; esac
 
-	__sx_num_is_sxint "${@}" || return "${SX_EX_USAGE}"
-
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sxint "${@}" || return
 	__sx_num_lt "${@}" || return
 }
 
@@ -2238,7 +2238,7 @@ __sx_num_lt() {
 ### sx_num_rel - 数値間の関係を確認する
 ##
 ## 使い方:
-##   sx_num_rel [数値1 [演算子1 数値2...]]
+##   sx_num_rel [数値1 [演算子1 数値2 ...]]
 ##
 ## 説明:
 ##   数値と演算子を交互に指定し、すべての関係が満たされるかを確認する。
@@ -2283,7 +2283,7 @@ sx_num_rel() {
 ### __sx_num_rel - 数値間の関係を確認する（内部用）
 ##
 ## 使い方:
-##   __sx_num_rel [数値1 [演算子1 数値2...]]
+##   __sx_num_rel [数値1 [演算子1 数値2 ...]]
 ##
 ## 説明:
 ##   sx_num_rel の内部実装。
@@ -2364,7 +2364,7 @@ sx_uuid_is_uuid() {
 ##    1  一つも一致しない
 sx_str_any() {
 	__sx_str_any_tgt="${1-}"
-	shift "$((0 < $#))"
+	shift "$((0 < ${#}))"
 
 	for __sx_str_any_arg in "${@}"; do
 		if sx_str_eq "${__sx_str_any_tgt}" "${__sx_str_any_arg}"; then
@@ -2397,7 +2397,8 @@ sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	{ sx_num_is_int "${3-1}" && ! __sx_num_eq "${3-1}" 0 && sx_num_is_nat0 "${4-${SX_NUM_I32_MAX}}"; } || return "${SX_EX_USAGE}"
+	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${3+"${3}"} ${4+"${4}"} || return
+	{ ! __sx_num_eq ${3+"${3}"} 0 && sx_num_is_nat0 ${4+"${4}"}; } || return "${SX_EX_USAGE}"
 
 	__sx_str_chunk "${@}"
 }
@@ -2472,7 +2473,7 @@ __sx_str_chunk() {
 ##    1  一致しない文字列が含まれる
 sx_str_eq() {
 	__sx_str_eq_first="${1-}"
-	shift "$((0 < $#))"
+	shift "$((0 < ${#}))"
 
 	for __sx_str_eq_arg in "${@}"; do
 		case "${__sx_str_eq_arg}" in
@@ -2544,7 +2545,7 @@ __sx_str_etrim() {
 ##    1  一致する終了文字列がない
 sx_str_ew() {
 	__sx_str_ew_tgt="${1-}"
-	shift "$((0 < $#))"
+	shift "$((0 < ${#}))"
 
 	for __sx_str_ew_arg in "${@}"; do
 		case "${__sx_str_ew_tgt}" in
@@ -2576,7 +2577,7 @@ sx_str_ew() {
 ##    1  一致する文字列がない
 sx_str_has() {
 	__sx_str_has_tgt="${1-}"
-	shift "$((0 < $#))"
+	shift "$((0 < ${#}))"
 
 	for __sx_str_has_arg in "${@}"; do
 		case "${__sx_str_has_tgt}" in
@@ -2670,7 +2671,7 @@ sx_str_is_oct() {
 ##    1  マッチするパターンがない
 sx_str_match() {
 	__sx_str_match_tgt="${1-}"
-	shift "$((0 < $#))"
+	shift "$((0 < ${#}))"
 
 	for __sx_str_match_arg in "${@}"; do
 		case "${__sx_str_match_tgt}" in
@@ -2750,7 +2751,7 @@ sx_str_split() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	sx_num_is_int "${4-${SX_NUM_I32_MAX}}" || return "${SX_EX_USAGE}"
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${4+"${4}"} || return
 
 	__sx_str_split "${@}"
 }
@@ -2897,7 +2898,7 @@ sx_str_sub() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	sx_num_is_int "${5-${SX_NUM_I32_MAX}}" || return "${SX_EX_USAGE}"
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${5+"${5}"} || return
 
 	__sx_str_sub "${@}"
 }
@@ -2922,7 +2923,7 @@ __sx_str_sub() {
 	if sx_str_eq "${__sx_str_sub_pat_}" ''; then
 		__sx_str_sub_out_="${__sx_str_sub_str_}"
 
-		if sx_num_lt 0 "${__sx_str_sub_lim_}"; then
+		if __sx_num_lt 0 "${__sx_str_sub_lim_}"; then
 			# 前向き挿入
 			__sx_str_sub_out_="${__sx_str_sub_rep_}"
 
@@ -2937,7 +2938,7 @@ __sx_str_sub() {
 			done
 
 			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_}"
-		elif sx_num_lt "${__sx_str_sub_lim_}" 0; then
+		elif __sx_num_lt "${__sx_str_sub_lim_}" 0; then
 			__sx_str_sub_out_="${__sx_str_sub_rep_}"
 
 			while
@@ -2958,7 +2959,7 @@ __sx_str_sub() {
 		return "${SX_EX_OK}"
 	fi
 
-	if sx_num_le 0 "${__sx_str_sub_lim_}"; then
+	if __sx_num_le 0 "${__sx_str_sub_lim_}"; then
 		# 前向き置換 (Forward)
 		while
 			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
@@ -3007,7 +3008,7 @@ sx_str_substr() {
 
 	sx_var_rw_chk "${1-}" || return
 
-	sx_num_is_int "${3-0}" "${4-${SX_NUM_I32_MAX}}" || return "${SX_EX_USAGE}"
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${3+"${3}"} ${4+"${4}"} || return
 
 	__sx_str_substr "${@}"
 }
@@ -3116,7 +3117,7 @@ __sx_str_strim() {
 ##    1  一致する開始文字列がない
 sx_str_sw() {
 	__sx_str_sw_tgt="${1-}"
-	shift "$((0 < $#))"
+	shift "$((0 < ${#}))"
 
 	for __sx_str_sw_arg in "${@}"; do
 		case "${__sx_str_sw_tgt}" in
@@ -3319,7 +3320,7 @@ sx_arr_gen() {
 ##   指定された配列を新規に作成し、引数で指定された値を要素として追加する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_arr_gen() {
-	__sx_var_set "${1}=${SX_SIG_ARR}:" "${1}_len=0"
+	__sx_var_set "${1}=${SX_CFG_SIG_ARR}:" "${1}_len=0"
 	__sx_arr_push "${@}"
 }
 
