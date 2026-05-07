@@ -2235,6 +2235,68 @@ __sx_num_lt() {
 	done
 }
 
+### sx_num_ge - 引数が降順（等号を含む）に並んでいるか確認する
+##
+## 使い方:
+##   sx_num_ge [数値1 [数値2 ...]]
+##
+## 終了ステータス:
+##    0  数値1 >= 数値2 >= ... である (SX_EX_OK)
+##    1  条件を満たさない、または数値でない引数が含まれる
+sx_num_ge() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_ge "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sxint "${@}" || return
+	__sx_num_ge "${@}" || return
+}
+
+### __sx_num_ge - 引数が降順（等号を含む）に並んでいるか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_ge [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_ge の内部実装。
+##   引数チェックは行わない。
+__sx_num_ge() {
+	while sx_str_eq "${2+X}" X; do
+		sx_str_eq "$((${1} >= ${2}))" 1 || return 1
+
+		shift
+	done
+}
+
+### sx_num_gt - 引数が厳密な降順に並んでいるか確認する
+##
+## 使い方:
+##   sx_num_gt [数値1 [数値2 ...]]
+##
+## 終了ステータス:
+##    0  数値1 > 数値2 > ... である (SX_EX_OK)
+##    1  条件を満たさない、または数値でない引数が含まれる
+sx_num_gt() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_gt "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sxint "${@}" || return
+	__sx_num_gt "${@}" || return
+}
+
+### __sx_num_gt - 引数が厳密な降順に並んでいるか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_gt [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_gt の内部実装。
+##   引数チェックは行わない。
+__sx_num_gt() {
+	while sx_str_eq "${2+X}" X; do
+		sx_str_eq "$((${1} > ${2}))" 1 || return 1
+
+		shift
+	done
+}
+
 ### sx_num_rel - 数値間の関係を確認する
 ##
 ## 使い方:
