@@ -190,10 +190,10 @@ sx_ex_is_status() {
 	unset __sx_ex_is_status_arg
 }
 
-### sx_ex_get - 終了ステータスの数値と名前を相互変換、または有効性を確認する
+### sx_ex_map - 終了ステータスの数値と名前を相互変換、または有効性を確認する
 ##
 ## 使い方:
-##   sx_ex_get [変数名=値 | 値 ...]
+##   sx_ex_map [変数名=値 | 値 ...]
 ##
 ## 説明:
 ##   引数として数値 (64 等) または名前 (DATAERR 等) を受け取り、その有効性を確認する。
@@ -205,70 +205,70 @@ sx_ex_is_status() {
 ##    1  無効な名前、または範囲外の数値が含まれる
 ##   64  引数の形式が不正、または結果変数名が無効 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_ex_get() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_get "${@}" || return; return 0;; esac
+sx_ex_map() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_map "${@}" || return; return 0;; esac
 
-	__sx_ex_get_chk=
+	__sx_ex_map_chk=
 
-	for __sx_ex_get_arg in "${@}"; do
-		case "${__sx_ex_get_arg}" in *=*)
-			__sx_ex_get_vn="${__sx_ex_get_arg%%=*}"
+	for __sx_ex_map_arg in "${@}"; do
+		case "${__sx_ex_map_arg}" in *=*)
+			__sx_ex_map_vn="${__sx_ex_map_arg%%=*}"
 
-			sx_var_is_name "${__sx_ex_get_vn}" || {
-				unset __sx_ex_get_chk __sx_ex_get_arg __sx_ex_get_vn
+			sx_var_is_name "${__sx_ex_map_vn}" || {
+				unset __sx_ex_map_chk __sx_ex_map_arg __sx_ex_map_vn
 				return "${SX_EX_USAGE}"
 			}
 
-			__sx_ex_get_chk="${__sx_ex_get_chk} ${__sx_ex_get_vn}"
+			__sx_ex_map_chk="${__sx_ex_map_chk} ${__sx_ex_map_vn}"
 		;; esac
 	done
 
-	eval sx_var_is_rw_all "${__sx_ex_get_chk}" || {
-		unset __sx_ex_get_chk __sx_ex_get_arg __sx_ex_get_vn
+	eval sx_var_is_rw_all "${__sx_ex_map_chk}" || {
+		unset __sx_ex_map_chk __sx_ex_map_arg __sx_ex_map_vn
 		return "${SX_EX_NOPERM}"
 	}
 
-	unset __sx_ex_get_chk __sx_ex_get_arg __sx_ex_get_vn
-	__sx_ex_get "${@}" || return
+	unset __sx_ex_map_chk __sx_ex_map_arg __sx_ex_map_vn
+	__sx_ex_map "${@}" || return
 }
 
-__sx_ex_get() {
-	__sx_ex_get_out_=
+__sx_ex_map() {
+	__sx_ex_map_out_=
 
-	for __sx_ex_get_arg_ in "${@}"; do
-		__sx_ex_get_in_="${__sx_ex_get_arg_#*=}"
+	for __sx_ex_map_arg_ in "${@}"; do
+		__sx_ex_map_in_="${__sx_ex_map_arg_#*=}"
 
-		case "${__sx_ex_get_in_}" in
+		case "${__sx_ex_map_in_}" in
 			*[!0-9A-Z]*)
-				unset __sx_ex_get_out_ __sx_ex_get_arg_ __sx_ex_get_in_ __sx_ex_get_val_
+				unset __sx_ex_map_out_ __sx_ex_map_arg_ __sx_ex_map_in_ __sx_ex_map_val_
 				return 1
 				;;
 		esac
 
 		case " ${SX_EX_MAP} " in
-			*" ${__sx_ex_get_in_}:"*)
-				__sx_ex_get_val_=" ${SX_EX_MAP} "
-				__sx_ex_get_val_="${__sx_ex_get_val_#*" ${__sx_ex_get_in_}:"}"
-				__sx_ex_get_val_="${__sx_ex_get_val_%% *}"
+			*" ${__sx_ex_map_in_}:"*)
+				__sx_ex_map_val_=" ${SX_EX_MAP} "
+				__sx_ex_map_val_="${__sx_ex_map_val_#*" ${__sx_ex_map_in_}:"}"
+				__sx_ex_map_val_="${__sx_ex_map_val_%% *}"
 				;;
-			*":${__sx_ex_get_in_} "*)
-				__sx_ex_get_val_=" ${SX_EX_MAP} "
-				__sx_ex_get_val_="${__sx_ex_get_val_%":${__sx_ex_get_in_} "*}"
-				__sx_ex_get_val_="${__sx_ex_get_val_##* }"
+			*":${__sx_ex_map_in_} "*)
+				__sx_ex_map_val_=" ${SX_EX_MAP} "
+				__sx_ex_map_val_="${__sx_ex_map_val_%":${__sx_ex_map_in_} "*}"
+				__sx_ex_map_val_="${__sx_ex_map_val_##* }"
 				;;
 			*)
-				unset __sx_ex_get_out_ __sx_ex_get_arg_ __sx_ex_get_in_ __sx_ex_get_val_
+				unset __sx_ex_map_out_ __sx_ex_map_arg_ __sx_ex_map_in_ __sx_ex_map_val_
 				return 1
 				;;
 		esac
 
-		case "${__sx_ex_get_arg_}" in *=*)
-			__sx_ex_get_out_="${__sx_ex_get_out_} ${__sx_ex_get_arg_%%=*}=${__sx_ex_get_val_}"
+		case "${__sx_ex_map_arg_}" in *=*)
+			__sx_ex_map_out_="${__sx_ex_map_out_} ${__sx_ex_map_arg_%%=*}=${__sx_ex_map_val_}"
 		;; esac
 	done
 
-	eval __sx_var_set "${__sx_ex_get_out_}"
-	unset __sx_ex_get_out_ __sx_ex_get_arg_ __sx_ex_get_in_ __sx_ex_get_val_
+	eval __sx_var_set "${__sx_ex_map_out_}"
+	unset __sx_ex_map_out_ __sx_ex_map_arg_ __sx_ex_map_in_ __sx_ex_map_val_
 }
 
 ### sx_ex_yield - 任意の終了ステータスを発生させる
@@ -287,7 +287,7 @@ __sx_ex_get() {
 sx_ex_yield() {
 	if sx_ex_is_status ${1+"${1}"}; then
 		return "${1-0}"
-	elif sx_ex_get "__sx_ex_yield_s=${1}"; then
+	elif sx_ex_map "__sx_ex_yield_s=${1}"; then
 		set -- "${__sx_ex_yield_s}"
 		unset __sx_ex_yield_s
 		return "${1}"
