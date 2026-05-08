@@ -1,0 +1,21 @@
+ID	Module	Description	Status
+ag	arg	Arguments	Current
+ar	arr	SX Array	Current
+nm	num	Numerical	Current
+st	str	String	Current
+ud	uuid	UUID	Current
+ut	util	Utility	Current
+vr	var	Variable	Current
+sy	sys	System	Reserved
+ev	env	Environment	Reserved
+fs	fs	File System	Reserved
+ph	path	Path	Reserved
+io	io	I/O	Reserved
+lg	log	Logging	Reserved
+ts	test	Test/Spec	Reserved
+dt	date	Date/Time	Reserved
+mt	math	Math	Reserved
+pc	proc	Process	Reserved
+cf	conf	Configuration	Reserved
+jn	json	JSON	Reserved
+sg	sig	Signal	Reserved
