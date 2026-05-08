@@ -336,10 +336,10 @@ sx_ex_remap() {
 
 		case "${__sx_ex_remap_pat}" in
 			-) ;;
-			*?-) sx_ex_is_status "${__sx_ex_remap_pat%-}" || ! :;;
-			-?*) sx_ex_is_status "${__sx_ex_remap_pat#-}" || ! :;;
-			*-*) sx_ex_is_status "${__sx_ex_remap_pat#*-}" "${__sx_ex_remap_arg%%-*}" || ! :;;
-			*) sx_ex_is_status "${__sx_ex_remap_pat#!}" || ! :;;
+			*?-) sx_ex_is_status "${__sx_ex_remap_pat%-}";;
+			-?*) sx_ex_is_status "${__sx_ex_remap_pat#-}";;
+			*-*) sx_ex_is_status "${__sx_ex_remap_pat#*-}" "${__sx_ex_remap_arg%%-*}";;
+			*) sx_ex_is_status "${__sx_ex_remap_pat#!}";;
 		esac || {
 			unset __sx_ex_remap_arg __sx_ex_remap_pat
 			return "${SX_EX_USAGE}"
