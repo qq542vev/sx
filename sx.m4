@@ -9,6 +9,12 @@ define({{M_STR_EQ}}, {{dnl
 define({{__M_STR_EQ_REST}}, {{dnl
 case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_STR_EQ_REST(shift($@))}})dnl
 }}) dnl
+define({{M_NUM_EQ}}, {{dnl
+{ case $(($1 == $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{&& __M_NUM_EQ_REST(shift($@))}}); }dnl
+}}) dnl
+define({{__M_NUM_EQ_REST}}, {{dnl
+case $(($1 == $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_NUM_EQ_REST(shift($@))}})dnl
+}}) dnl
 
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
@@ -2604,7 +2610,7 @@ sx_str_chunk() {
 
 	sx_var_rw_chk "${1-}" || return
 	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${3+"${3}"} ${4+"${4}"} || return
-	{ ! __sx_num_eq ${3+"${3}"} 0 && sx_num_is_nat0 ${4+"${4}"}; } || return "${SX_EX_USAGE}"
+	{ ! M_NUM_EQ(${3-1}, 0) && sx_num_is_nat0 ${4+"${4}"}; } || return "${SX_EX_USAGE}"
 
 	__sx_str_chunk "${@}"
 }
