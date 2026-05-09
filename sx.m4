@@ -2094,7 +2094,7 @@ __sx_num_is_int_width() {
 		case "${1}" in
 			0[xX]* | -0[xX]*)
 				if
-					__sx_num_lt "${__sx_num_is_int_width_xlen_}" "${2}" || {
+					M_NUM_LT({{__sx_num_is_int_width_xlen_}}, {{${2}}}) || {
 						M_STR_EQ({{"${__sx_num_is_int_width_xlen_}"}}, {{"${2}"}}) &&
 						sx_str_match "${1}" '-0[xX][9a-fA-F]*' '-0[xX]8*[!0]*' '0[xX][89a-fA-F]*'
 					}
@@ -2111,7 +2111,7 @@ __sx_num_is_int_width() {
 				esac
 
 				if
-					__sx_num_lt "${3}" "${2}" || {
+					M_NUM_LT({{${3}}}, {{${2}}}) || {
 						M_STR_EQ({{"${3}"}}, {{"${2}"}}) &&
 						sx_str_match "${1}" "-0[!1-${4}]*" "-0${4}*[!0]*" "0[!1-${4}-]*"
 					}
@@ -2121,7 +2121,7 @@ __sx_num_is_int_width() {
 				fi
 				;;
 			*)
-				if __sx_num_lt "${__sx_num_is_int_width_dlen_}" "${2}"; then
+				if M_NUM_LT({{__sx_num_is_int_width_dlen_}}, {{${2}}}); then
 					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 					return 1
 				elif M_STR_EQ({{"${__sx_num_is_int_width_dlen_}"}}, {{"${2}"}}); then
@@ -2145,10 +2145,10 @@ __sx_num_is_int_width() {
 								;;
 						esac
 
-						if __sx_num_lt "${2}" "${1}"; then
+						if M_NUM_LT({{${2}}}, {{${1}}}); then
 							unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 							return 1
-						elif __sx_num_lt "${1}" "${2}" || M_STR_EQ({{"${3}"}}, {{''}}); then
+						elif M_NUM_LT({{${1}}}, {{${2}}}) || M_STR_EQ({{"${3}"}}, {{''}}); then
 							# 小さければ確定または残りがなければ終了
 							break
 						fi
@@ -2654,7 +2654,7 @@ __sx_str_chunk() {
 	__sx_str_chunk_lim_="$((${4-${SX_NUM_I32_MAX}}))"
 	__sx_str_chunk_out_=
 
-	if __sx_num_lt 0 "${__sx_str_chunk_len_}"; then
+	if M_NUM_LT({{0}}, {{__sx_str_chunk_len_}}); then
 		# Forward
 		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
 
@@ -3013,19 +3013,19 @@ __sx_str_split() {
 	__sx_str_split_out_=
 
 	if M_STR_EQ({{"${__sx_str_split_sep_}"}}, {{''}}); then
-		if __sx_num_lt 0 "${__sx_str_split_lim_}"; then
+		if M_NUM_LT({{0}}, {{__sx_str_split_lim_}}); then
 			M_STR_EQ({{"${__sx_str_split_lim_}"}}, {{1}}) || __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
 
-			if __sx_num_lt "${#__sx_str_split_str_}" "${__sx_str_split_lim_}"; then
+			if M_NUM_LT({{${#__sx_str_split_str_}}}, {{__sx_str_split_lim_}}); then
 				__sx_str_split_out_="${__sx_str_split_out_} ''"
 			fi
 
 			__sx_str_split_out_="'' ${__sx_str_split_out_# }"
-		elif __sx_num_lt "${__sx_str_split_lim_}" 0; then
+		elif M_NUM_LT({{__sx_str_split_lim_}}, {{0}}); then
 			__sx_str_split_lim_=$((__sx_str_split_lim_ * -1))
 			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
 
-			if __sx_num_lt "${#__sx_str_split_str_}" "${__sx_str_split_lim_}"; then
+			if M_NUM_LT({{${#__sx_str_split_str_}}}, {{__sx_str_split_lim_}}); then
 				__sx_str_split_out_="'' ${__sx_str_split_out_}"
 			fi
 
@@ -3163,7 +3163,7 @@ __sx_str_sub() {
 	if M_STR_EQ({{"${__sx_str_sub_pat_}"}}, {{''}}); then
 		__sx_str_sub_out_="${__sx_str_sub_str_}"
 
-		if __sx_num_lt 0 "${__sx_str_sub_lim_}"; then
+		if M_NUM_LT({{0}}, {{__sx_str_sub_lim_}}); then
 			# 前向き挿入
 			__sx_str_sub_out_="${__sx_str_sub_rep_}"
 
@@ -3178,7 +3178,7 @@ __sx_str_sub() {
 			done
 
 			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_}"
-		elif __sx_num_lt "${__sx_str_sub_lim_}" 0; then
+		elif M_NUM_LT({{__sx_str_sub_lim_}}, {{0}}); then
 			__sx_str_sub_out_="${__sx_str_sub_rep_}"
 
 			while
@@ -3270,7 +3270,7 @@ __sx_str_substr() {
 	__sx_str_substr_total_="${#__sx_str_substr_str_}"
 
 	# オフセットの正規化 (負数は末尾から)
-	if __sx_num_lt "${__sx_str_substr_off_}" 0; then
+	if M_NUM_LT({{__sx_str_substr_off_}}, {{0}}); then
 		__sx_str_substr_off_=$(((__sx_str_substr_off_ * -1) < __sx_str_substr_total_ ? __sx_str_substr_total_ + __sx_str_substr_off_ : 0))
 	fi
 
@@ -3291,7 +3291,7 @@ __sx_str_substr() {
 	fi
 
 	# 2. 指定長に切り詰め
-	if __sx_num_lt "${__sx_str_substr_drop_}" "${__sx_str_substr_total_}"; then
+	if M_NUM_LT({{__sx_str_substr_drop_}}, {{__sx_str_substr_total_}}); then
 		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_drop_}"
 		__sx_str_substr_str_="${__sx_str_substr_str_%${__sx_str_substr_qm_}}"
 	else
@@ -3458,7 +3458,7 @@ sx_arr_at() {
 		}
 
 		# 範囲チェック
-		__sx_num_lt "${__sx_arr_at_i}" "${__sx_arr_at_len}" || __sx_arr_at_err=
+		M_NUM_LT({{__sx_arr_at_i}}, {{__sx_arr_at_len}}) || __sx_arr_at_err=
 
 		case "${__sx_arr_at_pair}" in *=*)
 			# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
@@ -3513,7 +3513,7 @@ __sx_arr_at() {
 		__sx_arr_at_i_="${__sx_arr_at_pair_#*=}"
 
 		# 範囲チェック
-		__sx_num_lt "${__sx_arr_at_i_}" "${__sx_arr_at_len_}" || {
+		M_NUM_LT({{__sx_arr_at_i_}}, {{__sx_arr_at_len_}}) || {
 			unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
 			return 1
 		}
@@ -3630,7 +3630,7 @@ __sx_arr_is_rw() {
 	while ! M_STR_EQ({{"${#}"}}, {{0}}); do
 		eval 'shift 2;' set -- "${1}" "$((${1} + ${2}))" '"${@}"'
 
-		while __sx_num_lt "${1}" "${2}"; do
+		while M_NUM_LT({{${1}}}, {{${2}}}); do
 			__sx_arr_is_rw_chk_="${__sx_arr_is_rw_chk_}${__sx_arr_is_rw_name_}_${1} "
 			eval 'shift 2;' set -- "$((${1} + 1))" "${2}" '"${@}"'
 		done
@@ -3882,7 +3882,7 @@ __sx_arr_quote() {
 	for __sx_arr_quote_arr_ in "${@}"; do
 		eval set -- 0 "\"\${${__sx_arr_quote_arr_}_len}\""
 
-		while __sx_num_lt "${1}" "${2}"; do
+		while M_NUM_LT({{${1}}}, {{${2}}}); do
 			eval __sx_arg_quote __sx_arr_quote_esc_ "\"\${${__sx_arr_quote_arr_}_${1}}\""
 			__sx_arr_quote_out_="${__sx_arr_quote_out_} ${__sx_arr_quote_esc_}"
 
@@ -3941,7 +3941,7 @@ __sx_arr_rquote() {
 	for __sx_arr_rquote_arr_ in "${@}"; do
 		eval set -- 0 "\"\${${__sx_arr_rquote_arr_}_len}\""
 
-		while __sx_num_lt "${1}" "${2}"; do
+		while M_NUM_LT({{${1}}}, {{${2}}}); do
 			eval __sx_arg_quote __sx_arr_rquote_esc_ "\"\${${__sx_arr_rquote_arr_}_${1}}\""
 			__sx_arr_rquote_out_=" ${__sx_arr_rquote_esc_}${__sx_arr_rquote_out_}"
 
