@@ -1,7 +1,7 @@
 #!/bin/sh
 # shellcheck shell=sh
 
-
+    
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
 readonly SX_EX_USAGE=64
@@ -363,7 +363,7 @@ sx_ex_remap() {
 __sx_ex_remap() {
 	__sx_ex_remap_map_=
 
-	while ! case "${#}" in 0) :;; *) ! :;; esac; do
+	while ! { case "${#}" in 0);; *) ! :;; esac ; }; do
 		case "${1}" in
 			"${SX_CFG_SEP}") shift; break;;
 			*:*)
@@ -394,7 +394,7 @@ __sx_ex_remap() {
 				fi
 				;;
 			!*)
-				if ! case "${1#!}" in "${__sx_ex_remap_sts_}") :;; *) ! :;; esac; then
+				if ! { case "${1#!}" in "${__sx_ex_remap_sts_}");; *) ! :;; esac ; }; then
 					__sx_ex_remap_sts_="${2}"
 					break
 				fi
@@ -1048,7 +1048,7 @@ sx_var_is_rw() {
 ##   引数で指定されたすべての変数が書き込み可能か確認する。
 ##   サブシェルの生成を最小限にするため、一括で検証を行う。
 __sx_var_is_rw() {
-	! case "${#}" in 0) :;; *) ! :;; esac || return 0
+	! { case "${#}" in 0);; *) ! :;; esac ; } || return 0
 	( unset -v "${@}" ) 2>/dev/null || return 1
 }
 
@@ -1191,7 +1191,7 @@ __sx_var_list_dep() {
 
 	__sx_var_list_dep_out_=' '
 
-	while ! case "${#}" in 0) :;; *) ! :;; esac; do
+	while ! { case "${#}" in 0);; *) ! :;; esac ; }; do
 		if sx_str_has "${__sx_var_list_dep_out_}" " ${1} "; then
 			shift
 			continue
@@ -1204,7 +1204,7 @@ __sx_var_list_dep() {
 			set -- "${@}" "${1}_len"
 
 			__sx_var_list_dep_i_=0
-			while ! case "${__sx_var_list_dep_i_}" in "${__sx_var_list_dep_len_}") :;; *) ! :;; esac; do
+			while ! { case "${__sx_var_list_dep_i_}" in "${__sx_var_list_dep_len_}");; *) ! :;; esac ; }; do
 				set -- "${@}" "${1}_${__sx_var_list_dep_i_}"
 				__sx_var_list_dep_i_=$((__sx_var_list_dep_i_ + 1))
 			done
@@ -1258,7 +1258,7 @@ __sx_var_list_ro() {
 			__sx_var_list_ro_vn_="${__sx_var_list_ro_vn_%%=*}"
 
 			if
-				! case "${__sx_var_list_ro_vn_}" in "${__sx_var_list_ro_ln_}") :;; *) ! :;; esac &&
+				! { case "${__sx_var_list_ro_vn_}" in "${__sx_var_list_ro_ln_}");; *) ! :;; esac ; } &&
 				sx_var_is_name "${__sx_var_list_ro_vn_}" &&
 				sx_var_is_ro "${__sx_var_list_ro_vn_}" &&
 				! sx_str_has "${__sx_var_list_ro_out_}" " ${__sx_var_list_ro_vn_} "
@@ -1312,7 +1312,7 @@ __sx_var_list_set() {
 			__sx_var_list_set_vn_="${__sx_var_list_set_ln_%%=*}"
 
 			if
-				! case "${__sx_var_list_set_vn_}" in "${__sx_var_list_set_ln_}") :;; *) ! :;; esac &&
+				! { case "${__sx_var_list_set_vn_}" in "${__sx_var_list_set_ln_}");; *) ! :;; esac ; } &&
 				sx_var_is_set "${__sx_var_list_set_vn_}" &&
 				! sx_str_has "${__sx_var_list_set_out_}" " ${__sx_var_list_set_vn_} "
 			then
@@ -1611,13 +1611,13 @@ sx_var_unset() {
 ##   sx_var_unset の内部実装。
 ##   引数チェックは行わない。
 __sx_var_unset() {
-	while ! case "${#}" in 0) :;; *) ! :;; esac; do
+	while ! { case "${#}" in 0);; *) ! :;; esac ; }; do
 		if __sx_var_is_arr "${1}"; then
 			eval "__sx_var_unset_len_=\"\${${1}_len}\""
 			set -- "${@}" "${1}_len"
 
 			__sx_var_unset_i_=0
-			while ! case "${__sx_var_unset_i_}" in "${__sx_var_unset_len_}") :;; *) ! :;; esac; do
+			while ! { case "${__sx_var_unset_i_}" in "${__sx_var_unset_len_}");; *) ! :;; esac ; }; do
 				set -- "${@}" "${1}_${__sx_var_unset_i_}"
 				__sx_var_unset_i_=$((__sx_var_unset_i_ + 1))
 			done
@@ -1660,8 +1660,8 @@ sx_num_eq() {
 ##   sx_num_eq の内部実装。
 ##   引数チェックは行わない。
 __sx_num_eq() {
-	while case "${2+X}" in X) :;; *) ! :;; esac; do
-		case "$((${1} == ${2}))" in 1) :;; *) ! :;; esac || return 1
+	while { case "${2+X}" in X);; *) ! :;; esac ; }; do
+		{ case "$((${1} == ${2}))" in 1);; *) ! :;; esac ; } || return 1
 
 		shift
 	done
@@ -2057,7 +2057,7 @@ __sx_num_is_int_width() {
 			0[xX]* | -0[xX]*)
 				if
 					__sx_num_lt "${__sx_num_is_int_width_xlen_}" "${2}" || {
-						case "${__sx_num_is_int_width_xlen_}" in "${2}") :;; *) ! :;; esac &&
+						{ case "${__sx_num_is_int_width_xlen_}" in "${2}");; *) ! :;; esac ; } &&
 						sx_str_match "${1}" '-0[xX][9a-fA-F]*' '-0[xX]8*[!0]*' '0[xX][89a-fA-F]*'
 					}
 				then
@@ -2074,7 +2074,7 @@ __sx_num_is_int_width() {
 
 				if
 					__sx_num_lt "${3}" "${2}" || {
-						case "${3}" in "${2}") :;; *) ! :;; esac &&
+						{ case "${3}" in "${2}");; *) ! :;; esac ; } &&
 						sx_str_match "${1}" "-0[!1-${4}]*" "-0${4}*[!0]*" "0[!1-${4}-]*"
 					}
 				then
@@ -2086,7 +2086,7 @@ __sx_num_is_int_width() {
 				if __sx_num_lt "${__sx_num_is_int_width_dlen_}" "${2}"; then
 					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 					return 1
-				elif case "${__sx_num_is_int_width_dlen_}" in "${2}") :;; *) ! :;; esac; then
+				elif { case "${__sx_num_is_int_width_dlen_}" in "${2}");; *) ! :;; esac ; }; then
 					# $1: 絶対値, $2: 制限値
 					case "${1}" in
 						-*) set -- "${1#-}" "${__sx_num_is_int_width_dmin_}";;
@@ -2110,7 +2110,7 @@ __sx_num_is_int_width() {
 						if __sx_num_lt "${2}" "${1}"; then
 							unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 							return 1
-						elif __sx_num_lt "${1}" "${2}" || case "${3}" in '') :;; *) ! :;; esac; then
+						elif __sx_num_lt "${1}" "${2}" || { case "${3}" in '');; *) ! :;; esac ; }; then
 							# 小さければ確定または残りがなければ終了
 							break
 						fi
@@ -2326,8 +2326,8 @@ sx_num_ge() {
 ##   sx_num_ge の内部実装。
 ##   引数チェックは行わない。
 __sx_num_ge() {
-	while case "${2+X}" in X) :;; *) ! :;; esac; do
-		case "$((${1} >= ${2}))" in 1) :;; *) ! :;; esac || return 1
+	while { case "${2+X}" in X);; *) ! :;; esac ; }; do
+		{ case "$((${1} >= ${2}))" in 1);; *) ! :;; esac ; } || return 1
 
 		shift
 	done
@@ -2359,8 +2359,8 @@ sx_num_gt() {
 ##   sx_num_gt の内部実装。
 ##   引数チェックは行わない。
 __sx_num_gt() {
-	while case "${2+X}" in X) :;; *) ! :;; esac; do
-		case "$((${1} > ${2}))" in 1) :;; *) ! :;; esac || return 1
+	while { case "${2+X}" in X);; *) ! :;; esac ; }; do
+		{ case "$((${1} > ${2}))" in 1);; *) ! :;; esac ; } || return 1
 
 		shift
 	done
@@ -2392,8 +2392,8 @@ sx_num_le() {
 ##   sx_num_le の内部実装。
 ##   引数チェックは行わない。
 __sx_num_le() {
-	while case "${2+X}" in X) :;; *) ! :;; esac; do
-		case "$((${1} <= ${2}))" in 1) :;; *) ! :;; esac || return 1
+	while { case "${2+X}" in X);; *) ! :;; esac ; }; do
+		{ case "$((${1} <= ${2}))" in 1);; *) ! :;; esac ; } || return 1
 
 		shift
 	done
@@ -2425,8 +2425,8 @@ sx_num_lt() {
 ##   sx_num_lt の内部実装。
 ##   引数チェックは行わない。
 __sx_num_lt() {
-	while case "${2+X}" in X) :;; *) ! :;; esac; do
-		case "$((${1} < ${2}))" in 1) :;; *) ! :;; esac || return 1
+	while { case "${2+X}" in X);; *) ! :;; esac ; }; do
+		{ case "$((${1} < ${2}))" in 1);; *) ! :;; esac ; } || return 1
 
 		shift
 	done
@@ -2454,11 +2454,11 @@ __sx_num_lt() {
 sx_num_rel() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_rel "${@}" || return; return 0;; esac
 
-	case "$((${#} == 0 ? 1 : ${#} % 2))" in 1) :;; *) ! :;; esac || return "${SX_EX_USAGE}"
+	{ case "$((${#} == 0 ? 1 : ${#} % 2))" in 1);; *) ! :;; esac ; } || return "${SX_EX_USAGE}"
 
 	__sx_num_rel_x=1
 	for __sx_num_rel_arg in "${@}"; do
-		if case "${__sx_num_rel_x}" in 1) :;; *) ! :;; esac; then
+		if { case "${__sx_num_rel_x}" in 1);; *) ! :;; esac ; }; then
 			__sx_num_is_sxint "${__sx_num_rel_arg}" || {
 				unset __sx_num_rel_x __sx_num_rel_arg
 				return "${SX_EX_USAGE}"
@@ -2489,7 +2489,7 @@ __sx_num_rel() {
 	__sx_num_rel_lhs_="${1-}"
 	shift $((0 < ${#}))
 
-	while case "${2+X}" in X) :;; *) ! :;; esac; do
+	while { case "${2+X}" in X);; *) ! :;; esac ; }; do
 		case "${1}" in
 			eq | '=')  __sx_num_rel_op_='==';;
 			ne | '!=') __sx_num_rel_op_='!=';;
@@ -2499,7 +2499,7 @@ __sx_num_rel() {
 			ge | '>=') __sx_num_rel_op_='>=';;
 		esac
 
-		case "$(( __sx_num_rel_lhs_ ${__sx_num_rel_op_} ${2} ))" in 1) :;; *) ! :;; esac || {
+		{ case "$(( __sx_num_rel_lhs_ ${__sx_num_rel_op_} ${2} ))" in 1);; *) ! :;; esac ; } || {
 			unset __sx_num_rel_lhs_ __sx_num_rel_op_
 			return 1
 		}
@@ -2564,7 +2564,7 @@ sx_str_any() {
 	shift "$((0 < ${#}))"
 
 	for __sx_str_any_arg in "${@}"; do
-		if case "${__sx_str_any_tgt}" in "${__sx_str_any_arg}") :;; *) ! :;; esac; then
+		if { case "${__sx_str_any_tgt}" in "${__sx_str_any_arg}");; *) ! :;; esac ; }; then
 			unset __sx_str_any_tgt __sx_str_any_arg
 			return "${SX_EX_OK}"
 		fi
@@ -2622,7 +2622,7 @@ __sx_str_chunk() {
 
 		while
 			__sx_num_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
-			! case "${__sx_str_chunk_lim_}" in 0) :;; *) ! :;; esac
+			! { case "${__sx_str_chunk_lim_}" in 0);; *) ! :;; esac ; }
 		do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
 			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"
@@ -2631,7 +2631,7 @@ __sx_str_chunk() {
 			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
 		done
 
-		if ! case "${__sx_str_chunk_str_}" in '') :;; *) ! :;; esac; then
+		if ! { case "${__sx_str_chunk_str_}" in '');; *) ! :;; esac ; }; then
 			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_}"
 			__sx_str_chunk_out_="${__sx_str_chunk_out_} ${__sx_str_chunk_esc_}"
 		fi
@@ -2642,7 +2642,7 @@ __sx_str_chunk() {
 
 		while
 			__sx_num_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
-			! case "${__sx_str_chunk_lim_}" in 0) :;; *) ! :;; esac
+			! { case "${__sx_str_chunk_lim_}" in 0);; *) ! :;; esac ; }
 		do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
 			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_#${__sx_str_chunk_next_}}"
@@ -2651,7 +2651,7 @@ __sx_str_chunk() {
 			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
 		done
 
-		if ! case "${__sx_str_chunk_str_}" in '') :;; *) ! :;; esac; then
+		if ! { case "${__sx_str_chunk_str_}" in '');; *) ! :;; esac ; }; then
 			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_}"
 			__sx_str_chunk_out_=" ${__sx_str_chunk_esc_}${__sx_str_chunk_out_}"
 		fi
@@ -2920,8 +2920,8 @@ __sx_str_rep() {
 	set -- "${1}" "${2-}" "$((${3-1}))"
 	__sx_str_rep_out_=
 
-	while ! case "${3}" in 0) :;; *) ! :;; esac; do
-		if case "$((${3} % 2))" in 1) :;; *) ! :;; esac; then
+	while ! { case "${3}" in 0);; *) ! :;; esac ; }; do
+		if { case "$((${3} % 2))" in 1);; *) ! :;; esac ; }; then
 			__sx_str_rep_out_="${__sx_str_rep_out_}${2}"
 		fi
 
@@ -2974,9 +2974,9 @@ __sx_str_split() {
 	__sx_str_split_lim_="$((${4-${SX_NUM_I32_MAX}}))"
 	__sx_str_split_out_=
 
-	if case "${__sx_str_split_sep_}" in '') :;; *) ! :;; esac; then
+	if { case "${__sx_str_split_sep_}" in '');; *) ! :;; esac ; }; then
 		if __sx_num_lt 0 "${__sx_str_split_lim_}"; then
-			case "${__sx_str_split_lim_}" in 1) :;; *) ! :;; esac || __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
+			{ case "${__sx_str_split_lim_}" in 1);; *) ! :;; esac ; } || __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
 
 			if __sx_num_lt "${#__sx_str_split_str_}" "${__sx_str_split_lim_}"; then
 				__sx_str_split_out_="${__sx_str_split_out_} ''"
@@ -3004,7 +3004,7 @@ __sx_str_split() {
 	if __sx_num_le 0 "${__sx_str_split_lim_}"; then
 		while
 			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
-			! case "${__sx_str_split_lim_}" in 0) :;; *) ! :;; esac
+			! { case "${__sx_str_split_lim_}" in 0);; *) ! :;; esac ; }
 		do
 			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"
 			__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
@@ -3017,7 +3017,7 @@ __sx_str_split() {
 	else
 		while
 			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
-			! case "${__sx_str_split_lim_}" in 0) :;; *) ! :;; esac
+			! { case "${__sx_str_split_lim_}" in 0);; *) ! :;; esac ; }
 		do
 			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}"
 			__sx_str_split_out_=" ${__sx_str_split_esc_}${__sx_str_split_out_}"
@@ -3122,7 +3122,7 @@ __sx_str_sub() {
 	__sx_str_sub_out_=
 
 	# パターンが空の場合は、文字間および両端に挿入（回数制限に従う）
-	if case "${__sx_str_sub_pat_}" in '') :;; *) ! :;; esac; then
+	if { case "${__sx_str_sub_pat_}" in '');; *) ! :;; esac ; }; then
 		__sx_str_sub_out_="${__sx_str_sub_str_}"
 
 		if __sx_num_lt 0 "${__sx_str_sub_lim_}"; then
@@ -3130,8 +3130,8 @@ __sx_str_sub() {
 			__sx_str_sub_out_="${__sx_str_sub_rep_}"
 
 			while
-				! case "${__sx_str_sub_str_}" in '') :;; *) ! :;; esac &&
-				! case "${__sx_str_sub_lim_}" in 1) :;; *) ! :;; esac
+				! { case "${__sx_str_sub_str_}" in '');; *) ! :;; esac ; } &&
+				! { case "${__sx_str_sub_lim_}" in 1);; *) ! :;; esac ; }
 			do
 				__sx_str_sub_next_="${__sx_str_sub_str_#?}"
 				__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%"${__sx_str_sub_next_}"}${__sx_str_sub_rep_}"
@@ -3144,8 +3144,8 @@ __sx_str_sub() {
 			__sx_str_sub_out_="${__sx_str_sub_rep_}"
 
 			while
-				! case "${__sx_str_sub_str_}" in '') :;; *) ! :;; esac &&
-				! case "${__sx_str_sub_lim_}" in -1) :;; *) ! :;; esac
+				! { case "${__sx_str_sub_str_}" in '');; *) ! :;; esac ; } &&
+				! { case "${__sx_str_sub_lim_}" in -1);; *) ! :;; esac ; }
 			do
 				__sx_str_sub_next_="${__sx_str_sub_str_%?}"
 				__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_#"${__sx_str_sub_next_}"}${__sx_str_sub_out_}"
@@ -3165,7 +3165,7 @@ __sx_str_sub() {
 		# 前向き置換 (Forward)
 		while
 			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
-			! case "${__sx_str_sub_lim_}" in 0) :;; *) ! :;; esac
+			! { case "${__sx_str_sub_lim_}" in 0);; *) ! :;; esac ; }
 		do
 			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%%"${__sx_str_sub_pat_}"*}${__sx_str_sub_rep_}"
 			__sx_str_sub_str_="${__sx_str_sub_str_#*"${__sx_str_sub_pat_}"}"
@@ -3177,7 +3177,7 @@ __sx_str_sub() {
 		# 後ろ向き置換 (Backward)
 		while
 			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
-			! case "${__sx_str_sub_lim_}" in 0) :;; *) ! :;; esac
+			! { case "${__sx_str_sub_lim_}" in 0);; *) ! :;; esac ; }
 		do
 			__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_##*"${__sx_str_sub_pat_}"}${__sx_str_sub_out_}"
 			__sx_str_sub_str_="${__sx_str_sub_str_%"${__sx_str_sub_pat_}"*}"
@@ -3578,9 +3578,9 @@ __sx_arr_is_rw() {
 	__sx_arr_is_rw_chk_=
 	shift
 
-	! case "${#}" in 0) :;; *) ! :;; esac || set -- 0
+	! { case "${#}" in 0);; *) ! :;; esac ; } || set -- 0
 
-	if case "$((${#} % 2))" in 0) :;; *) ! :;; esac; then
+	if { case "$((${#} % 2))" in 0);; *) ! :;; esac ; }; then
 		:
 	elif sx_var_is_arr "${__sx_arr_is_rw_name_}"; then
 		# 個数が省略された場合は末尾まで
@@ -3589,7 +3589,7 @@ __sx_arr_is_rw() {
 		set -- "${@}" 0
 	fi
 
-	while ! case "${#}" in 0) :;; *) ! :;; esac; do
+	while ! { case "${#}" in 0);; *) ! :;; esac ; }; do
 		eval 'shift 2;' set -- "${1}" "$((${1} + ${2}))" '"${@}"'
 
 		while __sx_num_lt "${1}" "${2}"; do
@@ -3638,7 +3638,7 @@ sx_arr_pop() {
 	eval "__sx_arr_pop_len=\"\${${1}_len}\""
 	shift
 
-	! case "${#}" in 0) :;; *) ! :;; esac || set -- -
+	! { case "${#}" in 0);; *) ! :;; esac ; } || set -- -
 	__sx_arg_norm __sx_arr_pop_args - "${@}"
 	eval set -- "${__sx_arr_pop_args}"
 	unset __sx_arr_pop_args
@@ -3665,7 +3665,7 @@ sx_arr_pop() {
 	for __sx_arr_pop_dest in "${@}"; do
 		__sx_arr_pop_i=$((__sx_arr_pop_i - 1))
 
-		! case "${__sx_arr_pop_dest}" in -) :;; *) ! :;; esac || continue
+		! { case "${__sx_arr_pop_dest}" in -);; *) ! :;; esac ; } || continue
 
 		# pop中に配列以下の更新を禁止
 		if
@@ -3703,7 +3703,7 @@ sx_arr_pop() {
 ##   指定された配列の末尾から要素を取り出し、結果変数に格納または破棄する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_arr_pop() {
-	! case "${#}" in 1) :;; *) ! :;; esac || set -- -
+	! { case "${#}" in 1);; *) ! :;; esac ; } || set -- -
 	__sx_arg_norm __sx_arr_pop_args_ - "${@}"
 	eval set -- "${__sx_arr_pop_args_}"
 	unset __sx_arr_pop_args_
@@ -3733,7 +3733,7 @@ __sx_arr_pop0() {
 		__sx_arr_pop0_len_=$((__sx_arr_pop0_len_ - 1))
 		__sx_arr_pop0_src_="${__sx_arr_pop0_arr_}_${__sx_arr_pop0_len_}"
 
-		if ! case "${__sx_arr_pop0_dest_}" in -) :;; *) ! :;; esac; then
+		if ! { case "${__sx_arr_pop0_dest_}" in -);; *) ! :;; esac ; }; then
 			__sx_var_copy "${__sx_arr_pop0_src_}-${__sx_arr_pop0_dest_}"
 		fi
 
