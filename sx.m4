@@ -426,7 +426,7 @@ __sx_ex_remap() {
 			"${__sx_ex_remap_sts_}") __sx_ex_remap_sts_="${2}"; break;;
 			*-*)
 				set -- "${@}" "${1%%-*}" "${1#*-}"
-				if __sx_num_le "${3:-0}" "${__sx_ex_remap_sts_}" "${4:-255}"; then
+				if M_NUM_LE({{${3:-0}}}, {{__sx_ex_remap_sts_}}, {{${4:-255}}}); then
 					__sx_ex_remap_sts_="${2}"
 					break
 				fi
@@ -2659,7 +2659,7 @@ __sx_str_chunk() {
 		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
 
 		while
-			__sx_num_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
+			M_NUM_LE({{__sx_str_chunk_len_}}, {{${#__sx_str_chunk_str_}}}) &&
 			! M_STR_EQ({{"${__sx_str_chunk_lim_}"}}, {{0}})
 		do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
@@ -2679,7 +2679,7 @@ __sx_str_chunk() {
 		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
 
 		while
-			__sx_num_le "${__sx_str_chunk_len_}" "${#__sx_str_chunk_str_}" &&
+			M_NUM_LE({{__sx_str_chunk_len_}}, {{${#__sx_str_chunk_str_}}}) &&
 			! M_STR_EQ({{"${__sx_str_chunk_lim_}"}}, {{0}})
 		do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
@@ -3039,7 +3039,7 @@ __sx_str_split() {
 		return "${SX_EX_OK}"
 	fi
 
-	if __sx_num_le 0 "${__sx_str_split_lim_}"; then
+	if M_NUM_LE({{0}}, {{__sx_str_split_lim_}}); then
 		while
 			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
 			! M_STR_EQ({{"${__sx_str_split_lim_}"}}, {{0}})
@@ -3199,7 +3199,7 @@ __sx_str_sub() {
 		return "${SX_EX_OK}"
 	fi
 
-	if __sx_num_le 0 "${__sx_str_sub_lim_}"; then
+	if M_NUM_LE({{0}}, {{__sx_str_sub_lim_}}); then
 		# 前向き置換 (Forward)
 		while
 			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
@@ -3275,7 +3275,7 @@ __sx_str_substr() {
 	fi
 
 	# 1. オフセット分をスキップ
-	if __sx_num_le "${__sx_str_substr_total_}" "${__sx_str_substr_off_}"; then
+	if M_NUM_LE({{__sx_str_substr_total_}}, {{__sx_str_substr_off_}}); then
 		__sx_str_substr_str_=
 	else
 		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_off_}"
@@ -3284,7 +3284,7 @@ __sx_str_substr() {
 
 	# 長さの正規化 (負数は末尾から削る)
 	__sx_str_substr_total_="${#__sx_str_substr_str_}"
-	if __sx_num_le 0 "${__sx_str_substr_len_}"; then
+	if M_NUM_LE({{0}}, {{__sx_str_substr_len_}}); then
 		__sx_str_substr_drop_=$((__sx_str_substr_len_ < __sx_str_substr_total_ ? __sx_str_substr_total_ - __sx_str_substr_len_ : 0))
 	else
 		__sx_str_substr_drop_=$((__sx_str_substr_len_ * -1))
@@ -3682,7 +3682,7 @@ sx_arr_pop() {
 	unset __sx_arr_pop_args
 
 	# 要素数チェック
-	__sx_num_le "${#}" "${__sx_arr_pop_len}" || {
+	M_NUM_LE({{${#}}}, {{__sx_arr_pop_len}}) || {
 		unset __sx_arr_pop_arr __sx_arr_pop_len
 		return 1
 	}
@@ -3762,7 +3762,7 @@ __sx_arr_pop0() {
 	eval "__sx_arr_pop0_len_=\"\${${1}_len}\""
 	shift
 
-	__sx_num_le "${#}" "${__sx_arr_pop0_len_}" || {
+	M_NUM_LE({{${#}}}, {{__sx_arr_pop0_len_}}) || {
 		unset __sx_arr_pop0_arr_ __sx_arr_pop0_len_
 		return 1
 	}
