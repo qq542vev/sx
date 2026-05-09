@@ -6,39 +6,19 @@ changecom() dnl
 define({{M_STR_EQ}}, {{dnl
 { case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, {{&& __M_STR_EQ_REST(shift($@))}}); }dnl
 }}) dnl
+define({{M_STR_NE}}, {{case $1 in $2) ! :;; esac}}) dnl
 define({{__M_STR_EQ_REST}}, {{dnl
 case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_STR_EQ_REST(shift($@))}})dnl
 }}) dnl
-define({{M_NUM_EQ}}, {{dnl
-{ case $(($1 == $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{&& __M_NUM_EQ_REST(shift($@))}}); }dnl
+
+define({{__M_NUM_CMP_CHAIN}}, {{dnl
+$2 $1 $3 ifelse(eval(3 < $#), 1, {{ && __M_NUM_CMP_CHAIN($1, shift(shift($@))) }})dnl
 }}) dnl
-define({{__M_NUM_EQ_REST}}, {{dnl
-case $(($1 == $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_NUM_EQ_REST(shift($@))}})dnl
-}}) dnl
-define({{M_NUM_LE}}, {{dnl
-{ case $(($1 <= $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{&& __M_NUM_LE_REST(shift($@))}}); }dnl
-}}) dnl
-define({{__M_NUM_LE_REST}}, {{dnl
-case $(($1 <= $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_NUM_LE_REST(shift($@))}})dnl
-}}) dnl
-define({{M_NUM_LT}}, {{dnl
-{ case $(($1 < $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{&& __M_NUM_LT_REST(shift($@))}}); }dnl
-}}) dnl
-define({{__M_NUM_LT_REST}}, {{dnl
-case $(($1 < $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_NUM_LT_REST(shift($@))}})dnl
-}}) dnl
-define({{M_NUM_GT}}, {{dnl
-{ case $(($1 > $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{&& __M_NUM_GT_REST(shift($@))}}); }dnl
-}}) dnl
-define({{__M_NUM_GT_REST}}, {{dnl
-case $(($1 > $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_NUM_GT_REST(shift($@))}})dnl
-}}) dnl
-define({{M_NUM_GE}}, {{dnl
-{ case $(($1 >= $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{&& __M_NUM_GE_REST(shift($@))}}); }dnl
-}}) dnl
-define({{__M_NUM_GE_REST}}, {{dnl
-case $(($1 >= $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_NUM_GE_REST(shift($@))}})dnl
-}}) dnl
+define({{M_NUM_EQ}}, {{M_STR_NE({{$((__M_NUM_CMP_CHAIN(==, $@)))}}, 0)}}) dnl
+define({{M_NUM_GE}}, {{M_STR_NE({{$((__M_NUM_CMP_CHAIN(>=, $@)))}}, 0)}}) dnl
+define({{M_NUM_GT}}, {{M_STR_NE({{$((__M_NUM_CMP_CHAIN(>, $@)))}}, 0)}}) dnl
+define({{M_NUM_LE}}, {{M_STR_NE({{$((__M_NUM_CMP_CHAIN(<=, $@)))}}, 0)}}) dnl
+define({{M_NUM_LT}}, {{M_STR_NE({{$((__M_NUM_CMP_CHAIN(<, $@)))}}, 0)}}) dnl
 
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
@@ -3254,6 +3234,9 @@ sx_str_substr() {
 	__sx_str_substr "${@}"
 }
 
+define({{V}}, {{__sx_str_substr_$1_}}) dnl
+define({{CLEANUP}}, {{unset V(res) V(str) V(off) V(len) V(total) V(drop) V(qm)}}) dnl
+
 ### __sx_str_substr - 文字列の部分文字列を取得する（内部用）
 ##
 ## 使い方:
@@ -3263,44 +3246,47 @@ sx_str_substr() {
 ##   sx_str_substr の内部実装。
 ##   引数チェックは行わない。
 __sx_str_substr() {
-	__sx_str_substr_res_="${1}"
-	__sx_str_substr_str_="${2-}"
-	__sx_str_substr_off_="$((${3-0}))"
-	__sx_str_substr_len_="$((${4-${SX_NUM_I32_MAX}}))"
-	__sx_str_substr_total_="${#__sx_str_substr_str_}"
+	V(res)="${1}"
+	V(str)="${2-}"
+	V(off)="$((${3-0}))"
+	V(len)="$((${4-${SX_NUM_I32_MAX}}))"
+	V(total)="${#V(str)}"
 
 	# オフセットの正規化 (負数は末尾から)
-	if M_NUM_LT({{__sx_str_substr_off_}}, {{0}}); then
-		__sx_str_substr_off_=$(((__sx_str_substr_off_ * -1) < __sx_str_substr_total_ ? __sx_str_substr_total_ + __sx_str_substr_off_ : 0))
+	if M_NUM_LT({{V(off)}}, {{0}}); then
+		V(off)=$(((V(off) * -1) < V(total) ? V(total) + V(off) : 0))
 	fi
 
 	# 1. オフセット分をスキップ
-	if M_NUM_LE({{__sx_str_substr_total_}}, {{__sx_str_substr_off_}}); then
-		__sx_str_substr_str_=
+	if M_NUM_LE({{V(total)}}, {{V(off)}}); then
+		V(str)=
 	else
-		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_off_}"
-		__sx_str_substr_str_="${__sx_str_substr_str_#${__sx_str_substr_qm_}}"
+		__sx_str_rep V(qm) '?' "${V(off)}"
+		V(str)="${V(str)#${V(qm)}}"
 	fi
 
 	# 長さの正規化 (負数は末尾から削る)
-	__sx_str_substr_total_="${#__sx_str_substr_str_}"
-	if M_NUM_LE({{0}}, {{__sx_str_substr_len_}}); then
-		__sx_str_substr_drop_=$((__sx_str_substr_len_ < __sx_str_substr_total_ ? __sx_str_substr_total_ - __sx_str_substr_len_ : 0))
+	V(total)="${#V(str)}"
+	if M_NUM_LE({{0}}, {{V(len)}}); then
+		V(drop)=$((V(len) < V(total) ? V(total) - V(len) : 0))
 	else
-		__sx_str_substr_drop_=$((__sx_str_substr_len_ * -1))
+		V(drop)=$((V(len) * -1))
 	fi
 
 	# 2. 指定長に切り詰め
-	if M_NUM_LT({{__sx_str_substr_drop_}}, {{__sx_str_substr_total_}}); then
-		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_drop_}"
-		__sx_str_substr_str_="${__sx_str_substr_str_%${__sx_str_substr_qm_}}"
+	if M_NUM_LT({{V(drop)}}, {{V(total)}}); then
+		__sx_str_rep V(qm) '?' "${V(drop)}"
+		V(str)="${V(str)%${V(qm)}}"
 	else
-		__sx_str_substr_str_=
+		V(str)=
 	fi
 
-	__sx_var_set "${__sx_str_substr_res_}=${__sx_str_substr_str_}"
-	unset __sx_str_substr_res_ __sx_str_substr_str_ __sx_str_substr_off_ __sx_str_substr_len_ __sx_str_substr_total_ __sx_str_substr_drop_ __sx_str_substr_qm_
+	__sx_var_set "${V(res)}=${V(str)}"
+	CLEANUP
 }
+
+undefine({{CLEANUP}}) dnl
+undefine({{V}}) dnl
 
 ### sx_str_strim - 文字列の先頭から指定された文字セットを削除する
 ##
