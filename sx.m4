@@ -15,6 +15,30 @@ define({{M_NUM_EQ}}, {{dnl
 define({{__M_NUM_EQ_REST}}, {{dnl
 case $(($1 == $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_NUM_EQ_REST(shift($@))}})dnl
 }}) dnl
+define({{M_NUM_LE}}, {{dnl
+{ case $(($1 <= $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{&& __M_NUM_LE_REST(shift($@))}}); }dnl
+}}) dnl
+define({{__M_NUM_LE_REST}}, {{dnl
+case $(($1 <= $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_NUM_LE_REST(shift($@))}})dnl
+}}) dnl
+define({{M_NUM_LT}}, {{dnl
+{ case $(($1 < $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{&& __M_NUM_LT_REST(shift($@))}}); }dnl
+}}) dnl
+define({{__M_NUM_LT_REST}}, {{dnl
+case $(($1 < $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_NUM_LT_REST(shift($@))}})dnl
+}}) dnl
+define({{M_NUM_GT}}, {{dnl
+{ case $(($1 > $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{&& __M_NUM_GT_REST(shift($@))}}); }dnl
+}}) dnl
+define({{__M_NUM_GT_REST}}, {{dnl
+case $(($1 > $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_NUM_GT_REST(shift($@))}})dnl
+}}) dnl
+define({{M_NUM_GE}}, {{dnl
+{ case $(($1 >= $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{&& __M_NUM_GE_REST(shift($@))}}); }dnl
+}}) dnl
+define({{__M_NUM_GE_REST}}, {{dnl
+case $(($1 >= $2)) in 0) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_NUM_GE_REST(shift($@))}})dnl
+}}) dnl
 
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
