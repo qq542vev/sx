@@ -3,13 +3,18 @@
 
 changequote({{, }}) dnl
 changecom() dnl
+
+define({{M_STR_NE}}, {{case $1 in $2) ! :;; esac}}) dnl
+
 define({{M_STR_EQ}}, {{dnl
 { case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, {{&& __M_STR_EQ_REST(shift($@))}}); }dnl
 }}) dnl
-define({{M_STR_NE}}, {{case $1 in $2) ! :;; esac}}) dnl
 define({{__M_STR_EQ_REST}}, {{dnl
 case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, {{ && __M_STR_EQ_REST(shift($@))}})dnl
 }}) dnl
+
+define({{M_STR_MATCH}}, {{case $1 in __M_STR_MATCH_REST(shift($@)));; *) ! :;; esac}})
+define({{__M_STR_MATCH_REST}}, {{ifelse($#, 0, , $#, 1, {{$1}}, {{$1 | __M_STR_MATCH_REST(shift($@))}})}})
 
 define({{__M_NUM_CMP_CHAIN}}, {{dnl
 $2 $1 $3 ifelse(eval(3 < $#), 1, {{ && __M_NUM_CMP_CHAIN($1, shift(shift($@))) }})dnl
@@ -705,14 +710,14 @@ __sx_var_copy() {
 	__sx_var_copy_asg_=
 
 	for __sx_var_copy_pair_ in "${@}"; do
-		__sx_var_copy_dest_="${__sx_var_copy_pair_%%=*}"
+		__sx_var_copy_dst_="${__sx_var_copy_pair_%%=*}"
 		__sx_var_copy_src_="${__sx_var_copy_pair_#*=}"
 
 		if sx_var_is_set "${__sx_var_copy_src_}"; then
 			eval __sx_arg_quote __sx_var_copy_val_ "\"\${${__sx_var_copy_src_}}\""
-			__sx_var_copy_asg_="${__sx_var_copy_asg_} ${__sx_var_copy_dest_}=${__sx_var_copy_val_};"
+			__sx_var_copy_asg_="${__sx_var_copy_asg_} ${__sx_var_copy_dst_}=${__sx_var_copy_val_};"
 		else
-			__sx_var_copy_asg_="${__sx_var_copy_asg_} unset ${__sx_var_copy_dest_};"
+			__sx_var_copy_asg_="${__sx_var_copy_asg_} unset ${__sx_var_copy_dst_};"
 		fi
 	done
 
@@ -720,11 +725,11 @@ __sx_var_copy() {
 	eval set -- "${__sx_var_copy_esc_}"
 	for __sx_var_copy_arg_ in "${@}"; do
 		if sx_str_has "${__sx_var_copy_arg_}" =; then
-			sx_str_sub __sx_var_copy_dests_ "${__sx_var_copy_arg_%=*}" = ' '
-			eval sx_var_unset "${__sx_var_copy_dests_}"
+			sx_str_sub __sx_var_copy_dsts_ "${__sx_var_copy_arg_%=*}" = ' '
+			eval sx_var_unset "${__sx_var_copy_dsts_}"
 		elif sx_str_has "${__sx_var_copy_arg_}" -; then
-			sx_str_sub __sx_var_copy_dests_ "${__sx_var_copy_arg_#*-}" - ' '
-			eval sx_var_unset "${__sx_var_copy_dests_}"
+			sx_str_sub __sx_var_copy_dsts_ "${__sx_var_copy_arg_#*-}" - ' '
+			eval sx_var_unset "${__sx_var_copy_dsts_}"
 		fi
 	done
 
@@ -732,7 +737,7 @@ __sx_var_copy() {
 	eval "${__sx_var_copy_asg_}"
 
 	# 内部用変数を掃除
-	unset __sx_var_copy_esc_ __sx_var_copy_ls_ __sx_var_copy_asg_ __sx_var_copy_pair_ __sx_var_copy_dest_ __sx_var_copy_src_ __sx_var_copy_val_ __sx_var_copy_dests_ __sx_var_copy_arg_
+	unset __sx_var_copy_esc_ __sx_var_copy_ls_ __sx_var_copy_asg_ __sx_var_copy_pair_ __sx_var_copy_dst_ __sx_var_copy_src_ __sx_var_copy_val_ __sx_var_copy_dsts_ __sx_var_copy_arg_
 }
 
 ### sx_var_dump - 変数や配列の状態を文字列として取得する
@@ -843,8 +848,8 @@ __sx_var_is_arr() {
 sx_var_is_chain() {
 	for __sx_var_is_chain_arg in "${@}"; do
 		case "${__sx_var_is_chain_arg}" in
-			*=*) ! sx_str_match "${__sx_var_is_chain_arg}" '*[!_0-9A-Za-z=]*' '*==*' '=*' '*=' '[0-9]*' '*=[0-9]*';;
-			*-*) ! sx_str_match "${__sx_var_is_chain_arg}" '*[!_0-9A-Za-z-]*' '*--*' '-*' '*-' '[0-9]*' '*-[0-9]*';;
+			*=*) ! M_STR_MATCH({{"${__sx_var_is_chain_arg}"}}, {{*[!_0-9A-Za-z=]*}}, {{*==*}}, {{=*}}, {{*=}}, {{[0-9]*}}, {{*=[0-9]*}});;
+			*-*) ! M_STR_MATCH({{"${__sx_var_is_chain_arg}"}}, {{*[!_0-9A-Za-z-]*}}, {{*--*}}, {{-*}}, {{*-}}, {{[0-9]*}}, {{*-[0-9]*}});;
 			*) sx_var_is_name "${__sx_var_is_chain_arg}";;
 		esac || {
 			unset __sx_var_is_chain_arg
@@ -1781,7 +1786,7 @@ __sx_num_is_base_nat0() {
 
 	for __sx_num_is_base_nat0_arg_ in "${@}"; do
 		case "${__sx_num_is_base_nat0_arg_}" in
-			${__sx_num_is_base_nat0_pfix_}*) ! sx_str_match "${__sx_num_is_base_nat0_arg_#${__sx_num_is_base_nat0_pfix_}}" '' '0?*' "*[!${__sx_num_is_base_nat0_char_}]*";;
+			${__sx_num_is_base_nat0_pfix_}*) ! M_STR_MATCH({{"${__sx_num_is_base_nat0_arg_#${__sx_num_is_base_nat0_pfix_}""}"}} , {{''}}, {{0?*}}, {{*[!${__sx_num_is_base_nat0_char_}]*}});;
 			*) ! :;;
 		esac || {
 			unset __sx_num_is_base_nat0_pfix_ __sx_num_is_base_nat0_char_ __sx_num_is_base_nat0_arg_
