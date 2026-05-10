@@ -151,7 +151,7 @@ readonly SX_NUM_BASE8_PREFIX='0'
 readonly SX_NUM_BASE8_CHARS='01234567'
 readonly SX_NUM_BASE10_PREFIX=
 readonly SX_NUM_BASE10_CHARS='0123456789'
-readonly SX_NUM_BASE16_PREFIX='0[xX]'
+readonly SX_NUM_BASE16_PREFIX='0[Xx]'
 readonly SX_NUM_BASE16_CHARS='0123456789ABCDEFabcdef'
 
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
@@ -1921,7 +1921,7 @@ __sx_num_is_base_nnint() {
 
 	for __sx_num_is_base_nnint_arg_ in "${@}"; do
 		case "${__sx_num_is_base_nnint_base_}${__sx_num_is_base_nnint_arg_}" in
-			800 | 8[+-]00 | 100 | 10[+-]0 | 160[xX]0 | 16[+-]0[xX]0) continue;;
+			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) continue;;
 		esac
 
 		__sx_num_is_base_pint "${__sx_num_is_base_nnint_base_}" "${__sx_num_is_base_nnint_arg_}" || {
@@ -1966,7 +1966,7 @@ __sx_num_is_base_npint() {
 
 	for __sx_num_is_base_npint_arg_ in "${@}"; do
 		case "${__sx_num_is_base_npint_base_}${__sx_num_is_base_npint_arg_}" in
-			800 | 8[+-]00 | 100 | 10[+-]0 | 160[xX]0 | 16[+-]0[xX]0) continue;;
+			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) continue;;
 		esac
 
 		__sx_num_is_base_nint "${__sx_num_is_base_npint_base_}" "${__sx_num_is_base_npint_arg_}" || {
@@ -2096,11 +2096,11 @@ __sx_num_is_int_width() {
 		esac
 
 		case "${1}" in
-			0[xX]* | -0[xX]*)
+			0[Xx]* | -0[Xx]*)
 				if
 					M_NUM_LT([|__sx_num_is_int_width_xlen_|], [|${2}|]) || {
 						M_STR_EQ([|"${__sx_num_is_int_width_xlen_}"|], [|"${2}"|]) &&
-						M_STR_MATCH([|"${1}"|], [|-0[xX][9a-fA-F]*|], [|-0[xX]8*[!0]*|], [|0[xX][89a-fA-F]*|])
+						M_STR_MATCH([|"${1}"|], [|-0[Xx][9A-Fa-f]*|], [|-0[Xx]8*[!0]*|], [|0[Xx][89A-Fa-f]*|])
 					}
 				then
 					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
@@ -2179,7 +2179,7 @@ __sx_num_is_int_width() {
 sx_num_is_nat0() {
 	for __sx_num_is_nat0_arg in "${@}"; do
 		case "${__sx_num_is_nat0_arg}" in
-			0[xX]*) __sx_num_is_base_nat0 16 "${__sx_num_is_nat0_arg}";;
+			0[Xx]*) __sx_num_is_base_nat0 16 "${__sx_num_is_nat0_arg}";;
 			0?*) __sx_num_is_base_nat0 8 "${__sx_num_is_nat0_arg}";;
 			*) __sx_num_is_base_nat0 10 "${__sx_num_is_nat0_arg}";;
 		esac || {
@@ -2202,7 +2202,7 @@ sx_num_is_nat0() {
 sx_num_is_nat1() {
 	for __sx_num_is_nat1_arg in "${@}"; do
 		case "${__sx_num_is_nat1_arg}" in
-			0[xX]*) __sx_num_is_base_nat1 16 "${__sx_num_is_nat1_arg}";;
+			0[Xx]*) __sx_num_is_base_nat1 16 "${__sx_num_is_nat1_arg}";;
 			0?*) __sx_num_is_base_nat1 8 "${__sx_num_is_nat1_arg}";;
 			*) __sx_num_is_base_nat1 10 "${__sx_num_is_nat1_arg}";;
 		esac || {
@@ -2253,7 +2253,7 @@ sx_num_is_nint() {
 sx_num_is_nnint() {
 	for __sx_num_is_nnint_arg in "${@}"; do
 		case "${__sx_num_is_nnint_arg}" in
-			00 | [+-]00 | 0 | [+-]0 | 0[xX]0 | [+-]0[xX]0) continue;;
+			00 | [+-]00 | 0 | [+-]0 | 0[Xx]0 | [+-]0[Xx]0) continue;;
 		esac
 
 		sx_num_is_pint "${__sx_num_is_nnint_arg}" || {
@@ -2279,7 +2279,7 @@ sx_num_is_nnint() {
 sx_num_is_npint() {
 	for __sx_num_is_npint_arg in "${@}"; do
 		case "${__sx_num_is_npint_arg}" in
-			00 | [+-]00 | 0 | [+-]0 | 0[xX]0 | [+-]0[xX]0) continue;;
+			00 | [+-]00 | 0 | [+-]0 | 0[Xx]0 | [+-]0[Xx]0) continue;;
 		esac
 
 		sx_num_is_nint "${__sx_num_is_npint_arg}" || {
@@ -2572,7 +2572,7 @@ __sx_num_rel() {
 sx_uuid_is_uuid() {
 	for __sx_uuid_is_uuid_arg in "${@}"; do
 		case "${__sx_uuid_is_uuid_arg}" in
-			[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) ;;
+			[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]) ;;
 			*)
 				unset __sx_uuid_is_uuid_arg
 				return 1
