@@ -63,4 +63,31 @@ Describe 'sx_ex_remap'
     When call sx_ex_remap 1:64
     The status should equal 0
   End
+
+  Context '名前によるマッピング'
+    It '名前を数値にマッピングできること'
+      When call sx_ex_remap 1:USAGE ::: sh -c 'exit 1'
+      The status should equal 64
+    End
+
+    It '数値を名前にマッピングできること'
+      When call sx_ex_remap DATAERR:USAGE ::: sh -c 'exit 65'
+      The status should equal 64
+    End
+
+    It '名前を名前にマッピングできること'
+      When call sx_ex_remap DATAERR:SOFTWARE ::: sh -c 'exit 65'
+      The status should equal 70
+    End
+
+    It '否定 (!) と名前を組み合わせて使用できること'
+      When call sx_ex_remap '!OK:USAGE' ::: sh -c 'exit 1'
+      The status should equal 64
+    End
+
+    It '否定 (!) と名前を組み合わせた場合に一致しなければ元のステータスを返すこと'
+      When call sx_ex_remap '!DATAERR:USAGE' ::: sh -c 'exit 65'
+      The status should equal 65
+    End
+  End
 End
