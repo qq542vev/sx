@@ -1833,7 +1833,7 @@ __sx_num_is_base_nat1() {
 
 	for __sx_num_is_base_nat1_arg_ in "${@}"; do
 		case "${__sx_num_is_base_nat1_arg_}" in
-			${__sx_num_is_base_nat1_pfix_}*) ! sx_str_match "${__sx_num_is_base_nat1_arg_#${__sx_num_is_base_nat1_pfix_}}" '' '0*' "*[!${__sx_num_is_base_nat1_char_}]*";;
+			${__sx_num_is_base_nat1_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_base_nat1_arg_#${__sx_num_is_base_nat1_pfix_}}"|], [|''|], [|0*|], [|*[!${__sx_num_is_base_nat1_char_}]*|]);;
 			*) ! :;;
 		esac || {
 			unset __sx_num_is_base_nat1_pfix_ __sx_num_is_base_nat1_char_ __sx_num_is_base_nat1_arg_
@@ -2100,7 +2100,7 @@ __sx_num_is_int_width() {
 				if
 					M_NUM_LT([|__sx_num_is_int_width_xlen_|], [|${2|]}) || {
 						M_STR_EQ([|"${__sx_num_is_int_width_xlen_}"|], [|"${2}"|]) &&
-						sx_str_match "${1}" '-0[xX][9a-fA-F]*' '-0[xX]8*[!0]*' '0[xX][89a-fA-F]*'
+						M_STR_MATCH([|"${1}"|], [|-0[xX][9a-fA-F]*|], [|-0[xX]8*[!0]*|], [|0[xX][89a-fA-F]*|])
 					}
 				then
 					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
@@ -2117,7 +2117,7 @@ __sx_num_is_int_width() {
 				if
 					M_NUM_LT([|${3|]}, [|${2|]}) || {
 						M_STR_EQ([|"${3}"|], [|"${2}"|]) &&
-						sx_str_match "${1}" "-0[!1-${4}]*" "-0${4}*[!0]*" "0[!1-${4}-]*"
+						M_STR_MATCH([|"${1}"|], [|-0[!1-${4}]*|], [|-0${4}*[!0]*|], [|0[!1-${4}-]*|])
 					}
 				then
 					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
@@ -3474,7 +3474,7 @@ sx_arr_at() {
 			# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
 			if
 				! sx_var_is_name "${__sx_arr_at_dest}" ||
-				sx_str_match "${__sx_arr_at_dest}" "${__sx_arr_at_arr}" "${__sx_arr_at_arr}_*"
+				M_STR_MATCH([|"${__sx_arr_at_dest}"|], [|"${__sx_arr_at_arr}"|], [|"${__sx_arr_at_arr}"_*|])
 			then
 				unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
 				return "${SX_EX_USAGE}"
@@ -3718,7 +3718,7 @@ sx_arr_pop() {
 		# pop中に配列以下の更新を禁止
 		if
 			! sx_var_is_name "${__sx_arr_pop_dest}" ||
-			sx_str_match "${__sx_arr_pop_dest}" "${__sx_arr_pop_arr}" "${__sx_arr_pop_arr}_*"
+			M_STR_MATCH([|"${__sx_arr_pop_dest}"|], [|"${__sx_arr_pop_arr}"|], [|"${__sx_arr_pop_arr}"_*|])
 		then
 			unset __sx_arr_pop_arr __sx_arr_pop_len __sx_arr_pop_chk __sx_arr_pop_i __sx_arr_pop_dest
 			return "${SX_EX_USAGE}"
