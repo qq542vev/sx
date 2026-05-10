@@ -413,7 +413,7 @@ __sx_ex_remap() {
 			"${__sx_ex_remap_sts_}") __sx_ex_remap_sts_="${2}"; break;;
 			*-*)
 				set -- "${@}" "${1%%-*}" "${1#*-}"
-				if M_NUM_LE([|${3:-0|]}, [|__sx_ex_remap_sts_|], [|${4:-255|]}); then
+				if M_NUM_LE([|${3:-0}|], [|__sx_ex_remap_sts_|], [|${4:-255}|]); then
 					__sx_ex_remap_sts_="${2}"
 					break
 				fi
@@ -2098,7 +2098,7 @@ __sx_num_is_int_width() {
 		case "${1}" in
 			0[xX]* | -0[xX]*)
 				if
-					M_NUM_LT([|__sx_num_is_int_width_xlen_|], [|${2|]}) || {
+					M_NUM_LT([|__sx_num_is_int_width_xlen_|], [|${2}|]) || {
 						M_STR_EQ([|"${__sx_num_is_int_width_xlen_}"|], [|"${2}"|]) &&
 						M_STR_MATCH([|"${1}"|], [|-0[xX][9a-fA-F]*|], [|-0[xX]8*[!0]*|], [|0[xX][89a-fA-F]*|])
 					}
@@ -2115,7 +2115,7 @@ __sx_num_is_int_width() {
 				esac
 
 				if
-					M_NUM_LT([|${3|]}, [|${2|]}) || {
+					M_NUM_LT([|${3}|], [|${2}|]) || {
 						M_STR_EQ([|"${3}"|], [|"${2}"|]) &&
 						M_STR_MATCH([|"${1}"|], [|-0[!1-${4}]*|], [|-0${4}*[!0]*|], [|0[!1-${4}-]*|])
 					}
@@ -2125,7 +2125,7 @@ __sx_num_is_int_width() {
 				fi
 				;;
 			*)
-				if M_NUM_LT([|__sx_num_is_int_width_dlen_|], [|${2|]}); then
+				if M_NUM_LT([|__sx_num_is_int_width_dlen_|], [|${2}|]); then
 					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 					return 1
 				elif M_STR_EQ([|"${__sx_num_is_int_width_dlen_}"|], [|"${2}"|]); then
@@ -2149,10 +2149,10 @@ __sx_num_is_int_width() {
 								;;
 						esac
 
-						if M_NUM_LT([|${2|]}, [|${1|]}); then
+						if M_NUM_LT([|${2}|], [|${1}|]); then
 							unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 							return 1
-						elif M_NUM_LT([|${1|]}, [|${2|]}) || M_STR_EQ([|"${3}"|], [|''|]); then
+						elif M_NUM_LT([|${1}|], [|${2}|]) || M_STR_EQ([|"${3}"|], [|''|]); then
 							# 小さければ確定または残りがなければ終了
 							break
 						fi
@@ -2663,7 +2663,7 @@ __sx_str_chunk() {
 		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
 
 		while
-			M_NUM_LE([|__sx_str_chunk_len_|], [|${#__sx_str_chunk_str_|]}) &&
+			M_NUM_LE([|__sx_str_chunk_len_|], [|${#__sx_str_chunk_str_}|]) &&
 			! M_STR_EQ([|"${__sx_str_chunk_lim_}"|], [|0|])
 		do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
@@ -2683,7 +2683,7 @@ __sx_str_chunk() {
 		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
 
 		while
-			M_NUM_LE([|__sx_str_chunk_len_|], [|${#__sx_str_chunk_str_|]}) &&
+			M_NUM_LE([|__sx_str_chunk_len_|], [|${#__sx_str_chunk_str_}|]) &&
 			! M_STR_EQ([|"${__sx_str_chunk_lim_}"|], [|0|])
 		do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
@@ -3020,7 +3020,7 @@ __sx_str_split() {
 		if M_NUM_LT([|0|], [|__sx_str_split_lim_|]); then
 			M_STR_EQ([|"${__sx_str_split_lim_}"|], [|1|]) || __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
 
-			if M_NUM_LT([|${#__sx_str_split_str_|]}, [|__sx_str_split_lim_|]); then
+			if M_NUM_LT([|${#__sx_str_split_str_}|], [|__sx_str_split_lim_|]); then
 				__sx_str_split_out_="${__sx_str_split_out_} ''"
 			fi
 
@@ -3029,7 +3029,7 @@ __sx_str_split() {
 			__sx_str_split_lim_=$((__sx_str_split_lim_ * -1))
 			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
 
-			if M_NUM_LT([|${#__sx_str_split_str_|]}, [|__sx_str_split_lim_|]); then
+			if M_NUM_LT([|${#__sx_str_split_str_}|], [|__sx_str_split_lim_|]); then
 				__sx_str_split_out_="'' ${__sx_str_split_out_}"
 			fi
 
@@ -3640,7 +3640,7 @@ __sx_arr_is_rw() {
 	while ! M_STR_EQ([|"${#}"|], [|0|]); do
 		eval 'shift 2;' set -- "${1}" "$((${1} + ${2}))" '"${@}"'
 
-		while M_NUM_LT([|${1|]}, [|${2|]}); do
+		while M_NUM_LT([|${1}|], [|${2}|]); do
 			__sx_arr_is_rw_chk_="${__sx_arr_is_rw_chk_}${__sx_arr_is_rw_name_}_${1} "
 			eval 'shift 2;' set -- "$((${1} + 1))" "${2}" '"${@}"'
 		done
@@ -3692,7 +3692,7 @@ sx_arr_pop() {
 	unset __sx_arr_pop_args
 
 	# 要素数チェック
-	M_NUM_LE([|${#|]}, [|__sx_arr_pop_len|]) || {
+	M_NUM_LE([|${#}|], [|__sx_arr_pop_len|]) || {
 		unset __sx_arr_pop_arr __sx_arr_pop_len
 		return 1
 	}
@@ -3772,7 +3772,7 @@ __sx_arr_pop0() {
 	eval "__sx_arr_pop0_len_=\"\${${1}_len}\""
 	shift
 
-	M_NUM_LE([|${#|]}, [|__sx_arr_pop0_len_|]) || {
+	M_NUM_LE([|${#}|], [|__sx_arr_pop0_len_|]) || {
 		unset __sx_arr_pop0_arr_ __sx_arr_pop0_len_
 		return 1
 	}
@@ -3892,7 +3892,7 @@ __sx_arr_quote() {
 	for __sx_arr_quote_arr_ in "${@}"; do
 		eval set -- 0 "\"\${${__sx_arr_quote_arr_}_len}\""
 
-		while M_NUM_LT([|${1|]}, [|${2|]}); do
+		while M_NUM_LT([|${1}|], [|${2}|]); do
 			eval __sx_arg_quote __sx_arr_quote_esc_ "\"\${${__sx_arr_quote_arr_}_${1}}\""
 			__sx_arr_quote_out_="${__sx_arr_quote_out_} ${__sx_arr_quote_esc_}"
 
@@ -3951,7 +3951,7 @@ __sx_arr_rquote() {
 	for __sx_arr_rquote_arr_ in "${@}"; do
 		eval set -- 0 "\"\${${__sx_arr_rquote_arr_}_len}\""
 
-		while M_NUM_LT([|${1|]}, [|${2|]}); do
+		while M_NUM_LT([|${1}|], [|${2}|]); do
 			eval __sx_arg_quote __sx_arr_rquote_esc_ "\"\${${__sx_arr_rquote_arr_}_${1}}\""
 			__sx_arr_rquote_out_=" ${__sx_arr_rquote_esc_}${__sx_arr_rquote_out_}"
 
