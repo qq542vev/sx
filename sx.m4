@@ -24,6 +24,7 @@ define([|M_NUM_GE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(>=, $@)))|], 0)|]) dnl
 define([|M_NUM_GT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(>, $@)))|], 0)|]) dnl
 define([|M_NUM_LE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<=, $@)))|], 0)|]) dnl
 define([|M_NUM_LT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<, $@)))|], 0)|]) dnl
+define([|M_NUM_NE|], [|M_STR_EQ([|$((__M_NUM_CMP_CHAIN(==, $@)))|], 0)|]) dnl
 
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
@@ -101,6 +102,9 @@ readonly SX_STR_CNTRL=$'\cA\cB\cC\cD\cE\cF\cG\cH\cI\cJ\cK\cL\cM\cN\cO\cP\cQ\cR\c
 readonly SX_STR_OCT='01234567'
 readonly SX_STR_DIGIT='0123456789'
 readonly SX_STR_XDIGIT='0123456789ABCDEFabcdef'
+
+# sx_str_split 等で使用するフラグ
+readonly SX_STR_SPLIT_GLOB=1
 readonly SX_STR_UPPER='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 readonly SX_STR_LOWER='abcdefghijklmnopqrstuvwxyz'
 readonly SX_STR_PUNCT='!"#$%&'\''()*+,-./:;<=>?@[\]^_`{|}~'
@@ -2977,13 +2981,14 @@ __sx_str_rep() {
 ### sx_str_split - 文字列を分割して結果変数に格納する
 ##
 ## 使い方:
-##   sx_str_split 結果変数名 [文字列 [区切り文字 [分割回数]]]
+##   sx_str_split 結果変数名 [文字列 [区切り文字 [分割回数 [フラグ]]]]
 ##
 ## 説明:
 ##   指定された文字列を区切り文字で分割し、
 ##   各要素をシングルクォートで囲み、スペース区切りで結合した文字列として結果変数に格納する。
 ##   分割回数（limit）が指定された場合、最大でその回数分だけ分割を行う。
 ##   分割回数が正の場合は前方から、負の場合は後方から分割する。
+##   フラグに SX_STR_SPLIT_GLOB を指定すると、区切り文字を glob パターンとして扱う。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -2995,6 +3000,7 @@ sx_str_split() {
 
 	sx_var_rw_chk "${1-}" || return
 	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${5+"${5}"} || return
 
 	__sx_str_split "${@}"
 }
@@ -3002,7 +3008,7 @@ sx_str_split() {
 ### __sx_str_split - 文字列を分割して結果変数に格納する（内部用）
 ##
 ## 使い方:
-##   __sx_str_split 結果変数名 [文字列 [区切り文字 [分割回数]]]
+##   __sx_str_split 結果変数名 [文字列 [区切り文字 [分割回数 [フラグ]]]]
 ##
 ## 説明:
 ##   指定された文字列を区切り文字で分割し、結果変数に格納する。
@@ -3014,6 +3020,7 @@ __sx_str_split() {
 	__sx_str_split_str_="${2-}"
 	__sx_str_split_sep_="${3-}"
 	__sx_str_split_lim_="$((${4-${SX_NUM_I32_MAX}}))"
+	__sx_str_split_flg_="$((${5-0}))"
 	__sx_str_split_out_=
 
 	if M_STR_EQ([|"${__sx_str_split_sep_}"|], [|''|]); then
@@ -3039,40 +3046,70 @@ __sx_str_split() {
 		fi
 
 		__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_}"
-		unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_out_ __sx_str_split_esc_
+		unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_
 		return "${SX_EX_OK}"
 	fi
 
-	if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
-		while
-			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
-			! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
-		do
-			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"
+	if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
+		if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
+			while
+				case "${__sx_str_split_str_}" in *${__sx_str_split_sep_}*) ;; *) ! :;; esac &&
+				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
+			do
+				__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
+				__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
+				__sx_str_split_str_="${__sx_str_split_str_#*${__sx_str_split_sep_}}"
+				__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
+			done
+
+			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
 			__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
-			__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
-			__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
-		done
+		else
+			while
+				case "${__sx_str_split_str_}" in *${__sx_str_split_sep_}*) ;; *) ! :;; esac &&
+				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
+			do
+				__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_##*${__sx_str_split_sep_}}"
+				__sx_str_split_out_=" ${__sx_str_split_esc_}${__sx_str_split_out_}"
+				__sx_str_split_str_="${__sx_str_split_str_%${__sx_str_split_sep_}*}"
+				__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
+			done
 
-		__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
-		__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
-	else
-		while
-			sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
-			! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
-		do
-			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}"
+			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
 			__sx_str_split_out_=" ${__sx_str_split_esc_}${__sx_str_split_out_}"
-			__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
-			__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
-		done
+		fi
+	else
+		if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
+			while
+				sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
+				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
+			do
+				__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"
+				__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
+				__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
+				__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
+			done
 
-		__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
-		__sx_str_split_out_=" ${__sx_str_split_esc_}${__sx_str_split_out_}"
+			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
+			__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
+		else
+			while
+				sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
+				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
+			do
+				__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}"
+				__sx_str_split_out_=" ${__sx_str_split_esc_}${__sx_str_split_out_}"
+				__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
+				__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
+			done
+
+			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
+			__sx_str_split_out_=" ${__sx_str_split_esc_}${__sx_str_split_out_}"
+		fi
 	fi
 
 	__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_# }"
-	unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_out_ __sx_str_split_esc_
+	unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_
 }
 
 ### sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する
