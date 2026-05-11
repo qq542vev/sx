@@ -683,19 +683,18 @@ __sx_arg_iquote() {
 	__sx_arg_iquote_int_="${3-1}"
 	shift ${3+3} || shift ${2+2} || shift
 
-	__sx_str_sub __sx_arg_iquote_se_ "${__sx_arg_iquote_sep_}" "'" "'\\''"
-	__sx_arg_iquote_sqs_=" '${__sx_arg_iquote_se_}'"
+	__sx_arg_quote __sx_arg_iquote_sqs_ "${__sx_arg_iquote_sep_}"
 	__sx_arg_iquote_out_=
 
 	if M_NUM_GE([|${__sx_arg_iquote_int_}|], [|0|]); then
 		__sx_arg_iquote_i_=0
 		for __sx_arg_iquote_arg_ in "${@}"; do
 			if M_NUM_GT([|${__sx_arg_iquote_i_}|], [|0|]) && M_NUM_EQ([|${__sx_arg_iquote_i_} % ${__sx_arg_iquote_int_}|], [|0|]); then
-				__sx_arg_iquote_out_="${__sx_arg_iquote_out_}${__sx_arg_iquote_sqs_}"
+				__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_}"
 			fi
 
-			__sx_str_sub __sx_arg_iquote_esc_ "${__sx_arg_iquote_arg_}" "'" "'\\''"
-			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} '${__sx_arg_iquote_esc_}'"
+			__sx_arg_quote __sx_arg_iquote_esc_ "${__sx_arg_iquote_arg_}"
+			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_esc_}"
 			__sx_arg_iquote_i_=$((__sx_arg_iquote_i_ + 1))
 		done
 	else
@@ -711,19 +710,19 @@ __sx_arg_iquote() {
 				if M_NUM_LT([|${__sx_arg_iquote_i_}|], [|${__sx_arg_iquote_rem_}|]); then
 					:
 				elif M_NUM_EQ([|(${__sx_arg_iquote_i_} - ${__sx_arg_iquote_rem_}) % ${__sx_arg_iquote_int_}|], [|0|]); then
-					__sx_arg_iquote_out_="${__sx_arg_iquote_out_}${__sx_arg_iquote_sqs_}"
+					__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_}"
 				fi
 			fi
 
-			__sx_str_sub __sx_arg_iquote_esc_ "${__sx_arg_iquote_arg_}" "'" "'\\''"
-			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} '${__sx_arg_iquote_esc_}'"
+			__sx_arg_quote __sx_arg_iquote_esc_ "${__sx_arg_iquote_arg_}"
+			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_esc_}"
 			__sx_arg_iquote_i_=$((__sx_arg_iquote_i_ + 1))
 		done
 	fi
 
 	__sx_var_set "${__sx_arg_iquote_res_}=${__sx_arg_iquote_out_# }"
 
-	unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_se_ __sx_arg_iquote_sqs_ __sx_arg_iquote_out_ __sx_arg_iquote_i_ __sx_arg_iquote_arg_ __sx_arg_iquote_esc_ __sx_arg_iquote_rem_
+	unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_sqs_ __sx_arg_iquote_out_ __sx_arg_iquote_i_ __sx_arg_iquote_arg_ __sx_arg_iquote_esc_ __sx_arg_iquote_rem_
 }
 
 ### __sx_arg_norm - 引数リスト内の数値をプレースホルダに展開して正規化する（内部用）
