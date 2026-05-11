@@ -32,6 +32,23 @@ Describe 'sx_arr_at'
       When call sx_arr_at empty_arr 0
       The status should be failure
     End
+
+    It '=idx 形式を存在確認として受け付けること'
+      When call sx_arr_at myarr =0 =1 =2
+      The status should be success
+    End
+
+    It '=idx 形式で範囲外の場合は失敗を返すこと'
+      When call sx_arr_at myarr =3
+      The status should be failure
+    End
+
+    It '=idx 形式では代入が行われないこと'
+      res="initial"
+      When call sx_arr_at myarr =0
+      The variable res should equal "initial"
+      The status should be success
+    End
   End
 
   Context '要素取得 (dest=idx指定)'
@@ -96,6 +113,12 @@ Describe 'sx_arr_at'
       SX_CFG_SKIP_CHK=1
       When call sx_arr_at myarr 3
       The status should be failure
+    End
+
+    It 'スキップモードでも =idx 形式を正常に扱えること'
+      SX_CFG_SKIP_CHK=1
+      When call sx_arr_at myarr =1
+      The status should be success
     End
   End
 End

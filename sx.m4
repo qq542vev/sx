@@ -3428,7 +3428,7 @@ __sx_str_trim() {
 ### sx_arr_at - 配列の要素を取得または存在確認する
 ##
 ## 使い方:
-##   sx_arr_at 配列名 [結果変数名=インデックス | インデックス ...]
+##   sx_arr_at 配列名 [結果変数名=インデックス | =インデックス | インデックス ...]
 ##
 ## 説明:
 ##   指定された sx 配列から要素を取得または存在確認を行う。
@@ -3470,7 +3470,7 @@ sx_arr_at() {
 		# 範囲チェック
 		M_NUM_LT([|__sx_arr_at_i|], [|__sx_arr_at_len|]) || __sx_arr_at_err=
 
-		case "${__sx_arr_at_pair}" in *=*)
+		case "${__sx_arr_at_pair}" in *?=*)
 			# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
 			if
 				! sx_var_is_name "${__sx_arr_at_dest}" ||
@@ -3505,10 +3505,10 @@ sx_arr_at() {
 	__sx_var_copy "${@}"
 }
 
-### __sx_arr_at - 配列の要素を取得する（内部用）
+### __sx_arr_at - 配列の要素を取得または存在確認する（内部用）
 ##
 ## 使い方:
-##   __sx_arr_at 配列名 [結果変数名=インデックス ...]
+##   __sx_arr_at 配列名 [結果変数名=インデックス | =インデックス | インデックス ...]
 ##
 ## 説明:
 ##   sx_arr_at の内部実装。
@@ -3528,13 +3528,16 @@ __sx_arr_at() {
 			return 1
 		}
 
-		case "${__sx_arr_at_pair_}" in *=*)
+		case "${__sx_arr_at_pair_}" in *?=*)
 			__sx_arr_at_chk_="${__sx_arr_at_chk_} ${__sx_arr_at_arr_}_${__sx_arr_at_i_}-${__sx_arr_at_pair_%%=*}"
 		;; esac
 	done
 
 	case "${__sx_arr_at_chk_}" in
-		'') return "${SX_EX_OK}";;
+		'')
+			unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
+			return "${SX_EX_OK}"
+		;;
 	esac
 
 	eval __sx_var_copy "${__sx_arr_at_chk_}"
