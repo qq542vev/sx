@@ -645,6 +645,89 @@ __sx_arg_rquote() {
 	unset __sx_arg_rquote_res_ __sx_arg_rquote_out_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
 }
 
+### sx_arg_iquote - 引数間にセパレータを挿入し、すべてをクォートして結合する
+##
+## 使い方:
+##   sx_arg_iquote 結果変数名 セパレータ [インターバル [値 ...]]
+##
+## 説明:
+##   引数グループの間にセパレータを挿入し、すべての要素（セパレータを含む）を
+##   シングルクォートで囲んでスペース区切りで結合する。
+##   インターバルが正の場合は先頭から、負の場合は末尾から数えて挿入する。
+##   インターバルが 0 の場合は 1 とみなされる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_iquote() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_iquote "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	__sx_arg_iquote "${@}"
+}
+
+### __sx_arg_iquote - 引数間にセパレータを挿入し、すべてをクォートして結合する（内部用）
+##
+## 使い方:
+##   __sx_arg_iquote 結果変数名 セパレータ [インターバル [値 ...]]
+##
+## 説明:
+##   引数チェックを行わずにセパレータ挿入とクォート結合処理を行う。
+__sx_arg_iquote() {
+	__sx_arg_iquote_res_="${1}"
+	__sx_arg_iquote_sep_="${2-}"
+	__sx_arg_iquote_int_="${3-1}"
+	shift ${3+3} || shift ${2+2} || shift
+
+	__sx_str_sub __sx_arg_iquote_se_ "${__sx_arg_iquote_sep_}" "'" "'\\''"
+	__sx_arg_iquote_sqs_=" '${__sx_arg_iquote_se_}'"
+	__sx_arg_iquote_out_=
+
+	if M_NUM_EQ([|${__sx_arg_iquote_int_}|], [|0|]); then
+		__sx_arg_iquote_int_=1
+	fi
+
+	if M_NUM_GE([|${__sx_arg_iquote_int_}|], [|0|]); then
+		__sx_arg_iquote_i_=0
+		for __sx_arg_iquote_arg_ in "${@}"; do
+			if M_NUM_GT([|${__sx_arg_iquote_i_}|], [|0|]) && M_NUM_EQ([|${__sx_arg_iquote_i_} % ${__sx_arg_iquote_int_}|], [|0|]); then
+				__sx_arg_iquote_out_="${__sx_arg_iquote_out_}${__sx_arg_iquote_sqs_}"
+			fi
+
+			__sx_str_sub __sx_arg_iquote_esc_ "${__sx_arg_iquote_arg_}" "'" "'\\''"
+			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} '${__sx_arg_iquote_esc_}'"
+			__sx_arg_iquote_i_=$((__sx_arg_iquote_i_ + 1))
+		done
+	else
+		__sx_arg_iquote_int_=$(( -__sx_arg_iquote_int_ ))
+		__sx_arg_iquote_rem_=$(( ${#} % __sx_arg_iquote_int_ ))
+		if M_NUM_EQ([|${__sx_arg_iquote_rem_}|], [|0|]); then
+			__sx_arg_iquote_rem_="${__sx_arg_iquote_int_}"
+		fi
+
+		__sx_arg_iquote_i_=0
+		for __sx_arg_iquote_arg_ in "${@}"; do
+			if M_NUM_GT([|${__sx_arg_iquote_i_}|], [|0|]); then
+				if M_NUM_LT([|${__sx_arg_iquote_i_}|], [|${__sx_arg_iquote_rem_}|]); then
+					:
+				elif M_NUM_EQ([|(${__sx_arg_iquote_i_} - ${__sx_arg_iquote_rem_}) % ${__sx_arg_iquote_int_}|], [|0|]); then
+					__sx_arg_iquote_out_="${__sx_arg_iquote_out_}${__sx_arg_iquote_sqs_}"
+				fi
+			fi
+
+			__sx_str_sub __sx_arg_iquote_esc_ "${__sx_arg_iquote_arg_}" "'" "'\\''"
+			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} '${__sx_arg_iquote_esc_}'"
+			__sx_arg_iquote_i_=$((__sx_arg_iquote_i_ + 1))
+		done
+	fi
+
+	__sx_var_set "${__sx_arg_iquote_res_}=${__sx_arg_iquote_out_# }"
+
+	unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_se_ __sx_arg_iquote_sqs_ __sx_arg_iquote_out_ __sx_arg_iquote_i_ __sx_arg_iquote_arg_ __sx_arg_iquote_esc_ __sx_arg_iquote_rem_
+}
+
 ### __sx_arg_norm - 引数リスト内の数値をプレースホルダに展開して正規化する（内部用）
 ##
 ## 使い方:
@@ -3011,8 +3094,7 @@ sx_str_split() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${4+"${4}"} || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${5+"${5}"} || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${4+"${4}"} ${5+"${5}"} || return
 
 	__sx_str_split "${@}"
 }
