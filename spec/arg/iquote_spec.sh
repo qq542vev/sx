@@ -69,13 +69,9 @@ Describe 'sx_arg_iquote'
     The variable res should equal "'only'"
   End
 
-  It 'interval=0 は 1 とみなされること'
+  It 'interval=0 の場合はエラーになること'
     When call sx_arg_iquote res "-" 0 "a" "b"
-    The status should be success
-    eval "set -- $res"
-    The value "$1" should equal "a"
-    The value "$2" should equal "-"
-    The value "$3" should equal "b"
+    The status should equal 64
   End
 
   It '特殊文字が含まれる場合でも正しくクォートされること'

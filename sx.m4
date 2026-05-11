@@ -664,6 +664,8 @@ sx_arg_iquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_iquote "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
+	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${3+"${3}"} || return
+	{ ! M_NUM_EQ(${3-1}, 0); } || return "${SX_EX_USAGE}"
 
 	__sx_arg_iquote "${@}"
 }
@@ -684,10 +686,6 @@ __sx_arg_iquote() {
 	__sx_str_sub __sx_arg_iquote_se_ "${__sx_arg_iquote_sep_}" "'" "'\\''"
 	__sx_arg_iquote_sqs_=" '${__sx_arg_iquote_se_}'"
 	__sx_arg_iquote_out_=
-
-	if M_NUM_EQ([|${__sx_arg_iquote_int_}|], [|0|]); then
-		__sx_arg_iquote_int_=1
-	fi
 
 	if M_NUM_GE([|${__sx_arg_iquote_int_}|], [|0|]); then
 		__sx_arg_iquote_i_=0
