@@ -13,6 +13,9 @@ define([|__M_STR_EQ_REST|], [|dnl
 case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, [| && __M_STR_EQ_REST(shift($@))|])dnl
 |]) dnl
 
+define([|M_STR_HAS|], [|case $1 in __M_STR_HAS_REST(shift($@)));; *) ! :;; esac|])
+define([|__M_STR_HAS_REST|], [|ifelse($#, 0, , $#, 1, [|*$1*|], [|*$1* | __M_STR_HAS_REST(shift($@))|])|])
+
 define([|M_STR_MATCH|], [|case $1 in __M_STR_MATCH_REST(shift($@)));; *) ! :;; esac|])
 define([|__M_STR_MATCH_REST|], [|ifelse($#, 0, , $#, 1, [|$1|], [|$1 | __M_STR_MATCH_REST(shift($@))|])|])
 
@@ -729,10 +732,10 @@ __sx_var_copy() {
 	# 2. コピー先を削除
 	eval set -- "${__sx_var_copy_esc_}"
 	for __sx_var_copy_arg_ in "${@}"; do
-		if sx_str_has "${__sx_var_copy_arg_}" =; then
+		if M_STR_HAS([|"${__sx_var_copy_arg_}"|], [|=|]); then
 			sx_str_sub __sx_var_copy_dsts_ "${__sx_var_copy_arg_%=*}" = ' '
 			eval sx_var_unset "${__sx_var_copy_dsts_}"
-		elif sx_str_has "${__sx_var_copy_arg_}" -; then
+		elif M_STR_HAS([|"${__sx_var_copy_arg_}"|], [|-|]); then
 			sx_str_sub __sx_var_copy_dsts_ "${__sx_var_copy_arg_#*-}" - ' '
 			eval sx_var_unset "${__sx_var_copy_dsts_}"
 		fi
@@ -1195,7 +1198,7 @@ __sx_var_list_copy() {
 	shift
 
 	for __sx_var_list_copy_chain_ in "${@}"; do
-		if sx_str_has "${__sx_var_list_copy_chain_}" =; then
+		if M_STR_HAS([|"${__sx_var_list_copy_chain_}"|], [|=|]); then
 			sx_str_sub __sx_var_list_copy_args_ "${__sx_var_list_copy_chain_}" = ' '
 			eval sx_arg_rquote __sx_var_list_copy_args_ "${__sx_var_list_copy_args_}"
 		else
@@ -1239,7 +1242,7 @@ __sx_var_list_dep() {
 	__sx_var_list_dep_out_=' '
 
 	while ! M_STR_EQ([|"${#}"|], [|0|]); do
-		if sx_str_has "${__sx_var_list_dep_out_}" " ${1} "; then
+		if M_STR_HAS([|"${__sx_var_list_dep_out_}"|], [|" ${1} "|]); then
 			shift
 			continue
 		fi
@@ -1308,7 +1311,7 @@ __sx_var_list_ro() {
 				! M_STR_EQ([|"${__sx_var_list_ro_vn_}"|], [|"${__sx_var_list_ro_ln_}"|]) &&
 				sx_var_is_name "${__sx_var_list_ro_vn_}" &&
 				sx_var_is_ro "${__sx_var_list_ro_vn_}" &&
-				! sx_str_has "${__sx_var_list_ro_out_}" " ${__sx_var_list_ro_vn_} "
+				! M_STR_HAS([|"${__sx_var_list_ro_out_}"|], [|" ${__sx_var_list_ro_vn_} "|])
 			then
 				__sx_var_list_ro_out_="${__sx_var_list_ro_out_}${__sx_var_list_ro_vn_} "
 			fi
@@ -1361,7 +1364,7 @@ __sx_var_list_set() {
 			if
 				! M_STR_EQ([|"${__sx_var_list_set_vn_}"|], [|"${__sx_var_list_set_ln_}"|]) &&
 				sx_var_is_set "${__sx_var_list_set_vn_}" &&
-				! sx_str_has "${__sx_var_list_set_out_}" " ${__sx_var_list_set_vn_} "
+				! M_STR_HAS([|"${__sx_var_list_set_out_}"|], [|" ${__sx_var_list_set_vn_} "|])
 			then
 				__sx_var_list_set_out_="${__sx_var_list_set_out_}${__sx_var_list_set_vn_} "
 			fi
@@ -1547,7 +1550,7 @@ sx_var_swap() {
 		__sx_arr_push __sx_var_swap_arr ''
 		__sx_var_swap_tmp="__sx_var_swap_arr_$((__sx_var_swap_arr_len - 1))"
 
-		if sx_str_has "${__sx_var_swap_arg}" =; then
+		if M_STR_HAS([|"${__sx_var_swap_arg}"|], [|=|]); then
 			__sx_var_copy "${__sx_var_swap_arg%%=*}-${__sx_var_swap_tmp}"
 			__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_arg}=${__sx_var_swap_tmp}"
 		else
@@ -1578,7 +1581,7 @@ sx_var_swap() {
 ##   引数チェックは行わない。
 __sx_var_swap() {
 	for __sx_var_swap_arg_ in "${@}"; do
-		if sx_str_has "${__sx_var_swap_arg_}" =; then
+		if M_STR_HAS([|"${__sx_var_swap_arg_}"|], [|=|]); then
 			__sx_var_copy "${__sx_var_swap_arg_%%=*}-__sx_var_swap_tmp_"
 			__sx_var_move "${__sx_var_swap_arg_}=__sx_var_swap_tmp_"
 		else
@@ -3116,7 +3119,7 @@ __sx_str_split() {
 		if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
 			# 前方から分割
 			while
-				sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
+				M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
 				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 			do
 				__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"
@@ -3130,7 +3133,7 @@ __sx_str_split() {
 		else
 			# 後方から分割
 			while
-				sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
+				M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
 				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 			do
 				__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}"
@@ -3185,7 +3188,7 @@ __sx_str_split_ifs() {
 	set -f
 	set -- ${*}
 
-	if ! sx_str_has "${__sx_str_split_ifs_opts_}" f; then
+	if ! M_STR_HAS([|"${__sx_str_split_ifs_opts_}"|], [|f|]); then
 		set +f
 	fi
 
@@ -3279,7 +3282,7 @@ __sx_str_sub() {
 	if M_NUM_LE([|0|], [|__sx_str_sub_lim_|]); then
 		# 前向き置換 (Forward)
 		while
-			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
+			M_STR_HAS([|"${__sx_str_sub_str_}"|], [|"${__sx_str_sub_pat_}"|]) &&
 			! M_STR_EQ([|"${__sx_str_sub_lim_}"|], [|0|])
 		do
 			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%%"${__sx_str_sub_pat_}"*}${__sx_str_sub_rep_}"
@@ -3291,7 +3294,7 @@ __sx_str_sub() {
 	else
 		# 後ろ向き置換 (Backward)
 		while
-			sx_str_has "${__sx_str_sub_str_}" "${__sx_str_sub_pat_}" &&
+			M_STR_HAS([|"${__sx_str_sub_str_}"|], [|"${__sx_str_sub_pat_}"|]) &&
 			! M_STR_EQ([|"${__sx_str_sub_lim_}"|], [|0|])
 		do
 			__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_##*"${__sx_str_sub_pat_}"}${__sx_str_sub_out_}"
