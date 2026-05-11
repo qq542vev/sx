@@ -105,6 +105,7 @@ readonly SX_STR_XDIGIT='0123456789ABCDEFabcdef'
 
 # sx_str_split 等で使用するフラグ
 readonly SX_STR_SPLIT_GLOB=1
+readonly SX_STR_SPLIT_INC=2
 readonly SX_STR_UPPER='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 readonly SX_STR_LOWER='abcdefghijklmnopqrstuvwxyz'
 readonly SX_STR_PUNCT='!"#$%&'\''()*+,-./:;<=>?@[\]^_`{|}~'
@@ -3023,8 +3024,10 @@ __sx_str_split() {
 	__sx_str_split_flg_="$((${5-0}))"
 	__sx_str_split_out_=
 
+	# 空区切り文字（一文字ずつ分割）の処理
 	if M_STR_EQ([|"${__sx_str_split_sep_}"|], [|''|]); then
 		if M_NUM_LT([|0|], [|__sx_str_split_lim_|]); then
+			# 前方から制限数分だけ分割
 			M_STR_EQ([|"${__sx_str_split_lim_}"|], [|1|]) || __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
 
 			if M_NUM_LT([|${#__sx_str_split_str_}|], [|__sx_str_split_lim_|]); then
@@ -3033,6 +3036,7 @@ __sx_str_split() {
 
 			__sx_str_split_out_="'' ${__sx_str_split_out_# }"
 		elif M_NUM_LT([|__sx_str_split_lim_|], [|0|]); then
+			# 後方から制限数分だけ分割
 			__sx_str_split_lim_=$((__sx_str_split_lim_ * -1))
 			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
 
@@ -3042,36 +3046,60 @@ __sx_str_split() {
 
 			__sx_str_split_out_="${__sx_str_split_out_% } ''"
 		else
+			# 制限なし：文字列全体をクォートして格納
 			__sx_arg_quote __sx_str_split_out_ "${__sx_str_split_str_}"
 		fi
 
 		__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_}"
-		unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_
+		unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_
 		return "${SX_EX_OK}"
 	fi
 
+	# グロブ（パターン）による分割
 	if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
 		if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
+			# 前方からグロブ分割
 			while
 				case "${__sx_str_split_str_}" in *${__sx_str_split_sep_}*) ;; *) ! :;; esac &&
 				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 			do
-				__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
+				__sx_str_split_val_="${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
+				__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_val_}"
 				__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
-				__sx_str_split_str_="${__sx_str_split_str_#*${__sx_str_split_sep_}}"
+				__sx_str_split_rem_="${__sx_str_split_str_#*${__sx_str_split_sep_}}"
+
+				# 区切り文字を含めるフラグがある場合
+				if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
+					__sx_str_split_mid_="${__sx_str_split_str_#${__sx_str_split_val_}}"
+					__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_mid_%${__sx_str_split_rem_}}"
+					__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
+				fi
+
+				__sx_str_split_str_="${__sx_str_split_rem_}"
 				__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
 			done
 
 			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
 			__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
 		else
+			# 後方からグロブ分割
 			while
 				case "${__sx_str_split_str_}" in *${__sx_str_split_sep_}*) ;; *) ! :;; esac &&
 				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 			do
-				__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_##*${__sx_str_split_sep_}}"
+				__sx_str_split_val_="${__sx_str_split_str_##*${__sx_str_split_sep_}}"
+				__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_val_}"
 				__sx_str_split_out_=" ${__sx_str_split_esc_}${__sx_str_split_out_}"
-				__sx_str_split_str_="${__sx_str_split_str_%${__sx_str_split_sep_}*}"
+				__sx_str_split_rem_="${__sx_str_split_str_%${__sx_str_split_sep_}*}"
+
+				# 区切り文字を含めるフラグがある場合
+				if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
+					__sx_str_split_mid_="${__sx_str_split_str_%${__sx_str_split_val_}}"
+					__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_mid_#${__sx_str_split_rem_}}"
+					__sx_str_split_out_=" ${__sx_str_split_esc_}${__sx_str_split_out_}"
+				fi
+
+				__sx_str_split_str_="${__sx_str_split_rem_}"
 				__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
 			done
 
@@ -3079,13 +3107,20 @@ __sx_str_split() {
 			__sx_str_split_out_=" ${__sx_str_split_esc_}${__sx_str_split_out_}"
 		fi
 	else
+		__sx_str_split_qsep_=
+		if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
+			__sx_arg_quote __sx_str_split_qsep_ "${__sx_str_split_sep_}"
+		fi
+
+		# 通常の文字列による分割
 		if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
+			# 前方から分割
 			while
 				sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
 				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 			do
 				__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"
-				__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
+				__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}${__sx_str_split_qsep_:+" ${__sx_str_split_qsep_}"}"
 				__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
 				__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
 			done
@@ -3093,12 +3128,13 @@ __sx_str_split() {
 			__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_}"
 			__sx_str_split_out_="${__sx_str_split_out_} ${__sx_str_split_esc_}"
 		else
+			# 後方から分割
 			while
 				sx_str_has "${__sx_str_split_str_}" "${__sx_str_split_sep_}" &&
 				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 			do
 				__sx_arg_quote __sx_str_split_esc_ "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}"
-				__sx_str_split_out_=" ${__sx_str_split_esc_}${__sx_str_split_out_}"
+				__sx_str_split_out_=" ${__sx_str_split_qsep_:+"${__sx_str_split_qsep_} "}${__sx_str_split_esc_}${__sx_str_split_out_}"
 				__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
 				__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
 			done
@@ -3109,7 +3145,7 @@ __sx_str_split() {
 	fi
 
 	__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_# }"
-	unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_
+	unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_qsep_
 }
 
 ### sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する
