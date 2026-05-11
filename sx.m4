@@ -684,45 +684,86 @@ __sx_arg_iquote() {
 	shift ${3+3} || shift ${2+2} || shift
 
 	__sx_arg_quote __sx_arg_iquote_sqs_ "${__sx_arg_iquote_sep_}"
-	__sx_arg_iquote_out_=
 
 	if M_NUM_GE([|${__sx_arg_iquote_int_}|], [|0|]); then
-		__sx_arg_iquote_i_=0
-		for __sx_arg_iquote_arg_ in "${@}"; do
-			if M_NUM_GT([|${__sx_arg_iquote_i_}|], [|0|]) && M_NUM_EQ([|${__sx_arg_iquote_i_} % ${__sx_arg_iquote_int_}|], [|0|]); then
-				__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_}"
-			fi
+		# 正方向: 先頭からインターバルごとにセパレータを挿入
+		if M_NUM_LE([|${#}|], [|${__sx_arg_iquote_int_}|]); then
+			__sx_arg_quote "${__sx_arg_iquote_res_}" "${@}"
+			__sx_arg_iquote_out_=__DONE__
+		fi
 
-			__sx_arg_quote __sx_arg_iquote_esc_ "${__sx_arg_iquote_arg_}"
-			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_esc_}"
-			__sx_arg_iquote_i_=$((__sx_arg_iquote_i_ + 1))
-		done
+		if M_STR_NE([|"${__sx_arg_iquote_out_}"|], [|__DONE__|]); then
+			# 位置パラメータのバッチ用文字列を生成 ("${1}" "${2}" ...)
+			__sx_arg_iquote_batch_=
+			__sx_arg_iquote_j_=1
+			while M_NUM_LE([|${__sx_arg_iquote_j_}|], [|${__sx_arg_iquote_int_}|]); do
+				__sx_arg_iquote_batch_="${__sx_arg_iquote_batch_} \"\${${__sx_arg_iquote_j_}}\""
+				__sx_arg_iquote_j_=$((__sx_arg_iquote_j_ + 1))
+			done
+
+			# 最初のグループを処理
+			eval "__sx_arg_quote __sx_arg_iquote_out_ ${__sx_arg_iquote_batch_}"
+			shift "${__sx_arg_iquote_int_}"
+
+			# 残りのグループをセパレータと共に結合
+			while M_NUM_GE([|${#}|], [|${__sx_arg_iquote_int_}|]); do
+				eval "__sx_arg_quote __sx_arg_iquote_part_ ${__sx_arg_iquote_batch_}"
+				__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
+				shift "${__sx_arg_iquote_int_}"
+			done
+
+			# 端数がある場合
+			if M_NUM_GT([|${#}|], [|0|]); then
+				__sx_arg_quote __sx_arg_iquote_part_ "${@}"
+				__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
+			fi
+		fi
 	else
+		# 逆方向: 末尾からインターバルを計算して分割
 		__sx_arg_iquote_int_=$(( -__sx_arg_iquote_int_ ))
 		__sx_arg_iquote_rem_=$(( ${#} % __sx_arg_iquote_int_ ))
 		if M_NUM_EQ([|${__sx_arg_iquote_rem_}|], [|0|]); then
 			__sx_arg_iquote_rem_="${__sx_arg_iquote_int_}"
 		fi
 
-		__sx_arg_iquote_i_=0
-		for __sx_arg_iquote_arg_ in "${@}"; do
-			if M_NUM_GT([|${__sx_arg_iquote_i_}|], [|0|]); then
-				if M_NUM_LT([|${__sx_arg_iquote_i_}|], [|${__sx_arg_iquote_rem_}|]); then
-					:
-				elif M_NUM_EQ([|(${__sx_arg_iquote_i_} - ${__sx_arg_iquote_rem_}) % ${__sx_arg_iquote_int_}|], [|0|]); then
-					__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_}"
-				fi
-			fi
+		if M_NUM_GE([|${__sx_arg_iquote_int_}|], [|${#}|]); then
+			__sx_arg_quote "${__sx_arg_iquote_res_}" "${@}"
+			__sx_arg_iquote_out_=__DONE__
+		fi
 
-			__sx_arg_quote __sx_arg_iquote_esc_ "${__sx_arg_iquote_arg_}"
-			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_esc_}"
-			__sx_arg_iquote_i_=$((__sx_arg_iquote_i_ + 1))
-		done
+		if M_STR_NE([|"${__sx_arg_iquote_out_}"|], [|__DONE__|]); then
+			# 最初のグループ（端数分）のバッチ用文字列を生成
+			__sx_arg_iquote_batch_=
+			__sx_arg_iquote_j_=1
+			while M_NUM_LE([|${__sx_arg_iquote_j_}|], [|${__sx_arg_iquote_rem_}|]); do
+				__sx_arg_iquote_batch_="${__sx_arg_iquote_batch_} \"\${${__sx_arg_iquote_j_}}\""
+				__sx_arg_iquote_j_=$((__sx_arg_iquote_j_ + 1))
+			done
+
+			eval "__sx_arg_quote __sx_arg_iquote_out_ ${__sx_arg_iquote_batch_}"
+			shift "${__sx_arg_iquote_rem_}"
+
+			# インターバル分のバッチ用文字列を生成
+			__sx_arg_iquote_batch_=
+			__sx_arg_iquote_j_=1
+			while M_NUM_LE([|${__sx_arg_iquote_j_}|], [|${__sx_arg_iquote_int_}|]); do
+				__sx_arg_iquote_batch_="${__sx_arg_iquote_batch_} \"\${${__sx_arg_iquote_j_}}\""
+				__sx_arg_iquote_j_=$((__sx_arg_iquote_j_ + 1))
+			done
+
+			while M_NUM_GT([|${#}|], [|0|]); do
+				eval "__sx_arg_quote __sx_arg_iquote_part_ ${__sx_arg_iquote_batch_}"
+				__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
+				shift "${__sx_arg_iquote_int_}"
+			done
+		fi
 	fi
 
-	__sx_var_set "${__sx_arg_iquote_res_}=${__sx_arg_iquote_out_# }"
+	if M_STR_NE([|"${__sx_arg_iquote_out_}"|], [|__DONE__|]); then
+		__sx_var_set "${__sx_arg_iquote_res_}=${__sx_arg_iquote_out_}"
+	fi
 
-	unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_sqs_ __sx_arg_iquote_out_ __sx_arg_iquote_i_ __sx_arg_iquote_arg_ __sx_arg_iquote_esc_ __sx_arg_iquote_rem_
+	unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_sqs_ __sx_arg_iquote_out_ __sx_arg_iquote_part_ __sx_arg_iquote_batch_ __sx_arg_iquote_j_ __sx_arg_iquote_rem_
 }
 
 ### __sx_arg_norm - 引数リスト内の数値をプレースホルダに展開して正規化する（内部用）
