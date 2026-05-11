@@ -1,47 +1,47 @@
 Describe 'sx_ex_is_err'
   Include ./sx.sh
 
-  Describe 'valid decimal error status'
-    It 'validates 1'
+  Describe '有効な10進数のエラーステータス'
+    It '1 を検証すること'
       When call sx_ex_is_err 1
       The status should be success
     End
 
-    It 'validates 255'
+    It '255 を検証すること'
       When call sx_ex_is_err 255
       The status should be success
     End
   End
 
-  Describe 'invalid error status'
-    It 'rejects 0'
+  Describe '無効なエラーステータス'
+    It '0 を拒否すること'
       When call sx_ex_is_err 0
       The status should be failure
     End
 
-    It 'rejects 256'
+    It '256 を拒否すること'
       When call sx_ex_is_err 256
       The status should be failure
     End
 
-    It 'rejects -1'
+    It '-1 を拒否すること'
       When call sx_ex_is_err -1
       The status should be failure
     End
 
-    It 'rejects leading zeros'
+    It '先頭に 0 がある数値を拒否すること'
       When call sx_ex_is_err 01
       The status should be failure
     End
   End
 
-  Describe 'multiple arguments'
-    It 'validates multiple valid error statuses'
+  Describe '複数の引数'
+    It '複数の有効なエラーステータスを検証すること'
       When call sx_ex_is_err 1 100 255
       The status should be success
     End
 
-    It 'rejects if any status is invalid (including 0)'
+    It 'いずれかのステータスが無効（0を含む）な場合に拒否すること'
       When call sx_ex_is_err 1 0 255
       The status should be failure
     End
