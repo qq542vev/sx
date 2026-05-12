@@ -57,4 +57,10 @@ Describe 'sx_str_split'
     The status should be success
     The variable res should equal "'' ''"
   End
+
+  It '空文字を区切り文字として制限1で前方から分割すること'
+    When call sx_str_split res "A" "" 1
+    The status should be success
+    The variable res should equal "'' 'A'"
+  End
 End

@@ -3253,7 +3253,7 @@ __sx_str_split() {
 	if M_STR_EQ([|"${__sx_str_split_sep_}"|], [|''|]); then
 		if M_NUM_LT([|0|], [|__sx_str_split_lim_|]); then
 			# 前方から制限数分だけ分割
-			M_STR_EQ([|"${__sx_str_split_lim_}"|], [|1|]) || __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
+			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
 
 			if M_NUM_LT([|${#__sx_str_split_str_}|], [|__sx_str_split_lim_|]); then
 				__sx_str_split_out_="${__sx_str_split_out_} ''"
@@ -3275,7 +3275,12 @@ __sx_str_split() {
 			__sx_arg_quote __sx_str_split_out_ "${__sx_str_split_str_}"
 		fi
 
-		__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_}"
+		if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
+			eval __sx_arg_iquote "${__sx_str_split_res_}" '""' 1 "${__sx_str_split_out_}"
+		else
+			__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_}"
+		fi
+
 		unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_
 		return "${SX_EX_OK}"
 	fi

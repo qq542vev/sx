@@ -41,10 +41,28 @@ Describe 'sx_str_split (SX_STR_SPLIT_INC)'
     The variable res should equal "'A:B' ':' 'C' ':' 'D'"
   End
 
-  It '空文字区切りでの INC 無視（既存挙動維持）'
+  It '空文字区切りでの INC 動作確認'
     When call sx_str_split res "ABC" "" "${SX_NUM_I32_MAX}" "${SX_STR_SPLIT_INC}"
     The status should be success
-    The variable res should equal "'' 'A' 'B' 'C' ''"
+    The variable res should equal "'' '' 'A' '' 'B' '' 'C' '' ''"
+  End
+
+  It '空文字区切りでの INC 動作確認（制限付き前方分割）'
+    When call sx_str_split res "A" "" 1 "${SX_STR_SPLIT_INC}"
+    The status should be success
+    The variable res should equal "'' '' 'A'"
+  End
+
+  It '空文字区切りでの INC 動作確認（制限付き後方分割）'
+    When call sx_str_split res "A" "" -1 "${SX_STR_SPLIT_INC}"
+    The status should be success
+    The variable res should equal "'A' '' ''"
+  End
+
+  It '空文字区切りでの INC 動作確認（空文字列）'
+    When call sx_str_split res "" "" 1 "${SX_STR_SPLIT_INC}"
+    The status should be success
+    The variable res should equal "'' '' ''"
   End
 
   It '連続する区切り文字の処理確認'
