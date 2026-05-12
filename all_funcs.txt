@@ -45,6 +45,7 @@ nm	npin	sx_num_is_npint	Active
 nm	pint	sx_num_is_pint	Active
 nm	le	sx_num_le	Active
 nm	lt	sx_num_lt	Active
+nm	rng	sx_num_range	Active
 ud	isud	sx_uuid_is_uuid	Active
 st	any	sx_str_any	Active
 st	chnk	sx_str_chunk	Active

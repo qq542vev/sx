@@ -680,55 +680,56 @@ sx_arg_iquote() {
 __sx_arg_iquote() {
 	__sx_arg_iquote_res_="${1}"
 	__sx_arg_iquote_sep_="${2-}"
-	__sx_arg_iquote_int_="${3-1}"
+	__sx_arg_iquote_int_="$((${3-1}))"
 	shift ${3+3} || shift ${2+2} || shift
 
 	__sx_arg_quote __sx_arg_iquote_sqs_ "${__sx_arg_iquote_sep_}"
 
-	if M_NUM_GE([|${__sx_arg_iquote_int_}|], [|0|]); then
+	if M_NUM_LE([|0|], [|__sx_arg_iquote_int_|]); then
 		# 正方向: 先頭からインターバルごとにセパレータを挿入
-		if M_NUM_LE([|${#}|], [|${__sx_arg_iquote_int_}|]); then
+		if M_NUM_LE([|${#}|], [|__sx_arg_iquote_int_|]); then
 			__sx_arg_quote "${__sx_arg_iquote_res_}" "${@}"
-			__sx_arg_iquote_out_=__DONE__
+			unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_sqs_
+			return "${SX_EX_OK}"
 		fi
 
-		if M_STR_NE([|"${__sx_arg_iquote_out_}"|], [|__DONE__|]); then
-			# 位置パラメータのバッチ用文字列を生成 ("${1}" "${2}" ...)
-			__sx_arg_iquote_batch_=
-			__sx_arg_iquote_j_=1
-			while M_NUM_LE([|${__sx_arg_iquote_j_}|], [|${__sx_arg_iquote_int_}|]); do
-				__sx_arg_iquote_batch_="${__sx_arg_iquote_batch_} \"\${${__sx_arg_iquote_j_}}\""
-				__sx_arg_iquote_j_=$((__sx_arg_iquote_j_ + 1))
-			done
+		# 位置パラメータのバッチ用文字列を生成 ("${1}" "${2}" ...)
+		__sx_arg_iquote_batch_=
+		__sx_arg_iquote_j_=1
+		while M_NUM_LE([|__sx_arg_iquote_j_|], [|__sx_arg_iquote_int_|]); do
+			__sx_arg_iquote_batch_="${__sx_arg_iquote_batch_} \"\${${__sx_arg_iquote_j_}}\""
+			__sx_arg_iquote_j_=$((__sx_arg_iquote_j_ + 1))
+		done
 
-			# 最初のグループを処理
-			eval "__sx_arg_quote __sx_arg_iquote_out_ ${__sx_arg_iquote_batch_}"
+		# 最初のグループを処理
+		eval __sx_arg_quote __sx_arg_iquote_out_ "${__sx_arg_iquote_batch_}"
+		shift "${__sx_arg_iquote_int_}"
+
+		# 残りのグループをセパレータと共に結合
+		while M_NUM_LE([|${__sx_arg_iquote_int_}|], [|${#}|]); do
+			eval __sx_arg_quote __sx_arg_iquote_part_ "${__sx_arg_iquote_batch_}"
+			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
 			shift "${__sx_arg_iquote_int_}"
+		done
 
-			# 残りのグループをセパレータと共に結合
-			while M_NUM_GE([|${#}|], [|${__sx_arg_iquote_int_}|]); do
-				eval "__sx_arg_quote __sx_arg_iquote_part_ ${__sx_arg_iquote_batch_}"
-				__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
-				shift "${__sx_arg_iquote_int_}"
-			done
-
-			# 端数がある場合
-			if M_NUM_GT([|${#}|], [|0|]); then
-				__sx_arg_quote __sx_arg_iquote_part_ "${@}"
-				__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
-			fi
+		# 端数がある場合
+		if M_STR_NE([|${#}|], [|0|]); then
+			__sx_arg_quote __sx_arg_iquote_part_ "${@}"
+			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
 		fi
 	else
 		# 逆方向: 末尾からインターバルを計算して分割
-		__sx_arg_iquote_int_=$(( -__sx_arg_iquote_int_ ))
-		__sx_arg_iquote_rem_=$(( ${#} % __sx_arg_iquote_int_ ))
-		if M_NUM_EQ([|${__sx_arg_iquote_rem_}|], [|0|]); then
-			__sx_arg_iquote_rem_="${__sx_arg_iquote_int_}"
+		__sx_arg_iquote_int_=$((__sx_arg_iquote_int_ * -1))
+
+		if M_NUM_LE([|${#}|], [|__sx_arg_iquote_int_|]); then
+			__sx_arg_quote "${__sx_arg_iquote_res_}" "${@}"
+			unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_sqs_
+			return "${SX_EX_OK}"
 		fi
 
-		if M_NUM_GE([|${__sx_arg_iquote_int_}|], [|${#}|]); then
-			__sx_arg_quote "${__sx_arg_iquote_res_}" "${@}"
-			__sx_arg_iquote_out_=__DONE__
+		__sx_arg_iquote_rem_=$((${#} % __sx_arg_iquote_int_))
+		if M_NUM_EQ([|${__sx_arg_iquote_rem_}|], [|0|]); then
+			__sx_arg_iquote_rem_="${__sx_arg_iquote_int_}"
 		fi
 
 		if M_STR_NE([|"${__sx_arg_iquote_out_}"|], [|__DONE__|]); then
@@ -759,9 +760,7 @@ __sx_arg_iquote() {
 		fi
 	fi
 
-	if M_STR_NE([|"${__sx_arg_iquote_out_}"|], [|__DONE__|]); then
-		__sx_var_set "${__sx_arg_iquote_res_}=${__sx_arg_iquote_out_}"
-	fi
+	__sx_var_set "${__sx_arg_iquote_res_}=${__sx_arg_iquote_out_}"
 
 	unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_sqs_ __sx_arg_iquote_out_ __sx_arg_iquote_part_ __sx_arg_iquote_batch_ __sx_arg_iquote_j_ __sx_arg_iquote_rem_
 }
@@ -2688,6 +2687,78 @@ __sx_num_rel() {
 	done
 
 	unset __sx_num_rel_lhs_ __sx_num_rel_op_
+}
+
+### sx_num_range - 数値の範囲を生成する (Python range 互換)
+##
+## 使い方:
+##   sx_num_range 宛先 終了
+##   sx_num_range 宛先 開始 終了
+##   sx_num_range 宛先 開始 終了 増分
+##
+## 説明:
+##   指定された範囲の数値をスペース区切りで生成し、宛先変数に格納する。
+##   Python の range() と同様に、終了値は含まない (exclusive)。
+##   引数が1つの場合は、0 から 終了 - 1 まで増分 1。
+##   引数が2つの場合は、開始 から 終了 - 1 まで増分 1。
+##   引数が3つの場合は、開始 から 終了 (exclusive) まで指定された 増分 で生成する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  書き込み不可 (SX_EX_NOPERM)
+sx_num_range() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_range "${@}" || return; return 0;; esac
+
+	case "${#}" in
+		2 | 3 | 4) ;;
+		*) return "${SX_EX_USAGE}";;
+	esac
+
+	sx_var_rw_chk "${1}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${2+"${2}"} ${3+"${3}"} ${4+"${4}"} || return
+
+	if M_NUM_EQ([|${4-1}|], [|0|]); then
+		return "${SX_EX_USAGE}"
+	fi
+
+	__sx_num_range "${@}"
+}
+
+### __sx_num_range - 数値の範囲を生成する（内部用）
+##
+## 使い方:
+##   __sx_num_range 宛先 [引数...]
+##
+## 説明:
+##   sx_num_range の内部実装。引数チェックを行わない。
+__sx_num_range() {
+	__sx_num_range_dest_="${1}"
+
+	case "${#}" in
+		2) __sx_num_range_start_=0; __sx_num_range_stop_="${2}"; __sx_num_range_step_=1;;
+		3) __sx_num_range_start_="${2}"; __sx_num_range_stop_="${3}"; __sx_num_range_step_=1;;
+		4) __sx_num_range_start_="${2}"; __sx_num_range_stop_="${3}"; __sx_num_range_step_="${4}";;
+	esac
+
+	__sx_num_range_res_=
+	__sx_num_range_cur_="${__sx_num_range_start_}"
+
+	if M_NUM_LT([|0|], [|__sx_num_range_step_|]); then
+		while M_NUM_LT([|${__sx_num_range_cur_}|], [|${__sx_num_range_stop_}|]); do
+			__sx_num_range_res_="${__sx_num_range_res_}${__sx_num_range_res_:+ }${__sx_num_range_cur_}"
+			__sx_num_range_cur_=$((__sx_num_range_cur_ + __sx_num_range_step_))
+		done
+	else
+		while M_NUM_GT([|${__sx_num_range_cur_}|], [|${__sx_num_range_stop_}|]); do
+			__sx_num_range_res_="${__sx_num_range_res_}${__sx_num_range_res_:+ }${__sx_num_range_cur_}"
+			__sx_num_range_cur_=$((__sx_num_range_cur_ + __sx_num_range_step_))
+		done
+	fi
+
+	__sx_var_set "${__sx_num_range_dest_}=${__sx_num_range_res_}"
+
+	unset __sx_num_range_dest_ __sx_num_range_start_ __sx_num_range_stop_ __sx_num_range_step_ __sx_num_range_res_ __sx_num_range_cur_
 }
 
 # ========================================
