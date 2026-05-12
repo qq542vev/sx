@@ -694,19 +694,14 @@ __sx_arg_iquote() {
 		fi
 
 		# 位置パラメータのバッチ用文字列を生成 ("${1}" "${2}" ...)
-		__sx_arg_iquote_batch_=
-		__sx_arg_iquote_j_=1
-		while M_NUM_LE([|__sx_arg_iquote_j_|], [|__sx_arg_iquote_int_|]); do
-			__sx_arg_iquote_batch_="${__sx_arg_iquote_batch_} \"\${${__sx_arg_iquote_j_}}\""
-			__sx_arg_iquote_j_=$((__sx_arg_iquote_j_ + 1))
-		done
+		__sx_arg_range __sx_arg_iquote_batch_ 1 $((__sx_arg_iquote_int_ + 1))
 
 		# 最初のグループを処理
 		eval __sx_arg_quote __sx_arg_iquote_out_ "${__sx_arg_iquote_batch_}"
 		shift "${__sx_arg_iquote_int_}"
 
 		# 残りのグループをセパレータと共に結合
-		while M_NUM_LE([|${__sx_arg_iquote_int_}|], [|${#}|]); do
+		while M_NUM_LE([|__sx_arg_iquote_int_|], [|${#}|]); do
 			eval __sx_arg_quote __sx_arg_iquote_part_ "${__sx_arg_iquote_batch_}"
 			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
 			shift "${__sx_arg_iquote_int_}"
@@ -728,31 +723,21 @@ __sx_arg_iquote() {
 		fi
 
 		__sx_arg_iquote_rem_=$((${#} % __sx_arg_iquote_int_))
-		if M_NUM_EQ([|${__sx_arg_iquote_rem_}|], [|0|]); then
+		if M_NUM_EQ([|$__sx_arg_iquote_rem_|], [|0|]); then
 			__sx_arg_iquote_rem_="${__sx_arg_iquote_int_}"
 		fi
 
 		if M_STR_NE([|"${__sx_arg_iquote_out_}"|], [|__DONE__|]); then
 			# 最初のグループ（端数分）のバッチ用文字列を生成
-			__sx_arg_iquote_batch_=
-			__sx_arg_iquote_j_=1
-			while M_NUM_LE([|${__sx_arg_iquote_j_}|], [|${__sx_arg_iquote_rem_}|]); do
-				__sx_arg_iquote_batch_="${__sx_arg_iquote_batch_} \"\${${__sx_arg_iquote_j_}}\""
-				__sx_arg_iquote_j_=$((__sx_arg_iquote_j_ + 1))
-			done
+			__sx_arg_range __sx_arg_iquote_batch_ 1 $((__sx_arg_iquote_rem_ + 1))
 
 			eval "__sx_arg_quote __sx_arg_iquote_out_ ${__sx_arg_iquote_batch_}"
 			shift "${__sx_arg_iquote_rem_}"
 
 			# インターバル分のバッチ用文字列を生成
-			__sx_arg_iquote_batch_=
-			__sx_arg_iquote_j_=1
-			while M_NUM_LE([|${__sx_arg_iquote_j_}|], [|${__sx_arg_iquote_int_}|]); do
-				__sx_arg_iquote_batch_="${__sx_arg_iquote_batch_} \"\${${__sx_arg_iquote_j_}}\""
-				__sx_arg_iquote_j_=$((__sx_arg_iquote_j_ + 1))
-			done
+			__sx_arg_range __sx_arg_iquote_batch_ 1 $((__sx_arg_iquote_int_ + 1))
 
-			while M_NUM_GT([|${#}|], [|0|]); do
+			while M_NUM_LT([|0|], [|${#}|]); do
 				eval "__sx_arg_quote __sx_arg_iquote_part_ ${__sx_arg_iquote_batch_}"
 				__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
 				shift "${__sx_arg_iquote_int_}"
@@ -762,7 +747,7 @@ __sx_arg_iquote() {
 
 	__sx_var_set "${__sx_arg_iquote_res_}=${__sx_arg_iquote_out_}"
 
-	unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_sqs_ __sx_arg_iquote_out_ __sx_arg_iquote_part_ __sx_arg_iquote_batch_ __sx_arg_iquote_j_ __sx_arg_iquote_rem_
+	unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_sqs_ __sx_arg_iquote_out_ __sx_arg_iquote_part_ __sx_arg_iquote_batch_ __sx_arg_iquote_rem_
 }
 
 ### sx_arg_range - 位置パラメータの参照文字列を生成する
