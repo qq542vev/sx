@@ -765,6 +765,52 @@ __sx_arg_iquote() {
 	unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_sqs_ __sx_arg_iquote_out_ __sx_arg_iquote_part_ __sx_arg_iquote_batch_ __sx_arg_iquote_j_ __sx_arg_iquote_rem_
 }
 
+### sx_arg_range - 位置パラメータの参照文字列を生成する
+##
+## 使い方:
+##   sx_arg_range 宛先 終了
+##   sx_arg_range 宛先 開始 終了
+##   sx_arg_range 宛先 開始 終了 増分
+##
+## 説明:
+##   指定された範囲のインデックスに対応する位置パラメータの参照文字列
+##   （例: '"${1}" "${2}"'）を生成し、宛先変数に格納する。
+##   引数の仕様は sx_num_range と同一（Python の range 互換）だが、
+##   すべての数値引数は 0 以上の整数 (nat0) である必要がある。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  宛先変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_range() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_range "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0 "${2-}" ${3+"${3}"} ${4+"${4}"} || return
+
+	if M_NUM_EQ([|${4-1}|], [|0|]); then
+		return "${SX_EX_USAGE}"
+	fi
+
+	__sx_arg_range "${@}"
+}
+
+__sx_arg_range() {
+	__sx_arg_range_res_="${1}"
+	shift
+	__sx_num_range __sx_arg_range_idxs_ "${@}"
+
+	case "${__sx_arg_range_idxs_}" in
+		'') __sx_var_set "${__sx_arg_range_res_}=";;
+		*)
+			__sx_str_sub __sx_arg_range_tmp_ "${__sx_arg_range_idxs_}" ' ' '}" "${'
+			__sx_var_set "${__sx_arg_range_res_}=\"\${${__sx_arg_range_tmp_}}\""
+			;;
+	esac
+
+	unset __sx_arg_range_res_ __sx_arg_range_idxs_ __sx_arg_range_tmp_
+}
+
 ### __sx_arg_norm - 引数リスト内の数値をプレースホルダに展開して正規化する（内部用）
 ##
 ## 使い方:
@@ -2710,13 +2756,8 @@ __sx_num_rel() {
 sx_num_range() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_range "${@}" || return; return 0;; esac
 
-	case "${#}" in
-		2 | 3 | 4) ;;
-		*) return "${SX_EX_USAGE}";;
-	esac
-
 	sx_var_rw_chk "${1}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${2+"${2}"} ${3+"${3}"} ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint "${2-}" ${3+"${3}"} ${4+"${4}"} || return
 
 	if M_NUM_EQ([|${4-1}|], [|0|]); then
 		return "${SX_EX_USAGE}"
@@ -2733,32 +2774,29 @@ sx_num_range() {
 ## 説明:
 ##   sx_num_range の内部実装。引数チェックを行わない。
 __sx_num_range() {
-	__sx_num_range_dest_="${1}"
-
 	case "${#}" in
-		2) __sx_num_range_start_=0; __sx_num_range_stop_="${2}"; __sx_num_range_step_=1;;
-		3) __sx_num_range_start_="${2}"; __sx_num_range_stop_="${3}"; __sx_num_range_step_=1;;
-		4) __sx_num_range_start_="${2}"; __sx_num_range_stop_="${3}"; __sx_num_range_step_="${4}";;
+		2) set -- "${1}" 0 "${2}" 1;;
+		*) set -- "${1}" "${2}" "${3}" "${4-1}";;
 	esac
 
-	__sx_num_range_res_=
-	__sx_num_range_cur_="${__sx_num_range_start_}"
+	__sx_num_range_out_=
+	__sx_num_range_cur_="${2}"
 
-	if M_NUM_LT([|0|], [|__sx_num_range_step_|]); then
-		while M_NUM_LT([|${__sx_num_range_cur_}|], [|${__sx_num_range_stop_}|]); do
-			__sx_num_range_res_="${__sx_num_range_res_}${__sx_num_range_res_:+ }${__sx_num_range_cur_}"
-			__sx_num_range_cur_=$((__sx_num_range_cur_ + __sx_num_range_step_))
+	if M_NUM_LT([|0|], [|${4}|]); then
+		while M_NUM_LT([|__sx_num_range_cur_|], [|${3}|]); do
+			__sx_num_range_out_="${__sx_num_range_out_} ${__sx_num_range_cur_}"
+			__sx_num_range_cur_=$((__sx_num_range_cur_ + ${4}))
 		done
 	else
-		while M_NUM_GT([|${__sx_num_range_cur_}|], [|${__sx_num_range_stop_}|]); do
-			__sx_num_range_res_="${__sx_num_range_res_}${__sx_num_range_res_:+ }${__sx_num_range_cur_}"
-			__sx_num_range_cur_=$((__sx_num_range_cur_ + __sx_num_range_step_))
+		while M_NUM_LT([|${3}|], [|${__sx_num_range_cur_}|]); do
+			__sx_num_range_out_="${__sx_num_range_out_} ${__sx_num_range_cur_}"
+			__sx_num_range_cur_=$((__sx_num_range_cur_ + ${4}))
 		done
 	fi
 
-	__sx_var_set "${__sx_num_range_dest_}=${__sx_num_range_res_}"
+	__sx_var_set "${1}=${__sx_num_range_out_# }"
 
-	unset __sx_num_range_dest_ __sx_num_range_start_ __sx_num_range_stop_ __sx_num_range_step_ __sx_num_range_res_ __sx_num_range_cur_
+	unset __sx_num_range_out_ __sx_num_range_cur_
 }
 
 # ========================================
