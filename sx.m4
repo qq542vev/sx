@@ -649,12 +649,14 @@ __sx_arg_rquote() {
 ##
 ## 使い方:
 ##   sx_arg_iquote 結果変数名 セパレータ [インターバル [値 ...]]
+##   sx_arg_iquote 結果変数名 [セパレータ [インターバル]] ::: [値 ...]
 ##
 ## 説明:
 ##   引数グループの間にセパレータを挿入し、すべての要素（セパレータを含む）を
 ##   シングルクォートで囲んでスペース区切りで結合する。
 ##   インターバルが正の場合は先頭から、負の場合は末尾から数えて挿入する。
-##   インターバルが 0 の場合は 1 とみなされる。
+##   インターバルに 0 は指定できない。
+##   ::: を使用することで、設定引数と対象データを分離できる。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -664,9 +666,29 @@ sx_arg_iquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_iquote "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${3+"${3}"} || return
-	{ ! M_NUM_EQ(${3-1}, 0); } || return "${SX_EX_USAGE}"
 
+	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]); then
+		__sx_arg_iquote_int=1
+	elif M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
+		__sx_arg_iquote_int=1
+	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
+		__sx_arg_iquote_int="${3}"
+	else
+		__sx_arg_iquote_int="${3-1}"
+	fi
+
+	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint "${__sx_arg_iquote_int}" || {
+		set -- "${?}"
+		unset __sx_arg_iquote_int
+		return "${1}"
+	}
+
+	if M_NUM_EQ([|__sx_arg_iquote_int|], [|0|]); then
+		unset __sx_arg_iquote_int
+		return "${SX_EX_USAGE}"
+	fi
+
+	unset __sx_arg_iquote_int
 	__sx_arg_iquote "${@}"
 }
 
@@ -674,14 +696,31 @@ sx_arg_iquote() {
 ##
 ## 使い方:
 ##   __sx_arg_iquote 結果変数名 セパレータ [インターバル [値 ...]]
+##   __sx_arg_iquote 結果変数名 [セパレータ [インターバル]] ::: [値 ...]
 ##
 ## 説明:
 ##   引数チェックを行わずにセパレータ挿入とクォート結合処理を行う。
 __sx_arg_iquote() {
 	__sx_arg_iquote_res_="${1}"
-	__sx_arg_iquote_sep_="${2-}"
-	__sx_arg_iquote_int_="$((${3-1}))"
-	shift ${3+3} || shift ${2+2} || shift
+	__sx_arg_iquote_sep_=; __sx_arg_iquote_int_=1
+
+	# ::: の位置を特定 (Bounded Search: $2, $3, $4)
+	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]); then
+		shift 2
+	elif M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
+		__sx_arg_iquote_sep_="${2}"
+		shift 3
+	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
+		__sx_arg_iquote_sep_="${2}"; __sx_arg_iquote_int_="${3}"
+		shift 4
+	else
+		# 従来形式
+		 __sx_arg_iquote_sep_="${2-}"; __sx_arg_iquote_int_="${3-1}"
+		shift $((1 + (1 < ${#}) + (2 < ${#})))
+	fi
+
+	# 0 の場合は 1 に補正（無限ループ防止）
+	if M_NUM_EQ([|__sx_arg_iquote_int_|], [|0|]); then __sx_arg_iquote_int_=1; fi
 
 	__sx_arg_quote __sx_arg_iquote_sqs_ "${__sx_arg_iquote_sep_}"
 

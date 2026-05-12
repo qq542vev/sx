@@ -89,4 +89,57 @@ Describe 'sx_arg_iquote'
     The status should equal 77
   End
 
+  Describe 'セパレータ (:::) 形式'
+    It '最小構成 (res ::: a b c) で動作すること'
+      When call sx_arg_iquote res ::: "a" "b" "c"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal ""
+      The value "$3" should equal "b"
+      The value "$4" should equal ""
+      The value "$5" should equal "c"
+    End
+
+    It 'セパレータのみ指定 (res sep ::: a b c) で動作すること'
+      When call sx_arg_iquote res "-" ::: "a" "b" "c"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "-"
+      The value "$3" should equal "b"
+      The value "$4" should equal "-"
+      The value "$5" should equal "c"
+    End
+
+    It 'フル指定 (res sep int ::: a b c) で動作すること'
+      When call sx_arg_iquote res "-" 2 ::: "a" "b" "c" "d"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "b"
+      The value "$3" should equal "-"
+      The value "$4" should equal "c"
+      The value "$5" should equal "d"
+    End
+
+    It 'データの中に ::: が含まれていても誤判定されないこと'
+      When call sx_arg_iquote res "-" 1 "a" "b" ::: "c"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "-"
+      The value "$3" should equal "b"
+      The value "$4" should equal "-"
+      The value "$5" should equal ":::"
+      The value "$6" should equal "-"
+      The value "$7" should equal "c"
+    End
+
+    It '新形式で不正なインターバルを指定した場合にエラーになること'
+      When call sx_arg_iquote res "-" "invalid" ::: "a" "b"
+      The status should equal 64
+    End
+  End
+
 End
