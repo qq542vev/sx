@@ -110,6 +110,7 @@ readonly SX_STR_XDIGIT='0123456789ABCDEFabcdef'
 readonly SX_STR_SPLIT_GLOB=1
 readonly SX_STR_SPLIT_INC=2
 readonly SX_STR_SUB_GLOB=1
+readonly SX_ARG_FIND_GLOB=1
 readonly SX_STR_UPPER='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 readonly SX_STR_LOWER='abcdefghijklmnopqrstuvwxyz'
 readonly SX_STR_PUNCT='!"#$%&'\''()*+,-./:;<=>?@[\]^_`{|}~'
@@ -671,24 +672,21 @@ sx_arg_iquote() {
 
 	sx_var_rw_chk "${1-}" || return
 
-	__sx_arg_iquote_int=1; __sx_arg_iquote_lim="${SX_NUM_I32_MAX}"
-	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]); then
-		:
-	elif M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
+	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]) || M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
 		:
 	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_iquote_int="${3}"; __sx_arg_iquote_lim="${SX_NUM_I32_MAX}"
+		__sx_arg_iquote_int="${3}"
 	else
 		__sx_arg_iquote_int="${3-1}"; __sx_arg_iquote_lim="${4-${SX_NUM_I32_MAX}}"
 	fi
 
-	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint "${__sx_arg_iquote_int}" "${__sx_arg_iquote_lim}" || {
+	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${__sx_arg_iquote_int+"${__sx_arg_iquote_int}"} ${__sx_arg_iquote_lim+"${__sx_arg_iquote_lim}"} || {
 		set -- "${?}"
 		unset __sx_arg_iquote_int __sx_arg_iquote_lim
 		return "${1}"
 	}
 
-	sx_num_is_nat0 "${__sx_arg_iquote_lim}" && M_NUM_NE([|__sx_arg_iquote_int|], [|0|]) || {
+	sx_num_is_nat0 "${__sx_arg_iquote_lim-0}" && M_NUM_NE([|${__sx_arg_iquote_int-1}|], [|0|]) || {
 		unset __sx_arg_iquote_int __sx_arg_iquote_lim
 		return "${SX_EX_USAGE}"
 	}
@@ -807,6 +805,137 @@ __sx_arg_iquote() {
 	__sx_var_set "${__sx_arg_iquote_res_}=${__sx_arg_iquote_out_}"
 
 	unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_lim_ __sx_arg_iquote_sqs_ __sx_arg_iquote_out_ __sx_arg_iquote_part_ __sx_arg_iquote_batch_ __sx_arg_iquote_rem_ __sx_arg_iquote_eff_
+}
+
+### sx_arg_find - 引数リストから指定された値を探し、そのインデックスを取得する
+##
+## 使い方:
+##   sx_arg_find 結果変数名 [検索対象 [上限 [フラグ]]] ::: [値 ...]
+##
+## 説明:
+##   検索対象が、指定された値のリストの中で何番目（1開始）にあるかを探し、
+##   そのインデックスを結果変数に格納する。
+##   上限 N を指定することで、複数の一致項目をスペース区切りで取得できる。
+##     N > 0 : 先頭から最大 N 個探す
+##     N < 0 : 末尾から最大 |N| 個探す
+##     N = 0 : 検索を行わず空文字列を返す
+##   フラグに SX_ARG_FIND_GLOB (1) を指定すると、検索対象を glob パターンとして扱う。
+##   見つからない場合は空文字列を格納する。
+##
+## 終了ステータス:
+##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
+##    1  一致項目が見つからなかった、または上限が 0 (不一致)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_find() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_find "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]) || M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
+		:
+	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
+		__sx_arg_find_lim="${3}"
+	elif M_STR_EQ([|"${5-}"|], [|"${SX_CFG_SEP}"|]); then
+		__sx_arg_find_lim="${3}"; __sx_arg_find_flg="${4}"
+	else
+		__sx_arg_find_lim="${3-1}"; __sx_arg_find_flg="${4-0}"
+	fi
+
+	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${__sx_arg_find_lim+"${__sx_arg_find_lim}"} ${__sx_arg_find_flg+"${__sx_arg_find_flg}"} || {
+		set -- "${?}"
+		unset __sx_arg_find_lim __sx_arg_find_flg
+		return "${1}"
+	}
+
+	unset __sx_arg_find_lim __sx_arg_find_flg
+	__sx_arg_find "${@}"
+}
+
+### __sx_arg_find - 引数リストから指定された値を探し、そのインデックスを取得する（内部用）
+##
+## 使い方:
+##   __sx_arg_find 結果変数名 [検索対象 [上限 [フラグ]]] ::: [値 ...]
+##
+## 説明:
+##   sx_arg_find の内部実装。
+##   引数チェックは行わない。
+__sx_arg_find() {
+	__sx_arg_find_res_="${1}"
+	__sx_arg_find_tgt_=
+	__sx_arg_find_lim_=1
+	__sx_arg_find_flg_=0
+
+	# ::: セパレータに基づいてオプションをパース
+	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]); then
+		shift 2
+	elif M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
+		__sx_arg_find_tgt_="${2}"
+		shift 3
+	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
+		__sx_arg_find_tgt_="${2}"
+		__sx_arg_find_lim_="$((${3-1}))"
+		shift 4
+	elif M_STR_EQ([|"${5-}"|], [|"${SX_CFG_SEP}"|]); then
+		__sx_arg_find_tgt_="${2}"
+		__sx_arg_find_lim_="$((${3-1}))"
+		__sx_arg_find_flg_="$((${4-0}))"
+		shift 5
+	else
+		# ::: がない場合は固定位置の引数を使用（フォールバック）
+		__sx_arg_find_tgt_="${2-}"
+		__sx_arg_find_lim_="$((${3-1}))"
+		__sx_arg_find_flg_="$((${4-0}))"
+		shift $((1 + 0${2+1} + 0${3+1} + 0${4+1}))
+	fi
+
+	__sx_arg_find_out_=
+
+	if M_NUM_LT([|__sx_arg_find_lim_|], [|0|]); then
+		# 逆方向検索
+		__sx_arg_find_i_="${#}"
+
+		while M_NUM_LT([|0|], [|__sx_arg_find_i_|]); do
+			eval __sx_arg_find_arg_=\"\${${__sx_arg_find_i_}}\"
+
+			if M_NUM_EQ([|$((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB))|], [|0|]); then
+				M_STR_EQ([|"${__sx_arg_find_arg_}"|], [|"${__sx_arg_find_tgt_}"|])
+			else
+				M_STR_MATCH([|"${__sx_arg_find_arg_}"|], [|${__sx_arg_find_tgt_}|])
+			fi && {
+				__sx_arg_find_out_="${__sx_arg_find_out_} ${__sx_arg_find_i_}"
+				__sx_arg_find_lim_=$((__sx_arg_find_lim_ + 1))
+
+				M_NUM_NE([|__sx_arg_find_lim_|], [|0|]) || break
+			}
+
+			__sx_arg_find_i_=$((__sx_arg_find_i_ - 1))
+		done
+	elif M_NUM_LT([|0|], [|__sx_arg_find_lim_|]); then
+		# 順方向検索
+		__sx_arg_find_i_=1
+
+		for __sx_arg_find_arg_ in "${@}"; do
+			if M_NUM_EQ([|$((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB))|], [|0|]); then
+				M_STR_EQ([|"${__sx_arg_find_arg_}"|], [|"${__sx_arg_find_tgt_}"|])
+			else
+				M_STR_MATCH([|"${__sx_arg_find_arg_}"|], [|${__sx_arg_find_tgt_}|])
+			fi && {
+				__sx_arg_find_out_="${__sx_arg_find_out_} ${__sx_arg_find_i_}"
+				__sx_arg_find_lim_=$((__sx_arg_find_lim_ - 1))
+
+				M_NUM_NE([|__sx_arg_find_lim_|], [|0|]) || break
+			}
+
+			__sx_arg_find_i_=$((__sx_arg_find_i_ + 1))
+		done
+	fi
+
+	__sx_var_set "${__sx_arg_find_res_}=${__sx_arg_find_out_# }"
+	M_STR_EQ([|"${__sx_arg_find_out_}"|], [|''|]) && set -- 1 || set -- "${SX_EX_OK}"
+
+	unset __sx_arg_find_res_ __sx_arg_find_tgt_ __sx_arg_find_lim_ __sx_arg_find_flg_ __sx_arg_find_out_ __sx_arg_find_i_ __sx_arg_find_arg_
+	return "${1}"
 }
 
 ### sx_arg_range - 位置パラメータの参照文字列を生成する
