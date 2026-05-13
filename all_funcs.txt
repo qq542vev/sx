@@ -12,7 +12,7 @@ vr	icpy	sx_var_is_copyable	Active
 vr	iemp	sx_var_is_empty	Active
 vr	inam	sx_var_is_name	Active
 vr	iset	sx_var_is_set	Active
-vr	hval	sx_var_has_val	Active
+vr	ival	sx_var_is_val	Active
 vr	iro	sx_var_is_ro	Active
 vr	irw	sx_var_is_rw	Active
 vr	rwa	sx_var_is_rw_all	Active

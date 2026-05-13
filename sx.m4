@@ -1350,38 +1350,38 @@ __sx_var_is_set() {
 	done
 }
 
-### sx_var_has_val - 変数が値を持ち、かつ空でないか確認する
+### sx_var_is_val - 変数が値を持ち、かつ空でないか確認する
 ##
 ## 使い方:
-##   sx_var_has_val 変数名1 [変数名2 ...]
+##   sx_var_is_val 変数名1 [変数名2 ...]
 ##
 ## 終了ステータス:
 ##    0  すべて値があり、空でない (SX_EX_OK)
 ##    1  設定されていない、または空の変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_has_val() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_has_val "${@}" || return; return 0;; esac
+sx_var_is_val() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_val "${@}" || return; return 0;; esac
 
 	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_has_val "${@}" || return
+	__sx_var_is_val "${@}" || return
 }
 
-### __sx_var_has_val - 変数が値を持ち、かつ空でないか確認する（内部用）
+### __sx_var_is_val - 変数が値を持ち、かつ空でないか確認する（内部用）
 ##
 ## 使い方:
-##   __sx_var_has_val 変数名1 [変数名2 ...]
+##   __sx_var_is_val 変数名1 [変数名2 ...]
 ##
 ## 説明:
 ##   引数で指定されたすべての変数が値を持ち、空でないか確認する。
 ##   引数チェックは行わない。
-__sx_var_has_val() {
-	for __sx_var_has_val_arg_ in "${@}"; do
-		if eval ! sx_str_eq "\"\${${__sx_var_has_val_arg_}:+X}\"" X; then
-			unset __sx_var_has_val_arg_
+__sx_var_is_val() {
+	for __sx_var_is_val_arg_ in "${@}"; do
+		if eval ! sx_str_eq "\"\${${__sx_var_is_val_arg_}:+X}\"" X; then
+			unset __sx_var_is_val_arg_
 			return 1
 		fi
 
-		unset __sx_var_has_val_arg_
+		unset __sx_var_is_val_arg_
 	done
 }
 
@@ -2386,14 +2386,26 @@ __sx_num_is_base_pint() {
 ##    0  すべて整数である (SX_EX_OK)
 ##    1  整数ではない値が含まれる
 sx_num_is_int() {
-	for __sx_num_is_int_arg in "${@}"; do
-		sx_num_is_nat0 "${__sx_num_is_int_arg#[+-]}" || {
-			unset __sx_num_is_int_arg
+	case "${SX_CFG_SKIP_CHK-}" in 1) return 0;; esac
+	__sx_num_is_int "${@}"
+}
+
+### __sx_num_is_int - すべての引数が整数であるか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_int [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_int の内部実装。引数チェックは行わない。
+__sx_num_is_int() {
+	for __sx_num_is_int_arg_ in "${@}"; do
+		__sx_num_is_nat0 "${__sx_num_is_int_arg_#[+-]}" || {
+			unset __sx_num_is_int_arg_
 			return 1
 		}
 	done
 
-	unset __sx_num_is_int_arg
+	unset __sx_num_is_int_arg_
 }
 
 ### sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
@@ -2411,7 +2423,7 @@ sx_num_is_int() {
 ##    1  範囲外、または整数ではない値が含まれる
 ##   64  ビット幅指定が不正 (SX_EX_USAGE)
 sx_num_is_int_width() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_width "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) return 0;; esac
 
 	case "${1-}" in
 		8 | 16 | 32 | 64 | 128) ;;
@@ -2426,10 +2438,21 @@ __sx_num_is_int_width() {
 	__sx_num_is_int_width_bits_="${1}"
 	shift
 
-	sx_num_is_int "${@}" || {
+	__sx_num_is_int "${@}" || {
 		unset __sx_num_is_int_width_bits_
 		return 1
 	}
+
+	set -- "${__sx_num_is_int_width_bits_}" "${@}"
+	unset __sx_num_is_int_width_bits_
+
+	__sx_num_is_int_width_core "${@}" || return
+}
+
+### __sx_num_is_int_width_core - 指定されたビット幅の符号付き整数の範囲内か確認する（内部ロジック）
+__sx_num_is_int_width_core() {
+	__sx_num_is_int_width_bits_="${1}"
+	shift
 
 	# 基数8のパラメータ計算
 	__sx_num_is_int_width_olenn_=$(((__sx_num_is_int_width_bits_ - 1) / 3 + 2))
@@ -2532,18 +2555,30 @@ __sx_num_is_int_width() {
 ##    0  すべて 0 以上の自然数である (SX_EX_OK)
 ##    1  自然数ではない値が含まれる
 sx_num_is_nat0() {
-	for __sx_num_is_nat0_arg in "${@}"; do
-		case "${__sx_num_is_nat0_arg}" in
-			0[Xx]*) __sx_num_is_base_nat0 16 "${__sx_num_is_nat0_arg}";;
-			0?*) __sx_num_is_base_nat0 8 "${__sx_num_is_nat0_arg}";;
-			*) __sx_num_is_base_nat0 10 "${__sx_num_is_nat0_arg}";;
+	case "${SX_CFG_SKIP_CHK-}" in 1) return 0;; esac
+	__sx_num_is_nat0 "${@}"
+}
+
+### __sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_nat0 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_nat0 の内部実装。引数チェックは行わない。
+__sx_num_is_nat0() {
+	for __sx_num_is_nat0_arg_ in "${@}"; do
+		case "${__sx_num_is_nat0_arg_}" in
+			0[Xx]*) __sx_num_is_base_nat0 16 "${__sx_num_is_nat0_arg_}";;
+			0?*) __sx_num_is_base_nat0 8 "${__sx_num_is_nat0_arg_}";;
+			*) __sx_num_is_base_nat0 10 "${__sx_num_is_nat0_arg_}";;
 		esac || {
-			unset __sx_num_is_nat0_arg
+			unset __sx_num_is_nat0_arg_
 			return 1
 		}
 	done
 
-	unset __sx_num_is_nat0_arg
+	unset __sx_num_is_nat0_arg_
 }
 
 ### sx_num_is_nat1 - すべての引数が 1 以上の自然数（符号なし整数） であるか確認する
@@ -2678,7 +2713,7 @@ sx_num_is_pint() {
 ##    1  範囲外、または整数でない値が含まれる
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_num_is_sxint() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sxint "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) return 0;; esac
 
 	case "${SX_CFG_NUM_RANGE-}" in
 		8 | 16 | 32 | 64 | 128) __sx_num_is_sxint "${@}" || return;;
@@ -2694,7 +2729,38 @@ sx_num_is_sxint() {
 ## 説明:
 ##   sx_num_is_sxint の内部実装。引数チェックは行わない。
 __sx_num_is_sxint() {
-	__sx_num_is_int_width "${SX_CFG_NUM_RANGE}" "${@}"
+	__sx_num_is_int "${@}" || return
+	__sx_num_is_int_width_core "${SX_CFG_NUM_RANGE}" "${@}"
+}
+
+### sx_num_is_sxnat0 - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の自然数（0以上）か確認する
+##
+## 使い方:
+##   sx_num_is_sxnat0 [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて標準範囲内の自然数である (SX_EX_OK)
+##    1  範囲外、または自然数でない値が含まれる
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_is_sxnat0() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) return 0;; esac
+
+	case "${SX_CFG_NUM_RANGE-}" in
+		8 | 16 | 32 | 64 | 128) __sx_num_is_sxnat0 "${@}" || return;;
+		*) return "${SX_EX_CONFIG}";;
+	esac
+}
+
+### __sx_num_is_sxnat0 - 設定された数値範囲に基づいて自然数の検証を行う（内部用）
+##
+## 使い方:
+##   __sx_num_is_sxnat0 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_sxnat0 の内部実装。引数チェックは行わない。
+__sx_num_is_sxnat0() {
+	__sx_num_is_nat0 "${@}" || return
+	__sx_num_is_int_width_core "${SX_CFG_NUM_RANGE}" "${@}"
 }
 
 ### sx_num_ge - 引数が降順（等号を含む）に並んでいるか確認する
