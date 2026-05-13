@@ -648,15 +648,18 @@ __sx_arg_rquote() {
 ### sx_arg_iquote - 引数間にセパレータを挿入し、すべてをクォートして結合する
 ##
 ## 使い方:
-##   sx_arg_iquote 結果変数名 セパレータ [インターバル [値 ...]]
-##   sx_arg_iquote 結果変数名 [セパレータ [インターバル]] ::: [値 ...]
+##   sx_arg_iquote 結果変数名 セパレータ [インターバル [リミット [値 ...]]]
+##   sx_arg_iquote 結果変数名 [セパレータ [インターバル [リミット]]] ::: [値 ...]
 ##
 ## 説明:
 ##   引数グループの間にセパレータを挿入し、すべての要素（セパレータを含む）を
 ##   シングルクォートで囲んでスペース区切りで結合する。
 ##   インターバルが正の場合は先頭から、負の場合は末尾から数えて挿入する。
+##   リミットを指定すると、セパレータの挿入回数を制限できる。
 ##   インターバルに 0 は指定できない。
 ##   ::: を使用することで、設定引数と対象データを分離できる。
+##   ::: を使用しない場合、第2引数はセパレータ、第3引数はインターバル、
+##   第4引数はリミットとして扱われ、データは第5引数から開始される。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -667,60 +670,68 @@ sx_arg_iquote() {
 
 	sx_var_rw_chk "${1-}" || return
 
+	__sx_arg_iquote_int=1; __sx_arg_iquote_lim="${SX_NUM_I32_MAX}"
 	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_iquote_int=1
+		:
 	elif M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_iquote_int=1
+		:
 	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_iquote_int="${3}"
+		__sx_arg_iquote_int="${3}"; __sx_arg_iquote_lim="${SX_NUM_I32_MAX}"
 	else
-		__sx_arg_iquote_int="${3-1}"
+		__sx_arg_iquote_int="${3-1}"; __sx_arg_iquote_lim="${4-${SX_NUM_I32_MAX}}"
 	fi
 
-	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint "${__sx_arg_iquote_int}" || {
+	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint "${__sx_arg_iquote_int}" "${__sx_arg_iquote_lim}" || {
 		set -- "${?}"
-		unset __sx_arg_iquote_int
+		unset __sx_arg_iquote_int __sx_arg_iquote_lim
 		return "${1}"
 	}
 
-	if M_NUM_EQ([|__sx_arg_iquote_int|], [|0|]); then
-		unset __sx_arg_iquote_int
+	sx_num_is_nat0 "${__sx_arg_iquote_lim}" && M_NUM_NE([|__sx_arg_iquote_int|], [|0|]) || {
+		unset __sx_arg_iquote_int __sx_arg_iquote_lim
 		return "${SX_EX_USAGE}"
-	fi
+	}
 
-	unset __sx_arg_iquote_int
+	unset __sx_arg_iquote_int __sx_arg_iquote_lim
 	__sx_arg_iquote "${@}"
 }
 
 ### __sx_arg_iquote - 引数間にセパレータを挿入し、すべてをクォートして結合する（内部用）
 ##
 ## 使い方:
-##   __sx_arg_iquote 結果変数名 セパレータ [インターバル [値 ...]]
-##   __sx_arg_iquote 結果変数名 [セパレータ [インターバル]] ::: [値 ...]
+##   __sx_arg_iquote 結果変数名 セパレータ [インターバル [リミット [値 ...]]]
+##   __sx_arg_iquote 結果変数名 [セパレータ [インターバル [リミット]]] ::: [値 ...]
 ##
 ## 説明:
 ##   引数チェックを行わずにセパレータ挿入とクォート結合処理を行う。
 __sx_arg_iquote() {
 	__sx_arg_iquote_res_="${1}"
-	__sx_arg_iquote_sep_=; __sx_arg_iquote_int_=1
+	__sx_arg_iquote_sep_=
+	__sx_arg_iquote_int_=1
+	__sx_arg_iquote_lim_="${SX_NUM_I32_MAX}"
 
-	# ::: の位置を特定 (Bounded Search: $2, $3, $4)
+	# ::: の位置を特定 (Bounded Search: $2, $3, $4, $5)
 	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]); then
 		shift 2
 	elif M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
 		__sx_arg_iquote_sep_="${2}"
 		shift 3
 	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_iquote_sep_="${2}"; __sx_arg_iquote_int_="${3}"
+		__sx_arg_iquote_sep_="${2}";
+		__sx_arg_iquote_int_="${3}"
 		shift 4
+	elif M_STR_EQ([|"${5-}"|], [|"${SX_CFG_SEP}"|]); then
+		__sx_arg_iquote_sep_="${2}"
+		__sx_arg_iquote_int_="${3}"
+		__sx_arg_iquote_lim_="${4}"
+		shift 5
 	else
 		# 従来形式
-		 __sx_arg_iquote_sep_="${2-}"; __sx_arg_iquote_int_="${3-1}"
-		shift $((1 + (1 < ${#}) + (2 < ${#})))
+		 __sx_arg_iquote_sep_="${2-}"
+		 __sx_arg_iquote_int_="${3-1}"
+		 __sx_arg_iquote_lim_="${4-${SX_NUM_I32_MAX}}"
+		shift $((1 + 0${1+1} + 0${2+1} + 0${3+1}))
 	fi
-
-	# 0 の場合は 1 に補正（無限ループ防止）
-	if M_NUM_EQ([|__sx_arg_iquote_int_|], [|0|]); then __sx_arg_iquote_int_=1; fi
 
 	__sx_arg_quote __sx_arg_iquote_sqs_ "${__sx_arg_iquote_sep_}"
 
@@ -728,7 +739,7 @@ __sx_arg_iquote() {
 		# 正方向: 先頭からインターバルごとにセパレータを挿入
 		if M_NUM_LE([|${#}|], [|__sx_arg_iquote_int_|]); then
 			__sx_arg_quote "${__sx_arg_iquote_res_}" "${@}"
-			unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_sqs_
+			unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_lim_ __sx_arg_iquote_sqs_
 			return "${SX_EX_OK}"
 		fi
 
@@ -740,16 +751,25 @@ __sx_arg_iquote() {
 		shift "${__sx_arg_iquote_int_}"
 
 		# 残りのグループをセパレータと共に結合
-		while M_NUM_LE([|__sx_arg_iquote_int_|], [|${#}|]); do
+		while
+			M_NUM_LE([|__sx_arg_iquote_int_|], [|${#}|]) &&
+			M_NUM_LT([|0|], [|__sx_arg_iquote_lim_|])
+		do
 			eval __sx_arg_quote __sx_arg_iquote_part_ "${__sx_arg_iquote_batch_}"
 			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
 			shift "${__sx_arg_iquote_int_}"
+			__sx_arg_iquote_lim_=$((__sx_arg_iquote_lim_ - 1))
 		done
 
 		# 端数がある場合
 		if M_STR_NE([|${#}|], [|0|]); then
 			__sx_arg_quote __sx_arg_iquote_part_ "${@}"
-			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
+
+			if M_NUM_LT([|0|], [|__sx_arg_iquote_lim_|]); then
+				__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_}"
+			fi
+
+			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_part_}"
 		fi
 	else
 		# 逆方向: 末尾からインターバルを計算して分割
@@ -757,36 +777,35 @@ __sx_arg_iquote() {
 
 		if M_NUM_LE([|${#}|], [|__sx_arg_iquote_int_|]); then
 			__sx_arg_quote "${__sx_arg_iquote_res_}" "${@}"
-			unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_sqs_
+			unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_lim_ __sx_arg_iquote_sqs_
 			return "${SX_EX_OK}"
 		fi
 
-		__sx_arg_iquote_rem_=$((${#} % __sx_arg_iquote_int_))
-		if M_NUM_EQ([|$__sx_arg_iquote_rem_|], [|0|]); then
-			__sx_arg_iquote_rem_="${__sx_arg_iquote_int_}"
-		fi
+		# 最大分割可能回数を計算
+		__sx_arg_iquote_eff_=$(((${#} - 1) / __sx_arg_iquote_int_))
 
-		if M_STR_NE([|"${__sx_arg_iquote_out_}"|], [|__DONE__|]); then
-			# 最初のグループ（端数分）のバッチ用文字列を生成
-			__sx_arg_range __sx_arg_iquote_batch_ 1 $((__sx_arg_iquote_rem_ + 1))
+		# 最初のグループ（左側）のサイズを計算
+		__sx_arg_iquote_rem_=$((${#} - ((__sx_arg_iquote_lim_ < __sx_arg_iquote_eff_ ? __sx_arg_iquote_lim_ : __sx_arg_iquote_eff_) * __sx_arg_iquote_int_)))
 
-			eval "__sx_arg_quote __sx_arg_iquote_out_ ${__sx_arg_iquote_batch_}"
-			shift "${__sx_arg_iquote_rem_}"
+		# 最初のグループ（調整済み端数分）のバッチ用文字列を生成
+		__sx_arg_range __sx_arg_iquote_batch_ 1 $((__sx_arg_iquote_rem_ + 1))
 
-			# インターバル分のバッチ用文字列を生成
-			__sx_arg_range __sx_arg_iquote_batch_ 1 $((__sx_arg_iquote_int_ + 1))
+		eval "__sx_arg_quote __sx_arg_iquote_out_ ${__sx_arg_iquote_batch_}"
+		shift "${__sx_arg_iquote_rem_}"
 
-			while M_NUM_LT([|0|], [|${#}|]); do
-				eval "__sx_arg_quote __sx_arg_iquote_part_ ${__sx_arg_iquote_batch_}"
-				__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
-				shift "${__sx_arg_iquote_int_}"
-			done
-		fi
+		# インターバル分のバッチ用文字列を生成
+		__sx_arg_range __sx_arg_iquote_batch_ 1 $((__sx_arg_iquote_int_ + 1))
+
+		while M_NUM_LT([|0|], [|${#}|]); do
+			eval "__sx_arg_quote __sx_arg_iquote_part_ ${__sx_arg_iquote_batch_}"
+			__sx_arg_iquote_out_="${__sx_arg_iquote_out_} ${__sx_arg_iquote_sqs_} ${__sx_arg_iquote_part_}"
+			shift "${__sx_arg_iquote_int_}"
+		done
 	fi
 
 	__sx_var_set "${__sx_arg_iquote_res_}=${__sx_arg_iquote_out_}"
 
-	unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_sqs_ __sx_arg_iquote_out_ __sx_arg_iquote_part_ __sx_arg_iquote_batch_ __sx_arg_iquote_rem_
+	unset __sx_arg_iquote_res_ __sx_arg_iquote_sep_ __sx_arg_iquote_int_ __sx_arg_iquote_lim_ __sx_arg_iquote_sqs_ __sx_arg_iquote_out_ __sx_arg_iquote_part_ __sx_arg_iquote_batch_ __sx_arg_iquote_rem_ __sx_arg_iquote_eff_
 }
 
 ### sx_arg_range - 位置パラメータの参照文字列を生成する
@@ -3315,7 +3334,7 @@ __sx_str_split() {
 		fi
 
 		if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
-			eval __sx_arg_iquote "${__sx_str_split_res_}" '""' 1 "${__sx_str_split_out_}"
+			eval __sx_arg_iquote "${__sx_str_split_res_}" "${SX_CFG_SEP}" "${__sx_str_split_out_}"
 		else
 			__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_}"
 		fi
