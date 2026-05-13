@@ -109,6 +109,7 @@ readonly SX_STR_XDIGIT='0123456789ABCDEFabcdef'
 # sx_str_split 等で使用するフラグ
 readonly SX_STR_SPLIT_GLOB=1
 readonly SX_STR_SPLIT_INC=2
+readonly SX_STR_SUB_GLOB=1
 readonly SX_STR_UPPER='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 readonly SX_STR_LOWER='abcdefghijklmnopqrstuvwxyz'
 readonly SX_STR_PUNCT='!"#$%&'\''()*+,-./:;<=>?@[\]^_`{|}~'
@@ -3485,7 +3486,7 @@ __sx_str_split_ifs() {
 ### sx_str_sub - 文字列内のパターンを置換する
 ##
 ## 使い方:
-##   sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限]]]]
+##   sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限 [フラグ]]]]]
 ##
 ## 説明:
 ##   元文字列の中に含まれる検索パターンを、置換文字列に置き換えて結果変数に格納する。
@@ -3493,6 +3494,7 @@ __sx_str_split_ifs() {
 ##   回数制限が 2147483647（無制限）として扱われる。
 ##   検索パターンが空文字列の場合は、各文字の間および両端に置換文字列を挿入する。
 ##   回数制限（limit）が正の場合は前方から、負の場合は後方から指定された回数分だけ置換を行う。
+##   フラグに SX_STR_SUB_GLOB を指定すると、検索パターンを glob パターンとして扱う。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -3503,7 +3505,7 @@ sx_str_sub() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${5+"${5}"} || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${5+"${5}"} ${6+"${6}"} || return
 
 	__sx_str_sub "${@}"
 }
@@ -3511,7 +3513,7 @@ sx_str_sub() {
 ### __sx_str_sub - 文字列内のパターンを置換する（内部用）
 ##
 ## 使い方:
-##   __sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限]]]]
+##   __sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限 [フラグ]]]]]
 ##
 ## 説明:
 ##   sx_str_sub の内部実装。
@@ -3522,6 +3524,7 @@ __sx_str_sub() {
 	__sx_str_sub_pat_="${3-}"
 	__sx_str_sub_rep_="${4-}"
 	__sx_str_sub_lim_="$((${5-${SX_NUM_I32_MAX}}))"
+	__sx_str_sub_flg_="$((${6-0}))"
 	__sx_str_sub_out_=
 
 	# パターンが空の場合は、文字間および両端に挿入（回数制限に従う）
@@ -3560,38 +3563,66 @@ __sx_str_sub() {
 		fi
 
 		__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_out_}"
-		unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_out_ __sx_str_sub_next_
+		unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_flg_ __sx_str_sub_out_ __sx_str_sub_next_
 		return "${SX_EX_OK}"
 	fi
 
 	if M_NUM_LE([|0|], [|__sx_str_sub_lim_|]); then
 		# 前向き置換 (Forward)
-		while
-			M_STR_HAS([|"${__sx_str_sub_str_}"|], [|"${__sx_str_sub_pat_}"|]) &&
-			! M_STR_EQ([|"${__sx_str_sub_lim_}"|], [|0|])
-		do
-			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%%"${__sx_str_sub_pat_}"*}${__sx_str_sub_rep_}"
-			__sx_str_sub_str_="${__sx_str_sub_str_#*"${__sx_str_sub_pat_}"}"
-			__sx_str_sub_lim_=$((__sx_str_sub_lim_ - 1))
-		done
+		if M_NUM_NE([|$((__sx_str_sub_flg_ & SX_STR_SUB_GLOB))|], [|0|]); then
+			while
+				M_STR_MATCH([|"${__sx_str_sub_str_}"|], [|*${__sx_str_sub_pat_}*|]) &&
+				! M_STR_EQ([|"${__sx_str_sub_lim_}"|], [|0|])
+			do
+				__sx_str_sub_val_="${__sx_str_sub_str_%%${__sx_str_sub_pat_}*}"
+				__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_val_}${__sx_str_sub_rep_}"
+				__sx_str_sub_str_="${__sx_str_sub_str_#${__sx_str_sub_val_}}"
+				__sx_str_sub_tmp_="${__sx_str_sub_str_#${__sx_str_sub_pat_}}"
+				__sx_str_sub_str_="${__sx_str_sub_tmp_}"
+				__sx_str_sub_lim_=$((__sx_str_sub_lim_ - 1))
+			done
+		else
+			while
+				M_STR_HAS([|"${__sx_str_sub_str_}"|], [|"${__sx_str_sub_pat_}"|]) &&
+				! M_STR_EQ([|"${__sx_str_sub_lim_}"|], [|0|])
+			do
+				__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%%"${__sx_str_sub_pat_}"*}${__sx_str_sub_rep_}"
+				__sx_str_sub_str_="${__sx_str_sub_str_#*"${__sx_str_sub_pat_}"}"
+				__sx_str_sub_lim_=$((__sx_str_sub_lim_ - 1))
+			done
+		fi
 
 		__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_}"
 	else
 		# 後ろ向き置換 (Backward)
-		while
-			M_STR_HAS([|"${__sx_str_sub_str_}"|], [|"${__sx_str_sub_pat_}"|]) &&
-			! M_STR_EQ([|"${__sx_str_sub_lim_}"|], [|0|])
-		do
-			__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_##*"${__sx_str_sub_pat_}"}${__sx_str_sub_out_}"
-			__sx_str_sub_str_="${__sx_str_sub_str_%"${__sx_str_sub_pat_}"*}"
-			__sx_str_sub_lim_=$((__sx_str_sub_lim_ + 1))
-		done
+		if M_NUM_NE([|$((__sx_str_sub_flg_ & SX_STR_SUB_GLOB))|], [|0|]); then
+			while
+				M_STR_MATCH([|"${__sx_str_sub_str_}"|], [|*${__sx_str_sub_pat_}*|]) &&
+				! M_STR_EQ([|"${__sx_str_sub_lim_}"|], [|0|])
+			do
+				__sx_str_sub_val_="${__sx_str_sub_str_##*${__sx_str_sub_pat_}}"
+				__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_val_}${__sx_str_sub_out_}"
+				__sx_str_sub_str_="${__sx_str_sub_str_%${__sx_str_sub_val_}}"
+				__sx_str_sub_tmp_="${__sx_str_sub_str_%${__sx_str_sub_pat_}}"
+				__sx_str_sub_str_="${__sx_str_sub_tmp_}"
+				__sx_str_sub_lim_=$((__sx_str_sub_lim_ + 1))
+			done
+		else
+			while
+				M_STR_HAS([|"${__sx_str_sub_str_}"|], [|"${__sx_str_sub_pat_}"|]) &&
+				! M_STR_EQ([|"${__sx_str_sub_lim_}"|], [|0|])
+			do
+				__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_##*"${__sx_str_sub_pat_}"}${__sx_str_sub_out_}"
+				__sx_str_sub_str_="${__sx_str_sub_str_%"${__sx_str_sub_pat_}"*}"
+				__sx_str_sub_lim_=$((__sx_str_sub_lim_ + 1))
+			done
+		fi
 
 		__sx_str_sub_out_="${__sx_str_sub_str_}${__sx_str_sub_out_}"
 	fi
 
 	__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_out_}"
-	unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_out_
+	unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_flg_ __sx_str_sub_out_ __sx_str_sub_next_ __sx_str_sub_val_ __sx_str_sub_tmp_
 }
 
 ### sx_str_substr - 文字列の指定した位置から指定した長さの部分文字列を取得する
