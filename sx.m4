@@ -273,6 +273,16 @@ sx_cfg_set() {
 	__sx_cfg_set "${@}"
 }
 
+### __sx_cfg_set - SX_CFG_* の値を実際に設定する（内部用）
+##
+## 使い方:
+##   __sx_cfg_set [名前[=値] ...]
+##
+## 説明:
+##   sx_cfg_set の内部実装。
+##   引数チェックを行わずに設定値を反映する。
+##   '名前' のみが指定された場合は、対応する SX_CFG_DEF_* の値でリセットする。
+##   SIG_BASE が変更された場合は、SIG_ARR も自動的に更新する。
 __sx_cfg_set() {
 	for __sx_cfg_set_arg_ in "${@}"; do
 		__sx_cfg_set_vn_="${__sx_cfg_set_arg_%%=*}"
