@@ -165,12 +165,129 @@ readonly SX_NUM_BASE16_PREFIX='0[Xx]'
 readonly SX_NUM_BASE16_CHARS='0123456789ABCDEFabcdef'
 
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
-: "${SX_CFG_SIG_BASE:=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c}"
-: "${SX_CFG_SIG_ARR:=array-${SX_CFG_SIG_BASE}}"
-: "${SX_CFG_SKIP_CHK:=0}"
-: "${SX_CFG_NUM_RANGE:=32}"
-: "${SX_CFG_SEP:=:::}"
+readonly SX_CFG_DEF_SIG_BASE=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c
+readonly SX_CFG_DEF_SIG_ARR="array-${SX_CFG_DEF_SIG_BASE}"
+readonly SX_CFG_DEF_SKIP_CHK=0
+readonly SX_CFG_DEF_NUM_RANGE=32
+readonly SX_CFG_DEF_SEP=':::'
+
+: "${SX_CFG_SIG_BASE:=${SX_CFG_DEF_SIG_BASE}}"
+: "${SX_CFG_SIG_ARR:=${SX_CFG_DEF_SIG_ARR}}"
+: "${SX_CFG_SKIP_CHK:=${SX_CFG_DEF_SKIP_CHK}}"
+: "${SX_CFG_NUM_RANGE:=${SX_CFG_DEF_NUM_RANGE}}"
+: "${SX_CFG_SEP:=${SX_CFG_DEF_SEP}}"
 SX_SYS_REV=0
+
+# ========================================
+#  CFG (Configuration)
+# ========================================
+
+### sx_cfg_chk - SX_CFG_* の値が妥当か検査する
+##
+## 使い方:
+##   sx_cfg_chk [名前=値 ...]
+##
+## 説明:
+##   引数が指定された場合はその「名前と値のペア」を検査する（ドライラン）。
+##   引数がない場合は、現在の SX_CFG_* 変数の値をすべて検査する。
+##
+## 終了ステータス:
+##    0  すべて妥当 (SX_EX_OK)
+##    1  不適切な値が含まれる (SX_EX_CONFIG)
+sx_cfg_chk() {
+	if M_STR_EQ([|"${#}"|], [|0|]); then
+		__sx_cfg_chk_out=
+
+		for __sx_cfg_chk_vn in NUM_RANGE SKIP_CHK SIG_BASE SIG_ARR SEP; do
+			__sx_cfg_chk_out="${__sx_cfg_chk_out} ${__sx_cfg_chk_vn}=\"\${SX_CFG_${__sx_cfg_chk_vn}-}\""
+		done
+
+		eval set -- "${__sx_cfg_chk_out}"
+		unset __sx_cfg_chk_out __sx_cfg_chk_vn
+
+		sx_cfg_chk "${@}" || return 1
+
+		return "${SX_EX_OK}"
+	fi
+
+	for __sx_cfg_chk_arg in "${@}"; do
+		__sx_cfg_chk_vn="${__sx_cfg_chk_arg%%=*}"
+		__sx_cfg_chk_val="${__sx_cfg_chk_arg#*=}"
+
+		if M_STR_EQ([|"${__sx_cfg_chk_vn}"|], [|"${__sx_cfg_chk_arg}"|]); then
+			case "${__sx_cfg_chk_vn}" in
+				NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP) continue;;
+				*)
+					unset __sx_cfg_chk_arg __sx_cfg_chk_vn __sx_cfg_chk_val
+					return 1
+					;;
+			esac
+		fi
+
+		case "${__sx_cfg_chk_vn}" in
+			NUM_RANGE) M_STR_MATCH([|"${__sx_cfg_chk_val}"|], [|8|], [|16|], [|32|], [|64|], [|128|]);;
+			SKIP_CHK) M_STR_MATCH([|"${__sx_cfg_chk_val}"|], [|0|], [|1|]);;
+			SEP | SIG_BASE | SIG_ARR) M_STR_NE([|"${__sx_cfg_chk_val}"|], [|''|]);;
+			*) ! :;;
+			esac || {
+				unset __sx_cfg_chk_arg __sx_cfg_chk_vn __sx_cfg_chk_val
+				return 1
+			}
+	done
+
+	unset __sx_cfg_chk_arg __sx_cfg_chk_vn __sx_cfg_chk_val
+}
+
+### sx_cfg_set - SX_CFG_* を設定する
+##
+## 使い方:
+##   sx_cfg_set [名前=値 ...]
+##
+## 説明:
+##   sx_cfg_chk を用いて全引数を検査し、すべて合格した場合のみ値を設定する。
+##   SX_CFG_SIG_BASE が変更された場合は、自動的に SX_CFG_SIG_ARR も更新する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数の形式が不正 (SX_EX_USAGE)
+sx_cfg_set() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_cfg_set "${@}" || return; return 0;; esac
+
+	sx_cfg_chk "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_cfg_set_chk=
+
+	for __sx_cfg_set_arg in "${@}"; do
+		__sx_cfg_set_chk="${__sx_cfg_set_chk} SX_CFG_${__sx_cfg_set_arg%%=*}"
+	done
+
+	eval sx_var_is_rw "${__sx_cfg_set_chk}" || {
+		unset __sx_cfg_set_chk __sx_cfg_set_arg
+		return "${SX_EX_NOPERM}"
+	}
+
+	unset __sx_cfg_set_chk __sx_cfg_set_arg
+	__sx_cfg_set "${@}"
+}
+
+__sx_cfg_set() {
+	for __sx_cfg_set_arg_ in "${@}"; do
+		__sx_cfg_set_vn_="${__sx_cfg_set_arg_%%=*}"
+
+		case "${__sx_cfg_set_vn_}" in
+			"${__sx_cfg_set_arg_}")
+				eval "SX_CFG_${__sx_cfg_set_vn_}=\"\${SX_CFG_DEF_${__sx_cfg_set_vn_}}\"";;
+			*)
+				eval "SX_CFG_${__sx_cfg_set_vn_}=\"\${__sx_cfg_set_arg_#*=}\"";;
+		esac
+
+		case "${__sx_cfg_set_vn_}" in SIG_BASE)
+			SX_CFG_SIG_ARR="array-${SX_CFG_SIG_BASE}"
+		;; esac
+	done
+
+	unset __sx_cfg_set_arg_ __sx_cfg_set_vn_
+}
 
 # ========================================
 #  EX (Exit Status)
