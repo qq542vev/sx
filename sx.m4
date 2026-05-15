@@ -2866,6 +2866,35 @@ __sx_num_is_sx_nat0() {
 	__sx_num_is_int_width_core "${SX_CFG_NUM_RANGE}" "${@}" || return
 }
 
+### sx_num_is_sx_nat1 - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の自然数（1以上）か確認する
+##
+## 使い方:
+##   sx_num_is_sx_nat1 [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて標準範囲内の 1 以上の自然数である (SX_EX_OK)
+##    1  範囲外、または 1 以上の自然数でない値が含まれる
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_is_sx_nat1() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sx_nat1 "${@}" || return; return 0;; esac
+
+	sx_cfg_chk "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_is_sx_nat1 "${@}" || return
+}
+
+### __sx_num_is_sx_nat1 - 設定された数値範囲に基づいて 1 以上の自然数の検証を行う（内部用）
+##
+## 使い方:
+##   __sx_num_is_sx_nat1 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_sx_nat1 の内部実装。引数チェックは行わない。
+__sx_num_is_sx_nat1() {
+	sx_num_is_nat1 "${@}" || return
+	__sx_num_is_int_width_core "${SX_CFG_NUM_RANGE}" "${@}" || return
+}
+
 ### sx_num_ge - 引数が降順（等号を含む）に並んでいるか確認する
 ##
 ## 使い方:
