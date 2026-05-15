@@ -35,9 +35,18 @@ Describe 'sx_num_is_sxnat0'
 
   Context 'SKIP_CHK フラグ'
     Before 'SX_CFG_SKIP_CHK=1'
-    It 'チェックをスキップして常に成功すること'
-      When call sx_num_is_sxnat0 "999999999999999999999" "-1" "abc"
-      The status should be success
+    It '引数の検証自体は行われること'
+      When call sx_num_is_sxnat0 "abc"
+      The status should be failure
+    End
+
+    It '設定が不正でも環境チェックをスキップすること'
+      # SX_CFG_NUM_RANGE=9 は sx_cfg_chk では不正とされる
+      SX_CFG_NUM_RANGE=9
+      # 本来なら sx_cfg_chk で 78 (SX_EX_CONFIG) になるが、
+      # SKIP_CHK=1 なのでそれを飛ばして内部処理に進む。
+      When call sx_num_is_sxnat0 "0"
+      The status should not equal 78
     End
   End
 
