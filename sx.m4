@@ -1577,7 +1577,7 @@ sx_var_is_rw() {
 ##   サブシェルの生成を最小限にするため、一括で検証を行う。
 __sx_var_is_rw() {
 	! M_STR_EQ([|"${#}"|], [|0|]) || return 0
-	( unset -v "${@}" ) 2>/dev/null || return 1
+	( unset -v "${@}" ) 2>&- || return 1
 }
 
 ### sx_var_is_rw_all - 指定された変数およびその関連要素がすべて書き込み可能か確認する
