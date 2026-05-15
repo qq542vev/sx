@@ -2810,6 +2810,65 @@ sx_num_is_pint() {
 	unset __sx_num_is_pint_arg
 }
 
+### sx_num_is_real - すべての引数が 10 進の実数表記であるか確認する
+##
+## 使い方:
+##   sx_num_is_real [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   任意で符号（+ または -）を持つ 10 進の実数表記であるかを確認する。
+##   整数部は 10 進整数として検査し、小数点を含む場合は小数部に 1 文字以上の数字を要求する。
+##   したがって、"1.0" は許可されるが "1." や ".1" は許可されない。
+##
+## 終了ステータス:
+##    0  すべて 10 進の実数表記である (SX_EX_OK)
+##    1  10 進の実数表記ではない値が含まれる
+sx_num_is_real() {
+	for __sx_num_is_real_arg in "${@}"; do
+		__sx_num_is_real_int="${__sx_num_is_real_arg%%.*}"
+
+		sx_num_is_base_int 10 "${__sx_num_is_real_int}" &&
+		{
+			M_STR_EQ([|"${__sx_num_is_real_int}"|], [|"${__sx_num_is_real_arg}"|]) ||
+			sx_str_is_digit "${__sx_num_is_real_arg#*.}"
+		} || {
+			unset __sx_num_is_real_arg __sx_num_is_real_int
+			return 1
+		}
+	done
+
+	unset __sx_num_is_real_arg __sx_num_is_real_int
+}
+
+### sx_num_is_real_exp - すべての引数が指数表記を含む 10 進の実数表記であるか確認する
+##
+## 使い方:
+##   sx_num_is_real_exp [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_real に加えて、指数表記（e または E による表記）を許可する。
+##   指数部は 10 進整数として検査する。
+##
+## 終了ステータス:
+##    0  すべて指数表記を含む 10 進の実数表記である (SX_EX_OK)
+##    1  指数表記を含む 10 進の実数表記ではない値が含まれる
+sx_num_is_real_exp() {
+	for __sx_num_is_real_exp_arg in "${@}"; do
+		__sx_num_is_real_exp_mant="${__sx_num_is_real_exp_arg%%[Ee]*}"
+
+		sx_num_is_real "${__sx_num_is_real_exp_mant}" &&
+		{
+			M_STR_EQ([|"${__sx_num_is_real_exp_mant}"|], [|"${__sx_num_is_real_exp_arg}"|]) ||
+			sx_num_is_base_int 10 "${__sx_num_is_real_exp_arg#*[Ee]}"
+		} || {
+			unset __sx_num_is_real_exp_arg __sx_num_is_real_exp_mant
+			return 1
+		}
+	done
+
+	unset __sx_num_is_real_exp_arg __sx_num_is_real_exp_mant
+}
+
 ### sx_num_is_sx_int - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
 ##
 ## 使い方:
