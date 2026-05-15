@@ -226,7 +226,7 @@ sx_cfg_chk() {
 		fi
 
 		case "${__sx_cfg_chk_vn}" in
-			NUM_RANGE) M_STR_MATCH([|"${__sx_cfg_chk_val}"|], [|8|], [|16|], [|32|], [|64|], [|128|]);;
+			NUM_RANGE) M_STR_MATCH([|"${__sx_cfg_chk_val}"|], [|32|], [|64|], [|128|]);;
 			SKIP_CHK) M_STR_MATCH([|"${__sx_cfg_chk_val}"|], [|0|], [|1|]);;
 			SEP | SIG_BASE | SIG_ARR) M_STR_NE([|"${__sx_cfg_chk_val}"|], [|''|]);;
 			*) ! :;;
@@ -810,16 +810,17 @@ sx_arg_isep() {
 		__sx_arg_isep_int="${3-1}"; __sx_arg_isep_lim="${4-${SX_NUM_I32_MAX}}"
 	fi
 
-	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
+	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
 		set -- "${?}"
 		unset __sx_arg_isep_int __sx_arg_isep_lim
 		return "${1}"
 	}
 
-	sx_num_is_nat0 "${__sx_arg_isep_lim-0}" && M_NUM_NE([|${__sx_arg_isep_int-1}|], [|0|]) || {
+	M_NUM_NE([|${__sx_arg_isep_int-1}|], [|0|]) || {
 		unset __sx_arg_isep_int __sx_arg_isep_lim
 		return "${SX_EX_USAGE}"
 	}
+
 
 	unset __sx_arg_isep_int __sx_arg_isep_lim
 	__sx_arg_isep "${@}"
@@ -1089,7 +1090,7 @@ sx_arg_range() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_range "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0 "${2-}" ${3+"${3}"} ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${2-}" ${3+"${3}"} ${4+"${4}"} || return
 
 	if M_NUM_EQ([|${4-1}|], [|0|]); then
 		return "${SX_EX_USAGE}"
@@ -3254,8 +3255,8 @@ sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} ${4+"${4}"} || return
-	{ ! M_NUM_EQ(${3-1}, 0) && sx_num_is_nat0 ${4+"${4}"}; } || return "${SX_EX_USAGE}"
+	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} && sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${4+"${4}"} || return
+	! M_NUM_EQ(${3-1}, 0) || return "${SX_EX_USAGE}"
 
 	__sx_str_chunk "${@}"
 }
@@ -3561,8 +3562,7 @@ sx_str_rep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} || return
-	sx_num_is_nat0 ${3+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3+"${3}"} || return
 
 	__sx_str_rep "${@}"
 }
@@ -4323,7 +4323,7 @@ sx_arr_is_rw() {
 	__sx_arr_is_rw_name="${1}"
 	shift
 
-	sx_num_is_nat0 "${@}" || {
+	sx_num_is_sx_nat0 "${@}" || {
 		unset __sx_arr_is_rw_name
 		return "${SX_EX_USAGE}"
 	}

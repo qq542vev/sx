@@ -1,8 +1,7 @@
 # shellcheck shell=sh
 
 Describe 'sx_cfg_set()'
-	BeforeRun 'm4 sx.m4 > s.sh'
-	Include ./s.sh
+	Include ./sx.sh
 
 	It '値を正常に設定し、SIG_ARRを更新すること'
 		When call sx_cfg_set "SIG_BASE=new-sig" "NUM_RANGE=64"

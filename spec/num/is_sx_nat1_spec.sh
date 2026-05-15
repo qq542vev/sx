@@ -25,19 +25,6 @@ Describe 'sx_num_is_sx_nat1'
     End
   End
 
-  Context '8ビット設定'
-    Before 'SX_CFG_NUM_RANGE=8'
-    It '8ビットの正の境界値を検証すること'
-      When call sx_num_is_sx_nat1 "127" "1"
-      The status should be success
-    End
-
-    It '8ビットのオーバーフローを検出すること'
-      When call sx_num_is_sx_nat1 "128"
-      The status should be failure
-    End
-  End
-
   Context 'SKIP_CHK フラグ'
     Before 'SX_CFG_SKIP_CHK=1'
     It '引数の検証自体は行われること'

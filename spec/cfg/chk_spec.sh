@@ -1,8 +1,7 @@
 # shellcheck shell=sh
 
 Describe 'sx_cfg_chk()'
-	BeforeRun 'm4 sx.m4 > s.sh'
-	Include ./s.sh
+	Include ./sx.sh
 
 	It '正常な値をパスすること (NUM_RANGE=64)'
 		When call sx_cfg_chk "NUM_RANGE=64"
@@ -11,6 +10,12 @@ Describe 'sx_cfg_chk()'
 
 	It '不正な値を拒否すること (NUM_RANGE=99)'
 		When call sx_cfg_chk "NUM_RANGE=99"
+		The status should be failure
+		The status should equal 1
+	End
+
+	It '8ビットおよび16ビットを拒否すること'
+		When call sx_cfg_chk "NUM_RANGE=8" "NUM_RANGE=16"
 		The status should be failure
 		The status should equal 1
 	End
