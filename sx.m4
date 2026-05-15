@@ -810,7 +810,7 @@ sx_arg_isep() {
 		__sx_arg_isep_int="${3-1}"; __sx_arg_isep_lim="${4-${SX_NUM_I32_MAX}}"
 	fi
 
-	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
+	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
 		set -- "${?}"
 		unset __sx_arg_isep_int __sx_arg_isep_lim
 		return "${1}"
@@ -972,7 +972,7 @@ sx_arg_find() {
 		__sx_arg_find_lim="${3-1}"; __sx_arg_find_flg="${4-0}"
 	fi
 
-	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${__sx_arg_find_lim+"${__sx_arg_find_lim}"} ${__sx_arg_find_flg+"${__sx_arg_find_flg}"} || {
+	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_find_lim+"${__sx_arg_find_lim}"} ${__sx_arg_find_flg+"${__sx_arg_find_flg}"} || {
 		set -- "${?}"
 		unset __sx_arg_find_lim __sx_arg_find_flg
 		return "${1}"
@@ -2174,7 +2174,7 @@ __sx_var_unset() {
 sx_num_eq() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_eq "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint "${@}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${@}" || return
 	__sx_num_eq "${@}" || return
 }
 
@@ -2809,59 +2809,59 @@ sx_num_is_pint() {
 	unset __sx_num_is_pint_arg
 }
 
-### sx_num_is_sxint - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
+### sx_num_is_sx_int - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
 ##
 ## 使い方:
-##   sx_num_is_sxint [文字列1 [文字列2 ...]]
+##   sx_num_is_sx_int [文字列1 [文字列2 ...]]
 ##
 ## 終了ステータス:
 ##    0  すべて標準範囲内の整数である (SX_EX_OK)
 ##    1  範囲外、または整数でない値が含まれる
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_num_is_sxint() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sxint "${@}" || return; return 0;; esac
+sx_num_is_sx_int() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sx_int "${@}" || return; return 0;; esac
 
 	sx_cfg_chk "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_sxint "${@}" || return
+	__sx_num_is_sx_int "${@}" || return
 }
 
-### __sx_num_is_sxint - 設定された数値範囲に基づいて検証を行う（内部用）
+### __sx_num_is_sx_int - 設定された数値範囲に基づいて検証を行う（内部用）
 ##
 ## 使い方:
-##   __sx_num_is_sxint [文字列1 [文字列2 ...]]
+##   __sx_num_is_sx_int [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   sx_num_is_sxint の内部実装。引数チェックは行わない。
-__sx_num_is_sxint() {
+##   sx_num_is_sx_int の内部実装。引数チェックは行わない。
+__sx_num_is_sx_int() {
 	__sx_num_is_int_width "${SX_CFG_NUM_RANGE}" "${@}" || return
 }
 
-### sx_num_is_sxnat0 - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の自然数（0以上）か確認する
+### sx_num_is_sx_nat0 - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の自然数（0以上）か確認する
 ##
 ## 使い方:
-##   sx_num_is_sxnat0 [文字列1 [文字列2 ...]]
+##   sx_num_is_sx_nat0 [文字列1 [文字列2 ...]]
 ##
 ## 終了ステータス:
 ##    0  すべて標準範囲内の自然数である (SX_EX_OK)
 ##    1  範囲外、または自然数でない値が含まれる
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_num_is_sxnat0() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sxnat0 "${@}" || return; return 0;; esac
+sx_num_is_sx_nat0() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sx_nat0 "${@}" || return; return 0;; esac
 
 	sx_cfg_chk "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_sxnat0 "${@}" || return
+	__sx_num_is_sx_nat0 "${@}" || return
 }
 
-### __sx_num_is_sxnat0 - 設定された数値範囲に基づいて自然数の検証を行う（内部用）
+### __sx_num_is_sx_nat0 - 設定された数値範囲に基づいて自然数の検証を行う（内部用）
 ##
 ## 使い方:
-##   __sx_num_is_sxnat0 [文字列1 [文字列2 ...]]
+##   __sx_num_is_sx_nat0 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   sx_num_is_sxnat0 の内部実装。引数チェックは行わない。
-__sx_num_is_sxnat0() {
+##   sx_num_is_sx_nat0 の内部実装。引数チェックは行わない。
+__sx_num_is_sx_nat0() {
 	sx_num_is_nat0 "${@}" || return
 	__sx_num_is_int_width_core "${SX_CFG_NUM_RANGE}" "${@}" || return
 }
@@ -2879,7 +2879,7 @@ __sx_num_is_sxnat0() {
 sx_num_ge() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_ge "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sxint "${@}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sx_int "${@}" || return
 	__sx_num_ge "${@}" || return
 }
 
@@ -2912,7 +2912,7 @@ __sx_num_ge() {
 sx_num_gt() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_gt "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sxint "${@}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sx_int "${@}" || return
 	__sx_num_gt "${@}" || return
 }
 
@@ -2945,7 +2945,7 @@ __sx_num_gt() {
 sx_num_le() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_le "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint "${@}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${@}" || return
 	__sx_num_le "${@}" || return
 }
 
@@ -2978,7 +2978,7 @@ __sx_num_le() {
 sx_num_lt() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_lt "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint "${@}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${@}" || return
 	__sx_num_lt "${@}" || return
 }
 
@@ -3025,7 +3025,7 @@ sx_num_rel() {
 	__sx_num_rel_x=1
 	for __sx_num_rel_arg in "${@}"; do
 		if M_STR_EQ([|"${__sx_num_rel_x}"|], [|1|]); then
-			sx_num_is_sxint "${__sx_num_rel_arg}" || {
+			sx_num_is_sx_int "${__sx_num_rel_arg}" || {
 				unset __sx_num_rel_x __sx_num_rel_arg
 				return "${SX_EX_USAGE}"
 			}
@@ -3099,7 +3099,7 @@ sx_num_range() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_range "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint "${2-}" ${3+"${3}"} ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${2-}" ${3+"${3}"} ${4+"${4}"} || return
 
 	if M_NUM_EQ([|${4-1}|], [|0|]); then
 		return "${SX_EX_USAGE}"
@@ -3225,7 +3225,7 @@ sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${3+"${3}"} ${4+"${4}"} || return
+	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} ${4+"${4}"} || return
 	{ ! M_NUM_EQ(${3-1}, 0) && sx_num_is_nat0 ${4+"${4}"}; } || return "${SX_EX_USAGE}"
 
 	__sx_str_chunk "${@}"
@@ -3532,7 +3532,7 @@ sx_str_rep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${3+"${3}"} || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} || return
 	sx_num_is_nat0 ${3+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_rep "${@}"
@@ -3583,7 +3583,7 @@ sx_str_split() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${4+"${4}"} ${5+"${5}"} || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${4+"${4}"} ${5+"${5}"} || return
 
 	__sx_str_split "${@}"
 }
@@ -3803,7 +3803,7 @@ sx_str_sub() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${5+"${5}"} ${6+"${6}"} || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${5+"${5}"} ${6+"${6}"} || return
 
 	__sx_str_sub "${@}"
 }
@@ -3943,7 +3943,7 @@ sx_str_substr() {
 
 	sx_var_rw_chk "${1-}" || return
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sxint ${3+"${3}"} ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} ${4+"${4}"} || return
 
 	__sx_str_substr "${@}"
 }
