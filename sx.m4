@@ -256,6 +256,7 @@ sx_cfg_chk() {
 sx_cfg_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_cfg_set "${@}" || return; return 0;; esac
 
+	M_STR_NE([|"${#}"|], [|0|]) || return "${SX_EX_OK}"
 	sx_cfg_chk "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_cfg_set_chk=
@@ -2810,63 +2811,63 @@ sx_num_is_pint() {
 	unset __sx_num_is_pint_arg
 }
 
-### sx_num_is_real - すべての引数が 10 進の実数表記であるか確認する
+### sx_num_is_fixed - すべての引数が 10 進の実数表記（固定小数点形式）であるか確認する
 ##
 ## 使い方:
-##   sx_num_is_real [文字列1 [文字列2 ...]]
+##   sx_num_is_fixed [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   任意で符号（+ または -）を持つ 10 進の実数表記であるかを確認する。
+##   任意で符号（+ または -）を持つ 10 進の実数表記（固定小数点形式）であるかを確認する。
 ##   整数部は 10 進整数として検査し、小数点を含む場合は小数部に 1 文字以上の数字を要求する。
 ##   したがって、"1.0" は許可されるが "1." や ".1" は許可されない。
 ##
 ## 終了ステータス:
 ##    0  すべて 10 進の実数表記である (SX_EX_OK)
 ##    1  10 進の実数表記ではない値が含まれる
-sx_num_is_real() {
-	for __sx_num_is_real_arg in "${@}"; do
-		__sx_num_is_real_int="${__sx_num_is_real_arg%%.*}"
+sx_num_is_fixed() {
+	for __sx_num_is_fixed_arg in "${@}"; do
+		__sx_num_is_fixed_int="${__sx_num_is_fixed_arg%%.*}"
 
-		sx_num_is_base_int 10 "${__sx_num_is_real_int}" &&
+		sx_num_is_base_int 10 "${__sx_num_is_fixed_int}" &&
 		{
-			M_STR_EQ([|"${__sx_num_is_real_int}"|], [|"${__sx_num_is_real_arg}"|]) ||
-			sx_str_is_digit "${__sx_num_is_real_arg#*.}"
+			M_STR_EQ([|"${__sx_num_is_fixed_int}"|], [|"${__sx_num_is_fixed_arg}"|]) ||
+			sx_str_is_digit "${__sx_num_is_fixed_arg#*.}"
 		} || {
-			unset __sx_num_is_real_arg __sx_num_is_real_int
+			unset __sx_num_is_fixed_arg __sx_num_is_fixed_int
 			return 1
 		}
 	done
 
-	unset __sx_num_is_real_arg __sx_num_is_real_int
+	unset __sx_num_is_fixed_arg __sx_num_is_fixed_int
 }
 
-### sx_num_is_real_exp - すべての引数が指数表記を含む 10 進の実数表記であるか確認する
+### sx_num_is_float - すべての引数が 10 進の実数表記（浮動小数点形式）であるか確認する
 ##
 ## 使い方:
-##   sx_num_is_real_exp [文字列1 [文字列2 ...]]
+##   sx_num_is_float [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   sx_num_is_real に加えて、指数表記（e または E による表記）を許可する。
+##   sx_num_is_fixed に加えて、指数表記（e または E による表記）を許可する。
 ##   指数部は 10 進整数として検査する。
 ##
 ## 終了ステータス:
-##    0  すべて指数表記を含む 10 進の実数表記である (SX_EX_OK)
-##    1  指数表記を含む 10 進の実数表記ではない値が含まれる
-sx_num_is_real_exp() {
-	for __sx_num_is_real_exp_arg in "${@}"; do
-		__sx_num_is_real_exp_mant="${__sx_num_is_real_exp_arg%%[Ee]*}"
+##    0  すべて 10 進の実数表記である (SX_EX_OK)
+##    1  10 進の実数表記ではない値が含まれる
+sx_num_is_float() {
+	for __sx_num_is_float_arg in "${@}"; do
+		__sx_num_is_float_mant="${__sx_num_is_float_arg%%[Ee]*}"
 
-		sx_num_is_real "${__sx_num_is_real_exp_mant}" &&
+		sx_num_is_fixed "${__sx_num_is_float_mant}" &&
 		{
-			M_STR_EQ([|"${__sx_num_is_real_exp_mant}"|], [|"${__sx_num_is_real_exp_arg}"|]) ||
-			sx_num_is_base_int 10 "${__sx_num_is_real_exp_arg#*[Ee]}"
+			M_STR_EQ([|"${__sx_num_is_float_mant}"|], [|"${__sx_num_is_float_arg}"|]) ||
+			sx_num_is_base_int 10 "${__sx_num_is_float_arg#*[Ee]}"
 		} || {
-			unset __sx_num_is_real_exp_arg __sx_num_is_real_exp_mant
+			unset __sx_num_is_float_arg __sx_num_is_float_mant
 			return 1
 		}
 	done
 
-	unset __sx_num_is_real_exp_arg __sx_num_is_real_exp_mant
+	unset __sx_num_is_float_arg __sx_num_is_float_mant
 }
 
 ### sx_num_is_sx_int - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
