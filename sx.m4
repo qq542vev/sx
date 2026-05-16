@@ -2870,6 +2870,107 @@ sx_num_is_float() {
 	unset __sx_num_is_float_arg __sx_num_is_float_mant
 }
 
+### sx_num_to_fixed - 指数表記の数値を固定小数点表記に変換する
+##
+## 使い方:
+##   sx_num_to_fixed [結果変数名=数値 ...]
+##
+## 説明:
+##   "1.2e+3" を "1200"、"1.23e-2" を "0.0123" のような形式に変換して結果変数に格納する。
+##   入力が既に固定小数点形式の場合はそのまま返す。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正: 無効な変数名、数値形式が正しくない、または '=' が含まれない (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_num_to_fixed() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_to_fixed "${@}" || return; return 0;; esac
+
+	__sx_num_to_fixed_chk=
+	for __sx_num_to_fixed_arg in "${@}"; do
+		__sx_num_to_fixed_vn="${__sx_num_to_fixed_arg%%=*}"
+
+		sx_var_is_name "${__sx_num_to_fixed_vn}" && sx_num_is_float "${__sx_num_to_fixed_arg#*=}" || {
+			unset __sx_num_to_fixed_chk __sx_num_to_fixed_arg __sx_num_to_fixed_vn
+			return "${SX_EX_USAGE}"
+		}
+
+		__sx_num_to_fixed_chk="${__sx_num_to_fixed_chk} ${__sx_num_to_fixed_vn}"
+	done
+
+	eval sx_var_is_rw_all "${__sx_num_to_fixed_chk}" || {
+		unset __sx_num_to_fixed_chk __sx_num_to_fixed_arg __sx_num_to_fixed_vn
+		return "${SX_EX_NOPERM}"
+	}
+
+	unset __sx_num_to_fixed_chk __sx_num_to_fixed_arg __sx_num_to_fixed_vn
+	__sx_num_to_fixed "${@}"
+}
+
+__sx_num_to_fixed() {
+	for __sx_num_to_fixed_arg_ in "${@}"; do
+		__sx_num_to_fixed_in_="${__sx_num_to_fixed_arg_#*=}"
+
+		# 指数部が含まれていない場合はそのまま処理
+		M_STR_MATCH([|"${__sx_num_to_fixed_in_}"|], [|*[Ee]*|]*) || {
+			__sx_var_set "${__sx_num_to_fixed_arg_}"
+			continue
+		}
+
+		# 1. 解析: 符号、仮数部、指数部を分離
+		__sx_num_to_fixed_sgn_=
+		case "${__sx_num_to_fixed_in_}" in
+			-*) __sx_num_to_fixed_sgn_=-;;
+		esac
+
+		__sx_num_to_fixed_mnt_="${__sx_num_to_fixed_in_%%[Ee]*}"
+		__sx_num_to_fixed_mnt_="${__sx_num_to_fixed_mnt_#[+-]}"
+		__sx_num_to_fixed_exp_="${__sx_num_to_fixed_in_#*[Ee]}"
+		__sx_num_to_fixed_exp_="${__sx_num_to_fixed_exp_#+}"
+
+		# 2. 仮数部の正規化: 小数点を除去し、小数点以下の桁数を取得
+		case "${__sx_num_to_fixed_mnt_}" in
+			*.*)
+				__sx_num_to_fixed_f_="${__sx_num_to_fixed_mnt_#*.}"
+				__sx_num_to_fixed_dig_="${__sx_num_to_fixed_mnt_%.*}${__sx_num_to_fixed_f_}"
+				__sx_num_to_fixed_flen_="${#__sx_num_to_fixed_f_}"
+				;;
+			*)
+				__sx_num_to_fixed_dig_="${__sx_num_to_fixed_mnt_}"
+				__sx_num_to_fixed_flen_=0
+				;;
+		esac
+
+		# 3. 実質シフト量の計算
+		__sx_num_to_fixed_shift_=$((__sx_num_to_fixed_exp_ - __sx_num_to_fixed_flen_))
+
+		# 4. 配置処理
+		if M_NUM_LE([|0|], [|__sx_num_to_fixed_shift_|]); then
+			# 右シフト（整数化、または 0 埋め）
+			__sx_str_rep __sx_num_to_fixed_zeros_ 0 "${__sx_num_to_fixed_shift_}"
+			__sx_num_to_fixed_res_="${__sx_num_to_fixed_dig_}${__sx_num_to_fixed_zeros_}"
+		else
+			# 左シフト（小数化）
+			__sx_num_to_fixed_shift_=$((__sx_num_to_fixed_shift_ * -1))
+			__sx_num_to_fixed_dig_len_="${#__sx_num_to_fixed_dig_}"
+
+			if M_NUM_LT([|__sx_num_to_fixed_shift_|], [|__sx_num_to_fixed_dig_len_|]); then
+				# 数字列の中に小数点が入る場合
+				__sx_str_splice __sx_num_to_fixed_res_ "${__sx_num_to_fixed_dig_}" "$((__sx_num_to_fixed_dig_len_ - __sx_num_to_fixed_shift_))" 0 .
+			else
+				# 0.00... の形式になる場合
+				__sx_str_rep __sx_num_to_fixed_pads_ 0 "$((__sx_num_to_fixed_shift_ - __sx_num_to_fixed_dig_len_))"
+				__sx_num_to_fixed_res_="0.${__sx_num_to_fixed_pads_}${__sx_num_to_fixed_dig_}"
+			fi
+		fi
+
+		# 5. 符号を付けて格納
+		__sx_var_set "${__sx_num_to_fixed_arg_%%=*}=${__sx_num_to_fixed_sgn_}${__sx_num_to_fixed_res_}"
+	done
+
+	unset __sx_num_to_fixed_arg_ __sx_num_to_fixed_in_ __sx_num_to_fixed_sgn_ __sx_num_to_fixed_mnt_ __sx_num_to_fixed_exp_ __sx_num_to_fixed_f_ __sx_num_to_fixed_dig_ __sx_num_to_fixed_flen_ __sx_num_to_fixed_shift_ __sx_num_to_fixed_zeros_ __sx_num_to_fixed_dig_len_ __sx_num_to_fixed_res_ __sx_num_to_fixed_pads_
+}
+
 ### sx_num_is_sx_int - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
 ##
 ## 使い方:
@@ -4036,6 +4137,68 @@ sx_str_substr() {
 
 	__sx_str_substr "${@}"
 }
+
+### sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する
+##
+## 使い方:
+##   sx_str_splice 結果変数名 文字列 開始位置 削除数 挿入文字列
+##
+## 説明:
+##   文字列の「開始位置」（0開始）から「削除数」分の文字を取り除き、
+##   そこに「挿入文字列」を挿入した結果を結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_str_splice() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_splice "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} ${4+"${4}"} || return
+
+	__sx_str_splice "${@}"
+}
+
+define([|V|], [|__sx_str_splice_$1_|]) dnl
+define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(add) V(left) V(right) V(suffix) V(del)|]) dnl
+
+### __sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する（内部用）
+##
+## 使い方:
+##   __sx_str_splice 結果変数名 文字列 開始位置 削除数 挿入文字列
+##
+## 説明:
+##   sx_str_splice の内部実装。引数チェックは行わない。
+__sx_str_splice() {
+	V(res)="${1}"
+	V(str)="${2-}"
+	V(off)="${3-0}"
+	V(len)="${4-${SX_NUM_I32_MAX}}"
+	V(add)="${5-}"
+
+	# 1. 前半部分を取得 (sx_str_substr は負数 off をサポート済み)
+	__sx_str_substr V(left) "${V(str)}" 0 "${V(off)}"
+
+	# 2. 残りの部分（suffix）を抽出
+	V(suffix)="${V(str)#"${V(left)}"}"
+
+	# 3. 削除される部分を取得（sx_str_substr の負数 len を利用）
+	__sx_str_substr V(del) "${V(suffix)}" 0 "${V(len)}"
+
+	# 4. 後半部分（削除範囲より後ろ）を抽出
+	V(right)="${V(suffix)#"${V(del)}"}"
+
+	# 5. 結合して格納
+	__sx_var_set "${V(res)}=${V(left)}${V(add)}${V(right)}"
+
+	CLEANUP
+}
+
+undefine([|CLEANUP|]) dnl
+undefine([|V|]) dnl
 
 define([|V|], [|__sx_str_substr_$1_|]) dnl
 define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(total) V(drop) V(qm)|]) dnl
