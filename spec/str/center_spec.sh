@@ -47,8 +47,9 @@ Describe 'sx_str_center'
     The status should equal 64
   End
 
-  It '埋め込み文字列が明示的に空の場合は USAGE を返すこと'
+  It '埋め込み文字列が空の場合は何もしないこと (A 4 "" -> A)'
     When call sx_str_center res "A" 4 ""
-    The status should equal 64
+    The variable res should equal "A"
+    The status should equal 0
   End
 End

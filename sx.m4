@@ -2947,8 +2947,7 @@ __sx_num_to_fixed() {
 		# 4. 配置処理
 		if M_NUM_LE([|0|], [|__sx_num_to_fixed_shift_|]); then
 			# 右シフト（整数化、または 0 埋め）
-			__sx_num_to_fixed_dig_len_="${#__sx_num_to_fixed_dig_}"
-			__sx_str_pad __sx_num_to_fixed_res_ "${__sx_num_to_fixed_dig_}" "-$((__sx_num_to_fixed_dig_len_ + __sx_num_to_fixed_shift_))" 0
+			__sx_str_pad __sx_num_to_fixed_res_ "${__sx_num_to_fixed_dig_}" "-$((${#__sx_num_to_fixed_dig_}  + __sx_num_to_fixed_shift_))" 0
 		else
 			# 左シフト（小数化）
 			__sx_num_to_fixed_shift_=$((__sx_num_to_fixed_shift_ * -1))
@@ -3762,6 +3761,7 @@ __sx_str_rep() {
 ##   長さが正の場合、左側に埋める（右寄せ）。
 ##   長さが負の場合、右側に埋める（左寄せ）。
 ##   埋め込み文字列が指定されない場合は半角スペースを使用する。
+##   埋め込み文字列が明示的に空の場合は何もせずそのまま返す。
 ##   埋め込み文字列が複数文字の場合、必要な長さ分だけ使用される。
 ##   元の文字列が既に指定された長さ以上の場合は、そのまま返す。
 ##
@@ -3774,11 +3774,6 @@ sx_str_pad() {
 
 	sx_var_rw_chk "${1-}" || return
 	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} || return
-
-	# 埋め込み文字列が明示的に空の場合はエラー
-	if M_STR_EQ([|"${4+X}"|], [|X|]) && M_STR_EQ([|"${4}"|], [|''|]); then
-		return "${SX_EX_USAGE}"
-	fi
 
 	__sx_str_pad "${@}"
 }
@@ -3830,6 +3825,7 @@ __sx_str_pad() {
 ##   幅が正の場合、余り（奇数の場合）は右側に振る。
 ##   幅が負の場合、余りは左側に振る。
 ##   埋め込み文字列が指定されない場合は半角スペースを使用する。
+##   埋め込み文字列が明示的に空の場合は何もせずそのまま返す。
 ##   元の文字列が既に指定された幅以上の場合は、そのまま返す。
 ##
 ## 終了ステータス:
@@ -3842,11 +3838,6 @@ sx_str_center() {
 	sx_var_rw_chk "${1-}" || return
 	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} || return
 
-	# 埋め込み文字列が明示的に空の場合はエラー
-	if M_STR_EQ([|"${4+X}"|], [|X|]) && M_STR_EQ([|"${4}"|], [|''|]); then
-		return "${SX_EX_USAGE}"
-	fi
-
 	__sx_str_center "${@}"
 }
 
@@ -3857,7 +3848,7 @@ sx_str_center() {
 ##
 ## 説明:
 ##   sx_str_center の内部実装。
-##   引数チェックは行わない。
+##   引数チェックは行わないが、埋め込み文字列が空の場合は何もせず成功を返す。
 __sx_str_center() {
 	__sx_str_center_res_="${1}"
 	__sx_str_center_str_="${2-}"
