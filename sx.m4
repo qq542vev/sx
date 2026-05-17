@@ -3843,27 +3843,24 @@ sx_str_center() {
 ##   sx_str_center の内部実装。
 ##   引数チェックは行わないが、埋め込み文字列が空の場合は何もせず成功を返す。
 __sx_str_center() {
-	__sx_str_center_needed_=$(( ${3#-} - ${#2} ))
+	set -- "${1}" "${2-}" "${3-0}" "${4- }"
 
-	case "${__sx_str_center_needed_}" in
-		-*|0) __sx_var_set "${1}=${2-}" ;;
-		*)
-			__sx_str_center_p_="${4- }"
-			case "${__sx_str_center_p_}" in
-				"") __sx_var_set "${1}=${2-}" ;;
-				*)
-					__sx_str_center_l_=$(( (__sx_str_center_needed_ + (${3-0} < 0)) / 2 ))
-					__sx_str_rep __sx_str_center_rep_ "${__sx_str_center_p_}" "$(( (__sx_str_center_needed_ - 1) / ${#__sx_str_center_p_} + 1 ))"
-					__sx_str_substr __sx_str_center_l_str_ "${__sx_str_center_rep_}" 0 "${__sx_str_center_l_}"
-					__sx_str_substr __sx_str_center_r_str_ "${__sx_str_center_rep_}" 0 "$(( __sx_str_center_needed_ - __sx_str_center_l_ ))"
-					__sx_var_set "${1}=${__sx_str_center_l_str_}${2-}${__sx_str_center_r_str_}"
-					unset __sx_str_center_l_ __sx_str_center_rep_ __sx_str_center_l_str_ __sx_str_center_r_str_
-					;;
-			esac
-			unset __sx_str_center_p_
-			;;
-	esac
-	unset __sx_str_center_needed_
+	__sx_str_center_needed_=$((${3#-} - ${#2}))
+
+	M_NUM_LT([|0|], [|__sx_str_center_needed_|]) && M_STR_NE([|"${4}"|], [|''|]) || {
+		__sx_var_set "${1}=${2}"
+		unset __sx_str_center_needed_
+		return "${SX_EX_OK}"
+	}
+
+	__sx_str_center_l_=$(( (__sx_str_center_needed_ + (${3} < 0)) / 2 ))
+	__sx_str_rep __sx_str_center_rep_ "${4}" "$(( (__sx_str_center_needed_ - 1) / ${#4} + 1 ))"
+	__sx_str_substr __sx_str_center_l_str_ "${__sx_str_center_rep_}" 0 "${__sx_str_center_l_}"
+	__sx_str_substr __sx_str_center_r_str_ "${__sx_str_center_rep_}" 0 "$(( __sx_str_center_needed_ - __sx_str_center_l_ ))"
+
+	__sx_var_set "${1}=${__sx_str_center_l_str_}${2}${__sx_str_center_r_str_}"
+
+	unset __sx_str_center_needed_ __sx_str_center_l_ __sx_str_center_rep_ __sx_str_center_l_str_ __sx_str_center_r_str_
 }
 
 ### sx_str_split - 文字列を分割して結果変数に格納する
