@@ -3854,7 +3854,7 @@ __sx_str_center() {
 	}
 
 	__sx_str_center_l_=$(( (__sx_str_center_needed_ + (${3} < 0)) / 2 ))
-	__sx_str_rep __sx_str_center_rep_ "${4}" "$(( (__sx_str_center_needed_ - 1) / ${#4} + 1 ))"
+	__sx_str_rep __sx_str_center_rep_ "${4}" "$(( ( (__sx_str_center_needed_ + 1) / 2 - 1 ) / ${#4} + 1 ))"
 	__sx_str_substr __sx_str_center_l_str_ "${__sx_str_center_rep_}" 0 "${__sx_str_center_l_}"
 	__sx_str_substr __sx_str_center_r_str_ "${__sx_str_center_rep_}" 0 "$(( __sx_str_center_needed_ - __sx_str_center_l_ ))"
 
