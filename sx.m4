@@ -2947,8 +2947,8 @@ __sx_num_to_fixed() {
 		# 4. 配置処理
 		if M_NUM_LE([|0|], [|__sx_num_to_fixed_shift_|]); then
 			# 右シフト（整数化、または 0 埋め）
-			__sx_str_rep __sx_num_to_fixed_zeros_ 0 "${__sx_num_to_fixed_shift_}"
-			__sx_num_to_fixed_res_="${__sx_num_to_fixed_dig_}${__sx_num_to_fixed_zeros_}"
+			__sx_num_to_fixed_dig_len_="${#__sx_num_to_fixed_dig_}"
+			__sx_str_pad __sx_num_to_fixed_res_ "${__sx_num_to_fixed_dig_}" "-$((__sx_num_to_fixed_dig_len_ + __sx_num_to_fixed_shift_))" 0
 		else
 			# 左シフト（小数化）
 			__sx_num_to_fixed_shift_=$((__sx_num_to_fixed_shift_ * -1))
@@ -2959,8 +2959,8 @@ __sx_num_to_fixed() {
 				__sx_str_splice __sx_num_to_fixed_res_ "${__sx_num_to_fixed_dig_}" "$((__sx_num_to_fixed_dig_len_ - __sx_num_to_fixed_shift_))" 0 .
 			else
 				# 0.00... の形式になる場合
-				__sx_str_rep __sx_num_to_fixed_pads_ 0 "$((__sx_num_to_fixed_shift_ - __sx_num_to_fixed_dig_len_))"
-				__sx_num_to_fixed_res_="0.${__sx_num_to_fixed_pads_}${__sx_num_to_fixed_dig_}"
+				__sx_str_pad __sx_num_to_fixed_res_ "${__sx_num_to_fixed_dig_}" "${__sx_num_to_fixed_shift_}" 0
+				__sx_num_to_fixed_res_="0.${__sx_num_to_fixed_res_}"
 			fi
 		fi
 
@@ -2968,7 +2968,7 @@ __sx_num_to_fixed() {
 		__sx_var_set "${__sx_num_to_fixed_arg_%%=*}=${__sx_num_to_fixed_sgn_}${__sx_num_to_fixed_res_}"
 	done
 
-	unset __sx_num_to_fixed_arg_ __sx_num_to_fixed_in_ __sx_num_to_fixed_sgn_ __sx_num_to_fixed_mnt_ __sx_num_to_fixed_exp_ __sx_num_to_fixed_f_ __sx_num_to_fixed_dig_ __sx_num_to_fixed_flen_ __sx_num_to_fixed_shift_ __sx_num_to_fixed_zeros_ __sx_num_to_fixed_dig_len_ __sx_num_to_fixed_res_ __sx_num_to_fixed_pads_
+	unset __sx_num_to_fixed_arg_ __sx_num_to_fixed_in_ __sx_num_to_fixed_sgn_ __sx_num_to_fixed_mnt_ __sx_num_to_fixed_exp_ __sx_num_to_fixed_f_ __sx_num_to_fixed_dig_ __sx_num_to_fixed_flen_ __sx_num_to_fixed_shift_ __sx_num_to_fixed_dig_len_ __sx_num_to_fixed_res_
 }
 
 ### sx_num_is_sx_int - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
