@@ -3787,32 +3787,25 @@ sx_str_pad() {
 ##   sx_str_pad の内部実装。
 ##   引数チェックは行わないが、埋め込み文字列が空の場合は何もせず成功を返す。
 __sx_str_pad() {
-	__sx_str_pad_res_="${1}"
-	__sx_str_pad_str_="${2-}"
-	__sx_str_pad_tlen_="${3-0}"
-	__sx_str_pad_pstr_="${4- }"
+	set -- "${1}" "${2-}" "${3-0}" "${4- }"
 
-	__sx_str_pad_alen_="${__sx_str_pad_tlen_#-}"
-	__sx_str_pad_clen_="${#__sx_str_pad_str_}"
+	__sx_str_pad_needed_=$((${3#-} - ${#2}))
 
-	if M_NUM_LE([|__sx_str_pad_alen_|], [|__sx_str_pad_clen_|]) || M_STR_EQ([|"${__sx_str_pad_pstr_}"|], [|''|]); then
-		__sx_var_set "${__sx_str_pad_res_}=${__sx_str_pad_str_}"
-	else
-		__sx_str_pad_needed_=$((__sx_str_pad_alen_ - __sx_str_pad_clen_))
-		__sx_str_pad_plen_="${#__sx_str_pad_pstr_}"
-		__sx_str_pad_cnt_=$(( (__sx_str_pad_needed_ + __sx_str_pad_plen_ - 1) / __sx_str_pad_plen_ ))
-		
-		__sx_str_rep __sx_str_pad_repeated_ "${__sx_str_pad_pstr_}" "${__sx_str_pad_cnt_}"
-		__sx_str_substr __sx_str_pad_final_ "${__sx_str_pad_repeated_}" 0 "${__sx_str_pad_needed_}"
+	M_NUM_LT([|0|], [|__sx_str_pad_needed_|]) && M_STR_NE([|"${4}"|], [|''|]) || {
+		__sx_var_set "${1}=${2}"
+		unset __sx_str_pad_needed_
+		return "${SX_EX_OK}"
+	}
 
-		if M_NUM_LE([|0|], [|__sx_str_pad_tlen_|]); then
-			__sx_var_set "${__sx_str_pad_res_}=${__sx_str_pad_final_}${__sx_str_pad_str_}"
-		else
-			__sx_var_set "${__sx_str_pad_res_}=${__sx_str_pad_str_}${__sx_str_pad_final_}"
-		fi
-	fi
+	__sx_str_rep __sx_str_pad_rep_ "${4}" "$(( (__sx_str_pad_needed_ - 1) / ${#4} + 1 ))"
+	__sx_str_substr __sx_str_pad_fill_ "${__sx_str_pad_rep_}" 0 "${__sx_str_pad_needed_}"
 
-	unset __sx_str_pad_res_ __sx_str_pad_str_ __sx_str_pad_tlen_ __sx_str_pad_pstr_ __sx_str_pad_alen_ __sx_str_pad_clen_ __sx_str_pad_needed_ __sx_str_pad_plen_ __sx_str_pad_cnt_ __sx_str_pad_repeated_ __sx_str_pad_final_
+	case "${3}" in
+		-*) __sx_var_set "${1}=${2}${__sx_str_pad_fill_}";;
+		*) __sx_var_set "${1}=${__sx_str_pad_fill_}${2}";;
+	esac
+
+	unset __sx_str_pad_needed_ __sx_str_pad_rep_ __sx_str_pad_fill_
 }
 
 ### sx_str_center - 文字列を指定された幅で中央寄せする
@@ -3850,39 +3843,27 @@ sx_str_center() {
 ##   sx_str_center の内部実装。
 ##   引数チェックは行わないが、埋め込み文字列が空の場合は何もせず成功を返す。
 __sx_str_center() {
-	__sx_str_center_res_="${1}"
-	__sx_str_center_str_="${2-}"
-	__sx_str_center_tlen_="${3-0}"
-	__sx_str_center_pstr_="${4- }"
+	__sx_str_center_needed_=$(( ${3#-} - ${#2} ))
 
-	__sx_str_center_alen_="${__sx_str_center_tlen_#-}"
-	__sx_str_center_clen_="${#__sx_str_center_str_}"
-
-	if M_NUM_LE([|__sx_str_center_alen_|], [|__sx_str_center_clen_|]) || M_STR_EQ([|"${__sx_str_center_pstr_}"|], [|''|]); then
-		__sx_var_set "${__sx_str_center_res_}=${__sx_str_center_str_}"
-	else
-		__sx_str_center_needed_=$((__sx_str_center_alen_ - __sx_str_center_clen_))
-		
-		# 幅が正なら余りは右、負なら余りは左
-		if M_NUM_LE([|0|], [|__sx_str_center_tlen_|]); then
-			__sx_str_center_l_=$((__sx_str_center_needed_ / 2))
-			__sx_str_center_r_=$((__sx_str_center_needed_ - __sx_str_center_l_))
-		else
-			__sx_str_center_r_=$((__sx_str_center_needed_ / 2))
-			__sx_str_center_l_=$((__sx_str_center_needed_ - __sx_str_center_r_))
-		fi
-
-		__sx_str_center_plen_="${#__sx_str_center_pstr_}"
-		__sx_str_center_cnt_=$(( (__sx_str_center_needed_ + __sx_str_center_plen_ - 1) / __sx_str_center_plen_ ))
-		__sx_str_rep __sx_str_center_rep_ "${__sx_str_center_pstr_}" "${__sx_str_center_cnt_}"
-
-		__sx_str_substr __sx_str_center_left_  "${__sx_str_center_rep_}" 0 "${__sx_str_center_l_}"
-		__sx_str_substr __sx_str_center_right_ "${__sx_str_center_rep_}" 0 "${__sx_str_center_r_}"
-
-		__sx_var_set "${__sx_str_center_res_}=${__sx_str_center_left_}${__sx_str_center_str_}${__sx_str_center_right_}"
-	fi
-
-	unset __sx_str_center_res_ __sx_str_center_str_ __sx_str_center_tlen_ __sx_str_center_pstr_ __sx_str_center_alen_ __sx_str_center_clen_ __sx_str_center_needed_ __sx_str_center_l_ __sx_str_center_r_ __sx_str_center_plen_ __sx_str_center_cnt_ __sx_str_center_rep_ __sx_str_center_left_ __sx_str_center_right_
+	case "${__sx_str_center_needed_}" in
+		-*|0) __sx_var_set "${1}=${2-}" ;;
+		*)
+			__sx_str_center_p_="${4- }"
+			case "${__sx_str_center_p_}" in
+				"") __sx_var_set "${1}=${2-}" ;;
+				*)
+					__sx_str_center_l_=$(( (__sx_str_center_needed_ + (${3-0} < 0)) / 2 ))
+					__sx_str_rep __sx_str_center_rep_ "${__sx_str_center_p_}" "$(( (__sx_str_center_needed_ - 1) / ${#__sx_str_center_p_} + 1 ))"
+					__sx_str_substr __sx_str_center_l_str_ "${__sx_str_center_rep_}" 0 "${__sx_str_center_l_}"
+					__sx_str_substr __sx_str_center_r_str_ "${__sx_str_center_rep_}" 0 "$(( __sx_str_center_needed_ - __sx_str_center_l_ ))"
+					__sx_var_set "${1}=${__sx_str_center_l_str_}${2-}${__sx_str_center_r_str_}"
+					unset __sx_str_center_l_ __sx_str_center_rep_ __sx_str_center_l_str_ __sx_str_center_r_str_
+					;;
+			esac
+			unset __sx_str_center_p_
+			;;
+	esac
+	unset __sx_str_center_needed_
 }
 
 ### sx_str_split - 文字列を分割して結果変数に格納する
