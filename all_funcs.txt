@@ -62,6 +62,8 @@ st	splt	sx_str_split	Active
 st	sub	sx_str_sub	Active
 st	subs	sx_str_substr	Active
 st	sw	sx_str_sw	Active
+st	pad	sx_str_pad	Active
+st	cntr	sx_str_center	Active
 ar	gen	sx_arr_gen	Active
 ar	irw	sx_arr_is_rw	Active
 ar	pop	sx_arr_pop	Active

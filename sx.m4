@@ -3752,6 +3752,148 @@ __sx_str_rep() {
 	unset __sx_str_rep_out_
 }
 
+### sx_str_pad - 文字列を指定された長さになるように埋める
+##
+## 使い方:
+##   sx_str_pad 結果変数名 文字列 長さ [埋め込み文字列]
+##
+## 説明:
+##   文字列の長さが「長さ」の絶対値に満たない場合、埋め込み文字列で埋める。
+##   長さが正の場合、左側に埋める（右寄せ）。
+##   長さが負の場合、右側に埋める（左寄せ）。
+##   埋め込み文字列が指定されない場合は半角スペースを使用する。
+##   埋め込み文字列が複数文字の場合、必要な長さ分だけ使用される。
+##   元の文字列が既に指定された長さ以上の場合は、そのまま返す。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_pad() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_pad "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} || return
+
+	# 埋め込み文字列が明示的に空の場合はエラー
+	if M_STR_EQ([|"${4+X}"|], [|X|]) && M_STR_EQ([|"${4}"|], [|''|]); then
+		return "${SX_EX_USAGE}"
+	fi
+
+	__sx_str_pad "${@}"
+}
+
+### __sx_str_pad - 文字列を指定された長さになるように埋める（内部用）
+##
+## 使い方:
+##   __sx_str_pad 結果変数名 文字列 長さ [埋め込み文字列]
+##
+## 説明:
+##   sx_str_pad の内部実装。
+##   引数チェックは行わないが、埋め込み文字列が空の場合は何もせず成功を返す。
+__sx_str_pad() {
+	__sx_str_pad_res_="${1}"
+	__sx_str_pad_str_="${2-}"
+	__sx_str_pad_tlen_="${3-0}"
+	__sx_str_pad_pstr_="${4- }"
+
+	__sx_str_pad_alen_="${__sx_str_pad_tlen_#-}"
+	__sx_str_pad_clen_="${#__sx_str_pad_str_}"
+
+	if M_NUM_LE([|__sx_str_pad_alen_|], [|__sx_str_pad_clen_|]) || M_STR_EQ([|"${__sx_str_pad_pstr_}"|], [|''|]); then
+		__sx_var_set "${__sx_str_pad_res_}=${__sx_str_pad_str_}"
+	else
+		__sx_str_pad_needed_=$((__sx_str_pad_alen_ - __sx_str_pad_clen_))
+		__sx_str_pad_plen_="${#__sx_str_pad_pstr_}"
+		__sx_str_pad_cnt_=$(( (__sx_str_pad_needed_ + __sx_str_pad_plen_ - 1) / __sx_str_pad_plen_ ))
+		
+		__sx_str_rep __sx_str_pad_repeated_ "${__sx_str_pad_pstr_}" "${__sx_str_pad_cnt_}"
+		__sx_str_substr __sx_str_pad_final_ "${__sx_str_pad_repeated_}" 0 "${__sx_str_pad_needed_}"
+
+		if M_NUM_LE([|0|], [|__sx_str_pad_tlen_|]); then
+			__sx_var_set "${__sx_str_pad_res_}=${__sx_str_pad_final_}${__sx_str_pad_str_}"
+		else
+			__sx_var_set "${__sx_str_pad_res_}=${__sx_str_pad_str_}${__sx_str_pad_final_}"
+		fi
+	fi
+
+	unset __sx_str_pad_res_ __sx_str_pad_str_ __sx_str_pad_tlen_ __sx_str_pad_pstr_ __sx_str_pad_alen_ __sx_str_pad_clen_ __sx_str_pad_needed_ __sx_str_pad_plen_ __sx_str_pad_cnt_ __sx_str_pad_repeated_ __sx_str_pad_final_
+}
+
+### sx_str_center - 文字列を指定された幅で中央寄せする
+##
+## 使い方:
+##   sx_str_center 結果変数名 文字列 幅 [埋め込み文字列]
+##
+## 説明:
+##   文字列の長さが「幅」の絶対値に満たない場合、埋め込み文字列で中央寄せするように埋める。
+##   幅が正の場合、余り（奇数の場合）は右側に振る。
+##   幅が負の場合、余りは左側に振る。
+##   埋め込み文字列が指定されない場合は半角スペースを使用する。
+##   元の文字列が既に指定された幅以上の場合は、そのまま返す。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_center() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_center "${@}" || return; return 0;; esac
+
+	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} || return
+
+	# 埋め込み文字列が明示的に空の場合はエラー
+	if M_STR_EQ([|"${4+X}"|], [|X|]) && M_STR_EQ([|"${4}"|], [|''|]); then
+		return "${SX_EX_USAGE}"
+	fi
+
+	__sx_str_center "${@}"
+}
+
+### __sx_str_center - 文字列を指定された幅で中央寄せする（内部用）
+##
+## 使い方:
+##   __sx_str_center 結果変数名 文字列 幅 [埋め込み文字列]
+##
+## 説明:
+##   sx_str_center の内部実装。
+##   引数チェックは行わない。
+__sx_str_center() {
+	__sx_str_center_res_="${1}"
+	__sx_str_center_str_="${2-}"
+	__sx_str_center_tlen_="${3-0}"
+	__sx_str_center_pstr_="${4- }"
+
+	__sx_str_center_alen_="${__sx_str_center_tlen_#-}"
+	__sx_str_center_clen_="${#__sx_str_center_str_}"
+
+	if M_NUM_LE([|__sx_str_center_alen_|], [|__sx_str_center_clen_|]) || M_STR_EQ([|"${__sx_str_center_pstr_}"|], [|''|]); then
+		__sx_var_set "${__sx_str_center_res_}=${__sx_str_center_str_}"
+	else
+		__sx_str_center_needed_=$((__sx_str_center_alen_ - __sx_str_center_clen_))
+		
+		# 幅が正なら余りは右、負なら余りは左
+		if M_NUM_LE([|0|], [|__sx_str_center_tlen_|]); then
+			__sx_str_center_l_=$((__sx_str_center_needed_ / 2))
+			__sx_str_center_r_=$((__sx_str_center_needed_ - __sx_str_center_l_))
+		else
+			__sx_str_center_r_=$((__sx_str_center_needed_ / 2))
+			__sx_str_center_l_=$((__sx_str_center_needed_ - __sx_str_center_r_))
+		fi
+
+		__sx_str_center_plen_="${#__sx_str_center_pstr_}"
+		__sx_str_center_cnt_=$(( (__sx_str_center_needed_ + __sx_str_center_plen_ - 1) / __sx_str_center_plen_ ))
+		__sx_str_rep __sx_str_center_rep_ "${__sx_str_center_pstr_}" "${__sx_str_center_cnt_}"
+
+		__sx_str_substr __sx_str_center_left_  "${__sx_str_center_rep_}" 0 "${__sx_str_center_l_}"
+		__sx_str_substr __sx_str_center_right_ "${__sx_str_center_rep_}" 0 "${__sx_str_center_r_}"
+
+		__sx_var_set "${__sx_str_center_res_}=${__sx_str_center_left_}${__sx_str_center_str_}${__sx_str_center_right_}"
+	fi
+
+	unset __sx_str_center_res_ __sx_str_center_str_ __sx_str_center_tlen_ __sx_str_center_pstr_ __sx_str_center_alen_ __sx_str_center_clen_ __sx_str_center_needed_ __sx_str_center_l_ __sx_str_center_r_ __sx_str_center_plen_ __sx_str_center_cnt_ __sx_str_center_rep_ __sx_str_center_left_ __sx_str_center_right_
+}
+
 ### sx_str_split - 文字列を分割して結果変数に格納する
 ##
 ## 使い方:
