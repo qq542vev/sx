@@ -3853,14 +3853,14 @@ __sx_str_center() {
 		return "${SX_EX_OK}"
 	}
 
-	__sx_str_center_l_=$(( (__sx_str_center_needed_ + (${3} < 0)) / 2 ))
 	__sx_str_rep __sx_str_center_rep_ "${4}" "$(( ( (__sx_str_center_needed_ + 1) / 2 - 1 ) / ${#4} + 1 ))"
-	__sx_str_substr __sx_str_center_l_str_ "${__sx_str_center_rep_}" 0 "${__sx_str_center_l_}"
-	__sx_str_substr __sx_str_center_r_str_ "${__sx_str_center_rep_}" 0 "$(( __sx_str_center_needed_ - __sx_str_center_l_ ))"
+	__sx_str_substr __sx_str_center_spad_ "${__sx_str_center_rep_}" 0 "$(( (__sx_str_center_needed_ + (${3} < 0)) / 2 ))"
 
-	__sx_var_set "${1}=${__sx_str_center_l_str_}${2}${__sx_str_center_r_str_}"
+	__sx_str_substr __sx_str_center_epad_ "${__sx_str_center_rep_}" 0 "$(( __sx_str_center_needed_ - ${#__sx_str_center_spad_} ))"
 
-	unset __sx_str_center_needed_ __sx_str_center_l_ __sx_str_center_rep_ __sx_str_center_l_str_ __sx_str_center_r_str_
+	__sx_var_set "${1}=${__sx_str_center_spad_}${2}${__sx_str_center_epad_}"
+
+	unset __sx_str_center_needed_ __sx_str_center_rep_ __sx_str_center_spad_ __sx_str_center_epad_
 }
 
 ### sx_str_split - 文字列を分割して結果変数に格納する
