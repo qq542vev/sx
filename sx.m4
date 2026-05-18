@@ -709,7 +709,7 @@ __sx_arg_len() {
 sx_arg_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
 
-	sx_var_is_schema "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
 
 	__sx_arg_quote "${@}"
 }
@@ -791,7 +791,7 @@ __sx_arg_quote() {
 sx_arg_rquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
 
-	sx_var_is_schema "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
 
 	__sx_arg_rquote "${@}"
 }
@@ -1394,30 +1394,30 @@ sx_var_is_chain() {
 	unset __sx_var_is_chain_arg
 }
 
-### sx_var_is_schema - 文字列が分配代入スキーマとして有効か確認する
+### sx_var_is_bind - 文字列が分配代入バインド形式として有効か確認する
 ##
 ## 使い方:
-##   sx_var_is_schema [文字列1 [文字列2 ...]]
+##   sx_var_is_bind [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   引数で指定されたすべての文字列が、分配代入スキーマ（var1:var2::var3 等）
+##   引数で指定されたすべての文字列が、分配代入バインド形式（var1:var2::var3 等）
 ##   として有効な形式であるかを確認する。
 ##   各要素は有効な変数名、またはスキップを意味する空文字列である必要がある。
 ##
 ## 終了ステータス:
 ##    0  すべて有効な形式である (SX_EX_OK)
 ##    1  無効な形式が含まれる
-sx_var_is_schema() {
-	for __sx_var_is_schema_arg in "${@}"; do
-		case "${__sx_var_is_schema_arg}" in
+sx_var_is_bind() {
+	for __sx_var_is_bind_arg_ in "${@}"; do
+		case "${__sx_var_is_bind_arg_}" in
 			*[!_0-9A-Za-z:]* | [0-9]* | *:[0-9]*)
-				unset __sx_var_is_schema_arg
+				unset __sx_var_is_bind_arg_
 				return 1
 				;;
 		esac
 	done
 
-	unset __sx_var_is_schema_arg
+	unset __sx_var_is_bind_arg_
 }
 
 ### sx_var_is_copyable - コピー先が構造を含めて書き込み可能か確認する
