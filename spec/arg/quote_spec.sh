@@ -41,6 +41,55 @@ Describe 'sx_arg_quote'
     When call sx_arg_quote ro_res_quote "a"
     The status should equal 77
   End
+
+  Describe 'Destructuring assignment'
+    It 'performs basic destructuring'
+      When call sx_arg_quote 'a:b:c' val1 val2 val3 val4
+      The status should be success
+      The variable a should equal "val1"
+      The variable b should equal "val2"
+      eval "set -- $c"
+      The value "$1" should equal "val3"
+      The value "$2" should equal "val4"
+      The value "$#" should equal 2
+    End
+
+    It 'supports skips in schema'
+      When call sx_arg_quote 'a::c' val1 val2 val3 val4
+      The status should be success
+      The variable a should equal "val1"
+      eval "set -- $c"
+      The value "$1" should equal "val3"
+      The value "$2" should equal "val4"
+    End
+
+    It 'initializes variables even if arguments are insufficient'
+      a="pre" b="pre" c="pre"
+      When call sx_arg_quote 'a:b:c' val1
+      The status should be success
+      The variable a should equal "val1"
+      The variable b should equal ""
+      The variable c should equal ""
+    End
+
+    It 'discards remaining arguments if schema ends with colon'
+      When call sx_arg_quote 'a:b:' val1 val2 val3
+      The status should be success
+      The variable a should equal "val1"
+      The variable b should equal "val2"
+    End
+
+    It 'cleans up existing array variables when reused'
+      # Correctly initialize an SX array
+      sx_arr_gen myarr
+      sx_arr_push myarr "old"
+      When call sx_arg_quote 'myarr' newval
+      The status should be success
+      The variable myarr should equal "'newval'"
+      The variable myarr_len should be undefined
+      The variable myarr_0 should be undefined
+    End
+  End
 End
 
 Describe 'sx_arg_rquote'
@@ -69,8 +118,31 @@ Describe 'sx_arg_rquote'
   End
 
   It '結果変数が読み取り専用の場合に EX_NOPERM を返すこと'
-    readonly ro_res_rquote="fixed"
-    When call sx_arg_rquote ro_res_rquote "a"
-    The status should equal 77
+  readonly ro_res_rquote="fixed"
+  When call sx_arg_rquote ro_res_rquote "a"
+  The status should equal 77
   End
-End
+
+  Describe 'Destructuring assignment'
+  It 'performs reversed destructuring'
+    When call sx_arg_rquote 'a:b:c' val1 val2 val3 val4
+    The status should be success
+    The variable a should equal "val4"
+    The variable b should equal "val3"
+    eval "set -- $c"
+    The value "$1" should equal "val2"
+    The value "$2" should equal "val1"
+    The value "$#" should equal 2
+  End
+
+  It 'supports skips in reversed schema'
+    When call sx_arg_rquote 'a::c' val1 val2 val3 val4
+    The status should be success
+    The variable a should equal "val4"
+    eval "set -- $c"
+    The value "$1" should equal "val2"
+    The value "$2" should equal "val1"
+  End
+  End
+  End
+

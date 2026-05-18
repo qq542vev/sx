@@ -694,11 +694,12 @@ __sx_arg_len() {
 ### sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する
 ##
 ## 使い方:
-##   sx_arg_quote 結果変数名 [値 ...]
+##   sx_arg_quote スキーマ [値 ...]
 ##
 ## 説明:
 ##   指定された値をそれぞれシングルクォートで囲み（内部のシングルクォートはエスケープ）、
-##   スペース区切りで順方向に結合した文字列を作成して結果変数に格納する。
+##   スペース区切りで順方向に結合した文字列を作成して結果変数（スキーマ）に格納する。
+##   スキーマにコロン (:) を含めることで、引数の分配代入（デストラクチャリング）が可能。
 ##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
 ##
 ## 終了ステータス:
@@ -708,7 +709,7 @@ __sx_arg_len() {
 sx_arg_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	sx_var_is_schema "${1-}" || return "${SX_EX_USAGE}"
 
 	__sx_arg_quote "${@}"
 }
@@ -716,23 +717,62 @@ sx_arg_quote() {
 ### __sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
 ## 使い方:
-##   __sx_arg_quote 結果変数名 [値 ...]
+##   __sx_arg_quote スキーマ [値 ...]
 ##
 ## 説明:
-##   引数チェックを行わずにクォート結合処理を行う。
+##   引数チェックを行わずに分配代入およびクォート結合処理を行う。
 __sx_arg_quote() {
-	__sx_arg_quote_out_=
-	__sx_arg_quote_res_="${1}"
+	__sx_arg_quote_schema_="${1}"
 	shift
 
-	for __sx_arg_quote_arg_ in "${@}"; do
-		__sx_str_sub __sx_arg_quote_esc_ "${__sx_arg_quote_arg_}" "'" "'\\''"
-		__sx_arg_quote_out_="${__sx_arg_quote_out_} '${__sx_arg_quote_esc_}'"
+	# ステップ 1: 初期化と書き込み権限チェック
+	__sx_arg_quote_tmp_schema_="${__sx_arg_quote_schema_}"
+	while :; do
+		__sx_arg_quote_vn_="${__sx_arg_quote_tmp_schema_%%:*}"
+		case "${__sx_arg_quote_vn_}" in
+			"") ;; # スキップ
+			*)
+				__sx_var_is_rw "${__sx_arg_quote_vn_}" || {
+					unset __sx_arg_quote_schema_ __sx_arg_quote_tmp_schema_ __sx_arg_quote_vn_
+					return "${SX_EX_NOPERM}"
+				}
+				__sx_var_unset "${__sx_arg_quote_vn_}"
+				eval "${__sx_arg_quote_vn_}="
+				;;
+		esac
+		case "${__sx_arg_quote_tmp_schema_}" in
+			*:*) __sx_arg_quote_tmp_schema_="${__sx_arg_quote_tmp_schema_#*:}" ;;
+			*) break ;;
+		esac
 	done
 
-	__sx_var_set "${__sx_arg_quote_res_}=${__sx_arg_quote_out_# }"
+	# ステップ 2: 逐次代入（スキーマにコロンが含まれている間）
+	while case "${__sx_arg_quote_schema_}" in *:* ) ;; *) false ;; esac; do
+		__sx_arg_quote_vn_="${__sx_arg_quote_schema_%%:*}"
+		case "${__sx_arg_quote_vn_}" in
+			"") ;; # スキップ
+			*)
+				eval "${__sx_arg_quote_vn_}="'"${1-}"'
+				;;
+		esac
+		__sx_arg_quote_schema_="${__sx_arg_quote_schema_#*:}"
+		if [ "${#}" -gt 0 ]; then shift; fi
+	done
 
-	unset __sx_arg_quote_res_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
+	# ステップ 3: 末尾処理（残りの全引数をクォート結合）
+	case "${__sx_arg_quote_schema_}" in
+		"") ;; # スキップ
+		*)
+			__sx_arg_quote_out_=
+			for __sx_arg_quote_arg_ in "${@}"; do
+				__sx_str_sub __sx_arg_quote_esc_ "${__sx_arg_quote_arg_}" "'" "'\\''"
+				__sx_arg_quote_out_="${__sx_arg_quote_out_} '${__sx_arg_quote_esc_}'"
+			done
+			eval "${__sx_arg_quote_schema_}="'"${__sx_arg_quote_out_# }"'
+			;;
+	esac
+
+	unset __sx_arg_quote_schema_ __sx_arg_quote_tmp_schema_ __sx_arg_quote_vn_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
 }
 
 ### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する
@@ -751,7 +791,7 @@ __sx_arg_quote() {
 sx_arg_rquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	sx_var_is_schema "${1-}" || return "${SX_EX_USAGE}"
 
 	__sx_arg_rquote "${@}"
 }
@@ -759,23 +799,30 @@ sx_arg_rquote() {
 ### __sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
 ## 使い方:
-##   __sx_arg_rquote 結果変数名 [値 ...]
+##   __sx_arg_rquote スキーマ [値 ...]
 ##
 ## 説明:
-##   引数チェックを行わずに逆順クォート結合処理を行う。
+##   引数チェックを行わずに逆順分配代入およびクォート結合処理を行う。
 __sx_arg_rquote() {
-	__sx_arg_rquote_out_=
-	__sx_arg_rquote_res_="${1}"
+	__sx_arg_rquote_schema_="${1}"
 	shift
 
+	# ステップ 1: 引数を逆転させる
+	__sx_arg_rquote_cmd_="set --"
 	for __sx_arg_rquote_arg_ in "${@}"; do
 		__sx_str_sub __sx_arg_rquote_esc_ "${__sx_arg_rquote_arg_}" "'" "'\\''"
-		__sx_arg_rquote_out_=" '${__sx_arg_rquote_esc_}'${__sx_arg_rquote_out_}"
+		__sx_arg_rquote_cmd_="set -- '${__sx_arg_rquote_esc_}' ${__sx_arg_rquote_cmd_#set --}"
 	done
+	eval "${__sx_arg_rquote_cmd_}"
 
-	__sx_var_set "${__sx_arg_rquote_res_}=${__sx_arg_rquote_out_# }"
+	# ステップ 2: 分配代入の実行（__sx_arg_quote のロジックを適用）
+	__sx_arg_quote "${__sx_arg_rquote_schema_}" "${@}"
+	__sx_arg_rquote_status_=$?
 
-	unset __sx_arg_rquote_res_ __sx_arg_rquote_out_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
+	unset __sx_arg_rquote_schema_ __sx_arg_rquote_cmd_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
+	set -- "${__sx_arg_rquote_status_}"
+	unset __sx_arg_rquote_status_
+	return "${1}"
 }
 
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
@@ -1345,6 +1392,32 @@ sx_var_is_chain() {
 	done
 
 	unset __sx_var_is_chain_arg
+}
+
+### sx_var_is_schema - 文字列が分配代入スキーマとして有効か確認する
+##
+## 使い方:
+##   sx_var_is_schema [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   引数で指定されたすべての文字列が、分配代入スキーマ（var1:var2::var3 等）
+##   として有効な形式であるかを確認する。
+##   各要素は有効な変数名、またはスキップを意味する空文字列である必要がある。
+##
+## 終了ステータス:
+##    0  すべて有効な形式である (SX_EX_OK)
+##    1  無効な形式が含まれる
+sx_var_is_schema() {
+	for __sx_var_is_schema_arg in "${@}"; do
+		case "${__sx_var_is_schema_arg}" in
+			*[!_0-9A-Za-z:]* | [0-9]* | *:[0-9]*)
+				unset __sx_var_is_schema_arg
+				return 1
+				;;
+		esac
+	done
+
+	unset __sx_var_is_schema_arg
 }
 
 ### sx_var_is_copyable - コピー先が構造を含めて書き込み可能か確認する
@@ -3072,10 +3145,8 @@ __sx_num_is_sx_nat1() {
 sx_num_is_sx_num() {
 	for __sx_num_is_sx_num_arg in "${@}"; do
 		case "${__sx_num_is_sx_num_arg}" in
-			[+-]0[Xx]* | 0[Xx]* | [+-]0[0-9]* | 0[0-9]*)
-				sx_num_is_sx_int "${__sx_num_is_sx_num_arg}" ;;
-			*)
-				sx_num_is_float "${__sx_num_is_sx_num_arg}" ;;
+			*[Xx]* | [+-]0[0-9]* | 0[0-9]*) sx_num_is_sx_int "${__sx_num_is_sx_num_arg}";;
+			*) sx_num_is_float "${__sx_num_is_sx_num_arg}";;
 		esac || {
 			set -- "${?}"
 			unset __sx_num_is_sx_num_arg
