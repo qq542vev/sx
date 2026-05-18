@@ -3056,6 +3056,35 @@ __sx_num_is_sx_nat1() {
 	__sx_num_is_int_width_core "${SX_CFG_NUM_RANGE}" "${@}" || return
 }
 
+### sx_num_is_sx_num - すべての引数が有効な数値（整数または実数）であるか確認する
+##
+## 使い方:
+##   sx_num_is_sx_num [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   引数が 16進数または 8進数の形式（0x または 0[0-9] で始まる）である場合は
+##   sx_num_is_sx_int で、それ以外の場合は sx_num_is_float で検証を行う。
+##
+## 終了ステータス:
+##    0  すべて有効な数値である (SX_EX_OK)
+##    1  有効な数値ではない値が含まれる
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_is_sx_num() {
+	for __sx_num_is_sx_num_arg in "${@}"; do
+		case "${__sx_num_is_sx_num_arg}" in
+			[+-]0[Xx]* | 0[Xx]* | [+-]0[0-9]* | 0[0-9]*)
+				sx_num_is_sx_int "${__sx_num_is_sx_num_arg}" ;;
+			*)
+				sx_num_is_float "${__sx_num_is_sx_num_arg}" ;;
+		esac || {
+			set -- "${?}"
+			unset __sx_num_is_sx_num_arg
+			return "${1}"
+		}
+	done
+	unset __sx_num_is_sx_num_arg
+}
+
 ### sx_num_ge - 引数が降順（等号を含む）に並んでいるか確認する
 ##
 ## 使い方:
