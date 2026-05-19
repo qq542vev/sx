@@ -709,7 +709,7 @@ __sx_arg_len() {
 sx_arg_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_var_is_bind "${1-}" || return
+	__sx_ex_remap "64:${SX_EX_USAGE}" "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
 	__sx_arg_quote "${@}"
 }
@@ -725,17 +725,13 @@ __sx_arg_quote() {
 	__sx_arg_quote_schema_="${1}"
 	shift
 
-	# ステップ 1: 初期化と書き込み権限チェック
+	# ステップ 1: 初期化
 	__sx_arg_quote_tmp_schema_="${__sx_arg_quote_schema_}"
 	while :; do
 		__sx_arg_quote_vn_="${__sx_arg_quote_tmp_schema_%%:*}"
 		case "${__sx_arg_quote_vn_}" in
 			"") ;; # スキップ
 			*)
-				__sx_var_is_rw "${__sx_arg_quote_vn_}" || {
-					unset __sx_arg_quote_schema_ __sx_arg_quote_tmp_schema_ __sx_arg_quote_vn_
-					return "${SX_EX_NOPERM}"
-				}
 				__sx_var_unset "${__sx_arg_quote_vn_}"
 				eval "${__sx_arg_quote_vn_}="
 				;;
@@ -791,7 +787,7 @@ __sx_arg_quote() {
 sx_arg_rquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_bind_is_rw "${1-}" || return
+	__sx_ex_remap "64:${SX_EX_USAGE}" "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
 	__sx_arg_rquote "${@}"
 }
@@ -1419,10 +1415,10 @@ sx_var_is_bind() {
 	unset __sx_var_is_bind_arg
 }
 
-### sx_var_bind_is_rw - バインド形式が有効であり、かつ全変数が書き込み可能か確認する
+### sx_var_is_bindable - バインド形式が有効であり、かつ全変数が書き込み可能か確認する
 ##
 ## 使い方:
-##   sx_var_bind_is_rw [バインド形式1 [バインド形式2 ...]]
+##   sx_var_is_bindable [バインド形式1 [バインド形式2 ...]]
 ##
 ## 説明:
 ##   指定されたバインド形式が妥当な名前で構成されており、かつ含まれるすべての変数が
@@ -1432,18 +1428,18 @@ sx_var_is_bind() {
 ##    0  成功 (SX_EX_OK)
 ##    1  書き込み不可な変数が含まれる (SX_EX_NOPERM)
 ##   64  バインド形式が不正 (SX_EX_USAGE)
-sx_var_bind_is_rw() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind_is_rw "${@}" || return; return 0;; esac
+sx_var_is_bindable() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_bindable "${@}" || return; return 0;; esac
 
 	sx_var_is_bind "${@}" || return "${SX_EX_USAGE}"
 
-	__sx_var_bind_is_rw "${@}"
+	__sx_var_is_bindable "${@}"
 }
 
-### __sx_var_bind_is_rw - バインド形式に含まれる変数が書き込み可能か確認する（内部用）
+### __sx_var_is_bindable - バインド形式に含まれる変数が書き込み可能か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_var_bind_is_rw バインド形式
+##   __sx_var_is_bindable バインド形式
 ##
 ## 説明:
 ##   コロン区切りのバインド形式を解析し、含まれるすべての変数名に対して
@@ -1452,20 +1448,20 @@ sx_var_bind_is_rw() {
 ## 終了ステータス:
 ##    0  すべて書き込み可能 (SX_EX_OK)
 ##    1  書き込み不可な変数が含まれる
-__sx_var_bind_is_rw() {
-	__sx_var_bind_is_rw_chk_=
+__sx_var_is_bindable() {
+	__sx_var_is_bindable_chk_=
 
-	for __sx_var_bind_is_rw_arg_ in "${@}"; do
+	for __sx_var_is_bindable_arg_ in "${@}"; do
 		while
-			__sx_var_bind_is_rw_chk_="${__sx_var_bind_is_rw_chk_} ${__sx_var_bind_is_rw_arg_%%:*}"
-			M_STR_MATCH([|"${__sx_var_bind_is_rw_arg_}"|], [|*:*|])
+			__sx_var_is_bindable_chk_="${__sx_var_is_bindable_chk_} ${__sx_var_is_bindable_arg_%%:*}"
+			M_STR_MATCH([|"${__sx_var_is_bindable_arg_}"|], [|*:*|])
 		do
-			__sx_var_bind_is_rw_arg_="${__sx_var_bind_is_rw_arg_#*:}"
+			__sx_var_is_bindable_arg_="${__sx_var_is_bindable_arg_#*:}"
 		done
 	done
 
-	eval set -- "${__sx_var_bind_is_rw_chk_}"
-	unset __sx_var_bind_is_rw_chk_ __sx_var_bind_is_rw_arg_
+	eval set -- "${__sx_var_is_bindable_chk_}"
+	unset __sx_var_is_bindable_chk_ __sx_var_is_bindable_arg_
 
 	__sx_var_is_rw_all "${@}" || return
 }
@@ -1488,7 +1484,7 @@ __sx_var_bind_is_rw() {
 sx_var_bind_init() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind_init "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_bind_is_rw "${@}" || return
+	__sx_ex_remap "64:${SX_EX_USAGE}" "1:${SX_EX_NOPERM}" sx_var_is_bindable "${@}" || return
 
 	__sx_var_bind_init "${@}"
 }
