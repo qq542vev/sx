@@ -28,9 +28,9 @@ Describe 'sx_num_is_sx_nat0'
     End
 
     It '設定が不正でも環境チェックをスキップすること'
-      # SX_CFG_NUM_RANGE=9 は sx_cfg_chk では不正とされる
+      # SX_CFG_NUM_RANGE=9 は sx_cfg_is_valid では不正とされる
       SX_CFG_NUM_RANGE=9
-      # 本来なら sx_cfg_chk で 78 (SX_EX_CONFIG) になるが、
+      # 本来なら sx_cfg_is_valid で 78 (SX_EX_CONFIG) になるが、
       # SKIP_CHK=1 なのでそれを飛ばして内部処理に進む。
       When call sx_num_is_sx_nat0 "0"
       The status should not equal 78

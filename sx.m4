@@ -182,10 +182,10 @@ SX_SYS_REV=0
 #  CFG (Configuration)
 # ========================================
 
-### sx_cfg_chk - SX_CFG_* の値が妥当か検査する
+### sx_cfg_is_valid - SX_CFG_* の値が妥当か検査する
 ##
 ## 使い方:
-##   sx_cfg_chk [名前[=値] ...]
+##   sx_cfg_is_valid [名前[=値] ...]
 ##
 ## 説明:
 ##   引数が '名前=値' の形式の場合は、その設定値が妥当か検査する。
@@ -195,48 +195,48 @@ SX_SYS_REV=0
 ## 終了ステータス:
 ##    0  すべて妥当 (SX_EX_OK)
 ##    1  無効な設定項目、または不適切な値が含まれる
-sx_cfg_chk() {
+sx_cfg_is_valid() {
 	if M_STR_EQ([|"${#}"|], [|0|]); then
-		__sx_cfg_chk_out=
+		__sx_cfg_is_valid_out=
 
-		for __sx_cfg_chk_vn in NUM_RANGE SKIP_CHK SIG_BASE SIG_ARR SEP; do
-			__sx_cfg_chk_out="${__sx_cfg_chk_out} ${__sx_cfg_chk_vn}=\"\${SX_CFG_${__sx_cfg_chk_vn}-}\""
+		for __sx_cfg_is_valid_vn in NUM_RANGE SKIP_CHK SIG_BASE SIG_ARR SEP; do
+			__sx_cfg_is_valid_out="${__sx_cfg_is_valid_out} ${__sx_cfg_is_valid_vn}=\"\${SX_CFG_${__sx_cfg_is_valid_vn}-}\""
 		done
 
-		eval set -- "${__sx_cfg_chk_out}"
-		unset __sx_cfg_chk_out __sx_cfg_chk_vn
+		eval set -- "${__sx_cfg_is_valid_out}"
+		unset __sx_cfg_is_valid_out __sx_cfg_is_valid_vn
 
-		sx_cfg_chk "${@}" || return 1
+		sx_cfg_is_valid "${@}" || return 1
 
 		return "${SX_EX_OK}"
 	fi
 
-	for __sx_cfg_chk_arg in "${@}"; do
-		__sx_cfg_chk_vn="${__sx_cfg_chk_arg%%=*}"
-		__sx_cfg_chk_val="${__sx_cfg_chk_arg#*=}"
+	for __sx_cfg_is_valid_arg in "${@}"; do
+		__sx_cfg_is_valid_vn="${__sx_cfg_is_valid_arg%%=*}"
+		__sx_cfg_is_valid_val="${__sx_cfg_is_valid_arg#*=}"
 
-		if M_STR_EQ([|"${__sx_cfg_chk_vn}"|], [|"${__sx_cfg_chk_arg}"|]); then
-			case "${__sx_cfg_chk_vn}" in
+		if M_STR_EQ([|"${__sx_cfg_is_valid_vn}"|], [|"${__sx_cfg_is_valid_arg}"|]); then
+			case "${__sx_cfg_is_valid_vn}" in
 				NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP) continue;;
 				*)
-					unset __sx_cfg_chk_arg __sx_cfg_chk_vn __sx_cfg_chk_val
+					unset __sx_cfg_is_valid_arg __sx_cfg_is_valid_vn __sx_cfg_is_valid_val
 					return 1
 					;;
 			esac
 		fi
 
-		case "${__sx_cfg_chk_vn}" in
-			NUM_RANGE) M_STR_MATCH([|"${__sx_cfg_chk_val}"|], [|32|], [|64|], [|128|]);;
-			SKIP_CHK) M_STR_MATCH([|"${__sx_cfg_chk_val}"|], [|0|], [|1|]);;
-			SEP | SIG_BASE | SIG_ARR) M_STR_NE([|"${__sx_cfg_chk_val}"|], [|''|]);;
+		case "${__sx_cfg_is_valid_vn}" in
+			NUM_RANGE) M_STR_MATCH([|"${__sx_cfg_is_valid_val}"|], [|32|], [|64|], [|128|]);;
+			SKIP_CHK) M_STR_MATCH([|"${__sx_cfg_is_valid_val}"|], [|0|], [|1|]);;
+			SEP | SIG_BASE | SIG_ARR) M_STR_NE([|"${__sx_cfg_is_valid_val}"|], [|''|]);;
 			*) ! :;;
 			esac || {
-				unset __sx_cfg_chk_arg __sx_cfg_chk_vn __sx_cfg_chk_val
+				unset __sx_cfg_is_valid_arg __sx_cfg_is_valid_vn __sx_cfg_is_valid_val
 				return 1
 			}
 	done
 
-	unset __sx_cfg_chk_arg __sx_cfg_chk_vn __sx_cfg_chk_val
+	unset __sx_cfg_is_valid_arg __sx_cfg_is_valid_vn __sx_cfg_is_valid_val
 }
 
 ### sx_cfg_set - SX_CFG_* を設定する
@@ -245,7 +245,7 @@ sx_cfg_chk() {
 ##   sx_cfg_set [名前[=値] ...]
 ##
 ## 説明:
-##   sx_cfg_chk を用いて全引数を検査し、すべて合格した場合のみ値を設定する。
+##   sx_cfg_is_valid を用いて全引数を検査し、すべて合格した場合のみ値を設定する。
 ##   '名前' のみが指定された場合は、その項目をデフォルト値にリセットする。
 ##   SX_CFG_SIG_BASE が変更された場合は、自動的に SX_CFG_SIG_ARR も更新する。
 ##
@@ -257,7 +257,7 @@ sx_cfg_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_cfg_set "${@}" || return; return 0;; esac
 
 	M_STR_NE([|"${#}"|], [|0|]) || return "${SX_EX_OK}"
-	sx_cfg_chk "${@}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_cfg_set_chk=
 
@@ -3129,7 +3129,7 @@ __sx_num_to_fixed() {
 sx_num_is_sx_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sx_int "${@}" || return; return 0;; esac
 
-	sx_cfg_chk "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
 	__sx_num_is_sx_int "${@}" || return
 }
@@ -3157,7 +3157,7 @@ __sx_num_is_sx_int() {
 sx_num_is_sx_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sx_nat0 "${@}" || return; return 0;; esac
 
-	sx_cfg_chk "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
 	__sx_num_is_sx_nat0 "${@}" || return
 }
@@ -3186,7 +3186,7 @@ __sx_num_is_sx_nat0() {
 sx_num_is_sx_nat1() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sx_nat1 "${@}" || return; return 0;; esac
 
-	sx_cfg_chk "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
 	__sx_num_is_sx_nat1 "${@}" || return
 }
