@@ -2090,26 +2090,6 @@ __sx_var_move() {
 	unset __sx_var_move_arg_
 }
 
-### sx_var_rw_chk - 指定された変数名（および配列要素）が書き込み可能か確認する
-##
-## 使い方:
-##   sx_var_rw_chk 名前1 [名前2 ...]
-##
-## 説明:
-##   指定された変数が有効な名前であり、かつすべて書き込み可能かを確認する。
-##   読み取り専用が含まれる場合は SX_EX_NOPERM を返す。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  書き込み不可 (SX_EX_NOPERM)
-sx_var_rw_chk() {
-	sx_var_is_rw_all "${@}" || case "${?}" in
-		1) return "${SX_EX_NOPERM}";;
-		*) return;;
-	esac
-}
-
 ### sx_var_set - 変数に値を設定、または削除する
 ##
 ## 使い方:
