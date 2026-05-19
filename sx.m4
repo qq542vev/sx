@@ -741,6 +741,7 @@ __sx_arg_quote() {
 			*) ! :;;
 		esac || {
 			unset __sx_arg_quote_bind_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
+			return "${SX_EX_OK}"
 		}
 	done
 
@@ -765,7 +766,7 @@ __sx_arg_quote() {
 sx_arg_rquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "64:${SX_EX_USAGE}" "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
 	__sx_arg_rquote "${@}"
 }
@@ -778,25 +779,36 @@ sx_arg_rquote() {
 ## 説明:
 ##   引数チェックを行わずに逆順分配代入およびクォート結合処理を行う。
 __sx_arg_rquote() {
-	__sx_arg_rquote_schema_="${1}"
+	__sx_var_bind_init "${1}"
+	__sx_arg_rquote_bind_="${1}"
+	__sx_arg_rquote_out_=
 	shift
+	__sx_arg_rquote_i_="${#}"
 
-	# ステップ 1: 引数を逆転させる
-	__sx_arg_rquote_cmd_="set --"
-	for __sx_arg_rquote_arg_ in "${@}"; do
-		__sx_str_sub __sx_arg_rquote_esc_ "${__sx_arg_rquote_arg_}" "'" "'\\''"
-		__sx_arg_rquote_cmd_="set -- '${__sx_arg_rquote_esc_}' ${__sx_arg_rquote_cmd_#set --}"
+	while M_NUM_LT([|0|], [|__sx_arg_rquote_i_|]); do
+		eval "__sx_arg_rquote_arg_=\"\${${__sx_arg_rquote_i_}}\""
+
+		case "${__sx_arg_rquote_bind_}" in
+			:*) __sx_arg_rquote_bind_="${__sx_arg_rquote_bind_#:}";;
+			*:*)
+				eval "${__sx_arg_rquote_bind_%%:*}=\"\${__sx_arg_rquote_arg_}\""
+				__sx_arg_rquote_bind_="${__sx_arg_rquote_bind_#*:}"
+				;;
+			?*)
+				__sx_str_sub __sx_arg_rquote_esc_ "${__sx_arg_rquote_arg_}" "'" "'\\''"
+				__sx_arg_rquote_out_="${__sx_arg_rquote_out_}${__sx_arg_rquote_out_:+ }'${__sx_arg_rquote_esc_}'"
+				;;
+			*) ! :;;
+		esac || {
+			unset __sx_arg_rquote_bind_ __sx_arg_rquote_out_ __sx_arg_rquote_i_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
+			return "${SX_EX_OK}"
+		}
+
+		__sx_arg_rquote_i_=$((__sx_arg_rquote_i_ - 1))
 	done
-	eval "${__sx_arg_rquote_cmd_}"
 
-	# ステップ 2: 分配代入の実行（__sx_arg_quote のロジックを適用）
-	__sx_arg_quote "${__sx_arg_rquote_schema_}" "${@}"
-	__sx_arg_rquote_status_=$?
-
-	unset __sx_arg_rquote_schema_ __sx_arg_rquote_cmd_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
-	set -- "${__sx_arg_rquote_status_}"
-	unset __sx_arg_rquote_status_
-	return "${1}"
+	eval ${__sx_arg_rquote_out_:+"${__sx_arg_rquote_bind_}=\"\${__sx_arg_rquote_out_}\""}
+	unset __sx_arg_rquote_bind_ __sx_arg_rquote_out_ __sx_arg_rquote_i_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
 }
 
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
