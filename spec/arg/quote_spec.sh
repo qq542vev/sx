@@ -68,7 +68,7 @@ Describe 'sx_arg_quote'
       When call sx_arg_quote 'a:b:c' val1
       The status should be success
       The variable a should equal "val1"
-      The variable b should equal ""
+      The variable b should be undefined
       The variable c should equal ""
     End
 

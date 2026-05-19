@@ -709,7 +709,7 @@ __sx_arg_len() {
 sx_arg_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "64:${SX_EX_USAGE}" "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
 	__sx_arg_quote "${@}"
 }
@@ -722,53 +722,31 @@ sx_arg_quote() {
 ## 説明:
 ##   引数チェックを行わずに分配代入およびクォート結合処理を行う。
 __sx_arg_quote() {
-	__sx_arg_quote_schema_="${1}"
+	__sx_var_bind_init "${1}"
+	__sx_arg_quote_bind_="${1}"
+	__sx_arg_quote_out_=
 	shift
 
-	# ステップ 1: 初期化
-	__sx_arg_quote_tmp_schema_="${__sx_arg_quote_schema_}"
-	while :; do
-		__sx_arg_quote_vn_="${__sx_arg_quote_tmp_schema_%%:*}"
-		case "${__sx_arg_quote_vn_}" in
-			"") ;; # スキップ
-			*)
-				__sx_var_unset "${__sx_arg_quote_vn_}"
-				eval "${__sx_arg_quote_vn_}="
+	for __sx_arg_quote_arg_ in "${@}"; do
+		case "${__sx_arg_quote_bind_}" in
+			:*) __sx_arg_quote_bind_="${__sx_arg_quote_bind_#:}";;
+			*:*)
+				eval "${__sx_arg_quote_bind_%%:*}=\"\${__sx_arg_quote_arg_}\""
+				__sx_arg_quote_bind_="${__sx_arg_quote_bind_#*:}"
 				;;
-		esac
-		case "${__sx_arg_quote_tmp_schema_}" in
-			*:*) __sx_arg_quote_tmp_schema_="${__sx_arg_quote_tmp_schema_#*:}" ;;
-			*) break ;;
-		esac
-	done
-
-	# ステップ 2: 逐次代入（スキーマにコロンが含まれている間）
-	while case "${__sx_arg_quote_schema_}" in *:* ) ;; *) false ;; esac; do
-		__sx_arg_quote_vn_="${__sx_arg_quote_schema_%%:*}"
-		case "${__sx_arg_quote_vn_}" in
-			"") ;; # スキップ
-			*)
-				eval "${__sx_arg_quote_vn_}="'"${1-}"'
-				;;
-		esac
-		__sx_arg_quote_schema_="${__sx_arg_quote_schema_#*:}"
-		if [ "${#}" -gt 0 ]; then shift; fi
-	done
-
-	# ステップ 3: 末尾処理（残りの全引数をクォート結合）
-	case "${__sx_arg_quote_schema_}" in
-		"") ;; # スキップ
-		*)
-			__sx_arg_quote_out_=
-			for __sx_arg_quote_arg_ in "${@}"; do
+			?*)
 				__sx_str_sub __sx_arg_quote_esc_ "${__sx_arg_quote_arg_}" "'" "'\\''"
-				__sx_arg_quote_out_="${__sx_arg_quote_out_} '${__sx_arg_quote_esc_}'"
-			done
-			eval "${__sx_arg_quote_schema_}="'"${__sx_arg_quote_out_# }"'
-			;;
-	esac
+				__sx_arg_quote_out_="${__sx_arg_quote_out_}${__sx_arg_quote_out_:+ }'${__sx_arg_quote_esc_}'"
+				;;
+			*) ! :;;
+		esac || {
+			unset __sx_arg_quote_bind_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
+		}
+	done
 
-	unset __sx_arg_quote_schema_ __sx_arg_quote_tmp_schema_ __sx_arg_quote_vn_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
+	eval ${__sx_arg_quote_out_:+"${__sx_arg_quote_bind_}=\"\${__sx_arg_quote_out_}\""}
+
+	unset __sx_arg_quote_bind_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
 }
 
 ### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する
