@@ -18,6 +18,15 @@ Describe 'sx_arg_rquote'
     The variable res3 should equal "first"
   End
 
+  It '単一の引数を処理できること'
+    When call sx_arg_rquote reversed_args "only"
+    The status should be success
+    eval "set -- $reversed_args"
+    res1=$1 res_cnt=$#
+    The variable res1 should equal "only"
+    The variable res_cnt should equal 1
+  End
+
   It '特殊文字を含む引数を逆順で安全に保持できること'
     set -- "hello world" "it's me" 'back\slash' '"double quotes"'
     When call sx_arg_rquote reversed_args "$@"
@@ -52,5 +61,27 @@ Describe 'sx_arg_rquote'
     readonly ro_res_rquote="fixed"
     When call sx_arg_rquote ro_res_rquote "a"
     The status should equal 77
+  End
+
+  Describe 'Destructuring assignment'
+    It 'performs reversed destructuring'
+      When call sx_arg_rquote 'a:b:c' val1 val2 val3 val4
+      The status should be success
+      The variable a should equal "val4"
+      The variable b should equal "val3"
+      eval "set -- $c"
+      The value "$1" should equal "val2"
+      The value "$2" should equal "val1"
+      The value "$#" should equal 2
+    End
+
+    It 'supports skips in reversed schema'
+      When call sx_arg_rquote 'a::c' val1 val2 val3 val4
+      The status should be success
+      The variable a should equal "val4"
+      eval "set -- $c"
+      The value "$1" should equal "val2"
+      The value "$2" should equal "val1"
+    End
   End
 End
