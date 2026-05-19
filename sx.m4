@@ -633,7 +633,7 @@ sx_util_eval() {
 sx_arg_join() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_join "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	__sx_arg_join "${@}"
 }
@@ -675,7 +675,7 @@ __sx_arg_join() {
 sx_arg_len() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_len "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	__sx_arg_len "${@}"
 }
@@ -848,7 +848,7 @@ __sx_arg_rquote() {
 sx_arg_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_isep "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]) || M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
 		:
@@ -858,7 +858,7 @@ sx_arg_isep() {
 		__sx_arg_isep_int="${3-1}"; __sx_arg_isep_lim="${4-${SX_NUM_I32_MAX}}"
 	fi
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
 		set -- "${?}"
 		unset __sx_arg_isep_int __sx_arg_isep_lim
 		return "${1}"
@@ -1009,7 +1009,7 @@ __sx_arg_isep() {
 sx_arg_find() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_find "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]) || M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
 		:
@@ -2048,10 +2048,7 @@ __sx_var_list_set() {
 sx_var_move() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_move "${@}" || return; return 0;; esac
 
-	sx_var_is_copyable "${@}" || case "${?}" in
-		1) return "${SX_EX_NOPERM}";;
-		*) return;;
-	esac
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_copyable "${@}" || return
 
 	__sx_var_move_chk=
 	for __sx_var_move_arg in "${@}"; do
@@ -2061,10 +2058,9 @@ sx_var_move() {
 		esac
 	done
 
-	eval sx_var_rw_chk "${__sx_var_move_chk}" || {
-		set -- "${?}"
+	eval __sx_var_is_rw_all "${__sx_var_move_chk}" || {
 		unset __sx_var_move_chk __sx_var_move_arg
-		return "${1}"
+		return "${SX_EX_NOPERM}"
 	}
 
 	__sx_var_copy "${@}"
@@ -2255,7 +2251,7 @@ __sx_var_swap() {
 sx_var_touch() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_touch "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${@}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${@}" || return
 
 	__sx_var_touch "${@}"
 }
@@ -2297,7 +2293,7 @@ sx_var_unset() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unset "${@}" || return; return 0;; esac
 
 	# リストの内容（変数名）がすべて書き込み可能か一括チェック
-	sx_var_rw_chk "${@}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${@}" || return
 
 	__sx_var_unset "${@}"
 }
@@ -3486,8 +3482,7 @@ __sx_num_rel() {
 sx_num_range() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_range "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${2-}" ${3+"${3}"} ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${2-}" ${3+"${3}"} ${4+"${4}"} || return
 
 	if M_NUM_EQ([|${4-1}|], [|0|]); then
 		return "${SX_EX_USAGE}"
@@ -3612,8 +3607,7 @@ sx_str_any() {
 sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${4+"${4}"} || return
 	! M_NUM_EQ(${3-1}, 0) || return "${SX_EX_USAGE}"
 
 	__sx_str_chunk "${@}"
@@ -3720,7 +3714,7 @@ sx_str_eq() {
 sx_str_etrim() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_etrim "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	__sx_str_etrim "${@}"
 }
@@ -3919,8 +3913,7 @@ sx_str_match() {
 sx_str_rep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3+"${3}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3+"${3}"} || return
 
 	__sx_str_rep "${@}"
 }
@@ -3970,8 +3963,7 @@ __sx_str_rep() {
 sx_str_pad() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_pad "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} || return
 
 	__sx_str_pad "${@}"
 }
@@ -4026,8 +4018,7 @@ __sx_str_pad() {
 sx_str_center() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_center "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} || return
 
 	__sx_str_center "${@}"
 }
@@ -4081,8 +4072,7 @@ __sx_str_center() {
 sx_str_split() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${4+"${4}"} ${5+"${5}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${4+"${4}"} ${5+"${5}"} || return
 
 	__sx_str_split "${@}"
 }
@@ -4251,7 +4241,7 @@ __sx_str_split() {
 sx_str_split_ifs() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split_ifs "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	__sx_str_split_ifs "${@}" || return
 }
@@ -4301,8 +4291,7 @@ __sx_str_split_ifs() {
 sx_str_sub() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${5+"${5}"} ${6+"${6}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${5+"${5}"} ${6+"${6}"} || return
 
 	__sx_str_sub "${@}"
 }
@@ -4440,9 +4429,7 @@ __sx_str_sub() {
 sx_str_substr() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_substr "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
-
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} ${4+"${4}"} || return
 
 	__sx_str_substr "${@}"
 }
@@ -4464,9 +4451,7 @@ sx_str_substr() {
 sx_str_splice() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_splice "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
-
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} ${4+"${4}"} || return
 
 	__sx_str_splice "${@}"
 }
@@ -4579,7 +4564,7 @@ undefine([|V|]) dnl
 sx_str_strim() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_strim "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	__sx_str_strim "${@}"
 }
@@ -4650,7 +4635,7 @@ sx_str_sw() {
 sx_str_trim() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_trim "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	__sx_str_trim "${@}"
 }
@@ -5116,7 +5101,7 @@ __sx_arr_push() {
 sx_arr_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_quote "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	__sx_arr_quote_res="${1}"
 	shift
@@ -5176,7 +5161,8 @@ __sx_arr_quote() {
 sx_arr_rquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_rquote "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
 	__sx_arr_rquote_res="${1}"
 	shift
 	sx_var_is_arr "${@}" || {
