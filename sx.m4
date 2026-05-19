@@ -548,7 +548,7 @@ __sx_ex_remap() {
 		esac
 	done
 
-	sx_arg_quote __sx_ex_remap_cmd_ "${@}"
+	__sx_arg_quote __sx_ex_remap_cmd_ "${@}"
 	set -- "${__sx_ex_remap_map_}" "${__sx_ex_remap_cmd_}"
 	unset __sx_ex_remap_map_ __sx_ex_remap_cmd_
 
@@ -709,7 +709,7 @@ __sx_arg_len() {
 sx_arg_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
 
-	sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_var_is_bind "${1-}" || return
 
 	__sx_arg_quote "${@}"
 }
@@ -791,7 +791,7 @@ __sx_arg_quote() {
 sx_arg_rquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
 
-	sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_bind_is_rw "${1-}" || return
 
 	__sx_arg_rquote "${@}"
 }
@@ -858,7 +858,7 @@ sx_arg_isep() {
 		__sx_arg_isep_int="${3-1}"; __sx_arg_isep_lim="${4-${SX_NUM_I32_MAX}}"
 	fi
 
-	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
 		set -- "${?}"
 		unset __sx_arg_isep_int __sx_arg_isep_lim
 		return "${1}"
@@ -1021,7 +1021,7 @@ sx_arg_find() {
 		__sx_arg_find_lim="${3-1}"; __sx_arg_find_flg="${4-0}"
 	fi
 
-	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_find_lim+"${__sx_arg_find_lim}"} ${__sx_arg_find_flg+"${__sx_arg_find_flg}"} || {
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_find_lim+"${__sx_arg_find_lim}"} ${__sx_arg_find_flg+"${__sx_arg_find_flg}"} || {
 		set -- "${?}"
 		unset __sx_arg_find_lim __sx_arg_find_flg
 		return "${1}"
@@ -1137,8 +1137,7 @@ __sx_arg_find() {
 sx_arg_range() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_range "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1}" || return
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${2-}" ${3+"${3}"} ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${2-}" ${3+"${3}"} ${4+"${4}"} || return
 
 	if M_NUM_EQ([|${4-1}|], [|0|]); then
 		return "${SX_EX_USAGE}"
@@ -1291,8 +1290,8 @@ __sx_var_copy() {
 sx_var_dump() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_dump "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_rw_all "${1}" || return "${SX_EX_NOPERM}"
 
 	__sx_var_dump "${@}"
 }
@@ -1408,16 +1407,115 @@ sx_var_is_chain() {
 ##    0  すべて有効な形式である (SX_EX_OK)
 ##    1  無効な形式が含まれる
 sx_var_is_bind() {
-	for __sx_var_is_bind_arg_ in "${@}"; do
-		case "${__sx_var_is_bind_arg_}" in
+	for __sx_var_is_bind_arg in "${@}"; do
+		case "${__sx_var_is_bind_arg}" in
 			*[!_0-9A-Za-z:]* | [0-9]* | *:[0-9]*)
-				unset __sx_var_is_bind_arg_
+				unset __sx_var_is_bind_arg
 				return 1
 				;;
 		esac
 	done
 
-	unset __sx_var_is_bind_arg_
+	unset __sx_var_is_bind_arg
+}
+
+### sx_var_bind_is_rw - バインド形式が有効であり、かつ全変数が書き込み可能か確認する
+##
+## 使い方:
+##   sx_var_bind_is_rw [バインド形式1 [バインド形式2 ...]]
+##
+## 説明:
+##   指定されたバインド形式が妥当な名前で構成されており、かつ含まれるすべての変数が
+##   書き込み可能（読み取り専用でない）であることを確認する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##    1  書き込み不可な変数が含まれる (SX_EX_NOPERM)
+##   64  バインド形式が不正 (SX_EX_USAGE)
+sx_var_bind_is_rw() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind_is_rw "${@}" || return; return 0;; esac
+
+	sx_var_is_bind "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_var_bind_is_rw "${@}"
+}
+
+### __sx_var_bind_is_rw - バインド形式に含まれる変数が書き込み可能か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_bind_is_rw バインド形式
+##
+## 説明:
+##   コロン区切りのバインド形式を解析し、含まれるすべての変数名に対して
+##   一括で書き込み権限を確認する。
+##
+## 終了ステータス:
+##    0  すべて書き込み可能 (SX_EX_OK)
+##    1  書き込み不可な変数が含まれる
+__sx_var_bind_is_rw() {
+	__sx_var_bind_is_rw_chk_=
+
+	for __sx_var_bind_is_rw_arg_ in "${@}"; do
+		while
+			__sx_var_bind_is_rw_chk_="${__sx_var_bind_is_rw_chk_} ${__sx_var_bind_is_rw_arg_%%:*}"
+			M_STR_MATCH([|"${__sx_var_bind_is_rw_arg_}"|], [|*:*|])
+		do
+			__sx_var_bind_is_rw_arg_="${__sx_var_bind_is_rw_arg_#*:}"
+		done
+	done
+
+	eval set -- "${__sx_var_bind_is_rw_chk_}"
+	unset __sx_var_bind_is_rw_chk_ __sx_var_bind_is_rw_arg_
+
+	__sx_var_is_rw_all "${@}" || return
+}
+
+### sx_var_bind_init - バインド形式に基づき変数を初期化する
+##
+## 使い方:
+##   sx_var_bind_init [バインド形式1 [バインド形式2 ...]]
+##
+## 説明:
+##   指定されたバインド形式に従って、変数を初期化する。
+##   最後のコロン（:）より前の変数は関連要素を含めて削除（unset）され、
+##   最後の変数は空文字列（""）で初期化される。
+##   これにより、前の変数が「省略された」ことを sx_var_is_set で判定できる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  バインド形式が不正 (SX_EX_USAGE)
+##   77  書き込み不可な変数が含まれる (SX_EX_NOPERM)
+sx_var_bind_init() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind_init "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_bind_is_rw "${@}" || return
+
+	__sx_var_bind_init "${@}"
+}
+
+### __sx_var_bind_init - バインド形式に基づき変数を初期化する（内部用）
+##
+## 使い方:
+##   __sx_var_bind_init [バインド形式1 [バインド形式2 ...]]
+##
+## 説明:
+##   sx_var_bind_init の内部実装。
+##   引数チェックは行わない。
+__sx_var_bind_init() {
+	for __sx_var_bind_init_arg_ in "${@}"; do
+		__sx_var_bind_init_ls_=
+
+	while M_STR_MATCH([|"${__sx_var_bind_init_arg_}"|], [|*:*|]); do
+			__sx_var_bind_init_ls_="${__sx_var_bind_init_ls_} ${__sx_var_bind_init_arg_%%:*}"
+			__sx_var_bind_init_arg_="${__sx_var_bind_init_arg_#*:}"
+		done
+
+		eval __sx_var_unset "${__sx_var_bind_init_ls_}"
+
+		__sx_var_set ${__sx_var_bind_init_arg_:+"${__sx_var_bind_init_arg_}="}
+	done
+
+	unset __sx_var_bind_init_arg_ __sx_var_bind_init_ls_
 }
 
 ### sx_var_is_copyable - コピー先が構造を含めて書き込み可能か確認する
@@ -1704,8 +1802,8 @@ __sx_var_is_rw_all() {
 sx_var_list_dep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_dep "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_rw_all "${1}" || return "${SX_EX_NOPERM}"
 
 	__sx_var_list_dep "${@}"
 }
@@ -1729,7 +1827,7 @@ sx_var_list_dep() {
 sx_var_list_copy() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_copy "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 	sx_var_is_chain "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_var_list_copy "${@}"
@@ -1837,7 +1935,7 @@ __sx_var_list_dep() {
 sx_var_list_ro() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_ro "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" IFS || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" IFS || return
 
 	__sx_var_list_ro "${@}"
 }
@@ -1891,7 +1989,7 @@ __sx_var_list_ro() {
 sx_var_list_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_set "${@}" || return; return 0;; esac
 
-	sx_var_rw_chk "${1-}" IFS || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" IFS || return
 
 	__sx_var_list_set "${@}"
 }
@@ -3515,7 +3613,7 @@ sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
 	sx_var_rw_chk "${1-}" || return
-	sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} && sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${4+"${4}"} || return
 	! M_NUM_EQ(${3-1}, 0) || return "${SX_EX_USAGE}"
 
 	__sx_str_chunk "${@}"
