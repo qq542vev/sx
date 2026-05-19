@@ -63,8 +63,8 @@ Describe 'sx_arg_rquote'
     The status should equal 77
   End
 
-  Describe 'Destructuring assignment'
-    It 'performs reversed destructuring'
+  Describe '分割代入'
+    It '逆順での分割代入を実行すること'
       When call sx_arg_rquote 'a:b:c' val1 val2 val3 val4
       The status should be success
       The variable a should equal "val4"
@@ -75,7 +75,7 @@ Describe 'sx_arg_rquote'
       The value "$#" should equal 2
     End
 
-    It 'supports skips in reversed schema'
+    It '逆順スキーマ内でのスキップをサポートすること'
       When call sx_arg_rquote 'a::c' val1 val2 val3 val4
       The status should be success
       The variable a should equal "val4"

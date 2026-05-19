@@ -42,8 +42,8 @@ Describe 'sx_arg_quote'
     The status should equal 77
   End
 
-  Describe 'Destructuring assignment'
-    It 'performs basic destructuring'
+  Describe '分割代入'
+    It '基本的な分割代入を実行すること'
       When call sx_arg_quote 'a:b:c' val1 val2 val3 val4
       The status should be success
       The variable a should equal "val1"
@@ -54,7 +54,7 @@ Describe 'sx_arg_quote'
       The value "$#" should equal 2
     End
 
-    It 'supports skips in schema'
+    It 'スキーマ内でのスキップをサポートすること'
       When call sx_arg_quote 'a::c' val1 val2 val3 val4
       The status should be success
       The variable a should equal "val1"
@@ -63,7 +63,7 @@ Describe 'sx_arg_quote'
       The value "$2" should equal "val4"
     End
 
-    It 'initializes variables even if arguments are insufficient'
+    It '引数が不足している場合でも変数を初期化すること'
       a="pre" b="pre" c="pre"
       When call sx_arg_quote 'a:b:c' val1
       The status should be success
@@ -72,14 +72,14 @@ Describe 'sx_arg_quote'
       The variable c should equal ""
     End
 
-    It 'discards remaining arguments if schema ends with colon'
+    It 'スキーマがコロンで終わる場合に残りの引数を破棄すること'
       When call sx_arg_quote 'a:b:' val1 val2 val3
       The status should be success
       The variable a should equal "val1"
       The variable b should equal "val2"
     End
 
-    It 'cleans up existing array variables when reused'
+    It '再利用時に既存の配列変数をクリーンアップすること'
       # Correctly initialize an SX array
       sx_arr_gen myarr
       sx_arr_push myarr "old"
