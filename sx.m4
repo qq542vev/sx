@@ -30,22 +30,21 @@ define([|M_NUM_LT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<, $@)))|], 0)|]) dnl
 define([|M_NUM_NE|], [|M_STR_EQ([|$((__M_NUM_CMP_CHAIN(==, $@)))|], 0)|]) dnl
 
 define([|__M_QUOTE_APPEND|], [|dnl
-				case "${$2}" in
-					*"'"*) __sx_str_sub $1_esc_ "${$2}" "'" "'\\''";;
-					*) $1_esc_="${$2}";;
+				case $2 in
+					*"'"*) __sx_str_sub $1_esc_ $2 "'" "'\\''" ;;
+					*) $1_esc_=$2 ;;
 				esac
-
 				$1_out_="${$1_out_}${$1_out_:+ }'${$1_esc_}'"|])
 
 define([|__M_ARG_BIND_QUOTE_BODY|], [|dnl
 		case "${$1_bind_}" in
 			:*) $1_bind_="${$1_bind_#:}";;
 			*:*)
-				eval "${$1_bind_%%:*}=\"\${$1_val_}\""
+				eval "${$1_bind_%%:*}=patsubst([|$2|], [|[\\"`]|], [|\\\&|])"
 				$1_bind_="${$1_bind_#*:}"
 				;;
 			?*)
-				__M_QUOTE_APPEND([|$1|], [|$1_val_|])
+				__M_QUOTE_APPEND([|$1|], [|$2|])
 				;;
 			*) ! :;;
 		esac|])
@@ -749,7 +748,7 @@ __sx_arg_quote() {
 	shift
 
 	for __sx_arg_quote_val_ in "${@}"; do
-		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_quote|]) || {
+		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_quote|], [|"${__sx_arg_quote_val_}"|]) || {
 			unset __sx_arg_quote_bind_ __sx_arg_quote_out_ __sx_arg_quote_val_ __sx_arg_quote_esc_
 			return "${SX_EX_OK}"
 		}
@@ -798,7 +797,7 @@ __sx_arg_rquote() {
 	while M_NUM_LT([|0|], [|__sx_arg_rquote_i_|]); do
 		eval "__sx_arg_rquote_val_=\"\${${__sx_arg_rquote_i_}}\""
 
-		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_rquote|]) || {
+		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_rquote|], [|"${__sx_arg_rquote_val_}"|]) || {
 			unset __sx_arg_rquote_bind_ __sx_arg_rquote_out_ __sx_arg_rquote_i_ __sx_arg_rquote_val_ __sx_arg_rquote_esc_
 			return "${SX_EX_OK}"
 		}
