@@ -29,6 +29,27 @@ define([|M_NUM_LE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<=, $@)))|], 0)|]) dnl
 define([|M_NUM_LT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<, $@)))|], 0)|]) dnl
 define([|M_NUM_NE|], [|M_STR_EQ([|$((__M_NUM_CMP_CHAIN(==, $@)))|], 0)|]) dnl
 
+define([|__M_QUOTE_APPEND|], [|dnl
+				case "${$2}" in
+					*"'"*) __sx_str_sub $1_esc_ "${$2}" "'" "'\\''";;
+					*) $1_esc_="${$2}";;
+				esac
+
+				$1_out_="${$1_out_}${$1_out_:+ }'${$1_esc_}'"|])
+
+define([|__M_ARG_BIND_QUOTE_BODY|], [|dnl
+		case "${$1_bind_}" in
+			:*) $1_bind_="${$1_bind_#:}";;
+			*:*)
+				eval "${$1_bind_%%:*}=\"\${$1_val_}\""
+				$1_bind_="${$1_bind_#*:}"
+				;;
+			?*)
+				__M_QUOTE_APPEND([|$1|], [|$1_val_|])
+				;;
+			*) ! :;;
+		esac|])
+
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
 readonly SX_EX_USAGE=64
@@ -727,27 +748,16 @@ __sx_arg_quote() {
 	__sx_arg_quote_out_=
 	shift
 
-	for __sx_arg_quote_arg_ in "${@}"; do
-		case "${__sx_arg_quote_bind_}" in
-			:*) __sx_arg_quote_bind_="${__sx_arg_quote_bind_#:}";;
-			*:*)
-				eval "${__sx_arg_quote_bind_%%:*}=\"\${__sx_arg_quote_arg_}\""
-				__sx_arg_quote_bind_="${__sx_arg_quote_bind_#*:}"
-				;;
-			?*)
-				__sx_str_sub __sx_arg_quote_esc_ "${__sx_arg_quote_arg_}" "'" "'\\''"
-				__sx_arg_quote_out_="${__sx_arg_quote_out_}${__sx_arg_quote_out_:+ }'${__sx_arg_quote_esc_}'"
-				;;
-			*) ! :;;
-		esac || {
-			unset __sx_arg_quote_bind_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
+	for __sx_arg_quote_val_ in "${@}"; do
+		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_quote|]) || {
+			unset __sx_arg_quote_bind_ __sx_arg_quote_out_ __sx_arg_quote_val_ __sx_arg_quote_esc_
 			return "${SX_EX_OK}"
 		}
 	done
 
 	eval ${__sx_arg_quote_out_:+"${__sx_arg_quote_bind_}=\"\${__sx_arg_quote_out_}\""}
 
-	unset __sx_arg_quote_bind_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_esc_
+	unset __sx_arg_quote_bind_ __sx_arg_quote_out_ __sx_arg_quote_val_ __sx_arg_quote_esc_
 }
 
 ### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する
@@ -786,21 +796,10 @@ __sx_arg_rquote() {
 	__sx_arg_rquote_i_="${#}"
 
 	while M_NUM_LT([|0|], [|__sx_arg_rquote_i_|]); do
-		eval "__sx_arg_rquote_arg_=\"\${${__sx_arg_rquote_i_}}\""
+		eval "__sx_arg_rquote_val_=\"\${${__sx_arg_rquote_i_}}\""
 
-		case "${__sx_arg_rquote_bind_}" in
-			:*) __sx_arg_rquote_bind_="${__sx_arg_rquote_bind_#:}";;
-			*:*)
-				eval "${__sx_arg_rquote_bind_%%:*}=\"\${__sx_arg_rquote_arg_}\""
-				__sx_arg_rquote_bind_="${__sx_arg_rquote_bind_#*:}"
-				;;
-			?*)
-				__sx_str_sub __sx_arg_rquote_esc_ "${__sx_arg_rquote_arg_}" "'" "'\\''"
-				__sx_arg_rquote_out_="${__sx_arg_rquote_out_}${__sx_arg_rquote_out_:+ }'${__sx_arg_rquote_esc_}'"
-				;;
-			*) ! :;;
-		esac || {
-			unset __sx_arg_rquote_bind_ __sx_arg_rquote_out_ __sx_arg_rquote_i_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
+		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_rquote|]) || {
+			unset __sx_arg_rquote_bind_ __sx_arg_rquote_out_ __sx_arg_rquote_i_ __sx_arg_rquote_val_ __sx_arg_rquote_esc_
 			return "${SX_EX_OK}"
 		}
 
@@ -808,7 +807,7 @@ __sx_arg_rquote() {
 	done
 
 	eval ${__sx_arg_rquote_out_:+"${__sx_arg_rquote_bind_}=\"\${__sx_arg_rquote_out_}\""}
-	unset __sx_arg_rquote_bind_ __sx_arg_rquote_out_ __sx_arg_rquote_i_ __sx_arg_rquote_arg_ __sx_arg_rquote_esc_
+	unset __sx_arg_rquote_bind_ __sx_arg_rquote_out_ __sx_arg_rquote_i_ __sx_arg_rquote_val_ __sx_arg_rquote_esc_
 }
 
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
