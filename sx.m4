@@ -322,7 +322,7 @@ __sx_cfg_set() {
 
 		case "${__sx_cfg_set_vn_}" in SIG_BASE)
 			SX_CFG_SIG_ARR="array-${SX_CFG_SIG_BASE}"
-		;; esac
+		esac
 	done
 
 	unset __sx_cfg_set_arg_ __sx_cfg_set_vn_
@@ -410,7 +410,7 @@ sx_ex_map() {
 			}
 
 			__sx_ex_map_chk="${__sx_ex_map_chk} ${__sx_ex_map_vn}"
-		;; esac
+		esac
 	done
 
 	eval sx_var_is_rw_all "${__sx_ex_map_chk}" || {
@@ -439,7 +439,7 @@ __sx_ex_map() {
 		case "${__sx_ex_map_in_}" in *[!0-9A-Z]*)
 			unset __sx_ex_map_out_ __sx_ex_map_arg_ __sx_ex_map_in_ __sx_ex_map_val_
 			return 1
-		;; esac
+		esac
 
 		__sx_ex_map_val_=" ${SX_EX_MAP} "
 		case " ${__sx_ex_map_val_} " in
@@ -459,7 +459,7 @@ __sx_ex_map() {
 
 		case "${__sx_ex_map_arg_}" in *?=*)
 			__sx_ex_map_out_="${__sx_ex_map_out_} ${__sx_ex_map_arg_%%=*}=${__sx_ex_map_val_}"
-		;; esac
+		esac
 	done
 
 	eval __sx_var_set "${__sx_ex_map_out_}"
@@ -616,7 +616,7 @@ __sx_ex_remap() {
 
 	case "${__sx_ex_remap_sts_}" in [A-Z]*)
 		__sx_ex_map "__sx_ex_remap_sts_=${__sx_ex_remap_sts_}"
-	;; esac
+	esac
 
 	set -- "${__sx_ex_remap_sts_}"
 	unset __sx_ex_remap_sts_ __sx_ex_remap_map_ __sx_ex_remap_n_
@@ -1447,7 +1447,7 @@ __sx_var_is_bindable() {
 	for __sx_var_is_bindable_arg_ in "${@}"; do
 		while
 			__sx_var_is_bindable_chk_="${__sx_var_is_bindable_chk_} ${__sx_var_is_bindable_arg_%%:*}"
-			M_STR_MATCH([|"${__sx_var_is_bindable_arg_}"|], [|*:*|])
+			M_STR_HAS([|"${__sx_var_is_bindable_arg_}"|], [|:|])
 		do
 			__sx_var_is_bindable_arg_="${__sx_var_is_bindable_arg_#*:}"
 		done
@@ -1494,7 +1494,7 @@ __sx_var_bind_init() {
 	for __sx_var_bind_init_arg_ in "${@}"; do
 		__sx_var_bind_init_ls_=
 
-	while M_STR_MATCH([|"${__sx_var_bind_init_arg_}"|], [|*:*|]); do
+	while M_STR_HAS([|"${__sx_var_bind_init_arg_}"|], [|:|]); do
 			__sx_var_bind_init_ls_="${__sx_var_bind_init_ls_} ${__sx_var_bind_init_arg_%%:*}"
 			__sx_var_bind_init_arg_="${__sx_var_bind_init_arg_#*:}"
 		done
@@ -2409,7 +2409,7 @@ __sx_num_is_base_nat0() {
 
 	for __sx_num_is_base_nat0_arg_ in "${@}"; do
 		case "${__sx_num_is_base_nat0_arg_}" in
-			${__sx_num_is_base_nat0_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_base_nat0_arg_#${__sx_num_is_base_nat0_pfix_}}"|] , [|''|], [|0?*|], [|*[!${__sx_num_is_base_nat0_char_}]*|]);;
+			${__sx_num_is_base_nat0_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_base_nat0_arg_#${__sx_num_is_base_nat0_pfix_}}"|] , [|''|], [|0?*|], [|*[!"${__sx_num_is_base_nat0_char_}"]*|]);;
 			*) ! :;;
 		esac || {
 			unset __sx_num_is_base_nat0_pfix_ __sx_num_is_base_nat0_char_ __sx_num_is_base_nat0_arg_
@@ -2456,7 +2456,7 @@ __sx_num_is_base_nat1() {
 
 	for __sx_num_is_base_nat1_arg_ in "${@}"; do
 		case "${__sx_num_is_base_nat1_arg_}" in
-			${__sx_num_is_base_nat1_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_base_nat1_arg_#${__sx_num_is_base_nat1_pfix_}}"|], [|''|], [|0*|], [|*[!${__sx_num_is_base_nat1_char_}]*|]);;
+			${__sx_num_is_base_nat1_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_base_nat1_arg_#${__sx_num_is_base_nat1_pfix_}}"|], [|''|], [|0*|], [|*[!"${__sx_num_is_base_nat1_char_}"]*|]);;
 			*) ! :;;
 		esac || {
 			unset __sx_num_is_base_nat1_pfix_ __sx_num_is_base_nat1_char_ __sx_num_is_base_nat1_arg_
@@ -3048,7 +3048,7 @@ __sx_num_to_fixed() {
 		__sx_num_to_fixed_in_="${__sx_num_to_fixed_arg_#*=}"
 
 		# 指数部が含まれていない場合はそのまま処理
-		M_STR_MATCH([|"${__sx_num_to_fixed_in_}"|], [|*[Ee]*|]*) || {
+		M_STR_HAS([|"${__sx_num_to_fixed_in_}"|], [|[Ee]|]) || {
 			__sx_var_set "${__sx_num_to_fixed_arg_}"
 			continue
 		}
@@ -3715,7 +3715,7 @@ __sx_str_etrim() {
 	case "${3}" in '')
 		__sx_var_set "${1}=${2}"
 		return
-	;; esac
+	esac
 
 	__sx_var_set "${1}=${2%"${2##*[!"${3}"]}"}"
 }
@@ -3743,7 +3743,7 @@ sx_str_ew() {
 		case "${__sx_str_ew_tgt}" in *"${__sx_str_ew_arg}")
 			unset __sx_str_ew_tgt __sx_str_ew_arg
 			return "${SX_EX_OK}"
-		;; esac
+		esac
 	done
 
 	unset __sx_str_ew_tgt __sx_str_ew_arg
@@ -3773,7 +3773,7 @@ sx_str_has() {
 		case "${__sx_str_has_tgt}" in *"${__sx_str_has_arg}"*)
 			unset __sx_str_has_tgt __sx_str_has_arg
 			return "${SX_EX_OK}"
-		;; esac
+		esac
 	done
 
 	unset __sx_str_has_tgt __sx_str_has_arg
@@ -4114,7 +4114,7 @@ __sx_str_split() {
 		if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
 			# 前方からグロブ分割
 			while
-				M_STR_MATCH([|"${__sx_str_split_str_}"|], [|*${__sx_str_split_sep_}*|]) &&
+				M_STR_HAS([|"${__sx_str_split_str_}"|], [|${__sx_str_split_sep_}|]) &&
 				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 			do
 				__sx_str_split_val_="${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
@@ -4138,7 +4138,7 @@ __sx_str_split() {
 		else
 			# 後方からグロブ分割
 			while
-				M_STR_MATCH([|"${__sx_str_split_str_}"|], [|*${__sx_str_split_sep_}*|]) &&
+				M_STR_HAS([|"${__sx_str_split_str_}"|], [|${__sx_str_split_sep_}|]) &&
 				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 			do
 				__sx_str_split_val_="${__sx_str_split_str_##*${__sx_str_split_sep_}}"
@@ -4335,7 +4335,7 @@ __sx_str_sub() {
 		# 前向き置換 (Forward)
 		if M_NUM_NE([|$((__sx_str_sub_flg_ & SX_STR_SUB_GLOB))|], [|0|]); then
 			while
-				M_STR_MATCH([|"${__sx_str_sub_str_}"|], [|*${__sx_str_sub_pat_}*|]) &&
+				M_STR_HAS([|"${__sx_str_sub_str_}"|], [|${__sx_str_sub_pat_}|]) &&
 				! M_STR_EQ([|"${__sx_str_sub_lim_}"|], [|0|])
 			do
 				__sx_str_sub_val_="${__sx_str_sub_str_%%${__sx_str_sub_pat_}*}"
@@ -4361,7 +4361,7 @@ __sx_str_sub() {
 		# 後ろ向き置換 (Backward)
 		if M_NUM_NE([|$((__sx_str_sub_flg_ & SX_STR_SUB_GLOB))|], [|0|]); then
 			while
-				M_STR_MATCH([|"${__sx_str_sub_str_}"|], [|*${__sx_str_sub_pat_}*|]) &&
+				M_STR_HAS([|"${__sx_str_sub_str_}"|], [|${__sx_str_sub_pat_}|]) &&
 				! M_STR_EQ([|"${__sx_str_sub_lim_}"|], [|0|])
 			do
 				__sx_str_sub_val_="${__sx_str_sub_str_##*${__sx_str_sub_pat_}}"
@@ -4561,7 +4561,7 @@ __sx_str_strim() {
 	case "${3}" in '')
 		__sx_var_set "${1}=${2}"
 		return
-	;; esac
+	esac
 
 	__sx_var_set "${1}=${2#"${2%%[!"${3}"]*}"}"
 }
@@ -4588,7 +4588,7 @@ sx_str_sw() {
 		case "${__sx_str_sw_tgt}" in "${__sx_str_sw_arg}"*)
 			unset __sx_str_sw_tgt __sx_str_sw_arg
 			return "${SX_EX_OK}"
-		;; esac
+		esac
 	done
 
 	unset __sx_str_sw_tgt __sx_str_sw_arg
@@ -4694,13 +4694,13 @@ sx_arr_at() {
 
 			# コピー連鎖式の構築 (src-dest)
 			__sx_arr_at_chk="${__sx_arr_at_chk} ${__sx_arr_at_arr}_${__sx_arr_at_i}-${__sx_arr_at_dest}"
-		;; esac
+		esac
 	done
 
 	case "${__sx_arr_at_err+X}" in X)
 		unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i __sx_arr_at_err
 		return 1
-	;; esac
+	esac
 
 	eval set -- "${__sx_arr_at_chk}"
 	unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
@@ -4742,7 +4742,7 @@ __sx_arr_at() {
 
 		case "${__sx_arr_at_pair_}" in *?=*)
 			__sx_arr_at_chk_="${__sx_arr_at_chk_} ${__sx_arr_at_arr_}_${__sx_arr_at_i_}-${__sx_arr_at_pair_%%=*}"
-		;; esac
+		esac
 	done
 
 	case "${__sx_arr_at_chk_}" in
