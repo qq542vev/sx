@@ -3714,7 +3714,7 @@ __sx_str_etrim() {
 
 	case "${3}" in '')
 		__sx_var_set "${1}=${2}"
-		return
+		return "${SX_EX_OK}"
 	esac
 
 	__sx_var_set "${1}=${2%"${2##*[!"${3}"]}"}"
@@ -4050,7 +4050,7 @@ __sx_str_center() {
 sx_str_split() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${4+"${4}"} ${5+"${5}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${4+"${4}"} ${5+"${5}"} || return
 
 	__sx_str_split "${@}"
 }
@@ -4066,7 +4066,8 @@ sx_str_split() {
 ##   分割回数が正の場合は前方から、負の場合は後方から分割する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_str_split() {
-	__sx_str_split_res_="${1}"
+	__sx_var_bind_init "${1}"
+	__sx_str_split_bind_="${1}"
 	__sx_str_split_str_="${2-}"
 	__sx_str_split_sep_="${3-}"
 	__sx_str_split_lim_="$((${4-${SX_NUM_I32_MAX}}))"
@@ -4100,12 +4101,12 @@ __sx_str_split() {
 		fi
 
 		if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
-			eval __sx_arg_isep "${__sx_str_split_res_}" "${SX_CFG_SEP}" "${__sx_str_split_out_}"
+			eval __sx_arg_isep "${__sx_str_split_bind_}" "${SX_CFG_SEP}" "${__sx_str_split_out_}"
 		else
-			__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_}"
+			__sx_var_set "${__sx_str_split_bind_}=${__sx_str_split_out_}"
 		fi
 
-		unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_
+		unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_
 		return "${SX_EX_OK}"
 	fi
 
@@ -4198,8 +4199,8 @@ __sx_str_split() {
 		fi
 	fi
 
-	__sx_var_set "${__sx_str_split_res_}=${__sx_str_split_out_# }"
-	unset __sx_str_split_res_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_qsep_
+	__sx_var_set "${__sx_str_split_bind_}=${__sx_str_split_out_# }"
+	unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_qsep_
 }
 
 ### sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する
@@ -4560,7 +4561,7 @@ __sx_str_strim() {
 
 	case "${3}" in '')
 		__sx_var_set "${1}=${2}"
-		return
+		return "${SX_EX_OK}"
 	esac
 
 	__sx_var_set "${1}=${2#"${2%%[!"${3}"]*}"}"
