@@ -51,7 +51,7 @@ define([|__M_ARG_BIND_QUOTE_BODY|], [|dnl
 			$1_bind_="${$1_bind_#*:}"
 			;;
 		?*) __M_QUOTE_APPEND([|$1|], [|$2|]);;
-		*) ! :;;
+		*) unset $3; return "${SX_EX_OK}";;
 	esac|])
 
 # sysexits(3) compatible exit codes
@@ -739,6 +739,9 @@ sx_arg_quote() {
 	__sx_arg_quote "${@}"
 }
 
+define([|V|], [|__sx_arg_quote_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(arg) V(esc)|])dnl
+
 ### __sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
 ## 使い方:
@@ -752,16 +755,13 @@ __sx_arg_quote() {
 	__sx_arg_quote_out_=
 	shift
 
-	for __sx_arg_quote_val_ in "${@}"; do
-		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_quote|], [|"${__sx_arg_quote_val_}"|]) || {
-			unset __sx_arg_quote_bind_ __sx_arg_quote_out_ __sx_arg_quote_val_ __sx_arg_quote_esc_
-			return "${SX_EX_OK}"
-		}
+	for __sx_arg_quote_arg_ in "${@}"; do
+		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_quote|], [|"${__sx_arg_quote_arg_}"|], CLEANUP)
 	done
 
 	eval ${__sx_arg_quote_out_:+"${__sx_arg_quote_bind_}=\"\${__sx_arg_quote_out_}\""}
 
-	unset __sx_arg_quote_bind_ __sx_arg_quote_out_ __sx_arg_quote_val_ __sx_arg_quote_esc_
+	unset CLEANUP
 }
 
 ### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する
@@ -785,6 +785,9 @@ sx_arg_rquote() {
 	__sx_arg_rquote "${@}"
 }
 
+define([|V|], [|__sx_arg_rquote_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(i) V(val) V(esc)|])dnl
+
 ### __sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
 ## 使い方:
@@ -802,16 +805,13 @@ __sx_arg_rquote() {
 	while M_NUM_LT([|0|], [|__sx_arg_rquote_i_|]); do
 		eval "__sx_arg_rquote_val_=\"\${${__sx_arg_rquote_i_}}\""
 
-		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_rquote|], [|"${__sx_arg_rquote_val_}"|]) || {
-			unset __sx_arg_rquote_bind_ __sx_arg_rquote_out_ __sx_arg_rquote_i_ __sx_arg_rquote_val_ __sx_arg_rquote_esc_
-			return "${SX_EX_OK}"
-		}
+		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_rquote|], [|"${__sx_arg_rquote_val_}"|], CLEANUP)
 
 		__sx_arg_rquote_i_=$((__sx_arg_rquote_i_ - 1))
 	done
 
 	eval ${__sx_arg_rquote_out_:+"${__sx_arg_rquote_bind_}=\"\${__sx_arg_rquote_out_}\""}
-	unset __sx_arg_rquote_bind_ __sx_arg_rquote_out_ __sx_arg_rquote_i_ __sx_arg_rquote_val_ __sx_arg_rquote_esc_
+	unset CLEANUP
 }
 
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
@@ -3592,6 +3592,9 @@ sx_str_chunk() {
 	__sx_str_chunk "${@}"
 }
 
+define([|V|], [|__sx_str_chunk_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(str) V(len) V(lim) V(out) V(esc) V(qm) V(next)|])dnl
+
 ### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
 ##
 ## 使い方:
@@ -3616,26 +3619,23 @@ __sx_str_chunk() {
 			! M_STR_EQ([|"${__sx_str_chunk_lim_}"|], [|0|])
 		do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
-			__M_ARG_BIND_QUOTE_BODY([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|]) || {
-				unset __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_next_
-				return "${SX_EX_OK}"
-			}
+			__M_ARG_BIND_QUOTE_BODY([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], CLEANUP)
+
 			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
 			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
 		done
 
-		if ! M_STR_EQ([|"${__sx_str_chunk_str_}"|], [|''|]); then
-			__M_ARG_BIND_QUOTE_BODY([|__sx_str_chunk|], [|"${__sx_str_chunk_str_}"|]) || {
-				unset __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_next_
-				return "${SX_EX_OK}"
-			}
-		fi
+		M_STR_EQ([|"${__sx_str_chunk_str_}"|], [|''|]) || {
+			__M_ARG_BIND_QUOTE_BODY([|__sx_str_chunk|], [|"${__sx_str_chunk_str_}"|], CLEANUP)
+		}
+
 		eval ${__sx_str_chunk_out_:+"${__sx_str_chunk_bind_}=\"\${__sx_str_chunk_out_}\""}
 	else
 		# Backward: 全走査が必要なため set -- で収集
+		set --
 		__sx_str_chunk_len_=$((__sx_str_chunk_len_ * -1))
 		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
-		set --
+
 		while
 			M_NUM_LE([|__sx_str_chunk_len_|], [|${#__sx_str_chunk_str_}|]) &&
 			! M_STR_EQ([|"${__sx_str_chunk_lim_}"|], [|0|])
@@ -3646,13 +3646,14 @@ __sx_str_chunk() {
 			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
 		done
 
-		if ! M_STR_EQ([|"${__sx_str_chunk_str_}"|], [|''|]); then
+		M_STR_EQ([|"${__sx_str_chunk_str_}"|], [|''|]) || {
 			set -- "${__sx_str_chunk_str_}" "${@}"
-		fi
+		}
+
 		__sx_arg_quote "${__sx_str_chunk_bind_}" "${@}"
 	fi
 
-	unset __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_next_
+	unset CLEANUP
 }
 
 ### sx_str_eq - すべての引数が文字列として一致するか確認する
@@ -4055,8 +4056,8 @@ sx_str_split() {
 	__sx_str_split "${@}"
 }
 
-define([|V|], [|__sx_str_split_$1_|]) dnl
-define([|CLEANUP|], [|unset V(bind) V(str) V(sep) V(lim) V(flg) V(out) V(esc) V(rem) V(mid) V(val)|]) dnl
+define([|V|], [|__sx_str_split_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(str) V(sep) V(lim) V(flg) V(inc) V(out) V(esc) V(rem) V(mid) V(val)|])dnl
 
 ### __sx_str_split - 文字列を分割して結果変数に格納する（内部用）
 ##
@@ -4075,7 +4076,10 @@ __sx_str_split() {
 	__sx_str_split_sep_="${3-}"
 	__sx_str_split_lim_="$((${4-${SX_NUM_I32_MAX}}))"
 	__sx_str_split_flg_="$((${5-0}))"
+	__sx_str_split_inc_=$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))
 	__sx_str_split_out_=
+
+	set --
 
 	# 空区切り文字（一文字ずつ分割）の処理
 	if M_STR_EQ([|"${__sx_str_split_sep_}"|], [|''|]); then
@@ -4103,21 +4107,11 @@ __sx_str_split() {
 			__sx_arg_quote __sx_str_split_out_ "${__sx_str_split_str_}"
 		fi
 
-		if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
-			eval __sx_arg_isep __sx_str_split_out_ "${SX_CFG_SEP}" "${__sx_str_split_out_}"
-		fi
+		M_STR_EQ([|"${__sx_str_split_inc_}"|], [|0|]) || eval __sx_arg_isep __sx_str_split_out_ "${SX_CFG_SEP}" "${__sx_str_split_out_}"
 
-		eval set -- "${__sx_str_split_out_}"
-		__sx_arg_quote "${__sx_str_split_bind_}" "${@}"
-
-		CLEANUP
-		return "${SX_EX_OK}"
-	fi
-
-	set --
-
+		eval __sx_arg_quote '"${__sx_str_split_bind_}"' "${__sx_str_split_out_}"
+	elif M_STR_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
 	# グロブ（パターン）による分割
-	if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
 		if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
 			# 前方からグロブ分割
 			while
@@ -4126,31 +4120,23 @@ __sx_str_split() {
 			do
 				__sx_str_split_val_="${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
 
-				__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_val_}"|]) || {
-					CLEANUP
-					return "${SX_EX_OK}"
-				}
+				__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_val_}"|], CLEANUP)
 
 				__sx_str_split_rem_="${__sx_str_split_str_#*${__sx_str_split_sep_}}"
 
 				# 区切り文字を含めるフラグがある場合
-				M_NUM_EQ([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]) || {
+				M_STR_EQ([|"${__sx_str_split_inc_}"|], [|0|]) || {
 					__sx_str_split_mid_="${__sx_str_split_str_#${__sx_str_split_val_}}"
-					__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_mid_%${__sx_str_split_rem_}}"|]) || {
-						CLEANUP
-						return "${SX_EX_OK}"
-					}
+					__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_mid_%${__sx_str_split_rem_}}"|], CLEANUP)
 				}
 
 				__sx_str_split_str_="${__sx_str_split_rem_}"
 				__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
 			done
 
-			__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_}"|]) || :
+			__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_}"|], CLEANUP)
 
 			eval ${__sx_str_split_out_:+"${__sx_str_split_bind_}=\"\${__sx_str_split_out_}\""}
-
-			CLEANUP
 		else
 			# 後方からグロブ分割
 			while
@@ -4161,7 +4147,7 @@ __sx_str_split() {
 				__sx_str_split_rem_="${__sx_str_split_str_%${__sx_str_split_sep_}*}"
 
 				# 区切り文字を含めるフラグがある場合
-				M_NUM_EQ([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]) || {
+				M_STR_EQ([|"${__sx_str_split_inc_}"|], [|0|]) || {
 					__sx_str_split_mid_="${__sx_str_split_str_%${1}}"
 					set -- "${__sx_str_split_mid_#${__sx_str_split_rem_}}" "${@}"
 				}
@@ -4171,41 +4157,24 @@ __sx_str_split() {
 			done
 
 			__sx_arg_quote "${__sx_str_split_bind_}" "${__sx_str_split_str_}" "${@}"
-
-			CLEANUP
 		fi
-
-		return "${SX_EX_OK}"
-	fi
-
-	# 通常の文字列による分割
-	if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
-		# 前方から分割
+	elif M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
+		# 通常の文字列による前方から分割
 		while
 			M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
 			! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 		do
-			__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"|]) || {
-				CLEANUP
-				return "${SX_EX_OK}"
-			}
+			__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"|], CLEANUP)
 
-			if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
-				__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_sep_}"|]) || {
-					CLEANUP
-					return "${SX_EX_OK}"
-				}
-			fi
+			M_STR_EQ([|"${__sx_str_split_inc_}"|], [|0|]) || __M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_sep_}"|], CLEANUP)
 
 			__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
 			__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
 		done
 
-		__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_}"|]) || :
+		__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_}"|])
 
 		eval ${__sx_str_split_out_:+"${__sx_str_split_bind_}=\"\${__sx_str_split_out_}\""}
-
-		CLEANUP
 	else
 		# 後方から分割
 		while
@@ -4214,16 +4183,16 @@ __sx_str_split() {
 		do
 			set -- "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}" "${@}"
 
-			M_NUM_EQ([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]) || set -- "${__sx_str_split_sep_}" "${@}"
+			M_STR_EQ([|"${__sx_str_split_inc_}"|], [|0|]) || set -- "${__sx_str_split_sep_}" "${@}"
 
 			__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
 			__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
 		done
 
 		__sx_arg_quote "${__sx_str_split_bind_}" "${__sx_str_split_str_}" "${@}"
-
-		CLEANUP
 	fi
+
+	unset CLEANUP
 }
 
 ### sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する
