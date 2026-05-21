@@ -4055,6 +4055,9 @@ sx_str_split() {
 	__sx_str_split "${@}"
 }
 
+define([|V|], [|__sx_str_split_$1_|]) dnl
+define([|CLEANUP|], [|unset V(bind) V(str) V(sep) V(lim) V(flg) V(out) V(esc) V(rem) V(mid) V(val)|]) dnl
+
 ### __sx_str_split - 文字列を分割して結果変数に格納する（内部用）
 ##
 ## 使い方:
@@ -4107,9 +4110,11 @@ __sx_str_split() {
 		eval set -- "${__sx_str_split_out_}"
 		__sx_arg_quote "${__sx_str_split_bind_}" "${@}"
 
-		unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_
+		CLEANUP
 		return "${SX_EX_OK}"
 	fi
+
+	set --
 
 	# グロブ（パターン）による分割
 	if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
@@ -4120,116 +4125,104 @@ __sx_str_split() {
 				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 			do
 				__sx_str_split_val_="${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
+
 				__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_val_}"|]) || {
-					unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_qsep_
+					CLEANUP
 					return "${SX_EX_OK}"
 				}
 
 				__sx_str_split_rem_="${__sx_str_split_str_#*${__sx_str_split_sep_}}"
 
 				# 区切り文字を含めるフラグがある場合
-				if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
+				M_NUM_EQ([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]) || {
 					__sx_str_split_mid_="${__sx_str_split_str_#${__sx_str_split_val_}}"
 					__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_mid_%${__sx_str_split_rem_}}"|]) || {
-						unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_qsep_
+						CLEANUP
 						return "${SX_EX_OK}"
 					}
-				fi
+				}
 
 				__sx_str_split_str_="${__sx_str_split_rem_}"
 				__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
 			done
 
 			__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_}"|]) || :
+
 			eval ${__sx_str_split_out_:+"${__sx_str_split_bind_}=\"\${__sx_str_split_out_}\""}
 
-			unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_qsep_
-			return "${SX_EX_OK}"
+			CLEANUP
 		else
 			# 後方からグロブ分割
-			set --
 			while
 				M_STR_HAS([|"${__sx_str_split_str_}"|], [|${__sx_str_split_sep_}|]) &&
 				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 			do
-				__sx_str_split_val_="${__sx_str_split_str_##*${__sx_str_split_sep_}}"
+				set -- "${__sx_str_split_str_##*${__sx_str_split_sep_}}" "${@}"
 				__sx_str_split_rem_="${__sx_str_split_str_%${__sx_str_split_sep_}*}"
 
 				# 区切り文字を含めるフラグがある場合
-				if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
-					__sx_str_split_mid_="${__sx_str_split_str_%${__sx_str_split_val_}}"
-					set -- "${__sx_str_split_mid_#${__sx_str_split_rem_}}" "${__sx_str_split_val_}" "${@}"
-				else
-					set -- "${__sx_str_split_val_}" "${@}"
-				fi
+				M_NUM_EQ([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]) || {
+					__sx_str_split_mid_="${__sx_str_split_str_%${1}}"
+					set -- "${__sx_str_split_mid_#${__sx_str_split_rem_}}" "${@}"
+				}
 
 				__sx_str_split_str_="${__sx_str_split_rem_}"
 				__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
 			done
 
-			set -- "${__sx_str_split_str_}" "${@}"
-			__sx_arg_quote "${__sx_str_split_bind_}" "${@}"
+			__sx_arg_quote "${__sx_str_split_bind_}" "${__sx_str_split_str_}" "${@}"
 
-			unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_qsep_
-			return "${SX_EX_OK}"
-		fi
-	else
-		__sx_str_split_qsep_=
-		if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
-			__sx_str_split_qsep_="${__sx_str_split_sep_}"
+			CLEANUP
 		fi
 
-		# 通常の文字列による分割
-		if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
-			# 前方から分割
-			while
-				M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
-				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
-			do
-				__sx_str_split_val_="${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"
-				__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_val_}"|]) || {
-					unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_qsep_
+		return "${SX_EX_OK}"
+	fi
+
+	# 通常の文字列による分割
+	if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
+		# 前方から分割
+		while
+			M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
+			! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
+		do
+			__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"|]) || {
+				CLEANUP
+				return "${SX_EX_OK}"
+			}
+
+			if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
+				__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_sep_}"|]) || {
+					CLEANUP
 					return "${SX_EX_OK}"
 				}
+			fi
 
-				if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
-					__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_sep_}"|]) || {
-						unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_qsep_
-						return "${SX_EX_OK}"
-					}
-				fi
+			__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
+			__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
+		done
 
-				__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
-				__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
-			done
+		__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_}"|]) || :
 
-			__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_}"|]) || :
-			eval ${__sx_str_split_out_:+"${__sx_str_split_bind_}=\"\${__sx_str_split_out_}\""}
+		eval ${__sx_str_split_out_:+"${__sx_str_split_bind_}=\"\${__sx_str_split_out_}\""}
 
-			unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_qsep_
-			return "${SX_EX_OK}"
-		else
-			# 後方から分割
-			set --
-			while
-				M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
-				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
-			do
-				if M_STR_NE([|"${__sx_str_split_qsep_}"|], [|''|]); then
-					set -- "${__sx_str_split_qsep_}" "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}" "${@}"
-				else
-					set -- "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}" "${@}"
-				fi
-				__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
-				__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
-			done
+		CLEANUP
+	else
+		# 後方から分割
+		while
+			M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
+			! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
+		do
+			set -- "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}" "${@}"
 
-			set -- "${__sx_str_split_str_}" "${@}"
-			__sx_arg_quote "${__sx_str_split_bind_}" "${@}"
+			M_NUM_EQ([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]) || set -- "${__sx_str_split_sep_}" "${@}"
 
-			unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_qsep_
-			return "${SX_EX_OK}"
-		fi
+			__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
+			__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
+		done
+
+		__sx_arg_quote "${__sx_str_split_bind_}" "${__sx_str_split_str_}" "${@}"
+
+		CLEANUP
 	fi
 }
 
