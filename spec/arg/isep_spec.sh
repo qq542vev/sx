@@ -204,4 +204,31 @@ Describe 'sx_arg_isep'
     End
   End
 
+  Describe 'bind (分配代入) 機能'
+    It '分配代入 (v1:v2:rest) で結果を受け取れること'
+      sx_arg_isep "v1:v2:rest" "-" 1 ::: "a" "b"
+      The variable v1 should equal "a"
+      The variable v2 should equal "-"
+      The variable rest should equal "'b'"
+    End
+
+    It 'インターバルを跨ぐ分配代入が正しく動作すること'
+      sx_arg_isep "v1:v2:v3:v4:v5" "-" 2 ::: "1" "2" "3"
+      # Elements: "1", "2", "-", "3"
+      The variable v1 should equal "1"
+      The variable v2 should equal "2"
+      The variable v3 should equal "-"
+      The variable v4 should equal "3"
+      The variable v5 should equal ""
+    End
+
+    It 'スキップを含む分配代入ができること'
+      sx_arg_isep "::v3" "-" 1 ::: "a" "b"
+      # Elements: "a", "-", "b"
+      The variable v1 should be undefined
+      The variable v2 should be undefined
+      The variable v3 should equal "'b'"
+    End
+  End
+
 End

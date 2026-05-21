@@ -837,7 +837,7 @@ __sx_arg_rquote() {
 sx_arg_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_isep "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
 	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]) || M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
 		:
@@ -863,6 +863,9 @@ sx_arg_isep() {
 	__sx_arg_isep "${@}"
 }
 
+define([|V|], [|__sx_arg_isep_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(lim) V(abs) V(n) V(eff) V(r) V(j) V(k) V(arg) V(esc)|])dnl
+
 ### __sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する（内部用）
 ##
 ## 使い方:
@@ -872,7 +875,9 @@ sx_arg_isep() {
 ## 説明:
 ##   引数チェックを行わずにセパレータ挿入とクォート結合処理を行う。
 __sx_arg_isep() {
-	__sx_arg_isep_res_="${1}"
+	__sx_var_bind_init "${1}"
+	__sx_arg_isep_bind_="${1}"
+	__sx_arg_isep_out_=
 	__sx_arg_isep_sep_=
 	__sx_arg_isep_int_=1
 	__sx_arg_isep_lim_="${SX_NUM_I32_MAX}"
@@ -884,7 +889,7 @@ __sx_arg_isep() {
 		__sx_arg_isep_sep_="${2}"
 		shift 3
 	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_isep_sep_="${2}";
+		__sx_arg_isep_sep_="${2}"
 		__sx_arg_isep_int_="${3}"
 		shift 4
 	elif M_STR_EQ([|"${5-}"|], [|"${SX_CFG_SEP}"|]); then
@@ -900,79 +905,35 @@ __sx_arg_isep() {
 		shift $((1 + 0${1+1} + 0${2+1} + 0${3+1}))
 	fi
 
-	__sx_arg_quote __sx_arg_isep_sqs_ "${__sx_arg_isep_sep_}"
+	__sx_arg_isep_abs_="${__sx_arg_isep_int_#-}"
+	__sx_arg_isep_n_="${#}"
+	__sx_arg_isep_eff_=$(((__sx_arg_isep_n_ - 1) / __sx_arg_isep_abs_))
+	M_NUM_LE([|__sx_arg_isep_lim_|], [|__sx_arg_isep_eff_|]) || __sx_arg_isep_lim_="${__sx_arg_isep_eff_}"
 
 	if M_NUM_LE([|0|], [|__sx_arg_isep_int_|]); then
-		# 正方向: 先頭からインターバルごとにセパレータを挿入
-		if M_NUM_LE([|${#}|], [|__sx_arg_isep_int_|]); then
-			__sx_arg_quote "${__sx_arg_isep_res_}" "${@}"
-			unset __sx_arg_isep_res_ __sx_arg_isep_sep_ __sx_arg_isep_int_ __sx_arg_isep_lim_ __sx_arg_isep_sqs_
-			return "${SX_EX_OK}"
-		fi
-
-		# 位置パラメータのバッチ用文字列を生成 ("${1}" "${2}" ...)
-		__sx_arg_range __sx_arg_isep_batch_ 1 $((__sx_arg_isep_int_ + 1))
-
-		# 最初のグループを処理
-		eval __sx_arg_quote __sx_arg_isep_out_ "${__sx_arg_isep_batch_}"
-		shift "${__sx_arg_isep_int_}"
-
-		# 残りのグループをセパレータと共に結合
-		while
-			M_NUM_LE([|__sx_arg_isep_int_|], [|${#}|]) &&
-			M_NUM_LT([|0|], [|__sx_arg_isep_lim_|])
-		do
-			eval __sx_arg_quote __sx_arg_isep_part_ "${__sx_arg_isep_batch_}"
-			__sx_arg_isep_out_="${__sx_arg_isep_out_} ${__sx_arg_isep_sqs_} ${__sx_arg_isep_part_}"
-			shift "${__sx_arg_isep_int_}"
-			__sx_arg_isep_lim_=$((__sx_arg_isep_lim_ - 1))
-		done
-
-		# 端数がある場合
-		if M_STR_NE([|${#}|], [|0|]); then
-			__sx_arg_quote __sx_arg_isep_part_ "${@}"
-
-			if M_NUM_LT([|0|], [|__sx_arg_isep_lim_|]); then
-				__sx_arg_isep_out_="${__sx_arg_isep_out_} ${__sx_arg_isep_sqs_}"
-			fi
-
-			__sx_arg_isep_out_="${__sx_arg_isep_out_} ${__sx_arg_isep_part_}"
-		fi
+		__sx_arg_isep_r_="${__sx_arg_isep_int_}"
 	else
-		# 逆方向: 末尾からインターバルを計算して分割
-		__sx_arg_isep_int_=$((__sx_arg_isep_int_ * -1))
-
-		if M_NUM_LE([|${#}|], [|__sx_arg_isep_int_|]); then
-			__sx_arg_quote "${__sx_arg_isep_res_}" "${@}"
-			unset __sx_arg_isep_res_ __sx_arg_isep_sep_ __sx_arg_isep_int_ __sx_arg_isep_lim_ __sx_arg_isep_sqs_
-			return "${SX_EX_OK}"
-		fi
-
-		# 最大分割可能回数を計算
-		__sx_arg_isep_eff_=$(((${#} - 1) / __sx_arg_isep_int_))
-
-		# 最初のグループ（左側）のサイズを計算
-		__sx_arg_isep_rem_=$((${#} - ((__sx_arg_isep_lim_ < __sx_arg_isep_eff_ ? __sx_arg_isep_lim_ : __sx_arg_isep_eff_) * __sx_arg_isep_int_)))
-
-		# 最初のグループ（調整済み端数分）のバッチ用文字列を生成
-		__sx_arg_range __sx_arg_isep_batch_ 1 $((__sx_arg_isep_rem_ + 1))
-
-		eval "__sx_arg_quote __sx_arg_isep_out_ ${__sx_arg_isep_batch_}"
-		shift "${__sx_arg_isep_rem_}"
-
-		# インターバル分のバッチ用文字列を生成
-		__sx_arg_range __sx_arg_isep_batch_ 1 $((__sx_arg_isep_int_ + 1))
-
-		while M_NUM_LT([|0|], [|${#}|]); do
-			eval "__sx_arg_quote __sx_arg_isep_part_ ${__sx_arg_isep_batch_}"
-			__sx_arg_isep_out_="${__sx_arg_isep_out_} ${__sx_arg_isep_sqs_} ${__sx_arg_isep_part_}"
-			shift "${__sx_arg_isep_int_}"
-		done
+		__sx_arg_isep_r_=$((__sx_arg_isep_n_ - __sx_arg_isep_lim_ * __sx_arg_isep_abs_))
 	fi
 
-	__sx_var_set "${__sx_arg_isep_res_}=${__sx_arg_isep_out_}"
+	__sx_arg_isep_j_=1 __sx_arg_isep_k_=0
+	for __sx_arg_isep_arg_ in "${@}"; do
+		if
+			M_NUM_LT([|__sx_arg_isep_r_|], [|__sx_arg_isep_j_|]) &&
+			M_NUM_EQ([|$(((__sx_arg_isep_j_ - __sx_arg_isep_r_ - 1) % __sx_arg_isep_abs_))|], [|0|]) &&
+			M_NUM_LT([|__sx_arg_isep_k_|], [|__sx_arg_isep_lim_|])
+		then
+			__M_ARG_BIND_QUOTE_BODY([|__sx_arg_isep|], [|"${__sx_arg_isep_sep_}"|], CLEANUP)
+			__sx_arg_isep_k_=$((__sx_arg_isep_k_ + 1))
+		fi
 
-	unset __sx_arg_isep_res_ __sx_arg_isep_sep_ __sx_arg_isep_int_ __sx_arg_isep_lim_ __sx_arg_isep_sqs_ __sx_arg_isep_out_ __sx_arg_isep_part_ __sx_arg_isep_batch_ __sx_arg_isep_rem_ __sx_arg_isep_eff_
+		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_isep|], [|"${__sx_arg_isep_arg_}"|], CLEANUP)
+		__sx_arg_isep_j_=$((__sx_arg_isep_j_ + 1))
+	done
+
+	eval ${__sx_arg_isep_out_:+"${__sx_arg_isep_bind_}=\"\${__sx_arg_isep_out_}\""}
+
+	unset CLEANUP
 }
 
 ### sx_arg_find - 引数リストから指定された値を探し、そのインデックスを取得する
