@@ -814,6 +814,9 @@ __sx_arg_rquote() {
 	unset CLEANUP
 }
 
+define([|V|], [|__sx_arg_isep_$1|])dnl
+define([|CLEANUP|], [|V(int) V(lim)|])dnl
+
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
 ##
 ## 使い方:
@@ -839,32 +842,32 @@ sx_arg_isep() {
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
+	__sx_arg_isep_int=1 __sx_arg_isep_lim="${SX_NUM_I32_MAX}"
 	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]) || M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
 		:
 	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
 		__sx_arg_isep_int="${3}"
 	else
-		__sx_arg_isep_int="${3-1}"; __sx_arg_isep_lim="${4-${SX_NUM_I32_MAX}}"
+		__sx_arg_isep_int="${3-1}" __sx_arg_isep_lim="${4-${SX_NUM_I32_MAX}}"
 	fi
 
 	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
 		set -- "${?}"
-		unset __sx_arg_isep_int __sx_arg_isep_lim
+		unset CLEANUP
 		return "${1}"
 	}
 
 	M_NUM_NE([|${__sx_arg_isep_int-1}|], [|0|]) || {
-		unset __sx_arg_isep_int __sx_arg_isep_lim
+		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
 
-
-	unset __sx_arg_isep_int __sx_arg_isep_lim
+	unset CLEANUP
 	__sx_arg_isep "${@}"
 }
 
 define([|V|], [|__sx_arg_isep_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(lim) V(abs) V(n) V(eff) V(r) V(j) V(k) V(arg) V(esc)|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(lim) V(eff) V(r) V(j) V(arg) V(esc)|])dnl
 
 ### __sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する（内部用）
 ##
@@ -881,6 +884,7 @@ __sx_arg_isep() {
 	__sx_arg_isep_sep_=
 	__sx_arg_isep_int_=1
 	__sx_arg_isep_lim_="${SX_NUM_I32_MAX}"
+	__sx_arg_isep_j_=1
 
 	# ::: の位置を特定 (Bounded Search: $2, $3, $4, $5)
 	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]); then
@@ -889,42 +893,34 @@ __sx_arg_isep() {
 		__sx_arg_isep_sep_="${2}"
 		shift 3
 	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_isep_sep_="${2}"
-		__sx_arg_isep_int_="${3}"
+		__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}"
 		shift 4
 	elif M_STR_EQ([|"${5-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_isep_sep_="${2}"
-		__sx_arg_isep_int_="${3}"
-		__sx_arg_isep_lim_="${4}"
+		__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}"
 		shift 5
 	else
 		# 従来形式
-		 __sx_arg_isep_sep_="${2-}"
-		 __sx_arg_isep_int_="${3-1}"
-		 __sx_arg_isep_lim_="${4-${SX_NUM_I32_MAX}}"
+		__sx_arg_isep_sep_="${2-}" __sx_arg_isep_int_="${3-1}" __sx_arg_isep_lim_="${4-${SX_NUM_I32_MAX}}"
 		shift $((1 + 0${1+1} + 0${2+1} + 0${3+1}))
 	fi
 
-	__sx_arg_isep_abs_="${__sx_arg_isep_int_#-}"
-	__sx_arg_isep_n_="${#}"
-	__sx_arg_isep_eff_=$(((__sx_arg_isep_n_ - 1) / __sx_arg_isep_abs_))
+	__sx_arg_isep_eff_=$(((${#} - 1) / ${__sx_arg_isep_int_#-}))
 	M_NUM_LE([|__sx_arg_isep_lim_|], [|__sx_arg_isep_eff_|]) || __sx_arg_isep_lim_="${__sx_arg_isep_eff_}"
 
 	if M_NUM_LE([|0|], [|__sx_arg_isep_int_|]); then
 		__sx_arg_isep_r_="${__sx_arg_isep_int_}"
 	else
-		__sx_arg_isep_r_=$((__sx_arg_isep_n_ - __sx_arg_isep_lim_ * __sx_arg_isep_abs_))
+		__sx_arg_isep_r_=$((${#} - __sx_arg_isep_lim_ * ${__sx_arg_isep_int_#-}))
 	fi
 
-	__sx_arg_isep_j_=1 __sx_arg_isep_k_=0
 	for __sx_arg_isep_arg_ in "${@}"; do
 		if
 			M_NUM_LT([|__sx_arg_isep_r_|], [|__sx_arg_isep_j_|]) &&
-			M_NUM_EQ([|$(((__sx_arg_isep_j_ - __sx_arg_isep_r_ - 1) % __sx_arg_isep_abs_))|], [|0|]) &&
-			M_NUM_LT([|__sx_arg_isep_k_|], [|__sx_arg_isep_lim_|])
+			M_NUM_EQ([|$(((__sx_arg_isep_j_ - __sx_arg_isep_r_ - 1) % __sx_arg_isep_int_))|], [|0|]) &&
+			M_NUM_LT([|0|], [|__sx_arg_isep_lim_|])
 		then
 			__M_ARG_BIND_QUOTE_BODY([|__sx_arg_isep|], [|"${__sx_arg_isep_sep_}"|], CLEANUP)
-			__sx_arg_isep_k_=$((__sx_arg_isep_k_ + 1))
+			__sx_arg_isep_lim_=$((__sx_arg_isep_lim_ - 1))
 		fi
 
 		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_isep|], [|"${__sx_arg_isep_arg_}"|], CLEANUP)
