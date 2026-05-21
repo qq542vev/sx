@@ -3740,12 +3740,10 @@ sx_str_ew() {
 	shift "$((0 < ${#}))"
 
 	for __sx_str_ew_arg in "${@}"; do
-		case "${__sx_str_ew_tgt}" in
-			*"${__sx_str_ew_arg}")
-				unset __sx_str_ew_tgt __sx_str_ew_arg
-				return "${SX_EX_OK}"
-				;;
-		esac
+		case "${__sx_str_ew_tgt}" in *"${__sx_str_ew_arg}")
+			unset __sx_str_ew_tgt __sx_str_ew_arg
+			return "${SX_EX_OK}"
+		;; esac
 	done
 
 	unset __sx_str_ew_tgt __sx_str_ew_arg
@@ -3772,12 +3770,10 @@ sx_str_has() {
 	shift "$((0 < ${#}))"
 
 	for __sx_str_has_arg in "${@}"; do
-		case "${__sx_str_has_tgt}" in
-			*"${__sx_str_has_arg}"*)
-				unset __sx_str_has_tgt __sx_str_has_arg
-				return "${SX_EX_OK}"
-				;;
-		esac
+		case "${__sx_str_has_tgt}" in *"${__sx_str_has_arg}"*)
+			unset __sx_str_has_tgt __sx_str_has_arg
+			return "${SX_EX_OK}"
+		;; esac
 	done
 
 	unset __sx_str_has_tgt __sx_str_has_arg
@@ -4118,7 +4114,7 @@ __sx_str_split() {
 		if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
 			# 前方からグロブ分割
 			while
-				case "${__sx_str_split_str_}" in *${__sx_str_split_sep_}*) ;; *) ! :;; esac &&
+				M_STR_MATCH([|"${__sx_str_split_str_}"|], [|*${__sx_str_split_sep_}*|]) &&
 				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 			do
 				__sx_str_split_val_="${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
@@ -4142,7 +4138,7 @@ __sx_str_split() {
 		else
 			# 後方からグロブ分割
 			while
-				case "${__sx_str_split_str_}" in *${__sx_str_split_sep_}*) ;; *) ! :;; esac &&
+				M_STR_MATCH([|"${__sx_str_split_str_}"|], [|*${__sx_str_split_sep_}*|]) &&
 				! M_STR_EQ([|"${__sx_str_split_lim_}"|], [|0|])
 			do
 				__sx_str_split_val_="${__sx_str_split_str_##*${__sx_str_split_sep_}}"
@@ -4589,12 +4585,10 @@ sx_str_sw() {
 	shift "$((0 < ${#}))"
 
 	for __sx_str_sw_arg in "${@}"; do
-		case "${__sx_str_sw_tgt}" in
-			"${__sx_str_sw_arg}"*)
-				unset __sx_str_sw_tgt __sx_str_sw_arg
-				return "${SX_EX_OK}"
-				;;
-		esac
+		case "${__sx_str_sw_tgt}" in "${__sx_str_sw_arg}"*)
+			unset __sx_str_sw_tgt __sx_str_sw_arg
+			return "${SX_EX_OK}"
+		;; esac
 	done
 
 	unset __sx_str_sw_tgt __sx_str_sw_arg
