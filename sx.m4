@@ -4101,10 +4101,11 @@ __sx_str_split() {
 		fi
 
 		if M_NUM_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))|], [|0|]); then
-			eval __sx_arg_isep "${__sx_str_split_bind_}" "${SX_CFG_SEP}" "${__sx_str_split_out_}"
-		else
-			__sx_var_set "${__sx_str_split_bind_}=${__sx_str_split_out_}"
+			eval __sx_arg_isep __sx_str_split_out_ "${SX_CFG_SEP}" "${__sx_str_split_out_}"
 		fi
+
+		eval set -- "${__sx_str_split_out_}"
+		__sx_arg_quote "${__sx_str_split_bind_}" "${@}"
 
 		unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_out_ __sx_str_split_esc_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_
 		return "${SX_EX_OK}"
