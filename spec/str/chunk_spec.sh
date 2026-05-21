@@ -63,6 +63,107 @@ Describe "sx_str_chunk"
     The status should equal 64
   End
 
+  It "バインドチェーンを用いて前方から分配代入できること"
+    When call sx_str_chunk "v1:v2:rest" "abcde" 2
+    The status should be success
+    The variable v1 should equal "ab"
+    The variable v2 should equal "cd"
+    The variable rest should equal "'e'"
+  End
+
+  It "バインドチェーンを用いて後方から分配代入できること"
+    When call sx_str_chunk "v1:v2:rest" "abcde" -2
+    The status should be success
+    The variable v1 should equal "a"
+    The variable v2 should equal "bc"
+    The variable rest should equal "'de'"
+  End
+
+  It "シェルのメタ文字を安全に（展開せずに）処理できること"
+    When call sx_str_chunk "v1:v2:rest" ' $(echo BUG) $HOME `date` ' 7
+    The status should be success
+    The variable v1 should equal ' $(echo'
+    The variable v2 should equal ' BUG) $'
+    The variable rest should equal "'HOME \`d' 'ate\` '"
+  End
+
+  It "バインドチェーン末尾がコロンの場合（a:b:）に正しく代入されること"
+    When call sx_str_chunk "v1:v2:" "abcde" 1
+    The status should be success
+    The variable v1 should equal "a"
+    The variable v2 should equal "b"
+  End
+
+  It "コマンド置換を含む文字列が実行（二重評価）されないこと"
+    When call sx_str_chunk "v1" '$(echo INJECTION)' 20
+    The status should be success
+    The variable v1 should equal "'\$(echo INJECTION)'"
+  End
+
+  It "a:b: 形式で巨大な文字列を高速に処理できること"
+    # 10,000文字の文字列を生成
+    long_str="aaaaaaaaaa" # 10
+    long_str="${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}" # 100
+    long_str="${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}" # 1,000
+    long_str="${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}${long_str}" # 10,000
+    
+    When call sx_str_chunk "v1:v2:" "$long_str" 1
+    The status should be success
+    The variable v1 should equal "a"
+    The variable v2 should equal "a"
+  End
+
+  Describe "組み合わせテスト: 前方分割"
+    It "前方分割: limitなし + バインドチェーン"
+      When call sx_str_chunk "v1:v2:rest" "abcde" 2
+      The variable v1 should equal "ab"
+      The variable v2 should equal "cd"
+      The variable rest should equal "'e'"
+    End
+
+    It "前方分割: limitあり + バインドチェーン"
+      When call sx_str_chunk "v1:v2:rest" "abcdefgh" 2 2
+      # 1:ab, 2:cd -> limit到達 -> 残り:efgh
+      The variable v1 should equal "ab"
+      The variable v2 should equal "cd"
+      The variable v3 should be undefined
+      The variable rest should equal "'efgh'"
+    End
+
+    It "前方分割: limitあり + 早期終了形式"
+      When call sx_str_chunk "v1:v2:" "abcdefgh" 2 1
+      # 1:ab -> limit到達 -> 残り:cdefgh -> v2に代入
+      The variable v1 should equal "ab"
+      The variable v2 should equal "cdefgh"
+    End
+  End
+
+  Describe "組み合わせテスト: 後方分割"
+    It "後方分割: limitなし + バインドチェーン"
+      When call sx_str_chunk "v1:v2:rest" "abcde" -2
+      The variable v1 should equal "a"
+      The variable v2 should equal "bc"
+      The variable rest should equal "'de'"
+    End
+
+    It "後方分割: limitあり + バインドチェーン"
+      When call sx_str_chunk "v1:v2:rest" "abcdefgh" -2 2
+      # 後方から2回: 1:gh, 2:ef -> 残り:abcd
+      # 出現順に並ぶので: v1=abcd, v2=ef, rest='gh'
+      The variable v1 should equal "abcd"
+      The variable v2 should equal "ef"
+      The variable rest should equal "'gh'"
+    End
+
+    It "後方分割: limitあり + 早期終了形式"
+      When call sx_str_chunk "v1:v2:" "abcdefgh" -2 1
+      # 後方から1回: 1:gh -> 残り:abcdef
+      # v1=abcdef, v2=gh
+      The variable v1 should equal "abcdef"
+      The variable v2 should equal "gh"
+    End
+  End
+
   It "読み取り専用変数に対して EX_NOPERM (77) を返すこと"
     readonly ro_var_chunk=fixed
     When call sx_str_chunk ro_var_chunk "abc" 2

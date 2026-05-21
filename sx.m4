@@ -29,25 +29,30 @@ define([|M_NUM_LE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<=, $@)))|], 0)|]) dnl
 define([|M_NUM_LT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<, $@)))|], 0)|]) dnl
 define([|M_NUM_NE|], [|M_STR_EQ([|$((__M_NUM_CMP_CHAIN(==, $@)))|], 0)|]) dnl
 
+define([|__M_QUOTE_PREPEND|], [|dnl
+	case $2 in
+		*"'"*) __sx_str_sub $1_esc_ $2 "'" "'\\''";;
+		*) $1_esc_=$2 ;;
+	esac
+	$1_out_="'${$1_esc_}'${$1_out_:+ }${$1_out_}"|])
+
 define([|__M_QUOTE_APPEND|], [|dnl
-				case $2 in
-					*"'"*) __sx_str_sub $1_esc_ $2 "'" "'\\''" ;;
-					*) $1_esc_=$2 ;;
-				esac
-				$1_out_="${$1_out_}${$1_out_:+ }'${$1_esc_}'"|])
+	case $2 in
+		*"'"*) __sx_str_sub $1_esc_ $2 "'" "'\\''";;
+		*) $1_esc_=$2 ;;
+	esac
+	$1_out_="${$1_out_}${$1_out_:+ }'${$1_esc_}'"|])
 
 define([|__M_ARG_BIND_QUOTE_BODY|], [|dnl
-		case "${$1_bind_}" in
-			:*) $1_bind_="${$1_bind_#:}";;
-			*:*)
-				eval "${$1_bind_%%:*}=patsubst([|$2|], [|[\\"`]|], [|\\\&|])"
-				$1_bind_="${$1_bind_#*:}"
-				;;
-			?*)
-				__M_QUOTE_APPEND([|$1|], [|$2|])
-				;;
-			*) ! :;;
-		esac|])
+	case "${$1_bind_}" in
+		:*) $1_bind_="${$1_bind_#:}";;
+		*:*)
+			eval "${$1_bind_%%:*}=patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
+			$1_bind_="${$1_bind_#*:}"
+			;;
+		?*) __M_QUOTE_APPEND([|$1|], [|$2|]);;
+		*) ! :;;
+	esac|])
 
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
@@ -3571,7 +3576,7 @@ sx_str_any() {
 sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${4+"${4}"} || return
 	! M_NUM_EQ(${3-1}, 0) || return "${SX_EX_USAGE}"
 
 	__sx_str_chunk "${@}"
@@ -3586,55 +3591,58 @@ sx_str_chunk() {
 ##   sx_str_chunk の内部実装。
 ##   引数チェックは行わない。
 __sx_str_chunk() {
-	__sx_str_chunk_res_="${1}"
+	__sx_var_bind_init "${1}"
+	__sx_str_chunk_bind_="${1}"
 	__sx_str_chunk_str_="${2-}"
 	__sx_str_chunk_len_="$((${3-1}))"
 	__sx_str_chunk_lim_="$((${4-${SX_NUM_I32_MAX}}))"
-	__sx_str_chunk_out_=
 
 	if M_NUM_LT([|0|], [|__sx_str_chunk_len_|]); then
-		# Forward
+		# Forward: 早期終了をサポート
+		__sx_str_chunk_out_=
 		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
-
 		while
 			M_NUM_LE([|__sx_str_chunk_len_|], [|${#__sx_str_chunk_str_}|]) &&
 			! M_STR_EQ([|"${__sx_str_chunk_lim_}"|], [|0|])
 		do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"
-			__sx_str_chunk_out_="${__sx_str_chunk_out_} ${__sx_str_chunk_esc_}"
+			__M_ARG_BIND_QUOTE_BODY([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|]) || {
+				unset __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_next_
+				return "${SX_EX_OK}"
+			}
 			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
 			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
 		done
 
 		if ! M_STR_EQ([|"${__sx_str_chunk_str_}"|], [|''|]); then
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_}"
-			__sx_str_chunk_out_="${__sx_str_chunk_out_} ${__sx_str_chunk_esc_}"
+			__M_ARG_BIND_QUOTE_BODY([|__sx_str_chunk|], [|"${__sx_str_chunk_str_}"|]) || {
+				unset __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_next_
+				return "${SX_EX_OK}"
+			}
 		fi
+		eval ${__sx_str_chunk_out_:+"${__sx_str_chunk_bind_}=\"\${__sx_str_chunk_out_}\""}
 	else
-		# Backward
+		# Backward: 全走査が必要なため set -- で収集
 		__sx_str_chunk_len_=$((__sx_str_chunk_len_ * -1))
 		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
-
+		set --
 		while
 			M_NUM_LE([|__sx_str_chunk_len_|], [|${#__sx_str_chunk_str_}|]) &&
 			! M_STR_EQ([|"${__sx_str_chunk_lim_}"|], [|0|])
 		do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_#${__sx_str_chunk_next_}}"
-			__sx_str_chunk_out_=" ${__sx_str_chunk_esc_}${__sx_str_chunk_out_}"
+			set -- "${__sx_str_chunk_str_#${__sx_str_chunk_next_}}" "${@}"
 			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
 			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
 		done
 
 		if ! M_STR_EQ([|"${__sx_str_chunk_str_}"|], [|''|]); then
-			__sx_arg_quote __sx_str_chunk_esc_ "${__sx_str_chunk_str_}"
-			__sx_str_chunk_out_=" ${__sx_str_chunk_esc_}${__sx_str_chunk_out_}"
+			set -- "${__sx_str_chunk_str_}" "${@}"
 		fi
+		__sx_arg_quote "${__sx_str_chunk_bind_}" "${@}"
 	fi
 
-	__sx_var_set "${__sx_str_chunk_res_}=${__sx_str_chunk_out_# }"
-	unset __sx_str_chunk_res_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_next_
+	unset __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_esc_ __sx_str_chunk_qm_ __sx_str_chunk_next_
 }
 
 ### sx_str_eq - すべての引数が文字列として一致するか確認する
