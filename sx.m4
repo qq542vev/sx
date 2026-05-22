@@ -3591,9 +3591,9 @@ __sx_str_chunk() {
 			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
 		done
 
-		M_STR_EQ([|"${__sx_str_chunk_str_}"|], [|''|]) || {
+		case "${__sx_str_chunk_str_}" in ?*)
 			__M_ARG_BIND_QUOTE_BODY([|__sx_str_chunk|], [|"${__sx_str_chunk_str_}"|], CLEANUP)
-		}
+		esac
 
 		eval ${__sx_str_chunk_out_:+"${__sx_str_chunk_bind_}=\"\${__sx_str_chunk_out_}\""}
 	else
@@ -3612,9 +3612,9 @@ __sx_str_chunk() {
 			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
 		done
 
-		M_STR_EQ([|"${__sx_str_chunk_str_}"|], [|''|]) || {
+		case "${__sx_str_chunk_str_}" in ?*)
 			set -- "${__sx_str_chunk_str_}" "${@}"
-		}
+		esac
 
 		__sx_arg_quote "${__sx_str_chunk_bind_}" "${@}"
 	fi
@@ -4042,7 +4042,7 @@ __sx_str_split() {
 	__sx_str_split_sep_="${3-}"
 	__sx_str_split_lim_="$((${4-${SX_NUM_I32_MAX}}))"
 	__sx_str_split_flg_="$((${5-0}))"
-	__sx_str_split_inc_=$((__sx_str_split_flg_ & SX_STR_SPLIT_INC))
+	__sx_str_split_inc_=$(((__sx_str_split_flg_ & SX_STR_SPLIT_INC) != 0))
 	__sx_str_split_out_=
 
 	set --
@@ -4073,7 +4073,9 @@ __sx_str_split() {
 			__sx_arg_quote __sx_str_split_out_ "${__sx_str_split_str_}"
 		fi
 
-		M_STR_EQ([|"${__sx_str_split_inc_}"|], [|0|]) || eval __sx_arg_isep __sx_str_split_out_ "${SX_CFG_SEP}" "${__sx_str_split_out_}"
+		case "${__sx_str_split_inc_}" in 1)
+			eval __sx_arg_isep __sx_str_split_out_ "${SX_CFG_SEP}" "${__sx_str_split_out_}"
+		esac
 
 		eval __sx_arg_quote '"${__sx_str_split_bind_}"' "${__sx_str_split_out_}"
 	elif M_STR_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
@@ -4091,10 +4093,10 @@ __sx_str_split() {
 				__sx_str_split_rem_="${__sx_str_split_str_#*${__sx_str_split_sep_}}"
 
 				# 区切り文字を含めるフラグがある場合
-				M_STR_EQ([|"${__sx_str_split_inc_}"|], [|0|]) || {
+				case "${__sx_str_split_inc_}" in 1)
 					__sx_str_split_mid_="${__sx_str_split_str_#${__sx_str_split_val_}}"
 					__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_mid_%${__sx_str_split_rem_}}"|], CLEANUP)
-				}
+				esac
 
 				__sx_str_split_str_="${__sx_str_split_rem_}"
 				__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
@@ -4113,10 +4115,10 @@ __sx_str_split() {
 				__sx_str_split_rem_="${__sx_str_split_str_%${__sx_str_split_sep_}*}"
 
 				# 区切り文字を含めるフラグがある場合
-				M_STR_EQ([|"${__sx_str_split_inc_}"|], [|0|]) || {
+				case "${__sx_str_split_inc_}" in 1)
 					__sx_str_split_mid_="${__sx_str_split_str_%${1}}"
 					set -- "${__sx_str_split_mid_#${__sx_str_split_rem_}}" "${@}"
-				}
+				esac
 
 				__sx_str_split_str_="${__sx_str_split_rem_}"
 				__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
@@ -4132,7 +4134,9 @@ __sx_str_split() {
 		do
 			__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"|], CLEANUP)
 
-			M_STR_EQ([|"${__sx_str_split_inc_}"|], [|0|]) || __M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_sep_}"|], CLEANUP)
+			case "${__sx_str_split_inc_}" in 1)
+				__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_sep_}"|], CLEANUP)
+			esac
 
 			__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
 			__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
@@ -4149,7 +4153,9 @@ __sx_str_split() {
 		do
 			set -- "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}" "${@}"
 
-			M_STR_EQ([|"${__sx_str_split_inc_}"|], [|0|]) || set -- "${__sx_str_split_sep_}" "${@}"
+			case "${__sx_str_split_inc_}" in 1)
+				set -- "${__sx_str_split_sep_}" "${@}"
+			esac
 
 			__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
 			__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
