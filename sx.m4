@@ -883,22 +883,26 @@ __sx_arg_isep() {
 	__sx_arg_isep_j_=1
 
 	# ::: の位置を特定 (Bounded Search: $2, $3, $4, $5)
-	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]); then
-		shift 2
-	elif M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_isep_sep_="${2}"
-		shift 3
-	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}"
-		shift 4
-	elif M_STR_EQ([|"${5-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}"
-		shift 5
-	else
-		# 従来形式
-		__sx_arg_isep_sep_="${2-}" __sx_arg_isep_int_="${3-1}" __sx_arg_isep_lim_="${4-${SX_NUM_I32_MAX}}"
-		shift "$((1 + 0${1+1} + 0${2+1} + 0${3+1}))"
-	fi
+	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}") shift 2;;
+		"${3+X${3}}")
+			__sx_arg_isep_sep_="${2}"
+			shift 3
+			;;
+		"${4+X${4}}")
+			__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}"
+			shift 4
+			;;
+		"${5+X${5}}")
+			__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}"
+			shift 5
+			;;
+		*)
+			# 従来形式
+			__sx_arg_isep_sep_="${2-}" __sx_arg_isep_int_="${3-1}" __sx_arg_isep_lim_="${4-${SX_NUM_I32_MAX}}"
+			shift "$((1 + 0${2+1} + 0${3+1} + 0${4+1}))"
+			;;
+	esac
 
 	__sx_arg_isep_eff_=$(((${#} - 1) / ${__sx_arg_isep_int_#-}))
 	M_NUM_LE([|__sx_arg_isep_lim_|], [|__sx_arg_isep_eff_|]) || __sx_arg_isep_lim_="${__sx_arg_isep_eff_}"
@@ -1056,7 +1060,6 @@ __sx_arg_find() {
 	return "${1}"
 }
 
-
 ### sx_arg_range - 位置パラメータの参照文字列を生成する
 ##
 ## 使い方:
@@ -1079,9 +1082,9 @@ sx_arg_range() {
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${2-}" ${3+"${3}"} ${4+"${4}"} || return
 
-	if M_NUM_EQ([|${4-1}|], [|0|]); then
+	case "${4-1}" in 0)
 		return "${SX_EX_USAGE}"
-	fi
+	esac
 
 	__sx_arg_range "${@}"
 }
