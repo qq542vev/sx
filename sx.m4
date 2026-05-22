@@ -54,6 +54,17 @@ define([|__M_ARG_BIND_QUOTE_BODY|], [|dnl
 		*) unset $3; return "${SX_EX_OK}";;
 	esac|])
 
+define([|__M_ARG_BIND_UNQUOTE_BODY|], [|dnl
+	case "${$1_bind_}" in
+		:*) $1_bind_="${$1_bind_#:}";;
+		*:*)
+			eval "${$1_bind_%%:*}=patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
+			$1_bind_="${$1_bind_#*:}"
+			;;
+		?*) $1_out_="${$1_out_}${$1_out_:+ }"$2;;
+		*) unset $3; return "${SX_EX_OK}";;
+	esac|])
+
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
 readonly SX_EX_USAGE=64
@@ -955,7 +966,7 @@ __sx_arg_isep() {
 sx_arg_find() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_find "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
 	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]) || M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
 		:
@@ -977,6 +988,9 @@ sx_arg_find() {
 	__sx_arg_find "${@}"
 }
 
+define([|V|], [|__sx_arg_find_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(lim) V(flg) V(glob) V(out) V(i) V(arg) V(found)|])dnl
+
 ### __sx_arg_find - 引数リストから指定された値を探し、そのインデックスを取得する（内部用）
 ##
 ## 使い方:
@@ -986,10 +1000,13 @@ sx_arg_find() {
 ##   sx_arg_find の内部実装。
 ##   引数チェックは行わない。
 __sx_arg_find() {
-	__sx_arg_find_res_="${1}"
+	__sx_var_bind_init "${1}"
+	__sx_arg_find_bind_="${1}"
 	__sx_arg_find_tgt_=
 	__sx_arg_find_lim_=1
 	__sx_arg_find_flg_=0
+	__sx_arg_find_found_=0
+	__sx_arg_find_out_=
 
 	# ::: セパレータに基づいてオプションをパース
 	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]); then
@@ -998,23 +1015,18 @@ __sx_arg_find() {
 		__sx_arg_find_tgt_="${2}"
 		shift 3
 	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_find_tgt_="${2}"
-		__sx_arg_find_lim_="$((${3-1}))"
+		__sx_arg_find_tgt_="${2}" __sx_arg_find_lim_=$((${3-1}))
 		shift 4
 	elif M_STR_EQ([|"${5-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_find_tgt_="${2}"
-		__sx_arg_find_lim_="$((${3-1}))"
-		__sx_arg_find_flg_="$((${4-0}))"
+		__sx_arg_find_tgt_="${2}" __sx_arg_find_lim_=$((${3-1})) __sx_arg_find_flg_=$((${4-0}))
 		shift 5
 	else
 		# ::: がない場合は固定位置の引数を使用（フォールバック）
-		__sx_arg_find_tgt_="${2-}"
-		__sx_arg_find_lim_="$((${3-1}))"
-		__sx_arg_find_flg_="$((${4-0}))"
+		__sx_arg_find_tgt_="${2-}" __sx_arg_find_lim_=$((${3-1})) __sx_arg_find_flg_=$((${4-0}))
 		shift $((1 + 0${2+1} + 0${3+1} + 0${4+1}))
 	fi
 
-	__sx_arg_find_out_=
+	__sx_arg_find_glob_=$(( (__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0 ))
 
 	if M_NUM_LT([|__sx_arg_find_lim_|], [|0|]); then
 		# 逆方向検索
@@ -1023,16 +1035,14 @@ __sx_arg_find() {
 		while M_NUM_LT([|0|], [|__sx_arg_find_i_|]); do
 			eval __sx_arg_find_arg_=\"\${${__sx_arg_find_i_}}\"
 
-			if M_NUM_EQ([|$((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB))|], [|0|]); then
-				M_STR_EQ([|"${__sx_arg_find_arg_}"|], [|"${__sx_arg_find_tgt_}"|])
-			else
-				M_STR_MATCH([|"${__sx_arg_find_arg_}"|], [|${__sx_arg_find_tgt_}|])
-			fi && {
-				__sx_arg_find_out_="${__sx_arg_find_out_} ${__sx_arg_find_i_}"
+			case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
+				__M_ARG_BIND_UNQUOTE_BODY([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
+
+				__sx_arg_find_found_=1
 				__sx_arg_find_lim_=$((__sx_arg_find_lim_ + 1))
 
-				M_NUM_NE([|__sx_arg_find_lim_|], [|0|]) || break
-			}
+				case "${__sx_arg_find_lim_}" in 0) break; esac
+			esac
 
 			__sx_arg_find_i_=$((__sx_arg_find_i_ - 1))
 		done
@@ -1041,27 +1051,26 @@ __sx_arg_find() {
 		__sx_arg_find_i_=1
 
 		for __sx_arg_find_arg_ in "${@}"; do
-			if M_NUM_EQ([|$((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB))|], [|0|]); then
-				M_STR_EQ([|"${__sx_arg_find_arg_}"|], [|"${__sx_arg_find_tgt_}"|])
-			else
-				M_STR_MATCH([|"${__sx_arg_find_arg_}"|], [|${__sx_arg_find_tgt_}|])
-			fi && {
-				__sx_arg_find_out_="${__sx_arg_find_out_} ${__sx_arg_find_i_}"
+			case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
+				__M_ARG_BIND_UNQUOTE_BODY([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
+
+				__sx_arg_find_found_=1
 				__sx_arg_find_lim_=$((__sx_arg_find_lim_ - 1))
 
-				M_NUM_NE([|__sx_arg_find_lim_|], [|0|]) || break
-			}
+				case "${__sx_arg_find_lim_}" in 0) break; esac
+			esac
 
 			__sx_arg_find_i_=$((__sx_arg_find_i_ + 1))
 		done
 	fi
 
-	__sx_var_set "${__sx_arg_find_res_}=${__sx_arg_find_out_# }"
-	M_STR_EQ([|"${__sx_arg_find_out_}"|], [|''|]) && set -- 1 || set -- "${SX_EX_OK}"
+	eval ${__sx_arg_find_out_:+"${__sx_arg_find_bind_}=\"\${__sx_arg_find_out_# }\""}
+	M_STR_EQ([|"${__sx_arg_find_found_}"|], [|1|]) && set -- "${SX_EX_OK}" || set -- 1
 
-	unset __sx_arg_find_res_ __sx_arg_find_tgt_ __sx_arg_find_lim_ __sx_arg_find_flg_ __sx_arg_find_out_ __sx_arg_find_i_ __sx_arg_find_arg_
+	unset CLEANUP
 	return "${1}"
 }
+
 
 ### sx_arg_range - 位置パラメータの参照文字列を生成する
 ##

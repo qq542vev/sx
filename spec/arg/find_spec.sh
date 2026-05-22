@@ -72,6 +72,38 @@ Describe 'sx_arg_find'
 		End
 	End
 
+	Describe '分配代入 (Bind)'
+		It '複数の一致項目を個別の変数に分配する'
+			sx_arg_find "idx1:idx2" "b" 2 ::: "a" "b" "c" "b" "d"
+			Assert [ "$idx1" = "2" ]
+			Assert [ "$idx2" = "4" ]
+		End
+
+		It 'コロンを使用して特定のインデックスをスキップする'
+			sx_arg_find ":idx2" "b" 2 ::: "a" "b" "c" "b" "d"
+			Assert [ "${idx1+set}" != "set" ]
+			Assert [ "$idx2" = "4" ]
+		End
+
+		It 'バインド形式の最後の変数に残りの一致項目が格納される'
+			sx_arg_find "idx1:idx_rest" "b" 3 ::: "a" "b" "c" "b" "d" "b"
+			Assert [ "$idx1" = "2" ]
+			Assert [ "$idx_rest" = "4 6" ]
+		End
+
+		It '一致項目が足りない場合に残りの変数が空になる'
+			sx_arg_find "idx1:idx2:idx3" "b" 2 ::: "a" "b" "c" "b"
+			Assert [ "$idx1" = "2" ]
+			Assert [ "$idx2" = "4" ]
+			Assert [ "$idx3" = "" ]
+		End
+
+		It '単一変数の場合は従来通りスペース区切りで格納される'
+			sx_arg_find "res" "b" 2 ::: "a" "b" "c" "b"
+			Assert [ "$res" = "2 4" ]
+		End
+	End
+
 	Describe '::: セパレータ'
 		It '::: を使用してオプションを正しく処理する'
 			sx_arg_find res "target" 2 0 ::: "other" "target" "target"
