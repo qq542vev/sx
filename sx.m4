@@ -232,7 +232,7 @@ SX_SYS_REV=0
 ##    0  すべて妥当 (SX_EX_OK)
 ##    1  無効な設定項目、または不適切な値が含まれる
 sx_cfg_is_valid() {
-	if M_STR_EQ([|"${#}"|], [|0|]); then
+	case "${#}" in 0)
 		__sx_cfg_is_valid_out=
 
 		for __sx_cfg_is_valid_vn in NUM_RANGE SKIP_CHK SIG_BASE SIG_ARR SEP; do
@@ -245,35 +245,25 @@ sx_cfg_is_valid() {
 		sx_cfg_is_valid "${@}" || return 1
 
 		return "${SX_EX_OK}"
-	fi
+	esac
 
 	for __sx_cfg_is_valid_arg in "${@}"; do
-		__sx_cfg_is_valid_vn="${__sx_cfg_is_valid_arg%%=*}"
-		__sx_cfg_is_valid_val="${__sx_cfg_is_valid_arg#*=}"
-
-		if M_STR_EQ([|"${__sx_cfg_is_valid_vn}"|], [|"${__sx_cfg_is_valid_arg}"|]); then
-			case "${__sx_cfg_is_valid_vn}" in
-				NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP) continue;;
-				*)
-					unset __sx_cfg_is_valid_arg __sx_cfg_is_valid_vn __sx_cfg_is_valid_val
-					return 1
-					;;
-			esac
-		fi
-
-		case "${__sx_cfg_is_valid_vn}" in
-			NUM_RANGE) M_STR_MATCH([|"${__sx_cfg_is_valid_val}"|], [|32|], [|64|], [|128|]);;
-			SKIP_CHK) M_STR_MATCH([|"${__sx_cfg_is_valid_val}"|], [|0|], [|1|]);;
-			SEP | SIG_BASE | SIG_ARR) M_STR_NE([|"${__sx_cfg_is_valid_val}"|], [|''|]);;
-			*) ! :;;
-			esac || {
-				unset __sx_cfg_is_valid_arg __sx_cfg_is_valid_vn __sx_cfg_is_valid_val
+		case "${__sx_cfg_is_valid_arg}" in
+			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP);;
+			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128);;
+			SKIP_CHK=[01] | SEP=?* | SIG_BASE=?* | SIG_ARR=?*);;
+			*)
+				unset __sx_cfg_is_valid_arg
 				return 1
-			}
+				;;
+		esac
 	done
 
-	unset __sx_cfg_is_valid_arg __sx_cfg_is_valid_vn __sx_cfg_is_valid_val
+	unset __sx_cfg_is_valid_arg
 }
+
+define([|V|], [|__sx_cfg_set_$1|])dnl
+define([|CLEANUP|], [|V(arg) V(chk)|])dnl
 
 ### sx_cfg_set - SX_CFG_* を設定する
 ##
@@ -292,7 +282,8 @@ sx_cfg_is_valid() {
 sx_cfg_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_cfg_set "${@}" || return; return 0;; esac
 
-	M_STR_NE([|"${#}"|], [|0|]) || return "${SX_EX_OK}"
+	case "${#}" in 0) return "${SX_EX_OK}"; esac
+
 	sx_cfg_is_valid "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_cfg_set_chk=
@@ -302,11 +293,11 @@ sx_cfg_set() {
 	done
 
 	eval sx_var_is_rw "${__sx_cfg_set_chk}" || {
-		unset __sx_cfg_set_chk __sx_cfg_set_arg
+		unset CLEANUP
 		return "${SX_EX_NOPERM}"
 	}
 
-	unset __sx_cfg_set_chk __sx_cfg_set_arg
+	unset CLEANUP
 	__sx_cfg_set "${@}"
 }
 
@@ -322,21 +313,17 @@ sx_cfg_set() {
 ##   SIG_BASE が変更された場合は、SIG_ARR も自動的に更新する。
 __sx_cfg_set() {
 	for __sx_cfg_set_arg_ in "${@}"; do
-		__sx_cfg_set_vn_="${__sx_cfg_set_arg_%%=*}"
-
-		case "${__sx_cfg_set_vn_}" in
-			"${__sx_cfg_set_arg_}")
-				eval "SX_CFG_${__sx_cfg_set_vn_}=\"\${SX_CFG_DEF_${__sx_cfg_set_vn_}}\"";;
-			*)
-				eval "SX_CFG_${__sx_cfg_set_vn_}=\"\${__sx_cfg_set_arg_#*=}\"";;
+		case "${__sx_cfg_set_arg_}" in
+			*=*) eval "SX_CFG_${__sx_cfg_set_arg_%%=*}=\"\${__sx_cfg_set_arg_#*=}\"";;
+			*) eval "SX_CFG_${__sx_cfg_set_arg_}=\"\${SX_CFG_DEF_${__sx_cfg_set_arg_}}\"";;
 		esac
 
-		case "${__sx_cfg_set_vn_}" in SIG_BASE)
+		case "${__sx_cfg_set_arg_}" in SIG_BASE | SIG_BASE=*)
 			SX_CFG_SIG_ARR="array-${SX_CFG_SIG_BASE}"
 		esac
 	done
 
-	unset __sx_cfg_set_arg_ __sx_cfg_set_vn_
+	unset __sx_cfg_set_arg_
 }
 
 # ========================================
@@ -539,7 +526,7 @@ sx_ex_remap() {
 			-) ;;
 			*?-) sx_ex_is_status "${__sx_ex_remap_src%-}";;
 			-?*) sx_ex_is_status "${__sx_ex_remap_src#-}";;
-			*-*) sx_ex_is_status "${__sx_ex_remap_src#*-}" "${__sx_ex_remap_arg%%-*}";;
+			*-*) sx_ex_is_status "${__sx_ex_remap_src#*-}" "${__sx_ex_remap_src%%-*}";;
 			*) sx_ex_is_status "${__sx_ex_remap_src#!}" || __sx_ex_map "=${__sx_ex_remap_src#!}";;
 		esac || {
 			unset __sx_ex_remap_arg __sx_ex_remap_src __sx_ex_remap_dst
@@ -588,7 +575,7 @@ __sx_ex_remap() {
 	set -- "${__sx_ex_remap_map_}" "${__sx_ex_remap_cmd_}"
 	unset __sx_ex_remap_map_ __sx_ex_remap_cmd_
 
-	{ eval "${2}" && __sx_ex_remap_sts_="${?}"; } || __sx_ex_remap_sts_="${?}"
+	eval "${2}" && __sx_ex_remap_sts_="${?}" || __sx_ex_remap_sts_="${?}"
 	eval set -- "${1}"
 
 	for __sx_ex_remap_map_ in "${@}"; do
@@ -598,18 +585,17 @@ __sx_ex_remap() {
 			"${__sx_ex_remap_sts_}") __sx_ex_remap_sts_="${2}"; break;;
 			*-*)
 				set -- "${@}" "${1%%-*}" "${1#*-}"
+
 				if M_NUM_LE([|${3:-0}|], [|__sx_ex_remap_sts_|], [|${4:-255}|]); then
-					__sx_ex_remap_sts_="${2}"
-					break
+					__sx_ex_remap_sts_="${2}"; break
 				fi
 				;;
 			[A-Z]*)
 				__sx_ex_map "__sx_ex_remap_n_=${1}"
 
-				if M_STR_EQ([|"${__sx_ex_remap_n_}"|], [|"${__sx_ex_remap_sts_}"|]); then
-					__sx_ex_remap_sts_="${2}"
-					break
-				fi
+				case "${__sx_ex_remap_n_}" in "${__sx_ex_remap_sts_}")
+					__sx_ex_remap_sts_="${2}"; break
+				esac
 				;;
 			!*)
 				case "${1}" in ![A-Z]*)
@@ -618,8 +604,7 @@ __sx_ex_remap() {
 				esac
 
 				if ! M_STR_EQ([|"${1#!}"|], [|"${__sx_ex_remap_sts_}"|]); then
-					__sx_ex_remap_sts_="${2}"
-					break
+					__sx_ex_remap_sts_="${2}"; break
 				fi
 				;;
 		esac
@@ -868,10 +853,10 @@ sx_arg_isep() {
 		return "${1}"
 	}
 
-	M_NUM_NE([|${__sx_arg_isep_int-1}|], [|0|]) || {
+	case "${__sx_arg_isep_int-1}" in 0)
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
-	}
+	esac
 
 	unset CLEANUP
 	__sx_arg_isep "${@}"
@@ -912,17 +897,16 @@ __sx_arg_isep() {
 	else
 		# 従来形式
 		__sx_arg_isep_sep_="${2-}" __sx_arg_isep_int_="${3-1}" __sx_arg_isep_lim_="${4-${SX_NUM_I32_MAX}}"
-		shift $((1 + 0${1+1} + 0${2+1} + 0${3+1}))
+		shift "$((1 + 0${1+1} + 0${2+1} + 0${3+1}))"
 	fi
 
 	__sx_arg_isep_eff_=$(((${#} - 1) / ${__sx_arg_isep_int_#-}))
 	M_NUM_LE([|__sx_arg_isep_lim_|], [|__sx_arg_isep_eff_|]) || __sx_arg_isep_lim_="${__sx_arg_isep_eff_}"
 
-	if M_NUM_LE([|0|], [|__sx_arg_isep_int_|]); then
-		__sx_arg_isep_r_="${__sx_arg_isep_int_}"
-	else
-		__sx_arg_isep_r_=$((${#} - __sx_arg_isep_lim_ * ${__sx_arg_isep_int_#-}))
-	fi
+	case "${__sx_arg_isep_int_}" in
+		-*) __sx_arg_isep_r_=$((${#} - __sx_arg_isep_lim_ * ${__sx_arg_isep_int_#-}));;
+		*) __sx_arg_isep_r_="${__sx_arg_isep_int_}";;
+	esac
 
 	for __sx_arg_isep_arg_ in "${@}"; do
 		if
@@ -942,6 +926,9 @@ __sx_arg_isep() {
 
 	unset CLEANUP
 }
+
+define([|V|], [|__sx_arg_find_$1|])dnl
+define([|CLEANUP|], [|V(lim) V(flg)|])dnl
 
 ### sx_arg_find - 引数リストから指定された値を探し、そのインデックスを取得する
 ##
@@ -968,23 +955,19 @@ sx_arg_find() {
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
-	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]) || M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
-		:
-	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_find_lim="${3}"
-	elif M_STR_EQ([|"${5-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_find_lim="${3}"; __sx_arg_find_flg="${4}"
-	else
-		__sx_arg_find_lim="${3-1}"; __sx_arg_find_flg="${4-0}"
-	fi
+	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}" | "${3+X${3}}") ;;
+		"${4+X${4}}") __sx_arg_find_lim="${3}";;
+		*) __sx_arg_find_lim="${3-1}" __sx_arg_find_flg="${4-0}";;
+	esac
 
 	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_find_lim+"${__sx_arg_find_lim}"} ${__sx_arg_find_flg+"${__sx_arg_find_flg}"} || {
 		set -- "${?}"
-		unset __sx_arg_find_lim __sx_arg_find_flg
+		unset CLEANUP
 		return "${1}"
 	}
 
-	unset __sx_arg_find_lim __sx_arg_find_flg
+	unset CLEANUP
 	__sx_arg_find "${@}"
 }
 
@@ -1008,23 +991,25 @@ __sx_arg_find() {
 	__sx_arg_find_found_=0
 	__sx_arg_find_out_=
 
-	# ::: セパレータに基づいてオプションをパース
-	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]); then
-		shift 2
-	elif M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_find_tgt_="${2}"
-		shift 3
-	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_find_tgt_="${2}" __sx_arg_find_lim_=$((${3-1}))
-		shift 4
-	elif M_STR_EQ([|"${5-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_find_tgt_="${2}" __sx_arg_find_lim_=$((${3-1})) __sx_arg_find_flg_=$((${4-0}))
-		shift 5
-	else
-		# ::: がない場合は固定位置の引数を使用（フォールバック）
-		__sx_arg_find_tgt_="${2-}" __sx_arg_find_lim_=$((${3-1})) __sx_arg_find_flg_=$((${4-0}))
-		shift $((1 + 0${2+1} + 0${3+1} + 0${4+1}))
-	fi
+	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}") shift 2;;
+		"${3+X${3}}")
+			__sx_arg_find_tgt_="${2}"
+			shift 3
+			;;
+		"${4+X${4}}")
+			__sx_arg_find_tgt_="${2}" __sx_arg_find_lim_=$((${3-1}))
+			shift 4
+			;;
+		"${5+X${5}}")
+			__sx_arg_find_tgt_="${2}" __sx_arg_find_lim_=$((${3-1})) __sx_arg_find_flg_=${4-0}
+			shift 5
+			;;
+		*)
+			__sx_arg_find_tgt_="${2-}" __sx_arg_find_lim_=$((${3-1})) __sx_arg_find_flg_=${4-0}
+			shift "$((1 + 0${2+1} + 0${3+1} + 0${4+1}))"
+			;;
+	esac
 
 	__sx_arg_find_glob_=$(( (__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0 ))
 
@@ -3372,7 +3357,7 @@ sx_num_rel() {
 ##   引数チェックを行わずに数値と演算子の関係を順次評価する。
 __sx_num_rel() {
 	__sx_num_rel_lhs_="${1-}"
-	shift $((0 < ${#}))
+	shift "$((0 < ${#}))"
 
 	while M_STR_EQ([|"${2+X}"|], [|X|]); do
 		case "${1}" in
