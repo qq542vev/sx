@@ -803,7 +803,7 @@ __sx_arg_rquote() {
 
 		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_rquote|], [|"${__sx_arg_rquote_val_}"|], CLEANUP)
 
-		__sx_arg_rquote_i_=$((__sx_arg_rquote_i_ - 1))
+		: $(( __sx_arg_rquote_i_ -= 1 ))
 	done
 
 	eval ${__sx_arg_rquote_out_:+"${__sx_arg_rquote_bind_}=\"\${__sx_arg_rquote_out_}\""}
@@ -918,11 +918,11 @@ __sx_arg_isep() {
 			M_NUM_LT([|0|], [|__sx_arg_isep_lim_|])
 		then
 			__M_ARG_BIND_QUOTE_BODY([|__sx_arg_isep|], [|"${__sx_arg_isep_sep_}"|], CLEANUP)
-			__sx_arg_isep_lim_=$((__sx_arg_isep_lim_ - 1))
+			: $(( __sx_arg_isep_lim_ -= 1 ))
 		fi
 
 		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_isep|], [|"${__sx_arg_isep_arg_}"|], CLEANUP)
-		__sx_arg_isep_j_=$((__sx_arg_isep_j_ + 1))
+		: $(( __sx_arg_isep_j_ += 1 ))
 	done
 
 	eval ${__sx_arg_isep_out_:+"${__sx_arg_isep_bind_}=\"\${__sx_arg_isep_out_}\""}
@@ -1027,12 +1027,12 @@ __sx_arg_find() {
 				__M_ARG_BIND_UNQUOTE_BODY([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
 
 				__sx_arg_find_found_=1
-				__sx_arg_find_lim_=$((__sx_arg_find_lim_ + 1))
+				: $(( __sx_arg_find_lim_ += 1 ))
 
 				case "${__sx_arg_find_lim_}" in 0) break; esac
 			esac
 
-			__sx_arg_find_i_=$((__sx_arg_find_i_ - 1))
+			: $(( __sx_arg_find_i_ -= 1 ))
 		done
 	elif M_NUM_LT([|0|], [|__sx_arg_find_lim_|]); then
 		# 順方向検索
@@ -1043,12 +1043,12 @@ __sx_arg_find() {
 				__M_ARG_BIND_UNQUOTE_BODY([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
 
 				__sx_arg_find_found_=1
-				__sx_arg_find_lim_=$((__sx_arg_find_lim_ - 1))
+				: $(( __sx_arg_find_lim_ -= 1 ))
 
 				case "${__sx_arg_find_lim_}" in 0) break; esac
 			esac
 
-			__sx_arg_find_i_=$((__sx_arg_find_i_ + 1))
+			: $(( __sx_arg_find_i_ += 1 ))
 		done
 	fi
 
@@ -1854,7 +1854,7 @@ __sx_var_list_dep() {
 			__sx_var_list_dep_i_=0
 			while ! M_STR_EQ([|"${__sx_var_list_dep_i_}"|], [|"${__sx_var_list_dep_len_}"|]); do
 				set -- "${@}" "${1}_${__sx_var_list_dep_i_}"
-				__sx_var_list_dep_i_=$((__sx_var_list_dep_i_ + 1))
+				: $(( __sx_var_list_dep_i_ += 1 ))
 			done
 		fi
 
@@ -2212,7 +2212,7 @@ sx_var_touch() {
 __sx_var_touch() {
 	for __sx_var_touch_arg_ in "${@}"; do
 		eval "${__sx_var_touch_arg_}=\"\${${__sx_var_touch_arg_}%:*}:\${SX_SYS_REV}\""
-		SX_SYS_REV=$((SX_SYS_REV + 1))
+		: $(( SX_SYS_REV += 1 ))
 	done
 
 	unset __sx_var_touch_arg_
@@ -2259,7 +2259,7 @@ __sx_var_unset() {
 			__sx_var_unset_i_=0
 			while ! M_STR_EQ([|"${__sx_var_unset_i_}"|], [|"${__sx_var_unset_len_}"|]); do
 				set -- "${@}" "${1}_${__sx_var_unset_i_}"
-				__sx_var_unset_i_=$((__sx_var_unset_i_ + 1))
+				: $(( __sx_var_unset_i_ += 1 ))
 			done
 		fi
 
@@ -3454,12 +3454,12 @@ __sx_num_range() {
 	if M_NUM_LT([|0|], [|${4}|]); then
 		while M_NUM_LT([|__sx_num_range_cur_|], [|${3}|]); do
 			__sx_num_range_out_="${__sx_num_range_out_} ${__sx_num_range_cur_}"
-			__sx_num_range_cur_=$((__sx_num_range_cur_ + ${4}))
+			: $(( __sx_num_range_cur_ += ${4} ))
 		done
 	else
 		while M_NUM_LT([|${3}|], [|${__sx_num_range_cur_}|]); do
 			__sx_num_range_out_="${__sx_num_range_out_} ${__sx_num_range_cur_}"
-			__sx_num_range_cur_=$((__sx_num_range_cur_ + ${4}))
+			: $(( __sx_num_range_cur_ += ${4} ))
 		done
 	fi
 
@@ -3597,7 +3597,7 @@ __sx_str_chunk() {
 			__M_ARG_BIND_QUOTE_BODY([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], CLEANUP)
 
 			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
-			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
+			: $(( __sx_str_chunk_lim_ -= 1 ))
 		done
 
 		case "${__sx_str_chunk_str_}" in ?*)
@@ -3618,7 +3618,7 @@ __sx_str_chunk() {
 			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
 			set -- "${__sx_str_chunk_str_#${__sx_str_chunk_next_}}" "${@}"
 			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
-			__sx_str_chunk_lim_=$((__sx_str_chunk_lim_ - 1))
+			: $(( __sx_str_chunk_lim_ -= 1 ))
 		done
 
 		case "${__sx_str_chunk_str_}" in ?*)
@@ -4108,7 +4108,7 @@ __sx_str_split() {
 				esac
 
 				__sx_str_split_str_="${__sx_str_split_rem_}"
-				__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
+				: $(( __sx_str_split_lim_ -= 1 ))
 			done
 
 			__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_}"|], CLEANUP)
@@ -4130,7 +4130,7 @@ __sx_str_split() {
 				esac
 
 				__sx_str_split_str_="${__sx_str_split_rem_}"
-				__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
+				: $(( __sx_str_split_lim_ += 1 ))
 			done
 
 			__sx_arg_quote "${__sx_str_split_bind_}" "${__sx_str_split_str_}" "${@}"
@@ -4148,7 +4148,7 @@ __sx_str_split() {
 			esac
 
 			__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
-			__sx_str_split_lim_=$((__sx_str_split_lim_ - 1))
+			: $(( __sx_str_split_lim_ -= 1 ))
 		done
 
 		__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_}"|])
@@ -4167,7 +4167,7 @@ __sx_str_split() {
 			esac
 
 			__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
-			__sx_str_split_lim_=$((__sx_str_split_lim_ + 1))
+			: $(( __sx_str_split_lim_ += 1 ))
 		done
 
 		__sx_arg_quote "${__sx_str_split_bind_}" "${__sx_str_split_str_}" "${@}"
@@ -4279,7 +4279,7 @@ __sx_str_sub() {
 			do
 				__sx_str_sub_next_="${__sx_str_sub_str_#?}"
 				__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%"${__sx_str_sub_next_}"}${__sx_str_sub_rep_}"
-				__sx_str_sub_lim_=$((__sx_str_sub_lim_ - 1))
+				: $(( __sx_str_sub_lim_ -= 1 ))
 				__sx_str_sub_str_="${__sx_str_sub_next_}"
 			done
 
@@ -4293,7 +4293,7 @@ __sx_str_sub() {
 			do
 				__sx_str_sub_next_="${__sx_str_sub_str_%?}"
 				__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_#"${__sx_str_sub_next_}"}${__sx_str_sub_out_}"
-				__sx_str_sub_lim_=$((__sx_str_sub_lim_ + 1))
+				: $(( __sx_str_sub_lim_ += 1 ))
 				__sx_str_sub_str_="${__sx_str_sub_next_}"
 			done
 
@@ -4317,7 +4317,7 @@ __sx_str_sub() {
 				__sx_str_sub_str_="${__sx_str_sub_str_#${__sx_str_sub_val_}}"
 				__sx_str_sub_tmp_="${__sx_str_sub_str_#${__sx_str_sub_pat_}}"
 				__sx_str_sub_str_="${__sx_str_sub_tmp_}"
-				__sx_str_sub_lim_=$((__sx_str_sub_lim_ - 1))
+				: $(( __sx_str_sub_lim_ -= 1 ))
 			done
 		else
 			while
@@ -4326,7 +4326,7 @@ __sx_str_sub() {
 			do
 				__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%%"${__sx_str_sub_pat_}"*}${__sx_str_sub_rep_}"
 				__sx_str_sub_str_="${__sx_str_sub_str_#*"${__sx_str_sub_pat_}"}"
-				__sx_str_sub_lim_=$((__sx_str_sub_lim_ - 1))
+				: $(( __sx_str_sub_lim_ -= 1 ))
 			done
 		fi
 
@@ -4343,7 +4343,7 @@ __sx_str_sub() {
 				__sx_str_sub_str_="${__sx_str_sub_str_%${__sx_str_sub_val_}}"
 				__sx_str_sub_tmp_="${__sx_str_sub_str_%${__sx_str_sub_pat_}}"
 				__sx_str_sub_str_="${__sx_str_sub_tmp_}"
-				__sx_str_sub_lim_=$((__sx_str_sub_lim_ + 1))
+				: $(( __sx_str_sub_lim_ += 1 ))
 			done
 		else
 			while
@@ -4352,7 +4352,7 @@ __sx_str_sub() {
 			do
 				__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_##*"${__sx_str_sub_pat_}"}${__sx_str_sub_out_}"
 				__sx_str_sub_str_="${__sx_str_sub_str_%"${__sx_str_sub_pat_}"*}"
-				__sx_str_sub_lim_=$((__sx_str_sub_lim_ + 1))
+				: $(( __sx_str_sub_lim_ += 1 ))
 			done
 		fi
 
@@ -4900,7 +4900,7 @@ sx_arr_pop() {
 	__sx_arr_pop_chk=
 	__sx_arr_pop_i="${__sx_arr_pop_len}"
 	for __sx_arr_pop_dest in "${@}"; do
-		__sx_arr_pop_i=$((__sx_arr_pop_i - 1))
+		: $(( __sx_arr_pop_i -= 1 ))
 
 		! M_STR_EQ([|"${__sx_arr_pop_dest}"|], [|-|]) || continue
 
@@ -4967,7 +4967,7 @@ __sx_arr_pop0() {
 	}
 
 	for __sx_arr_pop0_dest_ in "${@}"; do
-		__sx_arr_pop0_len_=$((__sx_arr_pop0_len_ - 1))
+		: $(( __sx_arr_pop0_len_ -= 1 ))
 		__sx_arr_pop0_src_="${__sx_arr_pop0_arr_}_${__sx_arr_pop0_len_}"
 
 		if ! M_STR_EQ([|"${__sx_arr_pop0_dest_}"|], [|-|]); then
