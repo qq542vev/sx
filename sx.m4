@@ -141,12 +141,6 @@ readonly SX_STR_CNTRL=$'\cA\cB\cC\cD\cE\cF\cG\cH\cI\cJ\cK\cL\cM\cN\cO\cP\cQ\cR\c
 readonly SX_STR_OCT='01234567'
 readonly SX_STR_DIGIT='0123456789'
 readonly SX_STR_XDIGIT='0123456789ABCDEFabcdef'
-
-# sx_str_split 等で使用するフラグ
-readonly SX_STR_SPLIT_GLOB=1
-readonly SX_STR_SPLIT_INC=2
-readonly SX_STR_SUB_GLOB=1
-readonly SX_ARG_FIND_GLOB=1
 readonly SX_STR_UPPER='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 readonly SX_STR_LOWER='abcdefghijklmnopqrstuvwxyz'
 readonly SX_STR_PUNCT='!"#$%&'\''()*+,-./:;<=>?@[\]^_`{|}~'
@@ -156,6 +150,12 @@ readonly SX_STR_WORD="_${SX_STR_ALNUM}"
 readonly SX_STR_GRAPH="${SX_STR_PUNCT}${SX_STR_ALNUM}"
 readonly SX_STR_PRINT=" ${SX_STR_GRAPH}"
 readonly SX_STR_ASCII="${SX_STR_CNTRL}${SX_STR_GRAPH}"
+
+# sx_str_split 等で使用するフラグ
+readonly SX_STR_SPLIT_GLOB=1
+readonly SX_STR_SPLIT_INC=2
+readonly SX_STR_SUB_GLOB=1
+readonly SX_ARG_FIND_GLOB=1
 
 # 数値定数 (8bit / 16bit / 32bit / 64bit / 128bit 整数限界)
 readonly SX_NUM_I8_MAX=127
@@ -249,9 +249,9 @@ sx_cfg_is_valid() {
 
 	for __sx_cfg_is_valid_arg in "${@}"; do
 		case "${__sx_cfg_is_valid_arg}" in
-			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP);;
-			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128);;
-			SKIP_CHK=[01] | SEP=?* | SIG_BASE=?* | SIG_ARR=?*);;
+			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP) ;;
+			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128) ;;
+			SKIP_CHK=[01] | SEP=?* | SIG_BASE=?* | SIG_ARR=?*) ;;
 			*)
 				unset __sx_cfg_is_valid_arg
 				return 1
@@ -839,13 +839,12 @@ sx_arg_isep() {
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
 	__sx_arg_isep_int=1 __sx_arg_isep_lim="${SX_NUM_I32_MAX}"
-	if M_STR_EQ([|"${2-}"|], [|"${SX_CFG_SEP}"|]) || M_STR_EQ([|"${3-}"|], [|"${SX_CFG_SEP}"|]); then
-		:
-	elif M_STR_EQ([|"${4-}"|], [|"${SX_CFG_SEP}"|]); then
-		__sx_arg_isep_int="${3}"
-	else
-		__sx_arg_isep_int="${3-1}" __sx_arg_isep_lim="${4-${SX_NUM_I32_MAX}}"
-	fi
+
+	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}" | "${3+X${3}}") ;;
+		"${4+X${4}}") __sx_arg_isep_int="${3}";;
+		*) __sx_arg_isep_int="${3-1}" __sx_arg_isep_lim="${4-${SX_NUM_I32_MAX}}";;
+	esac
 
 	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
 		set -- "${?}"
@@ -1161,10 +1160,7 @@ __sx_arg_norm() {
 sx_var_copy() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_copy "${@}" || return; return 0;; esac
 
-	sx_var_is_copyable "${@}" || case "${?}" in
-		1) return "${SX_EX_NOPERM}";;
-		*) return;;
-	esac
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_copyable "${@}" || return
 
 	__sx_var_copy "${@}"
 }
@@ -1200,13 +1196,16 @@ __sx_var_copy() {
 	# 2. コピー先を削除
 	eval set -- "${__sx_var_copy_esc_}"
 	for __sx_var_copy_arg_ in "${@}"; do
-		if M_STR_HAS([|"${__sx_var_copy_arg_}"|], [|=|]); then
-			sx_str_sub __sx_var_copy_dsts_ "${__sx_var_copy_arg_%=*}" = ' '
-			eval sx_var_unset "${__sx_var_copy_dsts_}"
-		elif M_STR_HAS([|"${__sx_var_copy_arg_}"|], [|-|]); then
-			sx_str_sub __sx_var_copy_dsts_ "${__sx_var_copy_arg_#*-}" - ' '
-			eval sx_var_unset "${__sx_var_copy_dsts_}"
-		fi
+		case "${__sx_var_copy_arg_}" in
+			*=*)
+				sx_str_sub __sx_var_copy_dsts_ "${__sx_var_copy_arg_%=*}" = ' '
+				eval __sx_var_unset "${__sx_var_copy_dsts_}"
+				;;
+			*-*)
+				sx_str_sub __sx_var_copy_dsts_ "${__sx_var_copy_arg_#*-}" - ' '
+				eval __sx_var_unset "${__sx_var_copy_dsts_}"
+				;;
+		esac
 	done
 
 	# 3. 代入の実行
@@ -1531,12 +1530,14 @@ sx_var_is_empty() {
 ##   引数チェックは行わない。
 __sx_var_is_empty() {
 	for __sx_var_is_empty_arg_ in "${@}"; do
-		if eval ! sx_str_eq "\"\${${__sx_var_is_empty_arg_}+X}\${${__sx_var_is_empty_arg_}-}\"" X; then
-			unset __sx_var_is_empty_arg_
-			return 1
-		fi
+		eval "__sx_var_is_empty_e_=\"\${${__sx_var_is_empty_arg_}+X}\${${__sx_var_is_empty_arg_}-}\""
 
-		unset __sx_var_is_empty_arg_
+		case "${__sx_var_is_empty_e_}" in '' | X?*)
+			unset __sx_var_is_empty_arg_ __sx_var_is_empty_e_
+			return 1
+		esac
+
+		unset __sx_var_is_empty_arg_ __sx_var_is_empty_e_
 	done
 }
 
@@ -1550,11 +1551,9 @@ __sx_var_is_empty() {
 ##    1  無効な変数名が含まれる
 sx_var_is_name() {
 	for __sx_var_is_name_arg in "${@}"; do
-		case "${__sx_var_is_name_arg}" in
-			'' | [0-9]* | *[!_A-Za-z0-9]*)
-				unset __sx_var_is_name_arg
-				return 1
-				;;
+		case "${__sx_var_is_name_arg}" in '' | [0-9]* | *[!_0-9A-Za-z]*)
+			unset __sx_var_is_name_arg
+			return 1
 		esac
 	done
 
@@ -1587,12 +1586,14 @@ sx_var_is_set() {
 ##   引数チェックは行わない。
 __sx_var_is_set() {
 	for __sx_var_is_set_arg_ in "${@}"; do
-		if eval sx_str_eq "\"\${${__sx_var_is_set_arg_}+X}\"" '""'; then
-			unset __sx_var_is_set_arg_
-			return 1
-		fi
+		eval "__sx_var_is_set_e_=\"\${${__sx_var_is_set_arg_}+X}\""
 
-		unset __sx_var_is_set_arg_
+		case "${__sx_var_is_set_e_}" in '')
+			unset __sx_var_is_set_arg_ __sx_var_is_set_e_
+			return 1
+		esac
+
+		unset __sx_var_is_set_arg_ __sx_var_is_set_e_
 	done
 }
 
@@ -1622,12 +1623,14 @@ sx_var_is_val() {
 ##   引数チェックは行わない。
 __sx_var_is_val() {
 	for __sx_var_is_val_arg_ in "${@}"; do
-		if eval ! sx_str_eq "\"\${${__sx_var_is_val_arg_}:+X}\"" X; then
-			unset __sx_var_is_val_arg_
-			return 1
-		fi
+		eval "__sx_var_is_val_e_=\"\${${__sx_var_is_val_arg_}:+X}\""
 
-		unset __sx_var_is_val_arg_
+		case "${__sx_var_is_val_e_}" in '')
+			unset __sx_var_is_val_arg_ __sx_var_is_val_e_
+			return 1
+		esac
+
+		unset __sx_var_is_val_arg_ __sx_var_is_val_e_
 	done
 }
 
@@ -1691,8 +1694,9 @@ sx_var_is_rw() {
 ##   引数で指定されたすべての変数が書き込み可能か確認する。
 ##   サブシェルの生成を最小限にするため、一括で検証を行う。
 __sx_var_is_rw() {
-	! M_STR_EQ([|"${#}"|], [|0|]) || return 0
-	( unset -v "${@}" ) 2>&- || return 1
+	case "${#}" in [1-9]*)
+		( unset -v "${@}" ) 2>&- || return 1
+	esac
 }
 
 ### sx_var_is_rw_all - 指定された変数およびその関連要素がすべて書き込み可能か確認する
@@ -1791,12 +1795,13 @@ __sx_var_list_copy() {
 	shift
 
 	for __sx_var_list_copy_chain_ in "${@}"; do
-		if M_STR_HAS([|"${__sx_var_list_copy_chain_}"|], [|=|]); then
-			sx_str_sub __sx_var_list_copy_args_ "${__sx_var_list_copy_chain_}" = ' '
-			eval sx_arg_rquote __sx_var_list_copy_args_ "${__sx_var_list_copy_args_}"
-		else
-			sx_str_sub __sx_var_list_copy_args_ "${__sx_var_list_copy_chain_}" - ' '
-		fi
+		case "${__sx_var_list_copy_chain_}" in
+			*=*)
+				sx_str_sub __sx_var_list_copy_args_ "${__sx_var_list_copy_chain_}" = ' '
+				eval sx_arg_rquote __sx_var_list_copy_args_ "${__sx_var_list_copy_args_}"
+				;;
+			*) sx_str_sub __sx_var_list_copy_args_ "${__sx_var_list_copy_chain_}" - ' ';;
+		esac
 
 		eval set -- "${__sx_var_list_copy_args_}"
 
@@ -1835,10 +1840,10 @@ __sx_var_list_dep() {
 	__sx_var_list_dep_out_=' '
 
 	while ! M_STR_EQ([|"${#}"|], [|0|]); do
-		if M_STR_HAS([|"${__sx_var_list_dep_out_}"|], [|" ${1} "|]); then
+		case "${__sx_var_list_dep_out_}" in *" ${1} "*)
 			shift
 			continue
-		fi
+		esac
 
 		__sx_var_list_dep_out_="${__sx_var_list_dep_out_}${1} "
 
@@ -2007,7 +2012,7 @@ sx_var_move() {
 	}
 
 	__sx_var_copy "${@}"
-	eval sx_var_unset "${__sx_var_move_chk}"
+	eval __sx_var_unset "${__sx_var_move_chk}"
 
 	unset __sx_var_move_chk __sx_var_move_arg
 }
@@ -2083,8 +2088,8 @@ __sx_var_set() {
 		__sx_var_set_vn_="${__sx_var_set_arg_%%=*}"
 		__sx_var_unset "${__sx_var_set_vn_%%=*}"
 
-		case "${__sx_var_set_arg_}" in
-			*=*) eval "${__sx_var_set_vn_}="'"${__sx_var_set_arg_#*=}"';;
+		case "${__sx_var_set_arg_}" in *=*)
+			eval "${__sx_var_set_vn_}="'"${__sx_var_set_arg_#*=}"'
 		esac
 	done
 
