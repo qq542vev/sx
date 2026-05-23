@@ -586,9 +586,9 @@ __sx_ex_remap() {
 			*-*)
 				set -- "${@}" "${1%%-*}" "${1#*-}"
 
-				if M_NUM_LE([|${3:-0}|], [|__sx_ex_remap_sts_|], [|${4:-255}|]); then
+				case $(( ${3:-0} <= __sx_ex_remap_sts_ && __sx_ex_remap_sts_ <= ${4:-255} )) in 1)
 					__sx_ex_remap_sts_="${2}"; break
-				fi
+				esac
 				;;
 			[A-Z]*)
 				__sx_ex_map "__sx_ex_remap_n_=${1}"
@@ -904,7 +904,9 @@ __sx_arg_isep() {
 	esac
 
 	__sx_arg_isep_eff_=$(((${#} - 1) / ${__sx_arg_isep_int_#-}))
-	M_NUM_LE([|__sx_arg_isep_lim_|], [|__sx_arg_isep_eff_|]) || __sx_arg_isep_lim_="${__sx_arg_isep_eff_}"
+	case $((__sx_arg_isep_lim_ <= __sx_arg_isep_eff_)) in 0)
+		__sx_arg_isep_lim_="${__sx_arg_isep_eff_}"
+	esac
 
 	case "${__sx_arg_isep_int_}" in
 		-*) __sx_arg_isep_r_=$((${#} - __sx_arg_isep_lim_ * ${__sx_arg_isep_int_#-}));;
@@ -912,15 +914,10 @@ __sx_arg_isep() {
 	esac
 
 	for __sx_arg_isep_arg_ in "${@}"; do
-		if
-			M_NUM_LT([|__sx_arg_isep_r_|], [|__sx_arg_isep_j_|]) &&
-			M_NUM_EQ([|$(((__sx_arg_isep_j_ - __sx_arg_isep_r_ - 1) % __sx_arg_isep_int_))|], [|0|]) &&
-			M_NUM_LT([|0|], [|__sx_arg_isep_lim_|])
-		then
+		case $((__sx_arg_isep_r_ < __sx_arg_isep_j_ && (__sx_arg_isep_j_ - __sx_arg_isep_r_ - 1) % __sx_arg_isep_int_ == 0 && 0 < __sx_arg_isep_lim_)) in 1)
 			__M_ARG_BIND_QUOTE_BODY([|__sx_arg_isep|], [|"${__sx_arg_isep_sep_}"|], CLEANUP)
 			: $(( __sx_arg_isep_lim_ -= 1 ))
-		fi
-
+		esac
 		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_isep|], [|"${__sx_arg_isep_arg_}"|], CLEANUP)
 		: $(( __sx_arg_isep_j_ += 1 ))
 	done
@@ -3429,9 +3426,9 @@ sx_num_range() {
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${2-}" ${3+"${3}"} ${4+"${4}"} || return
 
-	if M_NUM_EQ([|${4-1}|], [|0|]); then
+	case $((${4-1})) in 0)
 		return "${SX_EX_USAGE}"
-	fi
+	esac
 
 	__sx_num_range "${@}"
 }
@@ -3563,7 +3560,7 @@ sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${4+"${4}"} || return
-	! M_NUM_EQ(${3-1}, 0) || return "${SX_EX_USAGE}"
+	case $((${3-1})) in 0) return "${SX_EX_USAGE}"; esac
 
 	__sx_str_chunk "${@}"
 }
@@ -4055,9 +4052,9 @@ __sx_str_split() {
 			# 前方から制限数分だけ分割
 			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
 
-			if M_NUM_LT([|${#__sx_str_split_str_}|], [|__sx_str_split_lim_|]); then
+			case $((${#__sx_str_split_str_} < __sx_str_split_lim_)) in 1)
 				__sx_str_split_out_="${__sx_str_split_out_} ''"
-			fi
+			esac
 
 			__sx_str_split_out_="'' ${__sx_str_split_out_# }"
 		elif M_NUM_LT([|__sx_str_split_lim_|], [|0|]); then
@@ -4065,9 +4062,9 @@ __sx_str_split() {
 			__sx_str_split_lim_=$((__sx_str_split_lim_ * -1))
 			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
 
-			if M_NUM_LT([|${#__sx_str_split_str_}|], [|__sx_str_split_lim_|]); then
+			case $((${#__sx_str_split_str_} < __sx_str_split_lim_)) in 1)
 				__sx_str_split_out_="'' ${__sx_str_split_out_}"
-			fi
+			esac
 
 			__sx_str_split_out_="${__sx_str_split_out_% } ''"
 		else
@@ -4458,9 +4455,9 @@ __sx_str_substr() {
 	V(total)="${#V(str)}"
 
 	# オフセットの正規化 (負数は末尾から)
-	if M_NUM_LT([|V(off)|], [|0|]); then
+	case $((V(off) < 0)) in 1)
 		V(off)=$(((V(off) * -1) < V(total) ? V(total) + V(off) : 0))
-	fi
+	esac
 
 	# 1. オフセット分をスキップ
 	if M_NUM_LE([|V(total)|], [|V(off)|]); then
@@ -4647,7 +4644,9 @@ sx_arr_at() {
 		}
 
 		# 範囲チェック
-		M_NUM_LT([|__sx_arr_at_i|], [|__sx_arr_at_len|]) || __sx_arr_at_err=
+		case $((__sx_arr_at_i < __sx_arr_at_len)) in 0)
+			__sx_arr_at_err=
+		esac
 
 		case "${__sx_arr_at_pair}" in *?=*)
 			# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
@@ -4702,10 +4701,10 @@ __sx_arr_at() {
 		__sx_arr_at_i_="${__sx_arr_at_pair_#*=}"
 
 		# 範囲チェック
-		M_NUM_LT([|__sx_arr_at_i_|], [|__sx_arr_at_len_|]) || {
+		case $((__sx_arr_at_i_ < __sx_arr_at_len_)) in 0)
 			unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
 			return 1
-		}
+		esac
 
 		case "${__sx_arr_at_pair_}" in *?=*)
 			__sx_arr_at_chk_="${__sx_arr_at_chk_} ${__sx_arr_at_arr_}_${__sx_arr_at_i_}-${__sx_arr_at_pair_%%=*}"
@@ -4874,10 +4873,10 @@ sx_arr_pop() {
 	unset __sx_arr_pop_args
 
 	# 要素数チェック
-	M_NUM_LE([|${#}|], [|__sx_arr_pop_len|]) || {
+	case $((${#} <= __sx_arr_pop_len)) in 0)
 		unset __sx_arr_pop_arr __sx_arr_pop_len
 		return 1
-	}
+	esac
 
 	# 配列の書き込み権限チェック
 	sx_arr_is_rw "${__sx_arr_pop_arr}" "$((__sx_arr_pop_len - ${#}))" "${#}" || {
@@ -4954,10 +4953,10 @@ __sx_arr_pop0() {
 	eval "__sx_arr_pop0_len_=\"\${${1}_len}\""
 	shift
 
-	M_NUM_LE([|${#}|], [|__sx_arr_pop0_len_|]) || {
+	case $((${#} <= __sx_arr_pop0_len_)) in 0)
 		unset __sx_arr_pop0_arr_ __sx_arr_pop0_len_
 		return 1
-	}
+	esac
 
 	for __sx_arr_pop0_dest_ in "${@}"; do
 		: $(( __sx_arr_pop0_len_ -= 1 ))
