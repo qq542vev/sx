@@ -2117,20 +2117,24 @@ sx_var_swap() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_swap "${@}" || return; return 0;; esac
 
 	sx_var_is_chain "${@}" || return "${SX_EX_USAGE}"
-	__sx_arr_gen __sx_var_swap_arr
 
 	__sx_var_swap_out=
+	__sx_arr_gen __sx_var_swap_arr
+
 	for __sx_var_swap_arg in "${@}"; do
 		__sx_arr_push __sx_var_swap_arr ''
 		__sx_var_swap_tmp="__sx_var_swap_arr_$((__sx_var_swap_arr_len - 1))"
 
-		if M_STR_HAS([|"${__sx_var_swap_arg}"|], [|=|]); then
-			__sx_var_copy "${__sx_var_swap_arg%%=*}-${__sx_var_swap_tmp}"
-			__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_arg}=${__sx_var_swap_tmp}"
-		else
-			__sx_var_copy "${__sx_var_swap_arg##*-}-${__sx_var_swap_tmp}"
-			__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_tmp}-${__sx_var_swap_arg}"
-		fi
+		case "${__sx_var_swap_arg}" in
+			*=*)
+				__sx_var_copy "${__sx_var_swap_arg%%=*}-${__sx_var_swap_tmp}"
+				__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_arg}=${__sx_var_swap_tmp}"
+				;;
+			*-*)
+				__sx_var_copy "${__sx_var_swap_arg##*-}-${__sx_var_swap_tmp}"
+				__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_tmp}-${__sx_var_swap_arg}"
+				;;
+		esac
 	done
 
 	eval set -- "${__sx_var_swap_out}"
@@ -2154,17 +2158,29 @@ sx_var_swap() {
 ##   sx_var_swap の内部実装。
 ##   引数チェックは行わない。
 __sx_var_swap() {
+	__sx_var_swap_out_=
+	__sx_arr_gen __sx_var_swap_arr_
+
 	for __sx_var_swap_arg_ in "${@}"; do
-		if M_STR_HAS([|"${__sx_var_swap_arg_}"|], [|=|]); then
-			__sx_var_copy "${__sx_var_swap_arg_%%=*}-__sx_var_swap_tmp_"
-			__sx_var_move "${__sx_var_swap_arg_}=__sx_var_swap_tmp_"
-		else
-			__sx_var_copy "${__sx_var_swap_arg_##*-}-__sx_var_swap_tmp_"
-			__sx_var_move "__sx_var_swap_tmp_-${__sx_var_swap_arg_}"
-		fi
+		__sx_arr_push __sx_var_swap_arr_ ''
+		__sx_var_swap_tmp_="__sx_var_swap_arr__$((__sx_var_swap_arr__len - 1))"
+
+		case "${__sx_var_swap_arg_}" in
+			*=*)
+				__sx_var_copy "${__sx_var_swap_arg_%%=*}-${__sx_var_swap_tmp_}"
+				__sx_var_swap_out_="${__sx_var_swap_out_} ${__sx_var_swap_arg_}=${__sx_var_swap_tmp_}"
+				;;
+			*-*)
+				__sx_var_copy "${__sx_var_swap_arg_##*-}-${__sx_var_swap_tmp_}"
+				__sx_var_swap_out_="${__sx_var_swap_out_} ${__sx_var_swap_tmp_}-${__sx_var_swap_arg_}"
+				;;
+		esac
 	done
 
-	unset __sx_var_swap_arg_ __sx_var_swap_tmp_
+	eval __sx_var_copy "${__sx_var_swap_out_}"
+
+	unset __sx_var_swap_arg_ __sx_var_swap_tmp_ __sx_var_swap_out_
+	__sx_var_unset __sx_var_swap_arr_
 }
 
 ### sx_var_touch - リビジョン番号を更新する
