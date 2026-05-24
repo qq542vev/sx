@@ -30,40 +30,78 @@ define([|M_NUM_LT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<, $@)))|], 0)|]) dnl
 define([|M_NUM_NE|], [|M_STR_EQ([|$((__M_NUM_CMP_CHAIN(==, $@)))|], 0)|]) dnl
 
 define([|__M_QUOTE_PREPEND|], [|dnl
-	case $2 in
-		*"'"*) __sx_str_sub $1_esc_ $2 "'" "'\\''";;
-		*) $1_esc_=$2 ;;
+	case $3 in
+		*"'"*) __sx_str_sub $1_esc_ $3 "'" "'\\''";;
+		*) $1_esc_=$3 ;;
 	esac
-	$1_out_="'${$1_esc_}'${$1_out_:+ }${$1_out_}"|])
+	$2="'${$1_esc_}'${$2:+ }${$2}"|])
 
 define([|__M_QUOTE_APPEND|], [|dnl
-	case $2 in
-		*"'"*) __sx_str_sub $1_esc_ $2 "'" "'\\''";;
-		*) $1_esc_=$2 ;;
+	case $3 in
+		*"'"*) __sx_str_sub $1_esc_ $3 "'" "'\\''";;
+		*) $1_esc_=$3 ;;
 	esac
-	$1_out_="${$1_out_}${$1_out_:+ }'${$1_esc_}'"|])
+	$2="${$2}${$2:+ }'${$1_esc_}'"|])
+
+define([|M_STR_QUOTE|], [|dnl
+	case $2 in
+		*"'"*) __sx_str_sub $1 $2 "'" "'\\''";;
+		*) $1=$2;;
+	esac
+
+	$1="'${$1}'"|])
 
 define([|__M_ARG_BIND_QUOTE_BODY|], [|dnl
 	case "${$1_bind_}" in
-		:*) $1_bind_="${$1_bind_#:}";;
+		:*) $1_bind_="${$1_bind_#*:}";;
+		[1-9]*:*)
+			$1_cnt_="${$1_bind_%%[!0-9]*}"
+			$1_name_="${$1_bind_%%:*}"
+			$1_name_="${$1_name_#"${$1_cnt_}"}"
+
+			case "${$1_name_}" in ?*)
+				M_STR_QUOTE([|$1_esc_|], [|$2|])
+				eval "${$1_name_}=\"\${${$1_name_}-}\${${$1_name_}+ }\${$1_esc_}\""
+			esac
+
+			case "${$1_cnt_}" in
+				1) $1_bind_="${$1_bind_#*:}";;
+				*) $1_bind_="$((${$1_cnt_} - 1))${$1_name_}:${$1_bind_#*:}";;
+			esac
+			;;
 		*:*)
 			eval "${$1_bind_%%:*}=patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
 			$1_bind_="${$1_bind_#*:}"
 			;;
-		?*) __M_QUOTE_APPEND([|$1|], [|$2|]);;
+		?*) __M_QUOTE_APPEND([|$1|], [|$1_out_|], [|$2|]);;
 		*) unset $3; return "${SX_EX_OK}";;
 	esac|])
 
 define([|__M_ARG_BIND_UNQUOTE_BODY|], [|dnl
 	case "${$1_bind_}" in
-		:*) $1_bind_="${$1_bind_#:}";;
+		:*) $1_bind_="${$1_bind_#*:}";;
+		[1-9]*:*)
+			$1_cnt_="${$1_bind_%%[!0-9]*}"
+			$1_name_="${$1_bind_%%:*}"
+			$1_name_="${$1_name_#"${$1_cnt_}"}"
+
+			case "${$1_name_}" in ?*)
+				eval "${$1_name_}=\"\${${$1_name_}-}\${${$1_name_}+ }\"patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
+			esac
+
+			case "${$1_cnt_}" in
+				1) $1_bind_="${$1_bind_#*:}";;
+				*) $1_bind_="$(( ${$1_cnt_} - 1 ))${$1_name_}:${$1_bind_#*:}";;
+			esac
+			;;
 		*:*)
-			eval "${$1_bind_%%:*}=patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
+				eval "${$1_bind_%%:*}=patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
 			$1_bind_="${$1_bind_#*:}"
 			;;
 		?*) $1_out_="${$1_out_}${$1_out_:+ }"$2;;
 		*) unset $3; return "${SX_EX_OK}";;
 	esac|])
+define([|__M_ARG_BIND_USEVAR|], [|V(cnt) V(name) V(esc)|])dnl
 
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
@@ -736,7 +774,7 @@ sx_arg_quote() {
 }
 
 define([|V|], [|__sx_arg_quote_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(arg) V(esc)|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(arg) __M_ARG_BIND_USEVAR|])dnl
 
 ### __sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
@@ -782,7 +820,7 @@ sx_arg_rquote() {
 }
 
 define([|V|], [|__sx_arg_rquote_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(i) V(val) V(esc)|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(i) V(val) __M_ARG_BIND_USEVAR|])dnl
 
 ### __sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
@@ -862,7 +900,7 @@ sx_arg_isep() {
 }
 
 define([|V|], [|__sx_arg_isep_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(lim) V(eff) V(r) V(j) V(arg) V(esc)|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(lim) V(eff) V(r) V(j) V(arg) __M_ARG_BIND_USEVAR|])dnl
 
 ### __sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する（内部用）
 ##
@@ -972,7 +1010,7 @@ sx_arg_find() {
 }
 
 define([|V|], [|__sx_arg_find_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(lim) V(flg) V(glob) V(out) V(i) V(arg) V(sts)|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(lim) V(flg) V(glob) V(out) V(i) V(arg) V(sts) __M_ARG_BIND_USEVAR|])dnl
 
 ### __sx_arg_find - 引数リストから指定された値を探し、そのインデックスを取得する（内部用）
 ##
@@ -1349,10 +1387,15 @@ sx_var_is_chain() {
 sx_var_is_bind() {
 	for __sx_var_is_bind_arg in "${@}"; do
 		case "${__sx_var_is_bind_arg}" in
-			*[!_0-9A-Za-z:]* | [0-9]* | *:[0-9]*)
+			*[!_0-9A-Za-z:]* | 0* | *:0*)
 				unset __sx_var_is_bind_arg
 				return 1
 				;;
+		esac
+
+		case "${__sx_var_is_bind_arg##*:}" in [0-9]*)
+			unset __sx_var_is_bind_arg
+			return 1
 		esac
 	done
 
@@ -1397,15 +1440,16 @@ __sx_var_is_bindable() {
 
 	for __sx_var_is_bindable_arg_ in "${@}"; do
 		while
-			__sx_var_is_bindable_chk_="${__sx_var_is_bindable_chk_} ${__sx_var_is_bindable_arg_%%:*}"
+			__sx_var_is_bindable_seg_="${__sx_var_is_bindable_arg_%%:*}"
+			__sx_var_is_bindable_chk_="${__sx_var_is_bindable_chk_} ${__sx_var_is_bindable_seg_#"${__sx_var_is_bindable_seg_%%[!0-9]*}"}"
 			M_STR_HAS([|"${__sx_var_is_bindable_arg_}"|], [|:|])
 		do
 			__sx_var_is_bindable_arg_="${__sx_var_is_bindable_arg_#*:}"
 		done
 	done
 
-	eval set -- "${__sx_var_is_bindable_chk_}"
-	unset __sx_var_is_bindable_chk_ __sx_var_is_bindable_arg_
+	eval "set -- ${__sx_var_is_bindable_chk_}"
+	unset __sx_var_is_bindable_chk_ __sx_var_is_bindable_arg_ __sx_var_is_bindable_seg_
 
 	__sx_var_is_rw_all "${@}" || return
 }
@@ -1445,17 +1489,22 @@ __sx_var_bind_init() {
 	for __sx_var_bind_init_arg_ in "${@}"; do
 		__sx_var_bind_init_ls_=
 
-	while M_STR_HAS([|"${__sx_var_bind_init_arg_}"|], [|:|]); do
-			__sx_var_bind_init_ls_="${__sx_var_bind_init_ls_} ${__sx_var_bind_init_arg_%%:*}"
+		while
+			__sx_var_bind_init_seg_="${__sx_var_bind_init_arg_%%:*}"
+			__sx_var_bind_init_ls_="${__sx_var_bind_init_ls_} ${__sx_var_bind_init_seg_#"${__sx_var_bind_init_seg_%%[!0-9]*}"}"
+			M_STR_HAS([|"${__sx_var_bind_init_arg_}"|], [|:|])
+		do
 			__sx_var_bind_init_arg_="${__sx_var_bind_init_arg_#*:}"
 		done
 
 		eval __sx_var_unset "${__sx_var_bind_init_ls_}"
 
-		__sx_var_set ${__sx_var_bind_init_arg_:+"${__sx_var_bind_init_arg_}="}
+		case "${__sx_var_bind_init_arg_}" in ?*)
+			eval "${__sx_var_bind_init_arg_}="
+		esac
 	done
 
-	unset __sx_var_bind_init_arg_ __sx_var_bind_init_ls_
+	unset __sx_var_bind_init_arg_ __sx_var_bind_init_ls_ __sx_var_bind_init_seg_
 }
 
 ### sx_var_is_copyable - コピー先が構造を含めて書き込み可能か確認する
@@ -3566,7 +3615,7 @@ sx_str_chunk() {
 }
 
 define([|V|], [|__sx_str_chunk_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(str) V(len) V(lim) V(out) V(esc) V(qm) V(next)|])dnl
+define([|CLEANUP|], [|V(bind) V(str) V(len) V(lim) V(out) V(qm) V(next) __M_ARG_BIND_USEVAR|])dnl
 
 ### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
 ##
@@ -4022,7 +4071,7 @@ sx_str_split() {
 }
 
 define([|V|], [|__sx_str_split_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(str) V(sep) V(lim) V(flg) V(inc) V(out) V(esc) V(rem) V(mid) V(val)|])dnl
+define([|CLEANUP|], [|V(bind) V(str) V(sep) V(lim) V(flg) V(inc) V(out) V(rem) V(mid) V(val) __M_ARG_BIND_USEVAR|])dnl
 
 ### __sx_str_split - 文字列を分割して結果変数に格納する（内部用）
 ##

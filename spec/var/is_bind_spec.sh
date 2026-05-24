@@ -30,8 +30,13 @@ Describe 'sx_var_is_bind'
         The status should be failure
     End
 
-    It '数字で始まる要素を拒否すること'
-        When call sx_var_is_bind "1a:b" "a:2b"
+    It '数字で始まる要素を許可または拒否すること'
+        When call sx_var_is_bind "1a:b" "3:" "v:2v:"
+        The status should be success
+    End
+
+    It '末尾の要素が数字で始まる場合は拒否すること'
+        When call sx_var_is_bind "a:2b" "3"
         The status should be failure
     End
 
