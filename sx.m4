@@ -31,17 +31,17 @@ define([|M_NUM_NE|], [|M_STR_EQ([|$((__M_NUM_CMP_CHAIN(==, $@)))|], 0)|]) dnl
 
 define([|__M_QUOTE_PREPEND|], [|dnl
 	case $3 in
-		*"'"*) __sx_str_sub $1_esc_ $3 "'" "'\\''";;
-		*) $1_esc_=$3 ;;
+		*"'"*) __sx_str_sub $1_bind_esc_ $3 "'" "'\\''";;
+		*) $1_bind_esc_=$3 ;;
 	esac
-	$2="'${$1_esc_}'${$2:+ }${$2}"|])
+	$2="'${$1_bind_esc_}'${$2:+ }${$2}"|])
 
 define([|__M_QUOTE_APPEND|], [|dnl
 	case $3 in
-		*"'"*) __sx_str_sub $1_esc_ $3 "'" "'\\''";;
-		*) $1_esc_=$3 ;;
+		*"'"*) __sx_str_sub $1_bind_esc_ $3 "'" "'\\''";;
+		*) $1_bind_esc_=$3 ;;
 	esac
-	$2="${$2}${$2:+ }'${$1_esc_}'"|])
+	$2="${$2}${$2:+ }'${$1_bind_esc_}'"|])
 
 define([|M_STR_QUOTE|], [|dnl
 	case $2 in
@@ -51,22 +51,22 @@ define([|M_STR_QUOTE|], [|dnl
 
 	$1="'${$1}'"|])
 
-define([|__M_ARG_BIND_QUOTE_BODY|], [|dnl
+define([|__M_BIND_QUOTE|], [|dnl
 	case "${$1_bind_}" in
 		:*) $1_bind_="${$1_bind_#*:}";;
 		[1-9]*:*)
-			$1_cnt_="${$1_bind_%%[!0-9]*}"
-			$1_name_="${$1_bind_%%:*}"
-			$1_name_="${$1_name_#"${$1_cnt_}"}"
+			$1_bind_cnt_="${$1_bind_%%[!0-9]*}"
+			$1_bind_name_="${$1_bind_%%:*}"
+			$1_bind_name_="${$1_bind_name_#"${$1_bind_cnt_}"}"
 
-			case "${$1_name_}" in ?*)
-				M_STR_QUOTE([|$1_esc_|], [|$2|])
-				eval "${$1_name_}=\"\${${$1_name_}-}\${${$1_name_}+ }\${$1_esc_}\""
+			case "${$1_bind_name_}" in ?*)
+				M_STR_QUOTE([|$1_bind_esc_|], [|$2|])
+				eval "${$1_bind_name_}=\"\${${$1_bind_name_}-}\${${$1_bind_name_}+ }\${$1_bind_esc_}\""
 			esac
 
-			case "${$1_cnt_}" in
+			case "${$1_bind_cnt_}" in
 				1) $1_bind_="${$1_bind_#*:}";;
-				*) $1_bind_="$((${$1_cnt_} - 1))${$1_name_}:${$1_bind_#*:}";;
+				*) $1_bind_="$((${$1_bind_cnt_} - 1))${$1_bind_name_}:${$1_bind_#*:}";;
 			esac
 			;;
 		*:*)
@@ -77,21 +77,21 @@ define([|__M_ARG_BIND_QUOTE_BODY|], [|dnl
 		*) unset $3; return "${SX_EX_OK}";;
 	esac|])
 
-define([|__M_ARG_BIND_UNQUOTE_BODY|], [|dnl
+define([|__M_BIND_UNQUOTE|], [|dnl
 	case "${$1_bind_}" in
 		:*) $1_bind_="${$1_bind_#*:}";;
 		[1-9]*:*)
-			$1_cnt_="${$1_bind_%%[!0-9]*}"
-			$1_name_="${$1_bind_%%:*}"
-			$1_name_="${$1_name_#"${$1_cnt_}"}"
+			$1_bind_cnt_="${$1_bind_%%[!0-9]*}"
+			$1_bind_name_="${$1_bind_%%:*}"
+			$1_bind_name_="${$1_bind_name_#"${$1_bind_cnt_}"}"
 
-			case "${$1_name_}" in ?*)
-				eval "${$1_name_}=\"\${${$1_name_}-}\${${$1_name_}+ }\"patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
+			case "${$1_bind_name_}" in ?*)
+				eval "${$1_bind_name_}=\"\${${$1_bind_name_}-}\${${$1_bind_name_}+ }\"patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
 			esac
 
-			case "${$1_cnt_}" in
+			case "${$1_bind_cnt_}" in
 				1) $1_bind_="${$1_bind_#*:}";;
-				*) $1_bind_="$(( ${$1_cnt_} - 1 ))${$1_name_}:${$1_bind_#*:}";;
+				*) $1_bind_="$(( ${$1_bind_cnt_} - 1 ))${$1_bind_name_}:${$1_bind_#*:}";;
 			esac
 			;;
 		*:*)
@@ -101,7 +101,7 @@ define([|__M_ARG_BIND_UNQUOTE_BODY|], [|dnl
 		?*) $1_out_="${$1_out_}${$1_out_:+ }"$2;;
 		*) unset $3; return "${SX_EX_OK}";;
 	esac|])
-define([|__M_ARG_BIND_USEVAR|], [|V(cnt) V(name) V(esc)|])dnl
+define([|__M_BIND_USEVAR|], [|V(bind_cnt) V(bind_name) V(bind_esc)|])dnl
 
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
@@ -774,7 +774,7 @@ sx_arg_quote() {
 }
 
 define([|V|], [|__sx_arg_quote_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(arg) __M_ARG_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(arg) __M_BIND_USEVAR|])dnl
 
 ### __sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
@@ -790,7 +790,7 @@ __sx_arg_quote() {
 	shift
 
 	for __sx_arg_quote_arg_ in "${@}"; do
-		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_quote|], [|"${__sx_arg_quote_arg_}"|], CLEANUP)
+		__M_BIND_QUOTE([|__sx_arg_quote|], [|"${__sx_arg_quote_arg_}"|], CLEANUP)
 	done
 
 	eval ${__sx_arg_quote_out_:+"${__sx_arg_quote_bind_}=\"\${__sx_arg_quote_out_}\""}
@@ -820,7 +820,7 @@ sx_arg_rquote() {
 }
 
 define([|V|], [|__sx_arg_rquote_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(i) V(val) __M_ARG_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(i) V(val) __M_BIND_USEVAR|])dnl
 
 ### __sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
@@ -839,7 +839,7 @@ __sx_arg_rquote() {
 	while M_NUM_LT([|0|], [|__sx_arg_rquote_i_|]); do
 		eval "__sx_arg_rquote_val_=\"\${${__sx_arg_rquote_i_}}\""
 
-		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_rquote|], [|"${__sx_arg_rquote_val_}"|], CLEANUP)
+		__M_BIND_QUOTE([|__sx_arg_rquote|], [|"${__sx_arg_rquote_val_}"|], CLEANUP)
 
 		: $(( __sx_arg_rquote_i_ -= 1 ))
 	done
@@ -900,7 +900,7 @@ sx_arg_isep() {
 }
 
 define([|V|], [|__sx_arg_isep_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(lim) V(eff) V(r) V(j) V(arg) __M_ARG_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(lim) V(eff) V(r) V(j) V(arg) __M_BIND_USEVAR|])dnl
 
 ### __sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する（内部用）
 ##
@@ -953,10 +953,10 @@ __sx_arg_isep() {
 
 	for __sx_arg_isep_arg_ in "${@}"; do
 		case $((__sx_arg_isep_r_ < __sx_arg_isep_j_ && (__sx_arg_isep_j_ - __sx_arg_isep_r_ - 1) % __sx_arg_isep_int_ == 0 && 0 < __sx_arg_isep_lim_)) in 1)
-			__M_ARG_BIND_QUOTE_BODY([|__sx_arg_isep|], [|"${__sx_arg_isep_sep_}"|], CLEANUP)
+			__M_BIND_QUOTE([|__sx_arg_isep|], [|"${__sx_arg_isep_sep_}"|], CLEANUP)
 			: $(( __sx_arg_isep_lim_ -= 1 ))
 		esac
-		__M_ARG_BIND_QUOTE_BODY([|__sx_arg_isep|], [|"${__sx_arg_isep_arg_}"|], CLEANUP)
+		__M_BIND_QUOTE([|__sx_arg_isep|], [|"${__sx_arg_isep_arg_}"|], CLEANUP)
 		: $(( __sx_arg_isep_j_ += 1 ))
 	done
 
@@ -1010,7 +1010,7 @@ sx_arg_find() {
 }
 
 define([|V|], [|__sx_arg_find_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(lim) V(flg) V(glob) V(out) V(i) V(arg) V(sts) __M_ARG_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(lim) V(flg) V(glob) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
 
 ### __sx_arg_find - 引数リストから指定された値を探し、そのインデックスを取得する（内部用）
 ##
@@ -1059,7 +1059,7 @@ __sx_arg_find() {
 			eval __sx_arg_find_arg_=\"\${${__sx_arg_find_i_}}\"
 
 			case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
-				__M_ARG_BIND_UNQUOTE_BODY([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
+				__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
 
 				__sx_arg_find_sts_="${SX_EX_OK}"
 				: $(( __sx_arg_find_lim_ += 1 ))
@@ -1075,7 +1075,7 @@ __sx_arg_find() {
 
 		for __sx_arg_find_arg_ in "${@}"; do
 			case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
-				__M_ARG_BIND_UNQUOTE_BODY([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
+				__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
 
 				__sx_arg_find_sts_="${SX_EX_OK}"
 				: $(( __sx_arg_find_lim_ -= 1 ))
@@ -3615,7 +3615,7 @@ sx_str_chunk() {
 }
 
 define([|V|], [|__sx_str_chunk_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(str) V(len) V(lim) V(out) V(qm) V(next) __M_ARG_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(str) V(len) V(lim) V(out) V(qm) V(next) __M_BIND_USEVAR|])dnl
 
 ### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
 ##
@@ -3641,14 +3641,14 @@ __sx_str_chunk() {
 			M_STR_NE([|"${__sx_str_chunk_lim_}"|], [|0|])
 		do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
-			__M_ARG_BIND_QUOTE_BODY([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], CLEANUP)
+			__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], CLEANUP)
 
 			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
 			: $(( __sx_str_chunk_lim_ -= 1 ))
 		done
 
 		case "${__sx_str_chunk_str_}" in ?*)
-			__M_ARG_BIND_QUOTE_BODY([|__sx_str_chunk|], [|"${__sx_str_chunk_str_}"|], CLEANUP)
+			__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_}"|], CLEANUP)
 		esac
 
 		eval ${__sx_str_chunk_out_:+"${__sx_str_chunk_bind_}=\"\${__sx_str_chunk_out_}\""}
@@ -4071,7 +4071,7 @@ sx_str_split() {
 }
 
 define([|V|], [|__sx_str_split_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(str) V(sep) V(lim) V(flg) V(inc) V(out) V(rem) V(mid) V(val) __M_ARG_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(str) V(sep) V(lim) V(flg) V(inc) V(out) V(rem) V(mid) V(val) __M_BIND_USEVAR|])dnl
 
 ### __sx_str_split - 文字列を分割して結果変数に格納する（内部用）
 ##
@@ -4136,21 +4136,21 @@ __sx_str_split() {
 			do
 				__sx_str_split_val_="${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
 
-				__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_val_}"|], CLEANUP)
+				__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_val_}"|], CLEANUP)
 
 				__sx_str_split_rem_="${__sx_str_split_str_#*${__sx_str_split_sep_}}"
 
 				# 区切り文字を含めるフラグがある場合
 				case "${__sx_str_split_inc_}" in 1)
 					__sx_str_split_mid_="${__sx_str_split_str_#${__sx_str_split_val_}}"
-					__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_mid_%${__sx_str_split_rem_}}"|], CLEANUP)
+					__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_mid_%${__sx_str_split_rem_}}"|], CLEANUP)
 				esac
 
 				__sx_str_split_str_="${__sx_str_split_rem_}"
 				: $(( __sx_str_split_lim_ -= 1 ))
 			done
 
-			__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_}"|], CLEANUP)
+			__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_str_}"|], CLEANUP)
 
 			eval ${__sx_str_split_out_:+"${__sx_str_split_bind_}=\"\${__sx_str_split_out_}\""}
 		else
@@ -4180,17 +4180,17 @@ __sx_str_split() {
 			M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
 			M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
 		do
-			__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"|], CLEANUP)
+			__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"|], CLEANUP)
 
 			case "${__sx_str_split_inc_}" in 1)
-				__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_sep_}"|], CLEANUP)
+				__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_sep_}"|], CLEANUP)
 			esac
 
 			__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
 			: $(( __sx_str_split_lim_ -= 1 ))
 		done
 
-		__M_ARG_BIND_QUOTE_BODY([|__sx_str_split|], [|"${__sx_str_split_str_}"|])
+		__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_str_}"|])
 
 		eval ${__sx_str_split_out_:+"${__sx_str_split_bind_}=\"\${__sx_str_split_out_}\""}
 	else
