@@ -416,6 +416,36 @@ sx_ex_is_status() {
 	unset __sx_ex_is_status_arg
 }
 
+### sx_ex_is_valid - すべての引数が有効な終了ステータス（数値または名前）であるか確認する
+##
+## 使い方:
+##   sx_ex_is_valid [値1 [値2 ...]]
+##
+## 説明:
+##   引数で指定されたすべての値が、0-255 の整数、または有効な終了ステータス名
+##   （OK, USAGE 等）であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて有効な終了ステータスである (SX_EX_OK)
+##    1  範囲外、または無効な値が含まれる
+sx_ex_is_valid() {
+	for __sx_ex_is_valid_arg in "${@}"; do
+		case "${__sx_ex_is_valid_arg}" in
+			[0-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5]) continue;;
+			*)
+				case " ${SX_EX_MAP} " in
+					*" ${__sx_ex_is_valid_arg}:"*) continue;;
+				esac
+				;;
+		esac
+
+		unset __sx_ex_is_valid_arg
+		return 1
+	done
+
+	unset __sx_ex_is_valid_arg
+}
+
 ### sx_ex_map - 終了ステータスの数値と名前を相互変換、または有効性を確認する
 ##
 ## 使い方:
