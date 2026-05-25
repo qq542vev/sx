@@ -3662,10 +3662,12 @@ __sx_str_chunk() {
 	__sx_str_chunk_len_="$((${3-1}))"
 	__sx_str_chunk_lim_="$((${4-${SX_NUM_I32_MAX}}))"
 
+		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_#[+-]}"
+
 	if M_NUM_LT([|0|], [|__sx_str_chunk_len_|]); then
 		# Forward: 早期終了をサポート
 		__sx_str_chunk_out_=
-		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
+
 		while
 			M_NUM_LE([|__sx_str_chunk_len_|], [|${#__sx_str_chunk_str_}|]) &&
 			M_STR_NE([|"${__sx_str_chunk_lim_}"|], [|0|])
@@ -3685,8 +3687,7 @@ __sx_str_chunk() {
 	else
 		# Backward: 全走査が必要なため set -- で収集
 		set --
-		__sx_str_chunk_len_=$((__sx_str_chunk_len_ * -1))
-		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
+		: $((__sx_str_chunk_len_ *= -1))
 
 		while
 			M_NUM_LE([|__sx_str_chunk_len_|], [|${#__sx_str_chunk_str_}|]) &&
@@ -3704,6 +3705,91 @@ __sx_str_chunk() {
 
 		__sx_arg_quote "${__sx_str_chunk_bind_}" "${@}"
 	fi
+
+	unset CLEANUP
+}
+
+### sx_str_isep - 文字列に一定の間隔でセパレータを挿入する
+##
+## 使い方:
+##   sx_str_isep 結果変数名 文字列 セパレータ [インターバル [リミット]]
+##
+## 説明:
+##   指定された文字列に対して、指定された間隔（インターバル）ごとにセパレータを挿入して結合する。
+##   インターバルが正の場合は前方から、負の場合は後方から数えて挿入する。
+##   リミットを指定すると、セパレータの挿入回数を制限できる。
+##   インターバルに 0 は指定できない。デフォルトのインターバルは 1。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_isep() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_isep "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && \
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${4+"${4}"} && \
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${5+"${5}"} || return
+
+	case $((${4-1})) in 0)
+		return "${SX_EX_USAGE}"
+	esac
+
+	__sx_str_isep "${@}"
+}
+
+define([|V|], [|__sx_str_isep_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(str) V(sep) V(int) V(lim) V(out) V(qm) V(next)|])dnl
+
+### __sx_str_isep - 文字列に一定の間隔でセパレータを挿入する（内部用）
+##
+## 使い方:
+##   __sx_str_isep 結果変数名 文字列 セパレータ [インターバル [リミット]]
+##
+## 説明:
+##   sx_str_isep の内部実装。
+##   引数チェックは行わない。
+__sx_str_isep() {
+	__sx_str_isep_res_="${1}"
+	__sx_str_isep_str_="${2-}"
+	__sx_str_isep_sep_="${3-}"
+	__sx_str_isep_int_="${4-1}"
+	__sx_str_isep_lim_="$((${5-${SX_NUM_I32_MAX}}))"
+	__sx_str_isep_out_=
+
+	__sx_str_rep __sx_str_isep_qm_ '?' "${__sx_str_isep_int_#[+-]}"
+
+	if M_NUM_LT([|0|], [|__sx_str_isep_int_|]); then
+		# Forward
+		while
+			M_NUM_LT([|__sx_str_isep_int_|], [|${#__sx_str_isep_str_}|]) &&
+			M_STR_NE([|"${__sx_str_isep_lim_}"|], [|0|])
+		do
+			__sx_str_isep_next_="${__sx_str_isep_str_#${__sx_str_isep_qm_}}"
+			__sx_str_isep_out_="${__sx_str_isep_out_}${__sx_str_isep_str_%"${__sx_str_isep_next_}"}${__sx_str_isep_sep_}"
+			__sx_str_isep_str_="${__sx_str_isep_next_}"
+			: $((__sx_str_isep_lim_ -= 1))
+		done
+
+		__sx_str_isep_out_="${__sx_str_isep_out_}${__sx_str_isep_str_}"
+	else
+		# Backward
+		: $((__sx_str_isep_int_ *= -1))
+
+		while
+			M_NUM_LT([|__sx_str_isep_int_|], [|${#__sx_str_isep_str_}|]) &&
+			M_STR_NE([|"${__sx_str_isep_lim_}"|], [|0|])
+		do
+			__sx_str_isep_next_="${__sx_str_isep_str_%${__sx_str_isep_qm_}}"
+			__sx_str_isep_out_="${__sx_str_isep_sep_}${__sx_str_isep_str_#${__sx_str_isep_next_}}${__sx_str_isep_out_}"
+			__sx_str_isep_str_="${__sx_str_isep_next_}"
+			: $((__sx_str_isep_lim_ -= 1))
+		done
+
+		__sx_str_isep_out_="${__sx_str_isep_str_}${__sx_str_isep_out_}"
+	fi
+
+	__sx_var_set "${__sx_str_isep_res_}=${__sx_str_isep_out_}"
 
 	unset CLEANUP
 }
