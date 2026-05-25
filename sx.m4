@@ -4242,10 +4242,10 @@ __sx_str_split() {
 		esac
 
 		eval __sx_arg_quote '"${__sx_str_split_bind_}"' "${__sx_str_split_out_}"
-	elif M_STR_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
-	# グロブ（パターン）による分割
-		if M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
-			# 前方からグロブ分割
+	elif M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
+		# 前方から分割
+		if M_STR_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
+			# グロブ（パターン）による前方分割
 			while
 				M_STR_HAS([|"${__sx_str_split_str_}"|], [|${__sx_str_split_sep_}|]) &&
 				M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
@@ -4265,12 +4265,30 @@ __sx_str_split() {
 				__sx_str_split_str_="${__sx_str_split_rem_}"
 				: $(( __sx_str_split_lim_ -= 1 ))
 			done
-
-			__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_str_}"|], CLEANUP)
-
-			eval ${__sx_str_split_out_:+"${__sx_str_split_bind_}=\"\${__sx_str_split_out_}\""}
 		else
-			# 後方からグロブ分割
+			# 通常の文字列による前方分割
+			while
+				M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
+				M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
+			do
+				__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"|], CLEANUP)
+
+				case "${__sx_str_split_inc_}" in 1)
+					__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_sep_}"|], CLEANUP)
+				esac
+
+				__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
+				: $(( __sx_str_split_lim_ -= 1 ))
+			done
+		fi
+
+		__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_str_}"|], CLEANUP)
+
+		eval ${__sx_str_split_out_:+"${__sx_str_split_bind_}=\"\${__sx_str_split_out_}\""}
+	else
+		# 後方から分割
+		if M_STR_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
+			# グロブ（パターン）による後方分割
 			while
 				M_STR_HAS([|"${__sx_str_split_str_}"|], [|${__sx_str_split_sep_}|]) &&
 				M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
@@ -4287,43 +4305,22 @@ __sx_str_split() {
 				__sx_str_split_str_="${__sx_str_split_rem_}"
 				: $(( __sx_str_split_lim_ += 1 ))
 			done
+		else
+			# 通常の文字列による後方分割
+			while
+				M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
+				M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
+			do
+				set -- "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}" "${@}"
 
-			__sx_arg_quote "${__sx_str_split_bind_}" "${__sx_str_split_str_}" "${@}"
+				case "${__sx_str_split_inc_}" in 1)
+					set -- "${__sx_str_split_sep_}" "${@}"
+				esac
+
+				__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
+				: $(( __sx_str_split_lim_ += 1 ))
+			done
 		fi
-	elif M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
-		# 通常の文字列による前方から分割
-		while
-			M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
-			M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
-		do
-			__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"|], CLEANUP)
-
-			case "${__sx_str_split_inc_}" in 1)
-				__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_sep_}"|], CLEANUP)
-			esac
-
-			__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
-			: $(( __sx_str_split_lim_ -= 1 ))
-		done
-
-		__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_str_}"|])
-
-		eval ${__sx_str_split_out_:+"${__sx_str_split_bind_}=\"\${__sx_str_split_out_}\""}
-	else
-		# 後方から分割
-		while
-			M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
-			M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
-		do
-			set -- "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}" "${@}"
-
-			case "${__sx_str_split_inc_}" in 1)
-				set -- "${__sx_str_split_sep_}" "${@}"
-			esac
-
-			__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
-			: $(( __sx_str_split_lim_ += 1 ))
-		done
 
 		__sx_arg_quote "${__sx_str_split_bind_}" "${__sx_str_split_str_}" "${@}"
 	fi
