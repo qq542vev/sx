@@ -3495,7 +3495,7 @@ __sx_num_rel() {
 sx_num_range() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_range "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${2-}" ${3+"${3}"} ${4+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${2-}" ${3+"${3}"} ${4+"${4}"} || return
 
 	case $((${4-1})) in 0)
 		return "${SX_EX_USAGE}"
@@ -3503,6 +3503,9 @@ sx_num_range() {
 
 	__sx_num_range "${@}"
 }
+
+define([|V|], [|__sx_num_range_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(cur) __M_BIND_USEVAR|])dnl
 
 ### __sx_num_range - 数値の範囲を生成する（内部用）
 ##
@@ -3512,29 +3515,34 @@ sx_num_range() {
 ## 説明:
 ##   sx_num_range の内部実装。引数チェックを行わない。
 __sx_num_range() {
+	__sx_var_bind_init "${1}"
+	__sx_num_range_bind_="${1}"
+	__sx_num_range_out_=
+	shift
+
 	case "${#}" in
-		2) set -- "${1}" 0 "${2}" 1;;
-		*) set -- "${1}" "${2}" "${3}" "${4-1}";;
+		1) set -- 0 "${1}" 1;;
+		2) set -- "${1}" "${2}" 1;;
+		*) set -- "${1}" "${2}" "${3-1}";;
 	esac
 
-	__sx_num_range_out_=
-	__sx_num_range_cur_="${2}"
+	__sx_num_range_cur_="${1}"
 
-	if M_NUM_LT([|0|], [|${4}|]); then
-		while M_NUM_LT([|__sx_num_range_cur_|], [|${3}|]); do
-			__sx_num_range_out_="${__sx_num_range_out_} ${__sx_num_range_cur_}"
-			: $(( __sx_num_range_cur_ += ${4} ))
+	if M_NUM_LT([|0|], [|${3}|]); then
+		while M_NUM_LT([|__sx_num_range_cur_|], [|${2}|]); do
+			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
+			: $(( __sx_num_range_cur_ += ${3} ))
 		done
 	else
-		while M_NUM_LT([|${3}|], [|${__sx_num_range_cur_}|]); do
-			__sx_num_range_out_="${__sx_num_range_out_} ${__sx_num_range_cur_}"
-			: $(( __sx_num_range_cur_ += ${4} ))
+		while M_NUM_LT([|${2}|], [|${__sx_num_range_cur_}|]); do
+			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
+			: $(( __sx_num_range_cur_ += ${3} ))
 		done
 	fi
 
-	__sx_var_set "${1}=${__sx_num_range_out_# }"
+	eval ${__sx_num_range_out_:+"${__sx_num_range_bind_}=\"\${__sx_num_range_out_}\""}
 
-	unset __sx_num_range_out_ __sx_num_range_cur_
+	unset CLEANUP
 }
 
 # ========================================

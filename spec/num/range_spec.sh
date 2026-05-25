@@ -61,4 +61,43 @@ Describe 'sx_num_range'
     When call sx_num_range ro_var 5
     The status should equal 77
   End
+
+  Describe 'bind機能'
+    It '複数の変数に分配代入すること'
+      When call sx_num_range i:j:k 1 4
+      The status should be success
+      The variable i should equal 1
+      The variable j should equal 2
+      The variable k should equal 3
+    End
+
+    It '残りの要素を最後の変数に集約すること'
+      When call sx_num_range i:j 1 5
+      The status should be success
+      The variable i should equal 1
+      The variable j should equal "2 3 4"
+    End
+
+    It '指定された変数分だけ取得して停止すること'
+      When call sx_num_range i:j: 1 10
+      The status should be success
+      The variable i should equal 1
+      The variable j should equal 2
+    End
+
+    It '空のセグメントで要素をスキップすること'
+      When call sx_num_range i::k 1 4
+      The status should be success
+      The variable i should equal 1
+      The variable k should equal 3
+    End
+
+    It '負の増分でも分配代入ができること'
+      When call sx_num_range i:j:k: 5 1 -1
+      The status should be success
+      The variable i should equal 5
+      The variable j should equal 4
+      The variable k should equal 3
+    End
+  End
 End
