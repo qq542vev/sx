@@ -432,11 +432,10 @@ sx_ex_is_valid() {
 	for __sx_ex_is_valid_arg in "${@}"; do
 		case "${__sx_ex_is_valid_arg}" in
 			[0-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5]) continue;;
-			*)
-				case " ${SX_EX_MAP} " in
-					*" ${__sx_ex_is_valid_arg}:"*) continue;;
-				esac
-				;;
+		esac
+
+		case " ${SX_EX_MAP} " in
+			*" ${__sx_ex_is_valid_arg}:"*) continue;;
 		esac
 
 		unset __sx_ex_is_valid_arg
@@ -449,87 +448,78 @@ sx_ex_is_valid() {
 ### sx_ex_map - 終了ステータスの数値と名前を相互変換、または有効性を確認する
 ##
 ## 使い方:
-##   sx_ex_map [変数名=値 | =値 | 値 ...]
+##   sx_ex_map バインド形式 [値1 [値2 ...]]
 ##
 ## 説明:
-##   引数として数値 (64 等) または名前 (DATAERR 等) を受け取り、その有効性を確認する。
-##   '変数名=値' の形式の場合は、解決された値（名前なら数値、数値なら名前）を
-##   結果変数に格納する。
+##   終了ステータスの数値（0-255）を対応する名前（OK, USAGE, ...）に、
+##   または名前を数値に変換し、結果を指定された変数に格納する。
+##   引数が指定されない場合は、バインド形式に基づき変数を初期化する。
+##
+## バインド形式:
+##   - `変数名`: 最後の引数の変換結果を格納する。
+##   - `変数名1:変数名2`: 各引数を順番に変換して格納する。詳細は __sx_var_bind_init を参照。
 ##
 ## 終了ステータス:
-##    0  すべての値が有効である (SX_EX_OK)
-##    1  無効な名前、または範囲外の数値が含まれる
-##   64  引数の形式が不正、または結果変数名が無効 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   - 0 (SX_EX_OK): すべての変換に成功。
+##   - 64 (SX_EX_USAGE): 無効なステータス、または対応するマッピングが存在しない。
+##   - 77 (SX_EX_NOPERM): 書き込み禁止の変数に代入しようとした。
 sx_ex_map() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_map "${@}" || return; return 0;; esac
 
-	__sx_ex_map_chk=
+	sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+
+	__sx_ex_map_bind="${1}"
+	shift
 
 	for __sx_ex_map_arg in "${@}"; do
-		case "${__sx_ex_map_arg}" in *?=*)
-			__sx_ex_map_vn="${__sx_ex_map_arg%%=*}"
-
-			sx_var_is_name "${__sx_ex_map_vn}" || {
-				unset __sx_ex_map_chk __sx_ex_map_arg __sx_ex_map_vn
+		case " ${SX_EX_MAP} " in
+			*" ${__sx_ex_map_arg}:"* | *":${__sx_ex_map_arg} "*) ;;
+			*)
+				unset __sx_ex_map_bind __sx_ex_map_arg
 				return "${SX_EX_USAGE}"
-			}
-
-			__sx_ex_map_chk="${__sx_ex_map_chk} ${__sx_ex_map_vn}"
+				;;
 		esac
 	done
 
-	eval sx_var_is_rw_all "${__sx_ex_map_chk}" || {
-		unset __sx_ex_map_chk __sx_ex_map_arg __sx_ex_map_vn
-		return "${SX_EX_NOPERM}"
-	}
-
-	unset __sx_ex_map_chk __sx_ex_map_arg __sx_ex_map_vn
-	__sx_ex_map "${@}" || return
+	__sx_ex_map "${__sx_ex_map_bind}" "${@}"
+	unset __sx_ex_map_bind __sx_ex_map_arg
 }
 
+define([|V|], [|__sx_ex_map_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(map) V(out) V(arg) __M_BIND_USEVAR|])dnl
 ### __sx_ex_map - 終了ステータスの数値と名前を相互変換、または有効性を確認する（内部用）
 ##
 ## 使い方:
-##   __sx_ex_map [変数名=値 | =値 | 値 ...]
+##   __sx_ex_map バインド形式 [値1 [値2 ...]]
 ##
 ## 説明:
 ##   sx_ex_map の内部実装。
 ##   引数チェックを行わずに変換処理を行う。
 __sx_ex_map() {
+	__sx_var_bind_init "${1}"
+	__sx_ex_map_bind_="${1}"
+	__sx_ex_map_map_=" ${SX_EX_MAP} "
 	__sx_ex_map_out_=
+	shift
 
 	for __sx_ex_map_arg_ in "${@}"; do
-		__sx_ex_map_in_="${__sx_ex_map_arg_#*=}"
-
-		case "${__sx_ex_map_in_}" in *[!0-9A-Z]*)
-			unset __sx_ex_map_out_ __sx_ex_map_arg_ __sx_ex_map_in_ __sx_ex_map_val_
-			return 1
-		esac
-
-		__sx_ex_map_val_=" ${SX_EX_MAP} "
-		case " ${__sx_ex_map_val_} " in
-			*" ${__sx_ex_map_in_}:"*)
-				__sx_ex_map_val_="${__sx_ex_map_val_#*" ${__sx_ex_map_in_}:"}"
-				__sx_ex_map_val_="${__sx_ex_map_val_%% *}"
+		case " ${__sx_ex_map_map_} " in
+			*" ${__sx_ex_map_arg_}:"*)
+				__sx_ex_map_arg_="${__sx_ex_map_map_#*" ${__sx_ex_map_arg_}:"}"
+				__sx_ex_map_arg_="${__sx_ex_map_arg_%% *}"
 				;;
-			*":${__sx_ex_map_in_} "*)
-				__sx_ex_map_val_="${__sx_ex_map_val_%":${__sx_ex_map_in_} "*}"
-				__sx_ex_map_val_="${__sx_ex_map_val_##* }"
-				;;
-			*)
-				unset __sx_ex_map_out_ __sx_ex_map_arg_ __sx_ex_map_in_ __sx_ex_map_val_
-				return 1
+			*":${__sx_ex_map_arg_} "*)
+				__sx_ex_map_arg_="${__sx_ex_map_map_%":${__sx_ex_map_arg_} "*}"
+				__sx_ex_map_arg_="${__sx_ex_map_arg_##* }"
 				;;
 		esac
 
-		case "${__sx_ex_map_arg_}" in *?=*)
-			__sx_ex_map_out_="${__sx_ex_map_out_} ${__sx_ex_map_arg_%%=*}=${__sx_ex_map_val_}"
-		esac
+		__M_BIND_UNQUOTE([|__sx_ex_map|], [|"${__sx_ex_map_arg_}"|], CLEANUP)
 	done
 
-	eval __sx_var_set "${__sx_ex_map_out_}"
-	unset __sx_ex_map_out_ __sx_ex_map_arg_ __sx_ex_map_in_ __sx_ex_map_val_
+	eval ${__sx_ex_map_out_:+"${__sx_ex_map_bind_}=\"\${__sx_ex_map_out_}\""}
+
+	unset CLEANUP
 }
 
 ### sx_ex_yield - 任意の終了ステータスを発生させる
@@ -538,23 +528,29 @@ __sx_ex_map() {
 ##   sx_ex_yield [ステータス番号 | ステータス名]
 ##
 ## 説明:
-##   指定された終了ステータス（0-255）を発生させる。
+##   指定された終了ステータス（数値または名前）を発生させる。
 ##   サブシェルを使用しないため、(exit n) よりも高速に動作する。
 ##
 ## 終了ステータス:
-##   指定されたステータスを返す。
-##   引数が指定されない場合は 0 (SX_EX_OK) を返す。
-##   ステータス値が 0-255 の範囲外、または整数でない場合は SX_EX_USAGE (64) を返す。
+##   - 指定されたステータスを返す。
+##   - 引数が指定されない場合は 0 (SX_EX_OK) を返す。
+##   - ステータス値が 0-255 の範囲外、または整数でない場合は SX_EX_USAGE (64) を返す。
 sx_ex_yield() {
-	if sx_ex_is_status ${1+"${1}"}; then
-		return "${1-0}"
-	elif sx_ex_map "__sx_ex_yield_s=${1}"; then
-		set -- "${__sx_ex_yield_s}"
-		unset __sx_ex_yield_s
-		return "${1}"
-	fi
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_yield "${@}" || return; return 0;; esac
 
-	return "${SX_EX_USAGE}"
+	sx_ex_is_valid "${1-0}" || return "${SX_EX_USAGE}"
+
+	__sx_ex_yield "${@}" || return
+}
+
+__sx_ex_yield() {
+	case "${1-0}" in [A-Z]*)
+		__sx_ex_map __sx_ex_yield_s_ "${1}"
+		set -- "${__sx_ex_yield_s_}"
+		unset __sx_ex_yield_s_
+	esac
+
+	return "${1-0}"
 }
 
 ### sx_ex_remap - 終了ステータスをマッピングしてコマンドを実行する
@@ -595,23 +591,19 @@ sx_ex_remap() {
 			*?-) sx_ex_is_status "${__sx_ex_remap_src%-}";;
 			-?*) sx_ex_is_status "${__sx_ex_remap_src#-}";;
 			*-*) sx_ex_is_status "${__sx_ex_remap_src#*-}" "${__sx_ex_remap_src%%-*}";;
-			*) sx_ex_is_status "${__sx_ex_remap_src#!}" || __sx_ex_map "=${__sx_ex_remap_src#!}";;
+			*) sx_ex_is_valid "${__sx_ex_remap_src#!}";;
 		esac || {
-			unset __sx_ex_remap_arg __sx_ex_remap_src __sx_ex_remap_dst
-
+			unset __sx_ex_remap_arg __sx_ex_remap_src
 			return "${SX_EX_USAGE}"
 		}
 
-		__sx_ex_remap_dst="${__sx_ex_remap_arg#*:}"
-
-		sx_ex_is_status "${__sx_ex_remap_dst}" || __sx_ex_map "=${__sx_ex_remap_dst}" || {
-			unset __sx_ex_remap_arg __sx_ex_remap_src __sx_ex_remap_dst
-
+		sx_ex_is_valid "${__sx_ex_remap_arg#*:}" || {
+			unset __sx_ex_remap_arg __sx_ex_remap_src
 			return "${SX_EX_USAGE}"
 		}
 	done
 
-	unset __sx_ex_remap_arg __sx_ex_remap_src __sx_ex_remap_dst
+	unset __sx_ex_remap_arg __sx_ex_remap_src
 
 	__sx_ex_remap "${@}" || return
 }
@@ -659,7 +651,7 @@ __sx_ex_remap() {
 				esac
 				;;
 			[A-Z]*)
-				__sx_ex_map "__sx_ex_remap_n_=${1}"
+				__sx_ex_map __sx_ex_remap_n_ "${1}"
 
 				case "${__sx_ex_remap_n_}" in "${__sx_ex_remap_sts_}")
 					__sx_ex_remap_sts_="${2}"; break
@@ -667,7 +659,7 @@ __sx_ex_remap() {
 				;;
 			!*)
 				case "${1}" in ![A-Z]*)
-					__sx_ex_map "__sx_ex_remap_n_=${1#!}"
+					__sx_ex_map __sx_ex_remap_n_ "${1#!}"
 					set -- "!${__sx_ex_remap_n_}" "${2}"
 				esac
 
@@ -679,7 +671,7 @@ __sx_ex_remap() {
 	done
 
 	case "${__sx_ex_remap_sts_}" in [A-Z]*)
-		__sx_ex_map "__sx_ex_remap_sts_=${__sx_ex_remap_sts_}"
+		__sx_ex_map __sx_ex_remap_sts_ "${__sx_ex_remap_sts_}"
 	esac
 
 	set -- "${__sx_ex_remap_sts_}"
