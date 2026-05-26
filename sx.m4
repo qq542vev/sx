@@ -3424,64 +3424,56 @@ __sx_num_lt() {
 sx_num_rel() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_rel "${@}" || return; return 0;; esac
 
-	case "$((${#} == 0 ? 1 : ${#} % 2))" in 0)
-		return "${SX_EX_USAGE}"
-	esac
-
-	__sx_num_rel_x=1
 	for __sx_num_rel_arg in "${@}"; do
-		case "${__sx_num_rel_x}" in
-			1) sx_num_is_sx_int "${__sx_num_rel_arg}";;
+		case "${__sx_num_rel_arg}" in
+			eq | '=' | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') ;;
 			*)
-				case "${__sx_num_rel_arg}" in
-					eq | = | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') ;;
-					*) ! :;;
-				esac
+				sx_num_is_sx_int "${__sx_num_rel_arg}" || {
+					unset __sx_num_rel_arg
+					return "${SX_EX_USAGE}"
+				}
 				;;
-		esac || {
-			unset __sx_num_rel_x __sx_num_rel_arg
-			return "${SX_EX_USAGE}"
-		}
-
-		: $((__sx_num_rel_x *= -1))
+		esac
 	done
 
-	unset __sx_num_rel_x __sx_num_rel_arg
+	unset __sx_num_rel_arg
+
 	__sx_num_rel "${@}" || return
 }
 
 ### __sx_num_rel - 数値間の関係を確認する（内部用）
 ##
 ## 使い方:
-##   __sx_num_rel [数値1 [演算子1 数値2 ...]]
+##   __sx_num_rel [数値 | 演算子 ...]
 ##
 ## 説明:
 ##   sx_num_rel の内部実装。
 ##   引数チェックを行わずに数値と演算子の関係を順次評価する。
 __sx_num_rel() {
-	__sx_num_rel_lhs_="${1-}"
-	shift "$((0 < ${#}))"
+	__sx_num_rel_op_='=='
 
-	while M_STR_EQ([|"${2+X}"|], [|X|]); do
-		case "${1}" in
+	for __sx_num_rel_arg_ in "${@}"; do
+		case "${__sx_num_rel_arg_}" in
 			eq | '=')  __sx_num_rel_op_='==';;
 			ne | '!=') __sx_num_rel_op_='!=';;
 			lt | '<')  __sx_num_rel_op_='<';;
 			le | '<=') __sx_num_rel_op_='<=';;
 			gt | '>')  __sx_num_rel_op_='>';;
 			ge | '>=') __sx_num_rel_op_='>=';;
-		esac
+			*)
+				case "${__sx_num_rel_lhs_+X}" in X)
+					case "$((__sx_num_rel_lhs_ ${__sx_num_rel_op_} __sx_num_rel_arg_))" in 0)
+						unset __sx_num_rel_op_ __sx_num_rel_lhs_ __sx_num_rel_arg_
+						return 1
+					esac
+				esac
 
-		case "$(( __sx_num_rel_lhs_ ${__sx_num_rel_op_} ${2} ))" in 0)
-			unset __sx_num_rel_lhs_ __sx_num_rel_op_
-			return 1
+				__sx_num_rel_lhs_="${__sx_num_rel_arg_}"
+				;;
 		esac
-
-		__sx_num_rel_lhs_="${2}"
-		shift 2
 	done
 
-	unset __sx_num_rel_lhs_ __sx_num_rel_op_
+	unset __sx_num_rel_op_ __sx_num_rel_lhs_ __sx_num_rel_arg_
 }
 
 ### sx_num_range - 数値の範囲を生成する (Python range 互換)
