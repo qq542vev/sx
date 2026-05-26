@@ -3426,14 +3426,13 @@ sx_num_rel() {
 
 	for __sx_num_rel_arg in "${@}"; do
 		case "${__sx_num_rel_arg}" in
-			eq | '=' | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') ;;
-			*)
-				sx_num_is_sx_int "${__sx_num_rel_arg}" || {
-					unset __sx_num_rel_arg
-					return "${SX_EX_USAGE}"
-				}
-				;;
+			eq | '=' | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') continue;;
 		esac
+
+		sx_num_is_sx_int "${__sx_num_rel_arg}" || {
+			unset __sx_num_rel_arg
+			return "${SX_EX_USAGE}"
+		}
 	done
 
 	unset __sx_num_rel_arg
@@ -3460,16 +3459,17 @@ __sx_num_rel() {
 			le | '<=') __sx_num_rel_op_='<=';;
 			gt | '>')  __sx_num_rel_op_='>';;
 			ge | '>=') __sx_num_rel_op_='>=';;
-			*)
-				case "${__sx_num_rel_lhs_+X}" in X)
-					case "$((__sx_num_rel_lhs_ ${__sx_num_rel_op_} __sx_num_rel_arg_))" in 0)
-						unset __sx_num_rel_op_ __sx_num_rel_lhs_ __sx_num_rel_arg_
-						return 1
-					esac
+			*) ! :;;
+		esac || case "${__sx_num_rel_lhs_+X}" in
+			X)
+				case "$((__sx_num_rel_lhs_ ${__sx_num_rel_op_} __sx_num_rel_arg_))" in 0)
+					unset __sx_num_rel_op_ __sx_num_rel_lhs_ __sx_num_rel_arg_
+					return 1
 				esac
 
 				__sx_num_rel_lhs_="${__sx_num_rel_arg_}"
 				;;
+			*) __sx_num_rel_lhs_="${__sx_num_rel_arg_}";;
 		esac
 	done
 
