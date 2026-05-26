@@ -3043,108 +3043,114 @@ sx_num_is_float() {
 	unset __sx_num_is_float_arg
 }
 
-### sx_num_to_fixed - 指数表記の数値を固定小数点表記に変換する
+### sx_num_norm - 数値を10進固定小数点形式に正規化する
 ##
 ## 使い方:
-##   sx_num_to_fixed [結果変数名=数値 ...]
+##   sx_num_norm バインド形式 [数値1 [数値2 ...]]
 ##
 ## 説明:
-##   "1.2e+3" を "1200"、"1.23e-2" を "0.0123" のような形式に変換して結果変数に格納する。
-##   入力が既に固定小数点形式の場合はそのまま返す。
+##   引数で指定された各数値を、10進固定小数点形式に正規化し、バインド形式に従って
+##   変数に代入する。
+##   正規化の内容：
+##   - 16進数（0x...）や8進数（0...）を10進整数に変換。
+##   - 指数表記（1.2e+3）を固定小数点形式（1200）に展開。
+##   - 小数点以下の不要な '0' を削除（6.0 -> 6, 1.20 -> 1.2）。
+##   - 符号（+ / -）は維持される。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正: 無効な変数名、数値形式が正しくない、または '=' が含まれない (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_num_to_fixed() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_to_fixed "${@}" || return; return 0;; esac
+##   64  引数不正: 無効なバインド形式、または数値形式が正しくない (SX_EX_USAGE)
+##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
+sx_num_norm() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_norm "${@}" || return; return 0;; esac
 
-	__sx_num_to_fixed_chk=
-	for __sx_num_to_fixed_arg in "${@}"; do
-		__sx_num_to_fixed_vn="${__sx_num_to_fixed_arg%%=*}"
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
-		sx_var_is_name "${__sx_num_to_fixed_vn}" && sx_num_is_float "${__sx_num_to_fixed_arg#*=}" || {
-			unset __sx_num_to_fixed_chk __sx_num_to_fixed_arg __sx_num_to_fixed_vn
-			return "${SX_EX_USAGE}"
-		}
+	__sx_num_norm_bind="${1}"
+	shift
 
-		__sx_num_to_fixed_chk="${__sx_num_to_fixed_chk} ${__sx_num_to_fixed_vn}"
-	done
-
-	eval sx_var_is_rw_all "${__sx_num_to_fixed_chk}" || {
-		unset __sx_num_to_fixed_chk __sx_num_to_fixed_arg __sx_num_to_fixed_vn
-		return "${SX_EX_NOPERM}"
+	sx_num_is_sx_num "${@}" || {
+		unset __sx_num_norm_bind
+		return "${SX_EX_USAGE}"
 	}
 
-	unset __sx_num_to_fixed_chk __sx_num_to_fixed_arg __sx_num_to_fixed_vn
-	__sx_num_to_fixed "${@}"
+	__sx_num_norm "${__sx_num_norm_bind}" "${@}"
+	unset __sx_num_norm_bind
 }
 
-__sx_num_to_fixed() {
-	for __sx_num_to_fixed_arg_ in "${@}"; do
-		__sx_num_to_fixed_in_="${__sx_num_to_fixed_arg_#*=}"
+define([|V|], [|__sx_num_norm_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(arg) V(in) V(mnt) V(dig) V(flen) V(shift) V(dlen) __M_BIND_USEVAR|])dnl
 
-		# 指数部が含まれていない場合はそのまま処理
-		case "${__sx_num_to_fixed_in_}" in
-			*[Ee]*) ;;
-			*)
-				__sx_var_set "${__sx_num_to_fixed_arg_}"
-				continue
+### __sx_num_norm - 数値を10進固定小数点形式に正規化する（内部用）
+##
+## 使い方:
+##   __sx_num_norm バインド形式 [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_norm の内部実装。引数の検証は行わない。
+__sx_num_norm() {
+	__sx_var_bind_init "${1}"
+	__sx_num_norm_bind_="${1}"
+	__sx_num_norm_out_=
+
+	shift
+
+	for __sx_num_norm_arg_ in "${@}"; do
+		__sx_num_norm_in_="${__sx_num_norm_arg_#[+-]}"
+
+		case "${__sx_num_norm_in_}" in
+			*[Ee]*)
+				# 指数表記の展開
+				__sx_num_norm_mnt_="${__sx_num_norm_in_%%[Ee]*}"
+				__sx_num_norm_dig_="${__sx_num_norm_mnt_%%.*}"
+
+				case "${__sx_num_norm_mnt_}" in
+					*.*)
+						__sx_num_norm_flen_=$((${#__sx_num_norm_mnt_} - ${#__sx_num_norm_dig_} - 1))
+						__sx_num_norm_dig_="${__sx_num_norm_dig_}${__sx_num_norm_mnt_#*.}"
+						;;
+					*) __sx_num_norm_flen_=0;;
+				esac
+
+				__sx_num_norm_shift_=$((${__sx_num_norm_in_#*[Ee]} - __sx_num_norm_flen_))
+					__sx_num_norm_dlen_="${#__sx_num_norm_dig_}"
+
+				if M_NUM_LE([|0|], [|__sx_num_norm_shift_|]); then
+					__sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "-$((__sx_num_norm_dlen_ + __sx_num_norm_shift_))" 0
+				else
+					: $((__sx_num_norm_shift_ *= -1))
+
+					if M_NUM_LT([|__sx_num_norm_shift_|], [|__sx_num_norm_dlen_|]); then
+						__sx_str_splice __sx_num_norm_in_ "${__sx_num_norm_dig_}" "$((__sx_num_norm_dlen_ - __sx_num_norm_shift_))" 0 .
+					else
+						__sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "${__sx_num_norm_shift_}" 0
+						__sx_num_norm_in_=".${__sx_num_norm_in_}"
+					fi
+				fi
+
+				__sx_num_norm_in_="${__sx_num_norm_in_#"${__sx_num_norm_in_%%[!0]*}"}"
+
+				case "${__sx_num_norm_in_}" in .*)
+					__sx_num_norm_in_="0${__sx_num_norm_in_}"
+				esac
 				;;
+			*[Xx]* | 0[0-9]*) : "$((__sx_num_norm_in_ += 0))";;
 		esac
 
-		# 1. 解析: 符号、仮数部、指数部を分離
-		__sx_num_to_fixed_sgn_=
-		case "${__sx_num_to_fixed_in_}" in
-			-*) __sx_num_to_fixed_sgn_=-;;
+		# 小数点以下のクリーンアップ
+		case "${__sx_num_norm_in_}" in *.*)
+			__sx_num_norm_in_="${__sx_num_norm_in_%"${__sx_num_norm_in_##*[!0]}"}"
+			__sx_num_norm_in_="${__sx_num_norm_in_%.}"
 		esac
 
-		__sx_num_to_fixed_mnt_="${__sx_num_to_fixed_in_%%[Ee]*}"
-		__sx_num_to_fixed_mnt_="${__sx_num_to_fixed_mnt_#[+-]}"
-		__sx_num_to_fixed_exp_="${__sx_num_to_fixed_in_#*[Ee]}"
-		__sx_num_to_fixed_exp_="${__sx_num_to_fixed_exp_#+}"
-
-		# 2. 仮数部の正規化: 小数点を除去し、小数点以下の桁数を取得
-		case "${__sx_num_to_fixed_mnt_}" in
-			*.*)
-				__sx_num_to_fixed_f_="${__sx_num_to_fixed_mnt_#*.}"
-				__sx_num_to_fixed_dig_="${__sx_num_to_fixed_mnt_%.*}${__sx_num_to_fixed_f_}"
-				__sx_num_to_fixed_flen_="${#__sx_num_to_fixed_f_}"
-				;;
-			*)
-				__sx_num_to_fixed_dig_="${__sx_num_to_fixed_mnt_}"
-				__sx_num_to_fixed_flen_=0
-				;;
-		esac
-
-		# 3. 実質シフト量の計算
-		__sx_num_to_fixed_shift_=$((__sx_num_to_fixed_exp_ - __sx_num_to_fixed_flen_))
-
-		# 4. 配置処理
-		if M_NUM_LE([|0|], [|__sx_num_to_fixed_shift_|]); then
-			# 右シフト（整数化、または 0 埋め）
-			__sx_str_pad __sx_num_to_fixed_res_ "${__sx_num_to_fixed_dig_}" "-$((${#__sx_num_to_fixed_dig_}  + __sx_num_to_fixed_shift_))" 0
-		else
-			# 左シフト（小数化）
-			__sx_num_to_fixed_shift_=$((__sx_num_to_fixed_shift_ * -1))
-			__sx_num_to_fixed_dig_len_="${#__sx_num_to_fixed_dig_}"
-
-			if M_NUM_LT([|__sx_num_to_fixed_shift_|], [|__sx_num_to_fixed_dig_len_|]); then
-				# 数字列の中に小数点が入る場合
-				__sx_str_splice __sx_num_to_fixed_res_ "${__sx_num_to_fixed_dig_}" "$((__sx_num_to_fixed_dig_len_ - __sx_num_to_fixed_shift_))" 0 .
-			else
-				# 0.00... の形式になる場合
-				__sx_str_pad __sx_num_to_fixed_res_ "${__sx_num_to_fixed_dig_}" "${__sx_num_to_fixed_shift_}" 0
-				__sx_num_to_fixed_res_="0.${__sx_num_to_fixed_res_}"
-			fi
-		fi
-
-		# 5. 符号を付けて格納
-		__sx_var_set "${__sx_num_to_fixed_arg_%%=*}=${__sx_num_to_fixed_sgn_}${__sx_num_to_fixed_res_}"
+		__M_BIND_UNQUOTE([|__sx_num_norm|], [|"${__sx_num_norm_arg_%%[!-]*}${__sx_num_norm_in_:-0}"|], CLEANUP)
 	done
 
-	unset __sx_num_to_fixed_arg_ __sx_num_to_fixed_in_ __sx_num_to_fixed_sgn_ __sx_num_to_fixed_mnt_ __sx_num_to_fixed_exp_ __sx_num_to_fixed_f_ __sx_num_to_fixed_dig_ __sx_num_to_fixed_flen_ __sx_num_to_fixed_shift_ __sx_num_to_fixed_dig_len_ __sx_num_to_fixed_res_
+	eval ${__sx_num_norm_out_:+"${__sx_num_norm_bind_}=\"\${__sx_num_norm_out_}\""}
+
+	unset CLEANUP
 }
+
 
 ### sx_num_is_sx_int - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
 ##
