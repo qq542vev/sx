@@ -70,11 +70,11 @@ Describe 'sx_num_norm'
     sx_num_norm r1 0.0
     Assert [ "$r1" = "0" ]
     sx_num_norm r2 -0.0
-    Assert [ "$r2" = "-0" ]
+    Assert [ "$r2" = "0" ]
     sx_num_norm r3 0.000
     Assert [ "$r3" = "0" ]
     sx_num_norm r4 -0e+5
-    Assert [ "$r4" = "-0" ]
+    Assert [ "$r4" = "0" ]
   End
 
   It '符号を維持すること'

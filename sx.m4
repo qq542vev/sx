@@ -3143,6 +3143,10 @@ __sx_num_norm() {
 			__sx_num_norm_in_="${__sx_num_norm_in_%.}"
 		esac
 
+		case "${__sx_num_norm_in_}" in '' | 0)
+			__sx_num_norm_arg_=
+		esac
+
 		__M_BIND_UNQUOTE([|__sx_num_norm|], [|"${__sx_num_norm_arg_%%[!-]*}${__sx_num_norm_in_:-0}"|], CLEANUP)
 	done
 
