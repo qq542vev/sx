@@ -15,9 +15,19 @@ Describe 'sx_num_rel'
     The status should be success
   End
 
+  It '正規化後に等しい実数表記を等値とみなすこと'
+    When call sx_num_rel 1 '=' 1.0 '=' 1e0
+    The status should be success
+  End
+
   It '不等号（!=）で成功を返すこと'
     When call sx_num_rel 10 '!=' 20
     The status should be success
+  End
+
+  It '正規化後に等しい値では != が失敗すること'
+    When call sx_num_rel 0x10 '!=' 16.0
+    The status should be failure
   End
 
   It '正常な連鎖比較（昇順）で成功を返すこと'
@@ -27,6 +37,21 @@ Describe 'sx_num_rel'
 
   It '正常な連鎖比較（混合）で成功を返すこと'
     When call sx_num_rel 10 '>' 5 '=' 5 '<' 10 '!=' 0
+    The status should be success
+  End
+
+  It '整数と実数が混在する大小比較を正しく処理できること'
+    When call sx_num_rel 0x10 '>' 15.5 '>' 017 '>=' 15.0
+    The status should be success
+  End
+
+  It '小数部の桁数が異なる値を正しく比較できること'
+    When call sx_num_rel 0.12 '<' 0.3 '<' 0.3001
+    The status should be success
+  End
+
+  It '負数を含む実数比較を正しく処理できること'
+    When call sx_num_rel -2.5 '<' -2.05 '<' -1
     The status should be success
   End
 
