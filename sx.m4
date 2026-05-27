@@ -3677,47 +3677,17 @@ __sx_num_rel_cmp_norm_abs() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_rel_cmp_norm() {
-	case "${1}" in
-		-*)
-			__sx_num_rel_cmp_norm_lsgn_='-'
-			__sx_num_rel_cmp_norm_labs_="${1#-}"
-			;;
-		*)
-			__sx_num_rel_cmp_norm_lsgn_='+'
-			__sx_num_rel_cmp_norm_labs_="${1}"
-			;;
+	set -- "${1#[+-]}" "${2#[+-]}" "${1%%[!-]*}" "${2%%[!-]*}"
+
+	case "${3:-+}${4:-+}" in
+		-+) return 1;;
+		+-) return 3;;
 	esac
 
-	case "${2}" in
-		-*)
-			__sx_num_rel_cmp_norm_rsgn_='-'
-			__sx_num_rel_cmp_norm_rabs_="${2#-}"
-			;;
-		*)
-			__sx_num_rel_cmp_norm_rsgn_='+'
-			__sx_num_rel_cmp_norm_rabs_="${2}"
-			;;
-	esac
-
-	case "${__sx_num_rel_cmp_norm_lsgn_}${__sx_num_rel_cmp_norm_rsgn_}" in
-		-+)
-			unset __sx_num_rel_cmp_norm_lsgn_ __sx_num_rel_cmp_norm_labs_ __sx_num_rel_cmp_norm_rsgn_ __sx_num_rel_cmp_norm_rabs_
-			return 1
-			;;
-		+-)
-			unset __sx_num_rel_cmp_norm_lsgn_ __sx_num_rel_cmp_norm_labs_ __sx_num_rel_cmp_norm_rsgn_ __sx_num_rel_cmp_norm_rabs_
-			return 3
-			;;
-	esac
-
-	if M_STR_EQ([|"${__sx_num_rel_cmp_norm_lsgn_}"|], [|-|]); then
-		__sx_num_rel_cmp_norm_abs "${__sx_num_rel_cmp_norm_rabs_}" "${__sx_num_rel_cmp_norm_labs_}" || set -- "${?}"
-	else
-		__sx_num_rel_cmp_norm_abs "${__sx_num_rel_cmp_norm_labs_}" "${__sx_num_rel_cmp_norm_rabs_}" || set -- "${?}"
-	fi
-
-	unset __sx_num_rel_cmp_norm_lsgn_ __sx_num_rel_cmp_norm_labs_ __sx_num_rel_cmp_norm_rsgn_ __sx_num_rel_cmp_norm_rabs_
-	return "${1}"
+	case "${3}" in
+		-*) __sx_num_rel_cmp_norm_abs "${2}" "${1}";;
+		*) __sx_num_rel_cmp_norm_abs "${1}" "${2}";;
+	esac || return "${?}"
 }
 
 ### __sx_num_rel - 数値間の関係を確認する（内部用）
@@ -3742,49 +3712,46 @@ __sx_num_rel() {
 			gt | '>')  __sx_num_rel_op_='>';;
 			ge | '>=') __sx_num_rel_op_='>=';;
 			*) ! :;;
-			esac || case "${__sx_num_rel_lhs_+X}" in
-			X)
-				__sx_num_rel_classify __sx_num_rel_lcls_ "${__sx_num_rel_lhs_}"
-				__sx_num_rel_classify __sx_num_rel_rcls_ "${__sx_num_rel_arg_}"
+		esac && continue
 
-				case "${__sx_num_rel_lcls_}:${__sx_num_rel_rcls_}" in
-					arith:arith)
-						__sx_num_rel_cmp_fast_int "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}" || __sx_num_rel_cmp_="${?}"
-						__sx_num_rel_rhs_norm_=
-						;;
-					dec:dec)
-						__sx_num_rel_cmp_dec_int "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}" || __sx_num_rel_cmp_="${?}"
-						__sx_num_rel_rhs_norm_=
-						;;
-					*)
-						case "${__sx_num_rel_lhs_norm_+X}" in
-							*) __sx_num_norm __sx_num_rel_lhs_norm_ "${__sx_num_rel_lhs_}";;
-						esac
+		case "${__sx_num_rel_lhs_+X}" in X)
+			__sx_num_rel_classify __sx_num_rel_lcls_ "${__sx_num_rel_lhs_}"
+			__sx_num_rel_classify __sx_num_rel_rcls_ "${__sx_num_rel_arg_}"
 
-						__sx_num_norm __sx_num_rel_rhs_norm_ "${__sx_num_rel_arg_}"
-						__sx_num_rel_cmp_norm "${__sx_num_rel_lhs_norm_}" "${__sx_num_rel_rhs_norm_}" || __sx_num_rel_cmp_="${?}"
-						;;
-				esac
+			case "${__sx_num_rel_lcls_}:${__sx_num_rel_rcls_}" in
+				arith:arith)
+					__sx_num_rel_cmp_fast_int "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}" || __sx_num_rel_cmp_="${?}"
+					unset __sx_num_rel_rhs_norm_
+					;;
+				dec:dec)
+					__sx_num_rel_cmp_dec_int "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}" || __sx_num_rel_cmp_="${?}"
+					unset __sx_num_rel_rhs_norm_
+					;;
+				*)
+					case "${__sx_num_rel_lhs_norm_+X}" in '')
+						__sx_num_norm __sx_num_rel_lhs_norm_ "${__sx_num_rel_lhs_}"
+					esac
 
-				case "${__sx_num_rel_op_}:${__sx_num_rel_cmp_}" in
-					'==:2' | '!=:1' | '!=:3' | '<:1' | '<=:1' | '<=:2' | '>:3' | '>=:2' | '>=:3') ;;
-					*)
-						unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lhs_norm_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_rhs_norm_ __sx_num_rel_cmp_ __sx_num_rel_arg_
-						return 1
-						;;
-				esac
+					__sx_num_norm __sx_num_rel_rhs_norm_ "${__sx_num_rel_arg_}"
+					__sx_num_rel_cmp_norm "${__sx_num_rel_lhs_norm_}" "${__sx_num_rel_rhs_norm_}" || __sx_num_rel_cmp_="${?}"
+					;;
+			esac
 
-				__sx_num_rel_lhs_="${__sx_num_rel_arg_}"
-				case "${__sx_num_rel_rhs_norm_+X}" in
-					X) __sx_num_rel_lhs_norm_="${__sx_num_rel_rhs_norm_}";;
-					*) unset __sx_num_rel_lhs_norm_;;
-				esac
-				;;
-			*)
-				__sx_num_rel_lhs_="${__sx_num_rel_arg_}"
-				unset __sx_num_rel_lhs_norm_
-				;;
+			case "${__sx_num_rel_op_}:${__sx_num_rel_cmp_}" in
+				'==:2' | '!=:1' | '!=:3' | '<:1' | '<=:1' | '<=:2' | '>:3' | '>=:2' | '>=:3') ;;
+				*)
+					unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lhs_norm_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_rhs_norm_ __sx_num_rel_cmp_ __sx_num_rel_arg_
+					return 1
+					;;
+			esac
+
+			case "${__sx_num_rel_rhs_norm_+X}" in
+				'') unset __sx_num_rel_lhs_norm_;;
+				*) __sx_num_rel_lhs_norm_="${__sx_num_rel_rhs_norm_}";;
+			esac
 		esac
+
+			__sx_num_rel_lhs_="${__sx_num_rel_arg_}"
 	done
 
 	unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lhs_norm_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_rhs_norm_ __sx_num_rel_cmp_ __sx_num_rel_arg_
