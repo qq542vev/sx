@@ -3479,21 +3479,21 @@ __sx_num_rel_classify() {
 ### __sx_num_rel_cmp_fast_int - 整数を算術展開で比較する（内部用）
 ##
 ## 終了ステータス:
-##   0  左辺 < 右辺
-##   1  左辺 = 右辺
-##   2  左辺 > 右辺
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
 __sx_num_rel_cmp_fast_int() {
-	case "$(( ${1} < ${2} ))" in 1) return 0; esac
-	case "$(( ${1} > ${2} ))" in 1) return 2; esac
-	return 1
+	case "$(( ${1} < ${2} ))" in 1) return 1; esac
+	case "$(( ${1} > ${2} ))" in 1) return 3; esac
+	return 2
 }
 
 ### __sx_num_rel_cmp_dec_chunk - 同じ長さの10進整数文字列を左から比較する（内部用）
 ##
 ## 終了ステータス:
-##   0  左辺 < 右辺
-##   1  左辺 = 右辺
-##   2  左辺 > 右辺
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
 __sx_num_rel_cmp_dec_chunk() {
 	set -- "${1}" "${2}"
 
@@ -3503,45 +3503,41 @@ __sx_num_rel_cmp_dec_chunk() {
 
 		if M_NUM_LT([|${__sx_num_rel_cmp_dec_chunk_lhs_}|], [|${__sx_num_rel_cmp_dec_chunk_rhs_}|]); then
 			unset __sx_num_rel_cmp_dec_chunk_lhs_ __sx_num_rel_cmp_dec_chunk_rhs_
-			return 0
+			return 1
 		elif M_NUM_LT([|${__sx_num_rel_cmp_dec_chunk_rhs_}|], [|${__sx_num_rel_cmp_dec_chunk_lhs_}|]); then
 			unset __sx_num_rel_cmp_dec_chunk_lhs_ __sx_num_rel_cmp_dec_chunk_rhs_
-			return 2
+			return 3
 		fi
 
 		set -- "${1#"${__sx_num_rel_cmp_dec_chunk_lhs_}"}" "${2#"${__sx_num_rel_cmp_dec_chunk_rhs_}"}"
 	done
 
 	unset __sx_num_rel_cmp_dec_chunk_lhs_ __sx_num_rel_cmp_dec_chunk_rhs_
-	return 1
+	return 2
 }
 
 ### __sx_num_rel_cmp_uint_dec - 符号なし10進整数文字列を比較する（内部用）
 ##
 ## 終了ステータス:
-##   0  左辺 < 右辺
-##   1  左辺 = 右辺
-##   2  左辺 > 右辺
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
 __sx_num_rel_cmp_uint_dec() {
 	if M_NUM_LT([|${#1}|], [|${#2}|]); then
-		return 0
+		return 1
 	elif M_NUM_LT([|${#2}|], [|${#1}|]); then
-		return 2
+		return 3
 	fi
 
-	if __sx_num_rel_cmp_dec_chunk "${1}" "${2}"; then
-		return 0
-	else
-		return "${?}"
-	fi
+	__sx_num_rel_cmp_dec_chunk "${1}" "${2}" || return "${?}"
 }
 
 ### __sx_num_rel_cmp_dec_int - 10進整数文字列を比較する（内部用）
 ##
 ## 終了ステータス:
-##   0  左辺 < 右辺
-##   1  左辺 = 右辺
-##   2  左辺 > 右辺
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
 __sx_num_rel_cmp_dec_int() {
 	case "${1}" in
 		-*)
@@ -3568,26 +3564,18 @@ __sx_num_rel_cmp_dec_int() {
 	case "${__sx_num_rel_cmp_dec_int_lsgn_}${__sx_num_rel_cmp_dec_int_rsgn_}" in
 		-+)
 			unset __sx_num_rel_cmp_dec_int_lsgn_ __sx_num_rel_cmp_dec_int_labs_ __sx_num_rel_cmp_dec_int_rsgn_ __sx_num_rel_cmp_dec_int_rabs_
-			return 0
+			return 1
 			;;
 		+-)
 			unset __sx_num_rel_cmp_dec_int_lsgn_ __sx_num_rel_cmp_dec_int_labs_ __sx_num_rel_cmp_dec_int_rsgn_ __sx_num_rel_cmp_dec_int_rabs_
-			return 2
+			return 3
 			;;
 	esac
 
 	if M_STR_EQ([|"${__sx_num_rel_cmp_dec_int_lsgn_}"|], [|-|]); then
-		if __sx_num_rel_cmp_uint_dec "${__sx_num_rel_cmp_dec_int_rabs_}" "${__sx_num_rel_cmp_dec_int_labs_}"; then
-			set -- 0
-		else
-			set -- "${?}"
-		fi
+		__sx_num_rel_cmp_uint_dec "${__sx_num_rel_cmp_dec_int_rabs_}" "${__sx_num_rel_cmp_dec_int_labs_}" || set -- "${?}"
 	else
-		if __sx_num_rel_cmp_uint_dec "${__sx_num_rel_cmp_dec_int_labs_}" "${__sx_num_rel_cmp_dec_int_rabs_}"; then
-			set -- 0
-		else
-			set -- "${?}"
-		fi
+		__sx_num_rel_cmp_uint_dec "${__sx_num_rel_cmp_dec_int_labs_}" "${__sx_num_rel_cmp_dec_int_rabs_}" || set -- "${?}"
 	fi
 	unset __sx_num_rel_cmp_dec_int_lsgn_ __sx_num_rel_cmp_dec_int_labs_ __sx_num_rel_cmp_dec_int_rsgn_ __sx_num_rel_cmp_dec_int_rabs_
 	return "${1}"
@@ -3596,9 +3584,9 @@ __sx_num_rel_cmp_dec_int() {
 ### __sx_num_rel_cmp_frac - 小数部を左から比較する（内部用）
 ##
 ## 終了ステータス:
-##   0  左辺 < 右辺
-##   1  左辺 = 右辺
-##   2  左辺 > 右辺
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
 __sx_num_rel_cmp_frac() {
 	set -- "${1-}" "${2-}"
 
@@ -3607,11 +3595,11 @@ __sx_num_rel_cmp_frac() {
 			'') case "${2}" in
 				'')
 					unset __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
-					return 1
+					return 2
 					;;
 				*)
 					unset __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
-					return 0
+					return 1
 					;;
 			esac;;
 		esac
@@ -3619,7 +3607,7 @@ __sx_num_rel_cmp_frac() {
 		case "${2}" in
 			'')
 				unset __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
-				return 2
+				return 3
 				;;
 		esac
 
@@ -3630,10 +3618,10 @@ __sx_num_rel_cmp_frac() {
 
 		if M_NUM_LT([|${__sx_num_rel_cmp_frac_lpad_}|], [|${__sx_num_rel_cmp_frac_rpad_}|]); then
 			unset __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
-			return 0
+			return 1
 		elif M_NUM_LT([|${__sx_num_rel_cmp_frac_rpad_}|], [|${__sx_num_rel_cmp_frac_lpad_}|]); then
 			unset __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
-			return 2
+			return 3
 		fi
 
 		set -- "${1#"${__sx_num_rel_cmp_frac_lhs_}"}" "${2#"${__sx_num_rel_cmp_frac_rhs_}"}"
@@ -3643,9 +3631,9 @@ __sx_num_rel_cmp_frac() {
 ### __sx_num_rel_cmp_norm_abs - 正規化済み絶対値同士を比較する（内部用）
 ##
 ## 終了ステータス:
-##   0  左辺 < 右辺
-##   1  左辺 = 右辺
-##   2  左辺 > 右辺
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
 __sx_num_rel_cmp_norm_abs() {
 	case "${1}" in
 		*.*)
@@ -3669,23 +3657,15 @@ __sx_num_rel_cmp_norm_abs() {
 			;;
 	esac
 
-	if __sx_num_rel_cmp_uint_dec "${__sx_num_rel_cmp_norm_abs_lint_}" "${__sx_num_rel_cmp_norm_abs_rint_}"; then
-		set -- 0
-	else
-		set -- "${?}"
-	fi
+	__sx_num_rel_cmp_uint_dec "${__sx_num_rel_cmp_norm_abs_lint_}" "${__sx_num_rel_cmp_norm_abs_rint_}" || set -- "${?}"
 	case "${1}" in
-		0 | 2)
+		1 | 3)
 			unset __sx_num_rel_cmp_norm_abs_lint_ __sx_num_rel_cmp_norm_abs_lfrac_ __sx_num_rel_cmp_norm_abs_rint_ __sx_num_rel_cmp_norm_abs_rfrac_
 			return "${1}"
 			;;
 	esac
 
-	if __sx_num_rel_cmp_frac "${__sx_num_rel_cmp_norm_abs_lfrac_}" "${__sx_num_rel_cmp_norm_abs_rfrac_}"; then
-		set -- 0
-	else
-		set -- "${?}"
-	fi
+	__sx_num_rel_cmp_frac "${__sx_num_rel_cmp_norm_abs_lfrac_}" "${__sx_num_rel_cmp_norm_abs_rfrac_}" || set -- "${?}"
 	unset __sx_num_rel_cmp_norm_abs_lint_ __sx_num_rel_cmp_norm_abs_lfrac_ __sx_num_rel_cmp_norm_abs_rint_ __sx_num_rel_cmp_norm_abs_rfrac_
 	return "${1}"
 }
@@ -3693,9 +3673,9 @@ __sx_num_rel_cmp_norm_abs() {
 ### __sx_num_rel_cmp_norm - 正規化済み数値を比較する（内部用）
 ##
 ## 終了ステータス:
-##   0  左辺 < 右辺
-##   1  左辺 = 右辺
-##   2  左辺 > 右辺
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
 __sx_num_rel_cmp_norm() {
 	case "${1}" in
 		-*)
@@ -3722,26 +3702,18 @@ __sx_num_rel_cmp_norm() {
 	case "${__sx_num_rel_cmp_norm_lsgn_}${__sx_num_rel_cmp_norm_rsgn_}" in
 		-+)
 			unset __sx_num_rel_cmp_norm_lsgn_ __sx_num_rel_cmp_norm_labs_ __sx_num_rel_cmp_norm_rsgn_ __sx_num_rel_cmp_norm_rabs_
-			return 0
+			return 1
 			;;
 		+-)
 			unset __sx_num_rel_cmp_norm_lsgn_ __sx_num_rel_cmp_norm_labs_ __sx_num_rel_cmp_norm_rsgn_ __sx_num_rel_cmp_norm_rabs_
-			return 2
+			return 3
 			;;
 	esac
 
 	if M_STR_EQ([|"${__sx_num_rel_cmp_norm_lsgn_}"|], [|-|]); then
-		if __sx_num_rel_cmp_norm_abs "${__sx_num_rel_cmp_norm_rabs_}" "${__sx_num_rel_cmp_norm_labs_}"; then
-			set -- 0
-		else
-			set -- "${?}"
-		fi
+		__sx_num_rel_cmp_norm_abs "${__sx_num_rel_cmp_norm_rabs_}" "${__sx_num_rel_cmp_norm_labs_}" || set -- "${?}"
 	else
-		if __sx_num_rel_cmp_norm_abs "${__sx_num_rel_cmp_norm_labs_}" "${__sx_num_rel_cmp_norm_rabs_}"; then
-			set -- 0
-		else
-			set -- "${?}"
-		fi
+		__sx_num_rel_cmp_norm_abs "${__sx_num_rel_cmp_norm_labs_}" "${__sx_num_rel_cmp_norm_rabs_}" || set -- "${?}"
 	fi
 
 	unset __sx_num_rel_cmp_norm_lsgn_ __sx_num_rel_cmp_norm_labs_ __sx_num_rel_cmp_norm_rsgn_ __sx_num_rel_cmp_norm_rabs_
@@ -3777,19 +3749,11 @@ __sx_num_rel() {
 
 				case "${__sx_num_rel_lcls_}:${__sx_num_rel_rcls_}" in
 					arith:arith)
-						if __sx_num_rel_cmp_fast_int "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}"; then
-							__sx_num_rel_cmp_=0
-						else
-							__sx_num_rel_cmp_="${?}"
-						fi
+						__sx_num_rel_cmp_fast_int "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}" || __sx_num_rel_cmp_="${?}"
 						__sx_num_rel_rhs_norm_=
 						;;
 					dec:dec)
-						if __sx_num_rel_cmp_dec_int "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}"; then
-							__sx_num_rel_cmp_=0
-						else
-							__sx_num_rel_cmp_="${?}"
-						fi
+						__sx_num_rel_cmp_dec_int "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}" || __sx_num_rel_cmp_="${?}"
 						__sx_num_rel_rhs_norm_=
 						;;
 					*)
@@ -3798,16 +3762,12 @@ __sx_num_rel() {
 						esac
 
 						__sx_num_norm __sx_num_rel_rhs_norm_ "${__sx_num_rel_arg_}"
-						if __sx_num_rel_cmp_norm "${__sx_num_rel_lhs_norm_}" "${__sx_num_rel_rhs_norm_}"; then
-							__sx_num_rel_cmp_=0
-						else
-							__sx_num_rel_cmp_="${?}"
-						fi
+						__sx_num_rel_cmp_norm "${__sx_num_rel_lhs_norm_}" "${__sx_num_rel_rhs_norm_}" || __sx_num_rel_cmp_="${?}"
 						;;
 				esac
 
 				case "${__sx_num_rel_op_}:${__sx_num_rel_cmp_}" in
-					'==:1' | '!=:0' | '!=:2' | '<:0' | '<=:0' | '<=:1' | '>:2' | '>=:1' | '>=:2') ;;
+					'==:2' | '!=:1' | '!=:3' | '<:1' | '<=:1' | '<=:2' | '>:3' | '>=:2' | '>=:3') ;;
 					*)
 						unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lhs_norm_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_rhs_norm_ __sx_num_rel_cmp_ __sx_num_rel_arg_
 						return 1
