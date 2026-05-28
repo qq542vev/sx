@@ -3429,7 +3429,7 @@ sx_num_rel() {
 
 	for __sx_num_rel_arg in "${@}"; do
 		case "${__sx_num_rel_arg}" in
-			eq | '=' | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') continue;;
+			eq | '==' | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') continue;;
 		esac
 
 		sx_num_is_sx_num "${__sx_num_rel_arg}" || {
@@ -3705,7 +3705,7 @@ __sx_num_rel() {
 
 	for __sx_num_rel_arg_ in "${@}"; do
 		case "${__sx_num_rel_arg_}" in
-			eq | '=')  __sx_num_rel_op_='==';;
+			eq | '==')  __sx_num_rel_op_='==';;
 			ne | '!=') __sx_num_rel_op_='!=';;
 			lt | '<')  __sx_num_rel_op_='<';;
 			le | '<=') __sx_num_rel_op_='<=';;

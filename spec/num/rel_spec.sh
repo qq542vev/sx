@@ -10,13 +10,13 @@ Describe 'sx_num_rel'
     The status should be success
   End
 
-  It '等号（=）で成功を返すこと'
-    When call sx_num_rel 10 '=' 10
+  It '等号（==）で成功を返すこと'
+    When call sx_num_rel 10 '==' 10
     The status should be success
   End
 
   It '正規化後に等しい実数表記を等値とみなすこと'
-    When call sx_num_rel 1 '=' 1.0 '=' 1e0
+    When call sx_num_rel 1 '==' 1.0 '==' 1e0
     The status should be success
   End
 
@@ -36,7 +36,7 @@ Describe 'sx_num_rel'
   End
 
   It '正常な連鎖比較（混合）で成功を返すこと'
-    When call sx_num_rel 10 '>' 5 '=' 5 '<' 10 '!=' 0
+    When call sx_num_rel 10 '>' 5 '==' 5 '<' 10 '!=' 0
     The status should be success
   End
 
@@ -75,6 +75,11 @@ Describe 'sx_num_rel'
     The status should equal 64
   End
 
+  It '旧演算子（=）が指定された場合に引数不正（64）を返すこと'
+    When call sx_num_rel 1 '=' 2
+    The status should equal 64
+  End
+
   It '非数値が指定された場合に引数不正（64）を返すこと'
     When call sx_num_rel 1 '<' "abc"
     The status should equal 64
@@ -97,11 +102,11 @@ Describe 'sx_num_rel'
     End
 
     It '動的な演算子の切り替えと連鎖ができること'
-      When call sx_num_rel 1 '<' 2 3 4 '=' 4
+      When call sx_num_rel 1 '<' 2 3 4 '==' 4
       The status should be success
     End
 
-    It 'デフォルトで等号比較が行われること'
+    It 'デフォルトで等値比較が行われること'
       When call sx_num_rel 1 2 3
       The status should be failure
     End
@@ -112,7 +117,7 @@ Describe 'sx_num_rel'
     End
 
     It '明示的な等号での連鎖ができること'
-      When call sx_num_rel 1 '=' 1 1
+      When call sx_num_rel 1 '==' 1 1
       The status should be success
     End
 
