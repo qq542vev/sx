@@ -135,6 +135,16 @@ Describe 'sx_num_rel'
       When call sx_num_rel 1 '<' 2 '>' 2
       The status should be failure
     End
+
+    It '巨大な10進数（チャンク分割時に先頭0が発生するケース）を正しく比較できること'
+      When call sx_num_rel 10000000008 '<' 10000000009
+      The status should be success
+    End
+
+    It '巨大な10進数の等値比較が正しく行えること'
+      When call sx_num_rel 10000000008 '==' 10000000008
+      The status should be success
+    End
   End
 
 

@@ -3496,34 +3496,17 @@ __sx_num_rel_cmp_fast_int() {
 ##   3  左辺 > 右辺
 __sx_num_rel_cmp_dec_chunk() {
 	__sx_str_rep __sx_num_rel_cmp_dec_chunk_qm_ '?' "${__sx_num_rel_wlen_}"
-	set -- "${1}" "${2}"
+	set -- "${__sx_num_rel_cmp_dec_chunk_qm_}" "${1}" "${2}"
+	unset __sx_num_rel_cmp_dec_chunk_qm_
 
-	while M_STR_NE([|"${1}"|], [|''|]); do
-		case "${1}" in
-			${__sx_num_rel_cmp_dec_chunk_qm_}*)
-				__sx_num_rel_cmp_dec_chunk_next_="${1#${__sx_num_rel_cmp_dec_chunk_qm_}}"
-				__sx_num_rel_cmp_dec_chunk_lhs_="${1%"${__sx_num_rel_cmp_dec_chunk_next_}"}"
-				__sx_num_rel_cmp_dec_chunk_rhs_="${2%"${2#${__sx_num_rel_cmp_dec_chunk_qm_}}}"}"
-				set -- "${__sx_num_rel_cmp_dec_chunk_next_}" "${2#"${__sx_num_rel_cmp_dec_chunk_rhs_}"}"
-				;;
-			*)
-				__sx_num_rel_cmp_dec_chunk_lhs_="${1}"
-				__sx_num_rel_cmp_dec_chunk_rhs_="${2}"
-				set -- '' ''
-				;;
+	while M_STR_MATCH([|"${2}"|], [|${1}*|]); do
+		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
+		__sx_num_rel_cmp_fast_int "1${4%"${2}"}" "1${5%"${3}"}" || case "${?}" in
+			1 | 3) return "${?}";;
 		esac
-
-		if M_NUM_LT([|${__sx_num_rel_cmp_dec_chunk_lhs_}|], [|${__sx_num_rel_cmp_dec_chunk_rhs_}|]); then
-			unset __sx_num_rel_cmp_dec_chunk_qm_ __sx_num_rel_cmp_dec_chunk_next_ __sx_num_rel_cmp_dec_chunk_lhs_ __sx_num_rel_cmp_dec_chunk_rhs_
-			return 1
-		elif M_NUM_LT([|${__sx_num_rel_cmp_dec_chunk_rhs_}|], [|${__sx_num_rel_cmp_dec_chunk_lhs_}|]); then
-			unset __sx_num_rel_cmp_dec_chunk_qm_ __sx_num_rel_cmp_dec_chunk_next_ __sx_num_rel_cmp_dec_chunk_lhs_ __sx_num_rel_cmp_dec_chunk_rhs_
-			return 3
-		fi
 	done
 
-	unset __sx_num_rel_cmp_dec_chunk_qm_ __sx_num_rel_cmp_dec_chunk_next_ __sx_num_rel_cmp_dec_chunk_lhs_ __sx_num_rel_cmp_dec_chunk_rhs_
-	return 2
+	__sx_num_rel_cmp_fast_int "1${2}" "1${3}" || return "${?}"
 }
 
 ### __sx_num_rel_cmp_uint_dec - 符号なし10進整数文字列を比較する（内部用）
