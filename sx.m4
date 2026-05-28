@@ -3523,11 +3523,10 @@ __sx_num_rel_cmp_dec_chunk() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_rel_cmp_uint_dec() {
-	if M_NUM_LT([|${#1}|], [|${#2}|]); then
-		return 1
-	elif M_NUM_LT([|${#2}|], [|${#1}|]); then
-		return 3
-	fi
+	case 1 in
+		"$((${#1} < ${#2}))") return 1;;
+		"$((${#2} < ${#1}))") return 3;;
+	esac
 
 	__sx_num_rel_cmp_dec_chunk "${1}" "${2}" || return "${?}"
 }
@@ -3636,38 +3635,20 @@ __sx_num_rel_cmp_frac() {
 ##   3  左辺 > 右辺
 __sx_num_rel_cmp_norm_abs() {
 	case "${1}" in
-		*.*)
-			__sx_num_rel_cmp_norm_abs_lint_="${1%%.*}"
-			__sx_num_rel_cmp_norm_abs_lfrac_="${1#*.}"
-			;;
-		*)
-			__sx_num_rel_cmp_norm_abs_lint_="${1}"
-			__sx_num_rel_cmp_norm_abs_lfrac_=
-			;;
+		*.*) set -- "${1%%.*}" "${2}" "${1#*.}";;
+		*) set -- "${1}" "${2}" '';;
 	esac
 
 	case "${2}" in
-		*.*)
-			__sx_num_rel_cmp_norm_abs_rint_="${2%%.*}"
-			__sx_num_rel_cmp_norm_abs_rfrac_="${2#*.}"
-			;;
-		*)
-			__sx_num_rel_cmp_norm_abs_rint_="${2}"
-			__sx_num_rel_cmp_norm_abs_rfrac_=
-			;;
+		*.*) set -- "${1}" "${2%%.*}" "${3}" "${2#*.}";;
+		*) set -- "${1}" "${2}" "${3}" '';;
 	esac
 
-	__sx_num_rel_cmp_uint_dec "${__sx_num_rel_cmp_norm_abs_lint_}" "${__sx_num_rel_cmp_norm_abs_rint_}" || set -- "${?}"
-	case "${1}" in
-		1 | 3)
-			unset __sx_num_rel_cmp_norm_abs_lint_ __sx_num_rel_cmp_norm_abs_lfrac_ __sx_num_rel_cmp_norm_abs_rint_ __sx_num_rel_cmp_norm_abs_rfrac_
-			return "${1}"
-			;;
+	__sx_num_rel_cmp_uint_dec "${1}" "${2}" || case "${?}" in 1 | 3)
+		return "${?}"
 	esac
 
-	__sx_num_rel_cmp_frac "${__sx_num_rel_cmp_norm_abs_lfrac_}" "${__sx_num_rel_cmp_norm_abs_rfrac_}" || set -- "${?}"
-	unset __sx_num_rel_cmp_norm_abs_lint_ __sx_num_rel_cmp_norm_abs_lfrac_ __sx_num_rel_cmp_norm_abs_rint_ __sx_num_rel_cmp_norm_abs_rfrac_
-	return "${1}"
+	__sx_num_rel_cmp_frac "${3}" "${4}" || return "${?}"
 }
 
 ### __sx_num_rel_cmp_norm - 正規化済み数値を比較する（内部用）
