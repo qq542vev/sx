@@ -3495,24 +3495,34 @@ __sx_num_rel_cmp_fast_int() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_rel_cmp_dec_chunk() {
+	__sx_str_rep __sx_num_rel_cmp_dec_chunk_qm_ '?' "${__sx_num_rel_wlen_}"
 	set -- "${1}" "${2}"
 
 	while M_STR_NE([|"${1}"|], [|''|]); do
-		__sx_str_substr __sx_num_rel_cmp_dec_chunk_lhs_ "${1}" 0 "${__sx_num_rel_wlen_}"
-		__sx_str_substr __sx_num_rel_cmp_dec_chunk_rhs_ "${2}" 0 "${__sx_num_rel_wlen_}"
+		case "${1}" in
+			${__sx_num_rel_cmp_dec_chunk_qm_}*)
+				__sx_num_rel_cmp_dec_chunk_next_="${1#${__sx_num_rel_cmp_dec_chunk_qm_}}"
+				__sx_num_rel_cmp_dec_chunk_lhs_="${1%"${__sx_num_rel_cmp_dec_chunk_next_}"}"
+				__sx_num_rel_cmp_dec_chunk_rhs_="${2%"${2#${__sx_num_rel_cmp_dec_chunk_qm_}}}"}"
+				set -- "${__sx_num_rel_cmp_dec_chunk_next_}" "${2#"${__sx_num_rel_cmp_dec_chunk_rhs_}"}"
+				;;
+			*)
+				__sx_num_rel_cmp_dec_chunk_lhs_="${1}"
+				__sx_num_rel_cmp_dec_chunk_rhs_="${2}"
+				set -- '' ''
+				;;
+		esac
 
 		if M_NUM_LT([|${__sx_num_rel_cmp_dec_chunk_lhs_}|], [|${__sx_num_rel_cmp_dec_chunk_rhs_}|]); then
-			unset __sx_num_rel_cmp_dec_chunk_lhs_ __sx_num_rel_cmp_dec_chunk_rhs_
+			unset __sx_num_rel_cmp_dec_chunk_qm_ __sx_num_rel_cmp_dec_chunk_next_ __sx_num_rel_cmp_dec_chunk_lhs_ __sx_num_rel_cmp_dec_chunk_rhs_
 			return 1
 		elif M_NUM_LT([|${__sx_num_rel_cmp_dec_chunk_rhs_}|], [|${__sx_num_rel_cmp_dec_chunk_lhs_}|]); then
-			unset __sx_num_rel_cmp_dec_chunk_lhs_ __sx_num_rel_cmp_dec_chunk_rhs_
+			unset __sx_num_rel_cmp_dec_chunk_qm_ __sx_num_rel_cmp_dec_chunk_next_ __sx_num_rel_cmp_dec_chunk_lhs_ __sx_num_rel_cmp_dec_chunk_rhs_
 			return 3
 		fi
-
-		set -- "${1#"${__sx_num_rel_cmp_dec_chunk_lhs_}"}" "${2#"${__sx_num_rel_cmp_dec_chunk_rhs_}"}"
 	done
 
-	unset __sx_num_rel_cmp_dec_chunk_lhs_ __sx_num_rel_cmp_dec_chunk_rhs_
+	unset __sx_num_rel_cmp_dec_chunk_qm_ __sx_num_rel_cmp_dec_chunk_next_ __sx_num_rel_cmp_dec_chunk_lhs_ __sx_num_rel_cmp_dec_chunk_rhs_
 	return 2
 }
 
@@ -3587,17 +3597,19 @@ __sx_num_rel_cmp_dec_int() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_rel_cmp_frac() {
+	__sx_str_rep __sx_num_rel_cmp_frac_qm_ '?' "${__sx_num_rel_wlen_}"
+	__sx_str_rep __sx_num_rel_cmp_frac_zero_ '0' "${__sx_num_rel_wlen_}"
 	set -- "${1-}" "${2-}"
 
 	while :; do
 		case "${1}" in
 			'') case "${2}" in
 				'')
-					unset __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
+					unset __sx_num_rel_cmp_frac_qm_ __sx_num_rel_cmp_frac_zero_ __sx_num_rel_cmp_frac_next_ __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
 					return 2
 					;;
 				*)
-					unset __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
+					unset __sx_num_rel_cmp_frac_qm_ __sx_num_rel_cmp_frac_zero_ __sx_num_rel_cmp_frac_next_ __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
 					return 1
 					;;
 			esac;;
@@ -3605,25 +3617,48 @@ __sx_num_rel_cmp_frac() {
 
 		case "${2}" in
 			'')
-				unset __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
+				unset __sx_num_rel_cmp_frac_qm_ __sx_num_rel_cmp_frac_zero_ __sx_num_rel_cmp_frac_next_ __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
 				return 3
 				;;
 		esac
 
-		__sx_str_substr __sx_num_rel_cmp_frac_lhs_ "${1}" 0 "${__sx_num_rel_wlen_}"
-		__sx_str_substr __sx_num_rel_cmp_frac_rhs_ "${2}" 0 "${__sx_num_rel_wlen_}"
-		__sx_str_pad __sx_num_rel_cmp_frac_lpad_ "${__sx_num_rel_cmp_frac_lhs_}" "-${__sx_num_rel_wlen_}" 0
-		__sx_str_pad __sx_num_rel_cmp_frac_rpad_ "${__sx_num_rel_cmp_frac_rhs_}" "-${__sx_num_rel_wlen_}" 0
+		case "${1}" in
+			${__sx_num_rel_cmp_frac_qm_}*)
+				__sx_num_rel_cmp_frac_next_="${1#${__sx_num_rel_cmp_frac_qm_}}"
+				__sx_num_rel_cmp_frac_lhs_="${1%"${__sx_num_rel_cmp_frac_next_}"}"
+				__sx_num_rel_cmp_frac_lpad_="${__sx_num_rel_cmp_frac_lhs_}"
+				set -- "${__sx_num_rel_cmp_frac_next_}" "${2}"
+				;;
+			*)
+				__sx_num_rel_cmp_frac_lhs_="${1}"
+				__sx_num_rel_cmp_frac_lpad_="${__sx_num_rel_cmp_frac_lhs_}${__sx_num_rel_cmp_frac_zero_}"
+				__sx_num_rel_cmp_frac_lpad_="${__sx_num_rel_cmp_frac_lpad_%${__sx_num_rel_cmp_frac_lpad_#${__sx_num_rel_cmp_frac_qm_}}}"
+				set -- '' "${2}"
+				;;
+		esac
+
+		case "${2}" in
+			${__sx_num_rel_cmp_frac_qm_}*)
+				__sx_num_rel_cmp_frac_next_="${2#${__sx_num_rel_cmp_frac_qm_}}"
+				__sx_num_rel_cmp_frac_rhs_="${2%"${__sx_num_rel_cmp_frac_next_}"}"
+				__sx_num_rel_cmp_frac_rpad_="${__sx_num_rel_cmp_frac_rhs_}"
+				set -- "${1}" "${__sx_num_rel_cmp_frac_next_}"
+				;;
+			*)
+				__sx_num_rel_cmp_frac_rhs_="${2}"
+				__sx_num_rel_cmp_frac_rpad_="${__sx_num_rel_cmp_frac_rhs_}${__sx_num_rel_cmp_frac_zero_}"
+				__sx_num_rel_cmp_frac_rpad_="${__sx_num_rel_cmp_frac_rpad_%${__sx_num_rel_cmp_frac_rpad_#${__sx_num_rel_cmp_frac_qm_}}}"
+				set -- "${1}" ''
+				;;
+		esac
 
 		if M_NUM_LT([|${__sx_num_rel_cmp_frac_lpad_}|], [|${__sx_num_rel_cmp_frac_rpad_}|]); then
-			unset __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
+			unset __sx_num_rel_cmp_frac_qm_ __sx_num_rel_cmp_frac_zero_ __sx_num_rel_cmp_frac_next_ __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
 			return 1
 		elif M_NUM_LT([|${__sx_num_rel_cmp_frac_rpad_}|], [|${__sx_num_rel_cmp_frac_lpad_}|]); then
-			unset __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
+			unset __sx_num_rel_cmp_frac_qm_ __sx_num_rel_cmp_frac_zero_ __sx_num_rel_cmp_frac_next_ __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
 			return 3
 		fi
-
-		set -- "${1#"${__sx_num_rel_cmp_frac_lhs_}"}" "${2#"${__sx_num_rel_cmp_frac_rhs_}"}"
 	done
 }
 
