@@ -3580,69 +3580,48 @@ __sx_num_rel_cmp_dec_int() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_rel_cmp_frac() {
-	__sx_str_rep __sx_num_rel_cmp_frac_qm_ '?' "${__sx_num_rel_wlen_}"
-	__sx_str_rep __sx_num_rel_cmp_frac_zero_ '0' "${__sx_num_rel_wlen_}"
-	set -- "${1-}" "${2-}"
+	# 完全に一致する場合は即座に終了 (EQ)
+	case "${1-}" in "${2-}") return 2 ;; esac
 
-	while :; do
-		case "${1}" in
-			'') case "${2}" in
-				'')
-					unset __sx_num_rel_cmp_frac_qm_ __sx_num_rel_cmp_frac_zero_ __sx_num_rel_cmp_frac_next_ __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
-					return 2
-					;;
-				*)
-					unset __sx_num_rel_cmp_frac_qm_ __sx_num_rel_cmp_frac_zero_ __sx_num_rel_cmp_frac_next_ __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
-					return 1
-					;;
-			esac;;
-		esac
+	# 接頭辞チェック（正規化により、長い方が必ず大きい）
+	# 冒頭で行うことで、長い小数部の延長比較をループなしで高速に処理する
+	case "${1-}" in "${2-}"*) return 3 ;; esac
+	case "${2-}" in "${1-}"*) return 1 ;; esac
 
-		case "${2}" in
-			'')
-				unset __sx_num_rel_cmp_frac_qm_ __sx_num_rel_cmp_frac_zero_ __sx_num_rel_cmp_frac_next_ __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
-				return 3
+	# 窓幅パターン（?????????）を準備
+	__sx_str_rep __sx_num_rel_cmp_frac_q_ '?' "${__sx_num_rel_wlen_}"
+	# $1: qm, $2: lhs, $3: rhs
+	set -- "${__sx_num_rel_cmp_frac_q_}" "${1-}" "${2-}"
+	unset __sx_num_rel_cmp_frac_q_
+
+	# 両方の文字列が窓幅以上の間、チャンクごとに比較
+	while M_STR_MATCH([|"${2}"|], [|${1}*|]) && M_STR_MATCH([|"${3}"|], [|${1}*|]); do
+		__sx_num_rel_cmp_fast_int "1${2%${2#$1}}" "1${3%${3#$1}}"
+		__sx_num_rel_cmp_frac_res_=$?
+		case "${__sx_num_rel_cmp_frac_res_}" in
+			1 | 3)
+				set -- "${__sx_num_rel_cmp_frac_res_}"
+				unset __sx_num_rel_cmp_frac_res_
+				return "${1}"
 				;;
 		esac
-
-		case "${1}" in
-			${__sx_num_rel_cmp_frac_qm_}*)
-				__sx_num_rel_cmp_frac_next_="${1#${__sx_num_rel_cmp_frac_qm_}}"
-				__sx_num_rel_cmp_frac_lhs_="${1%"${__sx_num_rel_cmp_frac_next_}"}"
-				__sx_num_rel_cmp_frac_lpad_="${__sx_num_rel_cmp_frac_lhs_}"
-				set -- "${__sx_num_rel_cmp_frac_next_}" "${2}"
-				;;
-			*)
-				__sx_num_rel_cmp_frac_lhs_="${1}"
-				__sx_num_rel_cmp_frac_lpad_="${__sx_num_rel_cmp_frac_lhs_}${__sx_num_rel_cmp_frac_zero_}"
-				__sx_num_rel_cmp_frac_lpad_="${__sx_num_rel_cmp_frac_lpad_%${__sx_num_rel_cmp_frac_lpad_#${__sx_num_rel_cmp_frac_qm_}}}"
-				set -- '' "${2}"
-				;;
-		esac
-
-		case "${2}" in
-			${__sx_num_rel_cmp_frac_qm_}*)
-				__sx_num_rel_cmp_frac_next_="${2#${__sx_num_rel_cmp_frac_qm_}}"
-				__sx_num_rel_cmp_frac_rhs_="${2%"${__sx_num_rel_cmp_frac_next_}"}"
-				__sx_num_rel_cmp_frac_rpad_="${__sx_num_rel_cmp_frac_rhs_}"
-				set -- "${1}" "${__sx_num_rel_cmp_frac_next_}"
-				;;
-			*)
-				__sx_num_rel_cmp_frac_rhs_="${2}"
-				__sx_num_rel_cmp_frac_rpad_="${__sx_num_rel_cmp_frac_rhs_}${__sx_num_rel_cmp_frac_zero_}"
-				__sx_num_rel_cmp_frac_rpad_="${__sx_num_rel_cmp_frac_rpad_%${__sx_num_rel_cmp_frac_rpad_#${__sx_num_rel_cmp_frac_qm_}}}"
-				set -- "${1}" ''
-				;;
-		esac
-
-		if M_NUM_LT([|${__sx_num_rel_cmp_frac_lpad_}|], [|${__sx_num_rel_cmp_frac_rpad_}|]); then
-			unset __sx_num_rel_cmp_frac_qm_ __sx_num_rel_cmp_frac_zero_ __sx_num_rel_cmp_frac_next_ __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
-			return 1
-		elif M_NUM_LT([|${__sx_num_rel_cmp_frac_rpad_}|], [|${__sx_num_rel_cmp_frac_lpad_}|]); then
-			unset __sx_num_rel_cmp_frac_qm_ __sx_num_rel_cmp_frac_zero_ __sx_num_rel_cmp_frac_next_ __sx_num_rel_cmp_frac_lhs_ __sx_num_rel_cmp_frac_rhs_ __sx_num_rel_cmp_frac_lpad_ __sx_num_rel_cmp_frac_rpad_
-			return 3
-		fi
+		set -- "${1}" "${2#${1}}" "${3#${1}}"
 	done
+
+	# 接頭辞の関係にない（＝どこかの桁で異なる）残りの部分をパディングして最後の比較
+	__sx_str_rep __sx_num_rel_cmp_frac_z_ '0' "${__sx_num_rel_wlen_}"
+	__sx_num_rel_cmp_frac_l_="${2}${__sx_num_rel_cmp_frac_z_}"
+	__sx_num_rel_cmp_frac_l_="${__sx_num_rel_cmp_frac_l_%${__sx_num_rel_cmp_frac_l_#$1}}"
+	__sx_num_rel_cmp_frac_r_="${3}${__sx_num_rel_cmp_frac_z_}"
+	__sx_num_rel_cmp_frac_r_="${__sx_num_rel_cmp_frac_r_%${__sx_num_rel_cmp_frac_r_#$1}}"
+	unset __sx_num_rel_cmp_frac_z_ __sx_num_rel_cmp_frac_res_
+
+	__sx_num_rel_cmp_fast_int "1${__sx_num_rel_cmp_frac_l_}" "1${__sx_num_rel_cmp_frac_r_}"
+	__sx_num_rel_cmp_frac_res_=$?
+	unset __sx_num_rel_cmp_frac_l_ __sx_num_rel_cmp_frac_r_
+	set -- "${__sx_num_rel_cmp_frac_res_}"
+	unset __sx_num_rel_cmp_frac_res_
+	return "${1}"
 }
 
 ### __sx_num_rel_cmp_norm_abs - 正規化済み絶対値同士を比較する（内部用）
