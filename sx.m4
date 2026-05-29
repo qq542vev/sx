@@ -3710,7 +3710,9 @@ __sx_num_rel() {
 		esac && continue
 
 		case "${__sx_num_rel_lhs_+X}" in X)
-			__sx_num_rel_classify __sx_num_rel_lcls_ "${__sx_num_rel_lhs_}"
+			case "${__sx_num_rel_lcls_+X}" in '')
+				__sx_num_rel_classify __sx_num_rel_lcls_ "${__sx_num_rel_lhs_}"
+			esac
 			__sx_num_rel_classify __sx_num_rel_rcls_ "${__sx_num_rel_arg_}"
 
 			case "${__sx_num_rel_lcls_}:${__sx_num_rel_rcls_}" in
@@ -3744,6 +3746,7 @@ __sx_num_rel() {
 				'') unset __sx_num_rel_lhs_norm_;;
 				*) __sx_num_rel_lhs_norm_="${__sx_num_rel_rhs_norm_}";;
 			esac
+			__sx_num_rel_lcls_="${__sx_num_rel_rcls_}"
 		esac
 
 			__sx_num_rel_lhs_="${__sx_num_rel_arg_}"
