@@ -3483,9 +3483,20 @@ __sx_num_rel_classify() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_rel_cmp_fast_int() {
-	case "$(( ${1} < ${2} ))" in 1) return 1; esac
-	case "$(( ${1} > ${2} ))" in 1) return 3; esac
+	case "$(( ${1:-0} < ${2:-0} ))" in 1) return 1; esac
+	case "$(( ${1:-0} > ${2:-0} ))" in 1) return 3; esac
 	return 2
+}
+
+### __sx_num_rel_cmp_dec_fast - 10進整数文字列を算術展開で比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_rel_cmp_dec_fast() {
+	set -- "${1#${1%%[!0]*}}" "${2#${2%%[!0]*}}"
+	__sx_num_rel_cmp_fast_int "${1:-0}" "${2:-0}"
 }
 
 ### __sx_num_rel_cmp_dec_chunk - 同じ長さの10進整数文字列を左から比較する（内部用）
@@ -3501,12 +3512,12 @@ __sx_num_rel_cmp_dec_chunk() {
 
 	while M_STR_MATCH([|"${2}"|], [|${1}*|]); do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_rel_cmp_fast_int "1${4%"${2}"}" "1${5%"${3}"}" || case "${?}" in
+		__sx_num_rel_cmp_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
 			1 | 3) return "${?}";;
 		esac
 	done
 
-	__sx_num_rel_cmp_fast_int "1${2}" "1${3}" || return "${?}"
+	__sx_num_rel_cmp_dec_fast "${2}" "${3}" || return "${?}"
 }
 
 ### __sx_num_rel_cmp_uint_dec - 符号なし10進整数文字列を比較する（内部用）
@@ -3596,32 +3607,18 @@ __sx_num_rel_cmp_frac() {
 
 	# 両方の文字列が窓幅以上の間、チャンクごとに比較
 	while M_STR_MATCH([|"${2}"|], [|${1}*|]) && M_STR_MATCH([|"${3}"|], [|${1}*|]); do
-		__sx_num_rel_cmp_fast_int "1${2%${2#$1}}" "1${3%${3#$1}}"
-		__sx_num_rel_cmp_frac_res_=$?
-		case "${__sx_num_rel_cmp_frac_res_}" in
-			1 | 3)
-				set -- "${__sx_num_rel_cmp_frac_res_}"
-				unset __sx_num_rel_cmp_frac_res_
-				return "${1}"
-				;;
+		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
+		__sx_num_rel_cmp_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
+			1 | 3) return "${?}";;
 		esac
-		set -- "${1}" "${2#${1}}" "${3#${1}}"
 	done
 
 	# 接頭辞の関係にない（＝どこかの桁で異なる）残りの部分をパディングして最後の比較
 	__sx_str_rep __sx_num_rel_cmp_frac_z_ '0' "${__sx_num_rel_wlen_}"
-	__sx_num_rel_cmp_frac_l_="${2}${__sx_num_rel_cmp_frac_z_}"
-	__sx_num_rel_cmp_frac_l_="${__sx_num_rel_cmp_frac_l_%${__sx_num_rel_cmp_frac_l_#$1}}"
-	__sx_num_rel_cmp_frac_r_="${3}${__sx_num_rel_cmp_frac_z_}"
-	__sx_num_rel_cmp_frac_r_="${__sx_num_rel_cmp_frac_r_%${__sx_num_rel_cmp_frac_r_#$1}}"
-	unset __sx_num_rel_cmp_frac_z_ __sx_num_rel_cmp_frac_res_
+	set -- "${1}" "${2}${__sx_num_rel_cmp_frac_z_}" "${3}${__sx_num_rel_cmp_frac_z_}"
+	unset __sx_num_rel_cmp_frac_z_
 
-	__sx_num_rel_cmp_fast_int "1${__sx_num_rel_cmp_frac_l_}" "1${__sx_num_rel_cmp_frac_r_}"
-	__sx_num_rel_cmp_frac_res_=$?
-	unset __sx_num_rel_cmp_frac_l_ __sx_num_rel_cmp_frac_r_
-	set -- "${__sx_num_rel_cmp_frac_res_}"
-	unset __sx_num_rel_cmp_frac_res_
-	return "${1}"
+	__sx_num_rel_cmp_dec_fast "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
 }
 
 ### __sx_num_rel_cmp_norm_abs - 正規化済み絶対値同士を比較する（内部用）
