@@ -3476,16 +3476,36 @@ __sx_num_rel_classify() {
 	unset __sx_num_rel_classify_res_ __sx_num_rel_classify_arg_ __sx_num_rel_classify_abs_
 }
 
-### __sx_num_rel_cmp_fast_int - 整数を算術展開で比較する（内部用）
+### sx_num_cmp_arith - 2つの数値を算術展開で比較する
+##
+## 使い方:
+##   sx_num_cmp_arith 数値1 数値2
+##
+## 終了ステータス:
+##   1  数値1 < 数値2
+##   2  数値1 = 数値2
+##   3  数値1 > 数値2
+##  64  引数不正 (SX_EX_USAGE)
+sx_num_cmp_arith() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_arith "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${1-}" "${2-}" || return
+
+	__sx_num_cmp_arith "${1}" "${2}" || return
+}
+
+### __sx_num_cmp_arith - 整数を算術展開で比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_rel_cmp_fast_int() {
-	case "$(( ${1:-0} < ${2:-0} ))" in 1) return 1; esac
-	case "$(( ${1:-0} > ${2:-0} ))" in 1) return 3; esac
-	return 2
+__sx_num_cmp_arith() {
+	case 1 in
+		"$((${1} < ${2}))") return 1;;
+		"$((${1} > ${2}))") return 3;;
+		*) return 2;;
+	esac
 }
 
 ### __sx_num_rel_cmp_dec_fast - 10進整数文字列を算術展開で比較する（内部用）
@@ -3496,7 +3516,7 @@ __sx_num_rel_cmp_fast_int() {
 ##   3  左辺 > 右辺
 __sx_num_rel_cmp_dec_fast() {
 	set -- "${1#${1%%[!0]*}}" "${2#${2%%[!0]*}}"
-	__sx_num_rel_cmp_fast_int "${1:-0}" "${2:-0}"
+	__sx_num_cmp_arith "${1:-0}" "${2:-0}"
 }
 
 ### __sx_num_rel_cmp_dec_chunk - 同じ長さの10進整数文字列を左から比較する（内部用）
@@ -3680,7 +3700,7 @@ __sx_num_rel() {
 
 	for __sx_num_rel_arg_ in "${@}"; do
 		case "${__sx_num_rel_arg_}" in
-			eq | '==')  __sx_num_rel_op_='==';;
+			eq | '==') __sx_num_rel_op_='==';;
 			ne | '!=') __sx_num_rel_op_='!=';;
 			lt | '<')  __sx_num_rel_op_='<';;
 			le | '<=') __sx_num_rel_op_='<=';;
@@ -3695,7 +3715,7 @@ __sx_num_rel() {
 
 			case "${__sx_num_rel_lcls_}:${__sx_num_rel_rcls_}" in
 				arith:arith)
-					__sx_num_rel_cmp_fast_int "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}" || __sx_num_rel_cmp_="${?}"
+					__sx_num_cmp_arith "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}" || __sx_num_rel_cmp_="${?}"
 					unset __sx_num_rel_rhs_norm_
 					;;
 				dec:dec)
