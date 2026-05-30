@@ -3122,7 +3122,6 @@ __sx_num_norm() {
 	unset CLEANUP
 }
 
-
 ### sx_num_is_sx_int - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
 ##
 ## 使い方:
@@ -3244,47 +3243,6 @@ __sx_num_is_sx_num() {
 	unset __sx_num_is_sx_num_arg_
 }
 
-### sx_num_rel - 数値間の関係を確認する
-##
-## 使い方:
-##   sx_num_rel [数値1 [演算子1 数値2 ...]]
-##
-## 説明:
-##   数値と演算子を交互に指定し、すべての関係が満たされるかを確認する。
-##   演算子には以下が使用可能：
-##     eq, =   : 等しい
-##     ne, !=  : 等しくない
-##     lt, <   : 未満
-##     le, <=  : 以下
-##     gt, >   : より大きい
-##     ge, >=  : 以上
-##
-## 終了ステータス:
-##    0  すべての条件を満たす (SX_EX_OK)
-##    1  条件を満たさない引数が含まれる
-##   64  引数不正 (SX_EX_USAGE)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_num_rel() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_rel "${@}" || return; return 0;; esac
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-
-	for __sx_num_rel_arg in "${@}"; do
-		case "${__sx_num_rel_arg}" in
-			eq | '==' | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') continue;;
-		esac
-
-		__sx_num_is_sx_num "${__sx_num_rel_arg}" || {
-			unset __sx_num_rel_arg
-			return "${SX_EX_USAGE}"
-		}
-	done
-
-	unset __sx_num_rel_arg
-
-	__sx_num_rel "${@}" || return
-}
-
 ### __sx_num_rel_classify - 比較方式を分類する（内部用）
 ##
 ## 終了ステータス:
@@ -3297,9 +3255,9 @@ __sx_num_rel_classify() {
 		*0[Xx]* | 0[0-9]* | [+-]0[0-9]*) return 1;;
 	esac
 
-	set -- "${1#[+-]}"
+	set -- "${1#[+-]}" "${2-9}"
 
-	return "$(((__sx_num_rel_wlen_ < ${#1}) + 1))"
+	return "$(((${2} < ${#1}) + 1))"
 }
 
 ### sx_num_cmp_arith - 2つの数値を算術展開で比較する
@@ -3334,50 +3292,50 @@ __sx_num_cmp_arith() {
 	esac
 }
 
-### __sx_num_rel_cmp_dec_fast - 10進整数文字列を算術展開で比較する（内部用）
+### __sx_num_cmp_float_dec_fast - 10進整数文字列を算術展開で比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_rel_cmp_dec_fast() {
+__sx_num_cmp_float_dec_fast() {
 	set -- "${1#${1%%[!0]*}}" "${2#${2%%[!0]*}}"
 	__sx_num_cmp_arith "${1:-0}" "${2:-0}"
 }
 
-### __sx_num_rel_cmp_uint_dec - 符号なし10進整数文字列を比較する（内部用）
+### __sx_num_cmp_float_uint_dec - 符号なし10進整数文字列を比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_rel_cmp_uint_dec() {
+__sx_num_cmp_float_uint_dec() {
 	case 1 in
 		"$((${#1} < ${#2}))") return 1;;
 		"$((${#2} < ${#1}))") return 3;;
 	esac
 
-	__sx_str_rep __sx_num_rel_cmp_uint_dec_qm_ '?' "${__sx_num_rel_wlen_}"
-	set -- "${__sx_num_rel_cmp_uint_dec_qm_}" "${1}" "${2}"
-	unset __sx_num_rel_cmp_uint_dec_qm_
+	__sx_str_rep __sx_num_cmp_float_uint_dec_qm_ '?' "$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))"
+	set -- "${__sx_num_cmp_float_uint_dec_qm_}" "${1}" "${2}"
+	unset __sx_num_cmp_float_uint_dec_qm_
 
 	while M_STR_MATCH([|"${2}"|], [|${1}*|]); do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_rel_cmp_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
+		__sx_num_cmp_float_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
 			1 | 3) return "${?}";;
 		esac
 	done
 
-	__sx_num_rel_cmp_dec_fast "${2}" "${3}" || return "${?}"
+	__sx_num_cmp_float_dec_fast "${2}" "${3}" || return "${?}"
 }
 
-### __sx_num_rel_cmp_frac - 小数部を左から比較する（内部用）
+### __sx_num_cmp_float_frac - 小数部を左から比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_rel_cmp_frac() {
+__sx_num_cmp_float_frac() {
 	# 完全に一致する場合は即座に終了 (EQ)
 	case "${1-}" in "${2-}") return 2 ;; esac
 
@@ -3387,34 +3345,34 @@ __sx_num_rel_cmp_frac() {
 	case "${2-}" in "${1-}"*) return 1 ;; esac
 
 	# 窓幅パターン（?????????）を準備
-	__sx_str_rep __sx_num_rel_cmp_frac_q_ '?' "${__sx_num_rel_wlen_}"
+	__sx_str_rep __sx_num_cmp_float_frac_q_ '?' "$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))"
 	# $1: qm, $2: lhs, $3: rhs
-	set -- "${__sx_num_rel_cmp_frac_q_}" "${1-}" "${2-}"
-	unset __sx_num_rel_cmp_frac_q_
+	set -- "${__sx_num_cmp_float_frac_q_}" "${1-}" "${2-}"
+	unset __sx_num_cmp_float_frac_q_
 
 	# 両方の文字列が窓幅以上の間、チャンクごとに比較
 	while M_STR_MATCH([|"${2}"|], [|${1}*|]) && M_STR_MATCH([|"${3}"|], [|${1}*|]); do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_rel_cmp_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
+		__sx_num_cmp_float_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
 			1 | 3) return "${?}";;
 		esac
 	done
 
 	# 接頭辞の関係にない（＝どこかの桁で異なる）残りの部分をパディングして最後の比較
-	__sx_str_rep __sx_num_rel_cmp_frac_z_ '0' "${__sx_num_rel_wlen_}"
-	set -- "${1}" "${2}${__sx_num_rel_cmp_frac_z_}" "${3}${__sx_num_rel_cmp_frac_z_}"
-	unset __sx_num_rel_cmp_frac_z_
+	__sx_str_rep __sx_num_cmp_float_frac_z_ '0' "${#1}"
+	set -- "${1}" "${2}${__sx_num_cmp_float_frac_z_}" "${3}${__sx_num_cmp_float_frac_z_}"
+	unset __sx_num_cmp_float_frac_z_
 
-	__sx_num_rel_cmp_dec_fast "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
+	__sx_num_cmp_float_dec_fast "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
 }
 
-### __sx_num_rel_cmp_norm_abs - 正規化済み絶対値同士を比較する（内部用）
+### __sx_num_cmp_float_abs - 正規化済み絶対値同士を比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_rel_cmp_norm_abs() {
+__sx_num_cmp_float_abs() {
 	case "${1}" in
 		*.*) set -- "${1%%.*}" "${2}" "${1#*.}";;
 		*) set -- "${1}" "${2}" '';;
@@ -3425,20 +3383,36 @@ __sx_num_rel_cmp_norm_abs() {
 		*) set -- "${1}" "${2}" "${3}" '';;
 	esac
 
-	__sx_num_rel_cmp_uint_dec "${1}" "${2}" || case "${?}" in 1 | 3)
+	__sx_num_cmp_float_uint_dec "${1}" "${2}" || case "${?}" in 1 | 3)
 		return "${?}"
 	esac
 
-	__sx_num_rel_cmp_frac "${3}" "${4}" || return "${?}"
+	__sx_num_cmp_float_frac "${3}" "${4}" || return "${?}"
 }
 
-### __sx_num_rel_cmp_norm - 正規化済み数値を比較する（内部用）
+sx_num_cmp_float() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_float "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_float "${1-}" "${2-}" || return
+
+	__sx_num_cmp_float "${@}"
+}
+
+__sx_num_cmp_float() {
+	__sx_num_norm __sx_num_cmp_float_a_:__sx_num_cmp_float_b_ "${1}" "${2}"
+	set -- "${__sx_num_cmp_float_a_}" "${__sx_num_cmp_float_b_}"
+	unset __sx_num_cmp_float_a_ __sx_num_cmp_float_b_
+
+	__sx_num_cmp_float_core "${@}" || return
+}
+
+### __sx_num_cmp_float_core - 正規化済み数値を比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_rel_cmp_norm() {
+__sx_num_cmp_float_core() {
 	set -- "${1#[+-]}" "${2#[+-]}" "${1%%[!-]*}" "${2%%[!-]*}"
 
 	case "${3:-+}${4:-+}" in
@@ -3447,9 +3421,50 @@ __sx_num_rel_cmp_norm() {
 	esac
 
 	case "${3}" in
-		-*) __sx_num_rel_cmp_norm_abs "${2}" "${1}";;
-		*) __sx_num_rel_cmp_norm_abs "${1}" "${2}";;
+		-*) __sx_num_cmp_float_abs "${2}" "${1}";;
+		*)  __sx_num_cmp_float_abs "${1}" "${2}";;
 	esac || return "${?}"
+}
+
+### sx_num_rel - 数値間の関係を確認する
+##
+## 使い方:
+##   sx_num_rel [数値1 [演算子1 数値2 ...]]
+##
+## 説明:
+##   数値と演算子を交互に指定し、すべての関係が満たされるかを確認する。
+##   演算子には以下が使用可能：
+##     eq, ==   : 等しい
+##     ne, !=  : 等しくない
+##     lt, <   : 未満
+##     le, <=  : 以下
+##     gt, >   : より大きい
+##     ge, >=  : 以上
+##
+## 終了ステータス:
+##    0  すべての条件を満たす (SX_EX_OK)
+##    1  条件を満たさない引数が含まれる
+##   64  引数不正 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_rel() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_rel "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	for __sx_num_rel_arg in "${@}"; do
+		case "${__sx_num_rel_arg}" in
+			eq | '==' | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') continue;;
+		esac
+
+		__sx_num_is_sx_num "${__sx_num_rel_arg}" || {
+			unset __sx_num_rel_arg
+			return "${SX_EX_USAGE}"
+		}
+	done
+
+	unset __sx_num_rel_arg
+
+	__sx_num_rel "${@}" || return
 }
 
 ### __sx_num_rel - 数値間の関係を確認する（内部用）
@@ -3476,21 +3491,21 @@ __sx_num_rel() {
 			*) ! :;;
 		esac && continue
 
-		__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
+		__sx_num_rel_classify "${__sx_num_rel_arg_}" "${__sx_num_rel_wlen_}" || __sx_num_rel_rcls_="${?}"
 
 			case "${__sx_num_rel_rcls_}" in
 				1) : $((__sx_num_rel_arg_ += 0));;
 				2) __sx_num_rel_arg_="${__sx_num_rel_arg_#+}";;
 				*)
 					__sx_num_norm __sx_num_rel_arg_ "${__sx_num_rel_arg_}"
-					__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
+					__sx_num_rel_classify "${__sx_num_rel_arg_}" "${__sx_num_rel_wlen_}" || __sx_num_rel_rcls_="${?}"
 					;;
 			esac
 
 		case "${__sx_num_rel_lhs_+X}" in X)
 			case "${__sx_num_rel_lcls_}:${__sx_num_rel_rcls_}" in
 				1:1) __sx_num_cmp_arith "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
-				*) __sx_num_rel_cmp_norm "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
+				*) __sx_num_cmp_float_core "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
 			esac || case "${__sx_num_rel_op_}:${?}" in
 				eq:2 | ne:1 | ne:3 | lt:1 | le:1 | le:2 | gt:3 | ge:2 | ge:3) ;;
 				*)
