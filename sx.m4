@@ -3468,65 +3468,47 @@ __sx_num_rel_cmp_norm() {
 ##   sx_num_rel の内部実装。
 ##   引数チェックを行わずに数値と演算子の関係を順次評価する。
 __sx_num_rel() {
-	__sx_num_rel_op_='=='
+	__sx_num_rel_op_='eq'
 	__sx_num_rel_wlen_=$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))
 	case "${__sx_num_rel_wlen_}" in 0) __sx_num_rel_wlen_=1;; esac
 
 	for __sx_num_rel_arg_ in "${@}"; do
 		case "${__sx_num_rel_arg_}" in
-			eq | '==') __sx_num_rel_op_='==';;
-			ne | '!=') __sx_num_rel_op_='!=';;
-			lt | '<')  __sx_num_rel_op_='<';;
-			le | '<=') __sx_num_rel_op_='<=';;
-			gt | '>')  __sx_num_rel_op_='>';;
-			ge | '>=') __sx_num_rel_op_='>=';;
+			eq | '==') __sx_num_rel_op_=eq;;
+			ne | '!=') __sx_num_rel_op_=ne;;
+			lt | '<')  __sx_num_rel_op_=lt;;
+			le | '<=') __sx_num_rel_op_=le;;
+			gt | '>')  __sx_num_rel_op_=gt;;
+			ge | '>=') __sx_num_rel_op_=ge;;
 			*) ! :;;
 		esac && continue
 
+		__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
+
+			case "${__sx_num_rel_rcls_}" in
+				1) : $((__sx_num_rel_arg_ += 0));;
+				2) __sx_num_rel_arg_="${__sx_num_rel_arg_#+}";;
+				*) __sx_num_norm __sx_num_rel_arg_ "${__sx_num_rel_arg_}";;
+			esac
+
 		case "${__sx_num_rel_lhs_+X}" in X)
-			case "${__sx_num_rel_lcls_+X}" in '')
-				__sx_num_rel_classify "${__sx_num_rel_lhs_}" || __sx_num_rel_lcls_="${?}"
-			esac
-			__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
-
 			case "${__sx_num_rel_lcls_}:${__sx_num_rel_rcls_}" in
-				1:1) # arith:arith
-					__sx_num_cmp_arith "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}" || __sx_num_rel_cmp_="${?}"
-					unset __sx_num_rel_rhs_norm_
-					;;
-				2:2) # dec:dec
-					__sx_num_rel_cmp_norm "${__sx_num_rel_lhs_#+}" "${__sx_num_rel_arg_#+}" || __sx_num_rel_cmp_="${?}"
-					unset __sx_num_rel_rhs_norm_
-					;;
+				1:1) __sx_num_cmp_arith "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
+				*) __sx_num_rel_cmp_norm "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
+			esac || case "${__sx_num_rel_op_}:${?}" in
+				eq:2 | ne:1 | ne:3 | lt:1 | le:1 | le:2 | gt:3 | ge:2 | ge:3) ;;
 				*)
-					case "${__sx_num_rel_lhs_norm_+X}" in '')
-						__sx_num_norm __sx_num_rel_lhs_norm_ "${__sx_num_rel_lhs_}"
-					esac
-
-					__sx_num_norm __sx_num_rel_rhs_norm_ "${__sx_num_rel_arg_}"
-					__sx_num_rel_cmp_norm "${__sx_num_rel_lhs_norm_}" "${__sx_num_rel_rhs_norm_}" || __sx_num_rel_cmp_="${?}"
-					;;
-			esac
-
-			case "${__sx_num_rel_op_}:${__sx_num_rel_cmp_}" in
-				'==:2' | '!=:1' | '!=:3' | '<:1' | '<=:1' | '<=:2' | '>:3' | '>=:2' | '>=:3') ;;
-				*)
-					unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lhs_norm_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_rhs_norm_ __sx_num_rel_cmp_ __sx_num_rel_arg_
+					unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
 					return 1
 					;;
 			esac
-
-			case "${__sx_num_rel_rhs_norm_+X}" in
-				'') unset __sx_num_rel_lhs_norm_;;
-				*) __sx_num_rel_lhs_norm_="${__sx_num_rel_rhs_norm_}";;
-			esac
-			__sx_num_rel_lcls_="${__sx_num_rel_rcls_}"
 		esac
 
-			__sx_num_rel_lhs_="${__sx_num_rel_arg_}"
+		__sx_num_rel_lcls_="${__sx_num_rel_rcls_}"
+		__sx_num_rel_lhs_="${__sx_num_rel_arg_}"
 	done
 
-	unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lhs_norm_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_rhs_norm_ __sx_num_rel_cmp_ __sx_num_rel_arg_
+	unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
 }
 
 ### sx_num_range - 数値の範囲を生成する (Python range 互換)
