@@ -3390,6 +3390,19 @@ __sx_num_cmp_float_abs() {
 	__sx_num_cmp_float_frac "${3}" "${4}" || return "${?}"
 }
 
+### sx_num_cmp_float - 2つの数値を比較する
+##
+## 使い方:
+##   sx_num_cmp_float 左辺 右辺
+##
+## 説明:
+##   指定された2つの数値を比較する。
+##
+## 終了ステータス:
+##    1  左辺 < 右辺
+##    2  左辺 = 右辺
+##    3  左辺 > 右辺
+##   64  引数が数値ではない (SX_EX_USAGE)
 sx_num_cmp_float() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_float "${@}" || return; return 0;; esac
 
@@ -3398,6 +3411,19 @@ sx_num_cmp_float() {
 	__sx_num_cmp_float "${@}"
 }
 
+### __sx_num_cmp_float - 2つの数値を比較する（検証なし）
+##
+## 使い方:
+##   __sx_num_cmp_float 左辺 右辺
+##
+## 説明:
+##   指定された2つの数値を比較する。
+##   引数が数値であることの検証は行わない。
+##
+## 終了ステータス:
+##    1  左辺 < 右辺
+##    2  左辺 = 右辺
+##    3  左辺 > 右辺
 __sx_num_cmp_float() {
 	__sx_num_norm __sx_num_cmp_float_a_:__sx_num_cmp_float_b_ "${1}" "${2}"
 	set -- "${__sx_num_cmp_float_a_}" "${__sx_num_cmp_float_b_}"
