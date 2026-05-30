@@ -3223,18 +3223,25 @@ __sx_num_is_sx_nat1() {
 ##    1  有効な数値ではない値が含まれる
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_num_is_sx_num() {
-	for __sx_num_is_sx_num_arg in "${@}"; do
-		case "${__sx_num_is_sx_num_arg}" in
-			*[Xx]* | [+-]0[0-9]* | 0[0-9]*) sx_num_is_sx_int "${__sx_num_is_sx_num_arg}";;
-			*) sx_num_is_float "${__sx_num_is_sx_num_arg}";;
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sx_num "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_is_sx_num "${@}" || return
+}
+
+__sx_num_is_sx_num() {
+	for __sx_num_is_sx_num_arg_ in "${@}"; do
+		case "${__sx_num_is_sx_num_arg_}" in
+			*[Xx]* | [+-]0[0-9]* | 0[0-9]*) __sx_num_is_sx_int "${__sx_num_is_sx_num_arg_}";;
+			*) sx_num_is_float "${__sx_num_is_sx_num_arg_}";;
 		esac || {
-			set -- "${?}"
-			unset __sx_num_is_sx_num_arg
-			return "${1}"
+			unset __sx_num_is_sx_num_arg_
+			return 1
 		}
 	done
 
-	unset __sx_num_is_sx_num_arg
+	unset __sx_num_is_sx_num_arg_
 }
 
 ### sx_num_rel - 数値間の関係を確認する
@@ -3267,13 +3274,9 @@ sx_num_rel() {
 			eq | '==' | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') continue;;
 		esac
 
-		sx_num_is_sx_num "${__sx_num_rel_arg}" || {
-			set -- "${?}"
+		__sx_num_is_sx_num "${__sx_num_rel_arg}" || {
 			unset __sx_num_rel_arg
-			case "${1}" in
-				1) return "${SX_EX_USAGE}";;
-				*) return "${1}";;
-			esac
+			return "${SX_EX_USAGE}"
 		}
 	done
 
@@ -3342,27 +3345,6 @@ __sx_num_rel_cmp_dec_fast() {
 	__sx_num_cmp_arith "${1:-0}" "${2:-0}"
 }
 
-### __sx_num_rel_cmp_dec_chunk - 同じ長さの10進整数文字列を左から比較する（内部用）
-##
-## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_rel_cmp_dec_chunk() {
-	__sx_str_rep __sx_num_rel_cmp_dec_chunk_qm_ '?' "${__sx_num_rel_wlen_}"
-	set -- "${__sx_num_rel_cmp_dec_chunk_qm_}" "${1}" "${2}"
-	unset __sx_num_rel_cmp_dec_chunk_qm_
-
-	while M_STR_MATCH([|"${2}"|], [|${1}*|]); do
-		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_rel_cmp_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
-			1 | 3) return "${?}";;
-		esac
-	done
-
-	__sx_num_rel_cmp_dec_fast "${2}" "${3}" || return "${?}"
-}
-
 ### __sx_num_rel_cmp_uint_dec - 符号なし10進整数文字列を比較する（内部用）
 ##
 ## 終了ステータス:
@@ -3375,7 +3357,18 @@ __sx_num_rel_cmp_uint_dec() {
 		"$((${#2} < ${#1}))") return 3;;
 	esac
 
-	__sx_num_rel_cmp_dec_chunk "${1}" "${2}" || return "${?}"
+	__sx_str_rep __sx_num_rel_cmp_uint_dec_qm_ '?' "${__sx_num_rel_wlen_}"
+	set -- "${__sx_num_rel_cmp_uint_dec_qm_}" "${1}" "${2}"
+	unset __sx_num_rel_cmp_uint_dec_qm_
+
+	while M_STR_MATCH([|"${2}"|], [|${1}*|]); do
+		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
+		__sx_num_rel_cmp_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
+			1 | 3) return "${?}";;
+		esac
+	done
+
+	__sx_num_rel_cmp_dec_fast "${2}" "${3}" || return "${?}"
 }
 
 ### __sx_num_rel_cmp_frac - 小数部を左から比較する（内部用）
