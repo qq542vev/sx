@@ -3488,7 +3488,10 @@ __sx_num_rel() {
 			case "${__sx_num_rel_rcls_}" in
 				1) : $((__sx_num_rel_arg_ += 0));;
 				2) __sx_num_rel_arg_="${__sx_num_rel_arg_#+}";;
-				*) __sx_num_norm __sx_num_rel_arg_ "${__sx_num_rel_arg_}";;
+				*)
+					__sx_num_norm __sx_num_rel_arg_ "${__sx_num_rel_arg_}"
+					__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
+					;;
 			esac
 
 		case "${__sx_num_rel_lhs_+X}" in X)
