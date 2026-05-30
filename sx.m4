@@ -2993,14 +2993,17 @@ sx_num_is_fixed() {
 ## 説明:
 ##   sx_num_is_fixed に加えて、指数表記（e または E による表記）を許可する。
 ##   指数部は 10 進整数として検査する。
+##   セキュリティ上の理由（DoS 対策）から、指数の絶対値は 4 桁（9999）までに制限される。
 ##
 ## 終了ステータス:
 ##    0  すべて 10 進の実数表記である (SX_EX_OK)
 ##    1  10 進の実数表記ではない値が含まれる
 sx_num_is_float() {
 	for __sx_num_is_float_arg in "${@}"; do
-		case "${__sx_num_is_float_arg}" in *[Ee]*)
-			sx_num_is_base_int 10 "${__sx_num_is_float_arg#*[Ee]}"
+		case "${__sx_num_is_float_arg}" in
+			# DoS 対策
+			*[Ee][+-]?????* | *[Ee][0-9]????*) ! :;;
+			*[Ee]*) __sx_num_is_base_int 10 "${__sx_num_is_float_arg#*[Ee]}";;
 		esac && sx_num_is_fixed "${__sx_num_is_float_arg%%[Ee]*}" || {
 			unset __sx_num_is_float_arg
 			return 1
