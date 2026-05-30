@@ -3752,7 +3752,7 @@ __sx_str_chunk() {
 	__sx_str_chunk_len_="$((${3-1}))"
 	__sx_str_chunk_lim_="$((${4-${SX_NUM_I32_MAX}}))"
 
-		__sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_#[+-]}"
+		SX_CFG_UNSET_SOFT=1 __sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_#[+-]}"
 
 	if M_NUM_LT([|0|], [|__sx_str_chunk_len_|]); then
 		# Forward: 早期終了をサポート
@@ -3847,7 +3847,7 @@ __sx_str_isep() {
 	__sx_str_isep_lim_="$((${5-${SX_NUM_I32_MAX}}))"
 	__sx_str_isep_out_=
 
-	__sx_str_rep __sx_str_isep_qm_ '?' "${__sx_str_isep_int_#[+-]}"
+	SX_CFG_UNSET_SOFT=1 __sx_str_rep __sx_str_isep_qm_ '?' "${__sx_str_isep_int_#[+-]}"
 
 	if M_NUM_LT([|0|], [|__sx_str_isep_int_|]); then
 		# Forward
@@ -4186,8 +4186,8 @@ __sx_str_pad() {
 		return "${SX_EX_OK}"
 	}
 
-	__sx_str_rep __sx_str_pad_rep_ "${4}" "$(( (__sx_str_pad_needed_ - 1) / ${#4} + 1 ))"
-	__sx_str_substr __sx_str_pad_fill_ "${__sx_str_pad_rep_}" 0 "${__sx_str_pad_needed_}"
+	SX_CFG_UNSET_SOFT=1 __sx_str_rep __sx_str_pad_rep_ "${4}" "$(( (__sx_str_pad_needed_ - 1) / ${#4} + 1 ))"
+	SX_CFG_UNSET_SOFT=1 __sx_str_substr __sx_str_pad_fill_ "${__sx_str_pad_rep_}" 0 "${__sx_str_pad_needed_}"
 
 	case "${3}" in
 		-*) __sx_var_set "${1}=${2}${__sx_str_pad_fill_}";;
@@ -4241,10 +4241,10 @@ __sx_str_center() {
 		return "${SX_EX_OK}"
 	}
 
-	__sx_str_rep __sx_str_center_rep_ "${4}" "$(( ( (__sx_str_center_needed_ + 1) / 2 - 1 ) / ${#4} + 1 ))"
-	__sx_str_substr __sx_str_center_spad_ "${__sx_str_center_rep_}" 0 "$(( (__sx_str_center_needed_ + (${3} < 0)) / 2 ))"
+	SX_CFG_UNSET_SOFT=1 __sx_str_rep __sx_str_center_rep_ "${4}" "$(( ( (__sx_str_center_needed_ + 1) / 2 - 1 ) / ${#4} + 1 ))"
+	SX_CFG_UNSET_SOFT=1 __sx_str_substr __sx_str_center_spad_ "${__sx_str_center_rep_}" 0 "$(( (__sx_str_center_needed_ + (${3} < 0)) / 2 ))"
 
-	__sx_str_substr __sx_str_center_epad_ "${__sx_str_center_rep_}" 0 "$(( __sx_str_center_needed_ - ${#__sx_str_center_spad_} ))"
+	SX_CFG_UNSET_SOFT=1 __sx_str_substr __sx_str_center_epad_ "${__sx_str_center_rep_}" 0 "$(( __sx_str_center_needed_ - ${#__sx_str_center_spad_} ))"
 
 	__sx_var_set "${1}=${__sx_str_center_spad_}${2}${__sx_str_center_epad_}"
 
@@ -4511,7 +4511,7 @@ __sx_str_sub() {
 	if M_STR_EQ([|"${__sx_str_sub_pat_}"|], [|''|]); then
 		if M_NUM_LT([|0|], [|__sx_str_sub_lim_|]); then
 			# 前向き挿入
-			__sx_str_isep __sx_str_sub_out_ "${__sx_str_sub_str_}" "${__sx_str_sub_rep_}" 1 $((__sx_str_sub_lim_ - 1))
+			SX_CFG_UNSET_SOFT=1 __sx_str_isep __sx_str_sub_out_ "${__sx_str_sub_str_}" "${__sx_str_sub_rep_}" 1 $((__sx_str_sub_lim_ - 1))
 			__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_out_}"
 			case $((${#__sx_str_sub_str_} != 0 && ${#__sx_str_sub_str_} < __sx_str_sub_lim_)) in 1)
 				__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_rep_}"
@@ -4519,7 +4519,7 @@ __sx_str_sub() {
 		elif M_NUM_LT([|__sx_str_sub_lim_|], [|0|]); then
 			# 後ろ向き挿入
 			__sx_str_sub_lim_=$((__sx_str_sub_lim_ * -1))
-			__sx_str_isep __sx_str_sub_out_ "${__sx_str_sub_str_}" "${__sx_str_sub_rep_}" -1 $((__sx_str_sub_lim_ - 1))
+			SX_CFG_UNSET_SOFT=1 __sx_str_isep __sx_str_sub_out_ "${__sx_str_sub_str_}" "${__sx_str_sub_rep_}" -1 $((__sx_str_sub_lim_ - 1))
 			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_rep_}"
 			case $((${#__sx_str_sub_str_} != 0 && ${#__sx_str_sub_str_} < __sx_str_sub_lim_)) in 1)
 				__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_out_}"
