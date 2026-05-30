@@ -244,12 +244,14 @@ readonly SX_CFG_DEF_SIG_ARR="array-${SX_CFG_DEF_SIG_BASE}"
 readonly SX_CFG_DEF_SKIP_CHK=0
 readonly SX_CFG_DEF_NUM_RANGE=32
 readonly SX_CFG_DEF_SEP=':::'
+readonly SX_CFG_DEF_UNSET_SOFT=0
 
 : "${SX_CFG_SIG_BASE:=${SX_CFG_DEF_SIG_BASE}}"
 : "${SX_CFG_SIG_ARR:=${SX_CFG_DEF_SIG_ARR}}"
 : "${SX_CFG_SKIP_CHK:=${SX_CFG_DEF_SKIP_CHK}}"
 : "${SX_CFG_NUM_RANGE:=${SX_CFG_DEF_NUM_RANGE}}"
 : "${SX_CFG_SEP:=${SX_CFG_DEF_SEP}}"
+: "${SX_CFG_UNSET_SOFT:=${SX_CFG_DEF_UNSET_SOFT}}"
 SX_SYS_REV=0
 
 # ========================================
@@ -273,7 +275,7 @@ sx_cfg_is_valid() {
 	case "${#}" in 0)
 		__sx_cfg_is_valid_out=
 
-		for __sx_cfg_is_valid_vn in NUM_RANGE SKIP_CHK SIG_BASE SIG_ARR SEP; do
+		for __sx_cfg_is_valid_vn in NUM_RANGE SKIP_CHK SIG_BASE SIG_ARR SEP UNSET_SOFT; do
 			__sx_cfg_is_valid_out="${__sx_cfg_is_valid_out} ${__sx_cfg_is_valid_vn}=\"\${SX_CFG_${__sx_cfg_is_valid_vn}-}\""
 		done
 
@@ -287,9 +289,9 @@ sx_cfg_is_valid() {
 
 	for __sx_cfg_is_valid_arg in "${@}"; do
 		case "${__sx_cfg_is_valid_arg}" in
-			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP) ;;
+			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP | UNSET_SOFT) ;;
 			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128) ;;
-			SKIP_CHK=[01] | SEP=?* | SIG_BASE=?* | SIG_ARR=?*) ;;
+			SKIP_CHK=[01] | UNSET_SOFT=[01] | SEP=?* | SIG_BASE=?* | SIG_ARR=?*) ;;
 			*)
 				unset __sx_cfg_is_valid_arg
 				return 1
@@ -2306,7 +2308,10 @@ sx_var_unset() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unset "${@}" || return; return 0;; esac
 
 	# リストの内容（変数名）がすべて書き込み可能か一括チェック
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${@}" || return
+	case "${SX_CFG_UNSET_SOFT-}" in
+		1) __sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${@}" || return ;;
+		*) __sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${@}" || return ;;
+	esac
 
 	__sx_var_unset "${@}"
 }
@@ -2320,6 +2325,14 @@ sx_var_unset() {
 ##   sx_var_unset の内部実装。
 ##   引数チェックは行わない。
 __sx_var_unset() {
+	case "${SX_CFG_UNSET_SOFT-}" in 1)
+		case "${#}" in [!0]*)
+			unset -v "${@}"
+		esac
+
+		return 0
+	esac
+
 	while M_STR_NE([|"${#}"|], [|0|]); do
 		if __sx_var_is_arr "${1}"; then
 			eval "__sx_var_unset_len_=\"\${${1}_len}\""
