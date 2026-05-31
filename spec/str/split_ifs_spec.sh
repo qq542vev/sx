@@ -81,4 +81,28 @@ Describe 'sx_str_split_ifs'
       The variable res should equal "'a' '' 'c'"
     End
   End
+
+  Describe 'シェルオプションの維持テスト'
+    It 'noglob が OFF の場合、呼び出し後も OFF であること'
+      check_noglob() {
+        set +f
+        sx_str_split_ifs res "a b"
+        case "$-" in *f*) return 1 ;; esac
+        return 0
+      }
+      When call check_noglob
+      The status should be success
+    End
+
+    It 'noglob が ON の場合、呼び出し後も ON であること'
+      check_noglob() {
+        set -f
+        sx_str_split_ifs res "a b"
+        case "$-" in *f*) return 0 ;; esac
+        return 1
+      }
+      When call check_noglob
+      The status should be success
+    End
+  End
 End

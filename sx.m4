@@ -1971,25 +1971,27 @@ __sx_var_list_ro() {
 	__sx_var_list_ro_res_="${1}"
 	__sx_var_list_ro_out_=' '
 
-	IFS="${SX_STR_LF}" sx_util_eval '
-		for __sx_var_list_ro_ln_ in $(readonly -p); do
+	IFS="${SX_STR_LF}" __sx_str_split_ifs __sx_var_list_ro_args_ "$(readonly -p)"
+	eval set -- "${__sx_var_list_ro_args_}"
+
+	for __sx_var_list_ro_ln_; do
+		case "${__sx_var_list_ro_ln_}" in 'readonly '[_A-Za-z] | 'readonly '[_A-Za-z]*[_0-9A-Za-z] | 'readonly '[_A-Za-z]=* | 'readonly '[_A-Za-z]*[_0-9A-Za-z]=*)
 			__sx_var_list_ro_vn_="${__sx_var_list_ro_ln_#readonly }"
 			__sx_var_list_ro_vn_="${__sx_var_list_ro_vn_%%=*}"
 
 			if
-				M_STR_NE([|"${__sx_var_list_ro_vn_}"|], [|"${__sx_var_list_ro_ln_}"|]) &&
 				sx_var_is_name "${__sx_var_list_ro_vn_}" &&
-				sx_var_is_ro "${__sx_var_list_ro_vn_}" &&
-				! M_STR_HAS([|"${__sx_var_list_ro_out_}"|], [|" ${__sx_var_list_ro_vn_} "|])
+				! M_STR_HAS([|"${__sx_var_list_ro_out_}"|], [|" ${__sx_var_list_ro_vn_} "|]) &&
+				__sx_var_is_ro "${__sx_var_list_ro_vn_}"
 			then
 				__sx_var_list_ro_out_="${__sx_var_list_ro_out_}${__sx_var_list_ro_vn_} "
 			fi
-		done
-	'
+		esac
+	done
 
 	__sx_var_list_ro_out_="${__sx_var_list_ro_out_# }"
 	__sx_var_set "${__sx_var_list_ro_res_}=${__sx_var_list_ro_out_% }"
-	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
+	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_args_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
 }
 
 ### sx_var_list_set - 設定されている変数の一覧を取得する
@@ -2022,27 +2024,30 @@ sx_var_list_set() {
 ##   sx_var_list_set の内部実装。
 ##   引数チェックは行わない。
 __sx_var_list_set() {
-	__sx_var_list_set_set_="$(set)"
+	IFS="${SX_STR_LF}" __sx_str_split_ifs __sx_var_list_set_args_ "$(set)"
 	__sx_var_list_set_res_="${1}"
 	__sx_var_list_set_out_=' '
 
-	IFS="${SX_STR_LF}" sx_util_eval '
-		for __sx_var_list_set_ln_ in ${__sx_var_list_set_set_}; do
+	eval set -- "${__sx_var_list_set_args_}"
+
+	for __sx_var_list_set_ln_; do
+		case "${__sx_var_list_set_ln_}" in [_A-Za-z]=* | [_A-Za-z]*[_0-9A-Za-z]=*)
 			__sx_var_list_set_vn_="${__sx_var_list_set_ln_%%=*}"
 
 			if
-				M_STR_NE([|"${__sx_var_list_set_vn_}"|], [|"${__sx_var_list_set_ln_}"|]) &&
-				sx_var_is_set "${__sx_var_list_set_vn_}" &&
-				! M_STR_HAS([|"${__sx_var_list_set_out_}"|], [|" ${__sx_var_list_set_vn_} "|])
+				sx_var_is_name "${__sx_var_list_set_vn_}" &&
+				! M_STR_HAS([|"${__sx_var_list_set_out_}"|], [|" ${__sx_var_list_set_vn_} "|]) &&
+				__sx_var_is_set "${__sx_var_list_set_vn_}"
 			then
 				__sx_var_list_set_out_="${__sx_var_list_set_out_}${__sx_var_list_set_vn_} "
 			fi
-		done
-	'
+		esac
+	done
 
 	__sx_var_list_set_out_="${__sx_var_list_set_out_# }"
 	__sx_var_set "${__sx_var_list_set_res_}=${__sx_var_list_set_out_% }"
-	unset __sx_var_list_set_set_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
+
+	unset __sx_var_list_set_args_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
 }
 
 ### sx_var_move - 変数を連鎖移動する
@@ -4459,7 +4464,7 @@ __sx_str_split_ifs() {
 	set -f
 	set -- ${*}
 
-	case "${__sx_str_split_ifs_opts_}" in *f*)
+	case "${__sx_str_split_ifs_opts_}" in *f*) ;; *)
 		set +f
 	esac
 
