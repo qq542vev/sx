@@ -2992,17 +2992,14 @@ sx_num_is_fixed() {
 ## 説明:
 ##   sx_num_is_fixed に加えて、指数表記（e または E による表記）を許可する。
 ##   指数部は 10 進整数として検査する。
-##   セキュリティ上の理由（DoS 対策）から、指数の絶対値は 4 桁（9999）までに制限される。
 ##
 ## 終了ステータス:
 ##    0  すべて 10 進の実数表記である (SX_EX_OK)
 ##    1  10 進の実数表記ではない値が含まれる
 sx_num_is_float() {
 	for __sx_num_is_float_arg in "${@}"; do
-		case "${__sx_num_is_float_arg}" in
-			# DoS 対策
-			*[Ee][+-]?????* | *[Ee][0-9]????*) ! :;;
-			*[Ee]*) __sx_num_is_base_int 10 "${__sx_num_is_float_arg#*[Ee]}";;
+		case "${__sx_num_is_float_arg}" in *[Ee]*)
+			__sx_num_is_base_int 10 "${__sx_num_is_float_arg#*[Ee]}"
 		esac && sx_num_is_fixed "${__sx_num_is_float_arg%%[Ee]*}" || {
 			unset __sx_num_is_float_arg
 			return 1
@@ -3010,6 +3007,33 @@ sx_num_is_float() {
 	done
 
 	unset __sx_num_is_float_arg
+}
+
+### sx_num_is_sx_float - すべての引数が安全な範囲の 10 進の実数表記であるか確認する
+##
+## 使い方:
+##   sx_num_is_sx_float [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_float による検証に加えて、セキュリティ上の理由（DoS 対策）から、
+##   指数の絶対値を 4 桁（9999）までに制限する。
+##
+## 終了ステータス:
+##    0  すべて安全な 10 進の実数表記である (SX_EX_OK)
+##    1  安全ではない、または 10 進の実数表記ではない値が含まれる
+sx_num_is_sx_float() {
+	for __sx_num_is_sx_float_arg in "${@}"; do
+		case "${__sx_num_is_sx_float_arg}" in
+			# DoS 対策: 指数の絶対値は 4 桁まで
+			*[Ee][+-]?????* | *[Ee][!+-]????*) ! :;;
+			*) sx_num_is_float "${__sx_num_is_sx_float_arg}";;
+		esac || {
+			unset __sx_num_is_sx_float_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_sx_float_arg
 }
 
 ### sx_num_norm - 数値を10進固定小数点形式に正規化する
@@ -3217,7 +3241,7 @@ __sx_num_is_sx_nat1() {
 ##
 ## 説明:
 ##   引数が 16進数または 8進数の形式（0x または 0[0-9] で始まる）である場合は
-##   sx_num_is_sx_int で、それ以外の場合は sx_num_is_float で検証を行う。
+##   sx_num_is_sx_int で、それ以外の場合は sx_num_is_sx_float で検証を行う。
 ##
 ## 終了ステータス:
 ##    0  すべて有効な数値である (SX_EX_OK)
@@ -3235,7 +3259,7 @@ __sx_num_is_sx_num() {
 	for __sx_num_is_sx_num_arg_ in "${@}"; do
 		case "${__sx_num_is_sx_num_arg_}" in
 			*[Xx]* | [+-]0[0-9]* | 0[0-9]*) __sx_num_is_sx_int "${__sx_num_is_sx_num_arg_}";;
-			*) sx_num_is_float "${__sx_num_is_sx_num_arg_}";;
+			*) sx_num_is_sx_float "${__sx_num_is_sx_num_arg_}";;
 		esac || {
 			unset __sx_num_is_sx_num_arg_
 			return 1
