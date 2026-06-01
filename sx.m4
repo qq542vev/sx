@@ -1991,6 +1991,7 @@ __sx_var_list_ro() {
 
 	__sx_var_list_ro_out_="${__sx_var_list_ro_out_# }"
 	__sx_var_set "${__sx_var_list_ro_res_}=${__sx_var_list_ro_out_% }"
+
 	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_args_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
 }
 
@@ -2744,38 +2745,35 @@ __sx_num_is_int_width_core() {
 	__sx_num_is_int_width_bits_="${1}"
 	shift
 
-	# 基数8のパラメータ計算
-	__sx_num_is_int_width_olenn_=$(((__sx_num_is_int_width_bits_ - 1) / 3 + 2))
-	__sx_num_is_int_width_oleadn_=$((1 << ((__sx_num_is_int_width_bits_ - 1) % 3)))
-	__sx_num_is_int_width_olenp_=$((__sx_num_is_int_width_olenn_ - (__sx_num_is_int_width_oleadn_ == 1)))
-	__sx_num_is_int_width_oleadp_=$((__sx_num_is_int_width_oleadn_ == 1 ? 7 : __sx_num_is_int_width_oleadn_ - 1))
-	# 基数10のパラメータ計算
-		eval "__sx_num_is_int_width_dmax_=\"\${SX_NUM_I${__sx_num_is_int_width_bits_}_MAX}\""
-	__sx_num_is_int_width_dmin_="${__sx_num_is_int_width_dmax_%7}8"
-	__sx_num_is_int_width_dlen_=${#__sx_num_is_int_width_dmax_}
-	# 基数16のパラメータ計算
-	__sx_num_is_int_width_xlen_=$((__sx_num_is_int_width_bits_ / 4 + 2))
-
 	for __sx_num_is_int_width_arg_ in "${@}"; do
 		# $1: 値（符号正規化）, $2: 数値部分の長さ
 		set -- "${__sx_num_is_int_width_arg_#+}" "${#__sx_num_is_int_width_arg_}"
-		case "${1}" in
-			+* | -*) set -- "${1}" "$((${2} - 1))";;
+		case "${1}" in +* | -*)
+			set -- "${1}" "$((${2} - 1))"
 		esac
 
 		case "${1}" in
 			0[Xx]* | -0[Xx]*)
+			# 基数16のパラメータ計算
+			: ${__sx_num_is_int_width_xlen_=$((__sx_num_is_int_width_bits_ / 4 + 2))}
+
 				if
 					M_NUM_LT([|__sx_num_is_int_width_xlen_|], [|${2}|]) || {
 						M_STR_EQ([|"${__sx_num_is_int_width_xlen_}"|], [|"${2}"|]) &&
 						M_STR_MATCH([|"${1}"|], [|-0[Xx][9A-Fa-f]*|], [|-0[Xx]8*[!0]*|], [|0[Xx][89A-Fa-f]*|])
 					}
 				then
-					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
+					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 					return 1
 				fi
 				;;
 			0?* | -0?*)
+				# 基数8のパラメータ計算
+				: ${__sx_num_is_int_width_olenn_=$(((__sx_num_is_int_width_bits_ - 1) / 3 + 2))}
+				: ${__sx_num_is_int_width_oleadn_=$((1 << ((__sx_num_is_int_width_bits_ - 1) % 3)))}
+				: ${__sx_num_is_int_width_olenp_=$((__sx_num_is_int_width_olenn_ - (__sx_num_is_int_width_oleadn_ == 1)))}
+				: ${__sx_num_is_int_width_oleadp_=$((__sx_num_is_int_width_oleadn_ == 1 ? 7 : __sx_num_is_int_width_oleadn_ - 1))}
+
 				# $3: 制限長さ, $4: 制限先頭文字
 				case "${1}" in
 					-*) set -- "${1}" "${2}" "${__sx_num_is_int_width_olenn_}" "${__sx_num_is_int_width_oleadn_}";;
@@ -2788,52 +2786,31 @@ __sx_num_is_int_width_core() {
 						M_STR_MATCH([|"${1}"|], [|-0[!1-${4}]*|], [|-0${4}*[!0]*|], [|0[!1-${4}-]*|])
 					}
 				then
-					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
+					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 					return 1
 				fi
 				;;
 			*)
-				if M_NUM_LT([|__sx_num_is_int_width_dlen_|], [|${2}|]); then
-					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
-					return 1
-				elif M_STR_EQ([|"${__sx_num_is_int_width_dlen_}"|], [|"${2}"|]); then
-					# $1: 絶対値, $2: 制限値
-					case "${1}" in
-						-*) set -- "${1#-}" "${__sx_num_is_int_width_dmin_}";;
-						*)  set -- "${1}"   "${__sx_num_is_int_width_dmax_}";;
+				# 基数10のパラメータ計算
+				case "${__sx_num_is_int_width_dmax_+X}" in '')
+					eval "__sx_num_is_int_width_dmax_=\"\${SX_NUM_I${__sx_num_is_int_width_bits_}_MAX}\""
+				esac
+				: ${__sx_num_is_int_width_dmin_="${__sx_num_is_int_width_dmax_%7}8"}
+
+				case "${1}" in
+					-*) set -- "${1#-}" "${__sx_num_is_int_width_dmin_}";;
+					*)  set -- "${1}"   "${__sx_num_is_int_width_dmax_}";;
 					esac
 
-					while :; do
-						case "${1}" in
-							?????????*)
-								# $3, $4 に残りを退避
-								set -- "${1}" "${2}" "${1#?????????}" "${2#?????????}"
-								# $1, $2 に先頭9桁をセット
-								set -- "${1%${3}}" "${2%${4}}" "${3}" "${4}"
-								;;
-							*)
-								# 9桁未満。 $3, $4 を空にして最終周とする
-								set -- "${1}" "${2}" '' ''
-								;;
-						esac
-
-						if M_NUM_LT([|${2}|], [|${1}|]); then
-							unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
-							return 1
-						elif M_NUM_LT([|${1}|], [|${2}|]) || M_STR_EQ([|"${3}"|], [|''|]); then
-							# 小さければ確定または残りがなければ終了
-							break
-						fi
-
-						# 残りを次の比較対象へ
-						shift 2
-					done
-				fi
-				;;
+				__sx_num_cmp_float_uint_dec "${@}" 9 || case "${?}" in 3)
+					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_  __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
+					return 1
+			esac
+			;;
 		esac
 	done
 
-	unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_dlen_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
+	unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 }
 
 ### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
@@ -3340,7 +3317,7 @@ __sx_num_cmp_float_uint_dec() {
 		"$((${#2} < ${#1}))") return 3;;
 	esac
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_uint_dec_qm_ '?' "$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))"
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_uint_dec_qm_ '?' "${3-$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))}"
 	set -- "${__sx_num_cmp_float_uint_dec_qm_}" "${1}" "${2}"
 	unset __sx_num_cmp_float_uint_dec_qm_
 
@@ -3362,17 +3339,17 @@ __sx_num_cmp_float_uint_dec() {
 ##   3  左辺 > 右辺
 __sx_num_cmp_float_frac() {
 	# 完全に一致する場合は即座に終了 (EQ)
-	case "${1-}" in "${2-}") return 2 ;; esac
+	case "${1}" in "${2}") return 2;; esac
 
 	# 接頭辞チェック（正規化により、長い方が必ず大きい）
 	# 冒頭で行うことで、長い小数部の延長比較をループなしで高速に処理する
-	case "${1-}" in "${2-}"*) return 3 ;; esac
-	case "${2-}" in "${1-}"*) return 1 ;; esac
+	case "${1}" in "${2}"*) return 3;; esac
+	case "${2}" in "${1}"*) return 1;; esac
 
 	# 窓幅パターン（?????????）を準備
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_frac_q_ '?' "$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))"
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_frac_q_ '?' "${3-$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))}"
 	# $1: qm, $2: lhs, $3: rhs
-	set -- "${__sx_num_cmp_float_frac_q_}" "${1-}" "${2-}"
+	set -- "${__sx_num_cmp_float_frac_q_}" "${1}" "${2}"
 	unset __sx_num_cmp_float_frac_q_
 
 	# 両方の文字列が窓幅以上の間、チャンクごとに比較
@@ -3398,6 +3375,7 @@ __sx_num_cmp_float_frac() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_cmp_float_abs() {
+
 	case "${1}" in
 		*.*) set -- "${1%%.*}" "${2}" "${1#*.}";;
 		*) set -- "${1}" "${2}" '';;
@@ -3408,11 +3386,13 @@ __sx_num_cmp_float_abs() {
 		*) set -- "${1}" "${2}" "${3}" '';;
 	esac
 
-	__sx_num_cmp_float_uint_dec "${1}" "${2}" || case "${?}" in 1 | 3)
+	set -- "${@}" "$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))"
+
+	__sx_num_cmp_float_uint_dec "${1}" "${2}" "${5}" || case "${?}" in 1 | 3)
 		return "${?}"
 	esac
 
-	__sx_num_cmp_float_frac "${3}" "${4}" || return "${?}"
+	__sx_num_cmp_float_frac "${3}" "${4}" "${5}" || return "${?}"
 }
 
 ### sx_num_cmp_float - 2つの数値を比較する
