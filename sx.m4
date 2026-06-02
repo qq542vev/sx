@@ -2447,7 +2447,6 @@ __sx_num_cmp_float() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_cmp_float_abs() {
-
 	case "${1}" in
 		*.*) set -- "${1%%.*}" "${2}" "${1#*.}";;
 		*) set -- "${1}" "${2}" '';;
@@ -2460,7 +2459,7 @@ __sx_num_cmp_float_abs() {
 
 	set -- "${@}" "$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))"
 
-	__sx_num_cmp_float_uint_dec "${1}" "${2}" "${5}" || case "${?}" in 1 | 3)
+	__sx_num_cmp_float_uint "${1}" "${2}" "${5}" || case "${?}" in 1 | 3)
 		return "${?}"
 	esac
 
@@ -2487,13 +2486,13 @@ __sx_num_cmp_float_core() {
 	esac || return "${?}"
 }
 
-### __sx_num_cmp_float_dec_fast - 10進整数文字列を算術展開で比較する（内部用）
+### __sx_num_cmp_float_arith - 10進整数文字列を算術展開で比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_cmp_float_dec_fast() {
+__sx_num_cmp_float_arith() {
 	set -- "${1#${1%%[!0]*}}" "${2#${2%%[!0]*}}"
 	__sx_num_cmp_arith "${1:-0}" "${2:-0}"
 }
@@ -2522,7 +2521,7 @@ __sx_num_cmp_float_frac() {
 	# 両方の文字列が窓幅以上の間、チャンクごとに比較
 	while M_STR_MATCH([|"${2}"|], [|${1}*|]) && M_STR_MATCH([|"${3}"|], [|${1}*|]); do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_cmp_float_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
+		__sx_num_cmp_float_arith "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
 			1 | 3) return "${?}";;
 		esac
 	done
@@ -2532,33 +2531,33 @@ __sx_num_cmp_float_frac() {
 	set -- "${1}" "${2}${__sx_num_cmp_float_frac_z_}" "${3}${__sx_num_cmp_float_frac_z_}"
 	unset __sx_num_cmp_float_frac_z_
 
-	__sx_num_cmp_float_dec_fast "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
+	__sx_num_cmp_float_arith "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
 }
 
-### __sx_num_cmp_float_uint_dec - 符号なし10進整数文字列を比較する（内部用）
+### __sx_num_cmp_float_uint - 符号なし10進整数文字列を比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_cmp_float_uint_dec() {
+__sx_num_cmp_float_uint() {
 	case 1 in
 		"$((${#1} < ${#2}))") return 1;;
 		"$((${#2} < ${#1}))") return 3;;
 	esac
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_uint_dec_qm_ '?' "${3-$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))}"
-	set -- "${__sx_num_cmp_float_uint_dec_qm_}" "${1}" "${2}"
-	unset __sx_num_cmp_float_uint_dec_qm_
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_uint_qm_ '?' "${3-$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))}"
+	set -- "${__sx_num_cmp_float_uint_qm_}" "${1}" "${2}"
+	unset __sx_num_cmp_float_uint_qm_
 
 	while M_STR_MATCH([|"${2}"|], [|${1}*|]); do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_cmp_float_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
+		__sx_num_cmp_float_arith "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
 			1 | 3) return "${?}";;
 		esac
 	done
 
-	__sx_num_cmp_float_dec_fast "${2}" "${3}" || return "${?}"
+	__sx_num_cmp_float_arith "${2}" "${3}" || return "${?}"
 }
 
 ### sx_num_is_base_int - 指定された基数で整数か確認する
@@ -3048,12 +3047,12 @@ __sx_num_is_int_width_core() {
 					*)  set -- "${1}"   "${__sx_num_is_int_width_dmax_}";;
 					esac
 
-				__sx_num_cmp_float_uint_dec "${@}" 9 || case "${?}" in 3)
+				__sx_num_cmp_float_uint "${@}" 9 || case "${?}" in 3)
 					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_  __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 					return 1
+				esac
+				;;
 			esac
-			;;
-		esac
 	done
 
 	unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
