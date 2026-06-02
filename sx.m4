@@ -524,37 +524,6 @@ __sx_ex_map() {
 	unset CLEANUP
 }
 
-### sx_ex_yield - 任意の終了ステータスを発生させる
-##
-## 使い方:
-##   sx_ex_yield [ステータス番号 | ステータス名]
-##
-## 説明:
-##   指定された終了ステータス（数値または名前）を発生させる。
-##   サブシェルを使用しないため、(exit n) よりも高速に動作する。
-##
-## 終了ステータス:
-##   - 指定されたステータスを返す。
-##   - 引数が指定されない場合は 0 (SX_EX_OK) を返す。
-##   - ステータス値が 0-255 の範囲外、または整数でない場合は SX_EX_USAGE (64) を返す。
-sx_ex_yield() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_yield "${@}" || return; return 0;; esac
-
-	sx_ex_is_valid "${1-0}" || return "${SX_EX_USAGE}"
-
-	__sx_ex_yield "${@}" || return
-}
-
-__sx_ex_yield() {
-	case "${1-0}" in [A-Z]*)
-		SX_CFG_UNSET_SOFT=2 __sx_ex_map __sx_ex_yield_s_ "${1}"
-		set -- "${__sx_ex_yield_s_}"
-		unset __sx_ex_yield_s_
-	esac
-
-	return "${1-0}"
-}
-
 ### sx_ex_remap - 終了ステータスをマッピングしてコマンドを実行する
 ##
 ## 使い方:
@@ -681,6 +650,37 @@ __sx_ex_remap() {
 	return "${1}"
 }
 
+### sx_ex_yield - 任意の終了ステータスを発生させる
+##
+## 使い方:
+##   sx_ex_yield [ステータス番号 | ステータス名]
+##
+## 説明:
+##   指定された終了ステータス（数値または名前）を発生させる。
+##   サブシェルを使用しないため、(exit n) よりも高速に動作する。
+##
+## 終了ステータス:
+##   - 指定されたステータスを返す。
+##   - 引数が指定されない場合は 0 (SX_EX_OK) を返す。
+##   - ステータス値が 0-255 の範囲外、または整数でない場合は SX_EX_USAGE (64) を返す。
+sx_ex_yield() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_yield "${@}" || return; return 0;; esac
+
+	sx_ex_is_valid "${1-0}" || return "${SX_EX_USAGE}"
+
+	__sx_ex_yield "${@}" || return
+}
+
+__sx_ex_yield() {
+	case "${1-0}" in [A-Z]*)
+		SX_CFG_UNSET_SOFT=2 __sx_ex_map __sx_ex_yield_s_ "${1}"
+		set -- "${__sx_ex_yield_s_}"
+		unset __sx_ex_yield_s_
+	esac
+
+	return "${1-0}"
+}
+
 # ========================================
 #  UTIL (Utilities)
 # ========================================
@@ -700,294 +700,6 @@ sx_util_eval() {
 # ========================================
 #  ARG (Arguments)
 # ========================================
-
-### sx_arg_join - 引数を指定された区切り文字で結合する
-##
-## 使い方:
-##   sx_arg_join 結果変数名 区切り文字 [値 ...]
-##
-## 説明:
-##   指定された値を区切り文字で結合した文字列を作成して結果変数に格納する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_join() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_join "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
-
-	__sx_arg_join "${@}"
-}
-
-### __sx_arg_join - 引数を指定された区切り文字で結合する（内部用）
-##
-## 使い方:
-##   __sx_arg_join 結果変数名 区切り文字 [値 ...]
-##
-## 説明:
-##   引数チェックを行わずに結合処理を行う。
-__sx_arg_join() {
-	__sx_arg_join_res_="${1}"
-	__sx_arg_join_sep_="${2-}"
-	__sx_arg_join_out_=
-	shift ${2+2}
-
-	for __sx_arg_join_arg_ in "${@}"; do
-		__sx_arg_join_out_="${__sx_arg_join_out_}${__sx_arg_join_sep_}${__sx_arg_join_arg_}"
-	done
-
-	__sx_var_set "${__sx_arg_join_res_}=${__sx_arg_join_out_#"${__sx_arg_join_sep_}"}"
-
-	unset __sx_arg_join_res_ __sx_arg_join_sep_ __sx_arg_join_out_ __sx_arg_join_arg_
-}
-
-### sx_arg_len - 引数の個数を取得する
-##
-## 使い方:
-##   sx_arg_len 結果変数名 [引数 ...]
-##
-## 説明:
-##   第2引数以降に渡された引数の個数を数え、その結果を結果変数に格納する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_len() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_len "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
-
-	__sx_arg_len "${@}"
-}
-
-### __sx_arg_len - 引数の個数を取得する（内部用）
-##
-## 使い方:
-##   __sx_arg_len 結果変数名 [引数 ...]
-##
-## 説明:
-##   引数チェックを行わずに個数の取得を行う。
-__sx_arg_len() {
-	__sx_var_set "${1}=$((${#} - 1))"
-}
-
-### sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する
-##
-## 使い方:
-##   sx_arg_quote スキーマ [値 ...]
-##
-## 説明:
-##   指定された値をそれぞれシングルクォートで囲み（内部のシングルクォートはエスケープ）、
-##   スペース区切りで順方向に結合した文字列を作成して結果変数（スキーマ）に格納する。
-##   スキーマにコロン (:) を含めることで、引数の分配代入（デストラクチャリング）が可能。
-##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_quote() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
-
-	__sx_arg_quote "${@}"
-}
-
-define([|V|], [|__sx_arg_quote_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(arg) __M_BIND_USEVAR|])dnl
-
-### __sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する（内部用）
-##
-## 使い方:
-##   __sx_arg_quote スキーマ [値 ...]
-##
-## 説明:
-##   引数チェックを行わずに分配代入およびクォート結合処理を行う。
-__sx_arg_quote() {
-	__sx_var_bind_init "${1}"
-	__sx_arg_quote_bind_="${1}"
-	__sx_arg_quote_out_=
-	shift
-
-	for __sx_arg_quote_arg_ in "${@}"; do
-		__M_BIND_QUOTE([|__sx_arg_quote|], [|"${__sx_arg_quote_arg_}"|], CLEANUP)
-	done
-
-	eval ${__sx_arg_quote_out_:+"${__sx_arg_quote_bind_}=\"\${__sx_arg_quote_out_}\""}
-
-	unset CLEANUP
-}
-
-### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する
-##
-## 使い方:
-##   sx_arg_rquote 結果変数名 [値 ...]
-##
-## 説明:
-##   指定された値をそれぞれシングルクォートで囲み、
-##   逆順（最後の引数が先頭）にスペース区切りで結合した文字列を作成して結果変数に格納する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_rquote() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
-
-	__sx_arg_rquote "${@}"
-}
-
-define([|V|], [|__sx_arg_rquote_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(i) V(val) __M_BIND_USEVAR|])dnl
-
-### __sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
-##
-## 使い方:
-##   __sx_arg_rquote スキーマ [値 ...]
-##
-## 説明:
-##   引数チェックを行わずに逆順分配代入およびクォート結合処理を行う。
-__sx_arg_rquote() {
-	__sx_var_bind_init "${1}"
-	__sx_arg_rquote_bind_="${1}"
-	__sx_arg_rquote_out_=
-	shift
-	__sx_arg_rquote_i_="${#}"
-
-	while M_NUM_LT([|0|], [|__sx_arg_rquote_i_|]); do
-		eval "__sx_arg_rquote_val_=\"\${${__sx_arg_rquote_i_}}\""
-
-		__M_BIND_QUOTE([|__sx_arg_rquote|], [|"${__sx_arg_rquote_val_}"|], CLEANUP)
-
-		: $(( __sx_arg_rquote_i_ -= 1 ))
-	done
-
-	eval ${__sx_arg_rquote_out_:+"${__sx_arg_rquote_bind_}=\"\${__sx_arg_rquote_out_}\""}
-	unset CLEANUP
-}
-
-define([|V|], [|__sx_arg_isep_$1|])dnl
-define([|CLEANUP|], [|V(int) V(lim)|])dnl
-
-### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
-##
-## 使い方:
-##   sx_arg_isep 結果変数名 セパレータ [インターバル [リミット [値 ...]]]
-##   sx_arg_isep 結果変数名 [セパレータ [インターバル [リミット]]] ::: [値 ...]
-##
-## 説明:
-##   引数グループの間にセパレータを挿入し、すべての要素（セパレータを含む）を
-##   シングルクォートで囲んでスペース区切りで結合する。
-##   インターバルが正の場合は先頭から、負の場合は末尾から数えて挿入する。
-##   リミットを指定すると、セパレータの挿入回数を制限できる。
-##   インターバルに 0 は指定できない。
-##   ::: を使用することで、設定引数と対象データを分離できる。
-##   ::: を使用しない場合、第2引数はセパレータ、第3引数はインターバル、
-##   第4引数はリミットとして扱われ、データは第5引数から開始される。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_isep() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_isep "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
-
-	__sx_arg_isep_int=1 __sx_arg_isep_lim="${SX_NUM_I32_MAX}"
-
-	case "X${SX_CFG_SEP}" in
-		"${2+X${2}}" | "${3+X${3}}") ;;
-		"${4+X${4}}") __sx_arg_isep_int="${3}";;
-		*) __sx_arg_isep_int="${3-1}" __sx_arg_isep_lim="${4-${SX_NUM_I32_MAX}}";;
-	esac
-
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
-		set -- "${?}"
-		unset CLEANUP
-		return "${1}"
-	}
-
-	case "${__sx_arg_isep_int-1}" in 0)
-		unset CLEANUP
-		return "${SX_EX_USAGE}"
-	esac
-
-	unset CLEANUP
-	__sx_arg_isep "${@}"
-}
-
-define([|V|], [|__sx_arg_isep_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(lim) V(eff) V(r) V(j) V(arg) __M_BIND_USEVAR|])dnl
-
-### __sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する（内部用）
-##
-## 使い方:
-##   __sx_arg_isep 結果変数名 セパレータ [インターバル [リミット [値 ...]]]
-##   __sx_arg_isep 結果変数名 [セパレータ [インターバル [リミット]]] ::: [値 ...]
-##
-## 説明:
-##   引数チェックを行わずにセパレータ挿入とクォート結合処理を行う。
-__sx_arg_isep() {
-	__sx_var_bind_init "${1}"
-	__sx_arg_isep_bind_="${1}"
-	__sx_arg_isep_out_=
-	__sx_arg_isep_sep_=
-	__sx_arg_isep_int_=1
-	__sx_arg_isep_lim_="${SX_NUM_I32_MAX}"
-	__sx_arg_isep_j_=1
-
-	# ::: の位置を特定 (Bounded Search: $2, $3, $4, $5)
-	case "X${SX_CFG_SEP}" in
-		"${2+X${2}}") shift 2;;
-		"${3+X${3}}")
-			__sx_arg_isep_sep_="${2}"
-			shift 3
-			;;
-		"${4+X${4}}")
-			__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}"
-			shift 4
-			;;
-		"${5+X${5}}")
-			__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}"
-			shift 5
-			;;
-		*)
-			# 従来形式
-			__sx_arg_isep_sep_="${2-}" __sx_arg_isep_int_="${3-1}" __sx_arg_isep_lim_="${4-${SX_NUM_I32_MAX}}"
-			shift "$((1 + 0${2+1} + 0${3+1} + 0${4+1}))"
-			;;
-	esac
-
-	__sx_arg_isep_eff_=$(((${#} - 1) / ${__sx_arg_isep_int_#-}))
-	case $((__sx_arg_isep_lim_ <= __sx_arg_isep_eff_)) in 0)
-		__sx_arg_isep_lim_="${__sx_arg_isep_eff_}"
-	esac
-
-	case "${__sx_arg_isep_int_}" in
-		-*) __sx_arg_isep_r_=$((${#} - __sx_arg_isep_lim_ * ${__sx_arg_isep_int_#-}));;
-		*) __sx_arg_isep_r_="${__sx_arg_isep_int_}";;
-	esac
-
-	for __sx_arg_isep_arg_ in "${@}"; do
-		case $((__sx_arg_isep_r_ < __sx_arg_isep_j_ && (__sx_arg_isep_j_ - __sx_arg_isep_r_ - 1) % __sx_arg_isep_int_ == 0 && 0 < __sx_arg_isep_lim_)) in 1)
-			__M_BIND_QUOTE([|__sx_arg_isep|], [|"${__sx_arg_isep_sep_}"|], CLEANUP)
-			: $(( __sx_arg_isep_lim_ -= 1 ))
-		esac
-		__M_BIND_QUOTE([|__sx_arg_isep|], [|"${__sx_arg_isep_arg_}"|], CLEANUP)
-		: $(( __sx_arg_isep_j_ += 1 ))
-	done
-
-	eval ${__sx_arg_isep_out_:+"${__sx_arg_isep_bind_}=\"\${__sx_arg_isep_out_}\""}
-
-	unset CLEANUP
-}
 
 define([|V|], [|__sx_arg_find_$1|])dnl
 define([|CLEANUP|], [|V(lim) V(flg)|])dnl
@@ -1119,6 +831,244 @@ __sx_arg_find() {
 	return "${1}"
 }
 
+define([|V|], [|__sx_arg_isep_$1|])dnl
+define([|CLEANUP|], [|V(int) V(lim)|])dnl
+
+### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
+##
+## 使い方:
+##   sx_arg_isep 結果変数名 セパレータ [インターバル [リミット [値 ...]]]
+##   sx_arg_isep 結果変数名 [セパレータ [インターバル [リミット]]] ::: [値 ...]
+##
+## 説明:
+##   引数グループの間にセパレータを挿入し、すべての要素（セパレータを含む）を
+##   シングルクォートで囲んでスペース区切りで結合する。
+##   インターバルが正の場合は先頭から、負の場合は末尾から数えて挿入する。
+##   リミットを指定すると、セパレータの挿入回数を制限できる。
+##   インターバルに 0 は指定できない。
+##   ::: を使用することで、設定引数と対象データを分離できる。
+##   ::: を使用しない場合、第2引数はセパレータ、第3引数はインターバル、
+##   第4引数はリミットとして扱われ、データは第5引数から開始される。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_isep() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_isep "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+
+	__sx_arg_isep_int=1 __sx_arg_isep_lim="${SX_NUM_I32_MAX}"
+
+	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}" | "${3+X${3}}") ;;
+		"${4+X${4}}") __sx_arg_isep_int="${3}";;
+		*) __sx_arg_isep_int="${3-1}" __sx_arg_isep_lim="${4-${SX_NUM_I32_MAX}}";;
+	esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
+		set -- "${?}"
+		unset CLEANUP
+		return "${1}"
+	}
+
+	case "${__sx_arg_isep_int-1}" in 0)
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	esac
+
+	unset CLEANUP
+	__sx_arg_isep "${@}"
+}
+
+define([|V|], [|__sx_arg_isep_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(lim) V(eff) V(r) V(j) V(arg) __M_BIND_USEVAR|])dnl
+
+### __sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する（内部用）
+##
+## 使い方:
+##   __sx_arg_isep 結果変数名 セパレータ [インターバル [リミット [値 ...]]]
+##   __sx_arg_isep 結果変数名 [セパレータ [インターバル [リミット]]] ::: [値 ...]
+##
+## 説明:
+##   引数チェックを行わずにセパレータ挿入とクォート結合処理を行う。
+__sx_arg_isep() {
+	__sx_var_bind_init "${1}"
+	__sx_arg_isep_bind_="${1}"
+	__sx_arg_isep_out_=
+	__sx_arg_isep_sep_=
+	__sx_arg_isep_int_=1
+	__sx_arg_isep_lim_="${SX_NUM_I32_MAX}"
+	__sx_arg_isep_j_=1
+
+	# ::: の位置を特定 (Bounded Search: $2, $3, $4, $5)
+	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}") shift 2;;
+		"${3+X${3}}")
+			__sx_arg_isep_sep_="${2}"
+			shift 3
+			;;
+		"${4+X${4}}")
+			__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}"
+			shift 4
+			;;
+		"${5+X${5}}")
+			__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}"
+			shift 5
+			;;
+		*)
+			# 従来形式
+			__sx_arg_isep_sep_="${2-}" __sx_arg_isep_int_="${3-1}" __sx_arg_isep_lim_="${4-${SX_NUM_I32_MAX}}"
+			shift "$((1 + 0${2+1} + 0${3+1} + 0${4+1}))"
+			;;
+	esac
+
+	__sx_arg_isep_eff_=$(((${#} - 1) / ${__sx_arg_isep_int_#-}))
+	case $((__sx_arg_isep_lim_ <= __sx_arg_isep_eff_)) in 0)
+		__sx_arg_isep_lim_="${__sx_arg_isep_eff_}"
+	esac
+
+	case "${__sx_arg_isep_int_}" in
+		-*) __sx_arg_isep_r_=$((${#} - __sx_arg_isep_lim_ * ${__sx_arg_isep_int_#-}));;
+		*) __sx_arg_isep_r_="${__sx_arg_isep_int_}";;
+	esac
+
+	for __sx_arg_isep_arg_ in "${@}"; do
+		case $((__sx_arg_isep_r_ < __sx_arg_isep_j_ && (__sx_arg_isep_j_ - __sx_arg_isep_r_ - 1) % __sx_arg_isep_int_ == 0 && 0 < __sx_arg_isep_lim_)) in 1)
+			__M_BIND_QUOTE([|__sx_arg_isep|], [|"${__sx_arg_isep_sep_}"|], CLEANUP)
+			: $(( __sx_arg_isep_lim_ -= 1 ))
+		esac
+		__M_BIND_QUOTE([|__sx_arg_isep|], [|"${__sx_arg_isep_arg_}"|], CLEANUP)
+		: $(( __sx_arg_isep_j_ += 1 ))
+	done
+
+	eval ${__sx_arg_isep_out_:+"${__sx_arg_isep_bind_}=\"\${__sx_arg_isep_out_}\""}
+
+	unset CLEANUP
+}
+
+### sx_arg_join - 引数を指定された区切り文字で結合する
+##
+## 使い方:
+##   sx_arg_join 結果変数名 区切り文字 [値 ...]
+##
+## 説明:
+##   指定された値を区切り文字で結合した文字列を作成して結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_join() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_join "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_arg_join "${@}"
+}
+
+### __sx_arg_join - 引数を指定された区切り文字で結合する（内部用）
+##
+## 使い方:
+##   __sx_arg_join 結果変数名 区切り文字 [値 ...]
+##
+## 説明:
+##   引数チェックを行わずに結合処理を行う。
+__sx_arg_join() {
+	__sx_arg_join_res_="${1}"
+	__sx_arg_join_sep_="${2-}"
+	__sx_arg_join_out_=
+	shift ${2+2}
+
+	for __sx_arg_join_arg_ in "${@}"; do
+		__sx_arg_join_out_="${__sx_arg_join_out_}${__sx_arg_join_sep_}${__sx_arg_join_arg_}"
+	done
+
+	__sx_var_set "${__sx_arg_join_res_}=${__sx_arg_join_out_#"${__sx_arg_join_sep_}"}"
+
+	unset __sx_arg_join_res_ __sx_arg_join_sep_ __sx_arg_join_out_ __sx_arg_join_arg_
+}
+
+### sx_arg_len - 引数の個数を取得する
+##
+## 使い方:
+##   sx_arg_len 結果変数名 [引数 ...]
+##
+## 説明:
+##   第2引数以降に渡された引数の個数を数え、その結果を結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_len() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_len "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_arg_len "${@}"
+}
+
+### __sx_arg_len - 引数の個数を取得する（内部用）
+##
+## 使い方:
+##   __sx_arg_len 結果変数名 [引数 ...]
+##
+## 説明:
+##   引数チェックを行わずに個数の取得を行う。
+__sx_arg_len() {
+	__sx_var_set "${1}=$((${#} - 1))"
+}
+
+### sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する
+##
+## 使い方:
+##   sx_arg_quote スキーマ [値 ...]
+##
+## 説明:
+##   指定された値をそれぞれシングルクォートで囲み（内部のシングルクォートはエスケープ）、
+##   スペース区切りで順方向に結合した文字列を作成して結果変数（スキーマ）に格納する。
+##   スキーマにコロン (:) を含めることで、引数の分配代入（デストラクチャリング）が可能。
+##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_quote() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+
+	__sx_arg_quote "${@}"
+}
+
+define([|V|], [|__sx_arg_quote_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(arg) __M_BIND_USEVAR|])dnl
+
+### __sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する（内部用）
+##
+## 使い方:
+##   __sx_arg_quote スキーマ [値 ...]
+##
+## 説明:
+##   引数チェックを行わずに分配代入およびクォート結合処理を行う。
+__sx_arg_quote() {
+	__sx_var_bind_init "${1}"
+	__sx_arg_quote_bind_="${1}"
+	__sx_arg_quote_out_=
+	shift
+
+	for __sx_arg_quote_arg_ in "${@}"; do
+		__M_BIND_QUOTE([|__sx_arg_quote|], [|"${__sx_arg_quote_arg_}"|], CLEANUP)
+	done
+
+	eval ${__sx_arg_quote_out_:+"${__sx_arg_quote_bind_}=\"\${__sx_arg_quote_out_}\""}
+
+	unset CLEANUP
+}
+
 ### sx_arg_range - 位置パラメータの参照文字列を生成する
 ##
 ## 使い方:
@@ -1195,9 +1145,112 @@ __sx_arg_norm() {
 	unset __sx_arg_norm_res_ __sx_arg_norm_pl_ __sx_arg_norm_out_ __sx_arg_norm_arg_ __sx_arg_norm_tmp_
 }
 
+### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する
+##
+## 使い方:
+##   sx_arg_rquote 結果変数名 [値 ...]
+##
+## 説明:
+##   指定された値をそれぞれシングルクォートで囲み、
+##   逆順（最後の引数が先頭）にスペース区切りで結合した文字列を作成して結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_rquote() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+
+	__sx_arg_rquote "${@}"
+}
+
+define([|V|], [|__sx_arg_rquote_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(i) V(val) __M_BIND_USEVAR|])dnl
+
+### __sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
+##
+## 使い方:
+##   __sx_arg_rquote スキーマ [値 ...]
+##
+## 説明:
+##   引数チェックを行わずに逆順分配代入およびクォート結合処理を行う。
+__sx_arg_rquote() {
+	__sx_var_bind_init "${1}"
+	__sx_arg_rquote_bind_="${1}"
+	__sx_arg_rquote_out_=
+	shift
+	__sx_arg_rquote_i_="${#}"
+
+	while M_NUM_LT([|0|], [|__sx_arg_rquote_i_|]); do
+		eval "__sx_arg_rquote_val_=\"\${${__sx_arg_rquote_i_}}\""
+
+		__M_BIND_QUOTE([|__sx_arg_rquote|], [|"${__sx_arg_rquote_val_}"|], CLEANUP)
+
+		: $(( __sx_arg_rquote_i_ -= 1 ))
+	done
+
+	eval ${__sx_arg_rquote_out_:+"${__sx_arg_rquote_bind_}=\"\${__sx_arg_rquote_out_}\""}
+	unset CLEANUP
+}
+
 # ========================================
 #  VAR (Variable)
 # ========================================
+
+### sx_var_bind_init - バインド形式に基づき変数を初期化する
+##
+## 使い方:
+##   sx_var_bind_init [バインド形式1 [バインド形式2 ...]]
+##
+## 説明:
+##   指定されたバインド形式に従って、変数を初期化する。
+##   最後のコロン（:）より前の変数は関連要素を含めて削除（unset）され、
+##   最後の変数は空文字列（""）で初期化される。
+##   これにより、前の変数が「省略された」ことを sx_var_is_set で判定できる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  バインド形式が不正 (SX_EX_USAGE)
+##   77  書き込み不可な変数が含まれる (SX_EX_NOPERM)
+sx_var_bind_init() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind_init "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "64:${SX_EX_USAGE}" "1:${SX_EX_NOPERM}" sx_var_is_bindable "${@}" || return
+
+	__sx_var_bind_init "${@}"
+}
+
+### __sx_var_bind_init - バインド形式に基づき変数を初期化する（内部用）
+##
+## 使い方:
+##   __sx_var_bind_init [バインド形式1 [バインド形式2 ...]]
+##
+## 説明:
+##   sx_var_bind_init の内部実装。
+##   引数チェックは行わない。
+__sx_var_bind_init() {
+	for __sx_var_bind_init_arg_ in "${@}"; do
+		__sx_var_bind_init_ls_=
+
+		while
+			__sx_var_bind_init_seg_="${__sx_var_bind_init_arg_%%:*}"
+			__sx_var_bind_init_ls_="${__sx_var_bind_init_ls_} ${__sx_var_bind_init_seg_#"${__sx_var_bind_init_seg_%%[!0-9]*}"}"
+			M_STR_HAS([|"${__sx_var_bind_init_arg_}"|], [|:|])
+		do
+			__sx_var_bind_init_arg_="${__sx_var_bind_init_arg_#*:}"
+		done
+
+		eval __sx_var_unset "${__sx_var_bind_init_ls_}"
+
+		case "${__sx_var_bind_init_arg_}" in ?*)
+			eval "${__sx_var_bind_init_arg_}="
+		esac
+	done
+
+	unset __sx_var_bind_init_arg_ __sx_var_bind_init_ls_ __sx_var_bind_init_seg_
+}
 
 ### sx_var_copy - 変数の値を連鎖コピーする
 ##
@@ -1367,34 +1420,6 @@ __sx_var_is_arr() {
 	unset __sx_var_is_arr_arg_
 }
 
-### sx_var_is_chain - 文字列が有効な連鎖式であるか確認する
-##
-## 使い方:
-##   sx_var_is_chain [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   引数で指定されたすべての文字列が、sx_var_copy 等で使用可能な
-##   有効な連鎖式（A-B-C または A=B=C）であるか、あるいは単一の有効な変数名
-##   であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて有効な形式である (SX_EX_OK)
-##    1  無効な形式が含まれる
-sx_var_is_chain() {
-	for __sx_var_is_chain_arg in "${@}"; do
-		case "${__sx_var_is_chain_arg}" in
-			*=*) ! M_STR_MATCH([|"${__sx_var_is_chain_arg}"|], [|*[!_0-9A-Za-z=]*|], [|*==*|], [|=*|], [|*=|], [|[0-9]*|], [|*=[0-9]*|]);;
-			*-*) ! M_STR_MATCH([|"${__sx_var_is_chain_arg}"|], [|*[!_0-9A-Za-z-]*|], [|*--*|], [|-*|], [|*-|], [|[0-9]*|], [|*-[0-9]*|]);;
-			*) sx_var_is_name "${__sx_var_is_chain_arg}";;
-		esac || {
-			unset __sx_var_is_chain_arg
-			return 1
-		}
-	done
-
-	unset __sx_var_is_chain_arg
-}
-
 ### sx_var_is_bind - 文字列が分配代入バインド形式として有効か確認する
 ##
 ## 使い方:
@@ -1478,57 +1503,32 @@ __sx_var_is_bindable() {
 	__sx_var_is_rw_all "${@}" || return
 }
 
-### sx_var_bind_init - バインド形式に基づき変数を初期化する
+### sx_var_is_chain - 文字列が有効な連鎖式であるか確認する
 ##
 ## 使い方:
-##   sx_var_bind_init [バインド形式1 [バインド形式2 ...]]
+##   sx_var_is_chain [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   指定されたバインド形式に従って、変数を初期化する。
-##   最後のコロン（:）より前の変数は関連要素を含めて削除（unset）され、
-##   最後の変数は空文字列（""）で初期化される。
-##   これにより、前の変数が「省略された」ことを sx_var_is_set で判定できる。
+##   引数で指定されたすべての文字列が、sx_var_copy 等で使用可能な
+##   有効な連鎖式（A-B-C または A=B=C）であるか、あるいは単一の有効な変数名
+##   であるかを確認する。
 ##
 ## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  バインド形式が不正 (SX_EX_USAGE)
-##   77  書き込み不可な変数が含まれる (SX_EX_NOPERM)
-sx_var_bind_init() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind_init "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "64:${SX_EX_USAGE}" "1:${SX_EX_NOPERM}" sx_var_is_bindable "${@}" || return
-
-	__sx_var_bind_init "${@}"
-}
-
-### __sx_var_bind_init - バインド形式に基づき変数を初期化する（内部用）
-##
-## 使い方:
-##   __sx_var_bind_init [バインド形式1 [バインド形式2 ...]]
-##
-## 説明:
-##   sx_var_bind_init の内部実装。
-##   引数チェックは行わない。
-__sx_var_bind_init() {
-	for __sx_var_bind_init_arg_ in "${@}"; do
-		__sx_var_bind_init_ls_=
-
-		while
-			__sx_var_bind_init_seg_="${__sx_var_bind_init_arg_%%:*}"
-			__sx_var_bind_init_ls_="${__sx_var_bind_init_ls_} ${__sx_var_bind_init_seg_#"${__sx_var_bind_init_seg_%%[!0-9]*}"}"
-			M_STR_HAS([|"${__sx_var_bind_init_arg_}"|], [|:|])
-		do
-			__sx_var_bind_init_arg_="${__sx_var_bind_init_arg_#*:}"
-		done
-
-		eval __sx_var_unset "${__sx_var_bind_init_ls_}"
-
-		case "${__sx_var_bind_init_arg_}" in ?*)
-			eval "${__sx_var_bind_init_arg_}="
-		esac
+##    0  すべて有効な形式である (SX_EX_OK)
+##    1  無効な形式が含まれる
+sx_var_is_chain() {
+	for __sx_var_is_chain_arg in "${@}"; do
+		case "${__sx_var_is_chain_arg}" in
+			*=*) ! M_STR_MATCH([|"${__sx_var_is_chain_arg}"|], [|*[!_0-9A-Za-z=]*|], [|*==*|], [|=*|], [|*=|], [|[0-9]*|], [|*=[0-9]*|]);;
+			*-*) ! M_STR_MATCH([|"${__sx_var_is_chain_arg}"|], [|*[!_0-9A-Za-z-]*|], [|*--*|], [|-*|], [|*-|], [|[0-9]*|], [|*-[0-9]*|]);;
+			*) sx_var_is_name "${__sx_var_is_chain_arg}";;
+		esac || {
+			unset __sx_var_is_chain_arg
+			return 1
+		}
 	done
 
-	unset __sx_var_bind_init_arg_ __sx_var_bind_init_ls_ __sx_var_bind_init_seg_
+	unset __sx_var_is_chain_arg
 }
 
 ### sx_var_is_copyable - コピー先が構造を含めて書き込み可能か確認する
@@ -1631,80 +1631,6 @@ sx_var_is_name() {
 	unset __sx_var_is_name_arg
 }
 
-### sx_var_is_set - 変数が設定されているか確認する
-##
-## 使い方:
-##   sx_var_is_set 変数名1 [変数名2 ...]
-##
-## 終了ステータス:
-##    0  すべて設定されている (SX_EX_OK)
-##    1  未設定の変数が含まれる
-##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_is_set() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_set "${@}" || return; return 0;; esac
-
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_set "${@}" || return
-}
-
-### __sx_var_is_set - 変数が設定されているか確認する（内部用）
-##
-## 使い方:
-##   __sx_var_is_set 変数名1 [変数名2 ...]
-##
-## 説明:
-##   引数で指定されたすべての変数が設定されているか確認する。
-##   引数チェックは行わない。
-__sx_var_is_set() {
-	for __sx_var_is_set_arg_ in "${@}"; do
-		eval "__sx_var_is_set_e_=\"\${${__sx_var_is_set_arg_}+X}\""
-
-		case "${__sx_var_is_set_e_}" in '')
-			unset __sx_var_is_set_arg_ __sx_var_is_set_e_
-			return 1
-		esac
-
-		unset __sx_var_is_set_arg_ __sx_var_is_set_e_
-	done
-}
-
-### sx_var_is_val - 変数が値を持ち、かつ空でないか確認する
-##
-## 使い方:
-##   sx_var_is_val 変数名1 [変数名2 ...]
-##
-## 終了ステータス:
-##    0  すべて値があり、空でない (SX_EX_OK)
-##    1  設定されていない、または空の変数が含まれる
-##   64  変数名が無効 (SX_EX_USAGE)
-sx_var_is_val() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_val "${@}" || return; return 0;; esac
-
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_val "${@}" || return
-}
-
-### __sx_var_is_val - 変数が値を持ち、かつ空でないか確認する（内部用）
-##
-## 使い方:
-##   __sx_var_is_val 変数名1 [変数名2 ...]
-##
-## 説明:
-##   引数で指定されたすべての変数が値を持ち、空でないか確認する。
-##   引数チェックは行わない。
-__sx_var_is_val() {
-	for __sx_var_is_val_arg_ in "${@}"; do
-		eval "__sx_var_is_val_e_=\"\${${__sx_var_is_val_arg_}:+X}\""
-
-		case "${__sx_var_is_val_e_}" in '')
-			unset __sx_var_is_val_arg_ __sx_var_is_val_e_
-			return 1
-		esac
-
-		unset __sx_var_is_val_arg_ __sx_var_is_val_e_
-	done
-}
-
 ### sx_var_is_ro - 変数が読み取り専用か確認する
 ##
 ## 使い方:
@@ -1803,27 +1729,78 @@ __sx_var_is_rw_all() {
 	__sx_var_is_rw "${@}" || return
 }
 
-### sx_var_list_dep - 指定された変数に関連するすべての変数名を取得する
+### sx_var_is_set - 変数が設定されているか確認する
 ##
 ## 使い方:
-##   sx_var_list_dep 結果変数名 検索対象1 [検索対象2 ...]
-##
-## 説明:
-##   指定された変数名、およびそれらがsx配列である場合に再帰的に含まれる
-##   すべての変数名（_len, _0, _1...）をスペース区切りの文字列として取得し、
-##   指定された結果変数に格納する。
+##   sx_var_is_set 変数名1 [変数名2 ...]
 ##
 ## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_var_list_dep() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_dep "${@}" || return; return 0;; esac
+##    0  すべて設定されている (SX_EX_OK)
+##    1  未設定の変数が含まれる
+##   64  変数名が無効 (SX_EX_USAGE)
+sx_var_is_set() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_set "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_rw_all "${1}" || return "${SX_EX_NOPERM}"
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_set "${@}" || return
+}
 
-	__sx_var_list_dep "${@}"
+### __sx_var_is_set - 変数が設定されているか確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_set 変数名1 [変数名2 ...]
+##
+## 説明:
+##   引数で指定されたすべての変数が設定されているか確認する。
+##   引数チェックは行わない。
+__sx_var_is_set() {
+	for __sx_var_is_set_arg_ in "${@}"; do
+		eval "__sx_var_is_set_e_=\"\${${__sx_var_is_set_arg_}+X}\""
+
+		case "${__sx_var_is_set_e_}" in '')
+			unset __sx_var_is_set_arg_ __sx_var_is_set_e_
+			return 1
+		esac
+
+		unset __sx_var_is_set_arg_ __sx_var_is_set_e_
+	done
+}
+
+### sx_var_is_val - 変数が値を持ち、かつ空でないか確認する
+##
+## 使い方:
+##   sx_var_is_val 変数名1 [変数名2 ...]
+##
+## 終了ステータス:
+##    0  すべて値があり、空でない (SX_EX_OK)
+##    1  設定されていない、または空の変数が含まれる
+##   64  変数名が無効 (SX_EX_USAGE)
+sx_var_is_val() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_val "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_val "${@}" || return
+}
+
+### __sx_var_is_val - 変数が値を持ち、かつ空でないか確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_val 変数名1 [変数名2 ...]
+##
+## 説明:
+##   引数で指定されたすべての変数が値を持ち、空でないか確認する。
+##   引数チェックは行わない。
+__sx_var_is_val() {
+	for __sx_var_is_val_arg_ in "${@}"; do
+		eval "__sx_var_is_val_e_=\"\${${__sx_var_is_val_arg_}:+X}\""
+
+		case "${__sx_var_is_val_e_}" in '')
+			unset __sx_var_is_val_arg_ __sx_var_is_val_e_
+			return 1
+		esac
+
+		unset __sx_var_is_val_arg_ __sx_var_is_val_e_
+	done
 }
 
 ### sx_var_list_copy - 変数のコピー用代入式リストを生成する
@@ -1896,6 +1873,28 @@ __sx_var_list_copy() {
 	unset __sx_var_list_copy_res_ __sx_var_list_copy_out_ __sx_var_list_copy_chain_ __sx_var_list_copy_args_ __sx_var_list_copy_ls_ __sx_var_list_copy_dest_ __sx_var_list_copy_name_
 }
 
+### sx_var_list_dep - 指定された変数に関連するすべての変数名を取得する
+##
+## 使い方:
+##   sx_var_list_dep 結果変数名 検索対象1 [検索対象2 ...]
+##
+## 説明:
+##   指定された変数名、およびそれらがsx配列である場合に再帰的に含まれる
+##   すべての変数名（_len, _0, _1...）をスペース区切りの文字列として取得し、
+##   指定された結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_var_list_dep() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_dep "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${1-}" "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_rw_all "${1}" || return "${SX_EX_NOPERM}"
+
+	__sx_var_list_dep "${@}"
+}
 ### __sx_var_list_dep - 指定された変数に関連するすべての変数名を取得する（内部用）
 ##
 ## 使い方:
@@ -1937,6 +1936,7 @@ __sx_var_list_dep() {
 
 	unset __sx_var_list_dep_res_ __sx_var_list_dep_out_ __sx_var_list_dep_len_ __sx_var_list_dep_i_
 }
+
 
 ### sx_var_list_ro - 読み取り専用変数の一覧を取得する
 ##
@@ -2366,6 +2366,201 @@ __sx_var_unset() {
 #  NUM (Numerical Operations)
 # ========================================
 
+### sx_num_cmp_arith - 2つの数値を算術展開で比較する
+##
+## 使い方:
+##   sx_num_cmp_arith 数値1 数値2
+##
+## 終了ステータス:
+##   1  数値1 < 数値2
+##   2  数値1 = 数値2
+##   3  数値1 > 数値2
+##  64  引数不正 (SX_EX_USAGE)
+sx_num_cmp_arith() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_arith "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${1-}" "${2-}" || return
+
+	__sx_num_cmp_arith "${1}" "${2}" || return
+}
+
+### __sx_num_cmp_arith - 整数を算術展開で比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_cmp_arith() {
+	case 1 in
+		"$((${1} < ${2}))") return 1;;
+		"$((${1} > ${2}))") return 3;;
+		*) return 2;;
+	esac
+}
+
+### sx_num_cmp_float - 2つの数値を比較する
+##
+## 使い方:
+##   sx_num_cmp_float 左辺 右辺
+##
+## 説明:
+##   指定された2つの数値を比較する。
+##
+## 終了ステータス:
+##    1  左辺 < 右辺
+##    2  左辺 = 右辺
+##    3  左辺 > 右辺
+##   64  引数が数値ではない (SX_EX_USAGE)
+sx_num_cmp_float() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_float "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_float "${1-}" "${2-}" || return
+
+	__sx_num_cmp_float "${@}"
+}
+
+### __sx_num_cmp_float - 2つの数値を比較する（検証なし）
+##
+## 使い方:
+##   __sx_num_cmp_float 左辺 右辺
+##
+## 説明:
+##   指定された2つの数値を比較する。
+##   引数が数値であることの検証は行わない。
+##
+## 終了ステータス:
+##    1  左辺 < 右辺
+##    2  左辺 = 右辺
+##    3  左辺 > 右辺
+__sx_num_cmp_float() {
+	SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_cmp_float_a_:__sx_num_cmp_float_b_ "${1}" "${2}"
+	set -- "${__sx_num_cmp_float_a_}" "${__sx_num_cmp_float_b_}"
+	unset __sx_num_cmp_float_a_ __sx_num_cmp_float_b_
+
+	__sx_num_cmp_float_core "${@}" || return
+}
+
+### __sx_num_cmp_float_abs - 正規化済み絶対値同士を比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_cmp_float_abs() {
+
+	case "${1}" in
+		*.*) set -- "${1%%.*}" "${2}" "${1#*.}";;
+		*) set -- "${1}" "${2}" '';;
+	esac
+
+	case "${2}" in
+		*.*) set -- "${1}" "${2%%.*}" "${3}" "${2#*.}";;
+		*) set -- "${1}" "${2}" "${3}" '';;
+	esac
+
+	set -- "${@}" "$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))"
+
+	__sx_num_cmp_float_uint_dec "${1}" "${2}" "${5}" || case "${?}" in 1 | 3)
+		return "${?}"
+	esac
+
+	__sx_num_cmp_float_frac "${3}" "${4}" "${5}" || return "${?}"
+}
+
+### __sx_num_cmp_float_core - 正規化済み数値を比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_cmp_float_core() {
+	set -- "${1#[+-]}" "${2#[+-]}" "${1%%[!-]*}" "${2%%[!-]*}"
+
+	case "${3:-+}${4:-+}" in
+		-+) return 1;;
+		+-) return 3;;
+	esac
+
+	case "${3}" in
+		-*) __sx_num_cmp_float_abs "${2}" "${1}";;
+		*)  __sx_num_cmp_float_abs "${1}" "${2}";;
+	esac || return "${?}"
+}
+
+### __sx_num_cmp_float_dec_fast - 10進整数文字列を算術展開で比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_cmp_float_dec_fast() {
+	set -- "${1#${1%%[!0]*}}" "${2#${2%%[!0]*}}"
+	__sx_num_cmp_arith "${1:-0}" "${2:-0}"
+}
+
+### __sx_num_cmp_float_frac - 小数部を左から比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_cmp_float_frac() {
+	# 完全に一致する場合は即座に終了 (EQ)
+	case "${1}" in "${2}") return 2;; esac
+
+	# 接頭辞チェック（正規化により、長い方が必ず大きい）
+	# 冒頭で行うことで、長い小数部の延長比較をループなしで高速に処理する
+	case "${1}" in "${2}"*) return 3;; esac
+	case "${2}" in "${1}"*) return 1;; esac
+
+	# 窓幅パターン（?????????）を準備
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_frac_q_ '?' "${3-$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))}"
+	# $1: qm, $2: lhs, $3: rhs
+	set -- "${__sx_num_cmp_float_frac_q_}" "${1}" "${2}"
+	unset __sx_num_cmp_float_frac_q_
+
+	# 両方の文字列が窓幅以上の間、チャンクごとに比較
+	while M_STR_MATCH([|"${2}"|], [|${1}*|]) && M_STR_MATCH([|"${3}"|], [|${1}*|]); do
+		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
+		__sx_num_cmp_float_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
+			1 | 3) return "${?}";;
+		esac
+	done
+
+	# 接頭辞の関係にない（＝どこかの桁で異なる）残りの部分をパディングして最後の比較
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_frac_z_ '0' "${#1}"
+	set -- "${1}" "${2}${__sx_num_cmp_float_frac_z_}" "${3}${__sx_num_cmp_float_frac_z_}"
+	unset __sx_num_cmp_float_frac_z_
+
+	__sx_num_cmp_float_dec_fast "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
+}
+
+### __sx_num_cmp_float_uint_dec - 符号なし10進整数文字列を比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_cmp_float_uint_dec() {
+	case 1 in
+		"$((${#1} < ${#2}))") return 1;;
+		"$((${#2} < ${#1}))") return 3;;
+	esac
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_uint_dec_qm_ '?' "${3-$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))}"
+	set -- "${__sx_num_cmp_float_uint_dec_qm_}" "${1}" "${2}"
+	unset __sx_num_cmp_float_uint_dec_qm_
+
+	while M_STR_MATCH([|"${2}"|], [|${1}*|]); do
+		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
+		__sx_num_cmp_float_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
+			1 | 3) return "${?}";;
+		esac
+	done
+
+	__sx_num_cmp_float_dec_fast "${2}" "${3}" || return "${?}"
+}
+
 ### sx_num_is_base_int - 指定された基数で整数か確認する
 ##
 ## 使い方:
@@ -2677,6 +2872,57 @@ __sx_num_is_base_pint() {
 	unset __sx_num_is_base_pint_base_ __sx_num_is_base_pint_arg_
 }
 
+### sx_num_is_fixed - すべての引数が 10 進の実数表記（固定小数点形式）であるか確認する
+##
+## 使い方:
+##   sx_num_is_fixed [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   任意で符号（+ または -）を持つ 10 進の実数表記（固定小数点形式）であるかを確認する。
+##   整数部は 10 進整数として検査し、小数点を含む場合は小数部に 1 文字以上の数字を要求する。
+##   したがって、"1.0" は許可されるが "1." や ".1" は許可されない。
+##
+## 終了ステータス:
+##    0  すべて 10 進の実数表記である (SX_EX_OK)
+##    1  10 進の実数表記ではない値が含まれる
+sx_num_is_fixed() {
+	for __sx_num_is_fixed_arg in "${@}"; do
+		case "${__sx_num_is_fixed_arg}" in *.*)
+			sx_str_is_digit "${__sx_num_is_fixed_arg#*.}"
+		esac && sx_num_is_base_int 10 "${__sx_num_is_fixed_arg%%.*}" || {
+			unset __sx_num_is_fixed_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_fixed_arg
+}
+
+### sx_num_is_float - すべての引数が 10 進の実数表記（浮動小数点形式）であるか確認する
+##
+## 使い方:
+##   sx_num_is_float [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_fixed に加えて、指数表記（e または E による表記）を許可する。
+##   指数部は 10 進整数として検査する。
+##
+## 終了ステータス:
+##    0  すべて 10 進の実数表記である (SX_EX_OK)
+##    1  10 進の実数表記ではない値が含まれる
+sx_num_is_float() {
+	for __sx_num_is_float_arg in "${@}"; do
+		case "${__sx_num_is_float_arg}" in *[Ee]*)
+			__sx_num_is_base_int 10 "${__sx_num_is_float_arg#*[Ee]}"
+		esac && sx_num_is_fixed "${__sx_num_is_float_arg%%[Ee]*}" || {
+			unset __sx_num_is_float_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_float_arg
+}
+
 ### sx_num_is_int - すべての引数が整数であるか確認する
 ##
 ## 使い方:
@@ -2958,57 +3204,6 @@ sx_num_is_pint() {
 	unset __sx_num_is_pint_arg
 }
 
-### sx_num_is_fixed - すべての引数が 10 進の実数表記（固定小数点形式）であるか確認する
-##
-## 使い方:
-##   sx_num_is_fixed [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   任意で符号（+ または -）を持つ 10 進の実数表記（固定小数点形式）であるかを確認する。
-##   整数部は 10 進整数として検査し、小数点を含む場合は小数部に 1 文字以上の数字を要求する。
-##   したがって、"1.0" は許可されるが "1." や ".1" は許可されない。
-##
-## 終了ステータス:
-##    0  すべて 10 進の実数表記である (SX_EX_OK)
-##    1  10 進の実数表記ではない値が含まれる
-sx_num_is_fixed() {
-	for __sx_num_is_fixed_arg in "${@}"; do
-		case "${__sx_num_is_fixed_arg}" in *.*)
-			sx_str_is_digit "${__sx_num_is_fixed_arg#*.}"
-		esac && sx_num_is_base_int 10 "${__sx_num_is_fixed_arg%%.*}" || {
-			unset __sx_num_is_fixed_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_fixed_arg
-}
-
-### sx_num_is_float - すべての引数が 10 進の実数表記（浮動小数点形式）であるか確認する
-##
-## 使い方:
-##   sx_num_is_float [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_fixed に加えて、指数表記（e または E による表記）を許可する。
-##   指数部は 10 進整数として検査する。
-##
-## 終了ステータス:
-##    0  すべて 10 進の実数表記である (SX_EX_OK)
-##    1  10 進の実数表記ではない値が含まれる
-sx_num_is_float() {
-	for __sx_num_is_float_arg in "${@}"; do
-		case "${__sx_num_is_float_arg}" in *[Ee]*)
-			__sx_num_is_base_int 10 "${__sx_num_is_float_arg#*[Ee]}"
-		esac && sx_num_is_fixed "${__sx_num_is_float_arg%%[Ee]*}" || {
-			unset __sx_num_is_float_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_float_arg
-}
-
 ### sx_num_is_sx_float - すべての引数が安全な範囲の 10 進の実数表記であるか確認する
 ##
 ## 使い方:
@@ -3034,118 +3229,6 @@ sx_num_is_sx_float() {
 	done
 
 	unset __sx_num_is_sx_float_arg
-}
-
-### sx_num_norm - 数値を10進固定小数点形式に正規化する
-##
-## 使い方:
-##   sx_num_norm バインド形式 [数値1 [数値2 ...]]
-##
-## 説明:
-##   引数で指定された各数値を、10進固定小数点形式に正規化し、バインド形式に従って
-##   変数に代入する。
-##   正規化の内容：
-##   - 16進数（0x...）や8進数（0...）を10進整数に変換。
-##   - 指数表記（1.2e+3）を固定小数点形式（1200）に展開。
-##   - 小数点以下の不要な '0' を削除（6.0 -> 6, 1.20 -> 1.2）。
-##   - 符号（+ / -）は維持される。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正: 無効なバインド形式、または数値形式が正しくない (SX_EX_USAGE)
-##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
-sx_num_norm() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_norm "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
-
-	__sx_num_norm_bind="${1}"
-	shift
-
-	sx_num_is_sx_num "${@}" || {
-		unset __sx_num_norm_bind
-		return "${SX_EX_USAGE}"
-	}
-
-	__sx_num_norm "${__sx_num_norm_bind}" "${@}"
-	unset __sx_num_norm_bind
-}
-
-define([|V|], [|__sx_num_norm_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(arg) V(in) V(mnt) V(dig) V(flen) V(shift) V(dlen) __M_BIND_USEVAR|])dnl
-
-### __sx_num_norm - 数値を10進固定小数点形式に正規化する（内部用）
-##
-## 使い方:
-##   __sx_num_norm バインド形式 [数値1 [数値2 ...]]
-##
-## 説明:
-##   sx_num_norm の内部実装。引数の検証は行わない。
-__sx_num_norm() {
-	__sx_var_bind_init "${1}"
-	__sx_num_norm_bind_="${1}"
-	__sx_num_norm_out_=
-
-	shift
-
-	for __sx_num_norm_arg_ in "${@}"; do
-		__sx_num_norm_in_="${__sx_num_norm_arg_#[+-]}"
-
-		case "${__sx_num_norm_in_}" in
-			*[Ee]*)
-				# 指数表記の展開
-				__sx_num_norm_mnt_="${__sx_num_norm_in_%%[Ee]*}"
-				__sx_num_norm_dig_="${__sx_num_norm_mnt_%%.*}"
-
-				case "${__sx_num_norm_mnt_}" in
-					*.*)
-						__sx_num_norm_flen_=$((${#__sx_num_norm_mnt_} - ${#__sx_num_norm_dig_} - 1))
-						__sx_num_norm_dig_="${__sx_num_norm_dig_}${__sx_num_norm_mnt_#*.}"
-						;;
-					*) __sx_num_norm_flen_=0;;
-				esac
-
-				__sx_num_norm_shift_=$((${__sx_num_norm_in_#*[Ee]} - __sx_num_norm_flen_))
-					__sx_num_norm_dlen_="${#__sx_num_norm_dig_}"
-
-				if M_NUM_LE([|0|], [|__sx_num_norm_shift_|]); then
-					SX_CFG_UNSET_SOFT=2 __sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "-$((__sx_num_norm_dlen_ + __sx_num_norm_shift_))" 0
-				else
-					: $((__sx_num_norm_shift_ *= -1))
-
-					if M_NUM_LT([|__sx_num_norm_shift_|], [|__sx_num_norm_dlen_|]); then
-						SX_CFG_UNSET_SOFT=2 __sx_str_splice __sx_num_norm_in_ "${__sx_num_norm_dig_}" "$((__sx_num_norm_dlen_ - __sx_num_norm_shift_))" 0 .
-					else
-						SX_CFG_UNSET_SOFT=2 __sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "${__sx_num_norm_shift_}" 0
-						__sx_num_norm_in_=".${__sx_num_norm_in_}"
-					fi
-				fi
-
-				__sx_num_norm_in_="${__sx_num_norm_in_#"${__sx_num_norm_in_%%[!0]*}"}"
-
-				case "${__sx_num_norm_in_}" in .*)
-					__sx_num_norm_in_="0${__sx_num_norm_in_}"
-				esac
-				;;
-			*[Xx]* | 0[0-9]*) : "$((__sx_num_norm_in_ += 0))";;
-		esac
-
-		# 小数点以下のクリーンアップ
-		case "${__sx_num_norm_in_}" in *.*)
-			__sx_num_norm_in_="${__sx_num_norm_in_%"${__sx_num_norm_in_##*[!0]}"}"
-			__sx_num_norm_in_="${__sx_num_norm_in_%.}"
-		esac
-
-		case "${__sx_num_norm_in_}" in '' | 0)
-			__sx_num_norm_arg_=
-		esac
-
-		__M_BIND_UNQUOTE([|__sx_num_norm|], [|"${__sx_num_norm_arg_%%[!-]*}${__sx_num_norm_in_:-0}"|], CLEANUP)
-	done
-
-	eval ${__sx_num_norm_out_:+"${__sx_num_norm_bind_}=\"\${__sx_num_norm_out_}\""}
-
-	unset CLEANUP
 }
 
 ### sx_num_is_sx_int - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
@@ -3286,199 +3369,187 @@ __sx_num_rel_classify() {
 	return "$(((${2} < ${#1}) + 1))"
 }
 
-### sx_num_cmp_arith - 2つの数値を算術展開で比較する
+### sx_num_norm - 数値を10進固定小数点形式に正規化する
 ##
 ## 使い方:
-##   sx_num_cmp_arith 数値1 数値2
-##
-## 終了ステータス:
-##   1  数値1 < 数値2
-##   2  数値1 = 数値2
-##   3  数値1 > 数値2
-##  64  引数不正 (SX_EX_USAGE)
-sx_num_cmp_arith() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_arith "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${1-}" "${2-}" || return
-
-	__sx_num_cmp_arith "${1}" "${2}" || return
-}
-
-### __sx_num_cmp_arith - 整数を算術展開で比較する（内部用）
-##
-## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_cmp_arith() {
-	case 1 in
-		"$((${1} < ${2}))") return 1;;
-		"$((${1} > ${2}))") return 3;;
-		*) return 2;;
-	esac
-}
-
-### __sx_num_cmp_float_dec_fast - 10進整数文字列を算術展開で比較する（内部用）
-##
-## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_cmp_float_dec_fast() {
-	set -- "${1#${1%%[!0]*}}" "${2#${2%%[!0]*}}"
-	__sx_num_cmp_arith "${1:-0}" "${2:-0}"
-}
-
-### __sx_num_cmp_float_uint_dec - 符号なし10進整数文字列を比較する（内部用）
-##
-## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_cmp_float_uint_dec() {
-	case 1 in
-		"$((${#1} < ${#2}))") return 1;;
-		"$((${#2} < ${#1}))") return 3;;
-	esac
-
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_uint_dec_qm_ '?' "${3-$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))}"
-	set -- "${__sx_num_cmp_float_uint_dec_qm_}" "${1}" "${2}"
-	unset __sx_num_cmp_float_uint_dec_qm_
-
-	while M_STR_MATCH([|"${2}"|], [|${1}*|]); do
-		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_cmp_float_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
-			1 | 3) return "${?}";;
-		esac
-	done
-
-	__sx_num_cmp_float_dec_fast "${2}" "${3}" || return "${?}"
-}
-
-### __sx_num_cmp_float_frac - 小数部を左から比較する（内部用）
-##
-## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_cmp_float_frac() {
-	# 完全に一致する場合は即座に終了 (EQ)
-	case "${1}" in "${2}") return 2;; esac
-
-	# 接頭辞チェック（正規化により、長い方が必ず大きい）
-	# 冒頭で行うことで、長い小数部の延長比較をループなしで高速に処理する
-	case "${1}" in "${2}"*) return 3;; esac
-	case "${2}" in "${1}"*) return 1;; esac
-
-	# 窓幅パターン（?????????）を準備
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_frac_q_ '?' "${3-$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))}"
-	# $1: qm, $2: lhs, $3: rhs
-	set -- "${__sx_num_cmp_float_frac_q_}" "${1}" "${2}"
-	unset __sx_num_cmp_float_frac_q_
-
-	# 両方の文字列が窓幅以上の間、チャンクごとに比較
-	while M_STR_MATCH([|"${2}"|], [|${1}*|]) && M_STR_MATCH([|"${3}"|], [|${1}*|]); do
-		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_cmp_float_dec_fast "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
-			1 | 3) return "${?}";;
-		esac
-	done
-
-	# 接頭辞の関係にない（＝どこかの桁で異なる）残りの部分をパディングして最後の比較
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_frac_z_ '0' "${#1}"
-	set -- "${1}" "${2}${__sx_num_cmp_float_frac_z_}" "${3}${__sx_num_cmp_float_frac_z_}"
-	unset __sx_num_cmp_float_frac_z_
-
-	__sx_num_cmp_float_dec_fast "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
-}
-
-### __sx_num_cmp_float_abs - 正規化済み絶対値同士を比較する（内部用）
-##
-## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_cmp_float_abs() {
-
-	case "${1}" in
-		*.*) set -- "${1%%.*}" "${2}" "${1#*.}";;
-		*) set -- "${1}" "${2}" '';;
-	esac
-
-	case "${2}" in
-		*.*) set -- "${1}" "${2%%.*}" "${3}" "${2#*.}";;
-		*) set -- "${1}" "${2}" "${3}" '';;
-	esac
-
-	set -- "${@}" "$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))"
-
-	__sx_num_cmp_float_uint_dec "${1}" "${2}" "${5}" || case "${?}" in 1 | 3)
-		return "${?}"
-	esac
-
-	__sx_num_cmp_float_frac "${3}" "${4}" "${5}" || return "${?}"
-}
-
-### sx_num_cmp_float - 2つの数値を比較する
-##
-## 使い方:
-##   sx_num_cmp_float 左辺 右辺
+##   sx_num_norm バインド形式 [数値1 [数値2 ...]]
 ##
 ## 説明:
-##   指定された2つの数値を比較する。
+##   引数で指定された各数値を、10進固定小数点形式に正規化し、バインド形式に従って
+##   変数に代入する。
+##   正規化の内容：
+##   - 16進数（0x...）や8進数（0...）を10進整数に変換。
+##   - 指数表記（1.2e+3）を固定小数点形式（1200）に展開。
+##   - 小数点以下の不要な '0' を削除（6.0 -> 6, 1.20 -> 1.2）。
+##   - 符号（+ / -）は維持される。
 ##
 ## 終了ステータス:
-##    1  左辺 < 右辺
-##    2  左辺 = 右辺
-##    3  左辺 > 右辺
-##   64  引数が数値ではない (SX_EX_USAGE)
-sx_num_cmp_float() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_float "${@}" || return; return 0;; esac
+##    0  成功 (SX_EX_OK)
+##   64  引数不正: 無効なバインド形式、または数値形式が正しくない (SX_EX_USAGE)
+##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
+sx_num_norm() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_norm "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_float "${1-}" "${2-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
-	__sx_num_cmp_float "${@}"
+	__sx_num_norm_bind="${1}"
+	shift
+
+	sx_num_is_sx_num "${@}" || {
+		unset __sx_num_norm_bind
+		return "${SX_EX_USAGE}"
+	}
+
+	__sx_num_norm "${__sx_num_norm_bind}" "${@}"
+	unset __sx_num_norm_bind
 }
 
-### __sx_num_cmp_float - 2つの数値を比較する（検証なし）
+define([|V|], [|__sx_num_norm_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(arg) V(in) V(mnt) V(dig) V(flen) V(shift) V(dlen) __M_BIND_USEVAR|])dnl
+
+### __sx_num_norm - 数値を10進固定小数点形式に正規化する（内部用）
 ##
 ## 使い方:
-##   __sx_num_cmp_float 左辺 右辺
+##   __sx_num_norm バインド形式 [数値1 [数値2 ...]]
 ##
 ## 説明:
-##   指定された2つの数値を比較する。
-##   引数が数値であることの検証は行わない。
-##
-## 終了ステータス:
-##    1  左辺 < 右辺
-##    2  左辺 = 右辺
-##    3  左辺 > 右辺
-__sx_num_cmp_float() {
-	SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_cmp_float_a_:__sx_num_cmp_float_b_ "${1}" "${2}"
-	set -- "${__sx_num_cmp_float_a_}" "${__sx_num_cmp_float_b_}"
-	unset __sx_num_cmp_float_a_ __sx_num_cmp_float_b_
+##   sx_num_norm の内部実装。引数の検証は行わない。
+__sx_num_norm() {
+	__sx_var_bind_init "${1}"
+	__sx_num_norm_bind_="${1}"
+	__sx_num_norm_out_=
 
-	__sx_num_cmp_float_core "${@}" || return
+	shift
+
+	for __sx_num_norm_arg_ in "${@}"; do
+		__sx_num_norm_in_="${__sx_num_norm_arg_#[+-]}"
+
+		case "${__sx_num_norm_in_}" in
+			*[Ee]*)
+				# 指数表記の展開
+				__sx_num_norm_mnt_="${__sx_num_norm_in_%%[Ee]*}"
+				__sx_num_norm_dig_="${__sx_num_norm_mnt_%%.*}"
+
+				case "${__sx_num_norm_mnt_}" in
+					*.*)
+						__sx_num_norm_flen_=$((${#__sx_num_norm_mnt_} - ${#__sx_num_norm_dig_} - 1))
+						__sx_num_norm_dig_="${__sx_num_norm_dig_}${__sx_num_norm_mnt_#*.}"
+						;;
+					*) __sx_num_norm_flen_=0;;
+				esac
+
+				__sx_num_norm_shift_=$((${__sx_num_norm_in_#*[Ee]} - __sx_num_norm_flen_))
+					__sx_num_norm_dlen_="${#__sx_num_norm_dig_}"
+
+				if M_NUM_LE([|0|], [|__sx_num_norm_shift_|]); then
+					SX_CFG_UNSET_SOFT=2 __sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "-$((__sx_num_norm_dlen_ + __sx_num_norm_shift_))" 0
+				else
+					: $((__sx_num_norm_shift_ *= -1))
+
+					if M_NUM_LT([|__sx_num_norm_shift_|], [|__sx_num_norm_dlen_|]); then
+						SX_CFG_UNSET_SOFT=2 __sx_str_splice __sx_num_norm_in_ "${__sx_num_norm_dig_}" "$((__sx_num_norm_dlen_ - __sx_num_norm_shift_))" 0 .
+					else
+						SX_CFG_UNSET_SOFT=2 __sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "${__sx_num_norm_shift_}" 0
+						__sx_num_norm_in_=".${__sx_num_norm_in_}"
+					fi
+				fi
+
+				__sx_num_norm_in_="${__sx_num_norm_in_#"${__sx_num_norm_in_%%[!0]*}"}"
+
+				case "${__sx_num_norm_in_}" in .*)
+					__sx_num_norm_in_="0${__sx_num_norm_in_}"
+				esac
+				;;
+			*[Xx]* | 0[0-9]*) : "$((__sx_num_norm_in_ += 0))";;
+		esac
+
+		# 小数点以下のクリーンアップ
+		case "${__sx_num_norm_in_}" in *.*)
+			__sx_num_norm_in_="${__sx_num_norm_in_%"${__sx_num_norm_in_##*[!0]}"}"
+			__sx_num_norm_in_="${__sx_num_norm_in_%.}"
+		esac
+
+		case "${__sx_num_norm_in_}" in '' | 0)
+			__sx_num_norm_arg_=
+		esac
+
+		__M_BIND_UNQUOTE([|__sx_num_norm|], [|"${__sx_num_norm_arg_%%[!-]*}${__sx_num_norm_in_:-0}"|], CLEANUP)
+	done
+
+	eval ${__sx_num_norm_out_:+"${__sx_num_norm_bind_}=\"\${__sx_num_norm_out_}\""}
+
+	unset CLEANUP
 }
 
-### __sx_num_cmp_float_core - 正規化済み数値を比較する（内部用）
+### sx_num_range - 数値の範囲を生成する (Python range 互換)
+##
+## 使い方:
+##   sx_num_range 宛先 終了
+##   sx_num_range 宛先 開始 終了
+##   sx_num_range 宛先 開始 終了 増分
+##
+## 説明:
+##   指定された範囲の数値をスペース区切りで生成し、宛先変数に格納する。
+##   Python の range() と同様に、終了値は含まない (exclusive)。
+##   引数が1つの場合は、0 から 終了 - 1 まで増分 1。
+##   引数が2つの場合は、開始 から 終了 - 1 まで増分 1。
+##   引数が3つの場合は、開始 から 終了 (exclusive) まで指定された 増分 で生成する。
 ##
 ## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_cmp_float_core() {
-	set -- "${1#[+-]}" "${2#[+-]}" "${1%%[!-]*}" "${2%%[!-]*}"
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  書き込み不可 (SX_EX_NOPERM)
+sx_num_range() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_range "${@}" || return; return 0;; esac
 
-	case "${3:-+}${4:-+}" in
-		-+) return 1;;
-		+-) return 3;;
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${2-}" ${3+"${3}"} ${4+"${4}"} || return
+
+	case $((${4-1})) in 0)
+		return "${SX_EX_USAGE}"
 	esac
 
-	case "${3}" in
-		-*) __sx_num_cmp_float_abs "${2}" "${1}";;
-		*)  __sx_num_cmp_float_abs "${1}" "${2}";;
-	esac || return "${?}"
+	__sx_num_range "${@}"
+}
+
+define([|V|], [|__sx_num_range_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(cur) __M_BIND_USEVAR|])dnl
+
+### __sx_num_range - 数値の範囲を生成する（内部用）
+##
+## 使い方:
+##   __sx_num_range 宛先 [引数...]
+##
+## 説明:
+##   sx_num_range の内部実装。引数チェックを行わない。
+__sx_num_range() {
+	__sx_var_bind_init "${1}"
+	__sx_num_range_bind_="${1}"
+	__sx_num_range_out_=
+	shift
+
+	case "${#}" in
+		1) set -- 0 "${1}" 1;;
+		2) set -- "${1}" "${2}" 1;;
+		*) set -- "${1}" "${2}" "${3-1}";;
+	esac
+
+	__sx_num_range_cur_="${1}"
+
+	if M_NUM_LT([|0|], [|${3}|]); then
+		while M_NUM_LT([|__sx_num_range_cur_|], [|${2}|]); do
+			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
+			: $(( __sx_num_range_cur_ += ${3} ))
+		done
+	else
+		while M_NUM_LT([|${2}|], [|${__sx_num_range_cur_}|]); do
+			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
+			: $(( __sx_num_range_cur_ += ${3} ))
+		done
+	fi
+
+	eval ${__sx_num_range_out_:+"${__sx_num_range_bind_}=\"\${__sx_num_range_out_}\""}
+
+	unset CLEANUP
 }
 
 ### sx_num_rel - 数値間の関係を確認する
@@ -3577,77 +3648,6 @@ __sx_num_rel() {
 	unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
 }
 
-### sx_num_range - 数値の範囲を生成する (Python range 互換)
-##
-## 使い方:
-##   sx_num_range 宛先 終了
-##   sx_num_range 宛先 開始 終了
-##   sx_num_range 宛先 開始 終了 増分
-##
-## 説明:
-##   指定された範囲の数値をスペース区切りで生成し、宛先変数に格納する。
-##   Python の range() と同様に、終了値は含まない (exclusive)。
-##   引数が1つの場合は、0 から 終了 - 1 まで増分 1。
-##   引数が2つの場合は、開始 から 終了 - 1 まで増分 1。
-##   引数が3つの場合は、開始 から 終了 (exclusive) まで指定された 増分 で生成する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  書き込み不可 (SX_EX_NOPERM)
-sx_num_range() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_range "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${2-}" ${3+"${3}"} ${4+"${4}"} || return
-
-	case $((${4-1})) in 0)
-		return "${SX_EX_USAGE}"
-	esac
-
-	__sx_num_range "${@}"
-}
-
-define([|V|], [|__sx_num_range_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(cur) __M_BIND_USEVAR|])dnl
-
-### __sx_num_range - 数値の範囲を生成する（内部用）
-##
-## 使い方:
-##   __sx_num_range 宛先 [引数...]
-##
-## 説明:
-##   sx_num_range の内部実装。引数チェックを行わない。
-__sx_num_range() {
-	__sx_var_bind_init "${1}"
-	__sx_num_range_bind_="${1}"
-	__sx_num_range_out_=
-	shift
-
-	case "${#}" in
-		1) set -- 0 "${1}" 1;;
-		2) set -- "${1}" "${2}" 1;;
-		*) set -- "${1}" "${2}" "${3-1}";;
-	esac
-
-	__sx_num_range_cur_="${1}"
-
-	if M_NUM_LT([|0|], [|${3}|]); then
-		while M_NUM_LT([|__sx_num_range_cur_|], [|${2}|]); do
-			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
-			: $(( __sx_num_range_cur_ += ${3} ))
-		done
-	else
-		while M_NUM_LT([|${2}|], [|${__sx_num_range_cur_}|]); do
-			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
-			: $(( __sx_num_range_cur_ += ${3} ))
-		done
-	fi
-
-	eval ${__sx_num_range_out_:+"${__sx_num_range_bind_}=\"\${__sx_num_range_out_}\""}
-
-	unset CLEANUP
-}
-
 # ========================================
 #  UUID (UUID Operations)
 # ========================================
@@ -3709,6 +3709,60 @@ sx_str_any() {
 
 	unset __sx_str_any_tgt __sx_str_any_arg
 	return 1
+}
+
+### sx_str_center - 文字列を指定された幅で中央寄せする
+##
+## 使い方:
+##   sx_str_center 結果変数名 文字列 幅 [埋め込み文字列]
+##
+## 説明:
+##   文字列の長さが「幅」の絶対値に満たない場合、埋め込み文字列で中央寄せするように埋める。
+##   幅が正の場合、余り（奇数の場合）は右側に振る。
+##   幅が負の場合、余りは左側に振る。
+##   埋め込み文字列が指定されない場合は半角スペースを使用する。
+##   埋め込み文字列が明示的に空の場合は何もせずそのまま返す。
+##   元の文字列が既に指定された幅以上の場合は、そのまま返す。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_center() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_center "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} || return
+
+	__sx_str_center "${@}"
+}
+
+### __sx_str_center - 文字列を指定された幅で中央寄せする（内部用）
+##
+## 使い方:
+##   __sx_str_center 結果変数名 文字列 幅 [埋め込み文字列]
+##
+## 説明:
+##   sx_str_center の内部実装。
+##   引数チェックは行わないが、埋め込み文字列が空の場合は何もせず成功を返す。
+__sx_str_center() {
+	set -- "${1}" "${2-}" "${3-0}" "${4- }"
+
+	__sx_str_center_needed_=$((${3#-} - ${#2}))
+
+	M_NUM_LT([|0|], [|__sx_str_center_needed_|]) && M_STR_NE([|"${4}"|], [|''|]) || {
+		__sx_var_set "${1}=${2}"
+		unset __sx_str_center_needed_
+		return "${SX_EX_OK}"
+	}
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_center_rep_ "${4}" "$(( ( (__sx_str_center_needed_ + 1) / 2 - 1 ) / ${#4} + 1 ))"
+	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_center_spad_ "${__sx_str_center_rep_}" 0 "$(( (__sx_str_center_needed_ + (${3} < 0)) / 2 ))"
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_center_epad_ "${__sx_str_center_rep_}" 0 "$(( __sx_str_center_needed_ - ${#__sx_str_center_spad_} ))"
+
+	__sx_var_set "${1}=${__sx_str_center_spad_}${2}${__sx_str_center_epad_}"
+
+	unset __sx_str_center_needed_ __sx_str_center_rep_ __sx_str_center_spad_ __sx_str_center_epad_
 }
 
 ### sx_str_chunk - 文字列を一定の長さで区切って結果変数（またはバインドチェーン）に格納する
@@ -3808,91 +3862,6 @@ __sx_str_chunk() {
 
 		__sx_arg_quote "${__sx_str_chunk_bind_}" "${@}"
 	fi
-
-	unset CLEANUP
-}
-
-### sx_str_isep - 文字列に一定の間隔でセパレータを挿入する
-##
-## 使い方:
-##   sx_str_isep 結果変数名 文字列 セパレータ [インターバル [リミット]]
-##
-## 説明:
-##   指定された文字列に対して、指定された間隔（インターバル）ごとにセパレータを挿入して結合する。
-##   インターバルが正の場合は前方から、負の場合は後方から数えて挿入する。
-##   リミットを指定すると、セパレータの挿入回数を制限できる。
-##   インターバルに 0 は指定できない。デフォルトのインターバルは 1。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_isep() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_isep "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && \
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${4+"${4}"} && \
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${5+"${5}"} || return
-
-	case $((${4-1})) in 0)
-		return "${SX_EX_USAGE}"
-	esac
-
-	__sx_str_isep "${@}"
-}
-
-define([|V|], [|__sx_str_isep_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(str) V(sep) V(int) V(lim) V(out) V(qm) V(next)|])dnl
-
-### __sx_str_isep - 文字列に一定の間隔でセパレータを挿入する（内部用）
-##
-## 使い方:
-##   __sx_str_isep 結果変数名 文字列 セパレータ [インターバル [リミット]]
-##
-## 説明:
-##   sx_str_isep の内部実装。
-##   引数チェックは行わない。
-__sx_str_isep() {
-	__sx_str_isep_res_="${1}"
-	__sx_str_isep_str_="${2-}"
-	__sx_str_isep_sep_="${3-}"
-	__sx_str_isep_int_="${4-1}"
-	__sx_str_isep_lim_="$((${5-${SX_NUM_I32_MAX}}))"
-	__sx_str_isep_out_=
-
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${__sx_str_isep_int_#[+-]}"
-
-	if M_NUM_LT([|0|], [|__sx_str_isep_int_|]); then
-		# Forward
-		while
-			M_NUM_LT([|__sx_str_isep_int_|], [|${#__sx_str_isep_str_}|]) &&
-			M_STR_NE([|"${__sx_str_isep_lim_}"|], [|0|])
-		do
-			__sx_str_isep_next_="${__sx_str_isep_str_#${__sx_str_isep_qm_}}"
-			__sx_str_isep_out_="${__sx_str_isep_out_}${__sx_str_isep_str_%"${__sx_str_isep_next_}"}${__sx_str_isep_sep_}"
-			__sx_str_isep_str_="${__sx_str_isep_next_}"
-			: $((__sx_str_isep_lim_ -= 1))
-		done
-
-		__sx_str_isep_out_="${__sx_str_isep_out_}${__sx_str_isep_str_}"
-	else
-		# Backward
-		: $((__sx_str_isep_int_ *= -1))
-
-		while
-			M_NUM_LT([|__sx_str_isep_int_|], [|${#__sx_str_isep_str_}|]) &&
-			M_STR_NE([|"${__sx_str_isep_lim_}"|], [|0|])
-		do
-			__sx_str_isep_next_="${__sx_str_isep_str_%${__sx_str_isep_qm_}}"
-			__sx_str_isep_out_="${__sx_str_isep_sep_}${__sx_str_isep_str_#${__sx_str_isep_next_}}${__sx_str_isep_out_}"
-			__sx_str_isep_str_="${__sx_str_isep_next_}"
-			: $((__sx_str_isep_lim_ -= 1))
-		done
-
-		__sx_str_isep_out_="${__sx_str_isep_str_}${__sx_str_isep_out_}"
-	fi
-
-	__sx_var_set "${__sx_str_isep_res_}=${__sx_str_isep_out_}"
 
 	unset CLEANUP
 }
@@ -4022,25 +3991,6 @@ sx_str_has() {
 	return 1
 }
 
-### sx_str_is_hex - すべての引数が数字のみで構成されている（空でない）か確認する
-##
-## 使い方:
-##   sx_str_is_hex [文字列1 [文字列2 ...]]
-##
-## 終了ステータス:
-##    0  すべて数字のみで構成されている (SX_EX_OK)
-##    1  数字以外が含まれる、または空文字列が含まれる
-sx_str_is_hex() {
-	for __sx_str_is_hex_arg in "${@}"; do
-		case "${__sx_str_is_hex_arg}" in '' | *[!0-9A-Fa-f]*)
-			unset __sx_str_is_hex_arg
-			return 1
-		esac
-	done
-
-	unset __sx_str_is_hex_arg
-}
-
 ### sx_str_is_digit - すべての引数が数字のみで構成されている（空でない）か確認する
 ##
 ## 使い方:
@@ -4060,6 +4010,25 @@ sx_str_is_digit() {
 	unset __sx_str_is_digit_arg
 }
 
+### sx_str_is_hex - すべての引数が数字のみで構成されている（空でない）か確認する
+##
+## 使い方:
+##   sx_str_is_hex [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて数字のみで構成されている (SX_EX_OK)
+##    1  数字以外が含まれる、または空文字列が含まれる
+sx_str_is_hex() {
+	for __sx_str_is_hex_arg in "${@}"; do
+		case "${__sx_str_is_hex_arg}" in '' | *[!0-9A-Fa-f]*)
+			unset __sx_str_is_hex_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_hex_arg
+}
+
 ### sx_str_is_oct - すべての引数が8進数（0-7）のみで構成されている（空でない）か確認する
 ##
 ## 使い方:
@@ -4077,6 +4046,91 @@ sx_str_is_oct() {
 	done
 
 	unset __sx_str_is_oct_arg
+}
+
+### sx_str_isep - 文字列に一定の間隔でセパレータを挿入する
+##
+## 使い方:
+##   sx_str_isep 結果変数名 文字列 セパレータ [インターバル [リミット]]
+##
+## 説明:
+##   指定された文字列に対して、指定された間隔（インターバル）ごとにセパレータを挿入して結合する。
+##   インターバルが正の場合は前方から、負の場合は後方から数えて挿入する。
+##   リミットを指定すると、セパレータの挿入回数を制限できる。
+##   インターバルに 0 は指定できない。デフォルトのインターバルは 1。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_isep() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_isep "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && \
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${4+"${4}"} && \
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${5+"${5}"} || return
+
+	case $((${4-1})) in 0)
+		return "${SX_EX_USAGE}"
+	esac
+
+	__sx_str_isep "${@}"
+}
+
+define([|V|], [|__sx_str_isep_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(str) V(sep) V(int) V(lim) V(out) V(qm) V(next)|])dnl
+
+### __sx_str_isep - 文字列に一定の間隔でセパレータを挿入する（内部用）
+##
+## 使い方:
+##   __sx_str_isep 結果変数名 文字列 セパレータ [インターバル [リミット]]
+##
+## 説明:
+##   sx_str_isep の内部実装。
+##   引数チェックは行わない。
+__sx_str_isep() {
+	__sx_str_isep_res_="${1}"
+	__sx_str_isep_str_="${2-}"
+	__sx_str_isep_sep_="${3-}"
+	__sx_str_isep_int_="${4-1}"
+	__sx_str_isep_lim_="$((${5-${SX_NUM_I32_MAX}}))"
+	__sx_str_isep_out_=
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${__sx_str_isep_int_#[+-]}"
+
+	if M_NUM_LT([|0|], [|__sx_str_isep_int_|]); then
+		# Forward
+		while
+			M_NUM_LT([|__sx_str_isep_int_|], [|${#__sx_str_isep_str_}|]) &&
+			M_STR_NE([|"${__sx_str_isep_lim_}"|], [|0|])
+		do
+			__sx_str_isep_next_="${__sx_str_isep_str_#${__sx_str_isep_qm_}}"
+			__sx_str_isep_out_="${__sx_str_isep_out_}${__sx_str_isep_str_%"${__sx_str_isep_next_}"}${__sx_str_isep_sep_}"
+			__sx_str_isep_str_="${__sx_str_isep_next_}"
+			: $((__sx_str_isep_lim_ -= 1))
+		done
+
+		__sx_str_isep_out_="${__sx_str_isep_out_}${__sx_str_isep_str_}"
+	else
+		# Backward
+		: $((__sx_str_isep_int_ *= -1))
+
+		while
+			M_NUM_LT([|__sx_str_isep_int_|], [|${#__sx_str_isep_str_}|]) &&
+			M_STR_NE([|"${__sx_str_isep_lim_}"|], [|0|])
+		do
+			__sx_str_isep_next_="${__sx_str_isep_str_%${__sx_str_isep_qm_}}"
+			__sx_str_isep_out_="${__sx_str_isep_sep_}${__sx_str_isep_str_#${__sx_str_isep_next_}}${__sx_str_isep_out_}"
+			__sx_str_isep_str_="${__sx_str_isep_next_}"
+			: $((__sx_str_isep_lim_ -= 1))
+		done
+
+		__sx_str_isep_out_="${__sx_str_isep_str_}${__sx_str_isep_out_}"
+	fi
+
+	__sx_var_set "${__sx_str_isep_res_}=${__sx_str_isep_out_}"
+
+	unset CLEANUP
 }
 
 ### sx_str_match - 第一引数が、後続引数のいずれかのパターンにマッチするか確認する
@@ -4106,52 +4160,6 @@ sx_str_match() {
 
 	unset __sx_str_match_tgt __sx_str_match_arg
 	return 1
-}
-
-### sx_str_rep - 文字列を繰り返す
-##
-## 使い方:
-##   sx_str_rep 結果変数名 [元文字列 [繰り返し回数]]
-##
-## 説明:
-##   元文字列を指定された回数だけ繰り返して、結果変数に格納する。
-##   省略された引数は、元文字列が空文字列、繰り返し回数が 1 として扱われる。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_str_rep() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3+"${3}"} || return
-
-	__sx_str_rep "${@}"
-}
-
-### __sx_str_rep - 文字列を繰り返す（内部用）
-##
-## 使い方:
-##   __sx_str_rep 結果変数名 [元文字列 [繰り返し回数]]
-##
-## 説明:
-##   sx_str_rep の内部実装。
-##   引数チェックは行わない。
-__sx_str_rep() {
-	set -- "${1}" "${2-}" "$((${3-1}))"
-	__sx_str_rep_out_=
-
-	while M_STR_NE([|"${3}"|], [|0|]); do
-		case "$((${3} % 2))" in 1)
-			__sx_str_rep_out_="${__sx_str_rep_out_}${2}"
-		esac
-
-		set -- "${1}" "${2}${2}" "$((${3} / 2))"
-	done
-
-	__sx_var_set "${1}=${__sx_str_rep_out_}"
-	unset __sx_str_rep_out_
 }
 
 ### sx_str_pad - 文字列を指定された長さになるように埋める
@@ -4210,59 +4218,111 @@ __sx_str_pad() {
 	unset __sx_str_pad_needed_ __sx_str_pad_rep_ __sx_str_pad_fill_
 }
 
-### sx_str_center - 文字列を指定された幅で中央寄せする
+### sx_str_rep - 文字列を繰り返す
 ##
 ## 使い方:
-##   sx_str_center 結果変数名 文字列 幅 [埋め込み文字列]
+##   sx_str_rep 結果変数名 [元文字列 [繰り返し回数]]
 ##
 ## 説明:
-##   文字列の長さが「幅」の絶対値に満たない場合、埋め込み文字列で中央寄せするように埋める。
-##   幅が正の場合、余り（奇数の場合）は右側に振る。
-##   幅が負の場合、余りは左側に振る。
-##   埋め込み文字列が指定されない場合は半角スペースを使用する。
-##   埋め込み文字列が明示的に空の場合は何もせずそのまま返す。
-##   元の文字列が既に指定された幅以上の場合は、そのまま返す。
+##   元文字列を指定された回数だけ繰り返して、結果変数に格納する。
+##   省略された引数は、元文字列が空文字列、繰り返し回数が 1 として扱われる。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_center() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_center "${@}" || return; return 0;; esac
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_str_rep() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3+"${3}"} || return
 
-	__sx_str_center "${@}"
+	__sx_str_rep "${@}"
 }
 
-### __sx_str_center - 文字列を指定された幅で中央寄せする（内部用）
+### __sx_str_rep - 文字列を繰り返す（内部用）
 ##
 ## 使い方:
-##   __sx_str_center 結果変数名 文字列 幅 [埋め込み文字列]
+##   __sx_str_rep 結果変数名 [元文字列 [繰り返し回数]]
 ##
 ## 説明:
-##   sx_str_center の内部実装。
-##   引数チェックは行わないが、埋め込み文字列が空の場合は何もせず成功を返す。
-__sx_str_center() {
-	set -- "${1}" "${2-}" "${3-0}" "${4- }"
+##   sx_str_rep の内部実装。
+##   引数チェックは行わない。
+__sx_str_rep() {
+	set -- "${1}" "${2-}" "$((${3-1}))"
+	__sx_str_rep_out_=
 
-	__sx_str_center_needed_=$((${3#-} - ${#2}))
+	while M_STR_NE([|"${3}"|], [|0|]); do
+		case "$((${3} % 2))" in 1)
+			__sx_str_rep_out_="${__sx_str_rep_out_}${2}"
+		esac
 
-	M_NUM_LT([|0|], [|__sx_str_center_needed_|]) && M_STR_NE([|"${4}"|], [|''|]) || {
-		__sx_var_set "${1}=${2}"
-		unset __sx_str_center_needed_
-		return "${SX_EX_OK}"
-	}
+		set -- "${1}" "${2}${2}" "$((${3} / 2))"
+	done
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_center_rep_ "${4}" "$(( ( (__sx_str_center_needed_ + 1) / 2 - 1 ) / ${#4} + 1 ))"
-	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_center_spad_ "${__sx_str_center_rep_}" 0 "$(( (__sx_str_center_needed_ + (${3} < 0)) / 2 ))"
-
-	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_center_epad_ "${__sx_str_center_rep_}" 0 "$(( __sx_str_center_needed_ - ${#__sx_str_center_spad_} ))"
-
-	__sx_var_set "${1}=${__sx_str_center_spad_}${2}${__sx_str_center_epad_}"
-
-	unset __sx_str_center_needed_ __sx_str_center_rep_ __sx_str_center_spad_ __sx_str_center_epad_
+	__sx_var_set "${1}=${__sx_str_rep_out_}"
+	unset __sx_str_rep_out_
 }
+
+### sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する
+##
+## 使い方:
+##   sx_str_splice 結果変数名 文字列 開始位置 削除数 挿入文字列
+##
+## 説明:
+##   文字列の「開始位置」（0開始）から「削除数」分の文字を取り除き、
+##   そこに「挿入文字列」を挿入した結果を結果変数に格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_str_splice() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_splice "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} ${4+"${4}"} || return
+
+	__sx_str_splice "${@}"
+}
+
+define([|V|], [|__sx_str_splice_$1_|]) dnl
+define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(add) V(left) V(right) V(suffix) V(del)|]) dnl
+
+### __sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する（内部用）
+##
+## 使い方:
+##   __sx_str_splice 結果変数名 文字列 開始位置 削除数 挿入文字列
+##
+## 説明:
+##   sx_str_splice の内部実装。引数チェックは行わない。
+__sx_str_splice() {
+	V(res)="${1}"
+	V(str)="${2-}"
+	V(off)="${3-0}"
+	V(len)="${4-${SX_NUM_I32_MAX}}"
+	V(add)="${5-}"
+
+	# 1. 前半部分を取得 (sx_str_substr は負数 off をサポート済み)
+	__sx_str_substr V(left) "${V(str)}" 0 "${V(off)}"
+
+	# 2. 残りの部分（suffix）を抽出
+	V(suffix)="${V(str)#"${V(left)}"}"
+
+	# 3. 削除される部分を取得（sx_str_substr の負数 len を利用）
+	__sx_str_substr V(del) "${V(suffix)}" 0 "${V(len)}"
+
+	# 4. 後半部分（削除範囲より後ろ）を抽出
+	V(right)="${V(suffix)#"${V(del)}"}"
+
+	# 5. 結合して格納
+	__sx_var_set "${V(res)}=${V(left)}${V(add)}${V(right)}"
+
+	CLEANUP
+}
+
+undefine([|CLEANUP|]) dnl
+undefine([|V|]) dnl
 
 ### sx_str_split - 文字列を分割して結果変数に格納する
 ##
@@ -4477,6 +4537,45 @@ __sx_str_split_ifs() {
 	unset __sx_str_split_ifs_res_ __sx_str_split_ifs_opts_
 }
 
+### sx_str_strim - 文字列の先頭から指定された文字セットを削除する
+##
+## 使い方:
+##   sx_str_strim 結果変数名 [文字列 [文字セット]]
+##
+## 説明:
+##   文字列の先頭にある、指定された文字セットに含まれる文字をすべて削除して結果変数に格納する。
+##   文字セットが省略された場合は、SX_STR_SPACE（空白文字すべて）が使用される。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_strim() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_strim "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_str_strim "${@}"
+}
+
+### __sx_str_strim - 文字列の先頭から指定された文字セットを削除する（内部用）
+##
+## 使い方:
+##   __sx_str_strim 結果変数名 [文字列 [文字セット]]
+##
+## 説明:
+##   sx_str_strim の内部実装。
+##   引数チェックは行わない。
+__sx_str_strim() {
+	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
+
+	case "${3}" in '')
+		__sx_var_set "${1}=${2}"
+		return "${SX_EX_OK}"
+	esac
+
+	__sx_var_set "${1}=${2#"${2%%[!"${3}"]*}"}"
+}
 ### sx_str_sub - 文字列内のパターンを置換する
 ##
 ## 使い方:
@@ -4620,67 +4719,6 @@ sx_str_substr() {
 
 	__sx_str_substr "${@}"
 }
-
-### sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する
-##
-## 使い方:
-##   sx_str_splice 結果変数名 文字列 開始位置 削除数 挿入文字列
-##
-## 説明:
-##   文字列の「開始位置」（0開始）から「削除数」分の文字を取り除き、
-##   そこに「挿入文字列」を挿入した結果を結果変数に格納する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_str_splice() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_splice "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} ${4+"${4}"} || return
-
-	__sx_str_splice "${@}"
-}
-
-define([|V|], [|__sx_str_splice_$1_|]) dnl
-define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(add) V(left) V(right) V(suffix) V(del)|]) dnl
-
-### __sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する（内部用）
-##
-## 使い方:
-##   __sx_str_splice 結果変数名 文字列 開始位置 削除数 挿入文字列
-##
-## 説明:
-##   sx_str_splice の内部実装。引数チェックは行わない。
-__sx_str_splice() {
-	V(res)="${1}"
-	V(str)="${2-}"
-	V(off)="${3-0}"
-	V(len)="${4-${SX_NUM_I32_MAX}}"
-	V(add)="${5-}"
-
-	# 1. 前半部分を取得 (sx_str_substr は負数 off をサポート済み)
-	__sx_str_substr V(left) "${V(str)}" 0 "${V(off)}"
-
-	# 2. 残りの部分（suffix）を抽出
-	V(suffix)="${V(str)#"${V(left)}"}"
-
-	# 3. 削除される部分を取得（sx_str_substr の負数 len を利用）
-	__sx_str_substr V(del) "${V(suffix)}" 0 "${V(len)}"
-
-	# 4. 後半部分（削除範囲より後ろ）を抽出
-	V(right)="${V(suffix)#"${V(del)}"}"
-
-	# 5. 結合して格納
-	__sx_var_set "${V(res)}=${V(left)}${V(add)}${V(right)}"
-
-	CLEANUP
-}
-
-undefine([|CLEANUP|]) dnl
-undefine([|V|]) dnl
-
 define([|V|], [|__sx_str_substr_$1_|]) dnl
 define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(total) V(drop) V(qm)|]) dnl
 
@@ -4735,45 +4773,7 @@ __sx_str_substr() {
 undefine([|CLEANUP|]) dnl
 undefine([|V|]) dnl
 
-### sx_str_strim - 文字列の先頭から指定された文字セットを削除する
-##
-## 使い方:
-##   sx_str_strim 結果変数名 [文字列 [文字セット]]
-##
-## 説明:
-##   文字列の先頭にある、指定された文字セットに含まれる文字をすべて削除して結果変数に格納する。
-##   文字セットが省略された場合は、SX_STR_SPACE（空白文字すべて）が使用される。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_strim() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_strim "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
-
-	__sx_str_strim "${@}"
-}
-
-### __sx_str_strim - 文字列の先頭から指定された文字セットを削除する（内部用）
-##
-## 使い方:
-##   __sx_str_strim 結果変数名 [文字列 [文字セット]]
-##
-## 説明:
-##   sx_str_strim の内部実装。
-##   引数チェックは行わない。
-__sx_str_strim() {
-	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
-
-	case "${3}" in '')
-		__sx_var_set "${1}=${2}"
-		return "${SX_EX_OK}"
-	esac
-
-	__sx_var_set "${1}=${2#"${2%%[!"${3}"]*}"}"
-}
 ### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
 ##
 ## 使い方:
