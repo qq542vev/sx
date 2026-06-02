@@ -621,15 +621,8 @@ __sx_ex_remap() {
 					__sx_ex_remap_sts_="${2}"; break
 				esac
 				;;
-			[A-Z]*)
-				SX_CFG_UNSET_SOFT=2 __sx_ex_map __sx_ex_remap_n_ "${1}"
-
-				case "${__sx_ex_remap_n_}" in "${__sx_ex_remap_sts_}")
-					__sx_ex_remap_sts_="${2}"; break
-				esac
-				;;
 			!*)
-				case "${1}" in ![A-Z]*)
+				case "${1}" in ![!0-9]*)
 					SX_CFG_UNSET_SOFT=2 __sx_ex_map __sx_ex_remap_n_ "${1#!}"
 					set -- "!${__sx_ex_remap_n_}" "${2}"
 				esac
@@ -638,10 +631,17 @@ __sx_ex_remap() {
 					__sx_ex_remap_sts_="${2}"; break
 				fi
 				;;
+			[!0-9]*)
+				SX_CFG_UNSET_SOFT=2 __sx_ex_map __sx_ex_remap_n_ "${1}"
+
+				case "${__sx_ex_remap_n_}" in "${__sx_ex_remap_sts_}")
+					__sx_ex_remap_sts_="${2}"; break
+				esac
+				;;
 		esac
 	done
 
-	case "${__sx_ex_remap_sts_}" in [A-Z]*)
+	case "${__sx_ex_remap_sts_}" in [!0-9]*)
 		SX_CFG_UNSET_SOFT=2 __sx_ex_map __sx_ex_remap_sts_ "${__sx_ex_remap_sts_}"
 	esac
 
@@ -683,7 +683,7 @@ sx_ex_yield() {
 ## 終了ステータス:
 ##   - 指定されたステータスを返す。
 __sx_ex_yield() {
-	case "${1-0}" in [A-Z]*)
+	case "${1-0}" in [!0-9]*)
 		SX_CFG_UNSET_SOFT=2 __sx_ex_map __sx_ex_yield_s_ "${1}"
 		set -- "${__sx_ex_yield_s_}"
 		unset __sx_ex_yield_s_
@@ -1458,7 +1458,7 @@ __sx_var_is_arr() {
 sx_var_is_bind() {
 	for __sx_var_is_bind_arg in "${@}"; do
 		case "${__sx_var_is_bind_arg}" in
-			*[!_0-9A-Za-z:]* | 0* | *:0*)
+			*[!"${SX_STR_WORD}":]* | 0* | *:0*)
 				unset __sx_var_is_bind_arg
 				return 1
 				;;
@@ -1541,8 +1541,8 @@ __sx_var_is_bindable() {
 sx_var_is_chain() {
 	for __sx_var_is_chain_arg in "${@}"; do
 		case "${__sx_var_is_chain_arg}" in
-			*=*) ! M_STR_MATCH([|"${__sx_var_is_chain_arg}"|], [|*[!_0-9A-Za-z=]*|], [|*==*|], [|=*|], [|*=|], [|[0-9]*|], [|*=[0-9]*|]);;
-			*-*) ! M_STR_MATCH([|"${__sx_var_is_chain_arg}"|], [|*[!_0-9A-Za-z-]*|], [|*--*|], [|-*|], [|*-|], [|[0-9]*|], [|*-[0-9]*|]);;
+			*=*) ! M_STR_MATCH([|"${__sx_var_is_chain_arg}"|], [|*[!"${SX_STR_WORD}"=]*|], [|*==*|], [|=*|], [|*=|], [|[0-9]*|], [|*=[0-9]*|]);;
+			*-*) ! M_STR_MATCH([|"${__sx_var_is_chain_arg}"|], [|*[!"${SX_STR_WORD}"-]*|], [|*--*|], [|-*|], [|*-|], [|[0-9]*|], [|*-[0-9]*|]);;
 			*) sx_var_is_name "${__sx_var_is_chain_arg}";;
 		esac || {
 			unset __sx_var_is_chain_arg
@@ -1644,7 +1644,7 @@ __sx_var_is_empty() {
 ##    1  無効な変数名が含まれる
 sx_var_is_name() {
 	for __sx_var_is_name_arg in "${@}"; do
-		case "${__sx_var_is_name_arg}" in '' | [0-9]* | *[!_0-9A-Za-z]*)
+		case "${__sx_var_is_name_arg}" in '' | [0-9]* | *[!"${SX_STR_WORD}"]*)
 			unset __sx_var_is_name_arg
 			return 1
 		esac
@@ -1997,7 +1997,7 @@ __sx_var_list_ro() {
 	eval set -- "${__sx_var_list_ro_args_}"
 
 	for __sx_var_list_ro_ln_; do
-		case "${__sx_var_list_ro_ln_}" in 'readonly '[_A-Za-z] | 'readonly '[_A-Za-z]*[_0-9A-Za-z] | 'readonly '[_A-Za-z]=* | 'readonly '[_A-Za-z]*[_0-9A-Za-z]=*)
+		case "${__sx_var_list_ro_ln_}" in 'readonly '[_"${SX_STR_ALPHA}"] | 'readonly '[_"${SX_STR_ALPHA}"]*["${SX_STR_WORD}"] | 'readonly '[_"${SX_STR_ALPHA}"]=* | 'readonly '[_"${SX_STR_ALPHA}"]*["${SX_STR_WORD}"]=*)
 			__sx_var_list_ro_vn_="${__sx_var_list_ro_ln_#readonly }"
 			__sx_var_list_ro_vn_="${__sx_var_list_ro_vn_%%=*}"
 
@@ -2054,7 +2054,7 @@ __sx_var_list_set() {
 	eval set -- "${__sx_var_list_set_args_}"
 
 	for __sx_var_list_set_ln_; do
-		case "${__sx_var_list_set_ln_}" in [_A-Za-z]=* | [_A-Za-z]*[_0-9A-Za-z]=*)
+		case "${__sx_var_list_set_ln_}" in [_"${SX_STR_ALPHA}"]=* | [_"${SX_STR_ALPHA}"]*["${SX_STR_WORD}"]=*)
 			__sx_var_list_set_vn_="${__sx_var_list_set_ln_%%=*}"
 
 			if
@@ -3027,7 +3027,7 @@ __sx_num_is_int_width_core() {
 				if
 					M_NUM_LT([|__sx_num_is_int_width_xlen_|], [|${2}|]) || {
 						M_STR_EQ([|"${__sx_num_is_int_width_xlen_}"|], [|"${2}"|]) &&
-						M_STR_MATCH([|"${1}"|], [|-0[Xx][9A-Fa-f]*|], [|-0[Xx]8*[!0]*|], [|0[Xx][89A-Fa-f]*|])
+						M_STR_MATCH([|"${1}"|], [|-0[Xx][9ABCDEFabcdef]*|], [|-0[Xx]8*[!0]*|], [|0[Xx][89ABCDEFabcdef]*|])
 					}
 				then
 					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
@@ -4054,7 +4054,7 @@ sx_str_is_digit() {
 ##    1  16進数文字以外が含まれる、または空文字列が含まれる
 sx_str_is_hex() {
 	for __sx_str_is_hex_arg in "${@}"; do
-		case "${__sx_str_is_hex_arg}" in '' | *[!0-9A-Fa-f]*)
+		case "${__sx_str_is_hex_arg}" in '' | *[!"${SX_STR_XDIGIT}"]*)
 			unset __sx_str_is_hex_arg
 			return 1
 		esac
@@ -4073,7 +4073,7 @@ sx_str_is_hex() {
 ##    1  8進数文字以外が含まれる、または空文字列が含まれる
 sx_str_is_oct() {
 	for __sx_str_is_oct_arg in "${@}"; do
-		case "${__sx_str_is_oct_arg}" in '' | *[!0-7]*)
+		case "${__sx_str_is_oct_arg}" in '' | *[!"${SX_STR_OCT}"]*)
 			unset __sx_str_is_oct_arg
 			return 1
 		esac
