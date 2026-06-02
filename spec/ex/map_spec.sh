@@ -91,6 +91,12 @@ Describe 'sx_ex_map'
       When call sx_ex_map 's1:2s' OK 65
       The status should equal 64
     End
+
+    It '単一の変数に複数の引数を解決し、スペース区切りで格納すること'
+      When call sx_ex_map s OK DATAERR
+      The status should be success
+      The variable s should equal '0 65'
+    End
   End
 
   Describe '高速モード (SX_CFG_SKIP_CHK=1)'

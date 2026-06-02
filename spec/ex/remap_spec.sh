@@ -90,4 +90,26 @@ Describe 'sx_ex_remap'
       The status should equal 65
     End
   End
+
+  Context '範囲指定マッピング'
+    It 'N-M の範囲に一致する場合にマッピングすること'
+      When call sx_ex_remap 1-10:64 ::: sh -c 'exit 5'
+      The status should equal 64
+    End
+
+    It 'N- の範囲（以上）に一致する場合にマッピングすること'
+      When call sx_ex_remap 10-:64 ::: sh -c 'exit 15'
+      The status should equal 64
+    End
+
+    It '-M の範囲（以下）に一致する場合にマッピングすること'
+      When call sx_ex_remap -10:64 ::: sh -c 'exit 5'
+      The status should equal 64
+    End
+
+    It '範囲外の場合は元のステータスを返すこと'
+      When call sx_ex_remap 1-10:64 ::: sh -c 'exit 11'
+      The status should equal 11
+    End
+  End
 End
