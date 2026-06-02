@@ -194,6 +194,8 @@ readonly SX_STR_SPLIT_GLOB=1
 readonly SX_STR_SPLIT_INC=2
 readonly SX_STR_SUB_GLOB=1
 readonly SX_ARG_FIND_GLOB=1
+readonly SX_STR_CHUNK_SKIP_SHORT=1
+readonly SX_STR_CHUNK_SKIP_LONG=2
 
 # 数値定数 (8bit / 16bit / 32bit / 64bit / 128bit 整数限界)
 readonly SX_NUM_I8_MAX=127
@@ -3802,7 +3804,7 @@ __sx_str_center() {
 ### sx_str_chunk - 文字列を一定の長さで区切って結果変数（またはバインドチェーン）に格納する
 ##
 ## 使い方:
-##   sx_str_chunk スキーマ [文字列 [長さ [分割回数]]]
+##   sx_str_chunk スキーマ [文字列 [長さ [分割回数 [フラグ]]]]
 ##
 ## 説明:
 ##   指定された文字列を、指定された長さ（文字数）ごとに区切る。
@@ -3821,6 +3823,10 @@ __sx_str_center() {
 ##   格納される値およびクォート結合される文字列は、メタ文字が適切にエスケープされており、
 ##   eval 等を用いて安全に位置パラメータとして復元できる。
 ##
+##   フラグ (第五引数) には SX_STR_CHUNK_SKIP_SHORT / SX_STR_CHUNK_SKIP_LONG
+##   をビットマスクで指定する。指定された条件に該当する残余チャンクは
+##   結果に含めずスキップする。
+##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
@@ -3829,14 +3835,17 @@ __sx_str_center() {
 sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3+"${3}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${4+"${4}"} || return
-	case $((${3-1})) in 0) return "${SX_EX_USAGE}"; esac
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3:+"${3}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${4:+"${4}"} ${5:+"${5}"} || return
+
+	case "$((${3:-1}))" in 0)
+		return "${SX_EX_USAGE}"
+	esac
 
 	__sx_str_chunk "${@}"
 }
 
 define([|V|], [|__sx_str_chunk_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(str) V(len) V(lim) V(out) V(qm) V(next) __M_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(str) V(len) V(lim) V(flg) V(out) V(qm) V(next) __M_BIND_USEVAR|])dnl
 
 ### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
 ##
@@ -3850,8 +3859,9 @@ __sx_str_chunk() {
 	__sx_var_bind_init "${1}"
 	__sx_str_chunk_bind_="${1}"
 	__sx_str_chunk_str_="${2-}"
-	__sx_str_chunk_len_="$((${3-1}))"
-	__sx_str_chunk_lim_="$((${4-${SX_NUM_I32_MAX}}))"
+	__sx_str_chunk_len_="$((${3:-1}))"
+	__sx_str_chunk_lim_="$((${4:-${SX_NUM_I32_MAX}}))"
+	__sx_str_chunk_flg_="${5:-0}"
 
 		SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_#[+-]}"
 
@@ -3871,8 +3881,11 @@ __sx_str_chunk() {
 		done
 
 		case "${__sx_str_chunk_str_}" in ?*)
+			__sx_num_cmp_arith "${#__sx_str_chunk_str_}" "${__sx_str_chunk_len_}" ||
+			case "${?}0" in "1$((__sx_str_chunk_flg_ & SX_STR_CHUNK_SKIP_SHORT))" | 20 | "3$((__sx_str_chunk_flg_ & SX_STR_CHUNK_SKIP_LONG))")
 			__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_}"|], CLEANUP)
 		esac
+	esac
 
 		eval ${__sx_str_chunk_out_:+"${__sx_str_chunk_bind_}=\"\${__sx_str_chunk_out_}\""}
 	else
@@ -3890,9 +3903,12 @@ __sx_str_chunk() {
 			: $(( __sx_str_chunk_lim_ -= 1 ))
 		done
 
-		case "${__sx_str_chunk_str_}" in ?*)
+	case "${__sx_str_chunk_str_}" in ?*)
+		__sx_num_cmp_arith "${#__sx_str_chunk_str_}" "${__sx_str_chunk_len_}" ||
+		case "${?}0" in "1$((__sx_str_chunk_flg_ & SX_STR_CHUNK_SKIP_SHORT))" | 20 | "3$((__sx_str_chunk_flg_ & SX_STR_CHUNK_SKIP_LONG))")
 			set -- "${__sx_str_chunk_str_}" "${@}"
 		esac
+	esac
 
 		__sx_arg_quote "${__sx_str_chunk_bind_}" "${@}"
 	fi

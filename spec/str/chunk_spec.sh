@@ -169,4 +169,35 @@ Describe "sx_str_chunk"
     When call sx_str_chunk ro_var_chunk "abc" 2
     The status should equal 77
   End
+
+  It "SKIP_SHORT で短い残余をスキップすること"
+    When call sx_str_chunk res "abcde" 2 '' "${SX_STR_CHUNK_SKIP_SHORT}"
+    The variable res should equal "'ab' 'cd'"
+  End
+
+  It "SKIP_LONG で長い残余をスキップすること（lim 到達時）"
+    When call sx_str_chunk res "abcdefgh" 2 2 "${SX_STR_CHUNK_SKIP_LONG}"
+    The variable res should equal "'ab' 'cd'"
+  End
+
+  It "両フラグで残余 == size のみ許可すること"
+    When call sx_str_chunk res "abcdef" 2 '' "$((SX_STR_CHUNK_SKIP_SHORT + SX_STR_CHUNK_SKIP_LONG))"
+    The variable res should equal "'ab' 'cd' 'ef'"
+  End
+
+  It "SKIP_SHORT は後方分割でも動作すること"
+    When call sx_str_chunk res "abcde" -2 '' "${SX_STR_CHUNK_SKIP_SHORT}"
+    The variable res should equal "'bc' 'de'"
+  End
+
+  It "SKIP_SHORT で割り切れる場合は全チャンク含まれること"
+    When call sx_str_chunk res "abcdef" 2 '' "${SX_STR_CHUNK_SKIP_SHORT}"
+    The variable res should equal "'ab' 'cd' 'ef'"
+  End
+
+  It "SKIP_SHORT + 早期終了チェーンで不完全チャンクをスキップすること"
+    When call sx_str_chunk "v1:v2:" "abcde" 2 '' "${SX_STR_CHUNK_SKIP_SHORT}"
+    The variable v1 should equal "ab"
+    The variable v2 should equal "cd"
+  End
 End
