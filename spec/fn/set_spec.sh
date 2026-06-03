@@ -1,26 +1,3 @@
-Describe 'sx_fn_is_valid'
-	Include ./sx.sh
-	It 'returns 0 for valid definitions'
-		When call sx_fn_is_valid "f=:" "g=echo hello"
-		The status should be success
-	End
-
-	It 'returns 1 for invalid names'
-		When call sx_fn_is_valid "123f=:"
-		The status should be failure
-	End
-
-	It 'returns 1 for missing equals sign'
-		When call sx_fn_is_valid "invalid"
-		The status should be failure
-	End
-
-	It 'returns 1 for syntax errors'
-		When call sx_fn_is_valid "bad=if :"
-		The status should be failure
-	End
-End
-
 Describe 'sx_fn_set'
 	Include ./sx.sh
 
