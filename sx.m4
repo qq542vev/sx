@@ -696,6 +696,79 @@ __sx_ex_yield() {
 }
 
 # ========================================
+#  FN (Function)
+# ========================================
+
+define([|V|], [|__sx_fn_is_valid_$1|])dnl
+define([|CLEANUP|], [|V(arg)|])dnl
+
+### sx_fn_is_valid - 関数定義の妥当性（名前および構文）を確認する
+##
+## 使い方:
+##   sx_fn_is_valid 名前=本体 [名前=本体 ...]
+##
+## 終了ステータス:
+##    0  すべて妥当
+##    1  無効な名前、または構文エラーが含まれる
+sx_fn_is_valid() {
+	for __sx_fn_is_valid_arg in "${@}"; do
+		case "${__sx_fn_is_valid_arg}" in *=*)
+			sx_var_is_name "${__sx_fn_is_valid_arg%%=*}" || {
+				unset CLEANUP
+				return 1
+			}
+
+			continue
+		esac
+
+		unset CLEANUP
+		return 1
+	done
+
+	unset CLEANUP
+
+	(
+		for arg in "${@}"; do
+			body="${arg#*=}"
+			eval "${arg%%=*}() { ${body:-:}${SX_STR_LF}}" || exit 1
+		done
+	) 2>&- || return 1
+}
+
+### sx_fn_set - 関数を動的に定義する
+##
+## 使い方:
+##   sx_fn_set 名前=本体 [名前=本体 ...]
+##
+## 説明:
+##   指定された名前と本体（コマンド文字列）を用いて、関数を定義する。
+##   本体は eval を介して定義されるため、クォーティングに注意が必要。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (名前が無効、または '=' がない) (SX_EX_USAGE)
+sx_fn_set() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_set "${@}" || return; return 0;; esac
+
+	sx_fn_is_valid "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_fn_set "${@}"
+}
+
+### __sx_fn_set - 関数を実際に定義する（内部用）
+##
+## 使い方:
+##   __sx_fn_set 名前=本体 [名前=本体 ...]
+__sx_fn_set() {
+	for __sx_fn_set_arg_ in "${@}"; do
+		__sx_fn_set_body_="${__sx_fn_set_arg_#*=}"
+		eval "${__sx_fn_set_arg_%%=*}() { ${__sx_fn_set_body_:-:}${SX_STR_LF}}"
+	done
+
+	unset __sx_fn_set_arg_ __sx_fn_set_body_
+}
+
+# ========================================
 #  UTIL (Utilities)
 # ========================================
 
