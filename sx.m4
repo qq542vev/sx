@@ -193,6 +193,7 @@ readonly SX_STR_ASCII="${SX_STR_CNTRL}${SX_STR_GRAPH}"
 readonly SX_STR_SPLIT_GLOB=1
 readonly SX_STR_SPLIT_INC=2
 readonly SX_STR_SUB_GLOB=1
+readonly SX_STR_SUB_CB=2
 readonly SX_ARG_FIND_GLOB=1
 readonly SX_STR_CHUNK_SKIP_SHORT=1
 readonly SX_STR_CHUNK_SKIP_LONG=2
@@ -4642,6 +4643,11 @@ __sx_str_strim() {
 ##   検索パターンが空文字列の場合は、各文字の間および両端に置換文字列を挿入する。
 ##   回数制限（limit）が正の場合は前方から、負の場合は後方から指定された回数分だけ置換を行う。
 ##   フラグに SX_STR_SUB_GLOB を指定すると、検索パターンを glob パターンとして扱う。
+##   フラグに SX_STR_SUB_CB を指定すると、第4引数を置換文字列ではなくコールバック関数名として扱う。
+##   コールバック関数は以下の形式で呼び出される:
+##     関数名 結果変数名 マッチ文字列 処理済み文字列 残存文字列
+##   その実行結果（第1引数の変数に格納された値）が置換後の文字列として使用される。
+##   コールバック関数が非0の値を返した場合、そこで置換処理を中断する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -4665,90 +4671,119 @@ sx_str_sub() {
 ##   sx_str_sub の内部実装。
 ##   引数チェックは行わない。
 __sx_str_sub() {
-	__sx_str_sub_res_="${1}"
-	__sx_str_sub_str_="${2-}"
-	__sx_str_sub_pat_="${3-}"
-	__sx_str_sub_rep_="${4-}"
-	__sx_str_sub_lim_="$((${5-${SX_NUM_I32_MAX}}))"
-	__sx_str_sub_flg_="$((${6-0}))"
-	__sx_str_sub_out_=
+	# 位置パラメータ構成:
+	# ${1}: res (結果変数名)
+	# ${2}: str (未処理の残存文字列)
+	# ${3}: pat (検索パターン)
+	# ${4}: rep/cb (置換文字列またはコールバック関数名)
+	# ${5}: lim (残り置換回数 / 正:前方から, 負:後方から)
+	# ${6}: glob (GLOBフラグ: SX_STR_SUB_GLOBとの論理積。0以外で有効)
+	# ${7}: cb (CBフラグ: SX_STR_SUB_CBとの論理積。0以外で有効)
+	# ${8}: out (処理済みの出力バッファ)
+	set -- "${1}" "${2-}" "${3-}" "${4-}" "$((${5-${SX_NUM_I32_MAX}}))" "$((${6-0} & SX_STR_SUB_GLOB))" "$((${6-0} & SX_STR_SUB_CB))" ""
 
 	# パターンが空の場合は、文字間および両端に挿入（回数制限に従う）
-	if M_STR_EQ([|"${__sx_str_sub_pat_}"|], [|''|]); then
-		if M_NUM_LT([|0|], [|__sx_str_sub_lim_|]); then
-			# 前向き挿入
-			SX_CFG_UNSET_SOFT=2 __sx_str_isep __sx_str_sub_out_ "${__sx_str_sub_str_}" "${__sx_str_sub_rep_}" 1 $((__sx_str_sub_lim_ - 1))
-			__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_out_}"
-			case $((${#__sx_str_sub_str_} != 0 && ${#__sx_str_sub_str_} < __sx_str_sub_lim_)) in 1)
-				__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_rep_}"
+	if M_STR_EQ([|"${3}"|], [|''|]); then
+		if M_NUM_LT([|0|], [|${5}|]); then
+			# 前向き挿入: 各文字の前に挿入し、最後に末尾への挿入判定を行う
+			SX_CFG_UNSET_SOFT=2 __sx_str_isep __sx_str_sub_tmp_ "${2}" "${4}" 1 $(( ${5} - 1 ))
+			__sx_str_sub_val_="${4}${__sx_str_sub_tmp_}"
+			case $((${#2} != 0 && ${#2} < ${5})) in 1)
+				__sx_str_sub_val_="${__sx_str_sub_val_}${4}"
 			esac
-		elif M_NUM_LT([|__sx_str_sub_lim_|], [|0|]); then
-			# 後ろ向き挿入
-			: $((__sx_str_sub_lim_ *= -1))
-			SX_CFG_UNSET_SOFT=2 __sx_str_isep __sx_str_sub_out_ "${__sx_str_sub_str_}" "${__sx_str_sub_rep_}" -1 $((__sx_str_sub_lim_ - 1))
-			__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_rep_}"
-			case $((${#__sx_str_sub_str_} != 0 && ${#__sx_str_sub_str_} < __sx_str_sub_lim_)) in 1)
-				__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_out_}"
+			set -- "${1}" "" "" "" "" "" "" "${__sx_str_sub_val_}"
+			unset __sx_str_sub_tmp_ __sx_str_sub_val_
+		elif M_NUM_LT([|${5}|], [|0|]); then
+			# 後ろ向き挿入: 各文字の後に挿入し、最後に先頭への挿入判定を行う
+			__sx_str_sub_lim_=$(( ${5} * -1 ))
+			SX_CFG_UNSET_SOFT=2 __sx_str_isep __sx_str_sub_tmp_ "${2}" "${4}" -1 $(( __sx_str_sub_lim_ - 1 ))
+			__sx_str_sub_val_="${__sx_str_sub_tmp_}${4}"
+			case $((${#2} != 0 && ${#2} < __sx_str_sub_lim_)) in 1)
+				__sx_str_sub_val_="${4}${__sx_str_sub_val_}"
 			esac
+			set -- "${1}" "" "" "" "" "" "" "${__sx_str_sub_val_}"
+			unset __sx_str_sub_tmp_ __sx_str_sub_val_ __sx_str_sub_lim_
 		else
-			__sx_str_sub_out_="${__sx_str_sub_str_}"
+			# lim=0 の場合は何もしない
+			set -- "${1}" "" "" "" "" "" "" "${2}"
 		fi
-	elif M_NUM_LE([|0|], [|__sx_str_sub_lim_|]); then
-		# 前向き置換 (Forward)
-		if M_NUM_NE([|$((__sx_str_sub_flg_ & SX_STR_SUB_GLOB))|], [|0|]); then
-			while
-				M_STR_HAS([|"${__sx_str_sub_str_}"|], [|${__sx_str_sub_pat_}|]) &&
-				M_STR_NE([|"${__sx_str_sub_lim_}"|], [|0|])
-			do
-				__sx_str_sub_val_="${__sx_str_sub_str_%%${__sx_str_sub_pat_}*}"
-				__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_val_}${__sx_str_sub_rep_}"
-				__sx_str_sub_str_="${__sx_str_sub_str_#${__sx_str_sub_val_}}"
-				__sx_str_sub_tmp_="${__sx_str_sub_str_#${__sx_str_sub_pat_}}"
-				__sx_str_sub_str_="${__sx_str_sub_tmp_}"
-				: $(( __sx_str_sub_lim_ -= 1 ))
-			done
-		else
-			while
-				M_STR_HAS([|"${__sx_str_sub_str_}"|], [|"${__sx_str_sub_pat_}"|]) &&
-				M_STR_NE([|"${__sx_str_sub_lim_}"|], [|0|])
-			do
-				__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_%%"${__sx_str_sub_pat_}"*}${__sx_str_sub_rep_}"
-				__sx_str_sub_str_="${__sx_str_sub_str_#*"${__sx_str_sub_pat_}"}"
-				: $(( __sx_str_sub_lim_ -= 1 ))
-			done
-		fi
+	elif M_NUM_LE([|0|], [|${5}|]); then
+		# 前向き置換 (Forward: Left -> Right)
+		# ${9}: pre (マッチ箇所の前までの文字列)
+		# ${10}: suf (マッチ箇所を含めた残りの文字列)
+		while
+			case "${6}" in
+				0) M_STR_HAS([|"${2}"|], [|"${3}"|]);; # リテラル検索
+				*) M_STR_HAS([|"${2}"|], [|${3}|]);;   # GLOB検索
+			esac && M_NUM_NE([|${5}|], [|0|])
+		do
+			# マッチ箇所の前後を分離
+			case "${6}" in
+				0) set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${2%%"${3}"*}" "${2#*"${3}"}";;
+				*) set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${2%%${3}*}" "${2#*${3}}";;
+			esac
+			# ${11}: (一時的) マッチした文字列を含む後半部分
+			# ${8}: 処理済みバッファにマッチ直前までの文字列を追加
+			# ${2}: suf を次の処理対象（残存文字列）として更新
+			set -- "${1}" "${10}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${7}" "${8}${9}" "${2#"${9}"}"
 
-		__sx_str_sub_out_="${__sx_str_sub_out_}${__sx_str_sub_str_}"
+			# コールバック置換の分岐
+			case "${7}" in
+				0) set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}${4}";;
+				*)
+					# コールバック置換:
+					# マッチした文字列 = ${9%${2}}
+					# 非0で終了(break)するために一時的に $? を ${10} に積む
+					"${4}" __sx_str_sub_cb_ "${9%"${2}"}" "${8}" "${2}" || set -- "${@}" "${?}"
+					# 置換結果をバッファに追加し、ステータスを ${9} に取り込む
+					set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}${__sx_str_sub_cb_-${9%"${2}"}}" "${10-0}"
+					unset __sx_str_sub_cb_
+					case "${9}" in 0) ;; *) break; esac # 非0なら「置換して終了」
+					;;
+			esac
+		done
+
+		# 残りの文字列をバッファに結合して終了
+		set -- "${1}" "" "" "" "" "" "" "${8}${2}"
 	else
-		# 後ろ向き置換 (Backward)
-		if M_NUM_NE([|$((__sx_str_sub_flg_ & SX_STR_SUB_GLOB))|], [|0|]); then
-			while
-				M_STR_HAS([|"${__sx_str_sub_str_}"|], [|${__sx_str_sub_pat_}|]) &&
-				M_STR_NE([|"${__sx_str_sub_lim_}"|], [|0|])
-			do
-				__sx_str_sub_val_="${__sx_str_sub_str_##*${__sx_str_sub_pat_}}"
-				__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_val_}${__sx_str_sub_out_}"
-				__sx_str_sub_str_="${__sx_str_sub_str_%${__sx_str_sub_val_}}"
-				__sx_str_sub_tmp_="${__sx_str_sub_str_%${__sx_str_sub_pat_}}"
-				__sx_str_sub_str_="${__sx_str_sub_tmp_}"
-				: $(( __sx_str_sub_lim_ += 1 ))
-			done
-		else
-			while
-				M_STR_HAS([|"${__sx_str_sub_str_}"|], [|"${__sx_str_sub_pat_}"|]) &&
-				M_STR_NE([|"${__sx_str_sub_lim_}"|], [|0|])
-			do
-				__sx_str_sub_out_="${__sx_str_sub_rep_}${__sx_str_sub_str_##*"${__sx_str_sub_pat_}"}${__sx_str_sub_out_}"
-				__sx_str_sub_str_="${__sx_str_sub_str_%"${__sx_str_sub_pat_}"*}"
-				: $(( __sx_str_sub_lim_ += 1 ))
-			done
-		fi
+		# 後ろ向き置換 (Backward: Right -> Left)
+		# ${9}: suf (マッチ箇所の後までの文字列)
+		# ${10}: pre (マッチ箇所を含めた残りの文字列)
+		while
+			case "${6}" in
+				0) M_STR_HAS([|"${2}"|], [|"${3}"|]);; # リテラル検索
+				*) M_STR_HAS([|"${2}"|], [|${3}|]);;   # GLOB検索
+			esac && M_NUM_NE([|${5}|], [|0|])
+		do
+			# 後方からマッチする箇所を探して分離
+			case "${6}" in
+				0) set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${2##*"${3}"}" "${2%"${3}"*}";;
+				*) set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${2##*${3}}" "${2%${3}*}";;
+			esac
+			# ${11}: (一時的) マッチした文字列を含む前半部分
+			# ${8}: 処理済みバッファの「前」にマッチ直後までの文字列を追加 (outは後ろから構築される)
+			# ${2}: pre を次の処理対象として更新
+			set -- "${1}" "${10}" "${3}" "${4}" "$((${5} + 1))" "${6}" "${7}" "${9}${8}" "${2%"${9}"}"
 
-		__sx_str_sub_out_="${__sx_str_sub_str_}${__sx_str_sub_out_}"
+			# コールバック置換の分岐
+			case "${7}" in
+				0) set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${4}${8}";;
+				*)
+					# コールバック置換:
+					# マッチした文字列 = ${9#${2}}
+					"${4}" __sx_str_sub_cb_ "${9#"${2}"}" "${8}" "${2}" || set -- "${@}" "${?}"
+					set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${__sx_str_sub_cb_-${9#"${2}"}}${8}" "${10-0}"
+					unset __sx_str_sub_cb_
+					case "${9}" in 0) ;; *) break; esac
+					;;
+			esac
+		done
+
+		# 残りの文字列をバッファの先頭側に結合して終了
+		set -- "${1}" "" "" "" "" "" "" "${2}${8}"
 	fi
 
-	__sx_var_set "${__sx_str_sub_res_}=${__sx_str_sub_out_}"
-	unset __sx_str_sub_res_ __sx_str_sub_str_ __sx_str_sub_pat_ __sx_str_sub_rep_ __sx_str_sub_lim_ __sx_str_sub_flg_ __sx_str_sub_out_ __sx_str_sub_next_ __sx_str_sub_val_ __sx_str_sub_tmp_
+	__sx_var_set "${1}=${8}"
 }
 
 ### sx_str_substr - 文字列の指定した位置から指定した長さの部分文字列を取得する
