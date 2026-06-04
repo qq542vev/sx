@@ -46,13 +46,35 @@ Describe 'sx_fn_with'
     The variable res should equal "ok"
   End
 
-  It 'セパレータがない場合に EX_USAGE を返すこと'
-    When call sx_fn_with 'f=:' :
-    The status should equal 64
+  It '匿名関数が正しく定義され、置換されていること'
+    When call sx_fn_with 'myfn=res=replaced' -- myfn
+    The status should be success
+    The variable res should equal "replaced"
   End
 
-  It '定義が不正な場合に EX_USAGE を返すこと'
-    When call sx_fn_with 'invalid_format' -- :
+  It 'エイリアス置換が部分一致しないこと'
+    res=initial
+    When call sx_fn_with 'f=res=replaced' -- :
+    # f は定義されているが、引数は : なので置換されないはず。
+    # 置換されなければ res は initial のまま。
+    The status should be success
+    The variable res should equal "initial"
+  End
+
+  It 'コマンドの終了ステータスが保持されること'
+    When call sx_fn_with 'f=return 123' -- f
+    The status should equal 123
+  End
+
+  It 'セパレータなしでも動作すること'
+    When call sx_fn_with 'f=res=ok' f
+    The status should be success
+    The variable res should equal "ok"
+  End
+
+  It '定義の本体が不正な場合に EX_USAGE を返すこと'
+    # eval で確実に構文エラーになるような不正な関数本体
+    When call sx_fn_with 'f=res=(' -- f
     The status should equal 64
   End
 

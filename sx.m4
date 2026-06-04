@@ -791,12 +791,13 @@ sx_fn_with() {
 		: $((__sx_fn_with_i += 1))
 	done
 
-	SX_CFG_UNSET_SOFT=2 __sx_arg_quote "${__sx_fn_with_i}__sx_fn_with_fn:" "${@}"
-
-	eval sx_fn_is_valid "${__sx_fn_with_fn}" || {
-		unset __sx_fn_with_i __sx_fn_with_arg __sx_fn_with_fn
-		return "${SX_EX_USAGE}"
-	}
+	case "${__sx_fn_with_i}" in [!0]*)
+		SX_CFG_UNSET_SOFT=2 __sx_arg_quote "${__sx_fn_with_i}__sx_fn_with_fn:" "${@}"
+		eval sx_fn_is_valid "${__sx_fn_with_fn}" || {
+			unset __sx_fn_with_i __sx_fn_with_arg __sx_fn_with_fn
+			return "${SX_EX_USAGE}"
+		}
+	esac
 
 	unset __sx_fn_with_i __sx_fn_with_arg __sx_fn_with_fn
 
@@ -805,7 +806,47 @@ sx_fn_with() {
 
 ### __sx_fn_with - 一時的な匿名関数を定義してコマンドを実行する（内部用）
 __sx_fn_with() {
-	:
+	__sx_fn_with_fns_=
+	__sx_fn_with_map_=' '
+
+	# 1. エイリアスの解析と関数定義
+	while M_STR_NE([|"${#}"|], [|0|]); do
+		case "${1}" in
+			"${SX_CFG_SEP-}") shift; break;;
+			*=*)
+				__sx_fn_anon __sx_fn_with_u_ "${1#*=}"
+				__sx_fn_with_fns_="${__sx_fn_with_fns_}${__sx_fn_with_fns_:+ }${__sx_fn_with_u_}"
+				__sx_fn_with_map_="${__sx_fn_with_map_}${1%%=*}:${__sx_fn_with_u_} "
+				shift
+				;;
+			*) break;;
+		esac
+	done
+
+	# 2. コマンド引数の置換とクォート処理
+	__sx_fn_with_q_=
+	for __sx_fn_with_arg_ in "${@}"; do
+		case "${__sx_fn_with_map_}" in
+			*" ${__sx_fn_with_arg_}:"*)
+				__sx_fn_with_m_="${__sx_fn_with_map_#*" ${__sx_fn_with_arg_}:"}"
+				__sx_fn_with_arg_="${__sx_fn_with_m_%% *}"
+				;;
+		esac
+		SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_fn_with_qa_ "${__sx_fn_with_arg_}"
+		__sx_fn_with_q_="${__sx_fn_with_q_}${__sx_fn_with_q_:+ }${__sx_fn_with_qa_}"
+	done
+
+	# 3. 実行準備とクリーンアップ
+	set -- "${__sx_fn_with_fns_}" "${__sx_fn_with_q_}"
+	unset __sx_fn_with_fns_ __sx_fn_with_map_ __sx_fn_with_u_ __sx_fn_with_q_ __sx_fn_with_arg_ __sx_fn_with_m_ __sx_fn_with_qa_
+
+	# 4. 実行と状態の保持 (set -e 対策)
+	eval "${2}" || set -- "${@}" "${?}"
+
+	# 5. 後始末
+	case "${1}" in ?*) eval "unset -f ${1}";; esac
+
+	return "${3-0}"
 }
 
 ### sx_fn_anon - 一意な名前を持つ匿名関数を生成して定義する
@@ -847,6 +888,12 @@ define([|V|], [|__sx_fn_anon_$1_|])dnl
 define([|CLEANUP|], [|V(bind) V(out) V(arg) V(name) __M_BIND_USEVAR|])dnl
 
 ### __sx_fn_anon - 匿名関数を実際に生成・定義する（内部用）
+##
+## 使い方:
+##   __sx_fn_anon 結果変数名（またはバインド形式） 本体 [本体 ...]
+##
+##   一意な関数名 (sx_fn_anon_${SX_SYS_REV}) を生成して定義し、
+##   結果変数に格納する。
 __sx_fn_anon() {
 	__sx_var_bind_init "${1}"
 	__sx_fn_anon_bind_="${1}"
