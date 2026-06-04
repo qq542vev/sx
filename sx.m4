@@ -768,6 +768,91 @@ __sx_fn_set() {
 	unset __sx_fn_set_arg_ __sx_fn_set_body_
 }
 
+### sx_fn_with - 一時的な匿名関数を定義してコマンドを実行する
+##
+## 使い方:
+##   sx_fn_with [エイリアス=本体 ...] ${SX_CFG_SEP:---} コマンド [引数 ...]
+##
+## 説明:
+##   指定されたエイリアス名で一時的な関数を定義し、コマンドを実行する。
+##   コマンドの引数の中にエイリアス名と一致するものがあれば、生成された一意な名前に置換される。
+##   コマンドの実行終了後、定義された関数は自動的に削除される。
+sx_fn_with() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_with "${@}" || return; return;; esac
+
+	__sx_fn_with_i=0
+	for __sx_fn_with_arg in "${@}"; do
+		case "${__sx_fn_with_arg}" in
+			"${SX_CFG_SEP-}") break;;
+			*=*) ;;
+			*) break;;
+		esac
+
+		: $((__sx_fn_with_i += 1))
+	done
+
+	SX_CFG_UNSET_SOFT=2 __sx_arg_quote "${__sx_fn_with_i}__sx_fn_with_fn:" "${@}"
+
+	eval sx_fn_is_valid "${__sx_fn_with_fn}" || {
+		unset __sx_fn_with_i __sx_fn_with_arg __sx_fn_with_fn
+		return "${SX_EX_USAGE}"
+	}
+
+	unset __sx_fn_with_i __sx_fn_with_arg __sx_fn_with_fn
+
+	__sx_fn_with "${@}" || return
+}
+
+### __sx_fn_with - 一時的な匿名関数を定義してコマンドを実行する（内部用）
+__sx_fn_with() {
+	:
+}
+
+sx_fn_uniq() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_uniq "${@}" || return; return;; esac
+
+	__sx_fn_uniq_bind="${1}"
+	__sx_fn_uniq_chk=
+	shift
+
+	for __sx_fn_uniq_arg in "${@}"; do
+		SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_fn_uniq_ "f=${__sx_fn_uniq_arg}"
+		__sx_fn_uniq_chk="${__sx_fn_uniq_chk} ${__sx_fn_uniq_arg}"
+	done
+
+	eval sx_fn_is_valid "${__sx_fn_uniq_chk}" || {
+		unset __sx_fn_uniq_bind __sx_fn_uniq_chk __sx_fn_uniq_arg
+		return "${SX_EX_USAGE}"
+	}
+
+	__sx_fn_uniq "${__sx_fn_uniq_bind}" "${@}"
+	unset __sx_fn_uniq_bind __sx_fn_uniq_chk __sx_fn_uniq_arg
+}
+
+define([|V|], [|__sx_fn_uniq_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(arg) V(name) __M_BIND_USEVAR|])dnl
+
+__sx_fn_uniq() {
+	__sx_var_bind_init "${1}"
+	__sx_fn_uniq_bind_="${1}"
+	__sx_fn_uniq_out_=
+	shift
+
+	for __sx_fn_uniq_arg_ in "${@}"; do
+		__sx_fn_uniq_name_="sx_fn_uniq_${SX_SYS_REV}"
+
+		__M_BIND_UNQUOTE([|__sx_fn_uniq|], [|"${__sx_fn_uniq_name_}"|], CLEANUP)
+
+		__sx_fn_set "${__sx_fn_uniq_name_}=${__sx_fn_uniq_arg_}"
+
+		: $((SX_SYS_REV += 1))
+	done
+
+	eval ${__sx_fn_uniq_out_:+"${__sx_fn_uniq_bind_}=\"\${__sx_fn_uniq_out_}\""}
+
+	CLEANUP
+}
+
 # ========================================
 #  UTIL (Utilities)
 # ========================================
