@@ -808,49 +808,64 @@ __sx_fn_with() {
 	:
 }
 
-sx_fn_uniq() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_uniq "${@}" || return; return;; esac
+### sx_fn_anon - 一意な名前を持つ匿名関数を生成して定義する
+##
+## 使い方:
+##   sx_fn_anon 結果変数名（またはバインド形式） 本体 [本体 ...]
+##
+## 説明:
+##   指定された本体（コマンド文字列）を持つ関数を一意な名前で定義し、
+##   その名前を結果変数に格納する。複数の本体を指定した場合は、
+##   それぞれの関数名がスペース区切りで格納される。
+##   生成された関数名は sx_fn_anon_N の形式となる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  本体の構文が不正 (SX_EX_USAGE)
+sx_fn_anon() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_anon "${@}" || return; return;; esac
 
-	__sx_fn_uniq_bind="${1}"
-	__sx_fn_uniq_chk=
+	__sx_fn_anon_bind="${1}"
+	__sx_fn_anon_chk=
 	shift
 
-	for __sx_fn_uniq_arg in "${@}"; do
-		SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_fn_uniq_ "f=${__sx_fn_uniq_arg}"
-		__sx_fn_uniq_chk="${__sx_fn_uniq_chk} ${__sx_fn_uniq_arg}"
+	for __sx_fn_anon_arg in "${@}"; do
+		SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_fn_anon_arg "f=${__sx_fn_anon_arg}"
+		__sx_fn_anon_chk="${__sx_fn_anon_chk} ${__sx_fn_anon_arg}"
 	done
 
-	eval sx_fn_is_valid "${__sx_fn_uniq_chk}" || {
-		unset __sx_fn_uniq_bind __sx_fn_uniq_chk __sx_fn_uniq_arg
+	eval sx_fn_is_valid "${__sx_fn_anon_chk}" || {
+		unset __sx_fn_anon_bind __sx_fn_anon_chk __sx_fn_anon_arg
 		return "${SX_EX_USAGE}"
 	}
 
-	__sx_fn_uniq "${__sx_fn_uniq_bind}" "${@}"
-	unset __sx_fn_uniq_bind __sx_fn_uniq_chk __sx_fn_uniq_arg
+	__sx_fn_anon "${__sx_fn_anon_bind}" "${@}"
+	unset __sx_fn_anon_bind __sx_fn_anon_chk __sx_fn_anon_arg
 }
 
-define([|V|], [|__sx_fn_uniq_$1_|])dnl
+define([|V|], [|__sx_fn_anon_$1_|])dnl
 define([|CLEANUP|], [|V(bind) V(out) V(arg) V(name) __M_BIND_USEVAR|])dnl
 
-__sx_fn_uniq() {
+### __sx_fn_anon - 匿名関数を実際に生成・定義する（内部用）
+__sx_fn_anon() {
 	__sx_var_bind_init "${1}"
-	__sx_fn_uniq_bind_="${1}"
-	__sx_fn_uniq_out_=
+	__sx_fn_anon_bind_="${1}"
+	__sx_fn_anon_out_=
 	shift
 
-	for __sx_fn_uniq_arg_ in "${@}"; do
-		__sx_fn_uniq_name_="sx_fn_uniq_${SX_SYS_REV}"
+	for __sx_fn_anon_arg_ in "${@}"; do
+		__sx_fn_anon_name_="sx_fn_anon_${SX_SYS_REV}"
 
-		__M_BIND_UNQUOTE([|__sx_fn_uniq|], [|"${__sx_fn_uniq_name_}"|], CLEANUP)
+		__M_BIND_UNQUOTE([|__sx_fn_anon|], [|"${__sx_fn_anon_name_}"|], CLEANUP)
 
-		__sx_fn_set "${__sx_fn_uniq_name_}=${__sx_fn_uniq_arg_}"
+		__sx_fn_set "${__sx_fn_anon_name_}=${__sx_fn_anon_arg_}"
 
 		: $((SX_SYS_REV += 1))
 	done
 
-	eval ${__sx_fn_uniq_out_:+"${__sx_fn_uniq_bind_}=\"\${__sx_fn_uniq_out_}\""}
+	eval ${__sx_fn_anon_out_:+"${__sx_fn_anon_bind_}=\"\${__sx_fn_anon_out_}\""}
 
-	CLEANUP
+	unset CLEANUP
 }
 
 # ========================================
