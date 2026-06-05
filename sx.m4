@@ -194,6 +194,7 @@ readonly SX_STR_SPLIT_GLOB=1
 readonly SX_STR_SPLIT_INC=2
 readonly SX_STR_SUB_GLOB=1
 readonly SX_STR_SUB_CB=2
+readonly SX_STR_ISEP_CB=1
 readonly SX_ARG_FIND_GLOB=1
 readonly SX_STR_CHUNK_SKIP_SHORT=1
 readonly SX_STR_CHUNK_SKIP_LONG=2
@@ -4322,13 +4323,16 @@ sx_str_is_oct() {
 ### sx_str_isep - 文字列に一定の間隔でセパレータを挿入する
 ##
 ## 使い方:
-##   sx_str_isep 結果変数名 文字列 セパレータ [インターバル [リミット]]
+##   sx_str_isep 結果変数名 文字列 セパレータ [インターバル [リミット [フラグ]]]
 ##
 ## 説明:
 ##   指定された文字列に対して、指定された間隔（インターバル）ごとにセパレータを挿入して結合する。
 ##   インターバルが正の場合は前方から、負の場合は後方から数えて挿入する。
 ##   リミットを指定すると、セパレータの挿入回数を制限できる。
 ##   インターバルに 0 は指定できない。デフォルトのインターバルは 1。
+##
+##   フラグに SX_STR_ISEP_CB を指定すると、第3引数をセパレータではなくコールバック関数名として扱う。
+##   コールバックのシグネチャ: callback 結果変数名 chunk prev next count
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -4338,70 +4342,86 @@ sx_str_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_isep "${@}" || return; return 0;; esac
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && \
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${4+"${4}"} && \
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${5+"${5}"} || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${4:+"${4}"} && \
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${5:+"${5}"} && \
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${6:+"${6}"} || return
 
-	case $((${4-1})) in 0)
+	case $((${4:-1})) in 0)
 		return "${SX_EX_USAGE}"
 	esac
 
 	__sx_str_isep "${@}"
 }
 
-define([|V|], [|__sx_str_isep_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(str) V(sep) V(int) V(lim) V(out) V(qm) V(next)|])dnl
-
 ### __sx_str_isep - 文字列に一定の間隔でセパレータを挿入する（内部用）
 ##
 ## 使い方:
-##   __sx_str_isep 結果変数名 文字列 セパレータ [インターバル [リミット]]
+##   __sx_str_isep 結果変数名 文字列 セパレータ [インターバル [リミット [フラグ]]]
 ##
 ## 説明:
 ##   sx_str_isep の内部実装。
 ##   引数チェックは行わない。
 __sx_str_isep() {
-	__sx_str_isep_res_="${1}"
-	__sx_str_isep_str_="${2-}"
-	__sx_str_isep_sep_="${3-}"
-	__sx_str_isep_int_="${4-1}"
-	__sx_str_isep_lim_="$((${5-${SX_NUM_I32_MAX}}))"
-	__sx_str_isep_out_=
+	# 位置パラメータ構成:
+	# ${1}: res (結果変数名)
+	# ${2}: str (未処理の残存文字列)
+	# ${3}: sep/cb (セパレータ文字列 または コールバック関数名)
+	# ${4}: int (インターバル絶対値)
+	# ${5}: lim (残り挿入回数制限)
+	# ${6}: cb (CBフラグ: SX_STR_ISEP_CBとの論理積。0以外で有効)
+	# ${7}: out (処理済みの出力バッファ)
+	# ${8}: qm (インターバル分の '?' 文字列)
+	# ${9}: count (マッチカウンター)
+	# ${10}: ctx (文脈バッファ: 正方向なら既処理部分、逆方向なら未処理部分)
+	# --- マッチごとの一時変数 ---
+	# ${11}: next/prev_rel, ${12}: chunk, ${13}: stat
+	set -- "${1}" "${2-}" "${3-}" "$((${4:-1}))" "$((${5:-${SX_NUM_I32_MAX}}))" "$((${6:-0} & SX_STR_ISEP_CB))" "" "" 0 ""
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${__sx_str_isep_int_#[+-]}"
+	# インターバル分の '?' を生成
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${4#[+-]}"
+	set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "" "${__sx_str_isep_qm_}" 0 ""
+	unset __sx_str_isep_qm_
 
-	if M_NUM_LT([|0|], [|__sx_str_isep_int_|]); then
-		# Forward
+	if M_NUM_LT([|0|], [|${4}|]); then
+		# Forward (正方向)
 		while
-			M_NUM_LT([|__sx_str_isep_int_|], [|${#__sx_str_isep_str_}|]) &&
-			M_STR_NE([|"${__sx_str_isep_lim_}"|], [|0|])
+			M_NUM_LT([|${4}|], [|${#2}|]) && M_NUM_NE([|${5}|], [|0|])
 		do
-			__sx_str_isep_next_="${__sx_str_isep_str_#${__sx_str_isep_qm_}}"
-			__sx_str_isep_out_="${__sx_str_isep_out_}${__sx_str_isep_str_%"${__sx_str_isep_next_}"}${__sx_str_isep_sep_}"
-			__sx_str_isep_str_="${__sx_str_isep_next_}"
-			: $((__sx_str_isep_lim_ -= 1))
+			set -- "${@}" "${2#${8}}"
+			set -- "${@}" "${2%"${11}"}"
+			# $11: next, $12: chunk
+			case "${6}" in
+				0) set -- "${1}" "${11}" "${3}" "${4}" "$(( ${5} - 1 ))" "${6}" "${7}${12}${3}" "${8}" "$(( ${9} + 1 ))" "${10}${12}";;
+				*)
+					"${3}" __sx_str_isep_cb_ "${12}" "${10}${12}" "${11}" "$(( ${9} + 1 ))" || :
+					set -- "${1}" "${11}" "${3}" "${4}" "$(( ${5} - 1 ))" "${6}" "${7}${12}${__sx_str_isep_cb_-}" "${8}" "$(( ${9} + 1 ))" "${10}${12}"
+					unset __sx_str_isep_cb_
+					;;
+			esac
 		done
-
-		__sx_str_isep_out_="${__sx_str_isep_out_}${__sx_str_isep_str_}"
+		set -- "${1}" "" "" "" "" "" "${7}${2}"
 	else
-		# Backward
-		: $((__sx_str_isep_int_ *= -1))
-
+		# Backward (逆方向)
+		set -- "${1}" "${2}" "${3}" "$(( ${4} * -1 ))" "${5}" "${6}" "" "${8}" 0 ""
 		while
-			M_NUM_LT([|__sx_str_isep_int_|], [|${#__sx_str_isep_str_}|]) &&
-			M_STR_NE([|"${__sx_str_isep_lim_}"|], [|0|])
+			M_NUM_LT([|${4}|], [|${#2}|]) && M_NUM_NE([|${5}|], [|0|])
 		do
-			__sx_str_isep_next_="${__sx_str_isep_str_%${__sx_str_isep_qm_}}"
-			__sx_str_isep_out_="${__sx_str_isep_sep_}${__sx_str_isep_str_#${__sx_str_isep_next_}}${__sx_str_isep_out_}"
-			__sx_str_isep_str_="${__sx_str_isep_next_}"
-			: $((__sx_str_isep_lim_ -= 1))
+			set -- "${@}" "${2%${8}}"
+			set -- "${@}" "${2#${11}}"
+			# $11: prev, $12: chunk
+			case "${6}" in
+				0) set -- "${1}" "${11}" "${3}" "${4}" "$(( ${5} - 1 ))" "${6}" "${3}${12}${7}" "${8}" "$(( ${9} + 1 ))" "${12}${10}";;
+				*)
+					"${3}" __sx_str_isep_cb_ "${12}" "${11}" "${12}${10}" "$(( ${9} + 1 ))" || :
+					set -- "${1}" "${11}" "${3}" "${4}" "$(( ${5} - 1 ))" "${6}" "${__sx_str_isep_cb_-}${12}${7}" "${8}" "$(( ${9} + 1 ))" "${12}${10}"
+					unset __sx_str_isep_cb_
+					;;
+			esac
 		done
-
-		__sx_str_isep_out_="${__sx_str_isep_str_}${__sx_str_isep_out_}"
+		set -- "${1}" "" "" "" "" "" "${2}${7}"
 	fi
 
-	__sx_var_set "${__sx_str_isep_res_}=${__sx_str_isep_out_}"
-
-	unset CLEANUP
+	__sx_var_set "${1}=${7}"
 }
 
 ### sx_str_match - 第一引数が、後続引数のいずれかのパターンにマッチするか確認する
