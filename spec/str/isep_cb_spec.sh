@@ -19,28 +19,41 @@ Describe 'sx_str_isep (callback)'
     The variable res should equal "1(2)23(1)45"
   End
 
-  It 'コールバック引数 (chunk, prev, next) が正しいこと'
-    # callback res chunk prev next count
-    # chunk を [] で囲み、prev と next を | で区切る
-    cb() { __sx_var_set "${1}=-[${2}]:${3}|${4}-"; }
+  It 'コールバック引数 (interval, prev, next) が正しいこと (Forward)'
+    # callback res interval prev next count
+    cb() { __sx_var_set "${1}=-[i${2}]:${3}|${4}-"; }
     
     # Forward: 123456, int=2
-    # 1st: chunk=12, prev=12, next=3456, count=1
-    # 2nd: chunk=34, prev=1234, next=56, count=2
+    # 1st: int=2, prev=12, next=3456, count=1
+    # 2nd: int=2, prev=1234, next=56, count=2
     When call sx_str_isep res "123456" cb 2 "" "$SX_STR_ISEP_CB"
     The status should be success
-    The variable res should equal "12-[12]:12|3456-34-[34]:1234|56-56"
+    The variable res should equal "12-[i2]:12|3456-34-[i2]:1234|56-56"
   End
 
-  It '逆方向のコールバック引数が正しいこと'
-    cb() { __sx_var_set "${1}=-[${2}]:${3}|${4}-"; }
+  It 'コールバック引数 (interval, prev, next) が正しいこと (Backward)'
+    cb() { __sx_var_set "${1}=-[i${2}]:${3}|${4}-"; }
     
     # Backward: 123456, int=-2
-    # 1st: chunk=56, prev=1234, next=56, count=1
-    # 2nd: chunk=34, prev=12, next=3456, count=2
+    # 1st: int=-2, prev=1234, next=56, count=1
+    # 2nd: int=-2, prev=12, next=3456, count=2
     When call sx_str_isep res "123456" cb -2 "" "$SX_STR_ISEP_CB"
     The status should be success
-    The variable res should equal "12-[34]:12|3456-34-[56]:1234|56-56"
+    The variable res should equal "12-[i-2]:12|3456-34-[i-2]:1234|56-56"
+  End
+
+  It 'ab に対する正方向 (int=1) の prev/next が正しいこと'
+    cb() { __sx_var_set "${1}=[${3}:${4}]"; }
+    When call sx_str_isep res "ab" cb 1 "" "$SX_STR_ISEP_CB"
+    The status should be success
+    The variable res should equal "a[a:b]b"
+  End
+
+  It 'ab に対する逆方向 (int=-1) の prev/next が正しいこと'
+    cb() { __sx_var_set "${1}=[${3}:${4}]"; }
+    When call sx_str_isep res "ab" cb -1 "" "$SX_STR_ISEP_CB"
+    The status should be success
+    The variable res should equal "a[a:b]b"
   End
 
   It 'リミットがコールバックでも機能すること'
@@ -55,8 +68,8 @@ Describe 'sx_str_isep (callback)'
       __sx_var_set "${1}=!"
       [ "$5" -lt 2 ] # count=2 で非0を返す
     }
-    # 1st: chunk=12, count=1 -> returns 0, inserts !
-    # 2nd: chunk=34, count=2 -> returns 1, inserts !, stops
+    # 1st: prev=12, count=1 -> returns 0, inserts !
+    # 2nd: prev=1234, count=2 -> returns 1, inserts !, stops
     When call sx_str_isep res "123456" cb_stop 2 "" "$SX_STR_ISEP_CB"
     The status should be success
     The variable res should equal "12!34!56"
@@ -68,8 +81,8 @@ Describe 'sx_str_isep (callback)'
       [ "$5" -lt 2 ] # count=2 で非0を返す
     }
     # Backward "123456" int=-2
-    # 1st: chunk=56, count=1 -> returns 0, inserts !
-    # 2nd: chunk=34, count=2 -> returns 1, inserts !, stops
+    # 1st: prev=56, count=1 -> returns 0, inserts !
+    # 2nd: prev=3456, count=2 -> returns 1, inserts !, stops
     When call sx_str_isep res "123456" cb_stop -2 "" "$SX_STR_ISEP_CB"
     The status should be success
     The variable res should equal "12!34!56"
