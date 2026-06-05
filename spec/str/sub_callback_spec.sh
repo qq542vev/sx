@@ -53,6 +53,7 @@ Describe 'sx_str_sub (callback)'
         }
         When call sx_str_sub res "aaa" "a" cb_stop 2147483647 "${SX_STR_SUB_CB}"
         # 1回目は置換され(X)、そこで終了するので残りの "aa" はそのまま
+        The status should be failure
         The variable res should eq "Xaa"
     End
 
@@ -63,6 +64,7 @@ Describe 'sx_str_sub (callback)'
         }
         When call sx_str_sub res "aaa" "a" cb_stop -2147483647 "${SX_STR_SUB_CB}"
         # 後方から1回目は置換され(X)、そこで終了するので残りの "aa" はそのまま
+        The status should be failure
         The variable res should eq "aaX"
     End
 

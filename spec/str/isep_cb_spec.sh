@@ -71,7 +71,7 @@ Describe 'sx_str_isep (callback)'
     # 1st: left=12, count=1 -> returns 0, inserts !
     # 2nd: left=1234, count=2 -> returns 1, inserts !, stops
     When call sx_str_isep res "123456" cb_stop 2 "" "$SX_STR_ISEP_CB"
-    The status should be success
+    The status should be failure
     The variable res should equal "12!34!56"
   End
 
@@ -84,7 +84,7 @@ Describe 'sx_str_isep (callback)'
     # 1st: right=56, count=1 -> returns 0, inserts !
     # 2nd: right=3456, count=2 -> returns 1, inserts !, stops
     When call sx_str_isep res "123456" cb_stop -2 "" "$SX_STR_ISEP_CB"
-    The status should be success
+    The status should be failure
     The variable res should equal "12!34!56"
   End
 
