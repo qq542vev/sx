@@ -66,26 +66,27 @@ Describe 'sx_str_sub (callback)'
         The variable res should eq "aaX"
     End
 
-    It 'コールバックに正確な引数（match, prev, next, count）が渡されること'
+    It 'コールバックに正確な引数（match, left, right, count）が渡されること'
         cb_check() {
-            # $1: res, $2: match, $3: prev, $4: next, $5: count
-            # マッチした箇所を [match:count:prev|next] に置換する
+            # $1: res, $2: match, $3: left, $4: right, $5: count
+            # マッチした箇所を [match:count:left|right] に置換する
             sx_var_set "$1=[$2:$5:$3|$4]"
         }
         # "a1b2c" で数字にマッチさせる
-        # 1回目: match="1", prev="a", next="b2c", count=1
-        # 2回目: match="2", prev="a1b", next="c", count=2
+        # 1回目: match="1", left="a", right="b2c", count=1
+        # 2回目: match="2", left="a1b", right="c", count=2
         When call sx_str_sub res "a1b2c" "[0-9]" cb_check 2147483647 "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
         The variable res should eq "a[1:1:a|b2c]b[2:2:a1b|c]c"
     End
 
     It '後方置換でコールバックに正確な引数が渡されること'
         cb_check() {
+            # $1: res, $2: match, $3: left, $4: right, $5: count
             sx_var_set "$1=[$2:$5:$3|$4]"
         }
         # "a1b2c" で数字にマッチさせる (後方から)
-        # 1回目 (後ろから1つ目): match="2", prev="a1b", next="c", count=1
-        # 2回目 (後ろから2つ目): match="1", prev="a", next="b2c", count=2
+        # 1回目 (後ろから1つ目): match="2", left="a1b", right="c", count=1
+        # 2回目 (後ろから2つ目): match="1", left="a", right="b2c", count=2
         When call sx_str_sub res "a1b2c" "[0-9]" cb_check -2147483647 "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
         The variable res should eq "a[1:2:a|b2c]b[2:1:a1b|c]c"
     End
