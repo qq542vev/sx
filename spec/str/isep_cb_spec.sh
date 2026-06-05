@@ -50,4 +50,29 @@ Describe 'sx_str_isep (callback)'
     The variable res should equal "12*3456"
   End
 
+  It 'コールバックが非0を返すと正方向の挿入を中断すること'
+    cb_stop() {
+      __sx_var_set "${1}=!"
+      [ "$5" -lt 2 ] # count=2 で非0を返す
+    }
+    # 1st: chunk=12, count=1 -> returns 0, inserts !
+    # 2nd: chunk=34, count=2 -> returns 1, inserts !, stops
+    When call sx_str_isep res "123456" cb_stop 2 "" "$SX_STR_ISEP_CB"
+    The status should be success
+    The variable res should equal "12!34!56"
+  End
+
+  It 'コールバックが非0を返すと逆方向の挿入を中断すること'
+    cb_stop() {
+      __sx_var_set "${1}=!"
+      [ "$5" -lt 2 ] # count=2 で非0を返す
+    }
+    # Backward "123456" int=-2
+    # 1st: chunk=56, count=1 -> returns 0, inserts !
+    # 2nd: chunk=34, count=2 -> returns 1, inserts !, stops
+    When call sx_str_isep res "123456" cb_stop -2 "" "$SX_STR_ISEP_CB"
+    The status should be success
+    The variable res should equal "12!34!56"
+  End
+
 End
