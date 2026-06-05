@@ -27,7 +27,8 @@ define([|M_NUM_GE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(>=, $@)))|], 0)|]) dnl
 define([|M_NUM_GT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(>, $@)))|], 0)|]) dnl
 define([|M_NUM_LE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<=, $@)))|], 0)|]) dnl
 define([|M_NUM_LT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<, $@)))|], 0)|]) dnl
-define([|M_NUM_NE|], [|M_STR_EQ([|$((__M_NUM_CMP_CHAIN(==, $@)))|], 0)|]) dnl
+define([|M_NUM_NE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(!=, $@)))|], 0)|]) dnl
+define([|M_NUM_BOOL|], [|M_STR_NE([|$(($1))|], 0)|]) dnl
 
 define([|__M_QUOTE_PREPEND|], [|dnl
 	case $3 in
@@ -3609,23 +3610,6 @@ __sx_num_is_sx_num() {
 	unset __sx_num_is_sx_num_arg_
 }
 
-### __sx_num_rel_classify - 比較方式を分類する（内部用）
-##
-## 終了ステータス:
-##   1  arith (算術展開比較)
-##   2  dec   (10進整数文字列比較)
-##   3  norm  (正規化数値比較)
-__sx_num_rel_classify() {
-	case "${1}" in
-		*.* | *[Ee]*) return 3;;
-		*0[Xx]* | 0[0-9]* | [+-]0[0-9]*) return 1;;
-	esac
-
-	set -- "${1#[+-]}" "${2-9}"
-
-	return "$(((${2} < ${#1}) + 1))"
-}
-
 ### sx_num_norm - 数値を10進固定小数点形式に正規化する
 ##
 ## 使い方:
@@ -3906,6 +3890,24 @@ __sx_num_rel() {
 	unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
 }
 
+### __sx_num_rel_classify - 比較方式を分類する（内部用）
+##
+## 終了ステータス:
+##   1  arith (算術展開比較)
+##   2  dec   (10進整数文字列比較)
+##   3  norm  (正規化数値比較)
+__sx_num_rel_classify() {
+	case "${1}" in
+		*.* | *[Ee]*) return 3;;
+		*0[Xx]* | 0[0-9]* | [+-]0[0-9]*) return 1;;
+	esac
+
+	set -- "${1#[+-]}" "${2-9}"
+
+	return "$(((${2} < ${#1}) + 1))"
+}
+
+
 # ========================================
 #  UUID (UUID Operations)
 # ========================================
@@ -4057,7 +4059,9 @@ __sx_str_center() {
 sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${3:+"${3}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${4:+"${4}"} ${5:+"${5}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 "${#2}" || return
+
+	__sx_num_is_sx_int ${3:+"${3}"} && __sx_num_is_sx_nat0 ${4:+"${4}"} ${5:+"${5}"} || return "${SX_EX_USAGE}"
 
 	case "$((${3:-1}))" in 0)
 		return "${SX_EX_USAGE}"
@@ -4081,8 +4085,8 @@ __sx_str_chunk() {
 	__sx_var_bind_init "${1}"
 	__sx_str_chunk_bind_="${1}"
 	__sx_str_chunk_str_="${2-}"
-	__sx_str_chunk_len_="$((${3:-1}))"
-	__sx_str_chunk_lim_="$((${4:-${SX_NUM_I32_MAX}}))"
+	__sx_str_chunk_len_="${3:-1}"
+	__sx_str_chunk_lim_="${4:-${SX_NUM_I32_MAX}}"
 	__sx_str_chunk_flg_="${5:-0}"
 
 		SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_#[+-]}"
@@ -4091,10 +4095,7 @@ __sx_str_chunk() {
 		# Forward: 早期終了をサポート
 		__sx_str_chunk_out_=
 
-		while
-			M_NUM_LE([|__sx_str_chunk_len_|], [|${#__sx_str_chunk_str_}|]) &&
-			M_STR_NE([|"${__sx_str_chunk_lim_}"|], [|0|])
-		do
+		while M_NUM_BOOL([|__sx_str_chunk_len_ < ${#__sx_str_chunk_str_} && __sx_str_chunk_lim_ != 0|]); do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
 			__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], CLEANUP)
 
@@ -4115,10 +4116,7 @@ __sx_str_chunk() {
 		set --
 		: $((__sx_str_chunk_len_ *= -1))
 
-		while
-			M_NUM_LE([|__sx_str_chunk_len_|], [|${#__sx_str_chunk_str_}|]) &&
-			M_STR_NE([|"${__sx_str_chunk_lim_}"|], [|0|])
-		do
+		while M_NUM_BOOL([|__sx_str_chunk_len_ < ${#__sx_str_chunk_str_} && __sx_str_chunk_lim_ != 0|]); do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
 			set -- "${__sx_str_chunk_str_#${__sx_str_chunk_next_}}" "${@}"
 			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
@@ -4345,12 +4343,9 @@ sx_str_is_oct() {
 sx_str_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_isep "${@}" || return; return 0;; esac
 
-	sx_num_is_sx_nat0 "${#2}" || return "${SX_EX_DATAERR}"
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 "${#2}" || return
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && \
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${4:+"${4}"} && \
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${5:+"${5}"} && \
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${6:+"${6}"} || return
+	__sx_num_is_sx_int ${4:+"${4}"} && __sx_num_is_sx_nat0 ${5:+"${5}"} ${6:+"${6}"} || return "${SX_EX_USAGE}"
 
 	case $((${4:-1})) in 0)
 		return "${SX_EX_USAGE}"
@@ -4392,15 +4387,12 @@ __sx_str_isep() {
 
 	# インターバル分の '?' を生成
 	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${4#[+-]}"
-	set -- "${1}" "${2}" "${3}" "${4}" "${5}" "$((${6} & SX_STR_ISEP_CB))" "" "${__sx_str_isep_qm_}" 0 ""
+	set -- "${1}" "${2}" "${3}" "${4}" "${5}" "$((${6} & SX_STR_ISEP_CB))" '' "${__sx_str_isep_qm_}" 0 ''
 	unset __sx_str_isep_qm_
 
 	if M_NUM_LT([|0|], [|${4}|]); then
 		# Forward (正方向)
-		while
-			M_NUM_LT([|${4}|], [|${#2}|]) &&
-			M_NUM_LT([|${9}|], [|${5}|])
-		do
+		while M_NUM_BOOL([|${4} < ${#2} && ${9} < ${5}|]); do
 			set -- "${@}" "${2#${8}}"
 			set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "$((${9} + 1))" "${10}" "${2%"${11}"}"
 
@@ -4420,10 +4412,7 @@ __sx_str_isep() {
 		# Backward (逆方向)
 		set -- "${1}" "${2}" "${3}" "${4#-}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}"
 
-		while
-			M_NUM_LT([|${4}|], [|${#2}|]) &&
-			M_NUM_LT([|${9}|], [|${5}|])
-		do
+		while M_NUM_BOOL([|${4} < ${#2} && ${9} < ${5}|]); do
 			set -- "${@}" "${2%${8}}"
 			set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "$((${9} + 1))" "${10}" "${2#${11}}"
 
