@@ -88,4 +88,40 @@ Describe 'sx_str_isep (callback)'
     The variable res should equal "12!34!56"
   End
 
-End
+  Context 'SX_STR_ISEP_PRE / POST フラグ (コールバック)'
+    It 'SX_STR_ISEP_PRE で先頭コールバックを呼び出すこと'
+      cb() { __sx_var_set "${1}=<${2}:${3}:${4}>"; }
+      # Forward "abc", int=1, PRE
+      # 1st: PRE -> left="", right="abc", count=1
+      # 2nd: loop -> left="a", right="bc", count=2
+      # 3rd: loop -> left="ab", right="c", count=3
+      When call sx_str_isep res "abc" cb 1 "" $((SX_STR_ISEP_CB | SX_STR_ISEP_PRE))
+      The status should be success
+      The variable res should equal "<:abc:1>a<a:bc:2>b<ab:c:3>c"
+    End
+
+    It 'SX_STR_ISEP_POST で末尾コールバックを呼び出すこと'
+      cb() { __sx_var_set "${1}=<${2}:${3}:${4}>"; }
+      # Forward "abc", int=1, POST
+      # 1st: loop -> left="a", right="bc", count=1
+      # 2nd: loop -> left="ab", right="c", count=2
+      # 3rd: POST -> left="abc", right="", count=3
+      When call sx_str_isep res "abc" cb 1 "" $((SX_STR_ISEP_CB | SX_STR_ISEP_POST))
+      The status should be success
+      The variable res should equal "a<a:bc:1>b<ab:c:2>c<abc::3>"
+    End
+
+    It '逆方向での PRE | POST コールバック'
+      cb() { __sx_var_set "${1}=($4)"; }
+      # Backward "1234", int=-2, PRE | POST
+      # 1st: POST -> count=1
+      # 2nd: loop -> count=2
+      # 3rd: PRE  -> count=3
+      When call sx_str_isep res "1234" cb -2 "" $((SX_STR_ISEP_CB | SX_STR_ISEP_PRE | SX_STR_ISEP_POST))
+      The status should be success
+      The variable res should equal "(3)12(2)34(1)"
+    End
+  End
+
+  End
+

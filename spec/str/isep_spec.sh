@@ -117,4 +117,72 @@ Describe 'sx_str_isep'
     The status should be failure
     The status should equal 64
   End
+
+  Context 'SX_STR_ISEP_PRE / POST フラグ'
+    It 'SX_STR_ISEP_PRE で先頭にセパレータを挿入すること (Forward)'
+      When call sx_str_isep res "abc" "-" 1 "" "$SX_STR_ISEP_PRE"
+      The status should be success
+      The variable res should equal "-a-b-c"
+    End
+
+    It 'SX_STR_ISEP_POST で末尾にセパレータを挿入すること (Forward, 割り切れる場合)'
+      When call sx_str_isep res "abc" "-" 1 "" "$SX_STR_ISEP_POST"
+      The status should be success
+      The variable res should equal "a-b-c-"
+    End
+
+    It 'SX_STR_ISEP_POST で末尾にセパレータを挿入しないこと (Forward, 割り切れない場合)'
+      When call sx_str_isep res "12345" "-" 2 "" "$SX_STR_ISEP_POST"
+      The status should be success
+      The variable res should equal "12-34-5"
+    End
+
+    It 'SX_STR_ISEP_POST で末尾にセパレータを挿入すること (Forward, 割り切れる場合, int=2)'
+      When call sx_str_isep res "123456" "-" 2 "" "$SX_STR_ISEP_POST"
+      The status should be success
+      The variable res should equal "12-34-56-"
+    End
+
+    It 'SX_STR_ISEP_POST で末尾にセパレータを挿入すること (Backward)'
+      When call sx_str_isep res "12345" "-" -2 "" "$SX_STR_ISEP_POST"
+      The status should be success
+      The variable res should equal "1-23-45-"
+    End
+
+    It 'SX_STR_ISEP_PRE で先頭にセパレータを挿入しないこと (Backward, 割り切れない場合)'
+      When call sx_str_isep res "12345" "-" -2 "" "$SX_STR_ISEP_PRE"
+      The status should be success
+      The variable res should equal "1-23-45"
+    End
+
+    It 'SX_STR_ISEP_PRE で先頭にセパレータを挿入すること (Backward, 割り切れる場合)'
+      When call sx_str_isep res "123456" "-" -2 "" "$SX_STR_ISEP_PRE"
+      The status should be success
+      The variable res should equal "-12-34-56"
+    End
+
+    It '空文字列に対して PRE|POST を指定した場合'
+      When call sx_str_isep res "" "-" 1 "" $((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))
+      The status should be success
+      The variable res should equal "--"
+    End
+
+    It 'インターバルより短い文字列でも PRE で挿入されること'
+      When call sx_str_isep res "abc" "-" 5 "" "$SX_STR_ISEP_PRE"
+      The status should be success
+      The variable res should equal "-abc"
+    End
+
+    It 'limit が PRE で消費されること'
+      When call sx_str_isep res "abc" "-" 1 1 "$SX_STR_ISEP_PRE"
+      The status should be success
+      The variable res should equal "-abc"
+    End
+
+    It 'glob 特殊文字を含む文字列を正しく処理できること (Backward)'
+      When call sx_str_isep res "[*]" "-" -1
+      The status should be success
+      The variable res should equal "[-*-]"
+    End
+  End
 End
