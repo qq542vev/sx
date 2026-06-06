@@ -184,5 +184,29 @@ Describe 'sx_str_isep'
       The status should be success
       The variable res should equal "[-*-]"
     End
+
+    It 'Forward: limit が POST 境界で正しく機能すること'
+      When call sx_str_isep res "abcd" "-" 2 2 "$SX_STR_ISEP_POST"
+      The status should be success
+      The variable res should equal "ab-cd-"
+    End
+
+    It 'Forward: limit が POST 境界の手前で正しく機能すること'
+      When call sx_str_isep res "abcd" "-" 2 1 "$SX_STR_ISEP_POST"
+      The status should be success
+      The variable res should equal "ab-cd"
+    End
+
+    It 'Backward: limit が PRE 境界で正しく機能すること'
+      When call sx_str_isep res "1234" "-" -2 2 "$SX_STR_ISEP_PRE"
+      The status should be success
+      The variable res should equal "-12-34"
+    End
+
+    It 'Backward: limit が PRE 境界の手前で正しく機能すること'
+      When call sx_str_isep res "1234" "-" -2 1 "$SX_STR_ISEP_PRE"
+      The status should be success
+      The variable res should equal "12-34"
+    End
   End
 End
