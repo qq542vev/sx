@@ -92,4 +92,12 @@ Describe 'sx_str_sub (callback)'
         When call sx_str_sub res "a1b2c" "[0-9]" cb_check -2147483647 "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
         The variable res should eq "a[1:2:a|b2c]b[2:1:a1b|c]c"
     End
+
+    It '空文字列パターンでコールバックを呼び出し、変数が漏洩しないこと'
+        cb_empty() {
+            sx_var_set "$1=($2)"
+        }
+        When call sx_str_sub res "abc" "" cb_empty 2147483647 "${SX_STR_SUB_CB}"
+        The variable res should eq "()a()b()c()"
+    End
 End
