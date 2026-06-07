@@ -4481,10 +4481,12 @@ __sx_str_isep_cb() {
 			unset __sx_str_isep_qm_
 
 			while M_NUM_BOOL([|${4} < ${#2} && ${9} < ${5}|]); do
-				__sx_str_isep_cb_chunk_="${2%"${2#${8}}"}"
-				"${3}" __sx_str_isep_cb_ret_ "${10}${__sx_str_isep_cb_chunk_}" "${2#${8}}" "$((${9} + 1))" || set -- "${@}" "${?}"
-				set -- "${1}" "${2#${8}}" "${3}" "${4}" "${5}" "${6}" "${7}${__sx_str_isep_cb_chunk_}${__sx_str_isep_cb_ret_-}" "${8}" "$((0 < ${11-0} ? ${5} : ${9} + 1))" "${10}${__sx_str_isep_cb_chunk_}" ${11+"${11}"}
-				unset __sx_str_isep_cb_ret_ __sx_str_isep_cb_chunk_
+				set -- "${@}" "${2#${8}}"
+				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "$((${9} + 1))" "${10}" "${2%"${11}"}"
+
+				"${3}" __sx_str_isep_cb_ret_ "${10}${11}" "${2}" "${9}" || set -- "${@}" "${?}"
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${11}${__sx_str_isep_cb_ret_-}" "${8}" "$((0 < ${12-0} ? ${5} : ${9}))" "${10}${11}" ${12+"${12}"}
+				unset __sx_str_isep_cb_ret_
 			done
 		fi
 
@@ -4513,10 +4515,12 @@ __sx_str_isep_cb() {
 			unset __sx_str_isep_qm_
 
 			while M_NUM_BOOL([|(0 - ${#2}) < ${4} && ${9} < ${5}|]); do
-				__sx_str_isep_cb_chunk_="${2#"${2%${8}}"}"
-				"${3}" __sx_str_isep_cb_ret_ "${2%${8}}" "${__sx_str_isep_cb_chunk_}${10}" "$((${9} + 1))" || set -- "${@}" "${?}"
-				set -- "${1}" "${2%${8}}" "${3}" "${4}" "${5}" "${6}" "${__sx_str_isep_cb_ret_-}${__sx_str_isep_cb_chunk_}${7}" "${8}" "$((0 < ${11-0} ? ${5} : ${9} + 1))" "${__sx_str_isep_cb_chunk_}${10}" ${11+"${11}"}
-				unset __sx_str_isep_cb_ret_ __sx_str_isep_cb_chunk_
+				set -- "${@}" "${2%${8}}"
+				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "$((${9} + 1))" "${10}" "${2#"${11}"}"
+
+				"${3}" __sx_str_isep_cb_ret_ "${2}" "${11}${10}" "${9}" || set -- "${@}" "${?}"
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${__sx_str_isep_cb_ret_-}${11}${7}" "${8}" "$((0 < ${12-0} ? ${5} : ${9}))" "${11}${10}" ${12+"${12}"}
+				unset __sx_str_isep_cb_ret_
 			done
 		fi
 
@@ -5015,6 +5019,20 @@ sx_str_sub() {
 	__sx_str_sub "${@}" || return
 }
 
+### __sx_str_sub_isep_adapt - sx_str_isep のコールバックを sx_str_sub の形式に変換する
+##
+## 使い方:
+##   __sx_str_sub_isep_adapt 結果変数名 left right count
+##
+## 説明:
+##   sx_str_isep のコールバック形式 (ret_var, left, right, count) を
+##   sx_str_sub のコールバック形式 (ret_var, match, left, right, count) に変換する。
+##   空パターン時の match は常に空文字列となる。
+##   実際の呼び出し先は変数 __sx_str_sub_isep_adapt_cb_ で指定する。
+__sx_str_sub_isep_adapt() {
+	"${__sx_str_sub_isep_adapt_cb_}" "${1}" '' "${2}" "${3}" "${4}"
+}
+
 ### __sx_str_sub - 文字列内のパターンを置換する（内部用）
 ##
 ## 使い方:
@@ -5032,24 +5050,23 @@ __sx_str_sub() {
 	# パターンが空の場合は、文字間および両端に挿入（回数制限に従う）
 	if M_STR_EQ([|"${3}"|], [|''|]); then
 		if M_NUM_LT([|0|], [|${5}|]); then
-			# 前向き挿入: 各文字の前に挿入し、最後に末尾への挿入判定を行う
-			SX_CFG_UNSET_SOFT=2 __sx_str_isep __sx_str_sub_tmp_ "${2}" "${4}" 1 $(( ${5} - 1 )) || return
-			__sx_str_sub_val_="${4}${__sx_str_sub_tmp_}"
-			case $((${#2} != 0 && ${#2} < ${5})) in 1)
-				__sx_str_sub_val_="${__sx_str_sub_val_}${4}"
-			esac
-			set -- "${1}" "" "" "" "" "" "" "${__sx_str_sub_val_}"
-			unset __sx_str_sub_tmp_ __sx_str_sub_val_
+			if M_STR_NE([|"${7}"|], [|0|]); then
+				# コールバックモード: isep の cb 機能に委譲
+				__sx_str_sub_isep_adapt_cb_="${4}" SX_CFG_UNSET_SOFT=2 __sx_str_isep "${1}" "${2}" __sx_str_sub_isep_adapt 1 "${5}" $((SX_STR_ISEP_CB | SX_STR_ISEP_PRE | SX_STR_ISEP_POST)) || return
+				return "${SX_EX_OK}"
+			fi
+			# 前向き挿入: isep の PRE|POST で先頭・文字間・末尾に挿入
+			SX_CFG_UNSET_SOFT=2 __sx_str_isep "${1}" "${2}" "${4}" 1 "${5}" $((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))
+			return "${SX_EX_OK}"
 		elif M_NUM_LT([|${5}|], [|0|]); then
-			# 後ろ向き挿入: 各文字の後に挿入し、最後に先頭への挿入判定を行う
-			__sx_str_sub_lim_=$(( ${5} * -1 ))
-			SX_CFG_UNSET_SOFT=2 __sx_str_isep __sx_str_sub_tmp_ "${2}" "${4}" -1 $(( __sx_str_sub_lim_ - 1 )) || return
-			__sx_str_sub_val_="${__sx_str_sub_tmp_}${4}"
-			case $((${#2} != 0 && ${#2} < __sx_str_sub_lim_)) in 1)
-				__sx_str_sub_val_="${4}${__sx_str_sub_val_}"
-			esac
-			set -- "${1}" "" "" "" "" "" "" "${__sx_str_sub_val_}"
-			unset __sx_str_sub_tmp_ __sx_str_sub_val_ __sx_str_sub_lim_
+			if M_STR_NE([|"${7}"|], [|0|]); then
+				# コールバックモード: isep の cb 機能に委譲
+				__sx_str_sub_isep_adapt_cb_="${4}" SX_CFG_UNSET_SOFT=2 __sx_str_isep "${1}" "${2}" __sx_str_sub_isep_adapt -1 "$((${5} * -1))" $((SX_STR_ISEP_CB | SX_STR_ISEP_PRE | SX_STR_ISEP_POST)) || return
+				return "${SX_EX_OK}"
+			fi
+			# 後ろ向き挿入: isep の PRE|POST で末尾・文字間・先頭に挿入
+			SX_CFG_UNSET_SOFT=2 __sx_str_isep "${1}" "${2}" "${4}" -1 "$((${5} * -1))" $((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))
+			return "${SX_EX_OK}"
 		else
 			# lim=0 の場合は何もしない
 			set -- "${1}" "" "" "" "" "" "" "${2}"
