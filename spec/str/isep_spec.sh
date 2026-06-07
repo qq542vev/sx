@@ -164,7 +164,13 @@ Describe 'sx_str_isep'
     It '空文字列に対して PRE|POST を指定した場合'
       When call sx_str_isep res "" "-" 1 "" $((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))
       The status should be success
-      The variable res should equal "--"
+      The variable res should equal "-"
+    End
+
+    It '空文字列に対して負のインターバルで PRE|POST を指定した場合'
+      When call sx_str_isep res "" "-" -1 "" $((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))
+      The status should be success
+      The variable res should equal "-"
     End
 
     It 'インターバルより短い文字列でも PRE で挿入されること'

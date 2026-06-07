@@ -121,7 +121,12 @@ Describe 'sx_str_isep (callback)'
       The status should be success
       The variable res should equal "(3)12(2)34(1)"
     End
-  End
 
+    It '空文字列に対して PRE|POST を指定した場合 (コールバック)'
+      cb() { __sx_var_set "${1}=A"; }
+      When call sx_str_isep res "" cb 1 "" $((SX_STR_ISEP_CB | SX_STR_ISEP_PRE | SX_STR_ISEP_POST))
+      The status should be success
+      The variable res should equal "A"
+    End
   End
-
+End
