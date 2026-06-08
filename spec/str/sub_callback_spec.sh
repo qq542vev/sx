@@ -93,11 +93,24 @@ Describe 'sx_str_sub (callback)'
         The variable res should eq "a[1:2:a|b2c]b[2:1:a1b|c]c"
     End
 
-    It '空文字列パターンでコールバックを呼び出し、変数が漏洩しないこと'
-        cb_empty() {
-            sx_var_set "$1=($2)"
+    It '空文字列パターンでコールバックを呼び出し、正確な引数が渡されること'
+        cb_check_empty() {
+            # $1: res, $2: match, $3: left, $4: right, $5: count
+            sx_var_set "$1=<$2|$3|$4|$5>"
         }
-        When call sx_str_sub res "abc" "" cb_empty 2147483647 "${SX_STR_SUB_CB}"
-        The variable res should eq "()a()b()c()"
+        When call sx_str_sub res "AB" "" cb_check_empty 2147483647 "${SX_STR_SUB_CB}"
+        The variable res should eq "<||AB|1>A<|A|B|2>B<|AB||3>"
+    End
+
+    It '空文字列パターンで後方置換コールバックを呼び出し、正確な引数が渡されること'
+        cb_check_empty() {
+            sx_var_set "$1=<$2|$3|$4|$5>"
+        }
+        When call sx_str_sub res "AB" "" cb_check_empty -2147483647 "${SX_STR_SUB_CB}"
+        # 後方からの場合、PRE/POSTフラグにより順序が逆転する
+        # 1回目: 末尾 (left="AB", right="", count=1)
+        # 2回目: 'B'の前 (left="A", right="B", count=2)
+        # 3回目: 先頭 (left="", right="AB", count=3)
+        The variable res should eq "<||AB|3>A<|A|B|2>B<|AB||1>"
     End
 End

@@ -88,10 +88,9 @@ Describe 'sx_str_isep'
     The variable res should equal "a' b' c"
   End
 
-  It 'interval=INT_MIN (-2147483648) の場合に早期終了すること'
+  It 'interval=INT_MIN (-2147483648) は引数エラーになること'
     When call sx_str_isep res "abc" "-" -2147483648
-    The status should be success
-    The variable res should equal "abc"
+    The status should equal 64
   End
 
   It 'interval=文字列長 の場合に早期終了すること (Forward)'
