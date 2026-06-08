@@ -2,7 +2,7 @@
 
 eval "$(shellspec - -c) exit 1"
 
-Describe 'Extended Bind Syntax'
+Describe '拡張バインド構文'
     Include ./sx.sh
 
     Describe 'sx_arg_quote'
