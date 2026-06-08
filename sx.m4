@@ -4585,6 +4585,68 @@ __sx_str_isep_lit() {
 	__sx_var_set "${1}=${7}"
 }
 
+### sx_str_lower - 文字列内のラテン大文字を小文字に変換する
+##
+## 使い方:
+##   sx_str_lower 結果変数名 [元文字列 [回数制限]]
+##
+## 説明:
+##   指定された文字列内のラテン大文字 (A-Z) を小文字 (a-z) に変換し、
+##   結果を結果変数に格納する。既に小文字の文字や非アルファベット文字は
+##   そのまま保持される。
+##   回数制限が正の値の場合は前方から、負の値の場合は後方から
+##   指定された回数分だけ変換を行う。省略時は無制限。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  設定値不正 (SX_EX_CONFIG)
+sx_str_lower() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_lower "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sx_int_inv ${3:+"${3}"} || return
+
+	__sx_str_lower "${@}"
+}
+
+### __sx_str_lower - 文字列内のラテン大文字を小文字に変換する（内部用）
+##
+## 使い方:
+##   __sx_str_lower 結果変数名 [元文字列 [回数制限]]
+##
+## 説明:
+##   sx_str_lower の内部実装。引数チェックは行わない。
+__sx_str_lower() {
+	__sx_str_sub "${1}" "${2-}" "[${SX_STR_UPPER}]" __sx_str_lower_cb "${3:-${SX_NUM_I32_MAX}}" $((SX_STR_SUB_GLOB | SX_STR_SUB_CB))
+}
+
+### __sx_str_lower_cb - sx_str_lower 用コールバック（内部用）
+##
+## 使い方:
+##   __sx_str_lower_cb 結果変数名 マッチ文字列 left right count
+##
+## 説明:
+##   sx_str_sub のコールバックモードから呼び出される。
+##   マッチした大文字1文字を小文字に変換して結果変数に格納する。
+__sx_str_lower_cb() {
+	case "${2}" in
+		A) eval "${1}=a";; B) eval "${1}=b";;
+		C) eval "${1}=c";; D) eval "${1}=d";;
+		E) eval "${1}=e";; F) eval "${1}=f";;
+		G) eval "${1}=g";; H) eval "${1}=h";;
+		I) eval "${1}=i";; J) eval "${1}=j";;
+		K) eval "${1}=k";; L) eval "${1}=l";;
+		M) eval "${1}=m";; N) eval "${1}=n";;
+		O) eval "${1}=o";; P) eval "${1}=p";;
+		Q) eval "${1}=q";; R) eval "${1}=r";;
+		S) eval "${1}=s";; T) eval "${1}=t";;
+		U) eval "${1}=u";; V) eval "${1}=v";;
+		W) eval "${1}=w";; X) eval "${1}=x";;
+		Y) eval "${1}=y";; Z) eval "${1}=z";;
+	esac
+}
+
 ### sx_str_match - 第一引数が、後続引数のいずれかのパターンにマッチするか確認する
 ##
 ## 使い方:
@@ -5364,6 +5426,68 @@ __sx_str_trim() {
 	__sx_str_etrim "${1}" "${__sx_str_trim_tmp_}" "${3}"
 
 	unset __sx_str_trim_tmp_
+}
+
+### sx_str_upper - 文字列内のラテン小文字を大文字に変換する
+##
+## 使い方:
+##   sx_str_upper 結果変数名 [元文字列 [回数制限]]
+##
+## 説明:
+##   指定された文字列内のラテン小文字 (a-z) を大文字 (A-Z) に変換し、
+##   結果を結果変数に格納する。既に大文字の文字や非アルファベット文字は
+##   そのまま保持される。
+##   回数制限が正の値の場合は前方から、負の値の場合は後方から
+##   指定された回数分だけ変換を行う。省略時は無制限。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  設定値不正 (SX_EX_CONFIG)
+sx_str_upper() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_upper "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sx_int_inv ${3:+"${3}"} || return
+
+	__sx_str_upper "${@}"
+}
+
+### __sx_str_upper - 文字列内のラテン小文字を大文字に変換する（内部用）
+##
+## 使い方:
+##   __sx_str_upper 結果変数名 [元文字列 [回数制限]]
+##
+## 説明:
+##   sx_str_upper の内部実装。引数チェックは行わない。
+__sx_str_upper() {
+	__sx_str_sub "$1" "${2-}" "[${SX_STR_LOWER}]" __sx_str_upper_cb "${3:-${SX_NUM_I32_MAX}}" $((SX_STR_SUB_GLOB | SX_STR_SUB_CB))
+}
+
+### __sx_str_upper_cb - sx_str_upper 用コールバック（内部用）
+##
+## 使い方:
+##   __sx_str_upper_cb 結果変数名 マッチ文字列 left right count
+##
+## 説明:
+##   sx_str_sub のコールバックモードから呼び出される。
+##   マッチした小文字1文字を大文字に変換して結果変数に格納する。
+__sx_str_upper_cb() {
+	case "${2}" in
+		a) eval "$1=A";; b) eval "$1=B";;
+		c) eval "$1=C";; d) eval "$1=D";;
+		e) eval "$1=E";; f) eval "$1=F";;
+		g) eval "$1=G";; h) eval "$1=H";;
+		i) eval "$1=I";; j) eval "$1=J";;
+		k) eval "$1=K";; l) eval "$1=L";;
+		m) eval "$1=M";; n) eval "$1=N";;
+		o) eval "$1=O";; p) eval "$1=P";;
+		q) eval "$1=Q";; r) eval "$1=R";;
+		s) eval "$1=S";; t) eval "$1=T";;
+		u) eval "$1=U";; v) eval "$1=V";;
+		w) eval "$1=W";; x) eval "$1=X";;
+		y) eval "$1=Y";; z) eval "$1=Z";;
+	esac
 }
 
 # ========================================
