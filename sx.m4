@@ -5490,6 +5490,110 @@ __sx_str_upper_cb() {
 	esac
 }
 
+### sx_str_swapcase - ラテン文字の大文字と小文字を反転する
+##
+## 使い方:
+##   sx_str_swapcase 結果変数名 [元文字列 [回数制限]]
+##
+## 説明:
+##   指定された文字列内のラテン大文字 (A-Z) を小文字 (a-z) に、
+##   ラテン小文字 (a-z) を大文字 (A-Z) に変換し、
+##   結果を結果変数に格納する。アルファベット以外の文字はそのまま保持される。
+##   回数制限が正の値の場合は前方から、負の値の場合は後方から
+##   指定された回数分だけ変換を行う。省略時は無制限。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  設定値不正 (SX_EX_CONFIG)
+sx_str_swapcase() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_swapcase "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sx_int_inv ${3:+"${3}"} || return
+
+	__sx_str_swapcase "${@}"
+}
+
+### __sx_str_swapcase - ラテン文字の大文字と小文字を反転する（内部用）
+##
+## 使い方:
+##   __sx_str_swapcase 結果変数名 [元文字列 [回数制限]]
+##
+## 説明:
+##   sx_str_swapcase の内部実装。引数チェックは行わない。
+__sx_str_swapcase() {
+	__sx_str_sub "${1}" "${2-}" "[${SX_STR_ALPHA}]" __sx_str_swapcase_cb "${3:-${SX_NUM_I32_MAX}}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+}
+
+### __sx_str_swapcase_cb - sx_str_swapcase 用コールバック（内部用）
+##
+## 使い方:
+##   __sx_str_swapcase_cb 結果変数名 マッチ文字列 left right count
+##
+## 説明:
+##   sx_str_sub のコールバックモードから呼び出される。
+##   大文字なら __sx_str_lower_cb に、小文字なら __sx_str_upper_cb に委譲する。
+__sx_str_swapcase_cb() {
+	case "${2}" in
+		[${SX_STR_UPPER}]) __sx_str_lower_cb "${@}";;
+		[${SX_STR_LOWER}]) __sx_str_upper_cb "${@}";;
+	esac
+}
+
+### sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する
+##
+## 使い方:
+##   sx_str_title 結果変数名 [元文字列 [回数制限 [単語区切りパターン]]]
+##
+## 説明:
+##   指定された文字列内の各単語の先頭文字を大文字に、残りの文字を小文字に変換する。
+##   単語の区切りは単語区切りパターンで判断する。デフォルトは [${SX_STR_SPACE}]
+##   （空白文字すべて）。このパターンは case 文のパターンとして使用されるため、
+##   必要に応じて [a-z] のようにブラケット式を指定すること。
+##   文字列先頭も単語の先頭として扱う。
+##   回数制限が正の値の場合は前方から、負の値の場合は後方から
+##   指定された回数分だけ変換を行う。省略時は無制限。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  設定値不正 (SX_EX_CONFIG)
+sx_str_title() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_title "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sx_int_inv ${3:+"${3}"} || return
+
+	__sx_str_title "${@}"
+}
+
+### __sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する（内部用）
+##
+## 使い方:
+##   __sx_str_title 結果変数名 [元文字列 [回数制限 [単語区切りパターン]]]
+##
+## 説明:
+##   sx_str_title の内部実装。引数チェックは行わない。
+__sx_str_title() {
+	__sx_str_title_cb_sep_="${4:-[${SX_STR_SPACE}]}" __sx_str_sub "${1}" "${2-}" "[${SX_STR_ALPHA}]" __sx_str_title_cb "${3:-${SX_NUM_I32_MAX}}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+}
+
+### __sx_str_title_cb - sx_str_title 用コールバック（内部用）
+##
+## 使い方:
+##   __sx_str_title_cb 結果変数名 マッチ文字列 left right count
+##
+## 説明:
+##   sx_str_sub のコールバックモードから呼び出される。
+##   直前の文字が空白（先頭含む）なら大文字、それ以外なら小文字に変換する。
+__sx_str_title_cb() {
+	case "${3}" in
+		*${__sx_str_title_cb_sep_} | '') __sx_str_upper_cb "${@}";;
+		*) __sx_str_lower_cb "${@}";;
+	esac
+}
+
 # ========================================
 #  ARR (Array Operations)
 # ========================================
