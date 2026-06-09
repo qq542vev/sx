@@ -195,6 +195,8 @@ readonly SX_STR_SPLIT_GLOB=1
 readonly SX_STR_SPLIT_INC=2
 readonly SX_STR_SUB_GLOB=1
 readonly SX_STR_SUB_CB=2
+readonly SX_STR_CAPITAL_KEEP=1
+readonly SX_STR_CAPITAL_SENT=2
 readonly SX_STR_ISEP_CB=1
 readonly SX_STR_ISEP_PRE=2
 readonly SX_STR_ISEP_POST=4
@@ -5591,6 +5593,65 @@ __sx_str_title_cb() {
 	case "${3}" in
 		*${__sx_str_title_cb_sep_} | '') __sx_str_upper_cb "${@}";;
 		*) __sx_str_lower_cb "${@}";;
+	esac
+}
+
+### sx_str_capital - 文頭または最初のアルファベットを大文字化し、他を小文字化する
+##
+## 使い方:
+##   sx_str_capital 結果変数名 [元文字列 [回数制限 [フラグ]]]
+##
+## 説明:
+##   指定された文字列のアルファベットを大文字化・小文字化する。
+##   デフォルトでは、文字列の先頭（インデックス0）がアルファベットの場合のみ
+##   それを大文字にし、以降のアルファベットをすべて小文字にする。
+##
+## フラグ:
+##   1 (SX_STR_CAPITAL_KEEP):
+##     大文字化（または維持）のみを行い、他の文字のケースを維持する。
+##   2 (SX_STR_CAPITAL_SENT):
+##     文字列の先頭に限らず、最初に出現したアルファベットを大文字化の対象とする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_capital() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_capital "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int_inv ${3:+"${3}"} ${4:+"${4}"} || return
+
+	__sx_str_capital "${@}"
+}
+
+### __sx_str_capital - sx_str_capital の内部実装（内部用）
+##
+## 使い方:
+##   __sx_str_capital 結果変数名 [元文字列 [回数制限 [フラグ]]]
+##
+## 説明:
+##   sx_str_capital の内部実装。引数チェックは行わない。
+__sx_str_capital() {
+	set -- "${1}" "${2-}" "${3:-${SX_NUM_I32_MAX}}" "${4:-0}"
+
+	case "$(((${4} & SX_STR_CAPITAL_SENT) == 0 && (${4} & SX_STR_CAPITAL_KEEP) != 0))${2}" in 1[!"${SX_STR_LOWER}"]*)
+		set -- "${1}" "${2}" 0 "${4}"
+	esac
+
+	__sx_str_capital_cb_sent_=$((${4} & SX_STR_CAPITAL_SENT)) __sx_str_sub "${1}" "${2}" "[${SX_STR_ALPHA}]" __sx_str_capital_cb "$(((${4} & SX_STR_CAPITAL_KEEP) == 0 ? ${3} : ${3} != 0))" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+}
+
+### __sx_str_capital_cb - sx_str_capital 用コールバック（内部用）
+##
+## 使い方:
+##   __sx_str_capital_cb 結果変数名 マッチ文字列 left right count
+##
+## 説明:
+##   sx_str_sub のコールバックモードから呼び出される。
+##   フラグに従い、対象文字を大文字または小文字に変換する。
+__sx_str_capital_cb() {
+	case "${__sx_str_capital_cb_sent_}:${3}" in
+		0:?* | [!0]*["${SX_STR_ALPHA}"]*) __sx_str_lower_cb "${@}";;
+		*) __sx_str_upper_cb "${@}";;
 	esac
 }
 
