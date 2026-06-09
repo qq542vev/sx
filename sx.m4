@@ -92,7 +92,7 @@ define([|__M_BIND_UNQUOTE|], [|dnl
 
 			case "${$1_bind_cnt_}" in
 				1) $1_bind_="${$1_bind_#*:}";;
-				*) $1_bind_="$(( ${$1_bind_cnt_} - 1 ))${$1_bind_name_}:${$1_bind_#*:}";;
+				*) $1_bind_="$((${$1_bind_cnt_} - 1))${$1_bind_name_}:${$1_bind_#*:}";;
 			esac
 			;;
 		*:*)
@@ -624,7 +624,7 @@ __sx_ex_remap() {
 			*-*)
 				set -- "${@}" "${1%%-*}" "${1#*-}"
 
-				case $(( ${3:-0} <= __sx_ex_remap_sts_ && __sx_ex_remap_sts_ <= ${4:-255} )) in 1)
+				case "$((${3:-0} <= __sx_ex_remap_sts_ && __sx_ex_remap_sts_ <= ${4:-255}))" in 1)
 					__sx_ex_remap_sts_="${2}"; break
 				esac
 				;;
@@ -1024,7 +1024,7 @@ __sx_arg_find() {
 			;;
 	esac
 
-	__sx_arg_find_glob_=$(( (__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0 ))
+	__sx_arg_find_glob_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0))
 
 	if M_NUM_LT([|__sx_arg_find_lim_|], [|0|]); then
 		# 逆方向検索
@@ -1037,12 +1037,12 @@ __sx_arg_find() {
 				__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
 
 				__sx_arg_find_sts_="${SX_EX_OK}"
-				: $(( __sx_arg_find_lim_ += 1 ))
+				: $((__sx_arg_find_lim_ += 1))
 
 				case "${__sx_arg_find_lim_}" in 0) break; esac
 			esac
 
-			: $(( __sx_arg_find_i_ -= 1 ))
+			: $((__sx_arg_find_i_ -= 1))
 		done
 	elif M_NUM_LT([|0|], [|__sx_arg_find_lim_|]); then
 		# 順方向検索
@@ -1053,12 +1053,12 @@ __sx_arg_find() {
 				__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
 
 				__sx_arg_find_sts_="${SX_EX_OK}"
-				: $(( __sx_arg_find_lim_ -= 1 ))
+				: $((__sx_arg_find_lim_ -= 1))
 
 				case "${__sx_arg_find_lim_}" in 0) break; esac
 			esac
 
-			: $(( __sx_arg_find_i_ += 1 ))
+			: $((__sx_arg_find_i_ += 1))
 		done
 	fi
 
@@ -1165,7 +1165,7 @@ __sx_arg_isep() {
 	esac
 
 	__sx_arg_isep_eff_=$(((${#} - 1) / ${__sx_arg_isep_int_#-}))
-	case $((__sx_arg_isep_lim_ <= __sx_arg_isep_eff_)) in 0)
+	case "$((__sx_arg_isep_lim_ <= __sx_arg_isep_eff_))" in 0)
 		__sx_arg_isep_lim_="${__sx_arg_isep_eff_}"
 	esac
 
@@ -1175,12 +1175,12 @@ __sx_arg_isep() {
 	esac
 
 	for __sx_arg_isep_arg_ in "${@}"; do
-		case $((__sx_arg_isep_r_ < __sx_arg_isep_j_ && (__sx_arg_isep_j_ - __sx_arg_isep_r_ - 1) % __sx_arg_isep_int_ == 0 && 0 < __sx_arg_isep_lim_)) in 1)
+		case "$((__sx_arg_isep_r_ < __sx_arg_isep_j_ && (__sx_arg_isep_j_ - __sx_arg_isep_r_ - 1) % __sx_arg_isep_int_ == 0 && 0 < __sx_arg_isep_lim_))" in 1)
 			__M_BIND_QUOTE([|__sx_arg_isep|], [|"${__sx_arg_isep_sep_}"|], CLEANUP)
-			: $(( __sx_arg_isep_lim_ -= 1 ))
+			: $((__sx_arg_isep_lim_ -= 1))
 		esac
 		__M_BIND_QUOTE([|__sx_arg_isep|], [|"${__sx_arg_isep_arg_}"|], CLEANUP)
-		: $(( __sx_arg_isep_j_ += 1 ))
+		: $((__sx_arg_isep_j_ += 1))
 	done
 
 	eval ${__sx_arg_isep_out_:+"${__sx_arg_isep_bind_}=\"\${__sx_arg_isep_out_}\""}
@@ -1437,7 +1437,7 @@ __sx_arg_rquote() {
 
 		__M_BIND_QUOTE([|__sx_arg_rquote|], [|"${__sx_arg_rquote_val_}"|], CLEANUP)
 
-		: $(( __sx_arg_rquote_i_ -= 1 ))
+		: $((__sx_arg_rquote_i_ -= 1))
 	done
 
 	eval ${__sx_arg_rquote_out_:+"${__sx_arg_rquote_bind_}=\"\${__sx_arg_rquote_out_}\""}
@@ -2173,7 +2173,7 @@ __sx_var_list_dep() {
 			__sx_var_list_dep_i_=0
 			while M_STR_NE([|"${__sx_var_list_dep_i_}"|], [|"${__sx_var_list_dep_len_}"|]); do
 				set -- "${@}" "${1}_${__sx_var_list_dep_i_}"
-				: $(( __sx_var_list_dep_i_ += 1 ))
+				: $((__sx_var_list_dep_i_ += 1))
 			done
 		fi
 
@@ -2538,7 +2538,7 @@ sx_var_touch() {
 __sx_var_touch() {
 	for __sx_var_touch_arg_ in "${@}"; do
 		eval "${__sx_var_touch_arg_}=\"\${${__sx_var_touch_arg_}%:*}:\${SX_SYS_REV}\""
-		: $(( SX_SYS_REV += 1 ))
+		: $((SX_SYS_REV += 1))
 	done
 
 	unset __sx_var_touch_arg_
@@ -2600,7 +2600,7 @@ __sx_var_unset() {
 			__sx_var_unset_i_=0
 			while M_STR_NE([|"${__sx_var_unset_i_}"|], [|"${__sx_var_unset_len_}"|]); do
 				set -- "${@}" "${1}_${__sx_var_unset_i_}"
-				: $(( __sx_var_unset_i_ += 1 ))
+				: $((__sx_var_unset_i_ += 1))
 			done
 		fi
 
@@ -3792,7 +3792,7 @@ sx_num_range() {
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int "${2-}" ${3+"${3}"} ${4+"${4}"} || return
 
-	case $((${4-1})) in 0)
+	case "$((${4-1}))" in 0)
 		return "${SX_EX_USAGE}"
 	esac
 
@@ -3826,12 +3826,12 @@ __sx_num_range() {
 	if M_NUM_LT([|0|], [|${3}|]); then
 		while M_NUM_LT([|__sx_num_range_cur_|], [|${2}|]); do
 			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
-			: $(( __sx_num_range_cur_ += ${3} ))
+			: $((__sx_num_range_cur_ += ${3}))
 		done
 	else
 		while M_NUM_LT([|${2}|], [|${__sx_num_range_cur_}|]); do
 			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
-			: $(( __sx_num_range_cur_ += ${3} ))
+			: $((__sx_num_range_cur_ += ${3}))
 		done
 	fi
 
@@ -4037,7 +4037,7 @@ sx_str_any() {
 sx_str_center() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_center "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 "${#2}" "${#4}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} ${4+"${#4}"} || return
 
 	__sx_num_is_sx_int_inv ${3+"${3}"} || return "${SX_EX_USAGE}"
 
@@ -4063,10 +4063,10 @@ __sx_str_center() {
 		return "${SX_EX_OK}"
 	}
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_center_rep_ "${4}" "$(( ( (__sx_str_center_needed_ + 1) / 2 - 1 ) / ${#4} + 1 ))"
-	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_center_spad_ "${__sx_str_center_rep_}" 0 "$(( (__sx_str_center_needed_ + (${3} < 0)) / 2 ))"
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_center_rep_ "${4}" "$((((__sx_str_center_needed_ + 1) / 2 - 1) / ${#4} + 1))"
+	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_center_spad_ "${__sx_str_center_rep_}" 0 "$(((__sx_str_center_needed_ + (${3} < 0)) / 2))"
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_center_epad_ "${__sx_str_center_rep_}" 0 "$(( __sx_str_center_needed_ - ${#__sx_str_center_spad_} ))"
+	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_center_epad_ "${__sx_str_center_rep_}" 0 "$((__sx_str_center_needed_ - ${#__sx_str_center_spad_}))"
 
 	__sx_var_set "${1}=${__sx_str_center_spad_}${2}${__sx_str_center_epad_}"
 
@@ -4107,7 +4107,7 @@ __sx_str_center() {
 sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 "${#2}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
 
 	__sx_num_is_sx_int_inv ${3:+"${3}"} && __sx_num_is_sx_nat0 ${4:+"${4}"} ${5:+"${5}"} || return "${SX_EX_USAGE}"
 
@@ -4148,7 +4148,7 @@ __sx_str_chunk() {
 			__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], CLEANUP)
 
 			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
-			: $(( __sx_str_chunk_lim_ -= 1 ))
+			: $((__sx_str_chunk_lim_ -= 1))
 		done
 
 		case "${__sx_str_chunk_str_}" in ?*)
@@ -4168,7 +4168,7 @@ __sx_str_chunk() {
 			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
 			set -- "${__sx_str_chunk_str_#${__sx_str_chunk_next_}}" "${@}"
 			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
-			: $(( __sx_str_chunk_lim_ -= 1 ))
+			: $((__sx_str_chunk_lim_ -= 1))
 		done
 
 	case "${__sx_str_chunk_str_}" in ?*)
@@ -4395,11 +4395,11 @@ sx_str_is_oct() {
 sx_str_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_isep "${@}" || return; return; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 "${#2}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
 
 	__sx_num_is_sx_int_inv ${4:+"${4}"} && __sx_num_is_sx_nat0 ${5:+"${5}"} ${6:+"${6}"} || return "${SX_EX_USAGE}"
 
-	case $((${4:-1})) in 0)
+	case "$((${4:-1}))" in 0)
 		return "${SX_EX_USAGE}"
 	esac
 
@@ -4618,7 +4618,7 @@ sx_str_lower() {
 ## 説明:
 ##   sx_str_lower の内部実装。引数チェックは行わない。
 __sx_str_lower() {
-	__sx_str_sub "${1}" "${2-}" "[${SX_STR_UPPER}]" __sx_str_lower_cb "${3:-${SX_NUM_I32_MAX}}" $((SX_STR_SUB_GLOB | SX_STR_SUB_CB))
+	__sx_str_sub "${1}" "${2-}" "[${SX_STR_UPPER}]" __sx_str_lower_cb "${3:-${SX_NUM_I32_MAX}}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
 }
 
 ### __sx_str_lower_cb - sx_str_lower 用コールバック（内部用）
@@ -4697,7 +4697,7 @@ sx_str_match() {
 sx_str_pad() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_pad "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 "${#2}" "${#4}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} ${4+"${#4}"} || return
 
 	__sx_num_is_sx_int_inv ${3+"${3}"} || return "${SX_EX_USAGE}"
 
@@ -4723,7 +4723,7 @@ __sx_str_pad() {
 		return "${SX_EX_OK}"
 	}
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_pad_rep_ "${4}" "$(( (__sx_str_pad_needed_ - 1) / ${#4} + 1 ))"
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_pad_rep_ "${4}" "$(((__sx_str_pad_needed_ - 1) / ${#4} + 1))"
 	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_pad_fill_ "${__sx_str_pad_rep_}" 0 "${__sx_str_pad_needed_}"
 
 	case "${3}" in
@@ -4797,7 +4797,7 @@ __sx_str_rep() {
 sx_str_splice() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_splice "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 "${#2}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
 
 	__sx_num_is_sx_int_inv ${3+"${3}"} ${4+"${4}"} || return "${SX_EX_USAGE}"
 
@@ -4866,7 +4866,7 @@ undefine([|V|]) dnl
 sx_str_split() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 "${#2}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
 
 	__sx_num_is_sx_int_inv ${4+"${4}"} ${5+"${5}"} || return "${SX_EX_USAGE}"
 
@@ -4904,7 +4904,7 @@ __sx_str_split() {
 			# 前方から制限数分だけ分割
 			SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
 
-			case $((${#__sx_str_split_str_} < __sx_str_split_lim_)) in 1)
+			case "$((${#__sx_str_split_str_} < __sx_str_split_lim_))" in 1)
 				__sx_str_split_out_="${__sx_str_split_out_} ''"
 			esac
 
@@ -4914,7 +4914,7 @@ __sx_str_split() {
 			: $((__sx_str_split_lim_ *= -1))
 			SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
 
-			case $((${#__sx_str_split_str_} < __sx_str_split_lim_)) in 1)
+			case "$((${#__sx_str_split_str_} < __sx_str_split_lim_))" in 1)
 				__sx_str_split_out_="'' ${__sx_str_split_out_}"
 			esac
 
@@ -4950,7 +4950,7 @@ __sx_str_split() {
 				esac
 
 				__sx_str_split_str_="${__sx_str_split_rem_}"
-				: $(( __sx_str_split_lim_ -= 1 ))
+				: $((__sx_str_split_lim_ -= 1))
 			done
 		else
 			# 通常の文字列による前方分割
@@ -4965,7 +4965,7 @@ __sx_str_split() {
 				esac
 
 				__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
-				: $(( __sx_str_split_lim_ -= 1 ))
+				: $((__sx_str_split_lim_ -= 1))
 			done
 		fi
 
@@ -4990,7 +4990,7 @@ __sx_str_split() {
 				esac
 
 				__sx_str_split_str_="${__sx_str_split_rem_}"
-				: $(( __sx_str_split_lim_ += 1 ))
+				: $((__sx_str_split_lim_ += 1))
 			done
 		else
 			# 通常の文字列による後方分割
@@ -5005,7 +5005,7 @@ __sx_str_split() {
 				esac
 
 				__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
-				: $(( __sx_str_split_lim_ += 1 ))
+				: $((__sx_str_split_lim_ += 1))
 			done
 		fi
 
@@ -5128,7 +5128,7 @@ __sx_str_strim() {
 sx_str_sub() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 "${#2}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
 
 	__sx_num_is_sx_int_inv ${5:+"${5}"} && __sx_num_is_sx_nat0 ${6:+"${6}"} || return "${SX_EX_USAGE}"
 
@@ -5179,7 +5179,7 @@ __sx_str_sub_cb() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}" "$((${6-0} & SX_STR_SUB_GLOB))" "" 0 ""
 
 	if M_STR_EQ([|"${3}"|], [|''|]); then
-		__sx_str_sub_isep_adapt_cb_="${4}" SX_CFG_UNSET_SOFT=2 __sx_str_isep "${1}" "${2}" __sx_str_sub_isep_adapt "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" $((SX_STR_ISEP_PRE | SX_STR_ISEP_POST | SX_STR_ISEP_CB)) || return
+		__sx_str_sub_isep_adapt_cb_="${4}" SX_CFG_UNSET_SOFT=2 __sx_str_isep "${1}" "${2}" __sx_str_sub_isep_adapt "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST | SX_STR_ISEP_CB))" || return
 	elif M_NUM_LE([|0|], [|${5}|]); then
 		if M_STR_EQ([|"${6}"|], [|0|]); then
 			while M_STR_HAS([|"${2}"|], [|"${3}"|]) && M_NUM_LT([|${8}|], [|${5}|]); do
@@ -5250,7 +5250,7 @@ __sx_str_sub_lit() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}" "$((${6-0} & SX_STR_SUB_GLOB))" ""
 
 	if M_STR_EQ([|"${3}"|], [|''|]); then
-		SX_CFG_UNSET_SOFT=2 __sx_str_isep "${1}" "${2}" "${4}" "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" $((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))
+		SX_CFG_UNSET_SOFT=2 __sx_str_isep "${1}" "${2}" "${4}" "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))"
 	elif M_NUM_LE([|0|], [|${5}|]); then
 		if M_STR_EQ([|"${6}"|], [|0|]); then
 			while M_STR_HAS([|"${2}"|], [|"${3}"|]) && M_NUM_NE([|${5}|], [|0|]); do
@@ -5299,7 +5299,7 @@ __sx_str_sub_lit() {
 sx_str_substr() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_substr "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 "${#2}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
 
 	__sx_num_is_sx_int_inv ${3+"${3}"} ${4+"${4}"} || return "${SX_EX_USAGE}"
 
@@ -5325,7 +5325,7 @@ __sx_str_substr() {
 	V(total)="${#V(str)}"
 
 	# オフセットの正規化 (負数は末尾から)
-	case $((V(off) < 0)) in 1)
+	case "$((V(off) < 0))" in 1)
 		V(off)=$(((V(off) * -1) < V(total) ? V(total) + V(off) : 0))
 	esac
 
@@ -5461,7 +5461,7 @@ sx_str_upper() {
 ## 説明:
 ##   sx_str_upper の内部実装。引数チェックは行わない。
 __sx_str_upper() {
-	__sx_str_sub "$1" "${2-}" "[${SX_STR_LOWER}]" __sx_str_upper_cb "${3:-${SX_NUM_I32_MAX}}" $((SX_STR_SUB_GLOB | SX_STR_SUB_CB))
+	__sx_str_sub "${1}" "${2-}" "[${SX_STR_LOWER}]" __sx_str_upper_cb "${3:-${SX_NUM_I32_MAX}}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
 }
 
 ### __sx_str_upper_cb - sx_str_upper 用コールバック（内部用）
@@ -5474,19 +5474,19 @@ __sx_str_upper() {
 ##   マッチした小文字1文字を大文字に変換して結果変数に格納する。
 __sx_str_upper_cb() {
 	case "${2}" in
-		a) eval "$1=A";; b) eval "$1=B";;
-		c) eval "$1=C";; d) eval "$1=D";;
-		e) eval "$1=E";; f) eval "$1=F";;
-		g) eval "$1=G";; h) eval "$1=H";;
-		i) eval "$1=I";; j) eval "$1=J";;
-		k) eval "$1=K";; l) eval "$1=L";;
-		m) eval "$1=M";; n) eval "$1=N";;
-		o) eval "$1=O";; p) eval "$1=P";;
-		q) eval "$1=Q";; r) eval "$1=R";;
-		s) eval "$1=S";; t) eval "$1=T";;
-		u) eval "$1=U";; v) eval "$1=V";;
-		w) eval "$1=W";; x) eval "$1=X";;
-		y) eval "$1=Y";; z) eval "$1=Z";;
+		a) eval "${1}=A";; b) eval "${1}=B";;
+		c) eval "${1}=C";; d) eval "${1}=D";;
+		e) eval "${1}=E";; f) eval "${1}=F";;
+		g) eval "${1}=G";; h) eval "${1}=H";;
+		i) eval "${1}=I";; j) eval "${1}=J";;
+		k) eval "${1}=K";; l) eval "${1}=L";;
+		m) eval "${1}=M";; n) eval "${1}=N";;
+		o) eval "${1}=O";; p) eval "${1}=P";;
+		q) eval "${1}=Q";; r) eval "${1}=R";;
+		s) eval "${1}=S";; t) eval "${1}=T";;
+		u) eval "${1}=U";; v) eval "${1}=V";;
+		w) eval "${1}=W";; x) eval "${1}=X";;
+		y) eval "${1}=Y";; z) eval "${1}=Z";;
 	esac
 }
 
@@ -5537,7 +5537,7 @@ sx_arr_at() {
 		}
 
 		# 範囲チェック
-		case $((__sx_arr_at_i < __sx_arr_at_len)) in 0)
+		case "$((__sx_arr_at_i < __sx_arr_at_len))" in 0)
 			__sx_arr_at_err=
 		esac
 
@@ -5594,7 +5594,7 @@ __sx_arr_at() {
 		__sx_arr_at_i_="${__sx_arr_at_pair_#*=}"
 
 		# 範囲チェック
-		case $((__sx_arr_at_i_ < __sx_arr_at_len_)) in 0)
+		case "$((__sx_arr_at_i_ < __sx_arr_at_len_))" in 0)
 			unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
 			return 1
 		esac
@@ -5766,7 +5766,7 @@ sx_arr_pop() {
 	unset __sx_arr_pop_args
 
 	# 要素数チェック
-	case $((${#} <= __sx_arr_pop_len)) in 0)
+	case "$((${#} <= __sx_arr_pop_len))" in 0)
 		unset __sx_arr_pop_arr __sx_arr_pop_len
 		return 1
 	esac
@@ -5785,7 +5785,7 @@ sx_arr_pop() {
 	__sx_arr_pop_chk=
 	__sx_arr_pop_i="${__sx_arr_pop_len}"
 	for __sx_arr_pop_dest in "${@}"; do
-		: $(( __sx_arr_pop_i -= 1 ))
+		: $((__sx_arr_pop_i -= 1))
 
 		M_STR_NE([|"${__sx_arr_pop_dest}"|], [|-|]) || continue
 
@@ -5846,13 +5846,13 @@ __sx_arr_pop0() {
 	eval "__sx_arr_pop0_len_=\"\${${1}_len}\""
 	shift
 
-	case $((${#} <= __sx_arr_pop0_len_)) in 0)
+	case "$((${#} <= __sx_arr_pop0_len_))" in 0)
 		unset __sx_arr_pop0_arr_ __sx_arr_pop0_len_
 		return 1
 	esac
 
 	for __sx_arr_pop0_dest_ in "${@}"; do
-		: $(( __sx_arr_pop0_len_ -= 1 ))
+		: $((__sx_arr_pop0_len_ -= 1))
 		__sx_arr_pop0_src_="${__sx_arr_pop0_arr_}_${__sx_arr_pop0_len_}"
 
 		if M_STR_NE([|"${__sx_arr_pop0_dest_}"|], [|-|]); then
