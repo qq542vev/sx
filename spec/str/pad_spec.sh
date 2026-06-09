@@ -55,4 +55,25 @@ Describe 'sx_str_pad'
     The variable res should equal "A"
     The status should equal 0
   End
+
+  It '非常に大きな幅（1000）でパディングできること'
+    When call sx_str_pad res "x" 1000
+    The length of variable res should equal 1000
+  End
+
+  It 'パディング文字にタブを使用できること'
+    tab=$(printf '\t')
+    When call sx_str_pad res "A" 3 "${tab}"
+    The variable res should equal "${tab}${tab}A"
+  End
+
+  It '負の大きな幅で右側にパディングできること'
+    When call sx_str_pad res "A" -1000 "${SX_STR_LF}"
+    The length of variable res should equal 1000
+  End
+
+  It 'パディング文字が空文字で幅不足の場合、元の文字列を返すこと'
+    When call sx_str_pad res "ABC" 5 ""
+    The variable res should equal "ABC"
+  End
 End

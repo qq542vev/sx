@@ -54,4 +54,24 @@ Describe 'sx_str_match'
     When call sx_str_match "any"
     The status should be failure
   End
+
+  It '文字範囲パターン[a-z]に正しく一致すること'
+    When call sx_str_match "m" "[a-z]"
+    The status should be success
+  End
+
+  It '複合範囲[0-9a-zA-Z]に正しく一致すること'
+    When call sx_str_match "Z" "[0-9a-zA-Z]"
+    The status should be success
+  End
+
+  It '非常に長いパターンでもマッチングできること'
+    When call sx_str_match "abc123" "a*"
+    The status should be success
+  End
+
+  It '先頭の*を含むパターンが正しくマッチすること'
+    When call sx_str_match "foobar" "*bar"
+    The status should be success
+  End
 End

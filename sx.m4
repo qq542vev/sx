@@ -4311,6 +4311,101 @@ sx_str_has() {
 	return 1
 }
 
+### sx_str_is_alnum - すべての引数が英数字（A-Z, a-z, 0-9）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_alnum [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて英数字のみで構成されている (SX_EX_OK)
+##    1  英数字以外が含まれる、または空文字列が含まれる
+sx_str_is_alnum() {
+	for __sx_str_is_alnum_arg in "${@}"; do
+		case "${__sx_str_is_alnum_arg}" in '' | *[!"${SX_STR_ALNUM}"]*)
+			unset __sx_str_is_alnum_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_alnum_arg
+}
+
+### sx_str_is_alpha - すべての引数が英字（A-Z, a-z）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_alpha [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて英字のみで構成されている (SX_EX_OK)
+##    1  英字以外が含まれる、または空文字列が含まれる
+sx_str_is_alpha() {
+	for __sx_str_is_alpha_arg in "${@}"; do
+		case "${__sx_str_is_alpha_arg}" in '' | *[!"${SX_STR_ALPHA}"]*)
+			unset __sx_str_is_alpha_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_alpha_arg
+}
+
+### sx_str_is_ascii - すべての引数がASCII文字（0x00-0x7F）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_ascii [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべてASCII文字のみで構成されている (SX_EX_OK)
+##    1  ASCII文字以外が含まれる、または空文字列が含まれる
+sx_str_is_ascii() {
+	for __sx_str_is_ascii_arg in "${@}"; do
+		case "${__sx_str_is_ascii_arg}" in '' | *[!"${SX_STR_ASCII}"]*)
+			unset __sx_str_is_ascii_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_ascii_arg
+}
+
+### sx_str_is_blank - すべての引数が空白文字（タブ, スペース）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_blank [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて空白文字のみで構成されている (SX_EX_OK)
+##    1  空白文字以外が含まれる、または空文字列が含まれる
+sx_str_is_blank() {
+	for __sx_str_is_blank_arg in "${@}"; do
+		case "${__sx_str_is_blank_arg}" in '' | *[!"${SX_STR_BLANK}"]*)
+			unset __sx_str_is_blank_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_blank_arg
+}
+
+### sx_str_is_cntrl - すべての引数が制御文字（0x01-0x1F, 0x7F）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_cntrl [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて制御文字のみで構成されている (SX_EX_OK)
+##    1  制御文字以外が含まれる、または空文字列が含まれる
+sx_str_is_cntrl() {
+	for __sx_str_is_cntrl_arg in "${@}"; do
+		case "${__sx_str_is_cntrl_arg}" in '' | *[!"${SX_STR_CNTRL}"]*)
+			unset __sx_str_is_cntrl_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_cntrl_arg
+}
+
 ### sx_str_is_digit - すべての引数が数字のみで構成されている（空でない）か確認する
 ##
 ## 使い方:
@@ -4349,6 +4444,44 @@ sx_str_is_hex() {
 	unset __sx_str_is_hex_arg
 }
 
+### sx_str_is_graph - すべての引数が図形文字（英数字 + 区切り記号）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_graph [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて図形文字のみで構成されている (SX_EX_OK)
+##    1  図形文字以外が含まれる、または空文字列が含まれる
+sx_str_is_graph() {
+	for __sx_str_is_graph_arg in "${@}"; do
+		case "${__sx_str_is_graph_arg}" in '' | *[!"${SX_STR_GRAPH}"]*)
+			unset __sx_str_is_graph_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_graph_arg
+}
+
+### sx_str_is_lower - すべての引数が小文字英字（a-z）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_lower [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて小文字英字のみで構成されている (SX_EX_OK)
+##    1  小文字英字以外が含まれる、または空文字列が含まれる
+sx_str_is_lower() {
+	for __sx_str_is_lower_arg in "${@}"; do
+		case "${__sx_str_is_lower_arg}" in '' | *[!"${SX_STR_LOWER}"]*)
+			unset __sx_str_is_lower_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_lower_arg
+}
+
 ### sx_str_is_oct - すべての引数が8進数文字（0-7）のみで構成されているか確認する
 ##
 ## 使い方:
@@ -4366,6 +4499,101 @@ sx_str_is_oct() {
 	done
 
 	unset __sx_str_is_oct_arg
+}
+
+### sx_str_is_print - すべての引数が表示可能文字（図形文字 + スペース）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_print [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて表示可能文字のみで構成されている (SX_EX_OK)
+##    1  表示可能文字以外が含まれる、または空文字列が含まれる
+sx_str_is_print() {
+	for __sx_str_is_print_arg in "${@}"; do
+		case "${__sx_str_is_print_arg}" in '' | *[!"${SX_STR_PRINT}"]*)
+			unset __sx_str_is_print_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_print_arg
+}
+
+### sx_str_is_punct - すべての引数が区切り記号（!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_punct [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて区切り記号のみで構成されている (SX_EX_OK)
+##    1  区切り記号以外が含まれる、または空文字列が含まれる
+sx_str_is_punct() {
+	for __sx_str_is_punct_arg in "${@}"; do
+		case "${__sx_str_is_punct_arg}" in '' | *[!"${SX_STR_PUNCT}"]*)
+			unset __sx_str_is_punct_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_punct_arg
+}
+
+### sx_str_is_space - すべての引数が空白文字（タブ, 改行, 垂直タブ, 改ページ, 復帰, スペース）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_space [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて空白文字のみで構成されている (SX_EX_OK)
+##    1  空白文字以外が含まれる、または空文字列が含まれる
+sx_str_is_space() {
+	for __sx_str_is_space_arg in "${@}"; do
+		case "${__sx_str_is_space_arg}" in '' | *[!"${SX_STR_SPACE}"]*)
+			unset __sx_str_is_space_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_space_arg
+}
+
+### sx_str_is_upper - すべての引数が大文字英字（A-Z）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_upper [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて大文字英字のみで構成されている (SX_EX_OK)
+##    1  大文字英字以外が含まれる、または空文字列が含まれる
+sx_str_is_upper() {
+	for __sx_str_is_upper_arg in "${@}"; do
+		case "${__sx_str_is_upper_arg}" in '' | *[!"${SX_STR_UPPER}"]*)
+			unset __sx_str_is_upper_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_upper_arg
+}
+
+### sx_str_is_word - すべての引数が単語構成文字（英数字 + _）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_word [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて単語構成文字のみで構成されている (SX_EX_OK)
+##    1  単語構成文字以外が含まれる、または空文字列が含まれる
+sx_str_is_word() {
+	for __sx_str_is_word_arg in "${@}"; do
+		case "${__sx_str_is_word_arg}" in '' | *[!"${SX_STR_WORD}"]*)
+			unset __sx_str_is_word_arg
+			return 1
+		esac
+	done
+
+	unset __sx_str_is_word_arg
 }
 
 ### sx_str_isep - 文字列に一定の間隔でセパレータを挿入する

@@ -80,4 +80,29 @@ Describe 'sx_var_copy'
       The status should equal 77
     End
   End
+
+  Describe '境界ケース'
+    It '配列の内容をスカラー変数にコピーすると配列シグネチャがコピーされること'
+      sx_arr_gen src_arr a b
+      When call sx_var_copy src_arr-dst_arr
+      The variable dst_arr should start with "array-"
+    End
+
+    It 'スカラー変数の値を配列にコピーすると配列の値が変わること'
+      src_val="value"
+      sx_arr_gen dst_val x
+      When call sx_var_copy src_val-dst_val
+      The variable dst_val should equal "value"
+    End
+
+    It '連鎖コピーの途中に読み取り専用があった場合、中間状態がロールバックされること'
+      a_roll=1
+      readonly b_roll=0
+      c_roll=3
+      When call sx_var_copy a_roll-b_roll-c_roll
+      The status should equal 77
+      The variable a_roll should equal "1"
+      The variable c_roll should equal "3"
+    End
+  End
 End

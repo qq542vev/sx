@@ -65,4 +65,19 @@ Describe 'sx_str_title()'
         When call sx_str_title res "hello-world_test" "" "[-_]"
         The variable res should equal "Hello-World_Test"
     End
+
+    It 'count=0では何も変換しないこと'
+        When call sx_str_title res "abc def" 0
+        The variable res should equal "abc def"
+    End
+
+    It 'countが単語数を超えても全単語変換されること'
+        When call sx_str_title res "a b c" 10
+        The variable res should equal "A B C"
+    End
+
+    It '改行区切りの単語を変換できること'
+        When call sx_str_title res "hello${SX_STR_LF}world"
+        The variable res should equal "Hello${SX_STR_LF}World"
+    End
 End

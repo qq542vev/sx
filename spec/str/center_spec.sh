@@ -52,4 +52,25 @@ Describe 'sx_str_center'
     The variable res should equal "A"
     The status should equal 0
   End
+
+  It '非常に大きな幅（1000）で中央寄せできること'
+    When call sx_str_center res "x" 1000
+    The length of variable res should equal 1000
+  End
+
+  It '埋め込み文字にタブを使用できること'
+    tab=$(printf '\t')
+    When call sx_str_center res "A" 5 "${tab}"
+    The variable res should equal "${tab}${tab}A${tab}${tab}"
+  End
+
+  It '負の大きな幅で中央寄せできること'
+    When call sx_str_center res "A" -1000 "="
+    The length of variable res should equal 1000
+  End
+
+  It '埋め込み文字列が空で幅不足の場合、元の文字列を返すこと'
+    When call sx_str_center res "ABC" 5 ""
+    The variable res should equal "ABC"
+  End
 End

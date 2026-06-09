@@ -51,4 +51,15 @@ Describe 'sx_str_is_digit'
     When call sx_str_is_digit
     The status should be success
   End
+
+  It '非常に長い数字文字列（1000桁）を検証できること'
+    long_digit=$(printf '1%.0s' $(seq 1 1000))
+    When call sx_str_is_digit "${long_digit}"
+    The status should be success
+  End
+
+  It '多数の引数（10個以上）を一括検証できること'
+    When call sx_str_is_digit 1 2 3 4 5 6 7 8 9 0
+    The status should be success
+  End
 End

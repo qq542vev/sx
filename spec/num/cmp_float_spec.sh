@@ -45,4 +45,19 @@ Describe 'sx_num_cmp_float'
 		When call sx_num_cmp_float 1.2 3.4
 		The status should equal 1
 	End
+
+	It '指数表記の非常に大きな値を比較できること'
+		When call sx_num_cmp_float "1e100" "1e100"
+		The status should equal 2
+	End
+
+	It '非常に小さな値を比較できること'
+		When call sx_num_cmp_float "1e-100" "2e-100"
+		The status should equal 1
+	End
+
+	It 'DBL_MAX境界の値を比較できること'
+		When call sx_num_cmp_float "${SX_NUM_DBL_MAX}" "${SX_NUM_DBL_MAX}"
+		The status should equal 2
+	End
 End

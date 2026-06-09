@@ -41,4 +41,19 @@ Describe 'sx_num_cmp_arith'
     When call sx_num_cmp_arith 10 20
     The status should equal 1
   End
+
+  It '巨大な値（INT32_MAX境界）を比較できること'
+    When call sx_num_cmp_arith 2147483647 2147483647
+    The status should equal 2
+  End
+
+  It '符号付きゼロ（+0, -0）を比較できること'
+    When call sx_num_cmp_arith "-0" "+0"
+    The status should equal 2
+  End
+
+  It '8進数と16進数の混合比較ができること'
+    When call sx_num_cmp_arith "010" "0x8"
+    The status should equal 2
+  End
 End

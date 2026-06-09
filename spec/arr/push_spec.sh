@@ -40,4 +40,30 @@ Describe 'sx_arr_push'
     When call sx_arr_push len_ro_arr b
     The status should equal 77
   End
+
+  It '空文字列の要素をプッシュできること'
+    sx_arr_gen myarr_empty a
+    When call sx_arr_push myarr_empty ""
+    The variable myarr_empty_len should equal 2
+    The variable myarr_empty_1 should equal ""
+  End
+
+  It '特殊文字を含む要素をプッシュできること'
+    sx_arr_gen myarr_spec
+    When call sx_arr_push myarr_spec "it's" 'say "hello"'
+    The variable myarr_spec_0 should equal "it's"
+    The variable myarr_spec_1 should equal 'say "hello"'
+  End
+
+  It '5個の要素を連続プッシュできること'
+    sx_arr_gen myarr_mul
+    sx_arr_push myarr_mul a
+    sx_arr_push myarr_mul b
+    sx_arr_push myarr_mul c
+    sx_arr_push myarr_mul d
+    sx_arr_push myarr_mul e
+    When call sx_arr_push myarr_mul "last"
+    The variable myarr_mul_len should equal 6
+    The variable myarr_mul_5 should equal "last"
+  End
 End

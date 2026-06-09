@@ -70,4 +70,20 @@ Describe 'sx_str_splice'
     When call sx_str_splice res "abc" "x" 0 "."
     The status should equal 64
   End
+
+  It '元文字列にメタ文字（* ? [）が含まれる場合も正しくスプライスできること'
+    When call sx_str_splice res "a*b?c[d" 2 1 "X"
+    The variable res should equal "a*X?c[d"
+  End
+
+  It '挿入文字列にシングルクォートが含まれる場合も正しく処理できること'
+    When call sx_str_splice res "abcd" 2 0 "it's"
+    The variable res should equal "abit'scd"
+  End
+
+  It '非常に長い文字列でのスプライスが正しく動作すること'
+    long_spl=$(printf 'a%.0s' $(seq 1 1000))
+    When call sx_str_splice res "${long_spl}" 500 10 "X"
+    The length of variable res should equal 991
+  End
 End

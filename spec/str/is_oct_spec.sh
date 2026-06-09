@@ -61,4 +61,15 @@ Describe 'sx_str_is_oct'
     When call sx_str_is_oct
     The status should be success
   End
+
+  It '非常に長い8進数文字列（1000桁）を検証できること'
+    long_oct=$(printf '7%.0s' $(seq 1 1000))
+    When call sx_str_is_oct "${long_oct}"
+    The status should be success
+  End
+
+  It '多数の引数（10個以上）を一括検証できること'
+    When call sx_str_is_oct 0 1 2 3 4 5 6 7 0 1
+    The status should be success
+  End
 End

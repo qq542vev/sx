@@ -50,4 +50,19 @@ Describe 'sx_str_swapcase()'
         The status should be failure
         The status should equal "${SX_EX_NOPERM}"
     End
+
+    It 'count=0では何も変換しないこと'
+        When call sx_str_swapcase res "AbC" 0
+        The variable res should equal "AbC"
+    End
+
+    It 'countが文字列長を超えても全変換されること'
+        When call sx_str_swapcase res "AbC" 10
+        The variable res should equal "aBc"
+    End
+
+    It 'アルファベットが存在しない文字列は何もしないこと'
+        When call sx_str_swapcase res "123!@#"
+        The variable res should equal "123!@#"
+    End
 End

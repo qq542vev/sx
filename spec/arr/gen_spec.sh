@@ -42,4 +42,39 @@ Describe 'sx_arr_gen'
     When call sx_arr_gen ro_arr_gen x
     The status should equal 77
   End
+
+  It '空文字列の要素を含む配列を生成できること'
+    When call sx_arr_gen myarr_gen "a" "" "b"
+    The variable myarr_gen_len should equal 3
+    The variable myarr_gen_0 should equal "a"
+    The variable myarr_gen_1 should equal ""
+    The variable myarr_gen_2 should equal "b"
+  End
+
+  It '要素に特殊文字（シングルクォート）を含む配列を生成できること'
+    When call sx_arr_gen myarr_q "it's" "test"
+    The variable myarr_q_0 should equal "it's"
+    The variable myarr_q_1 should equal "test"
+  End
+
+  It '再初期化時に古い要素（範囲外）が削除されていること'
+    sx_arr_gen myarr_re a b c d
+    When call sx_arr_gen myarr_re x y
+    The variable myarr_re_0 should equal "x"
+    The variable myarr_re_1 should equal "y"
+    The variable myarr_re_2 should be undefined
+  End
+
+  It '連続してgenを呼び出しても毎回正しく初期化されること'
+    sx_var_set myarr_seq
+    sx_arr_gen myarr_seq first
+    When call sx_arr_gen myarr_seq second
+    The variable myarr_seq_len should equal 1
+    The variable myarr_seq_0 should equal "second"
+  End
+
+  It '10個の要素で配列を初期化できること'
+    When call sx_arr_gen myarr10 a b c d e f g h i j
+    The variable myarr10_len should equal 10
+  End
 End

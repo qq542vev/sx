@@ -61,4 +61,15 @@ Describe 'sx_str_is_hex'
     When call sx_str_is_hex
     The status should be success
   End
+
+  It '非常に長い16進数文字列（1000桁）を検証できること'
+    long_hex=$(printf 'a%.0s' $(seq 1 1000))
+    When call sx_str_is_hex "${long_hex}"
+    The status should be success
+  End
+
+  It '多数の引数（10個以上）を一括検証できること'
+    When call sx_str_is_hex a b c d e f 0 1 2 3
+    The status should be success
+  End
 End

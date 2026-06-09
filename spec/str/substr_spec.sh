@@ -87,4 +87,15 @@ Describe 'sx_str_substr()'
     When call sx_str_substr res "abc" 1 -5
     The variable res should equal ""
   End
+
+  It '非常に長い文字列（1000文字）から部分抽出できること'
+    long_str_sub=$(printf 'a%.0s' $(seq 1 1000))
+    When call sx_str_substr res "${long_str_sub}" 100 10
+    The variable res should equal "aaaaaaaaaa"
+  End
+
+  It 'オフセットと長さに巨大な値を指定しても安全に動作すること'
+    When call sx_str_substr res "abc" 999999999 999999999
+    The variable res should equal ""
+  End
 End
