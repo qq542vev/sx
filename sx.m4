@@ -941,28 +941,23 @@ sx_util_eval() {
 #  ARG (Arguments)
 # ========================================
 
-define([|V|], [|__sx_arg_find_$1|])dnl
-define([|CLEANUP|], [|V(lim) V(flg)|])dnl
-
 ### sx_arg_find - 引数リストから指定された値を探し、そのインデックスを取得する
 ##
 ## 使い方:
-##   sx_arg_find 結果変数名（またはバインド形式） [検索対象 [上限 [フラグ]]] ::: [値 ...]
+##   sx_arg_find 結果変数名（またはバインド形式） [検索対象 [フラグ]] ::: [値 ...]
 ##
 ## 説明:
 ##   検索対象が、指定された値のリストの中で何番目（1開始）にあるかを探し、
 ##   一致した項目のインデックスをスペース区切りで結果変数に格納する。
 ##   第一引数にはバインド形式を指定して分配代入を行うことも可能。
-##   上限 N を指定することで、複数の一致項目を取得できる。
-##     N > 0 : 先頭から最大 N 個探す
-##     N < 0 : 末尾から最大 |N| 個探す
-##     N = 0 : 検索を行わず空文字列を返す
 ##   フラグに SX_ARG_FIND_GLOB (1) を指定すると、検索対象を glob パターンとして扱う。
 ##   見つからない場合は空文字列を格納する。
+##   取得件数はバインド形式によって決まる。
+##   例: res（全件）、3res:（最大3件）、idx1:idx2（2件を分配）
 ##
 ## 終了ステータス:
 ##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
-##    1  一致項目が見つからなかった、または上限が 0 (不一致)
+##    1  一致項目が見つからなかった (不一致)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_arg_find() {
@@ -972,36 +967,27 @@ sx_arg_find() {
 
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}" | "${3+X${3}}") ;;
-		"${4+X${4}}") __sx_arg_find_lim="${3}";;
-		*) __sx_arg_find_lim="${3-1}" __sx_arg_find_flg="${4-0}";;
+		*) __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3+"${3}"} || return;;
 	esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_find_lim+"${__sx_arg_find_lim}"} ${__sx_arg_find_flg+"${__sx_arg_find_flg}"} || {
-		set -- "${?}"
-		unset CLEANUP
-		return "${1}"
-	}
-
-	unset CLEANUP
 	__sx_arg_find "${@}"
 }
 
 define([|V|], [|__sx_arg_find_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(lim) V(flg) V(glob) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
 
-### __sx_arg_find - 引数リストから指定された値を探し、そのインデックスを取得する（内部用）
+### __sx_arg_find - 引数リストから指定された値を探す（内部用: 前向き）
 ##
 ## 使い方:
-##   __sx_arg_find 結果変数名 [検索対象 [上限 [フラグ]]] ::: [値 ...]
+##   __sx_arg_find 結果変数名 [検索対象 [フラグ]] ::: [値 ...]
 ##
 ## 説明:
-##   sx_arg_find の内部実装。
+##   sx_arg_find の内部実装。先頭から末尾に向かって検索する。
 ##   引数チェックは行わない。
 __sx_arg_find() {
 	__sx_var_bind_init "${1}"
 	__sx_arg_find_bind_="${1}"
 	__sx_arg_find_tgt_=
-	__sx_arg_find_lim_=1
 	__sx_arg_find_flg_=0
 	__sx_arg_find_sts_=1
 	__sx_arg_find_out_=
@@ -1013,56 +999,112 @@ __sx_arg_find() {
 			shift 3
 			;;
 		"${4+X${4}}")
-			__sx_arg_find_tgt_="${2}" __sx_arg_find_lim_=$((${3-1}))
+			__sx_arg_find_tgt_="${2}" __sx_arg_find_flg_=${3-0}
 			shift 4
 			;;
-		"${5+X${5}}")
-			__sx_arg_find_tgt_="${2}" __sx_arg_find_lim_=$((${3-1})) __sx_arg_find_flg_=${4-0}
-			shift 5
-			;;
 		*)
-			__sx_arg_find_tgt_="${2-}" __sx_arg_find_lim_=$((${3-1})) __sx_arg_find_flg_=${4-0}
-			shift "$((1 + 0${2+1} + 0${3+1} + 0${4+1}))"
+			__sx_arg_find_tgt_="${2-}" __sx_arg_find_flg_=${3-0}
+			shift "$((1 + 0${2+1} + 0${3+1}))"
 			;;
 	esac
 
 	__sx_arg_find_glob_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0))
 
-	if M_NUM_LT([|__sx_arg_find_lim_|], [|0|]); then
-		# 逆方向検索
-		__sx_arg_find_i_="${#}"
+	# 順方向検索
+	__sx_arg_find_i_=1
 
-		while M_NUM_LT([|0|], [|__sx_arg_find_i_|]); do
-			eval __sx_arg_find_arg_=\"\${${__sx_arg_find_i_}}\"
+	for __sx_arg_find_arg_ in "${@}"; do
+		case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
+			__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
+			__sx_arg_find_sts_="${SX_EX_OK}"
+		esac
 
-			case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
-				__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
+		: $((__sx_arg_find_i_ += 1))
+	done
 
-				__sx_arg_find_sts_="${SX_EX_OK}"
-				: $((__sx_arg_find_lim_ += 1))
+	eval ${__sx_arg_find_out_:+"${__sx_arg_find_bind_}=\"\${__sx_arg_find_out_# }\""}
 
-				case "${__sx_arg_find_lim_}" in 0) break; esac
-			esac
+	set -- "${__sx_arg_find_sts_}"
 
-			: $((__sx_arg_find_i_ -= 1))
-		done
-	elif M_NUM_LT([|0|], [|__sx_arg_find_lim_|]); then
-		# 順方向検索
-		__sx_arg_find_i_=1
+	unset CLEANUP
+	return "${1}"
+}
 
-		for __sx_arg_find_arg_ in "${@}"; do
-			case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
-				__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
+### sx_arg_rfind - 引数リストから指定された値を末尾から探し、そのインデックスを取得する
+##
+## 使い方:
+##   sx_arg_rfind 結果変数名（またはバインド形式） [検索対象 [フラグ]] ::: [値 ...]
+##
+## 説明:
+##   sx_arg_find と同じだが、末尾から前方向に検索する。
+##   一致した項目のインデックスを発見順（末尾から）にスペース区切りで結果変数に格納する。
+##   取得件数はバインド形式によって決まる。
+##
+## 終了ステータス:
+##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
+##    1  一致項目が見つからなかった (不一致)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_rfind() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfind "${@}" || return; return 0;; esac
 
-				__sx_arg_find_sts_="${SX_EX_OK}"
-				: $((__sx_arg_find_lim_ -= 1))
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
-				case "${__sx_arg_find_lim_}" in 0) break; esac
-			esac
+	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}" | "${3+X${3}}") ;;
+		*) __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3+"${3}"} || return;;
+	esac
 
-			: $((__sx_arg_find_i_ += 1))
-		done
-	fi
+	__sx_arg_rfind "${@}"
+}
+
+### __sx_arg_rfind - 引数リストから指定された値を後ろ向きに探す（内部用）
+##
+## 使い方:
+##   __sx_arg_rfind 結果変数名 [検索対象 [フラグ]] ::: [値 ...]
+##
+## 説明:
+##   sx_arg_rfind の内部実装。末尾から先頭に向かって検索する。
+##   引数チェックは行わない。
+__sx_arg_rfind() {
+	__sx_var_bind_init "${1}"
+	__sx_arg_find_bind_="${1}"
+	__sx_arg_find_tgt_=
+	__sx_arg_find_flg_=0
+	__sx_arg_find_sts_=1
+	__sx_arg_find_out_=
+
+	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}") shift 2;;
+		"${3+X${3}}")
+			__sx_arg_find_tgt_="${2}"
+			shift 3
+			;;
+		"${4+X${4}}")
+			__sx_arg_find_tgt_="${2}" __sx_arg_find_flg_=${3-0}
+			shift 4
+			;;
+		*)
+			__sx_arg_find_tgt_="${2-}" __sx_arg_find_flg_=${3-0}
+			shift "$((1 + 0${2+1} + 0${3+1}))"
+			;;
+	esac
+
+	__sx_arg_find_glob_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0))
+
+	# 逆方向検索
+	__sx_arg_find_i_="${#}"
+
+	while M_NUM_LT([|0|], [|__sx_arg_find_i_|]); do
+		eval __sx_arg_find_arg_=\"\${${__sx_arg_find_i_}}\"
+
+		case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
+			__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
+			__sx_arg_find_sts_="${SX_EX_OK}"
+		esac
+
+		: $((__sx_arg_find_i_ -= 1))
+	done
 
 	eval ${__sx_arg_find_out_:+"${__sx_arg_find_bind_}=\"\${__sx_arg_find_out_# }\""}
 

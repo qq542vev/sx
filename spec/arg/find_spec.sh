@@ -3,10 +3,10 @@
 Describe 'sx_arg_find'
 	Include ./sx.sh
 
-	Describe '順方向検索 (上限 > 0)'
-		It 'デフォルトで最初の一致項目を見つける'
+	Describe '前向き検索 (sx_arg_find)'
+		It 'デフォルトで全件一致する'
 			sx_arg_find res "b" ::: "a" "b" "c" "b"
-			Assert [ "$res" = "2" ]
+			Assert [ "$res" = "2 4" ]
 		End
 
 		It '成功時に終了ステータス 0 を返す'
@@ -14,45 +14,47 @@ Describe 'sx_arg_find'
 			The status should be success
 		End
 
-		It '上限が 1 より大きい場合に複数の一致項目を見つける'
-			sx_arg_find res "b" 2 ::: "a" "b" "c" "b" "d"
+		It 'バインド形式 Nname: で複数件を指定する'
+			sx_arg_find "2res:" "b" ::: "a" "b" "c" "b" "d"
 			Assert [ "$res" = "2 4" ]
 		End
 
-		It '指定された上限まで見つける'
-			sx_arg_find res "b" 1 ::: "a" "b" "c" "b"
+		It 'バインド形式 Nname: で1件を指定する'
+			sx_arg_find "1res:" "b" ::: "a" "b" "c" "b"
 			Assert [ "$res" = "2" ]
 		End
 	End
 
-	Describe '逆方向検索 (上限 < 0)'
-		It '上限が -1 の場合に最後の一致項目を見つける'
-			sx_arg_find res "b" -1 ::: "a" "b" "c" "b" "d"
+	Describe '後ろ向き検索 (sx_arg_rfind)'
+		It 'デフォルトで全件一致する（末尾から）'
+			sx_arg_rfind res "b" ::: "a" "b" "c" "b" "d"
+			Assert [ "$res" = "4 2" ]
+		End
+
+		It '末尾から1件を取得する'
+			sx_arg_rfind "1res:" "b" ::: "a" "b" "c" "b" "d"
 			Assert [ "$res" = "4" ]
 		End
 
-		It '末尾から逆順で一致項目を返す'
-			sx_arg_find res "b" -2 ::: "a" "b" "c" "b" "d" "b"
+		It '末尾から複数件を取得する'
+			sx_arg_rfind "2res:" "b" ::: "a" "b" "c" "b" "d" "b"
 			Assert [ "$res" = "6 4" ]
+		End
+
+		It '成功時に終了ステータス 0 を返す'
+			When call sx_arg_rfind res "b" ::: "a" "b" "c"
+			The status should be success
 		End
 	End
 
 	Describe 'Glob 検索 (フラグ = SX_ARG_FIND_GLOB)'
 		It 'フラグが設定されている場合に glob パターンに一致する'
-			sx_arg_find res "*.txt" 2 "$SX_ARG_FIND_GLOB" ::: "file.txt" "readme.md" "data.txt"
+			sx_arg_find "2res:" "*.txt" "$SX_ARG_FIND_GLOB" ::: "file.txt" "readme.md" "data.txt"
 			Assert [ "$res" = "1 3" ]
 		End
 
 		It 'デフォルトでは glob パターンに一致しない'
 			When call sx_arg_find res "*.txt" ::: "file.txt" "readme.md"
-			The status should be failure
-			The variable res should equal ""
-		End
-	End
-
-	Describe '上限 = 0'
-		It '終了ステータス 1 を返し、結果が空になる'
-			When call sx_arg_find res "b" 0 ::: "a" "b" "c"
 			The status should be failure
 			The variable res should equal ""
 		End
@@ -74,39 +76,39 @@ Describe 'sx_arg_find'
 
 	Describe '分配代入 (Bind)'
 		It '複数の一致項目を個別の変数に分配する'
-			sx_arg_find "idx1:idx2" "b" 2 ::: "a" "b" "c" "b" "d"
+			sx_arg_find "idx1:idx2" "b" ::: "a" "b" "c" "b" "d"
 			Assert [ "$idx1" = "2" ]
 			Assert [ "$idx2" = "4" ]
 		End
 
 		It 'コロンを使用して特定のインデックスをスキップする'
-			sx_arg_find ":idx2" "b" 2 ::: "a" "b" "c" "b" "d"
+			sx_arg_find ":idx2" "b" ::: "a" "b" "c" "b" "d"
 			Assert [ "${idx1+set}" != "set" ]
 			Assert [ "$idx2" = "4" ]
 		End
 
 		It 'バインド形式の最後の変数に残りの一致項目が格納される'
-			sx_arg_find "idx1:idx_rest" "b" 3 ::: "a" "b" "c" "b" "d" "b"
+			sx_arg_find "idx1:idx_rest" "b" ::: "a" "b" "c" "b" "d" "b"
 			Assert [ "$idx1" = "2" ]
 			Assert [ "$idx_rest" = "4 6" ]
 		End
 
 		It '一致項目が足りない場合に残りの変数が空になる'
-			sx_arg_find "idx1:idx2:idx3" "b" 2 ::: "a" "b" "c" "b"
+			sx_arg_find "idx1:idx2:idx3" "b" ::: "a" "b" "c" "b"
 			Assert [ "$idx1" = "2" ]
 			Assert [ "$idx2" = "4" ]
 			Assert [ "$idx3" = "" ]
 		End
 
-		It '単一変数の場合は従来通りスペース区切りで格納される'
-			sx_arg_find "res" "b" 2 ::: "a" "b" "c" "b"
+		It '裸の変数名で全件がスペース区切りで格納される'
+			sx_arg_find res "b" ::: "a" "b" "c" "b"
 			Assert [ "$res" = "2 4" ]
 		End
 	End
 
 	Describe '::: セパレータ'
 		It '::: を使用してオプションを正しく処理する'
-			sx_arg_find res "target" 2 0 ::: "other" "target" "target"
+			sx_arg_find "2res:" "target" ::: "other" "target" "target"
 			Assert [ "$res" = "2 3" ]
 		End
 
@@ -127,23 +129,6 @@ Describe 'sx_arg_find'
 			readonly RO_VAR=1
 			When call sx_arg_find RO_VAR "target" ::: "target"
 			The status should equal "$SX_EX_NOPERM"
-		End
-	End
-
-	Describe '厳密な引数チェック'
-		It '無効な上限値（数値以外）に対して使用法エラーを返す'
-			When call sx_arg_find res "target" "invalid" ::: "target"
-			The status should equal "$SX_EX_USAGE"
-		End
-
-		It '無効なフラグ（数値以外）に対して使用法エラーを返す'
-			When call sx_arg_find res "target" 1 "invalid" ::: "target"
-			The status should equal "$SX_EX_USAGE"
-		End
-
-		It '負のフラグを許容する'
-			When call sx_arg_find res "target" 1 -1 ::: "target"
-			The status should be success
 		End
 	End
 End
