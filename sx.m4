@@ -202,6 +202,9 @@ readonly SX_STR_CAPITAL_SENT=2
 readonly SX_STR_ISEP_CB=1
 readonly SX_STR_ISEP_PRE=2
 readonly SX_STR_ISEP_POST=4
+readonly SX_ARG_ISEP_CB=1
+readonly SX_ARG_ISEP_PRE=2
+readonly SX_ARG_ISEP_POST=4
 readonly SX_ARG_FIND_GLOB=1
 readonly SX_STR_CHUNK_SKIP_SHORT=1
 readonly SX_STR_CHUNK_SKIP_LONG=2
@@ -1033,12 +1036,12 @@ __sx_arg_find() {
 }
 
 define([|V|], [|__sx_arg_isep_$1|])dnl
-define([|CLEANUP|], [|V(int) V(lim)|])dnl
+define([|CLEANUP|], [|V(int) V(lim) V(flg)|])dnl
 
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
 ##
 ## 使い方:
-##   sx_arg_isep 結果変数名（またはバインド形式） セパレータ [インターバル [リミット [値 ...]]]
+##   sx_arg_isep 結果変数名（またはバインド形式） セパレータ [値 ...]
 ##   sx_arg_isep 結果変数名（またはバインド形式） [セパレータ [インターバル [リミット]]] ::: [値 ...]
 ##
 ## 説明:
@@ -1061,50 +1064,47 @@ sx_arg_isep() {
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
-	__sx_arg_isep_int=1 __sx_arg_isep_lim="${SX_NUM_I32_MAX}"
-
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}" | "${3+X${3}}") ;;
 		"${4+X${4}}") __sx_arg_isep_int="${3}";;
-		*) __sx_arg_isep_int="${3-1}" __sx_arg_isep_lim="${4-${SX_NUM_I32_MAX}}";;
+		"${5+X${5}}") __sx_arg_isep_int="${3}" __sx_arg_isep_lim="${4}";;
+		"${6+X${6}}") __sx_arg_isep_int="${3}" __sx_arg_isep_lim="${4}" __sx_arg_isep_flg="${5}";;
+		*) __sx_arg_isep_int=1 __sx_arg_isep_lim="${SX_NUM_I32_MAX}" __sx_arg_isep_flg=0;;
 	esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int_inv ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
+	: "${__sx_arg_isep_int:=1}" "${__sx_arg_isep_lim:=${SX_NUM_I32_MAX}}" "${__sx_arg_isep_flg:=0}"
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int_inv ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} ${__sx_arg_isep_flg+"${__sx_arg_isep_flg}"} || {
 		set -- "${?}"
 		unset CLEANUP
 		return "${1}"
 	}
 
-	case "${__sx_arg_isep_int-1}" in 0)
+	case "${__sx_arg_isep_int#[+-]}" in 0)
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	esac
 
 	unset CLEANUP
-	__sx_arg_isep "${@}"
+
+	__sx_arg_isep "${@}" || return
 }
 
 define([|V|], [|__sx_arg_isep_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(lim) V(eff) V(r) V(j) V(arg) __M_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(sep) V(int) V(lim) V(flg)|])dnl
 
-### __sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する（内部用）
+### __sx_arg_isep - 引数間にセパレータを挿入する（ディスパッチャ、内部用）
 ##
 ## 使い方:
-##   __sx_arg_isep 結果変数名 セパレータ [インターバル [リミット [値 ...]]]
-##   __sx_arg_isep 結果変数名 [セパレータ [インターバル [リミット]]] ::: [値 ...]
+##   __sx_arg_isep 結果変数名 セパレータ [値 ...]
+##   __sx_arg_isep 結果変数名 [セパレータ [インターバル [リミット [フラグ]]]] ::: [値 ...]
 ##
 ## 説明:
-##   引数チェックを行わずにセパレータ挿入とクォート結合処理を行う。
+##   ::: のパースと、lit/cb の振り分けを行う。
 __sx_arg_isep() {
-	__sx_var_bind_init "${1}"
 	__sx_arg_isep_bind_="${1}"
-	__sx_arg_isep_out_=
-	__sx_arg_isep_sep_=
-	__sx_arg_isep_int_=1
-	__sx_arg_isep_lim_="${SX_NUM_I32_MAX}"
-	__sx_arg_isep_j_=1
 
-	# ::: の位置を特定 (Bounded Search: $2, $3, $4, $5)
+	# ::: の位置を特定 (Bounded Search: $2, $3, $4, $5, $6)
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}") shift 2;;
 		"${3+X${3}}")
@@ -1119,33 +1119,120 @@ __sx_arg_isep() {
 			__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}"
 			shift 5
 			;;
+		"${6+X${6}}")
+			__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}" __sx_arg_isep_flg_="${5}"
+			shift 6
+			;;
 		*)
-			# 従来形式
-			__sx_arg_isep_sep_="${2-}" __sx_arg_isep_int_="${3-1}" __sx_arg_isep_lim_="${4-${SX_NUM_I32_MAX}}"
-			shift "$((1 + 0${2+1} + 0${3+1} + 0${4+1}))"
+			__sx_arg_isep_sep_="${2-}" __sx_arg_isep_int_=1 __sx_arg_isep_lim_="${SX_NUM_I32_MAX}" __sx_arg_isep_flg_=0
+			shift "$((1 + 0${2+1}))"
 			;;
 	esac
 
-	__sx_arg_isep_eff_=$(((${#} - 1) / ${__sx_arg_isep_int_#-}))
-	case "$((__sx_arg_isep_lim_ <= __sx_arg_isep_eff_))" in 0)
-		__sx_arg_isep_lim_="${__sx_arg_isep_eff_}"
-	esac
+	: "${__sx_arg_isep_sep_:=}" "${__sx_arg_isep_int_:=1}" "${__sx_arg_isep_lim_:=${SX_NUM_I32_MAX}}" "${__sx_arg_isep_flg_:=0}"
 
-	case "${__sx_arg_isep_int_}" in
-		-*) __sx_arg_isep_r_=$((${#} - __sx_arg_isep_lim_ * ${__sx_arg_isep_int_#-}));;
-		*) __sx_arg_isep_r_="${__sx_arg_isep_int_}";;
-	esac
+	set -- "${__sx_arg_isep_bind_}" "${__sx_arg_isep_sep_}" "${__sx_arg_isep_int_}" "${__sx_arg_isep_lim_}" "${__sx_arg_isep_flg_}" "${@}"
+	unset CLEANUP
 
-	for __sx_arg_isep_arg_ in "${@}"; do
-		case "$((__sx_arg_isep_r_ < __sx_arg_isep_j_ && (__sx_arg_isep_j_ - __sx_arg_isep_r_ - 1) % __sx_arg_isep_int_ == 0 && 0 < __sx_arg_isep_lim_))" in 1)
-			__M_BIND_QUOTE([|__sx_arg_isep|], [|"${__sx_arg_isep_sep_}"|], CLEANUP)
-			: $((__sx_arg_isep_lim_ -= 1))
+	case "$((${5} & SX_ARG_ISEP_CB))" in
+		0) __sx_arg_isep_lit "${@}";;
+		*) : ;; # __sx_arg_isep_cb "${@}"
+	esac
+}
+
+define([|V|], [|__sx_arg_isep_lit_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(flags) V(lim) V(eff) V(r) V(j) V(arg) V(max) V(post_ok) __M_BIND_USEVAR|])dnl
+
+### __sx_arg_isep_lit - 引数間にリテラルセパレータを挿入する（内部用）
+##
+## 使い方:
+##   __sx_arg_isep_lit 結果変数名 セパレータ インターバル フラグ リミット [値 ...]
+##
+## 説明:
+##   引数間にセパレータを挿入し、すべてをクォートして結合する。
+##   PRE/POST フラグにより先頭・末尾への挿入も行う。
+__sx_arg_isep_lit() {
+	__sx_var_bind_init "${1}"
+	__sx_arg_isep_lit_bind_="${1}"
+	__sx_arg_isep_lit_out_=
+	__sx_arg_isep_lit_sep_="${2}"
+	__sx_arg_isep_lit_int_="${3}"
+	__sx_arg_isep_lit_lim_="${4}"
+	__sx_arg_isep_lit_flags_="${5}"
+	shift 5
+
+	__sx_arg_isep_lit_eff_=$(((${#} - 1) / ${__sx_arg_isep_lit_int_#-}))
+
+	# Backward: POST はループ前に lim を消費する
+	case "${__sx_arg_isep_lit_int_}" in
+		-*)	case "$(( (__sx_arg_isep_lit_flags_ & SX_ARG_ISEP_POST) && 0 < __sx_arg_isep_lit_lim_ ))" in 1)
+			: $((__sx_arg_isep_lit_lim_ -= 1))
+			__sx_arg_isep_lit_post_ok_=1
 		esac
-		__M_BIND_QUOTE([|__sx_arg_isep|], [|"${__sx_arg_isep_arg_}"|], CLEANUP)
-		: $((__sx_arg_isep_j_ += 1))
+	esac
+
+	# 最大挿入可能数で lim を cap
+	__sx_arg_isep_lit_max_="${__sx_arg_isep_lit_eff_}"
+	case "$((__sx_arg_isep_lit_flags_ & SX_ARG_ISEP_PRE))" in 0) ;; *)
+		__sx_arg_isep_lit_max_=$((__sx_arg_isep_lit_max_ + 1))
+	esac
+	case "$((__sx_arg_isep_lit_flags_ & SX_ARG_ISEP_POST))" in 0) ;; *)
+		__sx_arg_isep_lit_max_=$((__sx_arg_isep_lit_max_ + 1))
+	esac
+	case "$((0 < __sx_arg_isep_lit_lim_ && __sx_arg_isep_lit_lim_ > __sx_arg_isep_lit_max_))" in 1)
+		__sx_arg_isep_lit_lim_="${__sx_arg_isep_lit_max_}"
+	esac
+
+	case "${__sx_arg_isep_lit_int_}" in
+		-*) __sx_arg_isep_lit_r_=$((${#} - __sx_arg_isep_lit_lim_ * ${__sx_arg_isep_lit_int_#-}));;
+		*) __sx_arg_isep_lit_r_="${__sx_arg_isep_lit_int_}";;
+	esac
+
+	__sx_arg_isep_lit_j_=1
+
+	# PRE
+	case "${__sx_arg_isep_lit_int_}" in
+		-*)	case "$(( (__sx_arg_isep_lit_flags_ & SX_ARG_ISEP_PRE) && 
+		           (__sx_arg_isep_lit_r_ % ${__sx_arg_isep_lit_int_#-}) == 0 &&
+		           __sx_arg_isep_lit_lim_ > __sx_arg_isep_lit_eff_ ))" in 1)
+			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
+			: $((__sx_arg_isep_lit_lim_ -= 1))
+		esac
+		;;
+		*)	case "$(( (__sx_arg_isep_lit_flags_ & SX_ARG_ISEP_PRE) && 0 < __sx_arg_isep_lit_lim_ ))" in 1)
+			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
+			: $((__sx_arg_isep_lit_lim_ -= 1))
+		esac
+		;;
+	esac
+
+	# ループ
+	for __sx_arg_isep_lit_arg_ in "${@}"; do
+		case "$((1 < __sx_arg_isep_lit_j_ &&
+		         __sx_arg_isep_lit_r_ < __sx_arg_isep_lit_j_ &&
+		         (__sx_arg_isep_lit_j_ - __sx_arg_isep_lit_r_ - 1) % ${__sx_arg_isep_lit_int_#-} == 0 &&
+		         0 < __sx_arg_isep_lit_lim_))" in 1)
+			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
+			: $((__sx_arg_isep_lit_lim_ -= 1))
+		esac
+		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_arg_}"|], CLEANUP)
+		: $((__sx_arg_isep_lit_j_ += 1))
 	done
 
-	eval ${__sx_arg_isep_out_:+"${__sx_arg_isep_bind_}=\"\${__sx_arg_isep_out_}\""}
+	# POST
+	case "${__sx_arg_isep_lit_int_}" in
+		-*)	case "${__sx_arg_isep_lit_post_ok_-0}" in 1)
+			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
+		esac
+		;;
+		*)	case "$(( (__sx_arg_isep_lit_flags_ & SX_ARG_ISEP_POST) && 0 < __sx_arg_isep_lit_lim_ &&
+		           (${#} - __sx_arg_isep_lit_r_) % ${__sx_arg_isep_lit_int_} == 0 ))" in 1)
+			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
+		esac
+		;;
+	esac
+
+	eval ${__sx_arg_isep_lit_out_:+"${__sx_arg_isep_lit_bind_}=\"\${__sx_arg_isep_lit_out_}\""}
 
 	unset CLEANUP
 }
@@ -1619,8 +1706,8 @@ __sx_var_bind() {
 			esac
 
 			case "${__sx_var_bind_c_}" in
-				1) eval "${1}=\"\${2#*:}\"" ;;
-				*) eval "${1}=\"$((${__sx_var_bind_c_} - 1))${__sx_var_bind_n_}:\${2#*:}\"" ;;
+				1) eval "${1}=\"\${2#*:}\"";;
+				*) eval "${1}=\"$((${__sx_var_bind_c_} - 1))${__sx_var_bind_n_}:\${2#*:}\"";;
 			esac
 			;;
 		*:*) eval "${2%%:*}=\${3}; ${1}=\"\${2#*:}\"";;
