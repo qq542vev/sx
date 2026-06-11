@@ -141,6 +141,8 @@ readonly SX_EX_MSG78='EX_CONFIG(78): configuration error'
 
 readonly SX_EX_MAP='OK:0 USAGE:64 DATAERR:65 NOINPUT:66 NOUSER:67 NOHOST:68 UNAVAILABLE:69 SOFTWARE:70 OSERR:71 OSFILE:72 CANTCREAT:73 IOERR:74 TEMPFAIL:75 PROTOCOL:76 NOPERM:77 CONFIG:78'
 
+readonly SX_VAR_BIND_QUOTE=1
+
 readonly SX_STR_SOH=$'\cA'
 readonly SX_STR_STX=$'\cB'
 readonly SX_STR_ETX=$'\cC'
@@ -1030,90 +1032,6 @@ __sx_arg_find() {
 	return "${1}"
 }
 
-### sx_arg_rfind - 引数リストから指定された値を末尾から探し、そのインデックスを取得する
-##
-## 使い方:
-##   sx_arg_rfind 結果変数名（またはバインド形式） [検索対象 [フラグ]] ::: [値 ...]
-##
-## 説明:
-##   sx_arg_find と同じだが、末尾から前方向に検索する。
-##   一致した項目のインデックスを発見順（末尾から）にスペース区切りで結果変数に格納する。
-##   取得件数はバインド形式によって決まる。
-##
-## 終了ステータス:
-##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
-##    1  一致項目が見つからなかった (不一致)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_rfind() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfind "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
-
-	case "X${SX_CFG_SEP}" in
-		"${2+X${2}}" | "${3+X${3}}") ;;
-		*) __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3+"${3}"} || return;;
-	esac
-
-	__sx_arg_rfind "${@}"
-}
-
-### __sx_arg_rfind - 引数リストから指定された値を後ろ向きに探す（内部用）
-##
-## 使い方:
-##   __sx_arg_rfind 結果変数名 [検索対象 [フラグ]] ::: [値 ...]
-##
-## 説明:
-##   sx_arg_rfind の内部実装。末尾から先頭に向かって検索する。
-##   引数チェックは行わない。
-__sx_arg_rfind() {
-	__sx_var_bind_init "${1}"
-	__sx_arg_find_bind_="${1}"
-	__sx_arg_find_tgt_=
-	__sx_arg_find_flg_=0
-	__sx_arg_find_sts_=1
-	__sx_arg_find_out_=
-
-	case "X${SX_CFG_SEP}" in
-		"${2+X${2}}") shift 2;;
-		"${3+X${3}}")
-			__sx_arg_find_tgt_="${2}"
-			shift 3
-			;;
-		"${4+X${4}}")
-			__sx_arg_find_tgt_="${2}" __sx_arg_find_flg_=${3-0}
-			shift 4
-			;;
-		*)
-			__sx_arg_find_tgt_="${2-}" __sx_arg_find_flg_=${3-0}
-			shift "$((1 + 0${2+1} + 0${3+1}))"
-			;;
-	esac
-
-	__sx_arg_find_glob_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0))
-
-	# 逆方向検索
-	__sx_arg_find_i_="${#}"
-
-	while M_NUM_LT([|0|], [|__sx_arg_find_i_|]); do
-		eval __sx_arg_find_arg_=\"\${${__sx_arg_find_i_}}\"
-
-		case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
-			__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
-			__sx_arg_find_sts_="${SX_EX_OK}"
-		esac
-
-		: $((__sx_arg_find_i_ -= 1))
-	done
-
-	eval ${__sx_arg_find_out_:+"${__sx_arg_find_bind_}=\"\${__sx_arg_find_out_# }\""}
-
-	set -- "${__sx_arg_find_sts_}"
-
-	unset CLEANUP
-	return "${1}"
-}
-
 define([|V|], [|__sx_arg_isep_$1|])dnl
 define([|CLEANUP|], [|V(int) V(lim)|])dnl
 
@@ -1151,7 +1069,7 @@ sx_arg_isep() {
 		*) __sx_arg_isep_int="${3-1}" __sx_arg_isep_lim="${4-${SX_NUM_I32_MAX}}";;
 	esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int_inv ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} || {
 		set -- "${?}"
 		unset CLEANUP
 		return "${1}"
@@ -1406,6 +1324,93 @@ __sx_arg_range() {
 	unset __sx_arg_range_res_ __sx_arg_range_idxs_ __sx_arg_range_tmp_
 }
 
+### sx_arg_rfind - 引数リストから指定された値を末尾から探し、そのインデックスを取得する
+##
+## 使い方:
+##   sx_arg_rfind 結果変数名（またはバインド形式） [検索対象 [フラグ]] ::: [値 ...]
+##
+## 説明:
+##   sx_arg_find と同じだが、末尾から前方向に検索する。
+##   一致した項目のインデックスを発見順（末尾から）にスペース区切りで結果変数に格納する。
+##   取得件数はバインド形式によって決まる。
+##
+## 終了ステータス:
+##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
+##    1  一致項目が見つからなかった (不一致)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_rfind() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfind "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+
+	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}" | "${3+X${3}}") ;;
+		*) __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3+"${3}"} || return;;
+	esac
+
+	__sx_arg_rfind "${@}"
+}
+
+define([|V|], [|__sx_arg_find_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
+
+### __sx_arg_rfind - 引数リストから指定された値を後ろ向きに探す（内部用）
+##
+## 使い方:
+##   __sx_arg_rfind 結果変数名 [検索対象 [フラグ]] ::: [値 ...]
+##
+## 説明:
+##   sx_arg_rfind の内部実装。末尾から先頭に向かって検索する。
+##   引数チェックは行わない。
+__sx_arg_rfind() {
+	__sx_var_bind_init "${1}"
+	__sx_arg_find_bind_="${1}"
+	__sx_arg_find_tgt_=
+	__sx_arg_find_flg_=0
+	__sx_arg_find_sts_=1
+	__sx_arg_find_out_=
+
+	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}") shift 2;;
+		"${3+X${3}}")
+			__sx_arg_find_tgt_="${2}"
+			shift 3
+			;;
+		"${4+X${4}}")
+			__sx_arg_find_tgt_="${2}" __sx_arg_find_flg_=${3-0}
+			shift 4
+			;;
+		*)
+			__sx_arg_find_tgt_="${2-}" __sx_arg_find_flg_=${3-0}
+			shift "$((1 + 0${2+1} + 0${3+1}))"
+			;;
+	esac
+
+	__sx_arg_find_glob_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0))
+
+	# 逆方向検索
+	__sx_arg_find_i_="${#}"
+
+	while M_NUM_LT([|0|], [|__sx_arg_find_i_|]); do
+		eval __sx_arg_find_arg_=\"\${${__sx_arg_find_i_}}\"
+
+		case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
+			__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
+			__sx_arg_find_sts_="${SX_EX_OK}"
+		esac
+
+		: $((__sx_arg_find_i_ -= 1))
+	done
+
+	eval ${__sx_arg_find_out_:+"${__sx_arg_find_bind_}=\"\${__sx_arg_find_out_# }\""}
+
+	set -- "${__sx_arg_find_sts_}"
+
+	unset CLEANUP
+	return "${1}"
+}
+
 ### __sx_arg_norm - 引数リスト内の数値をプレースホルダに展開して正規化する（内部用）
 ##
 ## 使い方:
@@ -1543,6 +1548,86 @@ __sx_var_bind_init() {
 	done
 
 	unset __sx_var_bind_init_arg_ __sx_var_bind_init_ls_ __sx_var_bind_init_seg_
+}
+
+### sx_var_bind - バインド状態に従って値を割り当てる
+##
+## 使い方:
+##   sx_var_bind 結果変数名 バインド形式 値 [フラグ]
+##
+## 説明:
+##   バインド形式（a:b:c 等）を解析し、値を適切な変数に割り当てる。
+##   割り当て後、残りのバインド形式が結果変数に格納される。
+##   フラグに SX_VAR_BIND_QUOTE (1) を指定すると、リスト蓄積時に値をクオートする。
+##
+## 終了ステータス:
+##    0  割り当て成功 (SX_EX_OK)
+##    1  バインド先がもうない（バインド形式が空）
+##   64  引数不正 (SX_EX_USAGE)
+##   77  変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_var_bind() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind "${@}" || return; return 0;; esac
+
+	# 結果変数名自体の妥当性と書き込み権限をチェック
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${2-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${4+"${4}"} || return
+
+	__sx_var_bind "${@}"
+}
+
+### __sx_var_bind - バインド状態に従って値を割り当てる（内部用）
+##
+## 使い方:
+##   __sx_var_bind 結果変数名 バインド形式 値 [フラグ]
+##
+## 説明:
+##   バインド形式（a:b:c 等）を解析し、値を適切な変数に割り当てる。
+##   割り当て後、残りのバインド形式が結果変数に格納される。
+##   フラグに SX_VAR_BIND_QUOTE (1) を指定すると、リスト蓄積時に値をクオートする。
+##
+## 終了ステータス:
+##    0  割り当て成功
+##    1  バインド先がもうない（バインド形式が空）
+__sx_var_bind() {
+	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
+
+	case "${2}" in '') return 1;; esac
+
+	__sx_var_bind_seg_="${2%%:*}"
+
+	case "${__sx_var_bind_seg_}" in *["${SX_STR_ALPHA}_"]*)
+		__sx_var_bind_v_="${3}"
+
+		case "$((${4} & SX_VAR_BIND_QUOTE))" in [!0]*)
+			case "${3}" in
+				*"'"*) SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_var_bind_v_ "${3}" "'" "'\\''";;
+				*) __sx_var_bind_v_="${3}";;
+			esac
+
+			__sx_var_bind_v_="'${__sx_var_bind_v_}'"
+		esac
+	esac
+
+	case "${2}" in
+		:*) eval "${1}=\"\${2#*:}\"";;
+		[1-9]*:*)
+			__sx_var_bind_c_="${2%%[!0-9]*}"
+			__sx_var_bind_n_="${__sx_var_bind_seg_#${__sx_var_bind_c_}}"
+
+			case "${__sx_var_bind_n_}" in ?*)
+				eval "${__sx_var_bind_n_}=\"\${${__sx_var_bind_n_}-}\${${__sx_var_bind_n_}+ }\${__sx_var_bind_v_}\""
+			esac
+
+			case "${__sx_var_bind_c_}" in
+				1) eval "${1}=\"\${2#*:}\"" ;;
+				*) eval "${1}=\"$((${__sx_var_bind_c_} - 1))${__sx_var_bind_n_}:\${2#*:}\"" ;;
+			esac
+			;;
+		*:*) eval "${2%%:*}=\${3}; ${1}=\"\${2#*:}\"";;
+		*) eval "${2}=\"\${${2}}\${${2}:+ }\${__sx_var_bind_v_}\"; ${1}=\"\${2}\"";;
+	esac
+
+	unset __sx_var_bind_seg_ __sx_var_bind_v_ __sx_var_bind_c_ __sx_var_bind_n_
 }
 
 ### sx_var_copy - 変数の値を連鎖コピーする
