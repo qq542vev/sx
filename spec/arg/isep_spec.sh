@@ -519,4 +519,327 @@ Describe 'sx_arg_isep'
     End
   End
 
+  Describe 'コールバックモード (CB)'
+    It '正方向 (int=1) で値間にコールバック結果が挿入されること'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 1 "" "$SX_ARG_ISEP_CB" ::: "a" "b" "c"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "(@1)"
+      The value "$3" should equal "b"
+      The value "$4" should equal "(@2)"
+      The value "$5" should equal "c"
+      The value "$#" should equal 5
+    End
+
+    It '正方向 (int=2) で2つおきにコールバック結果が挿入されること'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 2 "" "$SX_ARG_ISEP_CB" ::: "1" "2" "3" "4" "5"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "1"
+      The value "$2" should equal "2"
+      The value "$3" should equal "(@1)"
+      The value "$4" should equal "3"
+      The value "$5" should equal "4"
+      The value "$6" should equal "(@2)"
+      The value "$7" should equal "5"
+      The value "$#" should equal 7
+    End
+
+    It 'int=3 でPRE|POST、内部挿入位置が正しいこと'
+      cb() { __sx_var_set "${1}=($2)"; }
+      When call sx_arg_isep res cb 3 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" ::: "1" "2" "3" "4" "5" "6"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "(1)"
+      The value "$2" should equal "1"
+      The value "$3" should equal "2"
+      The value "$4" should equal "3"
+      The value "$5" should equal "(2)"
+      The value "$6" should equal "4"
+      The value "$7" should equal "5"
+      The value "$8" should equal "6"
+      The value "$9" should equal "(3)"
+      The value "$#" should equal 9
+    End
+
+    It 'PRE フラグで先頭にコールバック結果が挿入されること'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 1 "" "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "a" "b"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "(@1)"
+      The value "$2" should equal "a"
+      The value "$3" should equal "(@2)"
+      The value "$4" should equal "b"
+      The value "$#" should equal 4
+    End
+
+    It 'PRE のみ: 要素が1つでもPREが挿入されること'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 1 "" "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "only"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "(@1)"
+      The value "$2" should equal "only"
+      The value "$#" should equal 2
+    End
+
+    It 'PRE のみ: int が要素数より大きくてもPREが挿入されること'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 5 "" "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "a" "b"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "(@1)"
+      The value "$2" should equal "a"
+      The value "$3" should equal "b"
+      The value "$#" should equal 3
+    End
+
+    It 'POST フラグで末尾にコールバック結果が挿入されること (偶数分割)'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 2 "" "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_POST))" ::: "a" "b" "c" "d"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "b"
+      The value "$3" should equal "(@1)"
+      The value "$4" should equal "c"
+      The value "$5" should equal "d"
+      The value "$6" should equal "(@2)"
+      The value "$#" should equal 6
+    End
+
+    It 'POST フラグで末尾に挿入されないこと (奇数分割)'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 2 "" "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_POST))" ::: "a" "b" "c"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "b"
+      The value "$3" should equal "(@1)"
+      The value "$4" should equal "c"
+      The value "$#" should equal 4
+    End
+
+    It 'POST のみ: int が要素数より大きい場合は何も挿入されないこと'
+      cb() { __sx_var_set "${1}=x"; }
+      When call sx_arg_isep res cb 5 "" "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_POST))" ::: "a" "b"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "b"
+      The value "$#" should equal 2
+    End
+
+    It 'PRE|POST で両端にコールバック結果が挿入されること'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 1 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" ::: "x"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "(@1)"
+      The value "$2" should equal "x"
+      The value "$3" should equal "(@2)"
+      The value "$#" should equal 3
+    End
+
+    It 'limit で内部挿入回数が制限されること'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 1 2 "$SX_ARG_ISEP_CB" ::: "a" "b" "c" "d"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "(@1)"
+      The value "$3" should equal "b"
+      The value "$4" should equal "(@2)"
+      The value "$5" should equal "c"
+      The value "$6" should equal "d"
+      The value "$#" should equal 6
+    End
+
+    It 'limit=0 では一切挿入されないこと'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 1 0 "$SX_ARG_ISEP_CB" ::: "a" "b" "c"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "b"
+      The value "$3" should equal "c"
+      The value "$#" should equal 3
+    End
+
+    It 'limit=1 で PRE が優先され内部が挿入されないこと'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 1 1 "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "a" "b"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "(@1)"
+      The value "$2" should equal "a"
+      The value "$3" should equal "b"
+      The value "$#" should equal 3
+    End
+
+    It 'limit=1 で内部は挿入されるが POST は挿入されないこと'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 1 1 "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_POST))" ::: "a" "b"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "(@1)"
+      The value "$3" should equal "b"
+      The value "$#" should equal 3
+    End
+
+    It 'PRE|POST と limit=1 で PRE のみ挿入されること'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      When call sx_arg_isep res cb 1 1 \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" ::: "a" "b"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "(@1)"
+      The value "$2" should equal "a"
+      The value "$3" should equal "b"
+      The value "$#" should equal 3
+    End
+
+    It 'コールバックが非0を返すと以後の内部挿入が中断されること'
+      cb_stop() {
+        __sx_var_set "${1}=!"
+        case "$2" in 2) return 1;; esac
+      }
+      When call sx_arg_isep res cb_stop 2 "" "$SX_ARG_ISEP_CB" ::: "1" "2" "3" "4" "5" "6"
+      The status should equal 1
+      eval "set -- $res"
+      The value "$1" should equal "1"
+      The value "$2" should equal "2"
+      The value "$3" should equal "!"
+      The value "$4" should equal "3"
+      The value "$5" should equal "4"
+      The value "$6" should equal "!"
+      The value "$7" should equal "5"
+      The value "$8" should equal "6"
+      The value "$#" should equal 8
+    End
+
+    It 'PRE コールバックが失敗すると内部/POSTも挿入されないこと'
+      cb_fail() { __sx_var_set "${1}=X"; return 1; }
+      When call sx_arg_isep res cb_fail 1 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" ::: "a" "b"
+      The status should equal 1
+      eval "set -- $res"
+      The value "$1" should equal "X"
+      The value "$2" should equal "a"
+      The value "$3" should equal "b"
+      The value "$#" should equal 3
+    End
+
+    It 'POST コールバックが失敗しても内部/PREの値は挿入され、ステータスはエラーになること'
+      cb_fail_post() {
+        case "$2" in
+          3) __sx_var_set "${1}=!"; return 1;;
+          *) __sx_var_set "${1}=($2)";;
+        esac
+      }
+      When call sx_arg_isep res cb_fail_post 1 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" ::: "a" "b"
+      The status should equal 1
+      eval "set -- $res"
+      The value "$1" should equal "(1)"
+      The value "$2" should equal "a"
+      The value "$3" should equal "(2)"
+      The value "$4" should equal "b"
+      The value "$5" should equal "!"
+      The value "$#" should equal 5
+    End
+
+    It 'コールバックエラーが status に伝搬されること'
+      cb_err() { __sx_var_set "${1}=E"; return 42; }
+      When call sx_arg_isep res cb_err 1 "" "$SX_ARG_ISEP_CB" ::: "a" "b"
+      The status should equal 42
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "E"
+      The value "$3" should equal "b"
+      The value "$#" should equal 3
+    End
+
+    It 'count 引数が PRE→内部→POST で連続して増加すること'
+      cb_cnt() { __sx_var_set "${1}=C$2"; }
+      When call sx_arg_isep res cb_cnt 2 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" ::: "a" "b" "c" "d"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "C1"
+      The value "$2" should equal "a"
+      The value "$3" should equal "b"
+      The value "$4" should equal "C2"
+      The value "$5" should equal "c"
+      The value "$6" should equal "d"
+      The value "$7" should equal "C3"
+      The value "$#" should equal 7
+    End
+
+    It 'コールバックが挿入されないケースでも count が正しいこと'
+      cb_cnt2() { __sx_var_set "${1}=C$2"; }
+      When call sx_arg_isep res cb_cnt2 1 "" "$SX_ARG_ISEP_CB" ::: "x"
+      The status should be success
+      The variable res should equal "'x'"
+    End
+
+    It '分配代入 (bind) とコールバックが併用できること'
+      cb() { __sx_var_set "${1}=(@$2)"; }
+      sx_arg_isep "v1:v2:rest" cb 1 "" "$SX_ARG_ISEP_CB" ::: "a" "b"
+      The variable v1 should equal "a"
+      The variable v2 should equal "(@1)"
+      The variable rest should equal "'b'"
+    End
+
+    It 'スキップを含む分配代入とコールバックが併用できること'
+      cb() { __sx_var_set "${1}=SEP"; }
+      sx_arg_isep "::v3" cb 1 "" "$SX_ARG_ISEP_CB" ::: "a" "b"
+      The variable v1 should be undefined
+      The variable v2 should be undefined
+      The variable v3 should equal "'b'"
+    End
+
+    It '引数がない場合は空文字を返すこと'
+      cb() { __sx_var_set "${1}=x"; }
+      When call sx_arg_isep res cb 1 "" "$SX_ARG_ISEP_CB" :::
+      The status should be success
+      The variable res should equal ""
+    End
+
+    It '引数が1つの場合はセパレータが挿入されないこと'
+      cb() { __sx_var_set "${1}=x"; }
+      When call sx_arg_isep res cb 1 "" "$SX_ARG_ISEP_CB" ::: "only"
+      The status should be success
+      The variable res should equal "'only'"
+    End
+
+    It '特殊文字が含まれていても正しく処理されること (CB + PRE|POST)'
+      cb() { __sx_var_set "${1}=[@$2]"; }
+      When call sx_arg_isep res cb 1 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" ::: "hello world" "foo'bar"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "[@1]"
+      The value "$2" should equal "hello world"
+      The value "$3" should equal "[@2]"
+      The value "$4" should equal "foo'bar"
+      The value "$5" should equal "[@3]"
+      The value "$#" should equal 5
+    End
+
+    It '読み取り専用変数に書き込もうとした場合にエラーになること'
+      cb() { __sx_var_set "${1}=x"; }
+      readonly ro_res_isep_cb="fixed"
+      When call sx_arg_isep ro_res_isep_cb cb 1 "" "$SX_ARG_ISEP_CB" ::: "a"
+      The status should equal 77
+    End
+  End
+
 End

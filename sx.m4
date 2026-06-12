@@ -1134,9 +1134,11 @@ __sx_arg_isep() {
 	set -- "${__sx_arg_isep_bind_}" "${__sx_arg_isep_sep_}" "${__sx_arg_isep_int_}" "${__sx_arg_isep_lim_}" "${__sx_arg_isep_flg_}" "${@}"
 	unset CLEANUP
 
+	__sx_var_bind_init "${1}"
+
 	case "$((${5} & SX_ARG_ISEP_CB))" in
 		0) __sx_arg_isep_lit "${@}";;
-		*) : ;; # __sx_arg_isep_cb "${@}"
+		*) __sx_arg_isep_cb "${@}";;
 	esac
 }
 
@@ -1152,7 +1154,6 @@ define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(flg) V(lim) V(eff) V(r) V(i
 ##   引数間にセパレータを挿入し、すべてをクォートして結合する。
 ##   PRE/POST フラグにより先頭・末尾への挿入も行う。
 __sx_arg_isep_lit() {
-	__sx_var_bind_init "${1}"
 	__sx_arg_isep_lit_bind_="${1}"
 	__sx_arg_isep_lit_sep_="${2}"
 	__sx_arg_isep_lit_int_="${3}"
@@ -1244,6 +1245,75 @@ __sx_arg_isep_lit() {
 	eval ${__sx_arg_isep_lit_out_:+"${__sx_arg_isep_lit_bind_}=\"\${__sx_arg_isep_lit_out_}\""}
 
 	unset CLEANUP
+}
+
+### __sx_arg_isep_cb - 引数間にセパレータを挿入する（コールバックモード、内部用）
+##
+## 使い方:
+##   __sx_arg_isep_cb 結果変数名 コールバック インターバル リミット フラグ [値 ...]
+##
+## 説明:
+##   コールバックモード。セパレータ位置ごとにコールバックを呼び出し、
+##   その戻り値をセパレータとして挿入する。前向き（正のインターバル）のみ。
+##
+##   状態レイアウト（位置パラメータ）:
+##     $1: bind_fmt, $2: cb, $3: int, $4: lim
+##     $5: flags, $6: sep_cnt, $7: stat, $8: i
+##     $9+: 元の値（for ループが走査）
+##
+##   コールバック呼出: cb_func ret_var count
+__sx_arg_isep_cb() {
+	# 状態レイアウトに再構築: $1=bind $2=cb $3=int $4=lim $5=flags $6=sep_cnt $7=stat $8=i
+	__sx_arg_isep_cb_bind_="${1}"
+	__sx_arg_isep_cb_cb_=${2}
+	__sx_arg_isep_cb_int_=${3}
+	__sx_arg_isep_cb_lim_=${4}
+	__sx_arg_isep_cb_flg_=${5}
+	shift 5
+
+	set -- "${__sx_arg_isep_cb_bind_}" "${__sx_arg_isep_cb_cb_}" "${__sx_arg_isep_cb_int_}" "${__sx_arg_isep_cb_lim_}" "${__sx_arg_isep_cb_flg_}" 0 0 0 "${@}"
+	unset -- __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_cb_ __sx_arg_isep_cb_int_ __sx_arg_isep_cb_lim_ __sx_arg_isep_cb_flg_
+
+	# === PRE セパレータ ===
+	case "$((${4} != 0 && (${5} & SX_ARG_ISEP_PRE)))" in 1)
+		"${2}" __sx_arg_isep_cb_ret_ "$((${6} + 1))" && set -- 0 "${@}" || set -- "${?}" "${@}"
+
+		__sx_var_bind __sx_arg_isep_cb_bind_ "${2}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
+		__sx_arg_isep_cb_cb_=${3}
+
+		eval 'shift 9; set --' '"${__sx_arg_isep_cb_bind_}"' '"${__sx_arg_isep_cb_cb_}"' "${4}" "$((${5} - 1))" "${6}" "$((${7} + 1))" "${1}" "${9}" '"${@}"'
+		unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_cb_
+	esac
+
+	# === メインループ ===
+	for __sx_arg_isep_cb_arg_ in "${@}"; do
+		set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "$((${8} + 1))"
+
+		case "$((${8} <= 8))" in 1) continue;; esac
+
+		# 内部セパレータ挿入判定（前向き）
+		case "$((${7} == 0 && ${4} != 0 && ${8} > 9 && (${8} - 9) % ${3} == 0))" in 1)
+			"${2}" __sx_arg_isep_cb_ret_ "$((${6} + 1))" || set -- "${@}" "${?}"
+
+			__sx_var_bind __sx_arg_isep_cb_bind_ "${1}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
+			set -- "${__sx_arg_isep_cb_bind_}" "${2}" "${3}" "$((${4} - 1))" "${5}" "$((${6} + 1))" "${9-${7}}" "${8}"
+			unset __sx_arg_isep_cb_ret_
+		esac
+
+		__sx_var_bind __sx_arg_isep_cb_bind_ "${1}" "${__sx_arg_isep_cb_arg_}" "${SX_VAR_BIND_QUOTE}"
+		set -- "${__sx_arg_isep_cb_bind_}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}"
+	done
+
+	# === POST セパレータ ===
+	case "$((${7} == 0 && ${4} != 0 && (${5} & SX_ARG_ISEP_POST) && ${8} > 8 && (${8} - 8) % ${3} == 0))" in 1)
+		"${2}" __sx_arg_isep_cb_ret_ "$((${6} + 1))" || set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${?}" "${8}"
+
+		__sx_var_bind __sx_arg_isep_cb_bind_ "${1}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
+		unset __sx_arg_isep_cb_ret_
+	esac
+
+	unset __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_arg_
+	return "${7}"
 }
 
 ### sx_arg_join - 引数を指定された区切り文字で結合する
