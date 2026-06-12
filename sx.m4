@@ -1074,7 +1074,7 @@ sx_arg_isep() {
 
 	: "${__sx_arg_isep_int:=1}" "${__sx_arg_isep_lim:=${SX_NUM_I32_MAX}}" "${__sx_arg_isep_flg:=0}"
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int_inv ${__sx_arg_isep_int+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim+"${__sx_arg_isep_lim}"} ${__sx_arg_isep_flg+"${__sx_arg_isep_flg}"} || {
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int_inv ${__sx_arg_isep_int:+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim:+"${__sx_arg_isep_lim}"} ${__sx_arg_isep_flg:+"${__sx_arg_isep_flg}"} || {
 		set -- "${?}"
 		unset CLEANUP
 		return "${1}"
@@ -1141,7 +1141,7 @@ __sx_arg_isep() {
 }
 
 define([|V|], [|__sx_arg_isep_lit_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(flags) V(lim) V(eff) V(r) V(j) V(arg) V(max) V(post_ok) __M_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(flg) V(lim) V(eff) V(r) V(i) V(arg) V(max) V(post_ok) __M_BIND_USEVAR|])dnl
 
 ### __sx_arg_isep_lit - 引数間にリテラルセパレータを挿入する（内部用）
 ##
@@ -1154,84 +1154,93 @@ define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(flags) V(lim) V(eff) V(r) V
 __sx_arg_isep_lit() {
 	__sx_var_bind_init "${1}"
 	__sx_arg_isep_lit_bind_="${1}"
-	__sx_arg_isep_lit_out_=
 	__sx_arg_isep_lit_sep_="${2}"
 	__sx_arg_isep_lit_int_="${3}"
 	__sx_arg_isep_lit_lim_="${4}"
-	__sx_arg_isep_lit_flags_="${5}"
+	__sx_arg_isep_lit_flg_="${5}"
+	__sx_arg_isep_lit_out_=
 	shift 5
 
+	# セパレータを挿入可能な論理的な箇所数（要素間のみ）を計算
 	__sx_arg_isep_lit_eff_=$(((${#} - 1) / ${__sx_arg_isep_lit_int_#-}))
 
-	# Backward: POST はループ前に lim を消費する
-	case "${__sx_arg_isep_lit_int_}" in
-		-*)	case "$(( (__sx_arg_isep_lit_flags_ & SX_ARG_ISEP_POST) && 0 < __sx_arg_isep_lit_lim_ ))" in 1)
-			: $((__sx_arg_isep_lit_lim_ -= 1))
-			__sx_arg_isep_lit_post_ok_=1
-		esac
+	# --- 特殊処理: 負のインターバル（後方から数えるモード） ---
+	# インターバルが負の場合、末尾（POST側）を基準にするため、
+	# POSTフラグが指定されている場合は、ループ前にあらかじめ回数を1つ消費しておく。
+	case "$((__sx_arg_isep_lit_int_ < 0 && __sx_arg_isep_lit_lim_ != 0 && __sx_arg_isep_lit_flg_ & SX_ARG_ISEP_POST))" in 1)
+		__sx_arg_isep_lit_post_ok_=1
+		: $((__sx_arg_isep_lit_lim_ -= 1))
 	esac
 
-	# 最大挿入可能数で lim を cap
+	# --- 回数制限 (lim) の調整 ---
+	# PRE/POSTフラグを含めた「物理的に挿入可能な絶対最大数」を算出し、lim がそれを超えないよう制限(cap)する。
 	__sx_arg_isep_lit_max_="${__sx_arg_isep_lit_eff_}"
-	case "$((__sx_arg_isep_lit_flags_ & SX_ARG_ISEP_PRE))" in 0) ;; *)
-		__sx_arg_isep_lit_max_=$((__sx_arg_isep_lit_max_ + 1))
+	case "$((__sx_arg_isep_lit_flg_ & SX_ARG_ISEP_PRE))" in [!0]*)
+		: $((__sx_arg_isep_lit_max_ += 1))
 	esac
-	case "$((__sx_arg_isep_lit_flags_ & SX_ARG_ISEP_POST))" in 0) ;; *)
-		__sx_arg_isep_lit_max_=$((__sx_arg_isep_lit_max_ + 1))
+
+	case "$((__sx_arg_isep_lit_flg_ & SX_ARG_ISEP_POST))" in [!0]*)
+		: $((__sx_arg_isep_lit_max_ += 1))
 	esac
-	case "$((0 < __sx_arg_isep_lit_lim_ && __sx_arg_isep_lit_lim_ > __sx_arg_isep_lit_max_))" in 1)
+
+	case "$((__sx_arg_isep_lit_max_ < __sx_arg_isep_lit_lim_))" in 1)
 		__sx_arg_isep_lit_lim_="${__sx_arg_isep_lit_max_}"
 	esac
 
-	case "${__sx_arg_isep_lit_int_}" in
-		-*) __sx_arg_isep_lit_r_=$((${#} - __sx_arg_isep_lit_lim_ * ${__sx_arg_isep_lit_int_#-}));;
-		*) __sx_arg_isep_lit_r_="${__sx_arg_isep_lit_int_}";;
+	# --- オフセット (r_) の計算 ---
+	# ループ内で最初のセパレータをどこで入れるかを決めるための基準値を算出する。
+	# 正の場合：単純にインターバル数。
+	# 負の場合：要素数と残りの挿入可能回数から、左から数えて何個目を起点にするかを逆算。
+	__sx_arg_isep_lit_r_=$((0 < __sx_arg_isep_lit_int_ ? __sx_arg_isep_lit_int_ : ${#} - __sx_arg_isep_lit_lim_ * ${__sx_arg_isep_lit_int_#-}))
+
+	# --- PRE セパレータの挿入 ---
+	# 先頭にセパレータを配置するフラグがある場合の処理。
+	case "$((
+		__sx_arg_isep_lit_flg_ & SX_ARG_ISEP_PRE &&
+		(0 < __sx_arg_isep_lit_int_ ?
+			__sx_arg_isep_lit_lim_ != 0 :
+			__sx_arg_isep_lit_eff_ < __sx_arg_isep_lit_lim_ &&
+			(__sx_arg_isep_lit_r_ % __sx_arg_isep_lit_int_) == 0)
+		))" in 1)
+		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
+		: $((__sx_arg_isep_lit_lim_ -= 1))
 	esac
 
-	__sx_arg_isep_lit_j_=1
-
-	# PRE
-	case "${__sx_arg_isep_lit_int_}" in
-		-*)	case "$(( (__sx_arg_isep_lit_flags_ & SX_ARG_ISEP_PRE) && 
-		           (__sx_arg_isep_lit_r_ % ${__sx_arg_isep_lit_int_#-}) == 0 &&
-		           __sx_arg_isep_lit_lim_ > __sx_arg_isep_lit_eff_ ))" in 1)
-			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
-			: $((__sx_arg_isep_lit_lim_ -= 1))
-		esac
-		;;
-		*)	case "$(( (__sx_arg_isep_lit_flags_ & SX_ARG_ISEP_PRE) && 0 < __sx_arg_isep_lit_lim_ ))" in 1)
-			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
-			: $((__sx_arg_isep_lit_lim_ -= 1))
-		esac
-		;;
-	esac
-
-	# ループ
+	__sx_arg_isep_lit_i_=1
+	# --- メインループ: 引数の結合 ---
 	for __sx_arg_isep_lit_arg_ in "${@}"; do
-		case "$((1 < __sx_arg_isep_lit_j_ &&
-		         __sx_arg_isep_lit_r_ < __sx_arg_isep_lit_j_ &&
-		         (__sx_arg_isep_lit_j_ - __sx_arg_isep_lit_r_ - 1) % ${__sx_arg_isep_lit_int_#-} == 0 &&
-		         0 < __sx_arg_isep_lit_lim_))" in 1)
+		# 1. セパレータの挿入判定
+		#    - 制限回数 (lim) が残っている
+		#    - 最初の要素ではなく (1 < j_)
+		#    - オフセット位置を過ぎており (r_ < j_)
+		#    - インターバルの倍数位置である ((j - r - 1) % int == 0)
+		case "$((
+			__sx_arg_isep_lit_lim_ != 0 &&
+			1 < __sx_arg_isep_lit_i_ &&
+			__sx_arg_isep_lit_r_ < __sx_arg_isep_lit_i_ &&
+			(__sx_arg_isep_lit_i_ - __sx_arg_isep_lit_r_ - 1) % __sx_arg_isep_lit_int_ == 0
+		))" in 1)
 			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
 			: $((__sx_arg_isep_lit_lim_ -= 1))
 		esac
+
+		# 2. 値の結合（クォートして結合）
 		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_arg_}"|], CLEANUP)
-		: $((__sx_arg_isep_lit_j_ += 1))
+		: $((__sx_arg_isep_lit_i_ += 1))
 	done
 
-	# POST
-	case "${__sx_arg_isep_lit_int_}" in
-		-*)	case "${__sx_arg_isep_lit_post_ok_-0}" in 1)
-			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
-		esac
-		;;
-		*)	case "$(( (__sx_arg_isep_lit_flags_ & SX_ARG_ISEP_POST) && 0 < __sx_arg_isep_lit_lim_ &&
-		           (${#} - __sx_arg_isep_lit_r_) % ${__sx_arg_isep_lit_int_} == 0 ))" in 1)
-			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
-		esac
-		;;
+	# --- POST セパレータの挿入 ---
+	# 末尾にセパレータを配置するフラグがある場合の処理。
+	case "$((${__sx_arg_isep_lit_post_ok_-0} || (
+		0 < __sx_arg_isep_lit_int_ &&
+		__sx_arg_isep_lit_lim_ != 0 &&
+		__sx_arg_isep_lit_flg_ & SX_ARG_ISEP_POST &&
+		(${#} - __sx_arg_isep_lit_r_) % ${__sx_arg_isep_lit_int_} == 0
+	)))" in 1)
+		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
 	esac
 
+	# 結果を出力変数に格納
 	eval ${__sx_arg_isep_lit_out_:+"${__sx_arg_isep_lit_bind_}=\"\${__sx_arg_isep_lit_out_}\""}
 
 	unset CLEANUP
