@@ -172,6 +172,30 @@ Describe 'sx_str_isep'
       The variable res should equal "-"
     End
 
+    It '空文字列に対して 正のインターバル、PRE のみの場合'
+      When call sx_str_isep res "" "-" 1 "" "$SX_STR_ISEP_PRE"
+      The status should be success
+      The variable res should equal "-"
+    End
+
+    It '空文字列に対して 負のインターバル、PRE のみの場合'
+      When call sx_str_isep res "" "-" -1 "" "$SX_STR_ISEP_PRE"
+      The status should be success
+      The variable res should equal ""
+    End
+
+    It '空文字列に対して 正のインターバル、POST のみの場合'
+      When call sx_str_isep res "" "-" 1 "" "$SX_STR_ISEP_POST"
+      The status should be success
+      The variable res should equal ""
+    End
+
+    It '空文字列に対して 負のインターバル、POST のみの場合'
+      When call sx_str_isep res "" "-" -1 "" "$SX_STR_ISEP_POST"
+      The status should be success
+      The variable res should equal "-"
+    End
+
     It 'インターバルより短い文字列でも PRE で挿入されること'
       When call sx_str_isep res "abc" "-" 5 "" "$SX_STR_ISEP_PRE"
       The status should be success

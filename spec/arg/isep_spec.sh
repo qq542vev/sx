@@ -517,6 +517,54 @@ Describe 'sx_arg_isep'
       The value "$6" should equal "d"
       The value "$#" should equal 6
     End
+
+    It '引数が空で 正のインターバル、PRE|POST の場合、セパレータが1つだけ出力されること'
+      When call sx_arg_isep r1 x 1 10 "$((SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" :::
+      The status should be success
+      The variable r1 should equal "'x'"
+    End
+
+    It '引数が空で 負のインターバル、PRE|POST の場合、セパレータが1つだけ出力されること'
+      When call sx_arg_isep r2 x -1 10 "$((SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" :::
+      The status should be success
+      The variable r2 should equal "'x'"
+    End
+
+    It '引数が空で 正のインターバル、PRE のみの場合、セパレータが1つ出力されること'
+      When call sx_arg_isep res x 1 10 "$SX_ARG_ISEP_PRE" :::
+      The status should be success
+      The variable res should equal "'x'"
+    End
+
+    It '引数が空で 負のインターバル、PRE のみの場合、何も出力されないこと'
+      When call sx_arg_isep res x -1 10 "$SX_ARG_ISEP_PRE" :::
+      The status should be success
+      The variable res should equal ""
+    End
+
+    It '引数が空で 正のインターバル、POST のみの場合、何も出力されないこと'
+      When call sx_arg_isep res x 1 10 "$SX_ARG_ISEP_POST" :::
+      The status should be success
+      The variable res should equal ""
+    End
+
+    It '引数が空で 負のインターバル、POST のみの場合、セパレータが1つ出力されること'
+      When call sx_arg_isep res x -1 10 "$SX_ARG_ISEP_POST" :::
+      The status should be success
+      The variable res should equal "'x'"
+    End
+
+    It '引数が空で 正のインターバル、フラグなしの場合、何も出力されないこと'
+      When call sx_arg_isep res x 1 10 "" :::
+      The status should be success
+      The variable res should equal ""
+    End
+
+    It '引数が空で 負のインターバル、フラグなしの場合、何も出力されないこと'
+      When call sx_arg_isep res x -1 10 "" :::
+      The status should be success
+      The variable res should equal ""
+    End
   End
 
   Describe 'コールバックモード (CB)'
@@ -839,6 +887,57 @@ Describe 'sx_arg_isep'
       readonly ro_res_isep_cb="fixed"
       When call sx_arg_isep ro_res_isep_cb cb 1 "" "$SX_ARG_ISEP_CB" ::: "a"
       The status should equal 77
+    End
+
+    Context '引数が空の場合の挙動 (CB)'
+      It '引数が空で 正のインターバル、PRE|POST|CB の場合、セパレータが1つだけ出力されること'
+        cb() { __sx_var_set "${1}=X${2}"; }
+        When call sx_arg_isep res cb 1 10 "$((SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST | SX_ARG_ISEP_CB))" :::
+        The status should be success
+        The variable res should equal "'X1'"
+      End
+
+      It '引数が空で 負のインターバル、PRE|POST|CB の場合、セパレータが1つだけ出力されること'
+        cb() { __sx_var_set "${1}=X${2}"; }
+        When call sx_arg_isep res cb -1 10 "$((SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST | SX_ARG_ISEP_CB))" :::
+        The status should be success
+        The variable res should equal "'X1'"
+      End
+
+      It '引数が空で 正のインターバル、PRE|CB の場合、セパレータが1つ出力されること'
+        cb() { __sx_var_set "${1}=X${2}"; }
+        When call sx_arg_isep res cb 1 10 "$((SX_ARG_ISEP_PRE | SX_ARG_ISEP_CB))" :::
+        The status should be success
+        The variable res should equal "'X1'"
+      End
+
+      It '引数が空で 負のインターバル、PRE|CB の場合、何も出力されないこと'
+        cb() { __sx_var_set "${1}=X${2}"; }
+        When call sx_arg_isep res cb -1 10 "$((SX_ARG_ISEP_PRE | SX_ARG_ISEP_CB))" :::
+        The status should be success
+        The variable res should equal ""
+      End
+
+      It '引数が空で 正のインターバル、POST|CB の場合、何も出力されないこと'
+        cb() { __sx_var_set "${1}=X${2}"; }
+        When call sx_arg_isep res cb 1 10 "$((SX_ARG_ISEP_POST | SX_ARG_ISEP_CB))" :::
+        The status should be success
+        The variable res should equal ""
+      End
+
+      It '引数が空で 負のインターバル、POST|CB の場合、セパレータが1つ出力されること'
+        cb() { __sx_var_set "${1}=X${2}"; }
+        When call sx_arg_isep res cb -1 10 "$((SX_ARG_ISEP_POST | SX_ARG_ISEP_CB))" :::
+        The status should be success
+        The variable res should equal "'X1'"
+      End
+
+      It '引数が空で 正のインターバル、CBのみ（フラグなし）の場合、何も出力されないこと'
+        cb() { __sx_var_set "${1}=X${2}"; }
+        When call sx_arg_isep res cb 1 10 "$SX_ARG_ISEP_CB" :::
+        The status should be success
+        The variable res should equal ""
+      End
     End
   End
 
