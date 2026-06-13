@@ -1248,7 +1248,7 @@ __sx_arg_isep_lit() {
 }
 
 define([|V|], [|__sx_arg_isep_cb_$1_|])dnl
-define([|CLEANUP|], [|V(ret) V(bind) V(arg) V(cb) V(int) V(lim) V(flg) V(N) V(eff) V(max) V(r) V(i) V(pre) V(post) V(cnt) V(stat) V(pre_done) V(res_i) V(el_base) V(skip) V(budget) V(v)|])dnl
+define([|CLEANUP|], [|V(ret) V(bind) V(arg) V(cb) V(int) V(lim) V(flg) V(max) V(r) V(i) V(pre) V(post) V(cnt) V(stat) V(pre_done) V(res_i) V(el_base) V(skip) V(budget) V(v)|])dnl
 
 ### __sx_arg_isep_cb - 引数間にセパレータを挿入する（コールバックモード、内部用）
 ##
@@ -1387,15 +1387,13 @@ __sx_arg_isep_cb() {
 		# 1. POST（右端：末尾セパレータ）
 		case "${__sx_arg_isep_cb_post_-0}" in 1)
 			__sx_arg_isep_cb_cnt_=$((__sx_arg_isep_cb_cnt_ + 1))
-			# SAVE state (15 vars)
+			# SAVE state (13 vars)
 			set -- \
 				"${__sx_arg_isep_cb_stat_}" \
 				"${__sx_arg_isep_cb_lim_}" \
 				"${__sx_arg_isep_cb_cnt_}" \
 				"${__sx_arg_isep_cb_pre_done_}" \
 				"${__sx_arg_isep_cb_budget_}" \
-				"${__sx_arg_isep_cb_N_}" \
-				"${__sx_arg_isep_cb_eff_}" \
 				"${__sx_arg_isep_cb_r_}" \
 				"${__sx_arg_isep_cb_int_}" \
 				"${__sx_arg_isep_cb_pre_}" \
@@ -1406,28 +1404,26 @@ __sx_arg_isep_cb() {
 				"${__sx_arg_isep_cb_i_}" \
 				"${@}"
 			# CB call + status capture in $1
-			"${13}" __sx_arg_isep_cb_ret_ "${3}" && set -- 0 "${@}" || set -- "${?}" "${@}"
-			# RESTORE state from $2..$16, status from $1
+			"${11}" __sx_arg_isep_cb_ret_ "${3}" && set -- 0 "${@}" || set -- "${?}" "${@}"
+			# RESTORE state from $2..$14, status from $1
 			__sx_arg_isep_cb_stat_="${2}"
 			__sx_arg_isep_cb_lim_="${3}"
 			__sx_arg_isep_cb_cnt_="${4}"
 			__sx_arg_isep_cb_pre_done_="${5}"
 			__sx_arg_isep_cb_budget_="${6}"
-			__sx_arg_isep_cb_N_="${7}"
-			__sx_arg_isep_cb_eff_="${8}"
-			__sx_arg_isep_cb_r_="${9}"
-			__sx_arg_isep_cb_int_="${10}"
-			__sx_arg_isep_cb_pre_="${11}"
-			__sx_arg_isep_cb_post_="${12}"
-			__sx_arg_isep_cb_bind_="${13}"
-			__sx_arg_isep_cb_cb_="${14}"
-			__sx_arg_isep_cb_flg_="${15}"
-			__sx_arg_isep_cb_i_="${16}"
+			__sx_arg_isep_cb_r_="${7}"
+			__sx_arg_isep_cb_int_="${8}"
+			__sx_arg_isep_cb_pre_="${9}"
+			__sx_arg_isep_cb_post_="${10}"
+			__sx_arg_isep_cb_bind_="${11}"
+			__sx_arg_isep_cb_cb_="${12}"
+			__sx_arg_isep_cb_flg_="${13}"
+			__sx_arg_isep_cb_i_="${14}"
 			case "$((${1} != 0))" in 1)
 				__sx_arg_isep_cb_stat_="${1}"
 				__sx_arg_isep_cb_lim_=0
 			esac
-			shift 16
+			shift 14
 			set -- "${__sx_arg_isep_cb_ret_}" "${@}"
 			unset __sx_arg_isep_cb_ret_
 		esac
@@ -1446,15 +1442,13 @@ __sx_arg_isep_cb() {
 			))" in 1)
 				: $((__sx_arg_isep_cb_lim_ -= 1))
 				__sx_arg_isep_cb_cnt_=$((__sx_arg_isep_cb_cnt_ + 1))
-				# SAVE state (15 vars)
+				# SAVE state (13 vars)
 				set -- \
 					"${__sx_arg_isep_cb_stat_}" \
 					"${__sx_arg_isep_cb_lim_}" \
 					"${__sx_arg_isep_cb_cnt_}" \
 					"${__sx_arg_isep_cb_pre_done_}" \
 					"${__sx_arg_isep_cb_budget_}" \
-					"${__sx_arg_isep_cb_N_}" \
-					"${__sx_arg_isep_cb_eff_}" \
 					"${__sx_arg_isep_cb_r_}" \
 					"${__sx_arg_isep_cb_int_}" \
 					"${__sx_arg_isep_cb_pre_}" \
@@ -1465,28 +1459,26 @@ __sx_arg_isep_cb() {
 					"${__sx_arg_isep_cb_i_}" \
 					"${@}"
 				# CB call + status capture in $1
-				"${13}" __sx_arg_isep_cb_ret_ "${3}" && set -- 0 "${@}" || set -- "${?}" "${@}"
-				# RESTORE state from $2..$16, status from $1
+				"${11}" __sx_arg_isep_cb_ret_ "${3}" && set -- 0 "${@}" || set -- "${?}" "${@}"
+				# RESTORE state from $2..$14, status from $1
 				__sx_arg_isep_cb_stat_="${2}"
 				__sx_arg_isep_cb_lim_="${3}"
 				__sx_arg_isep_cb_cnt_="${4}"
 				__sx_arg_isep_cb_pre_done_="${5}"
 				__sx_arg_isep_cb_budget_="${6}"
-				__sx_arg_isep_cb_N_="${7}"
-				__sx_arg_isep_cb_eff_="${8}"
-				__sx_arg_isep_cb_r_="${9}"
-				__sx_arg_isep_cb_int_="${10}"
-				__sx_arg_isep_cb_pre_="${11}"
-				__sx_arg_isep_cb_post_="${12}"
-				__sx_arg_isep_cb_bind_="${13}"
-				__sx_arg_isep_cb_cb_="${14}"
-				__sx_arg_isep_cb_flg_="${15}"
-				__sx_arg_isep_cb_i_="${16}"
+				__sx_arg_isep_cb_r_="${7}"
+				__sx_arg_isep_cb_int_="${8}"
+				__sx_arg_isep_cb_pre_="${9}"
+				__sx_arg_isep_cb_post_="${10}"
+				__sx_arg_isep_cb_bind_="${11}"
+				__sx_arg_isep_cb_cb_="${12}"
+				__sx_arg_isep_cb_flg_="${13}"
+				__sx_arg_isep_cb_i_="${14}"
 				case "$((${1} != 0))" in 1)
 					__sx_arg_isep_cb_stat_="${1}"
 					__sx_arg_isep_cb_lim_=0
 				esac
-				shift 16
+				shift 14
 				set -- "${__sx_arg_isep_cb_ret_}" "${@}"
 				unset __sx_arg_isep_cb_ret_
 			esac
@@ -1497,15 +1489,13 @@ __sx_arg_isep_cb() {
 		# 3. PRE（左端：先頭セパレータ）
 		case "$((__sx_arg_isep_cb_pre_ && __sx_arg_isep_cb_stat_ == 0))" in 1)
 			__sx_arg_isep_cb_cnt_=$((__sx_arg_isep_cb_cnt_ + 1))
-			# SAVE state (15 vars)
+			# SAVE state (13 vars)
 			set -- \
 				"${__sx_arg_isep_cb_stat_}" \
 				"${__sx_arg_isep_cb_lim_}" \
 				"${__sx_arg_isep_cb_cnt_}" \
 				"${__sx_arg_isep_cb_pre_done_}" \
 				"${__sx_arg_isep_cb_budget_}" \
-				"${__sx_arg_isep_cb_N_}" \
-				"${__sx_arg_isep_cb_eff_}" \
 				"${__sx_arg_isep_cb_r_}" \
 				"${__sx_arg_isep_cb_int_}" \
 				"${__sx_arg_isep_cb_pre_}" \
@@ -1516,28 +1506,26 @@ __sx_arg_isep_cb() {
 				"${__sx_arg_isep_cb_i_}" \
 				"${@}"
 			# CB call + status capture in $1
-			"${13}" __sx_arg_isep_cb_ret_ "${3}" && set -- 0 "${@}" || set -- "${?}" "${@}"
-			# RESTORE state from $2..$16, status from $1
+			"${11}" __sx_arg_isep_cb_ret_ "${3}" && set -- 0 "${@}" || set -- "${?}" "${@}"
+			# RESTORE state from $2..$14, status from $1
 			__sx_arg_isep_cb_stat_="${2}"
 			__sx_arg_isep_cb_lim_="${3}"
 			__sx_arg_isep_cb_cnt_="${4}"
 			__sx_arg_isep_cb_pre_done_="${5}"
 			__sx_arg_isep_cb_budget_="${6}"
-			__sx_arg_isep_cb_N_="${7}"
-			__sx_arg_isep_cb_eff_="${8}"
-			__sx_arg_isep_cb_r_="${9}"
-			__sx_arg_isep_cb_int_="${10}"
-			__sx_arg_isep_cb_pre_="${11}"
-			__sx_arg_isep_cb_post_="${12}"
-			__sx_arg_isep_cb_bind_="${13}"
-			__sx_arg_isep_cb_cb_="${14}"
-			__sx_arg_isep_cb_flg_="${15}"
-			__sx_arg_isep_cb_i_="${16}"
+			__sx_arg_isep_cb_r_="${7}"
+			__sx_arg_isep_cb_int_="${8}"
+			__sx_arg_isep_cb_pre_="${9}"
+			__sx_arg_isep_cb_post_="${10}"
+			__sx_arg_isep_cb_bind_="${11}"
+			__sx_arg_isep_cb_cb_="${12}"
+			__sx_arg_isep_cb_flg_="${13}"
+			__sx_arg_isep_cb_i_="${14}"
 			case "$((${1} != 0))" in 1)
 				__sx_arg_isep_cb_stat_="${1}"
 				__sx_arg_isep_cb_lim_=0
 			esac
-			shift 16
+			shift 14
 			set -- "${__sx_arg_isep_cb_ret_}" "${@}"
 			__sx_arg_isep_cb_pre_done_=1
 			unset __sx_arg_isep_cb_ret_
@@ -1550,6 +1538,9 @@ __sx_arg_isep_cb() {
 		# skip_: 打ち切られた内部セパレータ数
 		#   = min(budget, eff) - cnt + pre_done + post_（負の場合は0）
 		#   → 要素ループ内で「本来セパレータが入るが制限超過で省略」
+		__sx_arg_isep_cb_N_=$(( ${#} - __sx_arg_isep_cb_cnt_ ))
+		__sx_arg_isep_cb_eff_=$(( 0 < __sx_arg_isep_cb_N_ ? \
+			(__sx_arg_isep_cb_N_ - 1) / ${__sx_arg_isep_cb_int_#-} : 0 ))
 		__sx_arg_isep_cb_res_i_=1
 		__sx_arg_isep_cb_el_base_=$((__sx_arg_isep_cb_cnt_ + 1))
 		__sx_arg_isep_cb_skip_=$((__sx_arg_isep_cb_budget_ < __sx_arg_isep_cb_eff_ ? __sx_arg_isep_cb_budget_ : __sx_arg_isep_cb_eff_))
@@ -1604,6 +1595,7 @@ __sx_arg_isep_cb() {
 		esac
 
 		set -- "${__sx_arg_isep_cb_stat_}"
+		unset V(N) V(eff)
 		unset CLEANUP
 		return "${1}"
 	fi
