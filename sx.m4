@@ -1248,7 +1248,7 @@ __sx_arg_isep_lit() {
 }
 
 define([|V|], [|__sx_arg_isep_cb_$1_|])dnl
-define([|CLEANUP|], [|V(ret) V(bind) V(arg) V(cb) V(int) V(lim) V(flg) V(max) V(r) V(i) V(pre) V(post) V(cnt) V(stat) V(pre_done) V(res_i) V(el_base) V(skip) V(budget) V(v)|])dnl
+define([|CLEANUP|], [|V(ret) V(bind) V(arg) V(cb) V(int) V(lim) V(flg) V(max) V(r) V(i) V(pre) V(cnt) V(stat) V(pre_done) V(res_i) V(el_base) V(skip) V(budget) V(v)|])dnl
 
 ### __sx_arg_isep_cb - 引数間にセパレータを挿入する（コールバックモード、内部用）
 ##
@@ -1400,7 +1400,7 @@ __sx_arg_isep_cb() {
 			))" in 1)
 				: $((__sx_arg_isep_cb_cnt_ += 1))
 
-				# SAVE state (13 vars)
+				# SAVE state (12 vars)
 				set -- \
 					"${__sx_arg_isep_cb_stat_}" \
 					"${__sx_arg_isep_cb_lim_}" \
@@ -1410,15 +1410,14 @@ __sx_arg_isep_cb() {
 					"${__sx_arg_isep_cb_r_}" \
 					"${__sx_arg_isep_cb_int_}" \
 					"${__sx_arg_isep_cb_pre_}" \
-					"${__sx_arg_isep_cb_post_}" \
 					"${__sx_arg_isep_cb_bind_}" \
 					"${__sx_arg_isep_cb_cb_}" \
 					"${__sx_arg_isep_cb_flg_}" \
 					"${__sx_arg_isep_cb_i_}" \
 					"${@}"
 				# CB call + status capture in $1
-				"${11}" __sx_arg_isep_cb_ret_ "${3}" && set -- 0 "${@}" || set -- "${?}" "${@}"
-				# RESTORE state from $2..$14, status from $1
+				"${10}" __sx_arg_isep_cb_ret_ "${3}" && set -- 0 "${@}" || set -- "${?}" "${@}"
+				# RESTORE state from $2..$13, status from $1
 				__sx_arg_isep_cb_stat_="${2}"
 				__sx_arg_isep_cb_lim_="${3}"
 				__sx_arg_isep_cb_cnt_="${4}"
@@ -1427,16 +1426,16 @@ __sx_arg_isep_cb() {
 				__sx_arg_isep_cb_r_="${7}"
 				__sx_arg_isep_cb_int_="${8}"
 				__sx_arg_isep_cb_pre_="${9}"
-				__sx_arg_isep_cb_post_="${10}"
-				__sx_arg_isep_cb_bind_="${11}"
-				__sx_arg_isep_cb_cb_="${12}"
-				__sx_arg_isep_cb_flg_="${13}"
-				__sx_arg_isep_cb_i_="${14}"
+				__sx_arg_isep_cb_bind_="${10}"
+				__sx_arg_isep_cb_cb_="${11}"
+				__sx_arg_isep_cb_flg_="${12}"
+				__sx_arg_isep_cb_i_="${13}"
+				__sx_arg_isep_cb_post_=$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_POST && __sx_arg_isep_cb_lim_ != 0))
 				case "$((${1} != 0))" in 1)
 					__sx_arg_isep_cb_stat_="${1}"
 					__sx_arg_isep_cb_lim_=0
 				esac
-				shift 14
+				shift 13
 				# lim消費（PRE以外）
 				case "$((__sx_arg_isep_cb_i_ != 0))" in 1)
 					: $((__sx_arg_isep_cb_lim_ -= 1))
@@ -1517,7 +1516,7 @@ __sx_arg_isep_cb() {
 		esac
 
 		set -- "${__sx_arg_isep_cb_stat_}"
-		unset V(N) V(eff)
+		unset V(N) V(eff) V(post)
 		unset CLEANUP
 		return "${1}"
 	fi
