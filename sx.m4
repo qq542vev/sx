@@ -1163,7 +1163,7 @@ __sx_arg_isep_lit() {
 	shift 5
 
 	# セパレータを挿入可能な論理的な箇所数（要素間のみ）を計算
-	__sx_arg_isep_lit_eff_=$((0 < ${#} ? (${#} - 1) / ${__sx_arg_isep_lit_int_#-}: 0))
+	__sx_arg_isep_lit_eff_=$(((0 < ${#}) * (${#} - 1) / ${__sx_arg_isep_lit_int_#-}))
 
 	# --- 特殊処理: 負のインターバル（後方から数えるモード） ---
 	# インターバルが負の場合、末尾（POST側）を基準にするため、
@@ -1338,18 +1338,18 @@ __sx_arg_isep_cb() {
 		shift 5
 
 		# max = eff（accumulator、max < lim なら lim を cap）
-		__sx_arg_isep_cb_max_=$((0 < ${#} ? (${#} - 1) / ${__sx_arg_isep_cb_int_#-} : 0))
+		__sx_arg_isep_cb_max_=$(((0 < ${#}) * (${#} - 1) / ${__sx_arg_isep_cb_int_#-}))
 
 		# POST加算
 		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_POST && __sx_arg_isep_cb_lim_ != 0))" in 1)
-			__sx_arg_isep_cb_max_=$((__sx_arg_isep_cb_max_ + 1))
+			: $((__sx_arg_isep_cb_max_ += 1))
 		esac
 
 		# PRE加算（eff < lim - post は max < lim に簡約）
 		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_PRE && \
 			__sx_arg_isep_cb_max_ < __sx_arg_isep_cb_lim_ && \
 			(${#} % ${__sx_arg_isep_cb_int_#-}) == 0))" in 1)
-			__sx_arg_isep_cb_max_=$((__sx_arg_isep_cb_max_ + 1))
+			: $((__sx_arg_isep_cb_max_ += 1))
 		esac
 
 		# lim capping
