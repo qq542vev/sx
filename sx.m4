@@ -1248,7 +1248,7 @@ __sx_arg_isep_lit() {
 }
 
 define([|V|], [|__sx_arg_isep_cb_$1_|])dnl
-define([|CLEANUP|], [|V(ret) V(bind) V(arg) V(cb) V(int) V(lim) V(flg) V(max) V(i) V(pre) V(cnt) V(stat) V(res_i) V(el_base) V(v)|])dnl
+define([|CLEANUP|], [|V(ret) V(bind) V(arg) V(cb) V(int) V(lim) V(flg) V(max) V(i) V(cnt) V(stat) V(res_i) V(el_base) V(v)|])dnl
 
 ### __sx_arg_isep_cb - 引数間にセパレータを挿入する（コールバックモード、内部用）
 ##
@@ -1337,26 +1337,25 @@ __sx_arg_isep_cb() {
 		__sx_arg_isep_cb_flg_=${5}
 		shift 5
 
-		__sx_arg_isep_cb_eff_=$((0 < ${#} ? (${#} - 1) / ${__sx_arg_isep_cb_int_#-} : 0))
-
-		# POSTフラグ
-		__sx_arg_isep_cb_post_=0
-		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_POST && __sx_arg_isep_cb_lim_ != 0))" in 1)
-			__sx_arg_isep_cb_post_=1
-		esac
+		# max = eff（accumulator、max < lim なら lim を cap）
+		__sx_arg_isep_cb_max_=$((0 < ${#} ? (${#} - 1) / ${__sx_arg_isep_cb_int_#-} : 0))
 
 		# r_: 左側スキップ要素数（lim cap前に仮計算）
 		__sx_arg_isep_cb_r_=$((0 < __sx_arg_isep_cb_int_ ? __sx_arg_isep_cb_int_ : ${#} - __sx_arg_isep_cb_lim_ * ${__sx_arg_isep_cb_int_#-}))
 
-		# PRE可否（割り切れ条件含む）
-		__sx_arg_isep_cb_pre_=0
-		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_PRE && __sx_arg_isep_cb_eff_ < __sx_arg_isep_cb_lim_ - __sx_arg_isep_cb_post_ && (__sx_arg_isep_cb_r_ % ${__sx_arg_isep_cb_int_#-}) == 0))" in 1)
-			__sx_arg_isep_cb_pre_=1
+		# POST加算
+		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_POST && __sx_arg_isep_cb_lim_ != 0))" in 1)
+			__sx_arg_isep_cb_max_=$((__sx_arg_isep_cb_max_ + 1))
 		esac
 
-		# 最大挿入可能数（eff + PRE + POST）を計算しlimを上限で制限
-		__sx_arg_isep_cb_max_=$((__sx_arg_isep_cb_eff_ + __sx_arg_isep_cb_pre_ + __sx_arg_isep_cb_post_))
+		# PRE加算（eff < lim - post は max < lim に簡約）
+		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_PRE && \
+			__sx_arg_isep_cb_max_ < __sx_arg_isep_cb_lim_ && \
+			(__sx_arg_isep_cb_r_ % ${__sx_arg_isep_cb_int_#-}) == 0))" in 1)
+			__sx_arg_isep_cb_max_=$((__sx_arg_isep_cb_max_ + 1))
+		esac
 
+		# lim capping
 		case "$((__sx_arg_isep_cb_max_ < __sx_arg_isep_cb_lim_))" in 1)
 			__sx_arg_isep_cb_lim_=${__sx_arg_isep_cb_max_}
 		esac
@@ -1410,12 +1409,13 @@ __sx_arg_isep_cb() {
 
 		# ===== Phase 2: 左→右bind =====
 		__sx_arg_isep_cb_N_=$(( ${#} - __sx_arg_isep_cb_cnt_ ))
+		__sx_arg_isep_cb_post_ok_=$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_POST && __sx_arg_isep_cb_lim_ != 0))
 		__sx_arg_isep_cb_eff_=$(( 0 < __sx_arg_isep_cb_N_ ? \
 			(__sx_arg_isep_cb_N_ - 1) / ${__sx_arg_isep_cb_int_#-} : 0 ))
-		__sx_arg_isep_cb_int_sep_=$((__sx_arg_isep_cb_cnt_ - __sx_arg_isep_cb_post_ < __sx_arg_isep_cb_eff_ ? __sx_arg_isep_cb_cnt_ - __sx_arg_isep_cb_post_ : __sx_arg_isep_cb_eff_))
+		__sx_arg_isep_cb_int_sep_=$((__sx_arg_isep_cb_cnt_ - __sx_arg_isep_cb_post_ok_ < __sx_arg_isep_cb_eff_ ? __sx_arg_isep_cb_cnt_ - __sx_arg_isep_cb_post_ok_ : __sx_arg_isep_cb_eff_))
 		case "$((__sx_arg_isep_cb_int_sep_ < 0))" in 1) __sx_arg_isep_cb_int_sep_=0; esac
 		__sx_arg_isep_cb_r_=$((__sx_arg_isep_cb_N_ - __sx_arg_isep_cb_int_sep_ * ${__sx_arg_isep_cb_int_#-}))
-		__sx_arg_isep_cb_pre_used_=$((__sx_arg_isep_cb_cnt_ > __sx_arg_isep_cb_int_sep_ + __sx_arg_isep_cb_post_ ? 1 : 0))
+		__sx_arg_isep_cb_pre_used_=$((__sx_arg_isep_cb_cnt_ > __sx_arg_isep_cb_int_sep_ + __sx_arg_isep_cb_post_ok_ ? 1 : 0))
 
 		__sx_arg_isep_cb_res_i_=1
 		__sx_arg_isep_cb_el_base_=$((__sx_arg_isep_cb_cnt_ + 1))
@@ -1453,14 +1453,14 @@ __sx_arg_isep_cb() {
 		done
 
 		# POST結果をbind
-		case "$((__sx_arg_isep_cb_post_ && __sx_arg_isep_cb_res_i_ <= __sx_arg_isep_cb_cnt_))" in 1)
+		case "$((__sx_arg_isep_cb_post_ok_ && __sx_arg_isep_cb_res_i_ <= __sx_arg_isep_cb_cnt_))" in 1)
 			eval '__sx_arg_isep_cb_v_="${'"${__sx_arg_isep_cb_res_i_}"'}"'
 			__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${__sx_arg_isep_cb_v_}" "${SX_VAR_BIND_QUOTE}" || __sx_arg_isep_cb_stat_="${?}"
 			unset __sx_arg_isep_cb_v_
 		esac
 
 		set -- "${__sx_arg_isep_cb_stat_}"
-		unset V(N) V(eff) V(post) V(int_sep) V(pre_used) V(r)
+		unset V(N) V(eff) V(post_ok) V(int_sep) V(pre_used) V(r)
 		unset CLEANUP
 		return "${1}"
 	fi
