@@ -1373,20 +1373,19 @@ __sx_arg_isep_cb() {
 			__sx_arg_isep_cb_cnt_=$((__sx_arg_isep_cb_cnt_ + 1))
 
 			# SAVE state (9 vars) — 再帰呼び出しでCLEANUPにより変数が消える対策
-			set -- \
-				"${__sx_arg_isep_cb_bind_}" \
-				"${__sx_arg_isep_cb_cb_}" \
-				"${__sx_arg_isep_cb_int_}" \
-				"${__sx_arg_isep_cb_lim_}" \
-				"${__sx_arg_isep_cb_flg_}" \
-				"${__sx_arg_isep_cb_max_}" \
-				"${__sx_arg_isep_cb_r_}" \
-				"${__sx_arg_isep_cb_cnt_}" \
-				"${__sx_arg_isep_cb_stat_}" \
-				"${@}"
+		set -- \
+			"${__sx_arg_isep_cb_bind_}" \
+			"${__sx_arg_isep_cb_cb_}" \
+			"${__sx_arg_isep_cb_int_}" \
+			"${__sx_arg_isep_cb_lim_}" \
+			"${__sx_arg_isep_cb_flg_}" \
+			"${__sx_arg_isep_cb_r_}" \
+			"${__sx_arg_isep_cb_cnt_}" \
+			"${__sx_arg_isep_cb_stat_}" \
+			"${@}"
 
 			# CB call + exit status capture in $1
-			"${2}" __sx_arg_isep_cb_ret_ "${8}" && set -- 0 "${@}" || set -- "${?}" "${@}"
+			"${2}" __sx_arg_isep_cb_ret_ "${7}" && set -- 0 "${@}" || set -- "${?}" "${@}"
 
 			# RESTORE state from $2..$10
 			__sx_arg_isep_cb_bind_="${2}"
@@ -1394,17 +1393,16 @@ __sx_arg_isep_cb() {
 			__sx_arg_isep_cb_int_="${4}"
 			__sx_arg_isep_cb_lim_="${5}"
 			__sx_arg_isep_cb_flg_="${6}"
-			__sx_arg_isep_cb_max_="${7}"
-			__sx_arg_isep_cb_r_="${8}"
-			__sx_arg_isep_cb_cnt_="${9}"
-			__sx_arg_isep_cb_stat_="${10}"
+			__sx_arg_isep_cb_r_="${7}"
+			__sx_arg_isep_cb_cnt_="${8}"
+			__sx_arg_isep_cb_stat_="${9}"
 
 			# Apply CB exit status
 			case "$((${1} != 0))" in 1)
 				__sx_arg_isep_cb_stat_="${1}"
 			esac
 
-			shift 10
+			shift 9
 
 			# Prepend CB result
 			set -- "${__sx_arg_isep_cb_ret_}" "${@}"
