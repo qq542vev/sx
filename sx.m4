@@ -1341,13 +1341,12 @@ __sx_arg_isep_cb() {
 		__sx_arg_isep_cb_max_=$(((0 < ${#}) * (${#} - 1) / ${__sx_arg_isep_cb_int_#-}))
 
 		# POST加算
-		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_POST && __sx_arg_isep_cb_lim_ != 0))" in 1)
+		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_POST))" in [!0]*)
 			: $((__sx_arg_isep_cb_max_ += 1))
 		esac
 
 		# PRE加算（eff < lim - post は max < lim に簡約）
 		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_PRE && \
-			__sx_arg_isep_cb_max_ < __sx_arg_isep_cb_lim_ && \
 			(${#} % ${__sx_arg_isep_cb_int_#-}) == 0))" in 1)
 			: $((__sx_arg_isep_cb_max_ += 1))
 		esac
