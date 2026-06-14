@@ -1337,7 +1337,6 @@ __sx_arg_isep_cb() {
 		__sx_arg_isep_cb_flg_=${5}
 		shift 5
 
-		__sx_arg_isep_cb_N_=${#}
 		__sx_arg_isep_cb_eff_=$((0 < ${#} ? (${#} - 1) / ${__sx_arg_isep_cb_int_#-} : 0))
 
 		# POSTフラグ
