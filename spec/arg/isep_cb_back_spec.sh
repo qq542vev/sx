@@ -409,6 +409,25 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
     End
   End
 
+  Describe '回帰テスト: 内部セパレータのオーバーコンシューム防止'
+    It 'int=-2, 6要素 → cnt_=2に対し発火3回にならないこと'
+      cb() { __sx_var_set "${1}=${2}"; printf '%d' "${2}"; }
+      When call sx_arg_isep res cb -2 "" "$SX_ARG_ISEP_CB" ::: "a" "b" "c" "d" "e" "f"
+      The status should be success
+      The stdout should equal "12"
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "b"
+      The value "$3" should equal "2"
+      The value "$4" should equal "c"
+      The value "$5" should equal "d"
+      The value "$6" should equal "1"
+      The value "$7" should equal "e"
+      The value "$8" should equal "f"
+      The value "$#" should equal 8
+    End
+  End
+
   Describe '読み取り専用変数エラー'
     It '読み取り専用変数に書こうとすると EX_NOPERM'
       cb() { __sx_var_set "${1}=x"; }
