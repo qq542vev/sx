@@ -1406,7 +1406,7 @@ __sx_arg_isep_cb() {
 
 		# $@ 先頭から ${1} + shift で sep を消費する
 		# PRE (先頭セパレータ)
-		case "$((__sx_arg_isep_cb_cnt_ > 0 && __sx_arg_isep_cb_r_ <= 0))" in 1)
+		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_PRE && __sx_arg_isep_cb_r_ <= 0))" in 1)
 			__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1}" "${SX_VAR_BIND_QUOTE}" || {
 				set -- "${__sx_arg_isep_cb_stat_}"
 				unset CLEANUP V(post) V(r)
@@ -1438,7 +1438,6 @@ __sx_arg_isep_cb() {
 				}
 
 				shift
-				: $((__sx_arg_isep_cb_cnt_ -= 1))
 			esac
 
 			# 要素本体をbind
@@ -1450,14 +1449,8 @@ __sx_arg_isep_cb() {
 		done
 
 		# POST (末尾セパレータ)
-		case "$((__sx_arg_isep_cb_post_ && __sx_arg_isep_cb_cnt_ > 0))" in 1)
-			__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1}" "${SX_VAR_BIND_QUOTE}" || {
-				set -- "${__sx_arg_isep_cb_stat_}"
-				unset CLEANUP V(post) V(r)
-				return "${1}"
-			}
-
-			shift
+		case "$((__sx_arg_isep_cb_post_))" in 1)
+			__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1}" "${SX_VAR_BIND_QUOTE}" || :
 		esac
 
 		set -- "${__sx_arg_isep_cb_stat_}"
