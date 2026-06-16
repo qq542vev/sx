@@ -1143,7 +1143,7 @@ __sx_arg_isep() {
 }
 
 define([|V|], [|__sx_arg_isep_cb_$1_|])dnl
-define([|CLEANUP|], [|V(ret) V(bind) V(arg) V(cb) V(int) V(lim) V(flg) V(max) V(i) V(cnt) V(stat)|])dnl
+define([|CLEANUP|], [|V(bind) V(int) V(flg) V(cnt) V(stat) V(post) V(r) V(i) V(arg)|])dnl
 
 ### __sx_arg_isep_cb - 引数間にセパレータを挿入する（コールバックモード、内部用）
 ##
@@ -1171,12 +1171,12 @@ __sx_arg_isep_cb() {
 			"${5}" __sx_arg_isep_cb_ret_ "$((${1} + 1))" && set -- 0 "${@}" || set -- "${?}" "${@}"
 
 			__sx_var_bind __sx_arg_isep_cb_ret_ "${5}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}" || {
-				unset CLEANUP
+				unset __sx_arg_isep_cb_ret_
 				return "${1}"
 			}
 
 			__sx_arg_isep_cb_cb_="${6}"
-			eval 'shift 9; set --' "$((${1-0} ? ${8} : ${2} + 1))" "${1}" "${4}" '"${__sx_arg_isep_cb_ret_}"' '"${__sx_arg_isep_cb_cb_}"' "${7}" "${8}" "${9}" '"${@}"'
+			eval 'shift 9;' set -- "$((${1-0} ? ${8} : ${2} + 1))" "${1}" "${4}" '"${__sx_arg_isep_cb_ret_}"' '"${__sx_arg_isep_cb_cb_}"' "${7}" "${8}" "${9}" '"${@}"'
 
 			unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_cb_
 		esac
@@ -1194,7 +1194,7 @@ __sx_arg_isep_cb() {
 				"${5}" __sx_arg_isep_cb_ret_ "$((${1} + 1))" || set -- "${@}" "${?}"
 
 				__sx_var_bind __sx_arg_isep_cb_ret_ "${4}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}" || {
-					unset CLEANUP
+					unset __sx_arg_isep_cb_ret_
 					return "${10-${2}}"
 				}
 
@@ -1213,7 +1213,7 @@ __sx_arg_isep_cb() {
 			__sx_var_bind __sx_arg_isep_cb_ret_ "${4}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}" || :
 		esac
 
-		unset CLEANUP
+		unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_arg_
 		return "${2}"
 	else
 		# === 負のインターバル: countベースCB呼出 + 左→右bind ===
@@ -1274,7 +1274,7 @@ __sx_arg_isep_cb() {
 		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_PRE && __sx_arg_isep_cb_r_ == 0))" in 1)
 			__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1}" "${SX_VAR_BIND_QUOTE}" || {
 				set -- "${__sx_arg_isep_cb_stat_}"
-				unset CLEANUP V(post) V(r)
+				unset CLEANUP
 				return "${1}"
 			}
 
@@ -1283,7 +1283,7 @@ __sx_arg_isep_cb() {
 		esac
 
 		# 要素を左→右に走査してbind (for ループ)
-		__sx_arg_isep_cb_i_=$((-__sx_arg_isep_cb_cnt_))
+		__sx_arg_isep_cb_i_="-${__sx_arg_isep_cb_cnt_}"
 		for __sx_arg_isep_cb_arg_ in "${@}"; do
 			: $((__sx_arg_isep_cb_i_ += 1))
 
@@ -1298,7 +1298,7 @@ __sx_arg_isep_cb() {
 			))" in 1)
 				__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1}" "${SX_VAR_BIND_QUOTE}" || {
 					set -- "${__sx_arg_isep_cb_stat_}"
-					unset CLEANUP V(post) V(r)
+					unset CLEANUP
 					return "${1}"
 				}
 
@@ -1308,7 +1308,7 @@ __sx_arg_isep_cb() {
 			# 要素本体をbind
 			__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${__sx_arg_isep_cb_arg_}" "${SX_VAR_BIND_QUOTE}" || {
 				set -- "${__sx_arg_isep_cb_stat_}"
-				unset CLEANUP V(post) V(r)
+				unset CLEANUP
 				return "${1}"
 			}
 		done
@@ -1319,7 +1319,7 @@ __sx_arg_isep_cb() {
 		esac
 
 		set -- "${__sx_arg_isep_cb_stat_}"
-		unset CLEANUP V(post) V(r)
+		unset CLEANUP
 		return "${1}"
 	fi
 }
