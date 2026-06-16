@@ -925,7 +925,7 @@ sx_arg_find() {
 
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}" | "${3+X${3}}") ;;
-		*) __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3+"${3}"} || return;;
+		*) __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3:+"${3}"} || return;;
 	esac
 
 	__sx_arg_find "${@}"
@@ -943,10 +943,6 @@ sx_arg_find() {
 __sx_arg_find() {
 	__sx_var_bind_init "${1}"
 	__sx_arg_find_bind_="${1}"
-	__sx_arg_find_tgt_=
-	__sx_arg_find_flg_=0
-	__sx_arg_find_sts_=1
-	__sx_arg_find_out_=
 
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}") shift 2;;
@@ -955,19 +951,20 @@ __sx_arg_find() {
 			shift 3
 			;;
 		"${4+X${4}}")
-			__sx_arg_find_tgt_="${2}" __sx_arg_find_flg_=${3-0}
+			__sx_arg_find_tgt_="${2}" __sx_arg_find_flg_="${3}"
 			shift 4
 			;;
 		*)
-			__sx_arg_find_tgt_="${2-}" __sx_arg_find_flg_=${3-0}
-			shift "$((1 + 0${2+1} + 0${3+1}))"
+			__sx_arg_find_tgt_="${2-}"
+			shift "$((1 + 0${2+1}))"
 			;;
 	esac
 
-	__sx_arg_find_glob_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0))
+	: "${__sx_arg_find_tgt_:=}" "${__sx_arg_find_flg_:=0}"
 
-	# 順方向検索
+	__sx_arg_find_glob_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0))
 	__sx_arg_find_i_=1
+	__sx_arg_find_out_=
 
 	for __sx_arg_find_arg_ in "${@}"; do
 		case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
@@ -1002,7 +999,7 @@ __sx_arg_find() {
 
 	eval ${__sx_arg_find_out_:+"${__sx_arg_find_bind_}=\"\${__sx_arg_find_out_# }\""}
 
-	set -- "${__sx_arg_find_sts_}"
+	set -- "${__sx_arg_find_sts_-1}"
 
 	unset __sx_arg_find_bind_ __sx_arg_find_tgt_ __sx_arg_find_flg_ __sx_arg_find_glob_ __sx_arg_find_out_ __sx_arg_find_i_ __sx_arg_find_arg_ __sx_arg_find_sts_ __sx_arg_find_bind_cnt_ __sx_arg_find_bind_name_ __sx_arg_find_bind_esc_
 	return "${1}"
@@ -1040,10 +1037,7 @@ sx_arg_isep() {
 		"${4+X${4}}") __sx_arg_isep_int="${3}";;
 		"${5+X${5}}") __sx_arg_isep_int="${3}" __sx_arg_isep_lim="${4}";;
 		"${6+X${6}}") __sx_arg_isep_int="${3}" __sx_arg_isep_lim="${4}" __sx_arg_isep_flg="${5}";;
-		*) __sx_arg_isep_int=1 __sx_arg_isep_lim="${SX_NUM_I32_MAX}" __sx_arg_isep_flg=0;;
 	esac
-
-	: "${__sx_arg_isep_int:=1}" "${__sx_arg_isep_lim:=${SX_NUM_I32_MAX}}" "${__sx_arg_isep_flg:=0}"
 
 	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int_inv ${__sx_arg_isep_int:+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim:+"${__sx_arg_isep_lim}"} ${__sx_arg_isep_flg:+"${__sx_arg_isep_flg}"} || {
 		set -- "${?}"
@@ -1051,7 +1045,7 @@ sx_arg_isep() {
 		return "${1}"
 	}
 
-	case "${__sx_arg_isep_int#[+-]}" in 0)
+	case ${__sx_arg_isep_int:+"${__sx_arg_isep_int#[+-]}"} in 0)
 		unset __sx_arg_isep_int __sx_arg_isep_lim __sx_arg_isep_flg
 		return "${SX_EX_USAGE}"
 	esac
@@ -1748,7 +1742,7 @@ sx_arg_rfind() {
 
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}" | "${3+X${3}}") ;;
-		*) __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3+"${3}"} || return;;
+		*) __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3:+"${3}"} || return;;
 	esac
 
 	__sx_arg_rfind "${@}"
@@ -1765,71 +1759,68 @@ sx_arg_rfind() {
 ##   引数チェックは行わない。
 __sx_arg_rfind() {
 	__sx_var_bind_init "${1}"
-	__sx_arg_find_bind_="${1}"
-	__sx_arg_find_tgt_=
-	__sx_arg_find_flg_=0
-	__sx_arg_find_sts_=1
-	__sx_arg_find_out_=
+	__sx_arg_rfind_bind_="${1}"
 
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}") shift 2;;
 		"${3+X${3}}")
-			__sx_arg_find_tgt_="${2}"
+			__sx_arg_rfind_tgt_="${2}"
 			shift 3
 			;;
 		"${4+X${4}}")
-			__sx_arg_find_tgt_="${2}" __sx_arg_find_flg_=${3-0}
+			__sx_arg_rfind_tgt_="${2}" __sx_arg_rfind_flg_="${3}"
 			shift 4
 			;;
 		*)
-			__sx_arg_find_tgt_="${2-}" __sx_arg_find_flg_=${3-0}
-			shift "$((1 + 0${2+1} + 0${3+1}))"
+			__sx_arg_rfind_tgt_="${2-}"
+			shift "$((1 + 0${2+1}))"
 			;;
 	esac
 
-	__sx_arg_find_glob_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0))
+	: "${__sx_arg_rfind_tgt_:=}" "${__sx_arg_rfind_flg_:=0}"
 
-	# 逆方向検索
-	__sx_arg_find_i_="${#}"
+	__sx_arg_rfind_glob_=$(((__sx_arg_rfind_flg_ & SX_ARG_FIND_GLOB) != 0))
+	__sx_arg_rfind_i_="${#}"
+	__sx_arg_rfind_out_=
 
-	while case $((0 < __sx_arg_find_i_ )) in 0) ! :;; esac; do
-		eval __sx_arg_find_arg_=\"\${${__sx_arg_find_i_}}\"
+	while case $((0 < __sx_arg_rfind_i_ )) in 0) ! :;; esac; do
+		eval __sx_arg_rfind_arg_=\"\${${__sx_arg_rfind_i_}}\"
 
-		case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
-				case "${__sx_arg_find_bind_}" in
-		:*) __sx_arg_find_bind_="${__sx_arg_find_bind_#*:}";;
+		case "${__sx_arg_rfind_glob_}${__sx_arg_rfind_arg_}" in "0${__sx_arg_rfind_tgt_}" | 1${__sx_arg_rfind_tgt_})
+				case "${__sx_arg_rfind_bind_}" in
+		:*) __sx_arg_rfind_bind_="${__sx_arg_rfind_bind_#*:}";;
 		[1-9]*:*)
-			__sx_arg_find_bind_cnt_="${__sx_arg_find_bind_%%[!0-9]*}"
-			__sx_arg_find_bind_name_="${__sx_arg_find_bind_%%:*}"
-			__sx_arg_find_bind_name_="${__sx_arg_find_bind_name_#"${__sx_arg_find_bind_cnt_}"}"
+			__sx_arg_rfind_bind_cnt_="${__sx_arg_rfind_bind_%%[!0-9]*}"
+			__sx_arg_rfind_bind_name_="${__sx_arg_rfind_bind_%%:*}"
+			__sx_arg_rfind_bind_name_="${__sx_arg_rfind_bind_name_#"${__sx_arg_rfind_bind_cnt_}"}"
 
-			case "${__sx_arg_find_bind_name_}" in ?*)
-				eval "${__sx_arg_find_bind_name_}=\"\${${__sx_arg_find_bind_name_}-}\${${__sx_arg_find_bind_name_}+ }\"\"\${__sx_arg_find_i_}\""
+			case "${__sx_arg_rfind_bind_name_}" in ?*)
+				eval "${__sx_arg_rfind_bind_name_}=\"\${${__sx_arg_rfind_bind_name_}-}\${${__sx_arg_rfind_bind_name_}+ }\"\"\${__sx_arg_rfind_i_}\""
 			esac
 
-			case "${__sx_arg_find_bind_cnt_}" in
-				1) __sx_arg_find_bind_="${__sx_arg_find_bind_#*:}";;
-				*) __sx_arg_find_bind_="$((${__sx_arg_find_bind_cnt_} - 1))${__sx_arg_find_bind_name_}:${__sx_arg_find_bind_#*:}";;
+			case "${__sx_arg_rfind_bind_cnt_}" in
+				1) __sx_arg_rfind_bind_="${__sx_arg_rfind_bind_#*:}";;
+				*) __sx_arg_rfind_bind_="$((${__sx_arg_rfind_bind_cnt_} - 1))${__sx_arg_rfind_bind_name_}:${__sx_arg_rfind_bind_#*:}";;
 			esac
 			;;
 		*:*)
-				eval "${__sx_arg_find_bind_%%:*}=\"\${__sx_arg_find_i_}\""
-			__sx_arg_find_bind_="${__sx_arg_find_bind_#*:}"
+				eval "${__sx_arg_rfind_bind_%%:*}=\"\${__sx_arg_rfind_i_}\""
+			__sx_arg_rfind_bind_="${__sx_arg_rfind_bind_#*:}"
 			;;
-		?*) __sx_arg_find_out_="${__sx_arg_find_out_}${__sx_arg_find_out_:+ }""${__sx_arg_find_i_}";;
-		*) unset __sx_arg_find_bind_ __sx_arg_find_tgt_ __sx_arg_find_flg_ __sx_arg_find_glob_ __sx_arg_find_out_ __sx_arg_find_i_ __sx_arg_find_arg_ __sx_arg_find_sts_ __sx_arg_find_bind_cnt_ __sx_arg_find_bind_name_ __sx_arg_find_bind_esc_; return "${SX_EX_OK}";;
+		?*) __sx_arg_rfind_out_="${__sx_arg_rfind_out_}${__sx_arg_rfind_out_:+ }""${__sx_arg_rfind_i_}";;
+		*) unset __sx_arg_rfind_bind_ __sx_arg_rfind_tgt_ __sx_arg_rfind_flg_ __sx_arg_rfind_glob_ __sx_arg_rfind_out_ __sx_arg_rfind_i_ __sx_arg_rfind_arg_ __sx_arg_rfind_sts_ __sx_arg_rfind_bind_cnt_ __sx_arg_rfind_bind_name_ __sx_arg_rfind_bind_esc_; return "${SX_EX_OK}";;
 	esac
-			__sx_arg_find_sts_="${SX_EX_OK}"
+			__sx_arg_rfind_sts_="${SX_EX_OK}"
 		esac
 
-		: $((__sx_arg_find_i_ -= 1))
+		: $((__sx_arg_rfind_i_ -= 1))
 	done
 
-	eval ${__sx_arg_find_out_:+"${__sx_arg_find_bind_}=\"\${__sx_arg_find_out_# }\""}
+	eval ${__sx_arg_rfind_out_:+"${__sx_arg_rfind_bind_}=\"\${__sx_arg_rfind_out_# }\""}
 
-	set -- "${__sx_arg_find_sts_}"
+	set -- "${__sx_arg_rfind_sts_-1}"
 
-	unset __sx_arg_find_bind_ __sx_arg_find_tgt_ __sx_arg_find_flg_ __sx_arg_find_glob_ __sx_arg_find_out_ __sx_arg_find_i_ __sx_arg_find_arg_ __sx_arg_find_sts_ __sx_arg_find_bind_cnt_ __sx_arg_find_bind_name_ __sx_arg_find_bind_esc_
+	unset __sx_arg_rfind_bind_ __sx_arg_rfind_tgt_ __sx_arg_rfind_flg_ __sx_arg_rfind_glob_ __sx_arg_rfind_out_ __sx_arg_rfind_i_ __sx_arg_rfind_arg_ __sx_arg_rfind_sts_ __sx_arg_rfind_bind_cnt_ __sx_arg_rfind_bind_name_ __sx_arg_rfind_bind_esc_
 	return "${1}"
 }
 
