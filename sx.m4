@@ -1331,10 +1331,10 @@ __sx_arg_isep_cb() {
 	else
 		# === 負のインターバル: countベースCB呼出 + 左→右bind ===
 		__sx_arg_isep_cb_bind_="${1}"
-		__sx_arg_isep_cb_cb_=${2}
-		__sx_arg_isep_cb_int_=${3}
-		__sx_arg_isep_cb_lim_=${4}
-		__sx_arg_isep_cb_flg_=${5}
+		__sx_arg_isep_cb_cb_="${2}"
+		__sx_arg_isep_cb_int_="${3}"
+		__sx_arg_isep_cb_lim_="${4}"
+		__sx_arg_isep_cb_flg_="${5}"
 		shift 5
 
 		# max = eff（accumulator、max < lim なら lim を cap）
@@ -1354,17 +1354,10 @@ __sx_arg_isep_cb() {
 		__sx_arg_isep_cb_lim_=$((__sx_arg_isep_cb_max_ < __sx_arg_isep_cb_lim_ ? __sx_arg_isep_cb_max_ : __sx_arg_isep_cb_lim_))
 
 		# ===== Phase 1: countベースCB呼出 + 結果prepend（save/restore対応） =====
-		__sx_arg_isep_cb_cnt_=0
-		__sx_arg_isep_cb_stat_=0
-
 			# SAVE state (7 vars) — 再帰呼び出しでCLEANUPにより変数が消える対策
-		set -- "${__sx_arg_isep_cb_bind_}" "${__sx_arg_isep_cb_cb_}" \
-			"${__sx_arg_isep_cb_int_}" \
-			"${__sx_arg_isep_cb_lim_}" \
-			"${__sx_arg_isep_cb_flg_}" \
-			"${__sx_arg_isep_cb_cnt_}" \
-			"${__sx_arg_isep_cb_stat_}" \
-			"${@}"
+		set -- "${__sx_arg_isep_cb_bind_}" "${__sx_arg_isep_cb_cb_}" "${__sx_arg_isep_cb_int_}" "${__sx_arg_isep_cb_lim_}" "${__sx_arg_isep_cb_flg_}" 0 0 "${@}"
+		unset __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_cb_ __sx_arg_isep_cb_int_ __sx_arg_isep_cb_lim_ __sx_arg_isep_cb_flg_
+
 		while M_NUM_BOOL([|${6} < ${4} && ${7} == 0|]); do
 			# CB call + exit status capture in $1
 			"${2}" __sx_arg_isep_cb_ret_ "$((${6} + 1))" && set -- 0 "${@}" || set -- "${?}" "${@}"
