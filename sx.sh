@@ -1,108 +1,25 @@
 #!/bin/sh
 # shellcheck shell=sh
 
-changequote([|, |]) dnl
-changecom() dnl
+  
+ 
+  
 
-define([|M_STR_NE|], [|case $1 in $2) ! :;; esac|]) dnl
 
-define([|M_STR_EQ|], [|dnl
-{ case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, [|&& __M_STR_EQ_REST(shift($@))|]); }dnl
-|]) dnl
-define([|__M_STR_EQ_REST|], [|dnl
-case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, [| && __M_STR_EQ_REST(shift($@))|])dnl
-|]) dnl
 
-define([|M_STR_HAS|], [|case $1 in __M_STR_HAS_REST(shift($@)));; *) ! :;; esac|])
-define([|__M_STR_HAS_REST|], [|ifelse($#, 0, , $#, 1, [|*$1*|], [|*$1* | __M_STR_HAS_REST(shift($@))|])|])
 
-define([|M_STR_MATCH|], [|case $1 in __M_STR_MATCH_REST(shift($@)));; *) ! :;; esac|])
-define([|__M_STR_MATCH_REST|], [|ifelse($#, 0, , $#, 1, [|$1|], [|$1 | __M_STR_MATCH_REST(shift($@))|])|])
 
-define([|__M_NUM_CMP_CHAIN|], [|dnl
-$2 $1 $3 ifelse(eval(3 < $#), 1, [| && __M_NUM_CMP_CHAIN($1, shift(shift($@))) |])dnl
-|]) dnl
-define([|M_NUM_EQ|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(==, $@)))|], 0)|]) dnl
-define([|M_NUM_GE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(>=, $@)))|], 0)|]) dnl
-define([|M_NUM_GT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(>, $@)))|], 0)|]) dnl
-define([|M_NUM_LE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<=, $@)))|], 0)|]) dnl
-define([|M_NUM_LT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<, $@)))|], 0)|]) dnl
-define([|M_NUM_NE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(!=, $@)))|], 0)|]) dnl
-define([|M_NUM_BOOL|], [|M_STR_NE([|$(($1))|], 0)|]) dnl
 
-define([|__M_QUOTE_PREPEND|], [|dnl
-	case $3 in
-		*"'"*) __sx_str_sub $1_bind_esc_ $3 "'" "'\\''";;
-		*) $1_bind_esc_=$3 ;;
-	esac
-	$2="'${$1_bind_esc_}'${$2:+ }${$2}"|])
+        
 
-define([|__M_QUOTE_APPEND|], [|dnl
-	case $3 in
-		*"'"*) __sx_str_sub $1_bind_esc_ $3 "'" "'\\''";;
-		*) $1_bind_esc_=$3 ;;
-	esac
-	$2="${$2}${$2:+ }'${$1_bind_esc_}'"|])
 
-define([|M_STR_QUOTE|], [|dnl
-	case $2 in
-		*"'"*) __sx_str_sub $1 $2 "'" "'\\''";;
-		*) $1=$2;;
-	esac
 
-	$1="'${$1}'"|])
 
-define([|__M_BIND_QUOTE|], [|dnl
-	case "${$1_bind_}" in
-		:*) $1_bind_="${$1_bind_#*:}";;
-		[1-9]*:*)
-			$1_bind_cnt_="${$1_bind_%%[!0-9]*}"
-			$1_bind_name_="${$1_bind_%%:*}"
-			$1_bind_name_="${$1_bind_name_#"${$1_bind_cnt_}"}"
 
-			case "${$1_bind_name_}" in ?*)
-				M_STR_QUOTE([|$1_bind_esc_|], [|$2|])
-				eval "${$1_bind_name_}=\"\${${$1_bind_name_}-}\${${$1_bind_name_}+ }\${$1_bind_esc_}\""
-			esac
 
-			case "${$1_bind_cnt_}" in
-				1) $1_bind_="${$1_bind_#*:}";;
-				*) $1_bind_="$((${$1_bind_cnt_} - 1))${$1_bind_name_}:${$1_bind_#*:}";;
-			esac
-			;;
-		*:*)
-			eval "${$1_bind_%%:*}=patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
-			$1_bind_="${$1_bind_#*:}"
-			;;
-		?*) __M_QUOTE_APPEND([|$1|], [|$1_out_|], [|$2|]);;
-		*) unset $3; return "${SX_EX_OK}";;
-	esac|])
 
-define([|__M_BIND_UNQUOTE|], [|dnl
-	case "${$1_bind_}" in
-		:*) $1_bind_="${$1_bind_#*:}";;
-		[1-9]*:*)
-			$1_bind_cnt_="${$1_bind_%%[!0-9]*}"
-			$1_bind_name_="${$1_bind_%%:*}"
-			$1_bind_name_="${$1_bind_name_#"${$1_bind_cnt_}"}"
 
-			case "${$1_bind_name_}" in ?*)
-				eval "${$1_bind_name_}=\"\${${$1_bind_name_}-}\${${$1_bind_name_}+ }\"patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
-			esac
 
-			case "${$1_bind_cnt_}" in
-				1) $1_bind_="${$1_bind_#*:}";;
-				*) $1_bind_="$((${$1_bind_cnt_} - 1))${$1_bind_name_}:${$1_bind_#*:}";;
-			esac
-			;;
-		*:*)
-				eval "${$1_bind_%%:*}=patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
-			$1_bind_="${$1_bind_#*:}"
-			;;
-		?*) $1_out_="${$1_out_}${$1_out_:+ }"$2;;
-		*) unset $3; return "${SX_EX_OK}";;
-	esac|])
-define([|__M_BIND_USEVAR|], [|V(bind_cnt) V(bind_name) V(bind_esc)|])dnl
 
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
@@ -316,8 +233,6 @@ sx_cfg_is_valid() {
 	unset __sx_cfg_is_valid_arg
 }
 
-define([|V|], [|__sx_cfg_set_$1|])dnl
-define([|CLEANUP|], [|V(arg) V(chk)|])dnl
 
 ### sx_cfg_set - SX_CFG_* を設定する
 ##
@@ -347,11 +262,11 @@ sx_cfg_set() {
 	done
 
 	eval sx_var_is_rw "${__sx_cfg_set_chk}" || {
-		unset CLEANUP
+		unset __sx_cfg_set_arg __sx_cfg_set_chk
 		return "${SX_EX_NOPERM}"
 	}
 
-	unset CLEANUP
+	unset __sx_cfg_set_arg __sx_cfg_set_chk
 	__sx_cfg_set "${@}"
 }
 
@@ -501,8 +416,6 @@ sx_ex_map() {
 	unset __sx_ex_map_bind __sx_ex_map_arg
 }
 
-define([|V|], [|__sx_ex_map_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(map) V(out) V(arg) __M_BIND_USEVAR|])dnl
 ### __sx_ex_map - 終了ステータスの数値と名前を相互変換、または有効性を確認する（内部用）
 ##
 ## 使い方:
@@ -530,12 +443,34 @@ __sx_ex_map() {
 				;;
 		esac
 
-		__M_BIND_UNQUOTE([|__sx_ex_map|], [|"${__sx_ex_map_arg_}"|], CLEANUP)
+			case "${__sx_ex_map_bind_}" in
+		:*) __sx_ex_map_bind_="${__sx_ex_map_bind_#*:}";;
+		[1-9]*:*)
+			__sx_ex_map_bind_cnt_="${__sx_ex_map_bind_%%[!0-9]*}"
+			__sx_ex_map_bind_name_="${__sx_ex_map_bind_%%:*}"
+			__sx_ex_map_bind_name_="${__sx_ex_map_bind_name_#"${__sx_ex_map_bind_cnt_}"}"
+
+			case "${__sx_ex_map_bind_name_}" in ?*)
+				eval "${__sx_ex_map_bind_name_}=\"\${${__sx_ex_map_bind_name_}-}\${${__sx_ex_map_bind_name_}+ }\"\"\${__sx_ex_map_arg_}\""
+			esac
+
+			case "${__sx_ex_map_bind_cnt_}" in
+				1) __sx_ex_map_bind_="${__sx_ex_map_bind_#*:}";;
+				*) __sx_ex_map_bind_="$((${__sx_ex_map_bind_cnt_} - 1))${__sx_ex_map_bind_name_}:${__sx_ex_map_bind_#*:}";;
+			esac
+			;;
+		*:*)
+				eval "${__sx_ex_map_bind_%%:*}=\"\${__sx_ex_map_arg_}\""
+			__sx_ex_map_bind_="${__sx_ex_map_bind_#*:}"
+			;;
+		?*) __sx_ex_map_out_="${__sx_ex_map_out_}${__sx_ex_map_out_:+ }""${__sx_ex_map_arg_}";;
+		*) unset __sx_ex_map_bind_ __sx_ex_map_map_ __sx_ex_map_out_ __sx_ex_map_arg_ __sx_ex_map_bind_cnt_ __sx_ex_map_bind_name_ __sx_ex_map_bind_esc_; return "${SX_EX_OK}";;
+	esac
 	done
 
 	eval ${__sx_ex_map_out_:+"${__sx_ex_map_bind_}=\"\${__sx_ex_map_out_}\""}
 
-	unset CLEANUP
+	unset __sx_ex_map_bind_ __sx_ex_map_map_ __sx_ex_map_out_ __sx_ex_map_arg_ __sx_ex_map_bind_cnt_ __sx_ex_map_bind_name_ __sx_ex_map_bind_esc_
 }
 
 ### sx_ex_remap - 終了ステータスをマッピングしてコマンドを実行する
@@ -605,7 +540,7 @@ sx_ex_remap() {
 __sx_ex_remap() {
 	__sx_ex_remap_map_=
 
-	while M_STR_NE([|"${#}"|], [|0|]); do
+	while case "${#}" in 0) ! :;; esac; do
 		case "${1}" in
 			"${SX_CFG_SEP}") shift; break;;
 			*:*)
@@ -641,7 +576,7 @@ __sx_ex_remap() {
 					set -- "!${__sx_ex_remap_n_}" "${2}"
 				esac
 
-				if M_STR_NE([|"${1#!}"|], [|"${__sx_ex_remap_sts_}"|]); then
+				if case "${1#!}" in "${__sx_ex_remap_sts_}") ! :;; esac; then
 					__sx_ex_remap_sts_="${2}"; break
 				fi
 				;;
@@ -710,8 +645,6 @@ __sx_ex_yield() {
 #  FN (Function)
 # ========================================
 
-define([|V|], [|__sx_fn_is_valid_$1|])dnl
-define([|CLEANUP|], [|V(arg)|])dnl
 
 ### sx_fn_is_valid - 関数定義の妥当性（名前および構文）を確認する
 ##
@@ -725,18 +658,18 @@ sx_fn_is_valid() {
 	for __sx_fn_is_valid_arg in "${@}"; do
 		case "${__sx_fn_is_valid_arg}" in *=*)
 			sx_var_is_name "${__sx_fn_is_valid_arg%%=*}" || {
-				unset CLEANUP
+				unset __sx_fn_is_valid_arg
 				return 1
 			}
 
 			continue
 		esac
 
-		unset CLEANUP
+		unset __sx_fn_is_valid_arg
 		return 1
 	done
 
-	unset CLEANUP
+	unset __sx_fn_is_valid_arg
 
 	(
 		for arg in "${@}"; do
@@ -821,7 +754,7 @@ __sx_fn_with() {
 	__sx_fn_with_map_=' '
 
 	# 1. エイリアスの解析と関数定義
-	while M_STR_NE([|"${#}"|], [|0|]); do
+	while case "${#}" in 0) ! :;; esac; do
 		case "${1}" in
 			"${SX_CFG_SEP-}") shift; break;;
 			*=*)
@@ -895,8 +828,6 @@ sx_fn_anon() {
 	unset __sx_fn_anon_bind __sx_fn_anon_chk __sx_fn_anon_arg
 }
 
-define([|V|], [|__sx_fn_anon_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(arg) V(name) __M_BIND_USEVAR|])dnl
 
 ### __sx_fn_anon - 匿名関数を実際に生成・定義する（内部用）
 ##
@@ -914,7 +845,29 @@ __sx_fn_anon() {
 	for __sx_fn_anon_arg_ in "${@}"; do
 		__sx_fn_anon_name_="sx_fn_anon_${SX_SYS_REV}"
 
-		__M_BIND_UNQUOTE([|__sx_fn_anon|], [|"${__sx_fn_anon_name_}"|], CLEANUP)
+			case "${__sx_fn_anon_bind_}" in
+		:*) __sx_fn_anon_bind_="${__sx_fn_anon_bind_#*:}";;
+		[1-9]*:*)
+			__sx_fn_anon_bind_cnt_="${__sx_fn_anon_bind_%%[!0-9]*}"
+			__sx_fn_anon_bind_name_="${__sx_fn_anon_bind_%%:*}"
+			__sx_fn_anon_bind_name_="${__sx_fn_anon_bind_name_#"${__sx_fn_anon_bind_cnt_}"}"
+
+			case "${__sx_fn_anon_bind_name_}" in ?*)
+				eval "${__sx_fn_anon_bind_name_}=\"\${${__sx_fn_anon_bind_name_}-}\${${__sx_fn_anon_bind_name_}+ }\"\"\${__sx_fn_anon_name_}\""
+			esac
+
+			case "${__sx_fn_anon_bind_cnt_}" in
+				1) __sx_fn_anon_bind_="${__sx_fn_anon_bind_#*:}";;
+				*) __sx_fn_anon_bind_="$((${__sx_fn_anon_bind_cnt_} - 1))${__sx_fn_anon_bind_name_}:${__sx_fn_anon_bind_#*:}";;
+			esac
+			;;
+		*:*)
+				eval "${__sx_fn_anon_bind_%%:*}=\"\${__sx_fn_anon_name_}\""
+			__sx_fn_anon_bind_="${__sx_fn_anon_bind_#*:}"
+			;;
+		?*) __sx_fn_anon_out_="${__sx_fn_anon_out_}${__sx_fn_anon_out_:+ }""${__sx_fn_anon_name_}";;
+		*) unset __sx_fn_anon_bind_ __sx_fn_anon_out_ __sx_fn_anon_arg_ __sx_fn_anon_name_ __sx_fn_anon_bind_cnt_ __sx_fn_anon_bind_name_ __sx_fn_anon_bind_esc_; return "${SX_EX_OK}";;
+	esac
 
 		__sx_fn_set "${__sx_fn_anon_name_}=${__sx_fn_anon_arg_}"
 
@@ -923,7 +876,7 @@ __sx_fn_anon() {
 
 	eval ${__sx_fn_anon_out_:+"${__sx_fn_anon_bind_}=\"\${__sx_fn_anon_out_}\""}
 
-	unset CLEANUP
+	unset __sx_fn_anon_bind_ __sx_fn_anon_out_ __sx_fn_anon_arg_ __sx_fn_anon_name_ __sx_fn_anon_bind_cnt_ __sx_fn_anon_bind_name_ __sx_fn_anon_bind_esc_
 }
 
 # ========================================
@@ -978,8 +931,6 @@ sx_arg_find() {
 	__sx_arg_find "${@}"
 }
 
-define([|V|], [|__sx_arg_find_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
 
 ### __sx_arg_find - 引数リストから指定された値を探す（内部用: 前向き）
 ##
@@ -1020,7 +971,29 @@ __sx_arg_find() {
 
 	for __sx_arg_find_arg_ in "${@}"; do
 		case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
-			__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
+				case "${__sx_arg_find_bind_}" in
+		:*) __sx_arg_find_bind_="${__sx_arg_find_bind_#*:}";;
+		[1-9]*:*)
+			__sx_arg_find_bind_cnt_="${__sx_arg_find_bind_%%[!0-9]*}"
+			__sx_arg_find_bind_name_="${__sx_arg_find_bind_%%:*}"
+			__sx_arg_find_bind_name_="${__sx_arg_find_bind_name_#"${__sx_arg_find_bind_cnt_}"}"
+
+			case "${__sx_arg_find_bind_name_}" in ?*)
+				eval "${__sx_arg_find_bind_name_}=\"\${${__sx_arg_find_bind_name_}-}\${${__sx_arg_find_bind_name_}+ }\"\"\${__sx_arg_find_i_}\""
+			esac
+
+			case "${__sx_arg_find_bind_cnt_}" in
+				1) __sx_arg_find_bind_="${__sx_arg_find_bind_#*:}";;
+				*) __sx_arg_find_bind_="$((${__sx_arg_find_bind_cnt_} - 1))${__sx_arg_find_bind_name_}:${__sx_arg_find_bind_#*:}";;
+			esac
+			;;
+		*:*)
+				eval "${__sx_arg_find_bind_%%:*}=\"\${__sx_arg_find_i_}\""
+			__sx_arg_find_bind_="${__sx_arg_find_bind_#*:}"
+			;;
+		?*) __sx_arg_find_out_="${__sx_arg_find_out_}${__sx_arg_find_out_:+ }""${__sx_arg_find_i_}";;
+		*) unset __sx_arg_find_bind_ __sx_arg_find_tgt_ __sx_arg_find_flg_ __sx_arg_find_glob_ __sx_arg_find_out_ __sx_arg_find_i_ __sx_arg_find_arg_ __sx_arg_find_sts_ __sx_arg_find_bind_cnt_ __sx_arg_find_bind_name_ __sx_arg_find_bind_esc_; return "${SX_EX_OK}";;
+	esac
 			__sx_arg_find_sts_="${SX_EX_OK}"
 		esac
 
@@ -1031,12 +1004,10 @@ __sx_arg_find() {
 
 	set -- "${__sx_arg_find_sts_}"
 
-	unset CLEANUP
+	unset __sx_arg_find_bind_ __sx_arg_find_tgt_ __sx_arg_find_flg_ __sx_arg_find_glob_ __sx_arg_find_out_ __sx_arg_find_i_ __sx_arg_find_arg_ __sx_arg_find_sts_ __sx_arg_find_bind_cnt_ __sx_arg_find_bind_name_ __sx_arg_find_bind_esc_
 	return "${1}"
 }
 
-define([|V|], [|__sx_arg_isep_$1|])dnl
-define([|CLEANUP|], [|V(int) V(lim) V(flg)|])dnl
 
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
 ##
@@ -1076,22 +1047,20 @@ sx_arg_isep() {
 
 	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int_inv ${__sx_arg_isep_int:+"${__sx_arg_isep_int}"} && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${__sx_arg_isep_lim:+"${__sx_arg_isep_lim}"} ${__sx_arg_isep_flg:+"${__sx_arg_isep_flg}"} || {
 		set -- "${?}"
-		unset CLEANUP
+		unset __sx_arg_isep_int __sx_arg_isep_lim __sx_arg_isep_flg
 		return "${1}"
 	}
 
 	case "${__sx_arg_isep_int#[+-]}" in 0)
-		unset CLEANUP
+		unset __sx_arg_isep_int __sx_arg_isep_lim __sx_arg_isep_flg
 		return "${SX_EX_USAGE}"
 	esac
 
-	unset CLEANUP
+	unset __sx_arg_isep_int __sx_arg_isep_lim __sx_arg_isep_flg
 
 	__sx_arg_isep "${@}" || return
 }
 
-define([|V|], [|__sx_arg_isep_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(sep) V(int) V(lim) V(flg)|])dnl
 
 ### __sx_arg_isep - 引数間にセパレータを挿入する（ディスパッチャ、内部用）
 ##
@@ -1132,7 +1101,7 @@ __sx_arg_isep() {
 	: "${__sx_arg_isep_sep_:=}" "${__sx_arg_isep_int_:=1}" "${__sx_arg_isep_lim_:=${SX_NUM_I32_MAX}}" "${__sx_arg_isep_flg_:=0}"
 
 	set -- "${__sx_arg_isep_bind_}" "${__sx_arg_isep_sep_}" "${__sx_arg_isep_int_}" "${__sx_arg_isep_lim_}" "$((${__sx_arg_isep_flg_} & (${#} != 0 ? ~0 : (${__sx_arg_isep_int_} > 0 ? ~SX_ARG_ISEP_POST : ~SX_ARG_ISEP_PRE))))" "${@}"
-	unset CLEANUP
+	unset __sx_arg_isep_bind_ __sx_arg_isep_sep_ __sx_arg_isep_int_ __sx_arg_isep_lim_ __sx_arg_isep_flg_
 
 	__sx_var_bind_init "${1}"
 
@@ -1142,8 +1111,6 @@ __sx_arg_isep() {
 	esac || return
 }
 
-define([|V|], [|__sx_arg_isep_cb_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(int) V(flg) V(cnt) V(stat) V(post) V(r) V(i) V(arg)|])dnl
 
 ### __sx_arg_isep_cb - 引数間にセパレータを挿入する（コールバックモード、内部用）
 ##
@@ -1161,7 +1128,7 @@ define([|CLEANUP|], [|V(bind) V(int) V(flg) V(cnt) V(stat) V(post) V(r) V(i) V(a
 ##
 ##   コールバック呼出: cb_func ret_var count
 __sx_arg_isep_cb() {
-	if M_NUM_LT([|0|], [|${3}|]); then
+	if case $((0 < ${3} )) in 0) ! :;; esac; then
 		# === 正のインターバル: 前向き処理 (左→右, append) ===
 		# 状態レイアウトに再構築: $1=sep_cnt $2=stat $3=i $4=bind $5=cb $6=int $7=lim $8=flags
 		set -- 0 0 -9 "${@}"
@@ -1241,11 +1208,11 @@ __sx_arg_isep_cb() {
 		__sx_arg_isep_cb_lim_=$((__sx_arg_isep_cb_max_ < __sx_arg_isep_cb_lim_ ? __sx_arg_isep_cb_max_ : __sx_arg_isep_cb_lim_))
 
 		# ===== Phase 1: countベースCB呼出 + 結果prepend（save/restore対応） =====
-			# SAVE state (7 vars) — 再帰呼び出しでCLEANUPにより変数が消える対策
+			# SAVE state (7 vars) — 再帰呼び出しで__sx_arg_isep_cb_bind_ __sx_arg_isep_cb_int_ __sx_arg_isep_cb_flg_ __sx_arg_isep_cb_cnt_ __sx_arg_isep_cb_stat_ __sx_arg_isep_cb_post_ __sx_arg_isep_cb_r_ __sx_arg_isep_cb_i_ __sx_arg_isep_cb_arg_により変数が消える対策
 		set -- "${__sx_arg_isep_cb_bind_}" "${__sx_arg_isep_cb_cb_}" "${__sx_arg_isep_cb_int_}" "${__sx_arg_isep_cb_lim_}" "${__sx_arg_isep_cb_flg_}" 0 0 "${@}"
 		unset __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_cb_ __sx_arg_isep_cb_int_ __sx_arg_isep_cb_lim_ __sx_arg_isep_cb_flg_ __sx_arg_isep_cb_max_
 
-		while M_NUM_BOOL([|${6} < ${4} && ${7} == 0|]); do
+		while case $((${6} < ${4} && ${7} == 0)) in 0) ! :;; esac; do
 			# CB call + exit status capture in $1
 			"${2}" __sx_arg_isep_cb_ret_ "$((${6} + 1))" && set -- 0 "${@}" || set -- "${?}" "${@}"
 
@@ -1274,7 +1241,7 @@ __sx_arg_isep_cb() {
 		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_PRE && __sx_arg_isep_cb_r_ == 0))" in 1)
 			__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1}" "${SX_VAR_BIND_QUOTE}" || {
 				set -- "${__sx_arg_isep_cb_stat_}"
-				unset CLEANUP
+				unset __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_int_ __sx_arg_isep_cb_flg_ __sx_arg_isep_cb_cnt_ __sx_arg_isep_cb_stat_ __sx_arg_isep_cb_post_ __sx_arg_isep_cb_r_ __sx_arg_isep_cb_i_ __sx_arg_isep_cb_arg_
 				return "${1}"
 			}
 
@@ -1298,7 +1265,7 @@ __sx_arg_isep_cb() {
 			))" in 1)
 				__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1}" "${SX_VAR_BIND_QUOTE}" || {
 					set -- "${__sx_arg_isep_cb_stat_}"
-					unset CLEANUP
+					unset __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_int_ __sx_arg_isep_cb_flg_ __sx_arg_isep_cb_cnt_ __sx_arg_isep_cb_stat_ __sx_arg_isep_cb_post_ __sx_arg_isep_cb_r_ __sx_arg_isep_cb_i_ __sx_arg_isep_cb_arg_
 					return "${1}"
 				}
 
@@ -1308,7 +1275,7 @@ __sx_arg_isep_cb() {
 			# 要素本体をbind
 			__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${__sx_arg_isep_cb_arg_}" "${SX_VAR_BIND_QUOTE}" || {
 				set -- "${__sx_arg_isep_cb_stat_}"
-				unset CLEANUP
+				unset __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_int_ __sx_arg_isep_cb_flg_ __sx_arg_isep_cb_cnt_ __sx_arg_isep_cb_stat_ __sx_arg_isep_cb_post_ __sx_arg_isep_cb_r_ __sx_arg_isep_cb_i_ __sx_arg_isep_cb_arg_
 				return "${1}"
 			}
 		done
@@ -1319,13 +1286,11 @@ __sx_arg_isep_cb() {
 		esac
 
 		set -- "${__sx_arg_isep_cb_stat_}"
-		unset CLEANUP
+		unset __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_int_ __sx_arg_isep_cb_flg_ __sx_arg_isep_cb_cnt_ __sx_arg_isep_cb_stat_ __sx_arg_isep_cb_post_ __sx_arg_isep_cb_r_ __sx_arg_isep_cb_i_ __sx_arg_isep_cb_arg_
 		return "${1}"
 	fi
 }
 
-define([|V|], [|__sx_arg_isep_lit_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(flg) V(lim) V(eff) V(r) V(i) V(arg) V(max) V(post_ok) __M_BIND_USEVAR|])dnl
 
 ### __sx_arg_isep_lit - 引数間にリテラルセパレータを挿入する（内部用）
 ##
@@ -1385,7 +1350,39 @@ __sx_arg_isep_lit() {
 			__sx_arg_isep_lit_eff_ < __sx_arg_isep_lit_lim_ &&
 			(__sx_arg_isep_lit_r_ % __sx_arg_isep_lit_int_) == 0)
 		))" in 1)
-		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
+			case "${__sx_arg_isep_lit_bind_}" in
+		:*) __sx_arg_isep_lit_bind_="${__sx_arg_isep_lit_bind_#*:}";;
+		[1-9]*:*)
+			__sx_arg_isep_lit_bind_cnt_="${__sx_arg_isep_lit_bind_%%[!0-9]*}"
+			__sx_arg_isep_lit_bind_name_="${__sx_arg_isep_lit_bind_%%:*}"
+			__sx_arg_isep_lit_bind_name_="${__sx_arg_isep_lit_bind_name_#"${__sx_arg_isep_lit_bind_cnt_}"}"
+
+			case "${__sx_arg_isep_lit_bind_name_}" in ?*)
+					case "${__sx_arg_isep_lit_sep_}" in
+		*"'"*) __sx_str_sub __sx_arg_isep_lit_bind_esc_ "${__sx_arg_isep_lit_sep_}" "'" "'\\''";;
+		*) __sx_arg_isep_lit_bind_esc_="${__sx_arg_isep_lit_sep_}";;
+	esac
+
+	__sx_arg_isep_lit_bind_esc_="'${__sx_arg_isep_lit_bind_esc_}'"
+				eval "${__sx_arg_isep_lit_bind_name_}=\"\${${__sx_arg_isep_lit_bind_name_}-}\${${__sx_arg_isep_lit_bind_name_}+ }\${__sx_arg_isep_lit_bind_esc_}\""
+			esac
+
+			case "${__sx_arg_isep_lit_bind_cnt_}" in
+				1) __sx_arg_isep_lit_bind_="${__sx_arg_isep_lit_bind_#*:}";;
+				*) __sx_arg_isep_lit_bind_="$((${__sx_arg_isep_lit_bind_cnt_} - 1))${__sx_arg_isep_lit_bind_name_}:${__sx_arg_isep_lit_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_arg_isep_lit_bind_%%:*}=\"\${__sx_arg_isep_lit_sep_}\""
+			__sx_arg_isep_lit_bind_="${__sx_arg_isep_lit_bind_#*:}"
+			;;
+		?*) 	case "${__sx_arg_isep_lit_sep_}" in
+		*"'"*) __sx_str_sub __sx_arg_isep_lit_bind_esc_ "${__sx_arg_isep_lit_sep_}" "'" "'\\''";;
+		*) __sx_arg_isep_lit_bind_esc_="${__sx_arg_isep_lit_sep_}" ;;
+	esac
+	__sx_arg_isep_lit_out_="${__sx_arg_isep_lit_out_}${__sx_arg_isep_lit_out_:+ }'${__sx_arg_isep_lit_bind_esc_}'";;
+		*) unset __sx_arg_isep_lit_bind_ __sx_arg_isep_lit_out_ __sx_arg_isep_lit_sep_ __sx_arg_isep_lit_int_ __sx_arg_isep_lit_flg_ __sx_arg_isep_lit_lim_ __sx_arg_isep_lit_eff_ __sx_arg_isep_lit_r_ __sx_arg_isep_lit_i_ __sx_arg_isep_lit_arg_ __sx_arg_isep_lit_max_ __sx_arg_isep_lit_post_ok_ __sx_arg_isep_lit_bind_cnt_ __sx_arg_isep_lit_bind_name_ __sx_arg_isep_lit_bind_esc_; return "${SX_EX_OK}";;
+	esac
 		: $((__sx_arg_isep_lit_lim_ -= 1))
 	esac
 
@@ -1403,12 +1400,76 @@ __sx_arg_isep_lit() {
 			__sx_arg_isep_lit_r_ < __sx_arg_isep_lit_i_ &&
 			(__sx_arg_isep_lit_i_ - __sx_arg_isep_lit_r_ - 1) % __sx_arg_isep_lit_int_ == 0
 		))" in 1)
-			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
+				case "${__sx_arg_isep_lit_bind_}" in
+		:*) __sx_arg_isep_lit_bind_="${__sx_arg_isep_lit_bind_#*:}";;
+		[1-9]*:*)
+			__sx_arg_isep_lit_bind_cnt_="${__sx_arg_isep_lit_bind_%%[!0-9]*}"
+			__sx_arg_isep_lit_bind_name_="${__sx_arg_isep_lit_bind_%%:*}"
+			__sx_arg_isep_lit_bind_name_="${__sx_arg_isep_lit_bind_name_#"${__sx_arg_isep_lit_bind_cnt_}"}"
+
+			case "${__sx_arg_isep_lit_bind_name_}" in ?*)
+					case "${__sx_arg_isep_lit_sep_}" in
+		*"'"*) __sx_str_sub __sx_arg_isep_lit_bind_esc_ "${__sx_arg_isep_lit_sep_}" "'" "'\\''";;
+		*) __sx_arg_isep_lit_bind_esc_="${__sx_arg_isep_lit_sep_}";;
+	esac
+
+	__sx_arg_isep_lit_bind_esc_="'${__sx_arg_isep_lit_bind_esc_}'"
+				eval "${__sx_arg_isep_lit_bind_name_}=\"\${${__sx_arg_isep_lit_bind_name_}-}\${${__sx_arg_isep_lit_bind_name_}+ }\${__sx_arg_isep_lit_bind_esc_}\""
+			esac
+
+			case "${__sx_arg_isep_lit_bind_cnt_}" in
+				1) __sx_arg_isep_lit_bind_="${__sx_arg_isep_lit_bind_#*:}";;
+				*) __sx_arg_isep_lit_bind_="$((${__sx_arg_isep_lit_bind_cnt_} - 1))${__sx_arg_isep_lit_bind_name_}:${__sx_arg_isep_lit_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_arg_isep_lit_bind_%%:*}=\"\${__sx_arg_isep_lit_sep_}\""
+			__sx_arg_isep_lit_bind_="${__sx_arg_isep_lit_bind_#*:}"
+			;;
+		?*) 	case "${__sx_arg_isep_lit_sep_}" in
+		*"'"*) __sx_str_sub __sx_arg_isep_lit_bind_esc_ "${__sx_arg_isep_lit_sep_}" "'" "'\\''";;
+		*) __sx_arg_isep_lit_bind_esc_="${__sx_arg_isep_lit_sep_}" ;;
+	esac
+	__sx_arg_isep_lit_out_="${__sx_arg_isep_lit_out_}${__sx_arg_isep_lit_out_:+ }'${__sx_arg_isep_lit_bind_esc_}'";;
+		*) unset __sx_arg_isep_lit_bind_ __sx_arg_isep_lit_out_ __sx_arg_isep_lit_sep_ __sx_arg_isep_lit_int_ __sx_arg_isep_lit_flg_ __sx_arg_isep_lit_lim_ __sx_arg_isep_lit_eff_ __sx_arg_isep_lit_r_ __sx_arg_isep_lit_i_ __sx_arg_isep_lit_arg_ __sx_arg_isep_lit_max_ __sx_arg_isep_lit_post_ok_ __sx_arg_isep_lit_bind_cnt_ __sx_arg_isep_lit_bind_name_ __sx_arg_isep_lit_bind_esc_; return "${SX_EX_OK}";;
+	esac
 			: $((__sx_arg_isep_lit_lim_ -= 1))
 		esac
 
 		# 2. 値の結合（クォートして結合）
-		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_arg_}"|], CLEANUP)
+			case "${__sx_arg_isep_lit_bind_}" in
+		:*) __sx_arg_isep_lit_bind_="${__sx_arg_isep_lit_bind_#*:}";;
+		[1-9]*:*)
+			__sx_arg_isep_lit_bind_cnt_="${__sx_arg_isep_lit_bind_%%[!0-9]*}"
+			__sx_arg_isep_lit_bind_name_="${__sx_arg_isep_lit_bind_%%:*}"
+			__sx_arg_isep_lit_bind_name_="${__sx_arg_isep_lit_bind_name_#"${__sx_arg_isep_lit_bind_cnt_}"}"
+
+			case "${__sx_arg_isep_lit_bind_name_}" in ?*)
+					case "${__sx_arg_isep_lit_arg_}" in
+		*"'"*) __sx_str_sub __sx_arg_isep_lit_bind_esc_ "${__sx_arg_isep_lit_arg_}" "'" "'\\''";;
+		*) __sx_arg_isep_lit_bind_esc_="${__sx_arg_isep_lit_arg_}";;
+	esac
+
+	__sx_arg_isep_lit_bind_esc_="'${__sx_arg_isep_lit_bind_esc_}'"
+				eval "${__sx_arg_isep_lit_bind_name_}=\"\${${__sx_arg_isep_lit_bind_name_}-}\${${__sx_arg_isep_lit_bind_name_}+ }\${__sx_arg_isep_lit_bind_esc_}\""
+			esac
+
+			case "${__sx_arg_isep_lit_bind_cnt_}" in
+				1) __sx_arg_isep_lit_bind_="${__sx_arg_isep_lit_bind_#*:}";;
+				*) __sx_arg_isep_lit_bind_="$((${__sx_arg_isep_lit_bind_cnt_} - 1))${__sx_arg_isep_lit_bind_name_}:${__sx_arg_isep_lit_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_arg_isep_lit_bind_%%:*}=\"\${__sx_arg_isep_lit_arg_}\""
+			__sx_arg_isep_lit_bind_="${__sx_arg_isep_lit_bind_#*:}"
+			;;
+		?*) 	case "${__sx_arg_isep_lit_arg_}" in
+		*"'"*) __sx_str_sub __sx_arg_isep_lit_bind_esc_ "${__sx_arg_isep_lit_arg_}" "'" "'\\''";;
+		*) __sx_arg_isep_lit_bind_esc_="${__sx_arg_isep_lit_arg_}" ;;
+	esac
+	__sx_arg_isep_lit_out_="${__sx_arg_isep_lit_out_}${__sx_arg_isep_lit_out_:+ }'${__sx_arg_isep_lit_bind_esc_}'";;
+		*) unset __sx_arg_isep_lit_bind_ __sx_arg_isep_lit_out_ __sx_arg_isep_lit_sep_ __sx_arg_isep_lit_int_ __sx_arg_isep_lit_flg_ __sx_arg_isep_lit_lim_ __sx_arg_isep_lit_eff_ __sx_arg_isep_lit_r_ __sx_arg_isep_lit_i_ __sx_arg_isep_lit_arg_ __sx_arg_isep_lit_max_ __sx_arg_isep_lit_post_ok_ __sx_arg_isep_lit_bind_cnt_ __sx_arg_isep_lit_bind_name_ __sx_arg_isep_lit_bind_esc_; return "${SX_EX_OK}";;
+	esac
 		: $((__sx_arg_isep_lit_i_ += 1))
 	done
 
@@ -1420,13 +1481,45 @@ __sx_arg_isep_lit() {
 		__sx_arg_isep_lit_flg_ & SX_ARG_ISEP_POST &&
 		(${#} - __sx_arg_isep_lit_r_) % ${__sx_arg_isep_lit_int_} == 0
 	)))" in 1)
-		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
+			case "${__sx_arg_isep_lit_bind_}" in
+		:*) __sx_arg_isep_lit_bind_="${__sx_arg_isep_lit_bind_#*:}";;
+		[1-9]*:*)
+			__sx_arg_isep_lit_bind_cnt_="${__sx_arg_isep_lit_bind_%%[!0-9]*}"
+			__sx_arg_isep_lit_bind_name_="${__sx_arg_isep_lit_bind_%%:*}"
+			__sx_arg_isep_lit_bind_name_="${__sx_arg_isep_lit_bind_name_#"${__sx_arg_isep_lit_bind_cnt_}"}"
+
+			case "${__sx_arg_isep_lit_bind_name_}" in ?*)
+					case "${__sx_arg_isep_lit_sep_}" in
+		*"'"*) __sx_str_sub __sx_arg_isep_lit_bind_esc_ "${__sx_arg_isep_lit_sep_}" "'" "'\\''";;
+		*) __sx_arg_isep_lit_bind_esc_="${__sx_arg_isep_lit_sep_}";;
+	esac
+
+	__sx_arg_isep_lit_bind_esc_="'${__sx_arg_isep_lit_bind_esc_}'"
+				eval "${__sx_arg_isep_lit_bind_name_}=\"\${${__sx_arg_isep_lit_bind_name_}-}\${${__sx_arg_isep_lit_bind_name_}+ }\${__sx_arg_isep_lit_bind_esc_}\""
+			esac
+
+			case "${__sx_arg_isep_lit_bind_cnt_}" in
+				1) __sx_arg_isep_lit_bind_="${__sx_arg_isep_lit_bind_#*:}";;
+				*) __sx_arg_isep_lit_bind_="$((${__sx_arg_isep_lit_bind_cnt_} - 1))${__sx_arg_isep_lit_bind_name_}:${__sx_arg_isep_lit_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_arg_isep_lit_bind_%%:*}=\"\${__sx_arg_isep_lit_sep_}\""
+			__sx_arg_isep_lit_bind_="${__sx_arg_isep_lit_bind_#*:}"
+			;;
+		?*) 	case "${__sx_arg_isep_lit_sep_}" in
+		*"'"*) __sx_str_sub __sx_arg_isep_lit_bind_esc_ "${__sx_arg_isep_lit_sep_}" "'" "'\\''";;
+		*) __sx_arg_isep_lit_bind_esc_="${__sx_arg_isep_lit_sep_}" ;;
+	esac
+	__sx_arg_isep_lit_out_="${__sx_arg_isep_lit_out_}${__sx_arg_isep_lit_out_:+ }'${__sx_arg_isep_lit_bind_esc_}'";;
+		*) unset __sx_arg_isep_lit_bind_ __sx_arg_isep_lit_out_ __sx_arg_isep_lit_sep_ __sx_arg_isep_lit_int_ __sx_arg_isep_lit_flg_ __sx_arg_isep_lit_lim_ __sx_arg_isep_lit_eff_ __sx_arg_isep_lit_r_ __sx_arg_isep_lit_i_ __sx_arg_isep_lit_arg_ __sx_arg_isep_lit_max_ __sx_arg_isep_lit_post_ok_ __sx_arg_isep_lit_bind_cnt_ __sx_arg_isep_lit_bind_name_ __sx_arg_isep_lit_bind_esc_; return "${SX_EX_OK}";;
+	esac
 	esac
 
 	# 結果を出力変数に格納
 	eval ${__sx_arg_isep_lit_out_:+"${__sx_arg_isep_lit_bind_}=\"\${__sx_arg_isep_lit_out_}\""}
 
-	unset CLEANUP
+	unset __sx_arg_isep_lit_bind_ __sx_arg_isep_lit_out_ __sx_arg_isep_lit_sep_ __sx_arg_isep_lit_int_ __sx_arg_isep_lit_flg_ __sx_arg_isep_lit_lim_ __sx_arg_isep_lit_eff_ __sx_arg_isep_lit_r_ __sx_arg_isep_lit_i_ __sx_arg_isep_lit_arg_ __sx_arg_isep_lit_max_ __sx_arg_isep_lit_post_ok_ __sx_arg_isep_lit_bind_cnt_ __sx_arg_isep_lit_bind_name_ __sx_arg_isep_lit_bind_esc_
 }
 
 ### sx_arg_join - 引数を指定された区切り文字で結合する
@@ -1525,8 +1618,6 @@ sx_arg_quote() {
 	__sx_arg_quote "${@}"
 }
 
-define([|V|], [|__sx_arg_quote_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(arg) __M_BIND_USEVAR|])dnl
 
 ### __sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
@@ -1542,12 +1633,44 @@ __sx_arg_quote() {
 	shift
 
 	for __sx_arg_quote_arg_ in "${@}"; do
-		__M_BIND_QUOTE([|__sx_arg_quote|], [|"${__sx_arg_quote_arg_}"|], CLEANUP)
+			case "${__sx_arg_quote_bind_}" in
+		:*) __sx_arg_quote_bind_="${__sx_arg_quote_bind_#*:}";;
+		[1-9]*:*)
+			__sx_arg_quote_bind_cnt_="${__sx_arg_quote_bind_%%[!0-9]*}"
+			__sx_arg_quote_bind_name_="${__sx_arg_quote_bind_%%:*}"
+			__sx_arg_quote_bind_name_="${__sx_arg_quote_bind_name_#"${__sx_arg_quote_bind_cnt_}"}"
+
+			case "${__sx_arg_quote_bind_name_}" in ?*)
+					case "${__sx_arg_quote_arg_}" in
+		*"'"*) __sx_str_sub __sx_arg_quote_bind_esc_ "${__sx_arg_quote_arg_}" "'" "'\\''";;
+		*) __sx_arg_quote_bind_esc_="${__sx_arg_quote_arg_}";;
+	esac
+
+	__sx_arg_quote_bind_esc_="'${__sx_arg_quote_bind_esc_}'"
+				eval "${__sx_arg_quote_bind_name_}=\"\${${__sx_arg_quote_bind_name_}-}\${${__sx_arg_quote_bind_name_}+ }\${__sx_arg_quote_bind_esc_}\""
+			esac
+
+			case "${__sx_arg_quote_bind_cnt_}" in
+				1) __sx_arg_quote_bind_="${__sx_arg_quote_bind_#*:}";;
+				*) __sx_arg_quote_bind_="$((${__sx_arg_quote_bind_cnt_} - 1))${__sx_arg_quote_bind_name_}:${__sx_arg_quote_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_arg_quote_bind_%%:*}=\"\${__sx_arg_quote_arg_}\""
+			__sx_arg_quote_bind_="${__sx_arg_quote_bind_#*:}"
+			;;
+		?*) 	case "${__sx_arg_quote_arg_}" in
+		*"'"*) __sx_str_sub __sx_arg_quote_bind_esc_ "${__sx_arg_quote_arg_}" "'" "'\\''";;
+		*) __sx_arg_quote_bind_esc_="${__sx_arg_quote_arg_}" ;;
+	esac
+	__sx_arg_quote_out_="${__sx_arg_quote_out_}${__sx_arg_quote_out_:+ }'${__sx_arg_quote_bind_esc_}'";;
+		*) unset __sx_arg_quote_bind_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_bind_cnt_ __sx_arg_quote_bind_name_ __sx_arg_quote_bind_esc_; return "${SX_EX_OK}";;
+	esac
 	done
 
 	eval ${__sx_arg_quote_out_:+"${__sx_arg_quote_bind_}=\"\${__sx_arg_quote_out_}\""}
 
-	unset CLEANUP
+	unset __sx_arg_quote_bind_ __sx_arg_quote_out_ __sx_arg_quote_arg_ __sx_arg_quote_bind_cnt_ __sx_arg_quote_bind_name_ __sx_arg_quote_bind_esc_
 }
 
 ### sx_arg_range - 位置パラメータの参照文字列を生成する
@@ -1631,8 +1754,6 @@ sx_arg_rfind() {
 	__sx_arg_rfind "${@}"
 }
 
-define([|V|], [|__sx_arg_find_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
 
 ### __sx_arg_rfind - 引数リストから指定された値を後ろ向きに探す（内部用）
 ##
@@ -1671,11 +1792,33 @@ __sx_arg_rfind() {
 	# 逆方向検索
 	__sx_arg_find_i_="${#}"
 
-	while M_NUM_LT([|0|], [|__sx_arg_find_i_|]); do
+	while case $((0 < __sx_arg_find_i_ )) in 0) ! :;; esac; do
 		eval __sx_arg_find_arg_=\"\${${__sx_arg_find_i_}}\"
 
 		case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
-			__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
+				case "${__sx_arg_find_bind_}" in
+		:*) __sx_arg_find_bind_="${__sx_arg_find_bind_#*:}";;
+		[1-9]*:*)
+			__sx_arg_find_bind_cnt_="${__sx_arg_find_bind_%%[!0-9]*}"
+			__sx_arg_find_bind_name_="${__sx_arg_find_bind_%%:*}"
+			__sx_arg_find_bind_name_="${__sx_arg_find_bind_name_#"${__sx_arg_find_bind_cnt_}"}"
+
+			case "${__sx_arg_find_bind_name_}" in ?*)
+				eval "${__sx_arg_find_bind_name_}=\"\${${__sx_arg_find_bind_name_}-}\${${__sx_arg_find_bind_name_}+ }\"\"\${__sx_arg_find_i_}\""
+			esac
+
+			case "${__sx_arg_find_bind_cnt_}" in
+				1) __sx_arg_find_bind_="${__sx_arg_find_bind_#*:}";;
+				*) __sx_arg_find_bind_="$((${__sx_arg_find_bind_cnt_} - 1))${__sx_arg_find_bind_name_}:${__sx_arg_find_bind_#*:}";;
+			esac
+			;;
+		*:*)
+				eval "${__sx_arg_find_bind_%%:*}=\"\${__sx_arg_find_i_}\""
+			__sx_arg_find_bind_="${__sx_arg_find_bind_#*:}"
+			;;
+		?*) __sx_arg_find_out_="${__sx_arg_find_out_}${__sx_arg_find_out_:+ }""${__sx_arg_find_i_}";;
+		*) unset __sx_arg_find_bind_ __sx_arg_find_tgt_ __sx_arg_find_flg_ __sx_arg_find_glob_ __sx_arg_find_out_ __sx_arg_find_i_ __sx_arg_find_arg_ __sx_arg_find_sts_ __sx_arg_find_bind_cnt_ __sx_arg_find_bind_name_ __sx_arg_find_bind_esc_; return "${SX_EX_OK}";;
+	esac
 			__sx_arg_find_sts_="${SX_EX_OK}"
 		esac
 
@@ -1686,7 +1829,7 @@ __sx_arg_rfind() {
 
 	set -- "${__sx_arg_find_sts_}"
 
-	unset CLEANUP
+	unset __sx_arg_find_bind_ __sx_arg_find_tgt_ __sx_arg_find_flg_ __sx_arg_find_glob_ __sx_arg_find_out_ __sx_arg_find_i_ __sx_arg_find_arg_ __sx_arg_find_sts_ __sx_arg_find_bind_cnt_ __sx_arg_find_bind_name_ __sx_arg_find_bind_esc_
 	return "${1}"
 }
 
@@ -1743,8 +1886,6 @@ sx_arg_rquote() {
 	__sx_arg_rquote "${@}"
 }
 
-define([|V|], [|__sx_arg_rquote_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(i) V(val) __M_BIND_USEVAR|])dnl
 
 ### __sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
@@ -1760,16 +1901,48 @@ __sx_arg_rquote() {
 	shift
 	__sx_arg_rquote_i_="${#}"
 
-	while M_NUM_LT([|0|], [|__sx_arg_rquote_i_|]); do
+	while case $((0 < __sx_arg_rquote_i_ )) in 0) ! :;; esac; do
 		eval "__sx_arg_rquote_val_=\"\${${__sx_arg_rquote_i_}}\""
 
-		__M_BIND_QUOTE([|__sx_arg_rquote|], [|"${__sx_arg_rquote_val_}"|], CLEANUP)
+			case "${__sx_arg_rquote_bind_}" in
+		:*) __sx_arg_rquote_bind_="${__sx_arg_rquote_bind_#*:}";;
+		[1-9]*:*)
+			__sx_arg_rquote_bind_cnt_="${__sx_arg_rquote_bind_%%[!0-9]*}"
+			__sx_arg_rquote_bind_name_="${__sx_arg_rquote_bind_%%:*}"
+			__sx_arg_rquote_bind_name_="${__sx_arg_rquote_bind_name_#"${__sx_arg_rquote_bind_cnt_}"}"
+
+			case "${__sx_arg_rquote_bind_name_}" in ?*)
+					case "${__sx_arg_rquote_val_}" in
+		*"'"*) __sx_str_sub __sx_arg_rquote_bind_esc_ "${__sx_arg_rquote_val_}" "'" "'\\''";;
+		*) __sx_arg_rquote_bind_esc_="${__sx_arg_rquote_val_}";;
+	esac
+
+	__sx_arg_rquote_bind_esc_="'${__sx_arg_rquote_bind_esc_}'"
+				eval "${__sx_arg_rquote_bind_name_}=\"\${${__sx_arg_rquote_bind_name_}-}\${${__sx_arg_rquote_bind_name_}+ }\${__sx_arg_rquote_bind_esc_}\""
+			esac
+
+			case "${__sx_arg_rquote_bind_cnt_}" in
+				1) __sx_arg_rquote_bind_="${__sx_arg_rquote_bind_#*:}";;
+				*) __sx_arg_rquote_bind_="$((${__sx_arg_rquote_bind_cnt_} - 1))${__sx_arg_rquote_bind_name_}:${__sx_arg_rquote_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_arg_rquote_bind_%%:*}=\"\${__sx_arg_rquote_val_}\""
+			__sx_arg_rquote_bind_="${__sx_arg_rquote_bind_#*:}"
+			;;
+		?*) 	case "${__sx_arg_rquote_val_}" in
+		*"'"*) __sx_str_sub __sx_arg_rquote_bind_esc_ "${__sx_arg_rquote_val_}" "'" "'\\''";;
+		*) __sx_arg_rquote_bind_esc_="${__sx_arg_rquote_val_}" ;;
+	esac
+	__sx_arg_rquote_out_="${__sx_arg_rquote_out_}${__sx_arg_rquote_out_:+ }'${__sx_arg_rquote_bind_esc_}'";;
+		*) unset __sx_arg_rquote_bind_ __sx_arg_rquote_out_ __sx_arg_rquote_i_ __sx_arg_rquote_val_ __sx_arg_rquote_bind_cnt_ __sx_arg_rquote_bind_name_ __sx_arg_rquote_bind_esc_; return "${SX_EX_OK}";;
+	esac
 
 		: $((__sx_arg_rquote_i_ -= 1))
 	done
 
 	eval ${__sx_arg_rquote_out_:+"${__sx_arg_rquote_bind_}=\"\${__sx_arg_rquote_out_}\""}
-	unset CLEANUP
+	unset __sx_arg_rquote_bind_ __sx_arg_rquote_out_ __sx_arg_rquote_i_ __sx_arg_rquote_val_ __sx_arg_rquote_bind_cnt_ __sx_arg_rquote_bind_name_ __sx_arg_rquote_bind_esc_
 }
 
 # ========================================
@@ -1814,7 +1987,7 @@ __sx_var_bind_init() {
 		while
 			__sx_var_bind_init_seg_="${__sx_var_bind_init_arg_%%:*}"
 			__sx_var_bind_init_ls_="${__sx_var_bind_init_ls_} ${__sx_var_bind_init_seg_#"${__sx_var_bind_init_seg_%%[!0-9]*}"}"
-			M_STR_HAS([|"${__sx_var_bind_init_arg_}"|], [|:|])
+			case "${__sx_var_bind_init_arg_}" in *:*);; *) ! :;; esac
 		do
 			__sx_var_bind_init_arg_="${__sx_var_bind_init_arg_#*:}"
 		done
@@ -2148,7 +2321,7 @@ __sx_var_is_bindable() {
 		while
 			__sx_var_is_bindable_seg_="${__sx_var_is_bindable_arg_%%:*}"
 			__sx_var_is_bindable_chk_="${__sx_var_is_bindable_chk_} ${__sx_var_is_bindable_seg_#"${__sx_var_is_bindable_seg_%%[!0-9]*}"}"
-			M_STR_HAS([|"${__sx_var_is_bindable_arg_}"|], [|:|])
+			case "${__sx_var_is_bindable_arg_}" in *:*);; *) ! :;; esac
 		do
 			__sx_var_is_bindable_arg_="${__sx_var_is_bindable_arg_#*:}"
 		done
@@ -2176,8 +2349,8 @@ __sx_var_is_bindable() {
 sx_var_is_chain() {
 	for __sx_var_is_chain_arg in "${@}"; do
 		case "${__sx_var_is_chain_arg}" in
-			*=*) ! M_STR_MATCH([|"${__sx_var_is_chain_arg}"|], [|*[!"${SX_STR_WORD}"=]*|], [|*==*|], [|=*|], [|*=|], [|[0-9]*|], [|*=[0-9]*|]);;
-			*-*) ! M_STR_MATCH([|"${__sx_var_is_chain_arg}"|], [|*[!"${SX_STR_WORD}"-]*|], [|*--*|], [|-*|], [|*-|], [|[0-9]*|], [|*-[0-9]*|]);;
+			*=*) ! case "${__sx_var_is_chain_arg}" in *[!"${SX_STR_WORD}"=]* | *==* | =* | *= | [0-9]* | *=[0-9]*);; *) ! :;; esac;;
+			*-*) ! case "${__sx_var_is_chain_arg}" in *[!"${SX_STR_WORD}"-]* | *--* | -* | *- | [0-9]* | *-[0-9]*);; *) ! :;; esac;;
 			*) sx_var_is_name "${__sx_var_is_chain_arg}";;
 		esac || {
 			unset __sx_var_is_chain_arg
@@ -2566,7 +2739,7 @@ __sx_var_list_dep() {
 
 	__sx_var_list_dep_out_=' '
 
-	while M_STR_NE([|"${#}"|], [|0|]); do
+	while case "${#}" in 0) ! :;; esac; do
 		case "${__sx_var_list_dep_out_}" in *" ${1} "*)
 			shift
 			continue
@@ -2579,7 +2752,7 @@ __sx_var_list_dep() {
 			set -- "${@}" "${1}_len"
 
 			__sx_var_list_dep_i_=0
-			while M_STR_NE([|"${__sx_var_list_dep_i_}"|], [|"${__sx_var_list_dep_len_}"|]); do
+			while case "${__sx_var_list_dep_i_}" in "${__sx_var_list_dep_len_}") ! :;; esac; do
 				set -- "${@}" "${1}_${__sx_var_list_dep_i_}"
 				: $((__sx_var_list_dep_i_ += 1))
 			done
@@ -2638,7 +2811,7 @@ __sx_var_list_ro() {
 
 			if
 				sx_var_is_name "${__sx_var_list_ro_vn_}" &&
-				! M_STR_HAS([|"${__sx_var_list_ro_out_}"|], [|" ${__sx_var_list_ro_vn_} "|]) &&
+				! case "${__sx_var_list_ro_out_}" in *" ${__sx_var_list_ro_vn_} "*);; *) ! :;; esac &&
 				__sx_var_is_ro "${__sx_var_list_ro_vn_}"
 			then
 				__sx_var_list_ro_out_="${__sx_var_list_ro_out_}${__sx_var_list_ro_vn_} "
@@ -2694,7 +2867,7 @@ __sx_var_list_set() {
 
 			if
 				sx_var_is_name "${__sx_var_list_set_vn_}" &&
-				! M_STR_HAS([|"${__sx_var_list_set_out_}"|], [|" ${__sx_var_list_set_vn_} "|]) &&
+				! case "${__sx_var_list_set_out_}" in *" ${__sx_var_list_set_vn_} "*);; *) ! :;; esac &&
 				__sx_var_is_set "${__sx_var_list_set_vn_}"
 			then
 				__sx_var_list_set_out_="${__sx_var_list_set_out_}${__sx_var_list_set_vn_} "
@@ -3000,13 +3173,13 @@ __sx_var_unset() {
 		2) return "${SX_EX_OK}";;
 	esac
 
-	while M_STR_NE([|"${#}"|], [|0|]); do
+	while case "${#}" in 0) ! :;; esac; do
 		if __sx_var_is_arr "${1}"; then
 			eval "__sx_var_unset_len_=\"\${${1}_len}\""
 			set -- "${@}" "${1}_len"
 
 			__sx_var_unset_i_=0
-			while M_STR_NE([|"${__sx_var_unset_i_}"|], [|"${__sx_var_unset_len_}"|]); do
+			while case "${__sx_var_unset_i_}" in "${__sx_var_unset_len_}") ! :;; esac; do
 				set -- "${@}" "${1}_${__sx_var_unset_i_}"
 				: $((__sx_var_unset_i_ += 1))
 			done
@@ -3176,7 +3349,7 @@ __sx_num_cmp_float_frac() {
 	unset __sx_num_cmp_float_frac_q_
 
 	# 両方の文字列が窓幅以上の間、チャンクごとに比較
-	while M_STR_MATCH([|"${2}"|], [|${1}*|]) && M_STR_MATCH([|"${3}"|], [|${1}*|]); do
+	while case "${2}" in ${1}*);; *) ! :;; esac && case "${3}" in ${1}*);; *) ! :;; esac; do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
 		__sx_num_cmp_float_arith "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
 			1 | 3) return "${?}";;
@@ -3207,7 +3380,7 @@ __sx_num_cmp_float_uint() {
 	set -- "${__sx_num_cmp_float_uint_qm_}" "${1}" "${2}"
 	unset __sx_num_cmp_float_uint_qm_
 
-	while M_STR_MATCH([|"${2}"|], [|${1}*|]); do
+	while case "${2}" in ${1}*);; *) ! :;; esac; do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
 		__sx_num_cmp_float_arith "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
 			1 | 3) return "${?}";;
@@ -3295,7 +3468,7 @@ __sx_num_is_base_nat0() {
 
 	for __sx_num_is_base_nat0_arg_ in "${@}"; do
 		case "${__sx_num_is_base_nat0_arg_}" in
-			${__sx_num_is_base_nat0_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_base_nat0_arg_#${__sx_num_is_base_nat0_pfix_}}"|] , [|''|], [|0?*|], [|*[!"${__sx_num_is_base_nat0_char_}"]*|]);;
+			${__sx_num_is_base_nat0_pfix_}*) ! case "${__sx_num_is_base_nat0_arg_#${__sx_num_is_base_nat0_pfix_}}"  in '' | 0?* | *[!"${__sx_num_is_base_nat0_char_}"]*);; *) ! :;; esac;;
 			*) ! :;;
 		esac || {
 			unset __sx_num_is_base_nat0_pfix_ __sx_num_is_base_nat0_char_ __sx_num_is_base_nat0_arg_
@@ -3342,7 +3515,7 @@ __sx_num_is_base_nat1() {
 
 	for __sx_num_is_base_nat1_arg_ in "${@}"; do
 		case "${__sx_num_is_base_nat1_arg_}" in
-			${__sx_num_is_base_nat1_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_base_nat1_arg_#${__sx_num_is_base_nat1_pfix_}}"|], [|''|], [|0*|], [|*[!"${__sx_num_is_base_nat1_char_}"]*|]);;
+			${__sx_num_is_base_nat1_pfix_}*) ! case "${__sx_num_is_base_nat1_arg_#${__sx_num_is_base_nat1_pfix_}}" in '' | 0* | *[!"${__sx_num_is_base_nat1_char_}"]*);; *) ! :;; esac;;
 			*) ! :;;
 		esac || {
 			unset __sx_num_is_base_nat1_pfix_ __sx_num_is_base_nat1_char_ __sx_num_is_base_nat1_arg_
@@ -3660,9 +3833,9 @@ __sx_num_is_int_width_core() {
 			: ${__sx_num_is_int_width_xlen_=$((__sx_num_is_int_width_bits_ / 4 + 2))}
 
 				if
-					M_NUM_LT([|__sx_num_is_int_width_xlen_|], [|${2}|]) || {
-						M_STR_EQ([|"${__sx_num_is_int_width_xlen_}"|], [|"${2}"|]) &&
-						M_STR_MATCH([|"${1}"|], [|-0[Xx][9ABCDEFabcdef]*|], [|-0[Xx]8*[!0]*|], [|0[Xx][89ABCDEFabcdef]*|])
+					case $((__sx_num_is_int_width_xlen_ < ${2} )) in 0) ! :;; esac || {
+						{ case "${__sx_num_is_int_width_xlen_}" in "${2}");; *) ! :;; esac ; } &&
+						case "${1}" in -0[Xx][9ABCDEFabcdef]* | -0[Xx]8*[!0]* | 0[Xx][89ABCDEFabcdef]*);; *) ! :;; esac
 					}
 				then
 					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
@@ -3683,9 +3856,9 @@ __sx_num_is_int_width_core() {
 				esac
 
 				if
-					M_NUM_LT([|${3}|], [|${2}|]) || {
-						M_STR_EQ([|"${3}"|], [|"${2}"|]) &&
-						M_STR_MATCH([|"${1}"|], [|-0[!1-${4}]*|], [|-0${4}*[!0]*|], [|0[!1-${4}-]*|])
+					case $((${3} < ${2} )) in 0) ! :;; esac || {
+						{ case "${3}" in "${2}");; *) ! :;; esac ; } &&
+						case "${1}" in -0[!1-${4}]* | -0${4}*[!0]* | 0[!1-${4}-]*);; *) ! :;; esac
 					}
 				then
 					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
@@ -4099,8 +4272,6 @@ sx_num_norm() {
 	unset __sx_num_norm_bind
 }
 
-define([|V|], [|__sx_num_norm_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(arg) V(in) V(mnt) V(dig) V(flen) V(shift) V(dlen) __M_BIND_USEVAR|])dnl
 
 ### __sx_num_norm - 数値を10進固定小数点形式に正規化する（内部用）
 ##
@@ -4136,12 +4307,12 @@ __sx_num_norm() {
 				__sx_num_norm_shift_=$((${__sx_num_norm_in_#*[Ee]} - __sx_num_norm_flen_))
 					__sx_num_norm_dlen_="${#__sx_num_norm_dig_}"
 
-				if M_NUM_LE([|0|], [|__sx_num_norm_shift_|]); then
+				if case $((0 <= __sx_num_norm_shift_ )) in 0) ! :;; esac; then
 					SX_CFG_UNSET_SOFT=2 __sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "-$((__sx_num_norm_dlen_ + __sx_num_norm_shift_))" 0
 				else
 					: $((__sx_num_norm_shift_ *= -1))
 
-					if M_NUM_LT([|__sx_num_norm_shift_|], [|__sx_num_norm_dlen_|]); then
+					if case $((__sx_num_norm_shift_ < __sx_num_norm_dlen_ )) in 0) ! :;; esac; then
 						SX_CFG_UNSET_SOFT=2 __sx_str_splice __sx_num_norm_in_ "${__sx_num_norm_dig_}" "$((__sx_num_norm_dlen_ - __sx_num_norm_shift_))" 0 .
 					else
 						SX_CFG_UNSET_SOFT=2 __sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "${__sx_num_norm_shift_}" 0
@@ -4168,12 +4339,34 @@ __sx_num_norm() {
 			__sx_num_norm_arg_=
 		esac
 
-		__M_BIND_UNQUOTE([|__sx_num_norm|], [|"${__sx_num_norm_arg_%%[!-]*}${__sx_num_norm_in_:-0}"|], CLEANUP)
+			case "${__sx_num_norm_bind_}" in
+		:*) __sx_num_norm_bind_="${__sx_num_norm_bind_#*:}";;
+		[1-9]*:*)
+			__sx_num_norm_bind_cnt_="${__sx_num_norm_bind_%%[!0-9]*}"
+			__sx_num_norm_bind_name_="${__sx_num_norm_bind_%%:*}"
+			__sx_num_norm_bind_name_="${__sx_num_norm_bind_name_#"${__sx_num_norm_bind_cnt_}"}"
+
+			case "${__sx_num_norm_bind_name_}" in ?*)
+				eval "${__sx_num_norm_bind_name_}=\"\${${__sx_num_norm_bind_name_}-}\${${__sx_num_norm_bind_name_}+ }\"\"\${__sx_num_norm_arg_%%[!-]*}\${__sx_num_norm_in_:-0}\""
+			esac
+
+			case "${__sx_num_norm_bind_cnt_}" in
+				1) __sx_num_norm_bind_="${__sx_num_norm_bind_#*:}";;
+				*) __sx_num_norm_bind_="$((${__sx_num_norm_bind_cnt_} - 1))${__sx_num_norm_bind_name_}:${__sx_num_norm_bind_#*:}";;
+			esac
+			;;
+		*:*)
+				eval "${__sx_num_norm_bind_%%:*}=\"\${__sx_num_norm_arg_%%[!-]*}\${__sx_num_norm_in_:-0}\""
+			__sx_num_norm_bind_="${__sx_num_norm_bind_#*:}"
+			;;
+		?*) __sx_num_norm_out_="${__sx_num_norm_out_}${__sx_num_norm_out_:+ }""${__sx_num_norm_arg_%%[!-]*}${__sx_num_norm_in_:-0}";;
+		*) unset __sx_num_norm_bind_ __sx_num_norm_out_ __sx_num_norm_arg_ __sx_num_norm_in_ __sx_num_norm_mnt_ __sx_num_norm_dig_ __sx_num_norm_flen_ __sx_num_norm_shift_ __sx_num_norm_dlen_ __sx_num_norm_bind_cnt_ __sx_num_norm_bind_name_ __sx_num_norm_bind_esc_; return "${SX_EX_OK}";;
+	esac
 	done
 
 	eval ${__sx_num_norm_out_:+"${__sx_num_norm_bind_}=\"\${__sx_num_norm_out_}\""}
 
-	unset CLEANUP
+	unset __sx_num_norm_bind_ __sx_num_norm_out_ __sx_num_norm_arg_ __sx_num_norm_in_ __sx_num_norm_mnt_ __sx_num_norm_dig_ __sx_num_norm_flen_ __sx_num_norm_shift_ __sx_num_norm_dlen_ __sx_num_norm_bind_cnt_ __sx_num_norm_bind_name_ __sx_num_norm_bind_esc_
 }
 
 ### sx_num_range - 数値の範囲を生成する (Python range 互換)
@@ -4207,8 +4400,6 @@ sx_num_range() {
 	__sx_num_range "${@}"
 }
 
-define([|V|], [|__sx_num_range_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(cur) __M_BIND_USEVAR|])dnl
 
 ### __sx_num_range - 数値の範囲を生成する（内部用）
 ##
@@ -4231,21 +4422,65 @@ __sx_num_range() {
 
 	__sx_num_range_cur_="${1}"
 
-	if M_NUM_LT([|0|], [|${3}|]); then
-		while M_NUM_LT([|__sx_num_range_cur_|], [|${2}|]); do
-			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
+	if case $((0 < ${3} )) in 0) ! :;; esac; then
+		while case $((__sx_num_range_cur_ < ${2} )) in 0) ! :;; esac; do
+				case "${__sx_num_range_bind_}" in
+		:*) __sx_num_range_bind_="${__sx_num_range_bind_#*:}";;
+		[1-9]*:*)
+			__sx_num_range_bind_cnt_="${__sx_num_range_bind_%%[!0-9]*}"
+			__sx_num_range_bind_name_="${__sx_num_range_bind_%%:*}"
+			__sx_num_range_bind_name_="${__sx_num_range_bind_name_#"${__sx_num_range_bind_cnt_}"}"
+
+			case "${__sx_num_range_bind_name_}" in ?*)
+				eval "${__sx_num_range_bind_name_}=\"\${${__sx_num_range_bind_name_}-}\${${__sx_num_range_bind_name_}+ }\"\"\${__sx_num_range_cur_}\""
+			esac
+
+			case "${__sx_num_range_bind_cnt_}" in
+				1) __sx_num_range_bind_="${__sx_num_range_bind_#*:}";;
+				*) __sx_num_range_bind_="$((${__sx_num_range_bind_cnt_} - 1))${__sx_num_range_bind_name_}:${__sx_num_range_bind_#*:}";;
+			esac
+			;;
+		*:*)
+				eval "${__sx_num_range_bind_%%:*}=\"\${__sx_num_range_cur_}\""
+			__sx_num_range_bind_="${__sx_num_range_bind_#*:}"
+			;;
+		?*) __sx_num_range_out_="${__sx_num_range_out_}${__sx_num_range_out_:+ }""${__sx_num_range_cur_}";;
+		*) unset __sx_num_range_bind_ __sx_num_range_out_ __sx_num_range_cur_ __sx_num_range_bind_cnt_ __sx_num_range_bind_name_ __sx_num_range_bind_esc_; return "${SX_EX_OK}";;
+	esac
 			: $((__sx_num_range_cur_ += ${3}))
 		done
 	else
-		while M_NUM_LT([|${2}|], [|${__sx_num_range_cur_}|]); do
-			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
+		while case $((${2} < ${__sx_num_range_cur_} )) in 0) ! :;; esac; do
+				case "${__sx_num_range_bind_}" in
+		:*) __sx_num_range_bind_="${__sx_num_range_bind_#*:}";;
+		[1-9]*:*)
+			__sx_num_range_bind_cnt_="${__sx_num_range_bind_%%[!0-9]*}"
+			__sx_num_range_bind_name_="${__sx_num_range_bind_%%:*}"
+			__sx_num_range_bind_name_="${__sx_num_range_bind_name_#"${__sx_num_range_bind_cnt_}"}"
+
+			case "${__sx_num_range_bind_name_}" in ?*)
+				eval "${__sx_num_range_bind_name_}=\"\${${__sx_num_range_bind_name_}-}\${${__sx_num_range_bind_name_}+ }\"\"\${__sx_num_range_cur_}\""
+			esac
+
+			case "${__sx_num_range_bind_cnt_}" in
+				1) __sx_num_range_bind_="${__sx_num_range_bind_#*:}";;
+				*) __sx_num_range_bind_="$((${__sx_num_range_bind_cnt_} - 1))${__sx_num_range_bind_name_}:${__sx_num_range_bind_#*:}";;
+			esac
+			;;
+		*:*)
+				eval "${__sx_num_range_bind_%%:*}=\"\${__sx_num_range_cur_}\""
+			__sx_num_range_bind_="${__sx_num_range_bind_#*:}"
+			;;
+		?*) __sx_num_range_out_="${__sx_num_range_out_}${__sx_num_range_out_:+ }""${__sx_num_range_cur_}";;
+		*) unset __sx_num_range_bind_ __sx_num_range_out_ __sx_num_range_cur_ __sx_num_range_bind_cnt_ __sx_num_range_bind_name_ __sx_num_range_bind_esc_; return "${SX_EX_OK}";;
+	esac
 			: $((__sx_num_range_cur_ += ${3}))
 		done
 	fi
 
 	eval ${__sx_num_range_out_:+"${__sx_num_range_bind_}=\"\${__sx_num_range_out_}\""}
 
-	unset CLEANUP
+	unset __sx_num_range_bind_ __sx_num_range_out_ __sx_num_range_cur_ __sx_num_range_bind_cnt_ __sx_num_range_bind_name_ __sx_num_range_bind_esc_
 }
 
 ### sx_num_rel - 数値間の関係を確認する
@@ -4465,7 +4700,7 @@ __sx_str_center() {
 
 	__sx_str_center_needed_=$((${3#-} - ${#2}))
 
-	M_NUM_LT([|0|], [|__sx_str_center_needed_|]) && M_STR_NE([|"${4}"|], [|''|]) || {
+	case $((0 < __sx_str_center_needed_ )) in 0) ! :;; esac && case "${4}" in '') ! :;; esac || {
 		__sx_var_set "${1}=${2}"
 		unset __sx_str_center_needed_
 		return "${SX_EX_OK}"
@@ -4526,8 +4761,6 @@ sx_str_chunk() {
 	__sx_str_chunk "${@}"
 }
 
-define([|V|], [|__sx_str_chunk_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(str) V(len) V(lim) V(flg) V(out) V(qm) V(next) __M_BIND_USEVAR|])dnl
 
 ### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
 ##
@@ -4547,13 +4780,45 @@ __sx_str_chunk() {
 
 		SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_#[+-]}"
 
-	if M_NUM_LT([|0|], [|__sx_str_chunk_len_|]); then
+	if case $((0 < __sx_str_chunk_len_ )) in 0) ! :;; esac; then
 		# Forward: 早期終了をサポート
 		__sx_str_chunk_out_=
 
-		while M_NUM_BOOL([|__sx_str_chunk_len_ < ${#__sx_str_chunk_str_} && __sx_str_chunk_lim_ != 0|]); do
+		while case $((__sx_str_chunk_len_ < ${#__sx_str_chunk_str_} && __sx_str_chunk_lim_ != 0)) in 0) ! :;; esac; do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
-			__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], CLEANUP)
+				case "${__sx_str_chunk_bind_}" in
+		:*) __sx_str_chunk_bind_="${__sx_str_chunk_bind_#*:}";;
+		[1-9]*:*)
+			__sx_str_chunk_bind_cnt_="${__sx_str_chunk_bind_%%[!0-9]*}"
+			__sx_str_chunk_bind_name_="${__sx_str_chunk_bind_%%:*}"
+			__sx_str_chunk_bind_name_="${__sx_str_chunk_bind_name_#"${__sx_str_chunk_bind_cnt_}"}"
+
+			case "${__sx_str_chunk_bind_name_}" in ?*)
+					case "${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}" in
+		*"'"*) __sx_str_sub __sx_str_chunk_bind_esc_ "${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}" "'" "'\\''";;
+		*) __sx_str_chunk_bind_esc_="${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}";;
+	esac
+
+	__sx_str_chunk_bind_esc_="'${__sx_str_chunk_bind_esc_}'"
+				eval "${__sx_str_chunk_bind_name_}=\"\${${__sx_str_chunk_bind_name_}-}\${${__sx_str_chunk_bind_name_}+ }\${__sx_str_chunk_bind_esc_}\""
+			esac
+
+			case "${__sx_str_chunk_bind_cnt_}" in
+				1) __sx_str_chunk_bind_="${__sx_str_chunk_bind_#*:}";;
+				*) __sx_str_chunk_bind_="$((${__sx_str_chunk_bind_cnt_} - 1))${__sx_str_chunk_bind_name_}:${__sx_str_chunk_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_str_chunk_bind_%%:*}=\"\${__sx_str_chunk_str_%\"\${__sx_str_chunk_next_}\"}\""
+			__sx_str_chunk_bind_="${__sx_str_chunk_bind_#*:}"
+			;;
+		?*) 	case "${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}" in
+		*"'"*) __sx_str_sub __sx_str_chunk_bind_esc_ "${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}" "'" "'\\''";;
+		*) __sx_str_chunk_bind_esc_="${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}" ;;
+	esac
+	__sx_str_chunk_out_="${__sx_str_chunk_out_}${__sx_str_chunk_out_:+ }'${__sx_str_chunk_bind_esc_}'";;
+		*) unset __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_flg_ __sx_str_chunk_out_ __sx_str_chunk_qm_ __sx_str_chunk_next_ __sx_str_chunk_bind_cnt_ __sx_str_chunk_bind_name_ __sx_str_chunk_bind_esc_; return "${SX_EX_OK}";;
+	esac
 
 			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
 			: $((__sx_str_chunk_lim_ -= 1))
@@ -4562,7 +4827,39 @@ __sx_str_chunk() {
 		case "${__sx_str_chunk_str_}" in ?*)
 			__sx_num_cmp_arith "${#__sx_str_chunk_str_}" "${__sx_str_chunk_len_}" ||
 			case "${?}0" in "1$((__sx_str_chunk_flg_ & SX_STR_CHUNK_SKIP_SHORT))" | 20 | "3$((__sx_str_chunk_flg_ & SX_STR_CHUNK_SKIP_LONG))")
-			__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_}"|], CLEANUP)
+				case "${__sx_str_chunk_bind_}" in
+		:*) __sx_str_chunk_bind_="${__sx_str_chunk_bind_#*:}";;
+		[1-9]*:*)
+			__sx_str_chunk_bind_cnt_="${__sx_str_chunk_bind_%%[!0-9]*}"
+			__sx_str_chunk_bind_name_="${__sx_str_chunk_bind_%%:*}"
+			__sx_str_chunk_bind_name_="${__sx_str_chunk_bind_name_#"${__sx_str_chunk_bind_cnt_}"}"
+
+			case "${__sx_str_chunk_bind_name_}" in ?*)
+					case "${__sx_str_chunk_str_}" in
+		*"'"*) __sx_str_sub __sx_str_chunk_bind_esc_ "${__sx_str_chunk_str_}" "'" "'\\''";;
+		*) __sx_str_chunk_bind_esc_="${__sx_str_chunk_str_}";;
+	esac
+
+	__sx_str_chunk_bind_esc_="'${__sx_str_chunk_bind_esc_}'"
+				eval "${__sx_str_chunk_bind_name_}=\"\${${__sx_str_chunk_bind_name_}-}\${${__sx_str_chunk_bind_name_}+ }\${__sx_str_chunk_bind_esc_}\""
+			esac
+
+			case "${__sx_str_chunk_bind_cnt_}" in
+				1) __sx_str_chunk_bind_="${__sx_str_chunk_bind_#*:}";;
+				*) __sx_str_chunk_bind_="$((${__sx_str_chunk_bind_cnt_} - 1))${__sx_str_chunk_bind_name_}:${__sx_str_chunk_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_str_chunk_bind_%%:*}=\"\${__sx_str_chunk_str_}\""
+			__sx_str_chunk_bind_="${__sx_str_chunk_bind_#*:}"
+			;;
+		?*) 	case "${__sx_str_chunk_str_}" in
+		*"'"*) __sx_str_sub __sx_str_chunk_bind_esc_ "${__sx_str_chunk_str_}" "'" "'\\''";;
+		*) __sx_str_chunk_bind_esc_="${__sx_str_chunk_str_}" ;;
+	esac
+	__sx_str_chunk_out_="${__sx_str_chunk_out_}${__sx_str_chunk_out_:+ }'${__sx_str_chunk_bind_esc_}'";;
+		*) unset __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_flg_ __sx_str_chunk_out_ __sx_str_chunk_qm_ __sx_str_chunk_next_ __sx_str_chunk_bind_cnt_ __sx_str_chunk_bind_name_ __sx_str_chunk_bind_esc_; return "${SX_EX_OK}";;
+	esac
 		esac
 	esac
 
@@ -4572,7 +4869,7 @@ __sx_str_chunk() {
 		set --
 		: $((__sx_str_chunk_len_ *= -1))
 
-		while M_NUM_BOOL([|__sx_str_chunk_len_ < ${#__sx_str_chunk_str_} && __sx_str_chunk_lim_ != 0|]); do
+		while case $((__sx_str_chunk_len_ < ${#__sx_str_chunk_str_} && __sx_str_chunk_lim_ != 0)) in 0) ! :;; esac; do
 			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
 			set -- "${__sx_str_chunk_str_#${__sx_str_chunk_next_}}" "${@}"
 			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
@@ -4589,7 +4886,7 @@ __sx_str_chunk() {
 		__sx_arg_quote "${__sx_str_chunk_bind_}" "${@}"
 	fi
 
-	unset CLEANUP
+	unset __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_flg_ __sx_str_chunk_out_ __sx_str_chunk_qm_ __sx_str_chunk_next_ __sx_str_chunk_bind_cnt_ __sx_str_chunk_bind_name_ __sx_str_chunk_bind_esc_
 }
 
 ### sx_str_eq - すべての引数が文字列として一致するか確認する
@@ -5002,22 +5299,22 @@ __sx_str_isep_cb() {
 	# 戻り値（__sx_str_isep_cb_ret_）を挿入文字列として使用する。
 	# コールバックが非0を返した場合、stat=$? に記録し以降のループを抑制する。
 
-	if M_NUM_LT([|0|], [|${4}|]); then
+	if case $((0 < ${4} )) in 0) ! :;; esac; then
 		# === Forward: 先頭から interval 文字ごとに区切る ===
 		# PRE: callback("", str, count+1) → 戻り値を追加
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_PRE && ${9} < ${5}|]); then
+		if case $((${6} & SX_STR_ISEP_PRE && ${9} < ${5})) in 0) ! :;; esac; then
 			"${3}" __sx_str_isep_cb_ret_ "" "${2}" "$((${9} + 1))" || set -- "${@}" "${?}"
 			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${__sx_str_isep_cb_ret_-}" "${8}" "$((${11-0} ? ${5} : ${9} + 1))" "${10}" ${11+"${11}"}
 			unset __sx_str_isep_cb_ret_
 		fi
 
 		# ループ要なら QM を生成してループ実行
-		if M_NUM_BOOL([|${4} < ${#2} && ${9} < ${5}|]); then
+		if case $((${4} < ${#2} && ${9} < ${5})) in 0) ! :;; esac; then
 			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${4}"
 			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${__sx_str_isep_qm_}" "${9}" "${10}" ${11+"${11}"}
 			unset __sx_str_isep_qm_
 
-			while M_NUM_BOOL([|${4} < ${#2} && ${9} < ${5}|]); do
+			while case $((${4} < ${#2} && ${9} < ${5})) in 0) ! :;; esac; do
 				set -- "${@}" "${2#${8}}"
 				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "$((${9} + 1))" "${10}" "${2%"${11}"}"
 
@@ -5031,7 +5328,7 @@ __sx_str_isep_cb() {
 		set -- "${1}" "" "${3}" "${4}" "${5}" "${6}" "${7}${2}" "${8}" "${9}" "${10}${2}" ${11+"${11}"}
 
 		# POST: callback(ctx, "", count+1) → 戻り値を追加
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_POST && ${9} < ${5} && (${#10} % ${4}) == 0|]); then
+		if case $((${6} & SX_STR_ISEP_POST && ${9} < ${5} && (${#10} % ${4}) == 0)) in 0) ! :;; esac; then
 			"${3}" __sx_str_isep_cb_ret_ "${10}" "" "$((${9} + 1))" || set -- "${@}" "${?}"
 			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${__sx_str_isep_cb_ret_-}" "${8}" "$((${11-0} ? ${5} : ${9} + 1))" "${10}" ${11+"${11}"}
 			unset __sx_str_isep_cb_ret_
@@ -5039,19 +5336,19 @@ __sx_str_isep_cb() {
 	else
 		# === Backward: 末尾から interval 文字ごとに区切る ===
 		# POST: callback(str, "", count+1) → 戻り値を前に追加
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_POST && ${9} < ${5}|]); then
+		if case $((${6} & SX_STR_ISEP_POST && ${9} < ${5})) in 0) ! :;; esac; then
 			"${3}" __sx_str_isep_cb_ret_ "${2}" "" "$((${9} + 1))" || set -- "${@}" "${?}"
 			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${__sx_str_isep_cb_ret_-}${7}" "${8}" "$((${11-0} ? ${5} : ${9} + 1))" "${10}" ${11+"${11}"}
 			unset __sx_str_isep_cb_ret_
 		fi
 
 		# ループ要なら QM を生成してループ実行
-		if M_NUM_BOOL([|(0 - ${#2}) < ${4} && ${5} != 0|]); then
+		if case $(((0 - ${#2}) < ${4} && ${5} != 0)) in 0) ! :;; esac; then
 			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${4#-}"
 			set -- "${1}" "${2}" "${3}" "${4#-}" "${5}" "${6}" "${7}" "${__sx_str_isep_qm_}" "${9}" "${10}" ${11+"${11}"}
 			unset __sx_str_isep_qm_
 
-			while M_NUM_BOOL([|${4} < ${#2} && ${9} < ${5}|]); do
+			while case $((${4} < ${#2} && ${9} < ${5})) in 0) ! :;; esac; do
 				set -- "${@}" "${2%${8}}"
 				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "$((${9} + 1))" "${10}" "${2#"${11}"}"
 
@@ -5065,7 +5362,7 @@ __sx_str_isep_cb() {
 		set -- "${1}" "" "${3}" "${4}" "${5}" "${6}" "${2}${7}" "${8}" "${9}" "${2}${10}" ${11+"${11}"}
 
 		# PRE: callback("", ctx, count+1) → 戻り値を前に追加
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_PRE && ${9} < ${5} && (${#10} % ${4}) == 0|]); then
+		if case $((${6} & SX_STR_ISEP_PRE && ${9} < ${5} && (${#10} % ${4}) == 0)) in 0) ! :;; esac; then
 			"${3}" __sx_str_isep_cb_ret_ "" "${10}" "$((${9} + 1))" || set -- "${@}" "${?}"
 			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${__sx_str_isep_cb_ret_-}${7}" "${8}" "$((${11-0} ? ${5} : ${9} + 1))" "${10}" ${11+"${11}"}
 			unset __sx_str_isep_cb_ret_
@@ -5088,20 +5385,20 @@ __sx_str_isep_lit() {
 	# ${1}: res, ${2}: str, ${3}: sep, ${4}: int, ${5}: lim, ${6}: flags
 	# ${7}: out, ${8}: qm
 
-	if M_NUM_LT([|0|], [|${4}|]); then
+	if case $((0 < ${4} )) in 0) ! :;; esac; then
 		# === Forward: 先頭から interval 文字ごとに区切る ===
 		# PRE: 先頭の境界
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_PRE && ${5} != 0|]); then
+		if case $((${6} & SX_STR_ISEP_PRE && ${5} != 0)) in 0) ! :;; esac; then
 			set -- "${1}" "${2}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${7}${3}" "${8}"
 		fi
 
 		# ループ要なら QM を生成してループ実行
-		if M_NUM_BOOL([|${4} < ${#2} && ${5} != 0|]); then
+		if case $((${4} < ${#2} && ${5} != 0)) in 0) ! :;; esac; then
 			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${4}"
 			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${__sx_str_isep_qm_}"
 			unset __sx_str_isep_qm_
 
-			while M_NUM_BOOL([|${4} < ${#2} && ${5} != 0|]); do
+			while case $((${4} < ${#2} && ${5} != 0)) in 0) ! :;; esac; do
 				set -- "${1}" "${2#${8}}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${7}${2%"${2#${8}}"}${3}" "${8}"
 			done
 		fi
@@ -5110,23 +5407,23 @@ __sx_str_isep_lit() {
 		set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${2}" "${8}"
 
 		# POST: 末尾の境界（count < lim かつ 残り文字列長 % interval == 0）
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_POST && ${5} != 0 && (${#2} % ${4}) == 0|]); then
+		if case $((${6} & SX_STR_ISEP_POST && ${5} != 0 && (${#2} % ${4}) == 0)) in 0) ! :;; esac; then
 			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${3}" "${8}"
 		fi
 	else
 		# === Backward: 末尾から interval 文字ごとに区切る ===
 		# POST: 末尾の境界（後方処理では最初に処理する境界）
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_POST && ${5} != 0|]); then
+		if case $((${6} & SX_STR_ISEP_POST && ${5} != 0)) in 0) ! :;; esac; then
 			set -- "${1}" "${2}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${3}${7}" "${8}"
 		fi
 
 		# ループ要なら QM を生成してループ実行
-		if M_NUM_BOOL([|(0 - ${#2}) < ${4} && ${5} != 0|]); then
+		if case $(((0 - ${#2}) < ${4} && ${5} != 0)) in 0) ! :;; esac; then
 			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${4#-}"
 			set -- "${1}" "${2}" "${3}" "${4#-}" "${5}" "${6}" "${7}" "${__sx_str_isep_qm_}"
 			unset __sx_str_isep_qm_
 
-			while M_NUM_BOOL([|${4} < ${#2} && ${5} != 0|]); do
+			while case $((${4} < ${#2} && ${5} != 0)) in 0) ! :;; esac; do
 				set -- "${1}" "${2%${8}}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${3}${2#"${2%${8}}"}${7}" "${8}"
 			done
 		fi
@@ -5135,7 +5432,7 @@ __sx_str_isep_lit() {
 		set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${2}${7}" "${8}"
 
 		# PRE: 先頭の境界（後方処理では最後に処理する境界）
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_PRE && ${5} != 0 && (${#2} % ${4}) == 0|]); then
+		if case $((${6} & SX_STR_ISEP_PRE && ${5} != 0 && (${#2} % ${4}) == 0)) in 0) ! :;; esac; then
 			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${3}${7}" "${8}"
 		fi
 	fi
@@ -5199,7 +5496,7 @@ __sx_str_lower_cb() {
 		O) eval "${1}=o";; P) eval "${1}=p";;
 		Q) eval "${1}=q";; R) eval "${1}=r";;
 		S) eval "${1}=s";; T) eval "${1}=t";;
-		U) eval "${1}=u";; V) eval "${1}=v";;
+		U) eval "${1}=u";; __sx_str_chunk__) eval "${1}=v";;
 		W) eval "${1}=w";; X) eval "${1}=x";;
 		Y) eval "${1}=y";; Z) eval "${1}=z";;
 	esac
@@ -5275,7 +5572,7 @@ __sx_str_pad() {
 
 	__sx_str_pad_needed_=$((${3#-} - ${#2}))
 
-	M_NUM_LT([|0|], [|__sx_str_pad_needed_|]) && M_STR_NE([|"${4}"|], [|''|]) || {
+	case $((0 < __sx_str_pad_needed_ )) in 0) ! :;; esac && case "${4}" in '') ! :;; esac || {
 		__sx_var_set "${1}=${2}"
 		unset __sx_str_pad_needed_
 		return "${SX_EX_OK}"
@@ -5326,7 +5623,7 @@ __sx_str_rep() {
 	set -- "${1}" "${2-}" "$((${3-1}))"
 	__sx_str_rep_out_=
 
-	while M_STR_NE([|"${3}"|], [|0|]); do
+	while case "${3}" in 0) ! :;; esac; do
 		case "$((${3} % 2))" in 1)
 			__sx_str_rep_out_="${__sx_str_rep_out_}${2}"
 		esac
@@ -5362,9 +5659,7 @@ sx_str_splice() {
 	__sx_str_splice "${@}"
 }
 
-define([|V|], [|__sx_str_splice_$1_|]) dnl
-define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(add) V(left) V(right) V(suffix) V(del)|]) dnl
-
+  
 ### __sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する（内部用）
 ##
 ## 使い方:
@@ -5373,33 +5668,31 @@ define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(add) V(left) V(right) 
 ## 説明:
 ##   sx_str_splice の内部実装。引数チェックは行わない。
 __sx_str_splice() {
-	V(res)="${1}"
-	V(str)="${2-}"
-	V(off)="${3-0}"
-	V(len)="${4-${SX_NUM_I32_MAX}}"
-	V(add)="${5-}"
+	__sx_str_splice_res_="${1}"
+	__sx_str_splice_str_="${2-}"
+	__sx_str_splice_off_="${3-0}"
+	__sx_str_splice_len_="${4-${SX_NUM_I32_MAX}}"
+	__sx_str_splice_add_="${5-}"
 
 	# 1. 前半部分を取得 (sx_str_substr は負数 off をサポート済み)
-	__sx_str_substr V(left) "${V(str)}" 0 "${V(off)}"
+	__sx_str_substr __sx_str_splice_left_ "${__sx_str_splice_str_}" 0 "${__sx_str_splice_off_}"
 
 	# 2. 残りの部分（suffix）を抽出
-	V(suffix)="${V(str)#"${V(left)}"}"
+	__sx_str_splice_suffix_="${__sx_str_splice_str_#"${__sx_str_splice_left_}"}"
 
 	# 3. 削除される部分を取得（sx_str_substr の負数 len を利用）
-	__sx_str_substr V(del) "${V(suffix)}" 0 "${V(len)}"
+	__sx_str_substr __sx_str_splice_del_ "${__sx_str_splice_suffix_}" 0 "${__sx_str_splice_len_}"
 
 	# 4. 後半部分（削除範囲より後ろ）を抽出
-	V(right)="${V(suffix)#"${V(del)}"}"
+	__sx_str_splice_right_="${__sx_str_splice_suffix_#"${__sx_str_splice_del_}"}"
 
 	# 5. 結合して格納
-	__sx_var_set "${V(res)}=${V(left)}${V(add)}${V(right)}"
+	__sx_var_set "${__sx_str_splice_res_}=${__sx_str_splice_left_}${__sx_str_splice_add_}${__sx_str_splice_right_}"
 
-	CLEANUP
+	unset __sx_str_splice_res_ __sx_str_splice_str_ __sx_str_splice_off_ __sx_str_splice_len_ __sx_str_splice_add_ __sx_str_splice_left_ __sx_str_splice_right_ __sx_str_splice_suffix_ __sx_str_splice_del_
 }
 
-undefine([|CLEANUP|]) dnl
-undefine([|V|]) dnl
-
+  
 ### sx_str_split - 文字列を分割して結果変数に格納する
 ##
 ## 使い方:
@@ -5431,8 +5724,6 @@ sx_str_split() {
 	__sx_str_split "${@}"
 }
 
-define([|V|], [|__sx_str_split_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(str) V(sep) V(lim) V(flg) V(inc) V(out) V(rem) V(mid) V(val) __M_BIND_USEVAR|])dnl
 
 ### __sx_str_split - 文字列を分割して結果変数に格納する（内部用）
 ##
@@ -5457,8 +5748,8 @@ __sx_str_split() {
 	set --
 
 	# 空区切り文字（一文字ずつ分割）の処理
-	if M_STR_EQ([|"${__sx_str_split_sep_}"|], [|''|]); then
-		if M_NUM_LT([|0|], [|__sx_str_split_lim_|]); then
+	if { case "${__sx_str_split_sep_}" in '');; *) ! :;; esac ; }; then
+		if case $((0 < __sx_str_split_lim_ )) in 0) ! :;; esac; then
 			# 前方から制限数分だけ分割
 			SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
 
@@ -5467,7 +5758,7 @@ __sx_str_split() {
 			esac
 
 			__sx_str_split_out_="'' ${__sx_str_split_out_# }"
-		elif M_NUM_LT([|__sx_str_split_lim_|], [|0|]); then
+		elif case $((__sx_str_split_lim_ < 0 )) in 0) ! :;; esac; then
 			# 後方から制限数分だけ分割
 			: $((__sx_str_split_lim_ *= -1))
 			SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
@@ -5487,24 +5778,88 @@ __sx_str_split() {
 		esac
 
 		eval __sx_arg_quote '"${__sx_str_split_bind_}"' "${__sx_str_split_out_}"
-	elif M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
+	elif case $((0 <= __sx_str_split_lim_ )) in 0) ! :;; esac; then
 		# 前方から分割
-		if M_STR_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
+		if case $((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB)) in 0) ! :;; esac; then
 			# グロブ（パターン）による前方分割
 			while
-				M_STR_HAS([|"${__sx_str_split_str_}"|], [|${__sx_str_split_sep_}|]) &&
-				M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
+				case "${__sx_str_split_str_}" in *${__sx_str_split_sep_}*);; *) ! :;; esac &&
+				case "${__sx_str_split_lim_}" in 0) ! :;; esac
 			do
 				__sx_str_split_val_="${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
 
-				__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_val_}"|], CLEANUP)
+					case "${__sx_str_split_bind_}" in
+		:*) __sx_str_split_bind_="${__sx_str_split_bind_#*:}";;
+		[1-9]*:*)
+			__sx_str_split_bind_cnt_="${__sx_str_split_bind_%%[!0-9]*}"
+			__sx_str_split_bind_name_="${__sx_str_split_bind_%%:*}"
+			__sx_str_split_bind_name_="${__sx_str_split_bind_name_#"${__sx_str_split_bind_cnt_}"}"
+
+			case "${__sx_str_split_bind_name_}" in ?*)
+					case "${__sx_str_split_val_}" in
+		*"'"*) __sx_str_sub __sx_str_split_bind_esc_ "${__sx_str_split_val_}" "'" "'\\''";;
+		*) __sx_str_split_bind_esc_="${__sx_str_split_val_}";;
+	esac
+
+	__sx_str_split_bind_esc_="'${__sx_str_split_bind_esc_}'"
+				eval "${__sx_str_split_bind_name_}=\"\${${__sx_str_split_bind_name_}-}\${${__sx_str_split_bind_name_}+ }\${__sx_str_split_bind_esc_}\""
+			esac
+
+			case "${__sx_str_split_bind_cnt_}" in
+				1) __sx_str_split_bind_="${__sx_str_split_bind_#*:}";;
+				*) __sx_str_split_bind_="$((${__sx_str_split_bind_cnt_} - 1))${__sx_str_split_bind_name_}:${__sx_str_split_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_str_split_bind_%%:*}=\"\${__sx_str_split_val_}\""
+			__sx_str_split_bind_="${__sx_str_split_bind_#*:}"
+			;;
+		?*) 	case "${__sx_str_split_val_}" in
+		*"'"*) __sx_str_sub __sx_str_split_bind_esc_ "${__sx_str_split_val_}" "'" "'\\''";;
+		*) __sx_str_split_bind_esc_="${__sx_str_split_val_}" ;;
+	esac
+	__sx_str_split_out_="${__sx_str_split_out_}${__sx_str_split_out_:+ }'${__sx_str_split_bind_esc_}'";;
+		*) unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_inc_ __sx_str_split_out_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_bind_cnt_ __sx_str_split_bind_name_ __sx_str_split_bind_esc_; return "${SX_EX_OK}";;
+	esac
 
 				__sx_str_split_rem_="${__sx_str_split_str_#*${__sx_str_split_sep_}}"
 
 				# 区切り文字を含めるフラグがある場合
 				case "${__sx_str_split_inc_}" in 1)
 					__sx_str_split_mid_="${__sx_str_split_str_#${__sx_str_split_val_}}"
-					__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_mid_%${__sx_str_split_rem_}}"|], CLEANUP)
+						case "${__sx_str_split_bind_}" in
+		:*) __sx_str_split_bind_="${__sx_str_split_bind_#*:}";;
+		[1-9]*:*)
+			__sx_str_split_bind_cnt_="${__sx_str_split_bind_%%[!0-9]*}"
+			__sx_str_split_bind_name_="${__sx_str_split_bind_%%:*}"
+			__sx_str_split_bind_name_="${__sx_str_split_bind_name_#"${__sx_str_split_bind_cnt_}"}"
+
+			case "${__sx_str_split_bind_name_}" in ?*)
+					case "${__sx_str_split_mid_%${__sx_str_split_rem_}}" in
+		*"'"*) __sx_str_sub __sx_str_split_bind_esc_ "${__sx_str_split_mid_%${__sx_str_split_rem_}}" "'" "'\\''";;
+		*) __sx_str_split_bind_esc_="${__sx_str_split_mid_%${__sx_str_split_rem_}}";;
+	esac
+
+	__sx_str_split_bind_esc_="'${__sx_str_split_bind_esc_}'"
+				eval "${__sx_str_split_bind_name_}=\"\${${__sx_str_split_bind_name_}-}\${${__sx_str_split_bind_name_}+ }\${__sx_str_split_bind_esc_}\""
+			esac
+
+			case "${__sx_str_split_bind_cnt_}" in
+				1) __sx_str_split_bind_="${__sx_str_split_bind_#*:}";;
+				*) __sx_str_split_bind_="$((${__sx_str_split_bind_cnt_} - 1))${__sx_str_split_bind_name_}:${__sx_str_split_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_str_split_bind_%%:*}=\"\${__sx_str_split_mid_%\${__sx_str_split_rem_}}\""
+			__sx_str_split_bind_="${__sx_str_split_bind_#*:}"
+			;;
+		?*) 	case "${__sx_str_split_mid_%${__sx_str_split_rem_}}" in
+		*"'"*) __sx_str_sub __sx_str_split_bind_esc_ "${__sx_str_split_mid_%${__sx_str_split_rem_}}" "'" "'\\''";;
+		*) __sx_str_split_bind_esc_="${__sx_str_split_mid_%${__sx_str_split_rem_}}" ;;
+	esac
+	__sx_str_split_out_="${__sx_str_split_out_}${__sx_str_split_out_:+ }'${__sx_str_split_bind_esc_}'";;
+		*) unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_inc_ __sx_str_split_out_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_bind_cnt_ __sx_str_split_bind_name_ __sx_str_split_bind_esc_; return "${SX_EX_OK}";;
+	esac
 				esac
 
 				__sx_str_split_str_="${__sx_str_split_rem_}"
@@ -5513,13 +5868,77 @@ __sx_str_split() {
 		else
 			# 通常の文字列による前方分割
 			while
-				M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
-				M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
+				case "${__sx_str_split_str_}" in *"${__sx_str_split_sep_}"*);; *) ! :;; esac &&
+				case "${__sx_str_split_lim_}" in 0) ! :;; esac
 			do
-				__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"|], CLEANUP)
+					case "${__sx_str_split_bind_}" in
+		:*) __sx_str_split_bind_="${__sx_str_split_bind_#*:}";;
+		[1-9]*:*)
+			__sx_str_split_bind_cnt_="${__sx_str_split_bind_%%[!0-9]*}"
+			__sx_str_split_bind_name_="${__sx_str_split_bind_%%:*}"
+			__sx_str_split_bind_name_="${__sx_str_split_bind_name_#"${__sx_str_split_bind_cnt_}"}"
+
+			case "${__sx_str_split_bind_name_}" in ?*)
+					case "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}" in
+		*"'"*) __sx_str_sub __sx_str_split_bind_esc_ "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}" "'" "'\\''";;
+		*) __sx_str_split_bind_esc_="${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}";;
+	esac
+
+	__sx_str_split_bind_esc_="'${__sx_str_split_bind_esc_}'"
+				eval "${__sx_str_split_bind_name_}=\"\${${__sx_str_split_bind_name_}-}\${${__sx_str_split_bind_name_}+ }\${__sx_str_split_bind_esc_}\""
+			esac
+
+			case "${__sx_str_split_bind_cnt_}" in
+				1) __sx_str_split_bind_="${__sx_str_split_bind_#*:}";;
+				*) __sx_str_split_bind_="$((${__sx_str_split_bind_cnt_} - 1))${__sx_str_split_bind_name_}:${__sx_str_split_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_str_split_bind_%%:*}=\"\${__sx_str_split_str_%%\"\${__sx_str_split_sep_}\"*}\""
+			__sx_str_split_bind_="${__sx_str_split_bind_#*:}"
+			;;
+		?*) 	case "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}" in
+		*"'"*) __sx_str_sub __sx_str_split_bind_esc_ "${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}" "'" "'\\''";;
+		*) __sx_str_split_bind_esc_="${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}" ;;
+	esac
+	__sx_str_split_out_="${__sx_str_split_out_}${__sx_str_split_out_:+ }'${__sx_str_split_bind_esc_}'";;
+		*) unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_inc_ __sx_str_split_out_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_bind_cnt_ __sx_str_split_bind_name_ __sx_str_split_bind_esc_; return "${SX_EX_OK}";;
+	esac
 
 				case "${__sx_str_split_inc_}" in 1)
-					__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_sep_}"|], CLEANUP)
+						case "${__sx_str_split_bind_}" in
+		:*) __sx_str_split_bind_="${__sx_str_split_bind_#*:}";;
+		[1-9]*:*)
+			__sx_str_split_bind_cnt_="${__sx_str_split_bind_%%[!0-9]*}"
+			__sx_str_split_bind_name_="${__sx_str_split_bind_%%:*}"
+			__sx_str_split_bind_name_="${__sx_str_split_bind_name_#"${__sx_str_split_bind_cnt_}"}"
+
+			case "${__sx_str_split_bind_name_}" in ?*)
+					case "${__sx_str_split_sep_}" in
+		*"'"*) __sx_str_sub __sx_str_split_bind_esc_ "${__sx_str_split_sep_}" "'" "'\\''";;
+		*) __sx_str_split_bind_esc_="${__sx_str_split_sep_}";;
+	esac
+
+	__sx_str_split_bind_esc_="'${__sx_str_split_bind_esc_}'"
+				eval "${__sx_str_split_bind_name_}=\"\${${__sx_str_split_bind_name_}-}\${${__sx_str_split_bind_name_}+ }\${__sx_str_split_bind_esc_}\""
+			esac
+
+			case "${__sx_str_split_bind_cnt_}" in
+				1) __sx_str_split_bind_="${__sx_str_split_bind_#*:}";;
+				*) __sx_str_split_bind_="$((${__sx_str_split_bind_cnt_} - 1))${__sx_str_split_bind_name_}:${__sx_str_split_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_str_split_bind_%%:*}=\"\${__sx_str_split_sep_}\""
+			__sx_str_split_bind_="${__sx_str_split_bind_#*:}"
+			;;
+		?*) 	case "${__sx_str_split_sep_}" in
+		*"'"*) __sx_str_sub __sx_str_split_bind_esc_ "${__sx_str_split_sep_}" "'" "'\\''";;
+		*) __sx_str_split_bind_esc_="${__sx_str_split_sep_}" ;;
+	esac
+	__sx_str_split_out_="${__sx_str_split_out_}${__sx_str_split_out_:+ }'${__sx_str_split_bind_esc_}'";;
+		*) unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_inc_ __sx_str_split_out_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_bind_cnt_ __sx_str_split_bind_name_ __sx_str_split_bind_esc_; return "${SX_EX_OK}";;
+	esac
 				esac
 
 				__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
@@ -5527,16 +5946,48 @@ __sx_str_split() {
 			done
 		fi
 
-		__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_str_}"|], CLEANUP)
+			case "${__sx_str_split_bind_}" in
+		:*) __sx_str_split_bind_="${__sx_str_split_bind_#*:}";;
+		[1-9]*:*)
+			__sx_str_split_bind_cnt_="${__sx_str_split_bind_%%[!0-9]*}"
+			__sx_str_split_bind_name_="${__sx_str_split_bind_%%:*}"
+			__sx_str_split_bind_name_="${__sx_str_split_bind_name_#"${__sx_str_split_bind_cnt_}"}"
+
+			case "${__sx_str_split_bind_name_}" in ?*)
+					case "${__sx_str_split_str_}" in
+		*"'"*) __sx_str_sub __sx_str_split_bind_esc_ "${__sx_str_split_str_}" "'" "'\\''";;
+		*) __sx_str_split_bind_esc_="${__sx_str_split_str_}";;
+	esac
+
+	__sx_str_split_bind_esc_="'${__sx_str_split_bind_esc_}'"
+				eval "${__sx_str_split_bind_name_}=\"\${${__sx_str_split_bind_name_}-}\${${__sx_str_split_bind_name_}+ }\${__sx_str_split_bind_esc_}\""
+			esac
+
+			case "${__sx_str_split_bind_cnt_}" in
+				1) __sx_str_split_bind_="${__sx_str_split_bind_#*:}";;
+				*) __sx_str_split_bind_="$((${__sx_str_split_bind_cnt_} - 1))${__sx_str_split_bind_name_}:${__sx_str_split_bind_#*:}";;
+			esac
+			;;
+		*:*)
+			eval "${__sx_str_split_bind_%%:*}=\"\${__sx_str_split_str_}\""
+			__sx_str_split_bind_="${__sx_str_split_bind_#*:}"
+			;;
+		?*) 	case "${__sx_str_split_str_}" in
+		*"'"*) __sx_str_sub __sx_str_split_bind_esc_ "${__sx_str_split_str_}" "'" "'\\''";;
+		*) __sx_str_split_bind_esc_="${__sx_str_split_str_}" ;;
+	esac
+	__sx_str_split_out_="${__sx_str_split_out_}${__sx_str_split_out_:+ }'${__sx_str_split_bind_esc_}'";;
+		*) unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_inc_ __sx_str_split_out_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_bind_cnt_ __sx_str_split_bind_name_ __sx_str_split_bind_esc_; return "${SX_EX_OK}";;
+	esac
 
 		eval ${__sx_str_split_out_:+"${__sx_str_split_bind_}=\"\${__sx_str_split_out_}\""}
 	else
 		# 後方から分割
-		if M_STR_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
+		if case $((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB)) in 0) ! :;; esac; then
 			# グロブ（パターン）による後方分割
 			while
-				M_STR_HAS([|"${__sx_str_split_str_}"|], [|${__sx_str_split_sep_}|]) &&
-				M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
+				case "${__sx_str_split_str_}" in *${__sx_str_split_sep_}*);; *) ! :;; esac &&
+				case "${__sx_str_split_lim_}" in 0) ! :;; esac
 			do
 				set -- "${__sx_str_split_str_##*${__sx_str_split_sep_}}" "${@}"
 				__sx_str_split_rem_="${__sx_str_split_str_%${__sx_str_split_sep_}*}"
@@ -5553,8 +6004,8 @@ __sx_str_split() {
 		else
 			# 通常の文字列による後方分割
 			while
-				M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
-				M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
+				case "${__sx_str_split_str_}" in *"${__sx_str_split_sep_}"*);; *) ! :;; esac &&
+				case "${__sx_str_split_lim_}" in 0) ! :;; esac
 			do
 				set -- "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}" "${@}"
 
@@ -5570,7 +6021,7 @@ __sx_str_split() {
 		__sx_arg_quote "${__sx_str_split_bind_}" "${__sx_str_split_str_}" "${@}"
 	fi
 
-	unset CLEANUP
+	unset __sx_str_split_bind_ __sx_str_split_str_ __sx_str_split_sep_ __sx_str_split_lim_ __sx_str_split_flg_ __sx_str_split_inc_ __sx_str_split_out_ __sx_str_split_rem_ __sx_str_split_mid_ __sx_str_split_val_ __sx_str_split_bind_cnt_ __sx_str_split_bind_name_ __sx_str_split_bind_esc_
 }
 
 ### sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する
@@ -5736,11 +6187,11 @@ __sx_str_sub_isep_adapt() {
 __sx_str_sub_cb() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}" "$((${6-0} & SX_STR_SUB_GLOB))" "" 0 ""
 
-	if M_STR_EQ([|"${3}"|], [|''|]); then
+	if { case "${3}" in '');; *) ! :;; esac ; }; then
 		__sx_str_sub_isep_adapt_cb_="${4}" SX_CFG_UNSET_SOFT=2 __sx_str_isep "${1}" "${2}" __sx_str_sub_isep_adapt "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST | SX_STR_ISEP_CB))" || return
-	elif M_NUM_LE([|0|], [|${5}|]); then
-		if M_STR_EQ([|"${6}"|], [|0|]); then
-			while M_STR_HAS([|"${2}"|], [|"${3}"|]) && M_NUM_LT([|${8}|], [|${5}|]); do
+	elif case $((0 <= ${5} )) in 0) ! :;; esac; then
+		if { case "${6}" in 0);; *) ! :;; esac ; }; then
+			while case "${2}" in *"${3}"*);; *) ! :;; esac && case $((${8} < ${5} )) in 0) ! :;; esac; do
 				set -- "${@}" "${2%%"${3}"*}"
 				set -- "${1}" "${2#*"${3}"}" "${3}" "${4}" "${5}" "${6}" "${7}${10}" "$((${8} + 1))" "${9}${10}"
 
@@ -5750,7 +6201,7 @@ __sx_str_sub_cb() {
 				unset __sx_str_sub_cb_
 			done
 		else
-			while M_STR_HAS([|"${2}"|], [|${3}|]) && M_NUM_LT([|${8}|], [|${5}|]); do
+			while case "${2}" in *${3}*);; *) ! :;; esac && case $((${8} < ${5} )) in 0) ! :;; esac; do
 				set -- "${@}" "${2%%${3}*}" "${2#*${3}}"
 				set -- "${@}" "${2#"${10}"}"
 				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}${10}" "$((${8} + 1))" "${9}${10}" "${12%"${11}"}"
@@ -5766,8 +6217,8 @@ __sx_str_sub_cb() {
 	else
 		set -- "${1}" "${2}" "${3}" "${4}" "${5#-}" "${6}" "${7}" "${8}" "${9}" 0
 
-		if M_STR_EQ([|"${6}"|], [|0|]); then
-			while M_STR_HAS([|"${2}"|], [|"${3}"|]) && M_NUM_LT([|${8}|], [|${5}|]); do
+		if { case "${6}" in 0);; *) ! :;; esac ; }; then
+			while case "${2}" in *"${3}"*);; *) ! :;; esac && case $((${8} < ${5} )) in 0) ! :;; esac; do
 				set -- "${@}" "${2##*"${3}"}" "${2%"${3}"*}"
 				set -- "${@}" "${2%"${11}"}"
 				set -- "${1}" "${12}" "${3}" "${4}" "${5}" "${6}" "${11}${7}" "$((${8} + 1))" "${11}${9}" "${13#"${12}"}"
@@ -5778,7 +6229,7 @@ __sx_str_sub_cb() {
 				unset __sx_str_sub_cb_
 			done
 		else
-			while M_STR_HAS([|"${2}"|], [|${3}|]) && M_NUM_LT([|${8}|], [|${5}|]); do
+			while case "${2}" in *${3}*);; *) ! :;; esac && case $((${8} < ${5} )) in 0) ! :;; esac; do
 				set -- "${@}" "${2##*${3}}" "${2%${3}*}"
 				set -- "${@}" "${2%"${11}"}"
 				set -- "${1}" "${12}" "${3}" "${4}" "${5}" "${6}" "${11}${7}" "$((${8} + 1))" "${11}${9}" "${13#"${12}"}"
@@ -5807,27 +6258,27 @@ __sx_str_sub_cb() {
 __sx_str_sub_lit() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}" "$((${6-0} & SX_STR_SUB_GLOB))" ""
 
-	if M_STR_EQ([|"${3}"|], [|''|]); then
+	if { case "${3}" in '');; *) ! :;; esac ; }; then
 		SX_CFG_UNSET_SOFT=2 __sx_str_isep "${1}" "${2}" "${4}" "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))"
-	elif M_NUM_LE([|0|], [|${5}|]); then
-		if M_STR_EQ([|"${6}"|], [|0|]); then
-			while M_STR_HAS([|"${2}"|], [|"${3}"|]) && M_NUM_NE([|${5}|], [|0|]); do
+	elif case $((0 <= ${5} )) in 0) ! :;; esac; then
+		if { case "${6}" in 0);; *) ! :;; esac ; }; then
+			while case "${2}" in *"${3}"*);; *) ! :;; esac && case $((${5} != 0 )) in 0) ! :;; esac; do
 				set -- "${1}" "${2#*"${3}"}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${7}${2%%"${3}"*}${4}"
 			done
 		else
-			while M_STR_HAS([|"${2}"|], [|${3}|]) && M_NUM_NE([|${5}|], [|0|]); do
+			while case "${2}" in *${3}*);; *) ! :;; esac && case $((${5} != 0 )) in 0) ! :;; esac; do
 				set -- "${1}" "${2#*${3}}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${7}${2%%${3}*}${4}"
 			done
 		fi
 
 		__sx_var_set "${1}=${7}${2}"
-	elif M_NUM_LT([|${5}|], [|0|]); then
-		if M_STR_EQ([|"${6}"|], [|0|]); then
-			while M_STR_HAS([|"${2}"|], [|"${3}"|]) && M_NUM_NE([|${5}|], [|0|]); do
+	elif case $((${5} < 0 )) in 0) ! :;; esac; then
+		if { case "${6}" in 0);; *) ! :;; esac ; }; then
+			while case "${2}" in *"${3}"*);; *) ! :;; esac && case $((${5} != 0 )) in 0) ! :;; esac; do
 				set -- "${1}" "${2%"${3}"*}" "${3}" "${4}" "$((${5} + 1))" "${6}" "${4}${2##*"${3}"}${7}"
 			done
 		else
-			while M_STR_HAS([|"${2}"|], [|${3}|]) && M_NUM_NE([|${5}|], [|0|]); do
+			while case "${2}" in *${3}*);; *) ! :;; esac && case $((${5} != 0 )) in 0) ! :;; esac; do
 				set -- "${1}" "${2%${3}*}" "${3}" "${4}" "$((${5} + 1))" "${6}" "${4}${2##*${3}}${7}"
 			done
 		fi
@@ -5864,9 +6315,7 @@ sx_str_substr() {
 	__sx_str_substr "${@}"
 }
 
-define([|V|], [|__sx_str_substr_$1_|]) dnl
-define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(total) V(drop) V(qm)|]) dnl
-
+  
 ### __sx_str_substr - 文字列の部分文字列を取得する（内部用）
 ##
 ## 使い方:
@@ -5876,48 +6325,46 @@ define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(total) V(drop) V(qm)|]
 ##   sx_str_substr の内部実装。
 ##   引数チェックは行わない。
 __sx_str_substr() {
-	V(res)="${1}"
-	V(str)="${2-}"
-	V(off)="$((${3-0}))"
-	V(len)="$((${4-${SX_NUM_I32_MAX}}))"
-	V(total)="${#V(str)}"
+	__sx_str_substr_res_="${1}"
+	__sx_str_substr_str_="${2-}"
+	__sx_str_substr_off_="$((${3-0}))"
+	__sx_str_substr_len_="$((${4-${SX_NUM_I32_MAX}}))"
+	__sx_str_substr_total_="${#__sx_str_substr_str_}"
 
 	# オフセットの正規化 (負数は末尾から)
-	case "$((V(off) < 0))" in 1)
-		V(off)=$(((V(off) * -1) < V(total) ? V(total) + V(off) : 0))
+	case "$((__sx_str_substr_off_ < 0))" in 1)
+		__sx_str_substr_off_=$(((__sx_str_substr_off_ * -1) < __sx_str_substr_total_ ? __sx_str_substr_total_ + __sx_str_substr_off_ : 0))
 	esac
 
 	# 1. オフセット分をスキップ
-	if M_NUM_LE([|V(total)|], [|V(off)|]); then
-		V(str)=
+	if case $((__sx_str_substr_total_ <= __sx_str_substr_off_ )) in 0) ! :;; esac; then
+		__sx_str_substr_str_=
 	else
-		__sx_str_rep V(qm) '?' "${V(off)}"
-		V(str)="${V(str)#${V(qm)}}"
+		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_off_}"
+		__sx_str_substr_str_="${__sx_str_substr_str_#${__sx_str_substr_qm_}}"
 	fi
 
 	# 長さの正規化 (負数は末尾から削る)
-	V(total)="${#V(str)}"
-	if M_NUM_LE([|0|], [|V(len)|]); then
-		V(drop)=$((V(len) < V(total) ? V(total) - V(len) : 0))
+	__sx_str_substr_total_="${#__sx_str_substr_str_}"
+	if case $((0 <= __sx_str_substr_len_ )) in 0) ! :;; esac; then
+		__sx_str_substr_drop_=$((__sx_str_substr_len_ < __sx_str_substr_total_ ? __sx_str_substr_total_ - __sx_str_substr_len_ : 0))
 	else
-		V(drop)=$((V(len) * -1))
+		__sx_str_substr_drop_=$((__sx_str_substr_len_ * -1))
 	fi
 
 	# 2. 指定長に切り詰め
-	if M_NUM_LT([|V(drop)|], [|V(total)|]); then
-		__sx_str_rep V(qm) '?' "${V(drop)}"
-		V(str)="${V(str)%${V(qm)}}"
+	if case $((__sx_str_substr_drop_ < __sx_str_substr_total_ )) in 0) ! :;; esac; then
+		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_drop_}"
+		__sx_str_substr_str_="${__sx_str_substr_str_%${__sx_str_substr_qm_}}"
 	else
-		V(str)=
+		__sx_str_substr_str_=
 	fi
 
-	__sx_var_set "${V(res)}=${V(str)}"
-	CLEANUP
+	__sx_var_set "${__sx_str_substr_res_}=${__sx_str_substr_str_}"
+	unset __sx_str_substr_res_ __sx_str_substr_str_ __sx_str_substr_off_ __sx_str_substr_len_ __sx_str_substr_total_ __sx_str_substr_drop_ __sx_str_substr_qm_
 }
 
-undefine([|CLEANUP|]) dnl
-undefine([|V|]) dnl
-
+  
 ### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
 ##
 ## 使い方:
@@ -6266,7 +6713,7 @@ sx_arr_at() {
 			# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
 			if
 				! sx_var_is_name "${__sx_arr_at_dest}" ||
-				M_STR_MATCH([|"${__sx_arr_at_dest}"|], [|"${__sx_arr_at_arr}"|], [|"${__sx_arr_at_arr}"_*|])
+				case "${__sx_arr_at_dest}" in "${__sx_arr_at_arr}" | "${__sx_arr_at_arr}"_*);; *) ! :;; esac
 			then
 				unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
 				return "${SX_EX_USAGE}"
@@ -6421,9 +6868,9 @@ __sx_arr_is_rw() {
 	__sx_arr_is_rw_chk_=
 	shift
 
-	M_STR_NE([|"${#}"|], [|0|]) || set -- 0
+	case "${#}" in 0) ! :;; esac || set -- 0
 
-	if M_STR_EQ([|"$((${#} % 2))"|], [|0|]); then
+	if { case "$((${#} % 2))" in 0);; *) ! :;; esac ; }; then
 		:
 	elif sx_var_is_arr "${__sx_arr_is_rw_name_}"; then
 		# 個数が省略された場合は末尾まで
@@ -6432,10 +6879,10 @@ __sx_arr_is_rw() {
 		set -- "${@}" 0
 	fi
 
-	while M_STR_NE([|"${#}"|], [|0|]); do
+	while case "${#}" in 0) ! :;; esac; do
 		eval 'shift 2;' set -- "${1}" "$((${1} + ${2}))" '"${@}"'
 
-		while M_NUM_LT([|${1}|], [|${2}|]); do
+		while case $((${1} < ${2} )) in 0) ! :;; esac; do
 			__sx_arr_is_rw_chk_="${__sx_arr_is_rw_chk_}${__sx_arr_is_rw_name_}_${1} "
 			eval 'shift 2;' set -- "$((${1} + 1))" "${2}" '"${@}"'
 		done
@@ -6481,7 +6928,7 @@ sx_arr_pop() {
 	eval "__sx_arr_pop_len=\"\${${1}_len}\""
 	shift
 
-	M_STR_NE([|"${#}"|], [|0|]) || set -- -
+	case "${#}" in 0) ! :;; esac || set -- -
 	SX_CFG_UNSET_SOFT=2 __sx_arg_norm __sx_arr_pop_args - "${@}"
 	eval set -- "${__sx_arr_pop_args}"
 	unset __sx_arr_pop_args
@@ -6508,12 +6955,12 @@ sx_arr_pop() {
 	for __sx_arr_pop_dest in "${@}"; do
 		: $((__sx_arr_pop_i -= 1))
 
-		M_STR_NE([|"${__sx_arr_pop_dest}"|], [|-|]) || continue
+		case "${__sx_arr_pop_dest}" in -) ! :;; esac || continue
 
 		# pop中に配列以下の更新を禁止
 		if
 			! sx_var_is_name "${__sx_arr_pop_dest}" ||
-			M_STR_MATCH([|"${__sx_arr_pop_dest}"|], [|"${__sx_arr_pop_arr}"|], [|"${__sx_arr_pop_arr}"_*|])
+			case "${__sx_arr_pop_dest}" in "${__sx_arr_pop_arr}" | "${__sx_arr_pop_arr}"_*);; *) ! :;; esac
 		then
 			unset __sx_arr_pop_arr __sx_arr_pop_len __sx_arr_pop_chk __sx_arr_pop_i __sx_arr_pop_dest
 			return "${SX_EX_USAGE}"
@@ -6546,7 +6993,7 @@ sx_arr_pop() {
 ##   指定された配列の末尾から要素を取り出し、結果変数に格納または破棄する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_arr_pop() {
-	M_STR_NE([|"${#}"|], [|1|]) || set -- -
+	case "${#}" in 1) ! :;; esac || set -- -
 	SX_CFG_UNSET_SOFT=2 __sx_arg_norm __sx_arr_pop_args_ - "${@}"
 	eval set -- "${__sx_arr_pop_args_}"
 	unset __sx_arr_pop_args_
@@ -6576,7 +7023,7 @@ __sx_arr_pop0() {
 		: $((__sx_arr_pop0_len_ -= 1))
 		__sx_arr_pop0_src_="${__sx_arr_pop0_arr_}_${__sx_arr_pop0_len_}"
 
-		if M_STR_NE([|"${__sx_arr_pop0_dest_}"|], [|-|]); then
+		if case "${__sx_arr_pop0_dest_}" in -) ! :;; esac; then
 			__sx_var_copy "${__sx_arr_pop0_src_}-${__sx_arr_pop0_dest_}"
 		fi
 
@@ -6687,7 +7134,7 @@ __sx_arr_quote() {
 	for __sx_arr_quote_arr_ in "${@}"; do
 		eval set -- 0 "\"\${${__sx_arr_quote_arr_}_len}\""
 
-		while M_NUM_LT([|${1}|], [|${2}|]); do
+		while case $((${1} < ${2} )) in 0) ! :;; esac; do
 			eval SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_arr_quote_esc_ "\"\${${__sx_arr_quote_arr_}_${1}}\""
 			__sx_arr_quote_out_="${__sx_arr_quote_out_} ${__sx_arr_quote_esc_}"
 
@@ -6747,7 +7194,7 @@ __sx_arr_rquote() {
 	for __sx_arr_rquote_arr_ in "${@}"; do
 		eval set -- 0 "\"\${${__sx_arr_rquote_arr_}_len}\""
 
-		while M_NUM_LT([|${1}|], [|${2}|]); do
+		while case $((${1} < ${2} )) in 0) ! :;; esac; do
 			eval SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_arr_rquote_esc_ "\"\${${__sx_arr_rquote_arr_}_${1}}\""
 			__sx_arr_rquote_out_=" ${__sx_arr_rquote_esc_}${__sx_arr_rquote_out_}"
 

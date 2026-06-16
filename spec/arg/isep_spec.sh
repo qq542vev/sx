@@ -939,6 +939,37 @@ Describe 'sx_arg_isep'
         The variable res should equal ""
       End
     End
+
+    Context 'PRE + limit 境界 (int=2)'
+      It 'int=2, PRE|POST, lim=1, 4要素 → PRE のみ挿入されること'
+        cb() { __sx_var_set "${1}=(@$2)"; }
+        When call sx_arg_isep res cb 2 1 \
+          "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" ::: "a" "b" "c" "d"
+        The status should be success
+        eval "set -- $res"
+        The value "$1" should equal "(@1)"
+        The value "$2" should equal "a"
+        The value "$3" should equal "b"
+        The value "$4" should equal "c"
+        The value "$5" should equal "d"
+        The value "$#" should equal 5
+      End
+
+      It 'int=2, PRE|POST, lim=2, 4要素 → PRE + 内部1つ (POST無)'
+        cb() { __sx_var_set "${1}=(@$2)"; }
+        When call sx_arg_isep res cb 2 2 \
+          "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" ::: "a" "b" "c" "d"
+        The status should be success
+        eval "set -- $res"
+        The value "$1" should equal "(@1)"
+        The value "$2" should equal "a"
+        The value "$3" should equal "b"
+        The value "$4" should equal "(@2)"
+        The value "$5" should equal "c"
+        The value "$6" should equal "d"
+        The value "$#" should equal 6
+      End
+    End
   End
 
 End

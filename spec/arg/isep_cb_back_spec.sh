@@ -90,6 +90,88 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
     End
   End
 
+  Describe 'PRE フラグ (奇数要素数 — PREが挿入されない境界)'
+    It 'int=-2, PRE, a b c → PRE無し (r_=-1)'
+      cb() { __sx_var_set "${1}=${2}"; printf '%d' "${2}"; }
+      When call sx_arg_isep res cb -2 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "a" "b" "c"
+      The status should be success
+      The stdout should equal "1"
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "1"
+      The value "$3" should equal "b"
+      The value "$4" should equal "c"
+      The value "$#" should equal 4
+    End
+
+    It 'int=-2, PRE, a b c d e → PRE無し (r_=-1)'
+      cb() { __sx_var_set "${1}=${2}"; printf '%d' "${2}"; }
+      When call sx_arg_isep res cb -2 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "a" "b" "c" "d" "e"
+      The status should be success
+      The stdout should equal "12"
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "2"
+      The value "$3" should equal "b"
+      The value "$4" should equal "c"
+      The value "$5" should equal "1"
+      The value "$6" should equal "d"
+      The value "$7" should equal "e"
+      The value "$#" should equal 7
+    End
+
+    It 'int=-3, PRE, a b c d → PRE無し (N % 3 ≠ 0)'
+      cb() { __sx_var_set "${1}=${2}"; printf '%d' "${2}"; }
+      When call sx_arg_isep res cb -3 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "a" "b" "c" "d"
+      The status should be success
+      The stdout should equal "1"
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "1"
+      The value "$3" should equal "b"
+      The value "$4" should equal "c"
+      The value "$5" should equal "d"
+      The value "$#" should equal 5
+    End
+
+    It 'int=-3, PRE, a b c d e → PRE無し (N % 3 ≠ 0)'
+      cb() { __sx_var_set "${1}=${2}"; printf '%d' "${2}"; }
+      When call sx_arg_isep res cb -3 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "a" "b" "c" "d" "e"
+      The status should be success
+      The stdout should equal "1"
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "b"
+      The value "$3" should equal "1"
+      The value "$4" should equal "c"
+      The value "$5" should equal "d"
+      The value "$6" should equal "e"
+      The value "$#" should equal 6
+    End
+
+    It 'int=-3, PRE, a b c d e f → PRE有り (N % 3 == 0)'
+      cb() { __sx_var_set "${1}=${2}"; printf '%d' "${2}"; }
+      When call sx_arg_isep res cb -3 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "a" "b" "c" "d" "e" "f"
+      The status should be success
+      The stdout should equal "12"
+      eval "set -- $res"
+      The value "$1" should equal "2"
+      The value "$2" should equal "a"
+      The value "$3" should equal "b"
+      The value "$4" should equal "c"
+      The value "$5" should equal "1"
+      The value "$6" should equal "d"
+      The value "$7" should equal "e"
+      The value "$8" should equal "f"
+      The value "$#" should equal 8
+    End
+  End
+
   Describe 'POST フラグ'
     It 'int=-1, POST, a b → a 2 b 1'
       cb() { __sx_var_set "${1}=${2}"; printf '%d' "${2}"; }
@@ -317,6 +399,24 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
       The value "$5" should equal "(1)"
       The value "$#" should equal 5
     End
+
+    It 'PRE コールバックが非0を返すとエラーステータスが伝搬され、値は挿入されること'
+      cb_fail_pre_back() {
+        case "$2" in
+          2) __sx_var_set "${1}=!"; return 1;;
+          *) __sx_var_set "${1}=($2)";;
+        esac
+      }
+      When call sx_arg_isep res cb_fail_pre_back -1 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "a" "b"
+      The status should equal 1
+      eval "set -- $res"
+      The value "$1" should equal "!"
+      The value "$2" should equal "a"
+      The value "$3" should equal "(1)"
+      The value "$4" should equal "b"
+      The value "$#" should equal 4
+    End
   End
 
   Describe '空引数'
@@ -406,6 +506,79 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
       The value "$2" should equal "x"
       The value "$3" should equal "(1)"
       The value "$#" should equal 3
+    End
+
+    It '1要素 + PRE (int=-1) → PRE が挿入されること'
+      cb() { __sx_var_set "${1}=P$2"; }
+      When call sx_arg_isep res cb -1 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "x"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "P1"
+      The value "$2" should equal "x"
+      The value "$#" should equal 2
+    End
+
+    It '1要素 + PRE (int=-2) → PRE が挿入されないこと (r_=-1)'
+      cb() { __sx_var_set "${1}=P$2"; }
+      When call sx_arg_isep res cb -2 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "x"
+      The status should be success
+      The variable res should equal "'x'"
+    End
+
+    It '1要素 + POST (int=-1) → POST が挿入されること'
+      cb() { __sx_var_set "${1}=P$2"; }
+      When call sx_arg_isep res cb -1 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_POST))" ::: "x"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "x"
+      The value "$2" should equal "P1"
+      The value "$#" should equal 2
+    End
+
+    It '1要素 + POST (int=-2) → POST が挿入されること'
+      cb() { __sx_var_set "${1}=P$2"; }
+      When call sx_arg_isep res cb -2 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_POST))" ::: "x"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "x"
+      The value "$2" should equal "P1"
+      The value "$#" should equal 2
+    End
+  End
+
+  Describe '大きなインターバル (|int| > 要素数)'
+    It 'int=-10, PRE, a b c → セパレータ無し'
+      cb() { __sx_var_set "${1}=P$2"; }
+      When call sx_arg_isep res cb -10 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "a" "b" "c"
+      The status should be success
+      The variable res should equal "'a' 'b' 'c'"
+    End
+
+    It 'int=-10, POST, a b c → POST のみ'
+      cb() { __sx_var_set "${1}=P$2"; }
+      When call sx_arg_isep res cb -10 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_POST))" ::: "a" "b" "c"
+      The status should be success
+      eval "set -- $res"
+      The value "$1" should equal "a"
+      The value "$2" should equal "b"
+      The value "$3" should equal "c"
+      The value "$4" should equal "P1"
+      The value "$#" should equal 4
+    End
+
+    It 'int=-10, POST, 空引数 → POST のみ'
+      cb() { __sx_var_set "${1}=P$2"; printf '%d' "${2}"; }
+      When call sx_arg_isep res cb -10 "" \
+        "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_POST))" :::
+      The status should be success
+      The stdout should equal "1"
+      The variable res should equal "'P1'"
     End
   End
 
