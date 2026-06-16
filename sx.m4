@@ -1357,46 +1357,31 @@ __sx_arg_isep_cb() {
 		__sx_arg_isep_cb_cnt_=0
 		__sx_arg_isep_cb_stat_=0
 
-		while :; do
-			case "$((__sx_arg_isep_cb_cnt_ >= __sx_arg_isep_cb_lim_ || \
-				__sx_arg_isep_cb_stat_ != 0))" in 1) break; esac
-
-			__sx_arg_isep_cb_cnt_=$((__sx_arg_isep_cb_cnt_ + 1))
-
 			# SAVE state (7 vars) — 再帰呼び出しでCLEANUPにより変数が消える対策
-		set -- \
-			"${__sx_arg_isep_cb_bind_}" \
-			"${__sx_arg_isep_cb_cb_}" \
+		set -- "${__sx_arg_isep_cb_bind_}" "${__sx_arg_isep_cb_cb_}" \
 			"${__sx_arg_isep_cb_int_}" \
 			"${__sx_arg_isep_cb_lim_}" \
 			"${__sx_arg_isep_cb_flg_}" \
 			"${__sx_arg_isep_cb_cnt_}" \
 			"${__sx_arg_isep_cb_stat_}" \
 			"${@}"
-
+		while M_NUM_BOOL([|${6} < ${4} && ${7} == 0|]); do
 			# CB call + exit status capture in $1
-			"${2}" __sx_arg_isep_cb_ret_ "${6}" && set -- 0 "${@}" || set -- "${?}" "${@}"
+			"${2}" __sx_arg_isep_cb_ret_ "$((${6} + 1))" && set -- 0 "${@}" || set -- "${?}" "${@}"
 
-			# RESTORE state from $2..$8
-			__sx_arg_isep_cb_bind_="${2}"
 			__sx_arg_isep_cb_cb_="${3}"
-			__sx_arg_isep_cb_int_="${4}"
-			__sx_arg_isep_cb_lim_="${5}"
-			__sx_arg_isep_cb_flg_="${6}"
-			__sx_arg_isep_cb_cnt_="${7}"
-			__sx_arg_isep_cb_stat_="${8}"
-
-			# Apply CB exit status
-			case "$((${1} != 0))" in 1)
-				__sx_arg_isep_cb_stat_="${1}"
-			esac
-
-			shift 8
-
 			# Prepend CB result to positional params
-			set -- "${__sx_arg_isep_cb_ret_}" "${@}"
-			unset __sx_arg_isep_cb_ret_
+			eval 'shift 8;' set -- "${2}" '"${__sx_arg_isep_cb_cb_}"' "${4}" "${5}" "${6}" "$((${7} + 1))" "${1}" '"${__sx_arg_isep_cb_ret_}"' '"${@}"'
+
+			unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_cb_
 		done
+
+		__sx_arg_isep_cb_bind_="${1}"
+		__sx_arg_isep_cb_int_="${3}"
+		__sx_arg_isep_cb_flg_="${5}"
+		__sx_arg_isep_cb_cnt_="${6}"
+		__sx_arg_isep_cb_stat_="${7}"
+		shift 7
 
 		# ===== Phase 2: 左→右bind (for ループ) =====
 		# $@ = sep_N ... sep_1 data_1 ... data_M
@@ -1406,7 +1391,7 @@ __sx_arg_isep_cb() {
 
 		# $@ 先頭から ${1} + shift で sep を消費する
 		# PRE (先頭セパレータ)
-		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_PRE && __sx_arg_isep_cb_r_ <= 0))" in 1)
+		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_PRE && __sx_arg_isep_cb_r_ == 0))" in 1)
 			__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1}" "${SX_VAR_BIND_QUOTE}" || {
 				set -- "${__sx_arg_isep_cb_stat_}"
 				unset CLEANUP V(post) V(r)
