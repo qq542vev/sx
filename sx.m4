@@ -4723,6 +4723,11 @@ sx_str_has() {
 ##   第一引数には sx_arg_find と同様のバインド形式を指定できる。
 ##   例: res（全件）、3res:（最大3件）、a:b（分配）
 ##
+##   フラグに SX_STR_FIND_GLOB (1) を指定すると、検索文字列を glob パターンとして扱う。
+##   例: "hello world" から "w*" を検索すると "6:1" を返す。
+##   例: "abc" から "?b" を検索すると "0:2" を返す。
+##   グロブモードでは一致長にマッチした文字列（最短一致）の長さを使用する。
+##
 ##   フラグに SX_STR_FIND_OVERLAP (2) を指定すると、重なり合う一致も検出する。
 ##   例: "aaa" から "aa" を重複検索すると "0:2 1:2" を返す。
 ##
@@ -4744,7 +4749,7 @@ sx_str_find() {
 }
 
 define([|V|], [|__sx_str_find_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(ndl) V(flg) V(off) V(pre) V(pos) V(out) V(sts) __M_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(ndl) V(flg) V(off) V(pre) V(pos) V(out) V(sts) V(match) V(after) __M_BIND_USEVAR|])dnl
 
 ### __sx_str_find - 文字列から指定された文字列を前方一致で探す（内部用）
 ##
@@ -4762,15 +4767,41 @@ __sx_str_find() {
 	__sx_str_find_off_=0
 	__sx_str_find_out_=
 
-	if M_STR_EQ([|"${__sx_str_find_ndl_}"|], [|''|]); then
-		# 空 needle: 全境界位置（0 〜 len）に長さ0で出力
+	if
+		M_STR_EQ([|"${__sx_str_find_ndl_}"|], [|''|]) ||
+		{ M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_GLOB|]) && ! M_STR_HAS([|"${__sx_str_find_ndl_}"|], [|*[!*]*|]); }
+	then
 		__sx_str_find_sts_="${SX_EX_OK}"
 
+		# 空 needle: 全境界位置（0 〜 len）に長さ0で出力
 		while M_NUM_LE([|${__sx_str_find_off_}|], [|${#__sx_str_find_tgt_}|]); do
 			__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:0"|], CLEANUP)
 			: $((__sx_str_find_off_ += 1))
 		done
+	elif M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_GLOB|]); then
+		# ==== グロブモード ====
+		while M_STR_HAS([|"${__sx_str_find_tgt_}"|], [|${__sx_str_find_ndl_}|]); do
+			__sx_str_find_pre_="${__sx_str_find_tgt_%%${__sx_str_find_ndl_}*}"
+			__sx_str_find_pos_=$((${#__sx_str_find_pre_} + __sx_str_find_off_))
+
+			# マッチ文字列を抽出（__sx_str_sub_cb と同じ手法）
+			__sx_str_find_after_="${__sx_str_find_tgt_#*${__sx_str_find_ndl_}}"
+			__sx_str_find_match_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"}"
+			__sx_str_find_match_="${__sx_str_find_match_%"${__sx_str_find_after_}"}"
+
+			__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_pos_}:${#__sx_str_find_match_}"|], CLEANUP)
+			__sx_str_find_sts_="${SX_EX_OK}"
+
+			if M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_OVERLAP|]); then
+				: $((__sx_str_find_off_ = __sx_str_find_pos_ + 1))
+				__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"?}"
+			else
+				: $((__sx_str_find_off_ = __sx_str_find_pos_ + ${#__sx_str_find_match_}))
+				__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}${__sx_str_find_match_}"}"
+			fi
+		done
 	else
+		# ==== リテラルモード ====
 		while M_STR_HAS([|"${__sx_str_find_tgt_}"|], [|"${__sx_str_find_ndl_}"|]); do
 			__sx_str_find_pre_="${__sx_str_find_tgt_%%"${__sx_str_find_ndl_}"*}"
 			__sx_str_find_pos_=$((${#__sx_str_find_pre_} + __sx_str_find_off_))
@@ -4780,8 +4811,7 @@ __sx_str_find() {
 
 			if M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_OVERLAP|]); then
 				: $((__sx_str_find_off_ = __sx_str_find_pos_ + 1))
-				__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"}"
-				__sx_str_find_tgt_="${__sx_str_find_tgt_#?}"
+				__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"?}"
 			else
 				: $((__sx_str_find_off_ = __sx_str_find_pos_ + ${#__sx_str_find_ndl_}))
 				__sx_str_find_tgt_="${__sx_str_find_tgt_#*"${__sx_str_find_ndl_}"}"

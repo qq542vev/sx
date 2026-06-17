@@ -109,4 +109,104 @@ Describe 'sx_str_find'
 		The status should be success
 		The variable res should equal "0:0 1:0 2:0 3:0"
 	End
+
+	It 'globモードでワイルドカード * が機能すること'
+		When call sx_str_find res "hello world" "w*" "$SX_STR_FIND_GLOB"
+		The status should be success
+		The variable res should equal "6:1"
+	End
+
+	It 'globモードで ? が機能すること'
+		When call sx_str_find res "abc" "?b" "$SX_STR_FIND_GLOB"
+		The status should be success
+		The variable res should equal "0:2"
+	End
+
+	It 'globモードで文字クラス [...] が機能すること'
+		When call sx_str_find res "abcd" "[ab]b" "$SX_STR_FIND_GLOB"
+		The status should be success
+		The variable res should equal "0:2"
+	End
+
+	It 'globモードで不一致は空文字列を返すこと'
+		When call sx_str_find res "abc" "x*" "$SX_STR_FIND_GLOB"
+		The status should be failure
+		The variable res should equal ""
+	End
+
+	It 'globモードで空文字列に非空パターンで不一致を返すこと'
+		When call sx_str_find res "" "a*" "$SX_STR_FIND_GLOB"
+		The status should be failure
+		The variable res should equal ""
+	End
+
+	It 'globモードで空needleは全境界位置を返すこと'
+		When call sx_str_find res "ab" "" "$SX_STR_FIND_GLOB"
+		The status should be success
+		The variable res should equal "0:0 1:0 2:0"
+	End
+
+	It 'globモードで複数一致を返すこと'
+		When call sx_str_find res "aXbXc" "X*" "$SX_STR_FIND_GLOB"
+		The status should be success
+		The variable res should equal "1:1 3:1"
+	End
+
+	It 'globモードで重複フラグと組み合わせられること'
+		When call sx_str_find res "aaa" "a*" "$(($SX_STR_FIND_GLOB | $SX_STR_FIND_OVERLAP))"
+		The status should be success
+		The variable res should equal "0:1 1:1 2:1"
+	End
+
+	It 'globモードでバインド形式 Nname: が機能すること'
+		sx_str_find "2res:" "a_b_c" "?b" "$SX_STR_FIND_GLOB"
+		Assert [ "$res" = "1:2" ]
+	End
+
+	It 'globモードで文字クラス範囲 [a-z] が機能すること'
+		When call sx_str_find res "abc123" "[a-z]" "$SX_STR_FIND_GLOB"
+		The status should be success
+		The variable res should equal "0:1 1:1 2:1"
+	End
+
+	It 'globモードで否定文字クラス [!abc] が機能すること'
+		When call sx_str_find res "abc123" "[!abc]" "$SX_STR_FIND_GLOB"
+		The status should be success
+		The variable res should equal "3:1 4:1 5:1"
+	End
+
+	It 'globモードで ? 単体が全文字に一致すること'
+		When call sx_str_find res "abc" "?" "$SX_STR_FIND_GLOB"
+		The status should be success
+		The variable res should equal "0:1 1:1 2:1"
+	End
+
+	It 'globモードでワイルドカードとリテラルの複合パターンが機能すること'
+		When call sx_str_find res "hello.txt" "*.txt" "$SX_STR_FIND_GLOB"
+		The status should be success
+		The variable res should equal "0:9"
+	End
+
+	It 'globモードでバインド形式 name:name が機能すること'
+		sx_str_find "fst:snd" "a_b_c" "?b" "$SX_STR_FIND_GLOB"
+		Assert [ "$fst" = "1:2" ]
+	End
+
+	It 'globモードで * 単体が空needle相当になること'
+		When call sx_str_find res "abc" "*" "$SX_STR_FIND_GLOB"
+		The status should be success
+		The variable res should equal "0:0 1:0 2:0 3:0"
+	End
+
+	It 'globモードで * 単体と重複フラグを組み合わせられること'
+		When call sx_str_find res "abc" "*" "$(($SX_STR_FIND_GLOB | $SX_STR_FIND_OVERLAP))"
+		The status should be success
+		The variable res should equal "0:0 1:0 2:0 3:0"
+	End
+
+	It 'globモードで * 単体が空文字列に境界位置を返すこと'
+		When call sx_str_find res "" "*" "$SX_STR_FIND_GLOB"
+		The status should be success
+		The variable res should equal "0:0"
+	End
 End
