@@ -62,7 +62,7 @@ Describe 'sx_str_title()'
     End
 
     It 'カスタム区切り文字で変換する'
-        When call sx_str_title res "hello-world_test" "" "[-_]"
+        When call sx_str_title res "hello-world_test" "" "-_"
         The variable res should equal "Hello-World_Test"
     End
 
