@@ -4710,6 +4710,83 @@ sx_str_has() {
 	return 1
 }
 
+### sx_str_find - 文字列から指定された文字列を前方一致で探し、位置を取得する
+##
+## 使い方:
+##   sx_str_find 結果変数名（またはバインド形式） [元文字列 [検索文字列]]
+##
+## 説明:
+##   元文字列から検索文字列をリテラル前方一致で探し、見つかったすべての位置を
+##   "index:len" 形式で結果変数に格納する。複数一致する場合はスペース区切りで並べる。
+##   検索文字列が空の場合は、各文字境界位置（長さ0）を出力する。
+##   第一引数には sx_arg_find と同様のバインド形式を指定できる。
+##   例: res（全件）、3res:（最大3件）、a:b（分配）
+##
+## 出力形式:
+##   index:len  — 各一致を "位置(0-based):一致長" のペアで表現
+##   空文字列   — 一致なし（終了ステータス 1）
+##
+## 終了ステータス:
+##    0  1件以上一致 (SX_EX_OK)
+##    1  不一致
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_find() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_find "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
+
+	__sx_str_find "${@}" || return
+}
+
+define([|V|], [|__sx_str_find_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(ndl) V(off) V(pre) V(pos) V(out) V(sts) __M_BIND_USEVAR|])dnl
+
+### __sx_str_find - 文字列から指定された文字列を前方一致で探す（内部用）
+##
+## 使い方:
+##   __sx_str_find 結果変数名（またはバインド形式） [元文字列 [検索文字列]]
+##
+## 説明:
+##   sx_str_find の内部実装。引数チェックは行わない。
+__sx_str_find() {
+	__sx_var_bind_init "${1}"
+	__sx_str_find_bind_="${1}"
+	__sx_str_find_tgt_="${2-}"
+	__sx_str_find_ndl_="${3-}"
+	__sx_str_find_off_=0
+	__sx_str_find_out_=
+
+	if M_STR_EQ([|"${__sx_str_find_ndl_}"|], [|''|]); then
+		# 空 needle: 全境界位置（0 〜 len）に長さ0で出力
+		__sx_str_find_sts_="${SX_EX_OK}"
+
+		while M_NUM_LE([|${__sx_str_find_off_}|], [|${#__sx_str_find_tgt_}|]); do
+			__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:0"|], CLEANUP)
+			: $((__sx_str_find_off_ += 1))
+		done
+	else
+		while M_STR_HAS([|"${__sx_str_find_tgt_}"|], [|"${__sx_str_find_ndl_}"|]); do
+			__sx_str_find_pre_="${__sx_str_find_tgt_%%"${__sx_str_find_ndl_}"*}"
+			__sx_str_find_pos_=$((${#__sx_str_find_pre_} + __sx_str_find_off_))
+
+			__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_pos_}:${#__sx_str_find_ndl_}"|], CLEANUP)
+			__sx_str_find_sts_="${SX_EX_OK}"
+
+			: $((__sx_str_find_off_ = __sx_str_find_pos_ + ${#__sx_str_find_ndl_}))
+			__sx_str_find_tgt_="${__sx_str_find_tgt_#*"${__sx_str_find_ndl_}"}"
+		done
+	fi
+
+	eval ${__sx_str_find_out_:+"${__sx_str_find_bind_}=\"\${__sx_str_find_out_# }\""}
+
+	set -- "${__sx_str_find_sts_-1}"
+	unset CLEANUP
+	return "${1}"
+}
+
+undefine([|CLEANUP|])dnl
+undefine([|V|])dnl
 ### sx_str_is_alnum - すべての引数が英数字（A-Z, a-z, 0-9）のみで構成されているか確認する
 ##
 ## 使い方:
