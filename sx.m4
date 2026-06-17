@@ -5611,6 +5611,60 @@ __sx_str_split_ifs() {
 	unset __sx_str_split_ifs_res_ __sx_str_split_ifs_opts_
 }
 
+### sx_str_squish - XSLT normalize-space 相当（trim + collapse）
+##
+## 使い方:
+##   sx_str_squish 結果変数名 [文字列 [文字セット [区切り文字]]]
+##
+## 説明:
+##   文字列の先頭と末尾から文字セットに含まれる文字を削除し、
+##   内部の連続する文字セット文字を指定された区切り文字で置き換える。
+##   文字セット省略時は SX_STR_SPACE（空白文字すべて）、
+##   区切り文字省略時は半角スペース。
+##   XSLT/XPath の normalize-space() 相当の機能。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_squish() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_squish "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_str_squish "${@}"
+}
+
+### __sx_str_squish - XSLT normalize-space 相当（内部用）
+##
+## 使い方:
+##   __sx_str_squish 結果変数名 [文字列 [文字セット [区切り文字]]]
+##
+## 説明:
+##   sx_str_squish の内部実装。
+##   引数チェックは行わない。
+__sx_str_squish() {
+	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}" "${4- }"
+
+	case "${3}" in '')
+		__sx_var_set "${1}=${2}"
+		return "${SX_EX_OK}"
+	esac
+
+	__sx_str_strim __sx_str_squish_str_ "${2}" "${3}"
+	__sx_str_etrim __sx_str_squish_str_ "${__sx_str_squish_str_}" "${3}"
+
+	__sx_str_squish_out_=
+	while M_STR_HAS([|"${__sx_str_squish_str_}"|], [|["${3}"]|]); do
+		__sx_str_squish_out_="${__sx_str_squish_out_}${__sx_str_squish_str_%%["${3}"]*}${4}"
+		__sx_str_squish_str_="${__sx_str_squish_str_#*["${3}"]}"
+		__sx_str_squish_str_="${__sx_str_squish_str_#"${__sx_str_squish_str_%%[!"${3}"]*}"}"
+	done
+
+	__sx_var_set "${1}=${__sx_str_squish_out_}${__sx_str_squish_str_}"
+	unset __sx_str_squish_str_ __sx_str_squish_out_
+}
+
 ### sx_str_strim - 文字列の先頭から指定された文字セットを削除する
 ##
 ## 使い方:
@@ -5650,6 +5704,7 @@ __sx_str_strim() {
 
 	__sx_var_set "${1}=${2#"${2%%[!"${3}"]*}"}"
 }
+
 ### sx_str_sub - 文字列内のパターンを置換する
 ##
 ## 使い方:
