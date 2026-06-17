@@ -207,6 +207,7 @@ readonly SX_ARG_ISEP_PRE=2
 readonly SX_ARG_ISEP_POST=4
 readonly SX_ARG_FIND_GLOB=1
 readonly SX_ARG_RFIND_GLOB=1
+readonly SX_STR_FIND_GLOB=1
 readonly SX_STR_CHUNK_SKIP_SHORT=1
 readonly SX_STR_CHUNK_SKIP_LONG=2
 
