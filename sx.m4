@@ -206,6 +206,7 @@ readonly SX_ARG_ISEP_CB=1
 readonly SX_ARG_ISEP_PRE=2
 readonly SX_ARG_ISEP_POST=4
 readonly SX_ARG_FIND_GLOB=1
+readonly SX_ARG_RFIND_GLOB=1
 readonly SX_STR_CHUNK_SKIP_SHORT=1
 readonly SX_STR_CHUNK_SKIP_LONG=2
 
@@ -1658,7 +1659,7 @@ __sx_arg_rfind() {
 
 	: "${__sx_arg_rfind_tgt_:=}" "${__sx_arg_rfind_flg_:=0}"
 
-	__sx_arg_rfind_glob_=$(((__sx_arg_rfind_flg_ & SX_ARG_FIND_GLOB) != 0))
+	__sx_arg_rfind_glob_=$(((__sx_arg_rfind_flg_ & SX_ARG_RFIND_GLOB) != 0))
 	__sx_arg_rfind_i_="${#}"
 	__sx_arg_rfind_out_=
 
