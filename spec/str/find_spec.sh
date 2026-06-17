@@ -209,4 +209,68 @@ Describe 'sx_str_find'
 		The status should be success
 		The variable res should equal "0:0"
 	End
+
+	It 'TEXTモードで単一一致の文字列を分配できること'
+		sx_str_find "fst:" "hello world" "world" "$SX_STR_FIND_TEXT"
+		Assert [ "$fst" = "world" ]
+	End
+
+	It 'TEXTモードで複数一致を分配できること'
+		sx_str_find "fst:snd:" "a_b_c" "_" "$SX_STR_FIND_TEXT"
+		Assert [ "$fst" = "_" ]
+		Assert [ "$snd" = "_" ]
+	End
+
+	It 'TEXTモードで全件（res）にクォート付きで格納されること'
+		When call sx_str_find res "abc" "b" "$SX_STR_FIND_TEXT"
+		The status should be success
+		The variable res should equal "'b'"
+	End
+
+	It 'TEXTモードで不一致は終了ステータス1を返すこと'
+		When call sx_str_find res "abc" "x" "$SX_STR_FIND_TEXT"
+		The status should be failure
+		The variable res should equal ""
+	End
+
+	It 'TEXTモードでカウント付き分配にクォート付きで格納されること'
+		sx_str_find "2fst:" "a_b_c" "_" "$SX_STR_FIND_TEXT"
+		Assert [ "$fst" = "'_' '_'" ]
+	End
+
+	It 'TEXT+globモードで ?b パターンのマッチ文字列を分配できること'
+		sx_str_find "fst:" "abc" "?b" "$(($SX_STR_FIND_GLOB | $SX_STR_FIND_TEXT))"
+		Assert [ "$fst" = "ab" ]
+	End
+
+	It 'TEXT+globモードで * パターンの複数一致を分配できること'
+		sx_str_find "fst:snd:" "aXbXc" "X*" "$(($SX_STR_FIND_GLOB | $SX_STR_FIND_TEXT))"
+		Assert [ "$fst" = "X" ]
+		Assert [ "$snd" = "X" ]
+	End
+
+	It 'TEXT+globモードで不一致は終了ステータス1を返すこと'
+		When call sx_str_find res "abc" "x*" "$(($SX_STR_FIND_GLOB | $SX_STR_FIND_TEXT))"
+		The status should be failure
+	End
+
+	It 'TEXT+globモードで ? 単体が全文字を返すこと'
+		sx_str_find "3fst:" "abc" "?" "$(($SX_STR_FIND_GLOB | $SX_STR_FIND_TEXT))"
+		Assert [ "$fst" = "'a' 'b' 'c'" ]
+	End
+
+	It 'TEXT+overlapモードで重複一致の文字列を返すこと'
+		sx_str_find "2fst:" "aaa" "aa" "$(($SX_STR_FIND_OVERLAP | $SX_STR_FIND_TEXT))"
+		Assert [ "$fst" = "'aa' 'aa'" ]
+	End
+
+	It 'TEXTモード（非overlap）で重複しない一致のみ返すこと'
+		sx_str_find "fst:" "aaa" "aa" "$SX_STR_FIND_TEXT"
+		Assert [ "$fst" = "aa" ]
+	End
+
+	It 'TEXT+glob+overlapモードで全フラグを組み合わせられること'
+		sx_str_find "3fst:" "aaa" "a*" "$(($SX_STR_FIND_GLOB | $SX_STR_FIND_OVERLAP | $SX_STR_FIND_TEXT))"
+		Assert [ "$fst" = "'a' 'a' 'a'" ]
+	End
 End

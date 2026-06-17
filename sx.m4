@@ -209,6 +209,7 @@ readonly SX_ARG_FIND_GLOB=1
 readonly SX_ARG_RFIND_GLOB=1
 readonly SX_STR_FIND_GLOB=1
 readonly SX_STR_FIND_OVERLAP=2
+readonly SX_STR_FIND_TEXT=4
 readonly SX_STR_CHUNK_SKIP_SHORT=1
 readonly SX_STR_CHUNK_SKIP_LONG=2
 
@@ -4731,8 +4732,16 @@ sx_str_has() {
 ##   フラグに SX_STR_FIND_OVERLAP (2) を指定すると、重なり合う一致も検出する。
 ##   例: "aaa" から "aa" を重複検索すると "0:2 1:2" を返す。
 ##
+##   フラグに SX_STR_FIND_TEXT (4) を指定すると、出力が "index:len" の代わりに
+##   実際にマッチした文字列になる。分配モード（a:b）と併用するのが安全。
+##   例: "hello world" から "l" を検索すると "l l l" を返す。
+##   例: "abc" から "?b" を glob 検索すると "ab" を返す。
+##   注意: 全件モード（res）ではマッチテキストにスペースが含まれると
+##   パースが曖昧になるため、分配モードの使用を推奨する。
+##
 ## 出力形式:
-##   index:len  — 各一致を "位置(0-based):一致長" のペアで表現
+##   index:len  — 各一致を "位置(0-based):一致長" のペアで表現（デフォルト）
+##   文字列     — SX_STR_FIND_TEXT 指定時はマッチした文字列そのもの
 ##   空文字列   — 一致なし（終了ステータス 1）
 ##
 ## 終了ステータス:
@@ -4775,7 +4784,12 @@ __sx_str_find() {
 
 		# 空 needle: 全境界位置（0 〜 len）に長さ0で出力
 		while M_NUM_LE([|${__sx_str_find_off_}|], [|${#__sx_str_find_tgt_}|]); do
-			__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:0"|], CLEANUP)
+			if M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_TEXT|]); then
+				__M_BIND_QUOTE([|__sx_str_find|], [|""|], CLEANUP)
+			else
+				__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:0"|], CLEANUP)
+			fi
+
 			: $((__sx_str_find_off_ += 1))
 		done
 	elif M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_GLOB|]); then
@@ -4789,7 +4803,11 @@ __sx_str_find() {
 			__sx_str_find_match_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"}"
 			__sx_str_find_match_="${__sx_str_find_match_%"${__sx_str_find_after_}"}"
 
-			__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_pos_}:${#__sx_str_find_match_}"|], CLEANUP)
+			if M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_TEXT|]); then
+				__M_BIND_QUOTE([|__sx_str_find|], [|"${__sx_str_find_match_}"|], CLEANUP)
+			else
+				__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_pos_}:${#__sx_str_find_match_}"|], CLEANUP)
+			fi
 			__sx_str_find_sts_="${SX_EX_OK}"
 
 			if M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_OVERLAP|]); then
@@ -4806,7 +4824,11 @@ __sx_str_find() {
 			__sx_str_find_pre_="${__sx_str_find_tgt_%%"${__sx_str_find_ndl_}"*}"
 			__sx_str_find_pos_=$((${#__sx_str_find_pre_} + __sx_str_find_off_))
 
-			__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_pos_}:${#__sx_str_find_ndl_}"|], CLEANUP)
+			if M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_TEXT|]); then
+				__M_BIND_QUOTE([|__sx_str_find|], [|"${__sx_str_find_ndl_}"|], CLEANUP)
+			else
+				__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_pos_}:${#__sx_str_find_ndl_}"|], CLEANUP)
+			fi
 			__sx_str_find_sts_="${SX_EX_OK}"
 
 			if M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_OVERLAP|]); then
