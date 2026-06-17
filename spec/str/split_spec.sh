@@ -63,4 +63,29 @@ Describe 'sx_str_split'
     The status should be success
     The variable res should equal "'' 'A'"
   End
+
+  It 'glob モードで * のみの区切り文字は空区切り相当になること'
+    sx_str_split res "abc" "*" "${SX_NUM_I32_MAX}" "${SX_STR_SPLIT_GLOB}"
+    Assert sx_str_eq "${res}" "'' 'a' 'b' 'c' ''"
+  End
+
+  It '非 glob モードでは * はリテラルとして扱われること'
+    sx_str_split res "abc" "*"
+    Assert sx_str_eq "${res}" "'abc'"
+  End
+
+  It 'glob モードで * のみの区切り文字、空文字列の場合は空要素2つになること'
+    sx_str_split res "" "*" "${SX_NUM_I32_MAX}" "${SX_STR_SPLIT_GLOB}"
+    Assert sx_str_eq "${res}" "'' ''"
+  End
+
+  It 'glob モードで * のみの区切り文字、制限付き前方分割ができること'
+    sx_str_split res "abcde" "*" 3 "${SX_STR_SPLIT_GLOB}"
+    Assert sx_str_eq "${res}" "'' 'a' 'b' 'cde'"
+  End
+
+  It 'glob モードで * のみの区切り文字、制限付き後方分割ができること'
+    sx_str_split res "abcde" "*" -3 "${SX_STR_SPLIT_GLOB}"
+    Assert sx_str_eq "${res}" "'abc' 'd' 'e' ''"
+  End
 End

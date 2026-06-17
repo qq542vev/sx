@@ -5568,7 +5568,10 @@ __sx_str_split() {
 	set --
 
 	# 空区切り文字（一文字ずつ分割）の処理
-	if M_STR_EQ([|"${__sx_str_split_sep_}"|], [|''|]); then
+	if
+		M_STR_EQ([|"${__sx_str_split_sep_}"|], [|''|]) ||
+		{ M_NUM_BOOL([|__sx_str_split_flg_ & SX_STR_SPLIT_GLOB|]) && ! M_STR_HAS([|"${__sx_str_split_sep_}"|], [|*[!*]*|]); }
+	then
 		if M_NUM_LT([|0|], [|__sx_str_split_lim_|]); then
 			# 前方から制限数分だけ分割
 			SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
@@ -5902,7 +5905,10 @@ __sx_str_sub_isep_adapt() {
 __sx_str_sub_cb() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}" "$((${6-0} & SX_STR_SUB_GLOB))" "" 0 ""
 
-	if M_STR_EQ([|"${3}"|], [|''|]); then
+	if
+		M_STR_EQ([|"${3}"|], [|''|]) ||
+		{ M_NUM_BOOL([|${6}|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
+	then
 		__sx_str_sub_isep_adapt_cb_="${4}" SX_CFG_UNSET_SOFT=2 __sx_str_isep "${1}" "${2}" __sx_str_sub_isep_adapt "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST | SX_STR_ISEP_CB))" || return
 	elif M_NUM_LE([|0|], [|${5}|]); then
 		if M_STR_EQ([|"${6}"|], [|0|]); then
@@ -5973,7 +5979,10 @@ __sx_str_sub_cb() {
 __sx_str_sub_lit() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}" "$((${6-0} & SX_STR_SUB_GLOB))" ""
 
-	if M_STR_EQ([|"${3}"|], [|''|]); then
+	if
+		M_STR_EQ([|"${3}"|], [|''|]) ||
+		{ M_NUM_BOOL([|${6}|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
+	then
 		SX_CFG_UNSET_SOFT=2 __sx_str_isep "${1}" "${2}" "${4}" "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))"
 	elif M_NUM_LE([|0|], [|${5}|]); then
 		if M_STR_EQ([|"${6}"|], [|0|]); then

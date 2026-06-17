@@ -99,4 +99,29 @@ Describe 'sx_str_sub'
     When call sx_str_sub ro_res_sub "a" "a" "b"
     The status should equal 77
   End
+
+  It 'glob モードで * のみのパターンは空パターン相当になること'
+    sx_str_sub res "abc" "*" "X" "${SX_NUM_I32_MAX}" "${SX_STR_SUB_GLOB}"
+    Assert sx_str_eq "${res}" "XaXbXcX"
+  End
+
+  It '非 glob モードでは * はリテラルとして扱われること'
+    sx_str_sub res "a*b" "*" "X"
+    Assert sx_str_eq "${res}" "aXb"
+  End
+
+  It 'glob モードで * のみのパターン、制限付き前方置換ができること'
+    sx_str_sub res "abc" "*" "X" 2 "${SX_STR_SUB_GLOB}"
+    Assert sx_str_eq "${res}" "XaXbc"
+  End
+
+  It 'glob モードで * のみのパターン、制限付き後方置換ができること'
+    sx_str_sub res "abc" "*" "X" -2 "${SX_STR_SUB_GLOB}"
+    Assert sx_str_eq "${res}" "abXcX"
+  End
+
+  It 'glob モードで * のみのパターン、空文字列に対する置換'
+    sx_str_sub res "" "*" "X" "${SX_NUM_I32_MAX}" "${SX_STR_SUB_GLOB}"
+    Assert sx_str_eq "${res}" "X"
+  End
 End
