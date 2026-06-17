@@ -73,4 +73,40 @@ Describe 'sx_str_find'
 		When call sx_str_find ro_var "abc" "a"
 		The status should eq "$SX_EX_NOPERM"
 	End
+
+	It '重複フラグ有効で重なり合う一致をすべて見つけること'
+		When call sx_str_find res "aaa" "aa" "$SX_STR_FIND_OVERLAP"
+		The status should be success
+		The variable res should equal "0:2 1:2"
+	End
+
+	It '重複フラグ無効で従来の動作を維持すること'
+		When call sx_str_find res "aaa" "aa" 0
+		The status should be success
+		The variable res should equal "0:2"
+	End
+
+	It '重複フラグ有効で複数重複一致を検出すること'
+		When call sx_str_find res "ababa" "aba" "$SX_STR_FIND_OVERLAP"
+		The status should be success
+		The variable res should equal "0:3 2:3"
+	End
+
+	It '重複フラグ有効で通常の一致も正しく動作すること'
+		When call sx_str_find res "ab_cd_ef" "_" "$SX_STR_FIND_OVERLAP"
+		The status should be success
+		The variable res should equal "2:1 5:1"
+	End
+
+	It '重複フラグ有効で不一致は空文字列を返すこと'
+		When call sx_str_find res "abc" "x" "$SX_STR_FIND_OVERLAP"
+		The status should be failure
+		The variable res should equal ""
+	End
+
+	It '重複フラグ有効で空needleは全境界位置を返すこと'
+		When call sx_str_find res "abc" "" "$SX_STR_FIND_OVERLAP"
+		The status should be success
+		The variable res should equal "0:0 1:0 2:0 3:0"
+	End
 End
