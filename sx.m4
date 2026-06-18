@@ -6302,7 +6302,7 @@ sx_str_sw() {
 ### sx_str_tr - 文字列内の文字を対応する文字で変換する
 ##
 ## 使い方:
-##   sx_str_tr 結果変数名 [文字列 [from文字列 [to文字列]]]
+##   sx_str_tr 結果変数名 [文字列 [from文字列 [to文字列 [limit]]]]
 ##
 ## 説明:
 ##   文字列中の from に含まれる各文字を、to の対応する位置の文字で置換する。
@@ -6310,6 +6310,9 @@ sx_str_sw() {
 ##   to に含まれない位置の文字（from が to より長い場合の超過分）は削除する。
 ##   to が from より長い場合、余剰の to の文字は無視される。
 ##   from に同一文字が複数ある場合、最初の出現位置が使用される。
+##   limit で最大置換回数を指定できる。デフォルトは SX_NUM_I32_MAX（無制限）。
+##   0 を指定すると置換を行わない。
+##   負の値を指定すると末尾から置換する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -6317,7 +6320,7 @@ sx_str_sw() {
 sx_str_tr() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_tr "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sx_int_inv ${5:+"${5}"} || return
 
 	__sx_str_tr "${@}"
 }
@@ -6325,12 +6328,12 @@ sx_str_tr() {
 ### __sx_str_tr - 文字列内の文字を対応する文字で変換する（内部用）
 ##
 ## 使い方:
-##   __sx_str_tr 結果変数名 [文字列 [from文字列 [to文字列]]]
+##   __sx_str_tr 結果変数名 [文字列 [from文字列 [to文字列 [limit]]]]
 ##
 ## 説明:
 ##   sx_str_tr の内部実装。引数チェックは行わない。
 __sx_str_tr() {
-	set -- "${1}" "${2-}" "${3-}" "${4-}"
+	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}"
 
 	case "${3}" in '')
 		__sx_var_set "${1}=${2}"
@@ -6341,26 +6344,50 @@ __sx_str_tr() {
 	__sx_str_tr_str_="${2}"
 	__sx_str_tr_from_="${3}"
 	__sx_str_tr_out_=
+	__sx_str_tr_lim_="${5:-${SX_NUM_I32_MAX}}"
 
 	SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_tr_to_ "${4}" 1
-	eval "set -- ${__sx_str_tr_to_}"
+	eval set -- "${__sx_str_tr_to_}"
 
-	while M_STR_HAS([|"${__sx_str_tr_str_}"|], [|["${__sx_str_tr_from_}"]|]); do
-		__sx_str_tr_pre_="${__sx_str_tr_str_%%["${__sx_str_tr_from_}"]*}"
-		__sx_str_tr_str_="${__sx_str_tr_str_#"${__sx_str_tr_pre_}"}"
-		__sx_str_tr_suf_="${__sx_str_tr_str_#?}"
-		__sx_str_tr_from_pre_="${__sx_str_tr_from_%%"${__sx_str_tr_str_%"${__sx_str_tr_suf_}"}"*}"
-		__sx_str_tr_idx_="${#__sx_str_tr_from_pre_}"
-		__sx_str_tr_str_="${__sx_str_tr_suf_}"
+	if M_NUM_LT([|${__sx_str_tr_lim_}|], [|0|]); then
+		while M_STR_HAS([|"${__sx_str_tr_str_}"|], [|["${__sx_str_tr_from_}"]|]) && M_NUM_NE([|${__sx_str_tr_lim_}|], [|0|]); do
+			__sx_str_tr_suf_="${__sx_str_tr_str_##*["${__sx_str_tr_from_}"]}"
+			__sx_str_tr_str_="${__sx_str_tr_str_%"${__sx_str_tr_suf_}"}"
+			__sx_str_tr_pre_="${__sx_str_tr_str_%?}"
+			__sx_str_tr_from_pre_="${__sx_str_tr_from_%%"${__sx_str_tr_str_#"${__sx_str_tr_pre_}"}"*}"
+			__sx_str_tr_idx_="${#__sx_str_tr_from_pre_}"
 
-		case "$((__sx_str_tr_idx_ < ${#}))" in
-			1) eval "__sx_str_tr_out_=\"\${__sx_str_tr_out_}\${__sx_str_tr_pre_}\${$((${__sx_str_tr_idx_} + 1))}\"";;
-			*) __sx_str_tr_out_="${__sx_str_tr_out_}${__sx_str_tr_pre_}";;
-		esac
-	done
+			case "$((__sx_str_tr_idx_ < ${#}))" in
+				1) eval "__sx_str_tr_out_=\"\${$((${__sx_str_tr_idx_} + 1))}\${__sx_str_tr_suf_}\${__sx_str_tr_out_}\"";;
+				*) __sx_str_tr_out_="${__sx_str_tr_suf_}${__sx_str_tr_out_}";;
+			esac
 
-	__sx_var_set "${__sx_str_tr_res_}=${__sx_str_tr_out_}${__sx_str_tr_str_}"
-	unset __sx_str_tr_res_ __sx_str_tr_str_ __sx_str_tr_from_ __sx_str_tr_to_ __sx_str_tr_out_ __sx_str_tr_pre_ __sx_str_tr_suf_ __sx_str_tr_from_pre_ __sx_str_tr_idx_
+			__sx_str_tr_str_="${__sx_str_tr_pre_}"
+			: $((__sx_str_tr_lim_ += 1))
+		done
+
+		__sx_var_set "${__sx_str_tr_res_}=${__sx_str_tr_str_}${__sx_str_tr_out_}"
+	else
+		while M_STR_HAS([|"${__sx_str_tr_str_}"|], [|["${__sx_str_tr_from_}"]|]) && M_NUM_NE([|${__sx_str_tr_lim_}|], [|0|]); do
+			__sx_str_tr_pre_="${__sx_str_tr_str_%%["${__sx_str_tr_from_}"]*}"
+			__sx_str_tr_str_="${__sx_str_tr_str_#"${__sx_str_tr_pre_}"}"
+			__sx_str_tr_suf_="${__sx_str_tr_str_#?}"
+			__sx_str_tr_from_pre_="${__sx_str_tr_from_%%"${__sx_str_tr_str_%"${__sx_str_tr_suf_}"}"*}"
+			__sx_str_tr_idx_="${#__sx_str_tr_from_pre_}"
+
+			case "$((__sx_str_tr_idx_ < ${#}))" in
+				1) eval "__sx_str_tr_out_=\"\${__sx_str_tr_out_}\${__sx_str_tr_pre_}\${$((${__sx_str_tr_idx_} + 1))}\"";;
+				*) __sx_str_tr_out_="${__sx_str_tr_out_}${__sx_str_tr_pre_}";;
+			esac
+
+			__sx_str_tr_str_="${__sx_str_tr_suf_}"
+			: $((__sx_str_tr_lim_ -= 1))
+		done
+
+		__sx_var_set "${__sx_str_tr_res_}=${__sx_str_tr_out_}${__sx_str_tr_str_}"
+	fi
+
+	unset __sx_str_tr_res_ __sx_str_tr_str_ __sx_str_tr_from_ __sx_str_tr_to_ __sx_str_tr_out_ __sx_str_tr_lim_ __sx_str_tr_pre_ __sx_str_tr_suf_ __sx_str_tr_from_pre_ __sx_str_tr_idx_
 }
 
 ### sx_str_trim - 文字列の前後から指定された文字セットを削除する

@@ -50,4 +50,49 @@ Describe 'sx_str_tr()'
 		When call sx_str_tr MYRO_TR "abc" "abc" "XYZ"
 		The status should equal 77
 	End
+
+	It 'limit=0 の場合は何も置換しないこと'
+		When call sx_str_tr res "abc" "abc" "XYZ" 0
+		The variable res should equal "abc"
+	End
+
+	It 'limit=1 で前方1回だけ置換すること'
+		When call sx_str_tr res "a1b2c3" "abc" "XYZ" 1
+		The variable res should equal "X1b2c3"
+	End
+
+	It 'limit=2 で前方2回だけ置換すること'
+		When call sx_str_tr res "a1b2c3" "abc" "XYZ" 2
+		The variable res should equal "X1Y2c3"
+	End
+
+	It 'limit がマッチ数を超える場合は全置換すること'
+		When call sx_str_tr res "abc" "abc" "XYZ" 5
+		The variable res should equal "XYZ"
+	End
+
+	It 'limit=-1 で後方1回だけ置換すること'
+		When call sx_str_tr res "a1b2c3" "abc" "XYZ" -1
+		The variable res should equal "a1b2Z3"
+	End
+
+	It 'limit=-2 で後方2回だけ置換すること'
+		When call sx_str_tr res "a1b2c3" "abc" "XYZ" -2
+		The variable res should equal "a1Y2Z3"
+	End
+
+	It '後方置換で limit がマッチ数を超える場合は全置換すること'
+		When call sx_str_tr res "abc" "abc" "XYZ" -5
+		The variable res should equal "XYZ"
+	End
+
+	It '後方置換で to が短い場合、超過文字が削除されること'
+		When call sx_str_tr res "abcdef" "cde" "12" -2
+		The variable res should equal "abc2f"
+	End
+
+	It 'limit 省略時は全置換すること'
+		When call sx_str_tr res "a1b2c3" "abc" "XYZ"
+		The variable res should equal "X1Y2Z3"
+	End
 End
