@@ -206,7 +206,9 @@ readonly SX_ARG_ISEP_CB=1
 readonly SX_ARG_ISEP_PRE=2
 readonly SX_ARG_ISEP_POST=4
 readonly SX_ARG_FIND_GLOB=1
+readonly SX_ARG_FIND_TEXT=4
 readonly SX_ARG_RFIND_GLOB=1
+readonly SX_ARG_RFIND_TEXT=4
 readonly SX_STR_FIND_GLOB=1
 readonly SX_STR_FIND_OVERLAP=2
 readonly SX_STR_FIND_TEXT=4
@@ -953,7 +955,7 @@ sx_util_eval() {
 #  ARG (Arguments)
 # ========================================
 
-### sx_arg_find - 引数リストから指定された値を探し、そのインデックスを取得する
+### sx_arg_find - 引数リストから指定された値を探し、そのインデックスまたは値を取得する
 ##
 ## 使い方:
 ##   sx_arg_find 結果変数名（またはバインド形式） [検索対象 [フラグ]] ::: [値 ...]
@@ -963,6 +965,7 @@ sx_util_eval() {
 ##   一致した項目のインデックスをスペース区切りで結果変数に格納する。
 ##   第一引数にはバインド形式を指定して分配代入を行うことも可能。
 ##   フラグに SX_ARG_FIND_GLOB (1) を指定すると、検索対象を glob パターンとして扱う。
+##   フラグに SX_ARG_FIND_TEXT (4) を指定すると、インデックスの代わりにマッチした値を出力する。
 ##   見つからない場合は空文字列を格納する。
 ##   取得件数はバインド形式によって決まる。
 ##   例: res（全件）、3res:（最大3件）、idx1:idx2（2件を分配）
@@ -986,7 +989,7 @@ sx_arg_find() {
 }
 
 define([|V|], [|__sx_arg_find_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(text) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
 
 ### __sx_arg_find - 引数リストから指定された値を探す（内部用: 前向き）
 ##
@@ -1019,12 +1022,17 @@ __sx_arg_find() {
 	: "${__sx_arg_find_tgt_:=}" "${__sx_arg_find_flg_:=0}"
 
 	__sx_arg_find_glob_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0))
+	__sx_arg_find_text_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_TEXT) != 0))
 	__sx_arg_find_i_=1
 	__sx_arg_find_out_=
 
 	for __sx_arg_find_arg_ in "${@}"; do
 		case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
-			__M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP)
+			case "${__sx_arg_find_text_}" in
+				0) __M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_arg_find|], [|"${__sx_arg_find_arg_}"|], CLEANUP);;
+			esac
+
 			__sx_arg_find_sts_="${SX_EX_OK}"
 		esac
 
@@ -1604,7 +1612,7 @@ __sx_arg_range() {
 	unset __sx_arg_range_res_ __sx_arg_range_idxs_ __sx_arg_range_tmp_
 }
 
-### sx_arg_rfind - 引数リストから指定された値を末尾から探し、そのインデックスを取得する
+### sx_arg_rfind - 引数リストから指定された値を末尾から探し、そのインデックスまたは値を取得する
 ##
 ## 使い方:
 ##   sx_arg_rfind 結果変数名（またはバインド形式） [検索対象 [フラグ]] ::: [値 ...]
@@ -1612,6 +1620,7 @@ __sx_arg_range() {
 ## 説明:
 ##   sx_arg_find と同じだが、末尾から前方向に検索する。
 ##   一致した項目のインデックスを発見順（末尾から）にスペース区切りで結果変数に格納する。
+##   フラグに SX_ARG_RFIND_TEXT (4) を指定すると、インデックスの代わりにマッチした値を出力する。
 ##   取得件数はバインド形式によって決まる。
 ##
 ## 終了ステータス:
@@ -1633,7 +1642,7 @@ sx_arg_rfind() {
 }
 
 define([|V|], [|__sx_arg_rfind_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(text) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
 
 ### __sx_arg_rfind - 引数リストから指定された値を後ろ向きに探す（内部用）
 ##
@@ -1666,6 +1675,7 @@ __sx_arg_rfind() {
 	: "${__sx_arg_rfind_tgt_:=}" "${__sx_arg_rfind_flg_:=0}"
 
 	__sx_arg_rfind_glob_=$(((__sx_arg_rfind_flg_ & SX_ARG_RFIND_GLOB) != 0))
+	__sx_arg_rfind_text_=$(((__sx_arg_rfind_flg_ & SX_ARG_RFIND_TEXT) != 0))
 	__sx_arg_rfind_i_="${#}"
 	__sx_arg_rfind_out_=
 
@@ -1673,7 +1683,10 @@ __sx_arg_rfind() {
 		eval __sx_arg_rfind_arg_=\"\${${__sx_arg_rfind_i_}}\"
 
 		case "${__sx_arg_rfind_glob_}${__sx_arg_rfind_arg_}" in "0${__sx_arg_rfind_tgt_}" | 1${__sx_arg_rfind_tgt_})
-			__M_BIND_UNQUOTE([|__sx_arg_rfind|], [|"${__sx_arg_rfind_i_}"|], CLEANUP)
+			case "${__sx_arg_rfind_text_}" in
+				0) __M_BIND_UNQUOTE([|__sx_arg_rfind|], [|"${__sx_arg_rfind_i_}"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_arg_rfind|], [|"${__sx_arg_rfind_arg_}"|], CLEANUP);;
+			esac
 			__sx_arg_rfind_sts_="${SX_EX_OK}"
 		esac
 
@@ -4852,115 +4865,6 @@ __sx_str_find() {
 	return "${1}"
 }
 
-### sx_str_rfind - 文字列から指定された文字列を後方一致で探し、位置を取得する
-##
-## 使い方:
-##   sx_str_rfind 結果変数名（またはバインド形式） [元文字列 [検索文字列 [フラグ]]]
-##
-## 説明:
-##   元文字列から検索文字列をリテラル後方一致で探し、見つかったすべての位置を
-##   "index:len" 形式で結果変数に格納する。複数一致する場合はスペース区切りで並べる。
-##   検索文字列が空の場合は、各文字境界位置（長さ0）を末尾から順に出力する。
-##   第一引数には sx_arg_find と同様のバインド形式を指定できる。
-##
-##   フラグに SX_STR_RFIND_GLOB (1) を指定すると、検索文字列を glob パターンとして扱う。
-##   フラグに SX_STR_RFIND_OVERLAP (2) を指定すると、重なり合う一致も検出する。
-##   フラグに SX_STR_RFIND_TEXT (4) を指定すると、出力が "index:len" の代わりに
-##   実際にマッチした文字列になる。
-##
-## 終了ステータス:
-##    0  1件以上一致 (SX_EX_OK)
-##    1  不一致
-##   64  引数不正 (SX_EX_USAGE)
-sx_str_rfind() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rfind "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} ${4+"${4}"} || return
-
-	__sx_str_rfind "${@}" || return
-}
-
-define([|V|], [|__sx_str_rfind_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(off) V(pre) V(out) V(sts) V(match) V(after) V(text) V(overlap) __M_BIND_USEVAR|])dnl
-
-### __sx_str_rfind - 文字列から指定された文字列を後方一致で探す（内部用）
-##
-## 使い方:
-##   __sx_str_rfind 結果変数名（またはバインド形式） [元文字列 [検索文字列 [フラグ]]]
-##
-## 説明:
-##   sx_str_rfind の内部実装。引数チェックは行わない。
-__sx_str_rfind() {
-	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
-	__sx_var_bind_init "${1}"
-	__sx_str_rfind_bind_="${1}"
-	__sx_str_rfind_tgt_="${2}"
-	__sx_str_rfind_text_=$((${4} & SX_STR_RFIND_TEXT))
-	__sx_str_rfind_overlap_=$((${4} & SX_STR_RFIND_OVERLAP))
-	__sx_str_rfind_out_=
-
-	if
-		M_STR_EQ([|"${3}"|], [|''|]) ||
-		{ M_NUM_BOOL([|${4} & SX_STR_RFIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
-	then
-		__sx_str_rfind_off_="${#__sx_str_rfind_tgt_}"
-		__sx_str_rfind_sts_="${SX_EX_OK}"
-
-		# 空 needle: len から 0 へ
-		while M_NUM_GE([|${__sx_str_rfind_off_}|], [|0|]); do
-			case "${__sx_str_rfind_text_}" in
-				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${__sx_str_rfind_off_}:0"|], CLEANUP);;
-				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|''|], CLEANUP);;
-			esac
-
-			: $((__sx_str_rfind_off_ -= 1))
-		done
-	elif M_NUM_BOOL([|${4} & SX_STR_RFIND_GLOB|]); then
-		# ==== グロブモード ====
-		while M_STR_HAS([|"${__sx_str_rfind_tgt_}"|], [|${3}|]); do
-			__sx_str_rfind_pre_="${__sx_str_rfind_tgt_%${3}*}"
-			__sx_str_rfind_match_="${__sx_str_rfind_tgt_#${__sx_str_rfind_pre_}}"
-			__sx_str_rfind_after_="${__sx_str_rfind_match_#${3}}"
-			__sx_str_rfind_match_="${__sx_str_rfind_match_%${__sx_str_rfind_after_}}"
-			__sx_str_rfind_sts_="${SX_EX_OK}"
-
-			case "${__sx_str_rfind_text_}" in
-				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${#__sx_str_rfind_pre_}:${#__sx_str_rfind_match_}"|], CLEANUP);;
-				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|"${__sx_str_rfind_match_}"|], CLEANUP);;
-			esac
-
-			case "${__sx_str_rfind_overlap_}" in
-				0) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}";;
-				*) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}${__sx_str_rfind_match_%?}";;
-			esac
-		done
-	else
-		# ==== リテラルモード ====
-		while M_STR_HAS([|"${__sx_str_rfind_tgt_}"|], [|"${3}"|]); do
-			__sx_str_rfind_pre_="${__sx_str_rfind_tgt_%"${3}"*}"
-			__sx_str_rfind_sts_="${SX_EX_OK}"
-
-			case "${__sx_str_rfind_text_}" in
-				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${#__sx_str_rfind_pre_}:${#3}"|], CLEANUP);;
-				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|"${3}"|], CLEANUP);;
-			esac
-
-			case "${__sx_str_rfind_overlap_}" in
-				0) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}";;
-				*) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}${3%?}";;
-			esac
-		done
-	fi
-
-	eval ${__sx_str_rfind_out_:+"${__sx_str_rfind_bind_}=\"\${__sx_str_rfind_out_# }\""}
-
-	set -- "${__sx_str_rfind_sts_-1}"
-	unset CLEANUP
-	return "${1}"
-}
-
-undefine([|CLEANUP|])dnl
-undefine([|V|])dnl
 ### sx_str_is_alnum - すべての引数が英数字（A-Z, a-z, 0-9）のみで構成されているか確認する
 ##
 ## 使い方:
@@ -5582,6 +5486,113 @@ __sx_str_rep() {
 	unset __sx_str_rep_out_
 }
 
+### sx_str_rfind - 文字列から指定された文字列を後方一致で探し、位置を取得する
+##
+## 使い方:
+##   sx_str_rfind 結果変数名（またはバインド形式） [元文字列 [検索文字列 [フラグ]]]
+##
+## 説明:
+##   元文字列から検索文字列をリテラル後方一致で探し、見つかったすべての位置を
+##   "index:len" 形式で結果変数に格納する。複数一致する場合はスペース区切りで並べる。
+##   検索文字列が空の場合は、各文字境界位置（長さ0）を末尾から順に出力する。
+##   第一引数には sx_arg_find と同様のバインド形式を指定できる。
+##
+##   フラグに SX_STR_RFIND_GLOB (1) を指定すると、検索文字列を glob パターンとして扱う。
+##   フラグに SX_STR_RFIND_OVERLAP (2) を指定すると、重なり合う一致も検出する。
+##   フラグに SX_STR_RFIND_TEXT (4) を指定すると、出力が "index:len" の代わりに
+##   実際にマッチした文字列になる。
+##
+## 終了ステータス:
+##    0  1件以上一致 (SX_EX_OK)
+##    1  不一致
+##   64  引数不正 (SX_EX_USAGE)
+sx_str_rfind() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rfind "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} ${4+"${4}"} || return
+
+	__sx_str_rfind "${@}" || return
+}
+
+define([|V|], [|__sx_str_rfind_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(off) V(pre) V(out) V(sts) V(match) V(after) V(text) V(overlap) __M_BIND_USEVAR|])dnl
+
+### __sx_str_rfind - 文字列から指定された文字列を後方一致で探す（内部用）
+##
+## 使い方:
+##   __sx_str_rfind 結果変数名（またはバインド形式） [元文字列 [検索文字列 [フラグ]]]
+##
+## 説明:
+##   sx_str_rfind の内部実装。引数チェックは行わない。
+__sx_str_rfind() {
+	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
+	__sx_var_bind_init "${1}"
+	__sx_str_rfind_bind_="${1}"
+	__sx_str_rfind_tgt_="${2}"
+	__sx_str_rfind_text_=$((${4} & SX_STR_RFIND_TEXT))
+	__sx_str_rfind_overlap_=$((${4} & SX_STR_RFIND_OVERLAP))
+	__sx_str_rfind_out_=
+
+	if
+		M_STR_EQ([|"${3}"|], [|''|]) ||
+		{ M_NUM_BOOL([|${4} & SX_STR_RFIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
+	then
+		__sx_str_rfind_off_="${#__sx_str_rfind_tgt_}"
+		__sx_str_rfind_sts_="${SX_EX_OK}"
+
+		# 空 needle: len から 0 へ
+		while M_NUM_GE([|${__sx_str_rfind_off_}|], [|0|]); do
+			case "${__sx_str_rfind_text_}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${__sx_str_rfind_off_}:0"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|''|], CLEANUP);;
+			esac
+
+			: $((__sx_str_rfind_off_ -= 1))
+		done
+	elif M_NUM_BOOL([|${4} & SX_STR_RFIND_GLOB|]); then
+		# ==== グロブモード ====
+		while M_STR_HAS([|"${__sx_str_rfind_tgt_}"|], [|${3}|]); do
+			__sx_str_rfind_pre_="${__sx_str_rfind_tgt_%${3}*}"
+			__sx_str_rfind_match_="${__sx_str_rfind_tgt_#${__sx_str_rfind_pre_}}"
+			__sx_str_rfind_after_="${__sx_str_rfind_match_#${3}}"
+			__sx_str_rfind_match_="${__sx_str_rfind_match_%${__sx_str_rfind_after_}}"
+			__sx_str_rfind_sts_="${SX_EX_OK}"
+
+			case "${__sx_str_rfind_text_}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${#__sx_str_rfind_pre_}:${#__sx_str_rfind_match_}"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|"${__sx_str_rfind_match_}"|], CLEANUP);;
+			esac
+
+			case "${__sx_str_rfind_overlap_}" in
+				0) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}";;
+				*) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}${__sx_str_rfind_match_%?}";;
+			esac
+		done
+	else
+		# ==== リテラルモード ====
+		while M_STR_HAS([|"${__sx_str_rfind_tgt_}"|], [|"${3}"|]); do
+			__sx_str_rfind_pre_="${__sx_str_rfind_tgt_%"${3}"*}"
+			__sx_str_rfind_sts_="${SX_EX_OK}"
+
+			case "${__sx_str_rfind_text_}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${#__sx_str_rfind_pre_}:${#3}"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|"${3}"|], CLEANUP);;
+			esac
+
+			case "${__sx_str_rfind_overlap_}" in
+				0) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}";;
+				*) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}${3%?}";;
+			esac
+		done
+	fi
+
+	eval ${__sx_str_rfind_out_:+"${__sx_str_rfind_bind_}=\"\${__sx_str_rfind_out_# }\""}
+
+	set -- "${__sx_str_rfind_sts_-1}"
+	unset CLEANUP
+	return "${1}"
+}
+
 ### sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する
 ##
 ## 使い方:
@@ -5640,9 +5651,6 @@ __sx_str_splice() {
 
 	CLEANUP
 }
-
-undefine([|CLEANUP|]) dnl
-undefine([|V|]) dnl
 
 ### sx_str_split - 文字列を分割して結果変数に格納する
 ##
@@ -6222,9 +6230,6 @@ __sx_str_substr() {
 	__sx_var_set "${V(res)}=${V(str)}"
 	CLEANUP
 }
-
-undefine([|CLEANUP|]) dnl
-undefine([|V|]) dnl
 
 ### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
 ##

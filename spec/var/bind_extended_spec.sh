@@ -46,7 +46,7 @@ Describe '拡張バインド構文'
         It '2v:rest形式で最初に見つかった2つのインデックスを格納すること'
             v=
             rest=
-            When call sx_arg_find "2v:rest" "target" 5 ::: "a" "target" "b" "target" "c" "target" "d"
+            When call sx_arg_find "2v:rest" "target" 1 ::: "a" "target" "b" "target" "c" "target" "d"
             The variable v should eq "2 4"
             The variable rest should eq "6"
         End
