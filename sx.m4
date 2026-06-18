@@ -4637,8 +4637,8 @@ sx_str_count() {
 ## 説明:
 ##   sx_str_count の内部実装。引数チェックは行わない。
 __sx_str_count() {
-	__sx_str_find __sx_str_count_tmp_ "${2-}" "${3-}" "${4:-0}" || :
-	eval __sx_arg_len "${1}" \${__sx_str_count_tmp_}
+	SX_CFG_UNSET_SOFT=2 __sx_str_find __sx_str_count_tmp_ "${2-}" "${3-}" "${4:-0}" || :
+	eval __sx_arg_len '"${1}"' "${__sx_str_count_tmp_}"
 	unset __sx_str_count_tmp_
 }
 
@@ -5950,11 +5950,10 @@ __sx_str_squish() {
 
 	case "${3}" in '')
 		__sx_var_set "${1}=${2}"
-		return "${SX_EX_OK}"
+		return
 	esac
 
-	__sx_str_strim __sx_str_squish_str_ "${2}" "${3}"
-	__sx_str_etrim __sx_str_squish_str_ "${__sx_str_squish_str_}" "${3}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_trim __sx_str_squish_str_ "${2}" "${3}"
 
 	__sx_str_squish_out_=
 	while M_STR_HAS([|"${__sx_str_squish_str_}"|], [|["${3}"]|]); do
@@ -6298,6 +6297,70 @@ sx_str_sw() {
 
 	unset __sx_str_sw_tgt __sx_str_sw_arg
 	return 1
+}
+
+### sx_str_tr - 文字列内の文字を対応する文字で変換する
+##
+## 使い方:
+##   sx_str_tr 結果変数名 [文字列 [from文字列 [to文字列]]]
+##
+## 説明:
+##   文字列中の from に含まれる各文字を、to の対応する位置の文字で置換する。
+##   from が空の場合は何もせずそのまま返す。
+##   to に含まれない位置の文字（from が to より長い場合の超過分）は削除する。
+##   to が from より長い場合、余剰の to の文字は無視される。
+##   from に同一文字が複数ある場合、最初の出現位置が使用される。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_tr() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_tr "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_str_tr "${@}"
+}
+
+### __sx_str_tr - 文字列内の文字を対応する文字で変換する（内部用）
+##
+## 使い方:
+##   __sx_str_tr 結果変数名 [文字列 [from文字列 [to文字列]]]
+##
+## 説明:
+##   sx_str_tr の内部実装。引数チェックは行わない。
+__sx_str_tr() {
+	set -- "${1}" "${2-}" "${3-}" "${4-}"
+
+	case "${3}" in '')
+		__sx_var_set "${1}=${2}"
+		return
+	esac
+
+	__sx_str_tr_res_="${1}"
+	__sx_str_tr_str_="${2}"
+	__sx_str_tr_from_="${3}"
+	__sx_str_tr_out_=
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_tr_to_ "${4}" 1
+	eval "set -- ${__sx_str_tr_to_}"
+
+	while M_STR_HAS([|"${__sx_str_tr_str_}"|], [|["${__sx_str_tr_from_}"]|]); do
+		__sx_str_tr_pre_="${__sx_str_tr_str_%%["${__sx_str_tr_from_}"]*}"
+		__sx_str_tr_str_="${__sx_str_tr_str_#"${__sx_str_tr_pre_}"}"
+		__sx_str_tr_suf_="${__sx_str_tr_str_#?}"
+		__sx_str_tr_from_pre_="${__sx_str_tr_from_%%"${__sx_str_tr_str_%"${__sx_str_tr_suf_}"}"*}"
+		__sx_str_tr_idx_="${#__sx_str_tr_from_pre_}"
+		__sx_str_tr_str_="${__sx_str_tr_suf_}"
+
+		case "$((__sx_str_tr_idx_ < ${#}))" in
+			1) eval "__sx_str_tr_out_=\"\${__sx_str_tr_out_}\${__sx_str_tr_pre_}\${$((${__sx_str_tr_idx_} + 1))}\"";;
+			*) __sx_str_tr_out_="${__sx_str_tr_out_}${__sx_str_tr_pre_}";;
+		esac
+	done
+
+	__sx_var_set "${__sx_str_tr_res_}=${__sx_str_tr_out_}${__sx_str_tr_str_}"
+	unset __sx_str_tr_res_ __sx_str_tr_str_ __sx_str_tr_from_ __sx_str_tr_to_ __sx_str_tr_out_ __sx_str_tr_pre_ __sx_str_tr_suf_ __sx_str_tr_from_pre_ __sx_str_tr_idx_
 }
 
 ### sx_str_trim - 文字列の前後から指定された文字セットを削除する
