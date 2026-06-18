@@ -6320,7 +6320,7 @@ sx_str_sw() {
 sx_str_tr() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_tr "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sx_int_inv ${5:+"${5}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sx_int_inv ${5:+"${5}"} || return
 
 	__sx_str_tr "${@}"
 }
@@ -6328,66 +6328,72 @@ sx_str_tr() {
 ### __sx_str_tr - 文字列内の文字を対応する文字で変換する（内部用）
 ##
 ## 使い方:
-##   __sx_str_tr 結果変数名 [文字列 [from文字列 [to文字列 [limit]]]]
+##   __sx_str_tr バインド形式 [文字列 [from文字列 [to文字列 [limit]]]]
 ##
 ## 説明:
 ##   sx_str_tr の内部実装。引数チェックは行わない。
+##   バインド形式で置換結果と置換回数を取得できる。
+##   例: res（結果のみ）、res:cnt（結果と回数）
 __sx_str_tr() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}"
 
-	case "${3}" in '')
-		__sx_var_set "${1}=${2}"
-		return
-	esac
-
-	__sx_str_tr_res_="${1}"
+	__sx_var_bind_init "${1}"
+	__sx_str_tr_bind_="${1}"
 	__sx_str_tr_str_="${2}"
 	__sx_str_tr_from_="${3}"
 	__sx_str_tr_out_=
 	__sx_str_tr_lim_="${5:-${SX_NUM_I32_MAX}}"
+	__sx_str_tr_cnt_=0
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_tr_to_ "${4}" 1
-	eval set -- "${__sx_str_tr_to_}"
+	case "${3}" in
+		'') __sx_var_bind __sx_str_tr_bind_ "${__sx_str_tr_bind_}" "${__sx_str_tr_str_}";;
+		*)
+			SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_tr_to_ "${4}" 1
+			eval set -- "${__sx_str_tr_to_}"
 
-	if M_NUM_LT([|${__sx_str_tr_lim_}|], [|0|]); then
-		while M_STR_HAS([|"${__sx_str_tr_str_}"|], [|["${__sx_str_tr_from_}"]|]) && M_NUM_NE([|${__sx_str_tr_lim_}|], [|0|]); do
-			__sx_str_tr_suf_="${__sx_str_tr_str_##*["${__sx_str_tr_from_}"]}"
-			__sx_str_tr_str_="${__sx_str_tr_str_%"${__sx_str_tr_suf_}"}"
-			__sx_str_tr_pre_="${__sx_str_tr_str_%?}"
-			__sx_str_tr_from_pre_="${__sx_str_tr_from_%%"${__sx_str_tr_str_#"${__sx_str_tr_pre_}"}"*}"
-			__sx_str_tr_idx_="${#__sx_str_tr_from_pre_}"
+			if M_NUM_LT([|${__sx_str_tr_lim_}|], [|0|]); then
+				__sx_str_tr_lim_="${__sx_str_tr_lim_#-}"
 
-			case "$((__sx_str_tr_idx_ < ${#}))" in
-				1) eval "__sx_str_tr_out_=\"\${$((${__sx_str_tr_idx_} + 1))}\${__sx_str_tr_suf_}\${__sx_str_tr_out_}\"";;
-				*) __sx_str_tr_out_="${__sx_str_tr_suf_}${__sx_str_tr_out_}";;
-			esac
+				while M_STR_HAS([|"${__sx_str_tr_str_}"|], [|["${__sx_str_tr_from_}"]|]) && M_NUM_LT([|__sx_str_tr_cnt_|], [|__sx_str_tr_lim_|]); do
+					__sx_str_tr_suf_="${__sx_str_tr_str_##*["${__sx_str_tr_from_}"]}"
+					__sx_str_tr_str_="${__sx_str_tr_str_%"${__sx_str_tr_suf_}"}"
+					__sx_str_tr_pre_="${__sx_str_tr_str_%?}"
+					__sx_str_tr_from_pre_="${__sx_str_tr_from_%%"${__sx_str_tr_str_#"${__sx_str_tr_pre_}"}"*}"
+					__sx_str_tr_idx_="${#__sx_str_tr_from_pre_}"
 
-			__sx_str_tr_str_="${__sx_str_tr_pre_}"
-			: $((__sx_str_tr_lim_ += 1))
-		done
+					case "$((__sx_str_tr_idx_ < ${#}))" in
+						1) eval "__sx_str_tr_out_=\"\${$((${__sx_str_tr_idx_} + 1))}\${__sx_str_tr_suf_}\${__sx_str_tr_out_}\"";;
+						*) __sx_str_tr_out_="${__sx_str_tr_suf_}${__sx_str_tr_out_}";;
+					esac
 
-		__sx_var_set "${__sx_str_tr_res_}=${__sx_str_tr_str_}${__sx_str_tr_out_}"
-	else
-		while M_STR_HAS([|"${__sx_str_tr_str_}"|], [|["${__sx_str_tr_from_}"]|]) && M_NUM_NE([|${__sx_str_tr_lim_}|], [|0|]); do
-			__sx_str_tr_pre_="${__sx_str_tr_str_%%["${__sx_str_tr_from_}"]*}"
-			__sx_str_tr_str_="${__sx_str_tr_str_#"${__sx_str_tr_pre_}"}"
-			__sx_str_tr_suf_="${__sx_str_tr_str_#?}"
-			__sx_str_tr_from_pre_="${__sx_str_tr_from_%%"${__sx_str_tr_str_%"${__sx_str_tr_suf_}"}"*}"
-			__sx_str_tr_idx_="${#__sx_str_tr_from_pre_}"
+					__sx_str_tr_str_="${__sx_str_tr_pre_}"
+					: $((__sx_str_tr_cnt_ += 1))
+				done
 
-			case "$((__sx_str_tr_idx_ < ${#}))" in
-				1) eval "__sx_str_tr_out_=\"\${__sx_str_tr_out_}\${__sx_str_tr_pre_}\${$((${__sx_str_tr_idx_} + 1))}\"";;
-				*) __sx_str_tr_out_="${__sx_str_tr_out_}${__sx_str_tr_pre_}";;
-			esac
+				__sx_var_bind __sx_str_tr_bind_ "${__sx_str_tr_bind_}" "${__sx_str_tr_str_}${__sx_str_tr_out_}" "${SX_VAR_BIND_QUOTE}"
+			else
+				while M_STR_HAS([|"${__sx_str_tr_str_}"|], [|["${__sx_str_tr_from_}"]|]) && M_NUM_LT([|__sx_str_tr_cnt_|], [|__sx_str_tr_lim_|]); do
+					__sx_str_tr_pre_="${__sx_str_tr_str_%%["${__sx_str_tr_from_}"]*}"
+					__sx_str_tr_str_="${__sx_str_tr_str_#"${__sx_str_tr_pre_}"}"
+					__sx_str_tr_suf_="${__sx_str_tr_str_#?}"
+					__sx_str_tr_from_pre_="${__sx_str_tr_from_%%"${__sx_str_tr_str_%"${__sx_str_tr_suf_}"}"*}"
+					__sx_str_tr_idx_="${#__sx_str_tr_from_pre_}"
 
-			__sx_str_tr_str_="${__sx_str_tr_suf_}"
-			: $((__sx_str_tr_lim_ -= 1))
-		done
+					case "$((__sx_str_tr_idx_ < ${#}))" in
+						1) eval "__sx_str_tr_out_=\"\${__sx_str_tr_out_}\${__sx_str_tr_pre_}\${$((${__sx_str_tr_idx_} + 1))}\"";;
+						*) __sx_str_tr_out_="${__sx_str_tr_out_}${__sx_str_tr_pre_}";;
+					esac
 
-		__sx_var_set "${__sx_str_tr_res_}=${__sx_str_tr_out_}${__sx_str_tr_str_}"
-	fi
+					__sx_str_tr_str_="${__sx_str_tr_suf_}"
+					: $((__sx_str_tr_cnt_ += 1))
+				done
 
-	unset __sx_str_tr_res_ __sx_str_tr_str_ __sx_str_tr_from_ __sx_str_tr_to_ __sx_str_tr_out_ __sx_str_tr_lim_ __sx_str_tr_pre_ __sx_str_tr_suf_ __sx_str_tr_from_pre_ __sx_str_tr_idx_
+				__sx_var_bind __sx_str_tr_bind_ "${__sx_str_tr_bind_}" "${__sx_str_tr_out_}${__sx_str_tr_str_}" "${SX_VAR_BIND_QUOTE}"
+			fi
+			;;
+	esac && __sx_var_bind __sx_str_tr_bind_ "${__sx_str_tr_bind_}" "${__sx_str_tr_cnt_}" "${SX_VAR_BIND_QUOTE}" || :
+
+	unset __sx_str_tr_bind_ __sx_str_tr_str_ __sx_str_tr_from_ __sx_str_tr_to_ __sx_str_tr_out_ __sx_str_tr_lim_ __sx_str_tr_cnt_ __sx_str_tr_pre_ __sx_str_tr_suf_ __sx_str_tr_from_pre_ __sx_str_tr_idx_
 }
 
 ### sx_str_trim - 文字列の前後から指定された文字セットを削除する
