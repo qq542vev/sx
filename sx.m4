@@ -215,6 +215,8 @@ readonly SX_STR_FIND_TEXT=4
 readonly SX_STR_RFIND_GLOB=1
 readonly SX_STR_RFIND_OVERLAP=2
 readonly SX_STR_RFIND_TEXT=4
+readonly SX_STR_COUNT_GLOB=1
+readonly SX_STR_COUNT_OVERLAP=2
 readonly SX_STR_CHUNK_SKIP_SHORT=1
 readonly SX_STR_CHUNK_SKIP_LONG=2
 
@@ -4601,6 +4603,43 @@ __sx_str_chunk() {
 	fi
 
 	unset CLEANUP
+}
+
+### sx_str_count - 文字列から指定された文字列の出現回数を取得する
+##
+## 使い方:
+##   sx_str_count 結果変数名 [元文字列 [検索文字列 [フラグ]]]
+##
+## 説明:
+##   元文字列から検索文字列の出現回数を数え、結果変数に非負整数で格納する。
+##   フラグの意味は sx_str_find と同一（SX_STR_COUNT_GLOB / SX_STR_COUNT_OVERLAP）。
+##   実質的に __sx_str_find に委譲し、結果のスペース区切り件数を __sx_arg_len で取得する。
+##
+##   バインド形式はサポートしない。結果変数名には単一の変数名のみ指定可能。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_count() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_count "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} ${4+"${4}"} || return
+
+	__sx_str_count "${@}" || return
+}
+
+### __sx_str_count - 文字列から指定された文字列の出現回数を取得する（内部用）
+##
+## 使い方:
+##   __sx_str_count 結果変数名 [元文字列 [検索文字列 [フラグ]]]
+##
+## 説明:
+##   sx_str_count の内部実装。引数チェックは行わない。
+__sx_str_count() {
+	__sx_str_find __sx_str_count_tmp_ "${2-}" "${3-}" "${4:-0}" || :
+	eval __sx_arg_len "${1}" \${__sx_str_count_tmp_}
+	unset __sx_str_count_tmp_
 }
 
 ### sx_str_eq - すべての引数が文字列として一致するか確認する
