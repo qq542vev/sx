@@ -5363,7 +5363,7 @@ sx_str_lower() {
 ## 説明:
 ##   sx_str_lower の内部実装。引数チェックは行わない。
 __sx_str_lower() {
-	__sx_str_sub "${1}" "${2-}" "[${SX_STR_UPPER}]" __sx_str_lower_cb "${3:-${SX_NUM_I32_MAX}}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+	__sx_str_tr "${1}:" "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${3:-${SX_NUM_I32_MAX}}"
 }
 
 ### __sx_str_lower_cb - sx_str_lower 用コールバック（内部用）
@@ -6333,7 +6333,7 @@ sx_str_tr() {
 ## 説明:
 ##   sx_str_tr の内部実装。引数チェックは行わない。
 ##   バインド形式で置換結果と置換回数を取得できる。
-##   例: res（結果のみ）、res:cnt（結果と回数）
+##   例: res:（結果のみ）、res:cnt:（結果と回数）
 __sx_str_tr() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}"
 
@@ -6467,7 +6467,7 @@ sx_str_upper() {
 ## 説明:
 ##   sx_str_upper の内部実装。引数チェックは行わない。
 __sx_str_upper() {
-	__sx_str_sub "${1}" "${2-}" "[${SX_STR_LOWER}]" __sx_str_upper_cb "${3:-${SX_NUM_I32_MAX}}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+	__sx_str_tr "${1}:" "${2-}" "${SX_STR_LOWER}" "${SX_STR_UPPER}" "${3:-${SX_NUM_I32_MAX}}"
 }
 
 ### __sx_str_upper_cb - sx_str_upper 用コールバック（内部用）
@@ -6529,23 +6529,9 @@ sx_str_swapcase() {
 ## 説明:
 ##   sx_str_swapcase の内部実装。引数チェックは行わない。
 __sx_str_swapcase() {
-	__sx_str_sub "${1}" "${2-}" "[${SX_STR_ALPHA}]" __sx_str_swapcase_cb "${3:-${SX_NUM_I32_MAX}}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+	__sx_str_tr "${1}:" "${2-}" "${SX_STR_UPPER}${SX_STR_LOWER}" "${SX_STR_LOWER}${SX_STR_UPPER}" "${3:-${SX_NUM_I32_MAX}}"
 }
 
-### __sx_str_swapcase_cb - sx_str_swapcase 用コールバック（内部用）
-##
-## 使い方:
-##   __sx_str_swapcase_cb 結果変数名 マッチ文字列 left right count
-##
-## 説明:
-##   sx_str_sub のコールバックモードから呼び出される。
-##   大文字なら __sx_str_lower_cb に、小文字なら __sx_str_upper_cb に委譲する。
-__sx_str_swapcase_cb() {
-	case "${2}" in
-		[${SX_STR_UPPER}]) __sx_str_lower_cb "${@}";;
-		[${SX_STR_LOWER}]) __sx_str_upper_cb "${@}";;
-	esac
-}
 
 ### sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する
 ##
