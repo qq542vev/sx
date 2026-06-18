@@ -210,6 +210,9 @@ readonly SX_ARG_RFIND_GLOB=1
 readonly SX_STR_FIND_GLOB=1
 readonly SX_STR_FIND_OVERLAP=2
 readonly SX_STR_FIND_TEXT=4
+readonly SX_STR_RFIND_GLOB=1
+readonly SX_STR_RFIND_OVERLAP=2
+readonly SX_STR_RFIND_TEXT=4
 readonly SX_STR_CHUNK_SKIP_SHORT=1
 readonly SX_STR_CHUNK_SKIP_LONG=2
 
@@ -4758,7 +4761,7 @@ sx_str_find() {
 }
 
 define([|V|], [|__sx_str_find_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(ndl) V(flg) V(off) V(pre) V(pos) V(out) V(sts) V(match) V(after) __M_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(off) V(pre) V(out) V(sts) V(match) V(after) V(text) V(overlap) __M_BIND_USEVAR|])dnl
 
 ### __sx_str_find - 文字列から指定された文字列を前方一致で探す（内部用）
 ##
@@ -4768,82 +4771,190 @@ define([|CLEANUP|], [|V(bind) V(tgt) V(ndl) V(flg) V(off) V(pre) V(pos) V(out) V
 ## 説明:
 ##   sx_str_find の内部実装。引数チェックは行わない。
 __sx_str_find() {
+	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
 	__sx_var_bind_init "${1}"
 	__sx_str_find_bind_="${1}"
-	__sx_str_find_tgt_="${2-}"
-	__sx_str_find_ndl_="${3-}"
-	__sx_str_find_flg_="${4-0}"
+	__sx_str_find_tgt_="${2}"
+	__sx_str_find_text_=$((${4} & SX_STR_FIND_TEXT))
+	__sx_str_find_overlap_=$((${4} & SX_STR_FIND_OVERLAP))
 	__sx_str_find_off_=0
 	__sx_str_find_out_=
 
 	if
-		M_STR_EQ([|"${__sx_str_find_ndl_}"|], [|''|]) ||
-		{ M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_GLOB|]) && ! M_STR_HAS([|"${__sx_str_find_ndl_}"|], [|*[!*]*|]); }
+		M_STR_EQ([|"${3}"|], [|''|]) ||
+		{ M_NUM_BOOL([|${4} & SX_STR_FIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
 	then
 		__sx_str_find_sts_="${SX_EX_OK}"
 
 		# 空 needle: 全境界位置（0 〜 len）に長さ0で出力
 		while M_NUM_LE([|${__sx_str_find_off_}|], [|${#__sx_str_find_tgt_}|]); do
-			if M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_TEXT|]); then
-				__M_BIND_QUOTE([|__sx_str_find|], [|""|], CLEANUP)
-			else
-				__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:0"|], CLEANUP)
-			fi
+			case "${__sx_str_find_text_}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:0"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_str_find|], [|''|], CLEANUP);;
+			esac
 
 			: $((__sx_str_find_off_ += 1))
 		done
-	elif M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_GLOB|]); then
+	elif M_NUM_BOOL([|${4} & SX_STR_FIND_GLOB|]); then
 		# ==== グロブモード ====
-		while M_STR_HAS([|"${__sx_str_find_tgt_}"|], [|${__sx_str_find_ndl_}|]); do
-			__sx_str_find_pre_="${__sx_str_find_tgt_%%${__sx_str_find_ndl_}*}"
-			__sx_str_find_pos_=$((${#__sx_str_find_pre_} + __sx_str_find_off_))
-
+		while M_STR_HAS([|"${__sx_str_find_tgt_}"|], [|${3}|]); do
 			# マッチ文字列を抽出（__sx_str_sub_cb と同じ手法）
-			__sx_str_find_after_="${__sx_str_find_tgt_#*${__sx_str_find_ndl_}}"
+			__sx_str_find_pre_="${__sx_str_find_tgt_%%${3}*}"
+			__sx_str_find_after_="${__sx_str_find_tgt_#*${3}}"
 			__sx_str_find_match_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"}"
 			__sx_str_find_match_="${__sx_str_find_match_%"${__sx_str_find_after_}"}"
+			: "$((__sx_str_find_off_ += ${#__sx_str_find_pre_}))" "${__sx_str_find_sts_=${SX_EX_OK}}"
 
-			if M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_TEXT|]); then
-				__M_BIND_QUOTE([|__sx_str_find|], [|"${__sx_str_find_match_}"|], CLEANUP)
-			else
-				__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_pos_}:${#__sx_str_find_match_}"|], CLEANUP)
-			fi
-			__sx_str_find_sts_="${SX_EX_OK}"
+			case "${__sx_str_find_text_}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:${#__sx_str_find_match_}"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_str_find|], [|"${__sx_str_find_match_}"|], CLEANUP);;
+			esac
 
-			if M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_OVERLAP|]); then
-				: $((__sx_str_find_off_ = __sx_str_find_pos_ + 1))
-				__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"?}"
-			else
-				: $((__sx_str_find_off_ = __sx_str_find_pos_ + ${#__sx_str_find_match_}))
-				__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}${__sx_str_find_match_}"}"
-			fi
+			case "${__sx_str_find_overlap_}" in
+				0)
+					: $((__sx_str_find_off_ += ${#__sx_str_find_match_}))
+					__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}${__sx_str_find_match_}"}"
+					;;
+				*)
+					: $((__sx_str_find_off_ += 1))
+					__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"?}"
+					;;
+			esac
 		done
 	else
 		# ==== リテラルモード ====
-		while M_STR_HAS([|"${__sx_str_find_tgt_}"|], [|"${__sx_str_find_ndl_}"|]); do
-			__sx_str_find_pre_="${__sx_str_find_tgt_%%"${__sx_str_find_ndl_}"*}"
-			__sx_str_find_pos_=$((${#__sx_str_find_pre_} + __sx_str_find_off_))
+		while M_STR_HAS([|"${__sx_str_find_tgt_}"|], [|"${3}"|]); do
+			__sx_str_find_pre_="${__sx_str_find_tgt_%%"${3}"*}"
+			: "$((__sx_str_find_off_ += ${#__sx_str_find_pre_}))" "${__sx_str_find_sts_=${SX_EX_OK}}"
 
-			if M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_TEXT|]); then
-				__M_BIND_QUOTE([|__sx_str_find|], [|"${__sx_str_find_ndl_}"|], CLEANUP)
-			else
-				__M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_pos_}:${#__sx_str_find_ndl_}"|], CLEANUP)
-			fi
-			__sx_str_find_sts_="${SX_EX_OK}"
+			case "${__sx_str_find_text_}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:${#3}"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_str_find|], [|"${3}"|], CLEANUP);;
+			esac
 
-			if M_NUM_BOOL([|__sx_str_find_flg_ & SX_STR_FIND_OVERLAP|]); then
-				: $((__sx_str_find_off_ = __sx_str_find_pos_ + 1))
-				__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"?}"
-			else
-				: $((__sx_str_find_off_ = __sx_str_find_pos_ + ${#__sx_str_find_ndl_}))
-				__sx_str_find_tgt_="${__sx_str_find_tgt_#*"${__sx_str_find_ndl_}"}"
-			fi
+			case "${__sx_str_find_overlap_}" in
+				0)
+					: $((__sx_str_find_off_ += ${#3}))
+					__sx_str_find_tgt_="${__sx_str_find_tgt_#*"${3}"}"
+					;;
+				*)
+					: $((__sx_str_find_off_ += 1))
+					__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"?}"
+					;;
+			esac
 		done
 	fi
 
 	eval ${__sx_str_find_out_:+"${__sx_str_find_bind_}=\"\${__sx_str_find_out_# }\""}
 
 	set -- "${__sx_str_find_sts_-1}"
+	unset CLEANUP
+	return "${1}"
+}
+
+### sx_str_rfind - 文字列から指定された文字列を後方一致で探し、位置を取得する
+##
+## 使い方:
+##   sx_str_rfind 結果変数名（またはバインド形式） [元文字列 [検索文字列 [フラグ]]]
+##
+## 説明:
+##   元文字列から検索文字列をリテラル後方一致で探し、見つかったすべての位置を
+##   "index:len" 形式で結果変数に格納する。複数一致する場合はスペース区切りで並べる。
+##   検索文字列が空の場合は、各文字境界位置（長さ0）を末尾から順に出力する。
+##   第一引数には sx_arg_find と同様のバインド形式を指定できる。
+##
+##   フラグに SX_STR_RFIND_GLOB (1) を指定すると、検索文字列を glob パターンとして扱う。
+##   フラグに SX_STR_RFIND_OVERLAP (2) を指定すると、重なり合う一致も検出する。
+##   フラグに SX_STR_RFIND_TEXT (4) を指定すると、出力が "index:len" の代わりに
+##   実際にマッチした文字列になる。
+##
+## 終了ステータス:
+##    0  1件以上一致 (SX_EX_OK)
+##    1  不一致
+##   64  引数不正 (SX_EX_USAGE)
+sx_str_rfind() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rfind "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} ${4+"${4}"} || return
+
+	__sx_str_rfind "${@}" || return
+}
+
+define([|V|], [|__sx_str_rfind_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(off) V(pre) V(out) V(sts) V(match) V(after) V(text) V(overlap) __M_BIND_USEVAR|])dnl
+
+### __sx_str_rfind - 文字列から指定された文字列を後方一致で探す（内部用）
+##
+## 使い方:
+##   __sx_str_rfind 結果変数名（またはバインド形式） [元文字列 [検索文字列 [フラグ]]]
+##
+## 説明:
+##   sx_str_rfind の内部実装。引数チェックは行わない。
+__sx_str_rfind() {
+	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
+	__sx_var_bind_init "${1}"
+	__sx_str_rfind_bind_="${1}"
+	__sx_str_rfind_tgt_="${2}"
+	__sx_str_rfind_text_=$((${4} & SX_STR_RFIND_TEXT))
+	__sx_str_rfind_overlap_=$((${4} & SX_STR_RFIND_OVERLAP))
+	__sx_str_rfind_out_=
+
+	if
+		M_STR_EQ([|"${3}"|], [|''|]) ||
+		{ M_NUM_BOOL([|${4} & SX_STR_RFIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
+	then
+		__sx_str_rfind_off_="${#__sx_str_rfind_tgt_}"
+		__sx_str_rfind_sts_="${SX_EX_OK}"
+
+		# 空 needle: len から 0 へ
+		while M_NUM_GE([|${__sx_str_rfind_off_}|], [|0|]); do
+			case "${__sx_str_rfind_text_}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${__sx_str_rfind_off_}:0"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|''|], CLEANUP);;
+			esac
+
+			: $((__sx_str_rfind_off_ -= 1))
+		done
+	elif M_NUM_BOOL([|${4} & SX_STR_RFIND_GLOB|]); then
+		# ==== グロブモード ====
+		while M_STR_HAS([|"${__sx_str_rfind_tgt_}"|], [|${3}|]); do
+			__sx_str_rfind_pre_="${__sx_str_rfind_tgt_%${3}*}"
+			__sx_str_rfind_match_="${__sx_str_rfind_tgt_#${__sx_str_rfind_pre_}}"
+			__sx_str_rfind_after_="${__sx_str_rfind_match_#${3}}"
+			__sx_str_rfind_match_="${__sx_str_rfind_match_%${__sx_str_rfind_after_}}"
+			__sx_str_rfind_sts_="${SX_EX_OK}"
+
+			case "${__sx_str_rfind_text_}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${#__sx_str_rfind_pre_}:${#__sx_str_rfind_match_}"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|"${__sx_str_rfind_match_}"|], CLEANUP);;
+			esac
+
+			case "${__sx_str_rfind_overlap_}" in
+				0) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}";;
+				*) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}${__sx_str_rfind_match_%?}";;
+			esac
+		done
+	else
+		# ==== リテラルモード ====
+		while M_STR_HAS([|"${__sx_str_rfind_tgt_}"|], [|"${3}"|]); do
+			__sx_str_rfind_pre_="${__sx_str_rfind_tgt_%"${3}"*}"
+			__sx_str_rfind_sts_="${SX_EX_OK}"
+
+			case "${__sx_str_rfind_text_}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${#__sx_str_rfind_pre_}:${#3}"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|"${3}"|], CLEANUP);;
+			esac
+
+			case "${__sx_str_rfind_overlap_}" in
+				0) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}";;
+				*) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}${3%?}";;
+			esac
+		done
+	fi
+
+	eval ${__sx_str_rfind_out_:+"${__sx_str_rfind_bind_}=\"\${__sx_str_rfind_out_# }\""}
+
+	set -- "${__sx_str_rfind_sts_-1}"
 	unset CLEANUP
 	return "${1}"
 }
