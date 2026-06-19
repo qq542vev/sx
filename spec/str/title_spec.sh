@@ -36,24 +36,6 @@ Describe 'sx_str_title()'
         The variable res should equal "Hello"
     End
 
-    Context '回数制限あり'
-        It '前方1回の制限で最初のアルファベットのみ大文字化する'
-            When call sx_str_title res "abc def" 1
-            The variable res should equal "Abc def"
-        End
-
-        It '後方1回の制限で最後の単語の先頭を大文字化する'
-            When call sx_str_title res "abc d" -1
-            The variable res should equal "abc D"
-        End
-    End
-
-    It '不正な回数制限に対して EX_USAGE を返す'
-        When call sx_str_title res "abc" "x"
-        The status should be failure
-        The status should equal "${SX_EX_USAGE}"
-    End
-
     It '読み取り専用変数に対して EX_NOPERM を返す'
         readonly MYRO_TITLE="const"
         When call sx_str_title MYRO_TITLE "abc"
@@ -62,18 +44,23 @@ Describe 'sx_str_title()'
     End
 
     It 'カスタム区切り文字で変換する'
-        When call sx_str_title res "hello-world_test" "" "-_"
+        When call sx_str_title res "hello-world_test" "-_"
         The variable res should equal "Hello-World_Test"
     End
 
-    It 'count=0では何も変換しないこと'
-        When call sx_str_title res "abc def" 0
-        The variable res should equal "abc def"
+    It '先頭に!がある区切り文字セットで正しく動作する'
+        When call sx_str_title res "hello!world" "!x"
+        The variable res should equal "Hello!World"
     End
 
-    It 'countが単語数を超えても全単語変換されること'
-        When call sx_str_title res "a b c" 10
-        The variable res should equal "A B C"
+    It '途中に]がある区切り文字セットで正しく動作する'
+        When call sx_str_title res "hello]world" "a]b"
+        The variable res should equal "Hello]World"
+    End
+
+    It '途中に-がある区切り文字セットでレンジ誤解釈が起きないこと'
+        When call sx_str_title res "abc-def-ghi" "a-z"
+        The variable res should equal "Abc-Def-Ghi"
     End
 
     It '改行区切りの単語を変換できること'

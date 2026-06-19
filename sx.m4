@@ -6533,18 +6533,74 @@ __sx_str_swapcase() {
 }
 
 
+### __sx_str_glob_safe - 文字セットを glob ブラケット式で安全な形に並べ替える（内部用）
+##
+## 使い方:
+##   __sx_str_glob_safe 結果変数名 文字セット
+##
+## 説明:
+##   指定された文字セットを、glob のブラケット式 [...] 内で安全に使用できる
+##   順序に並べ替える。以下の処理を行う:
+##   - ] は必ず先頭に配置
+##   - - は末尾に配置
+##   - ! は先頭以外に配置（先頭にあると否定になるため）
+##   結果は [...] で囲まれたブラケット式として返される。
+##   ただし、文字セットが ! のみの場合はブラケット式にできないため ! をそのまま返す。
+##
+## 終了ステータス:
+##   常に 0 (SX_EX_OK)
+__sx_str_glob_safe() {
+	set -- "${1}" "${2:-}"
+
+	__sx_str_glob_safe_pre_=
+	__sx_str_glob_safe_suf_=
+	__sx_str_glob_safe_rest_="${2}"
+
+	case "${__sx_str_glob_safe_rest_}" in
+		*"]"*)
+			__sx_str_glob_safe_pre_="]"
+			__sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_%%"]"*}${__sx_str_glob_safe_rest_#*"]"}"
+			;;
+	esac
+
+	case "${__sx_str_glob_safe_rest_}" in
+		*"-"*)
+			__sx_str_glob_safe_suf_="-"
+			__sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_%%"-"*}${__sx_str_glob_safe_rest_#*"-"}"
+			;;
+	esac
+
+	case "${__sx_str_glob_safe_rest_}" in
+		*"!"*)
+			__sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_%%"!"*}${__sx_str_glob_safe_rest_#*"!"}"
+			__sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_}!"
+			;;
+	esac
+
+	__sx_str_glob_safe_content_="${__sx_str_glob_safe_pre_}${__sx_str_glob_safe_rest_}${__sx_str_glob_safe_suf_}"
+
+	case "${__sx_str_glob_safe_content_}" in
+		"!"*) __sx_str_glob_safe_content_="${__sx_str_glob_safe_content_#?}${__sx_str_glob_safe_content_%${__sx_str_glob_safe_content_#?}}";;
+	esac
+
+	case "${__sx_str_glob_safe_content_}" in
+		"!") eval "${1}=\"!\"";;
+		*) eval "${1}=\"[${__sx_str_glob_safe_content_}]\"";;
+	esac
+
+	unset __sx_str_glob_safe_pre_ __sx_str_glob_safe_suf_ __sx_str_glob_safe_rest_ __sx_str_glob_safe_content_
+}
+
 ### sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する
 ##
 ## 使い方:
-##   sx_str_title 結果変数名 [元文字列 [回数制限 [単語区切り文字セット]]]
+##   sx_str_title 結果変数名 [元文字列 [単語区切り文字セット]]
 
 ## 説明:
 ##   指定された文字列内の各単語の先頭文字を大文字に、残りの文字を小文字に変換する。
 ##   単語の区切りは単語区切り文字セットで判断する。デフォルトは ${SX_STR_SPACE}
 ##   （空白文字すべて）。文字セット内の各文字が単語区切りとして扱われる。
 ##   文字列先頭も単語の先頭として扱う。
-##   回数制限が正の値の場合は前方から、負の値の場合は後方から
-##   指定された回数分だけ変換を行う。省略時は無制限。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -6554,7 +6610,7 @@ __sx_str_swapcase() {
 sx_str_title() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_title "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sx_int_inv ${3:+"${3}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	__sx_str_title "${@}"
 }
@@ -6562,12 +6618,21 @@ sx_str_title() {
 ### __sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する（内部用）
 ##
 ## 使い方:
-##   __sx_str_title 結果変数名 [元文字列 [回数制限 [単語区切り文字セット]]]
+##   __sx_str_title 結果変数名 [元文字列 [単語区切り文字セット]]
 ##
 ## 説明:
-##   sx_str_title の内部実装。引数チェックは行わない。
+##   sx_str_title の内部実装。sx_str_tr で一括小文字化した後、
+##   セパレータ+小文字のペアを sx_str_sub のコールバックモードで検出して大文字化する。
 __sx_str_title() {
-	__sx_str_title_cb_sep_="${4:-${SX_STR_SPACE}}" __sx_str_sub "${1}" "${2-}" "[${SX_STR_ALPHA}]" __sx_str_title_cb "${3:-${SX_NUM_I32_MAX}}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+	set -- "${1}" "${2-}" "${3:-${SX_STR_SPACE}}"
+
+	__sx_str_glob_safe __sx_str_title_gs_ "${3}"
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_tr "__sx_str_title_tmp_:" "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${SX_NUM_I32_MAX}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_str_title_tmp_ "${3%"${3#?}"}${__sx_str_title_tmp_}" "${__sx_str_title_gs_}[${SX_STR_LOWER}]" __sx_str_title_cb "${SX_NUM_I32_MAX}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+
+	__sx_var_set "${1}=${__sx_str_title_tmp_#?}"
+	unset __sx_str_title_tmp_ __sx_str_title_gs_
 }
 
 ### __sx_str_title_cb - sx_str_title 用コールバック（内部用）
@@ -6577,12 +6642,10 @@ __sx_str_title() {
 ##
 ## 説明:
 ##   sx_str_sub のコールバックモードから呼び出される。
-##   直前の文字が文字セットに含まれる（先頭含む）なら大文字、それ以外なら小文字に変換する。
+##   マッチ文字列（セパレータ文字+小文字）の小文字部分を大文字に変換する。
 __sx_str_title_cb() {
-	case "${3}" in
-		*["${__sx_str_title_cb_sep_}"] | '') __sx_str_upper_cb "${@}";;
-		*) __sx_str_lower_cb "${@}";;
-	esac
+	__sx_str_upper_cb "${1}" "${2#?}"
+	eval "${1}=\"\${2%?}\${${1}}\""
 }
 
 ### sx_str_capital - 文頭または最初のアルファベットを大文字化し、他を小文字化する
