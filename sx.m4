@@ -6572,39 +6572,42 @@ sx_str_glob_safe() {
 ## 終了ステータス:
 ##   常に 0 (SX_EX_OK)
 __sx_str_glob_safe() {
-	__sx_str_glob_safe_pre_=
-	__sx_str_glob_safe_suf_=
-
 	case "${2}" in
-		*[!!]*) ;;
-		*)
-			__sx_var_set "${1}=!"
-			unset __sx_str_glob_safe_pre_ __sx_str_glob_safe_suf_
+		*[!^!]*) ;;
+		!*^* | ^*!*)
+			__sx_var_set "${1}=[[.!.]^]"
 			return "${SX_EX_OK}"
 			;;
+		*)
+			__sx_var_set "${1}=${2%"${2#?}"}"
+			return "${SX_EX_OK}"
 	esac
 
 	case "${2}" in *']'*)
 		__sx_str_glob_safe_pre_=']'
 	esac
 
-	case "${2}" in *'='*) __sx_str_glob_safe_suf_="${__sx_str_glob_safe_suf_}=";; esac
-	case "${2}" in *'.'*) __sx_str_glob_safe_suf_="${__sx_str_glob_safe_suf_}.";; esac
-	case "${2}" in *':'*) __sx_str_glob_safe_suf_="${__sx_str_glob_safe_suf_}:";; esac
-	case "${2}" in *'!'*) __sx_str_glob_safe_suf_="${__sx_str_glob_safe_suf_}!";; esac
-	case "${2}" in *'-'*) __sx_str_glob_safe_suf_="${__sx_str_glob_safe_suf_}-";; esac
+	case "${2}" in *'\'*)
+		__sx_str_glob_safe_suf_='\\'
+	esac
 
-	SX_CFG_UNSET_SOFT=2  __sx_str_tr __sx_str_glob_safe_rest_: "${2}" '-]!.:='
+	for __sx_str_glob_safe_c_ in = . : '!' '^' -; do
+		case "${2}" in *"${__sx_str_glob_safe_c_}"*)
+			__sx_str_glob_safe_suf_="${__sx_str_glob_safe_suf_-}${__sx_str_glob_safe_c_}"
+		esac
+	done
 
-	__sx_str_glob_safe_rest_="${__sx_str_glob_safe_pre_}${__sx_str_glob_safe_rest_}${__sx_str_glob_safe_suf_}"
+	SX_CFG_UNSET_SOFT=2  __sx_str_tr __sx_str_glob_safe_rest_: "${2}" ']\.:=^!-'
 
-	case "${__sx_str_glob_safe_rest_}" in '!-')
-		__sx_str_glob_safe_rest_='-!'
+	__sx_str_glob_safe_rest_="${__sx_str_glob_safe_pre_-}${__sx_str_glob_safe_rest_}${__sx_str_glob_safe_suf_-}"
+
+	case "${__sx_str_glob_safe_rest_}" in '!-' | '^-' | '!^-')
+		__sx_str_glob_safe_rest_="-${__sx_str_glob_safe_rest_%-}"
 	esac
 
 	__sx_var_set "${1}=[${__sx_str_glob_safe_rest_}]"
 
-	unset __sx_str_glob_safe_pre_ __sx_str_glob_safe_suf_ __sx_str_glob_safe_rest_
+	unset __sx_str_glob_safe_pre_ __sx_str_glob_safe_suf_ __sx_str_glob_safe_c_ __sx_str_glob_safe_rest_
 }
 
 ### sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する

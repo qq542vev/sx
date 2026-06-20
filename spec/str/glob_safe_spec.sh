@@ -113,6 +113,58 @@ Describe 'sx_str_glob_safe'
 		End
 	End
 
+	Describe '正常系: ^ の処理（末尾配置／否定防止）'
+		It '^ 単体を処理する'
+			When call sx_str_glob_safe result '^'
+			The variable result should equal '^'
+		End
+
+		It '^ が先頭にある場合は末尾に移動される'
+			When call sx_str_glob_safe result '^a'
+			The variable result should equal '[a^]'
+		End
+
+		It '^ が中間にある場合は末尾に移動される'
+			When call sx_str_glob_safe result 'a^b'
+			The variable result should equal '[ab^]'
+		End
+
+		It '^ が複数あっても1つだけ末尾に追加される'
+			When call sx_str_glob_safe result '^^a'
+			The variable result should equal '[a^]'
+		End
+
+		It '^ と ] を同時に処理する'
+			When call sx_str_glob_safe result ']^a'
+			The variable result should equal '[]a^]'
+		End
+
+		It '^ と ! を同時に処理する（両方末尾へ）'
+			When call sx_str_glob_safe result '^!a'
+			The variable result should equal '[a!^]'
+		End
+
+		It '^ と - を同時に処理する'
+			When call sx_str_glob_safe result '^-'
+			The variable result should equal '[-^]'
+		End
+
+		It '! と ^ のみのセットを collating symbol で処理する'
+			When call sx_str_glob_safe result '!^'
+			The variable result should equal '[[.!.]^]'
+		End
+
+		It '! と ^ と - のセットをケースハンドラで安全な形に変換する'
+			When call sx_str_glob_safe result '!^-'
+			The variable result should equal '[-!^]'
+		End
+
+		It '^ と ! と - のセット（順序逆）も同様に処理する'
+			When call sx_str_glob_safe result '^!-'
+			The variable result should equal '[-!^]'
+		End
+	End
+
 	Describe '正常系: = の処理（末尾配置／等価クラス防止）'
 		It '= 単体を処理する'
 			When call sx_str_glob_safe result '='
@@ -265,6 +317,38 @@ Describe 'sx_str_glob_safe'
 		It '] が先頭にあれば : は位置0ではなく安全'
 			When call sx_str_glob_safe result ']:a:'
 			The variable result should equal '[]a:]'
+		End
+	End
+
+	Describe '正常系: \ の処理（エスケープ防止）'
+		It '\ 単体を処理する'
+			When call sx_str_glob_safe result '\'
+			The variable result should equal '[\\]'
+		End
+
+		It '\ を末尾に配置する（\ が ] をエスケープするのを防止）'
+			When call sx_str_glob_safe result 'a\b'
+			The variable result should equal '[ab\\]'
+		End
+
+		It '] と \ と - を同時に処理する'
+			When call sx_str_glob_safe result '\]-'
+			The variable result should equal '[]\\-]'
+		End
+
+		It '全特殊文字と \ を同時に処理する'
+			When call sx_str_glob_safe result '\=.:!-'
+			The variable result should equal '[\\=.:!-]'
+		End
+
+		It '複数の \ は1つだけ \\ に変換される'
+			When call sx_str_glob_safe result '\\'
+			The variable result should equal '[\\]'
+		End
+
+		It '通常文字と \ の混合'
+			When call sx_str_glob_safe result 'a\b\c'
+			The variable result should equal '[abc\\]'
 		End
 	End
 
