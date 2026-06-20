@@ -127,4 +127,28 @@ Describe 'sx_str_tr()'
 		When call sx_str_tr res "a1b2c3" "abc" "XYZ"
 		The variable res should equal "'X1Y2Z3' '3'"
 	End
+
+	It 'from-set に ] が含まれても正しく変換できること'
+		When call sx_str_tr res:cnt "a]b" "ab]" "XY_"
+		The variable res should equal "X_Y"
+		The variable cnt should equal "'3'"
+	End
+
+	It 'from-set が ] のみの場合も正しく変換できること'
+		When call sx_str_tr res:cnt "a]b" "]" "Z"
+		The variable res should equal "aZb"
+		The variable cnt should equal "'1'"
+	End
+
+	It 'from-set の先頭に ] がある場合も正しく処理できること'
+		When call sx_str_tr res:cnt "a]b" "]ab" "XYZ"
+		The variable res should equal "YXZ"
+		The variable cnt should equal "'3'"
+	End
+
+	It 'from-set に ] があり to が短い場合、超過文字として削除されること'
+		When call sx_str_tr res:cnt "a]b" "ab]" "XY"
+		The variable res should equal "XY"
+		The variable cnt should equal "'3'"
+	End
 End

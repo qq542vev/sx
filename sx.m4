@@ -6533,19 +6533,41 @@ __sx_str_swapcase() {
 }
 
 
-### __sx_str_glob_safe - 文字セットを glob ブラケット式で安全な形に並べ替える（内部用）
+### sx_str_glob_safe - 文字セットを glob ブラケット式で安全な形に並べ替える
 ##
 ## 使い方:
-##   __sx_str_glob_safe 結果変数名 文字セット
+##   sx_str_glob_safe 結果変数名 [文字セット]
 ##
 ## 説明:
 ##   指定された文字セットを、glob のブラケット式 [...] 内で安全に使用できる
 ##   順序に並べ替える。以下の処理を行う:
 ##   - ] は必ず先頭に配置
 ##   - - は末尾に配置
-##   - ! は先頭以外に配置（先頭にあると否定になるため）
+##   - ! = . : は末尾に配置（先頭にあると否定・等価クラス・照合記号・文字クラスと解釈されるため）
 ##   結果は [...] で囲まれたブラケット式として返される。
-##   ただし、文字セットが ! のみの場合はブラケット式にできないため ! をそのまま返す。
+##   ただし、文字セットが ! のみの場合はブラケット式として表現できないため ! をそのまま返す。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_glob_safe() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_glob_safe "${@}"; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+	case "${2-}" in '')
+		__sx_ex_remap "1:${SX_EX_USAGE}" false || return
+	esac
+
+	__sx_str_glob_safe "${@}"
+}
+
+### __sx_str_glob_safe - 文字セットを glob ブラケット式で安全な形に並べ替える（内部用）
+##
+## 使い方:
+##   __sx_str_glob_safe 結果変数名 文字セット
+##
+## 説明:
+##   sx_str_glob_safe の内部実装。引数チェックは行わない。
 ##
 ## 終了ステータス:
 ##   常に 0 (SX_EX_OK)
@@ -6554,41 +6576,51 @@ __sx_str_glob_safe() {
 
 	__sx_str_glob_safe_pre_=
 	__sx_str_glob_safe_suf_=
-	__sx_str_glob_safe_rest_="${2}"
+	__sx_str_glob_safe_has_bang_=
+	__sx_str_glob_safe_has_eq_=
+	__sx_str_glob_safe_has_dot_=
+	__sx_str_glob_safe_has_colon_=
 
-	case "${__sx_str_glob_safe_rest_}" in
-		*"]"*)
-			__sx_str_glob_safe_pre_="]"
-			__sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_%%"]"*}${__sx_str_glob_safe_rest_#*"]"}"
+	case "${2}" in
+		*[!!]*) ;;
+		*)
+			__sx_var_set "${1}=!"
+			unset __sx_str_glob_safe_pre_ __sx_str_glob_safe_suf_ __sx_str_glob_safe_has_bang_ __sx_str_glob_safe_has_eq_ __sx_str_glob_safe_has_dot_ __sx_str_glob_safe_has_colon_
+			return "${SX_EX_OK}"
 			;;
 	esac
 
-	case "${__sx_str_glob_safe_rest_}" in
-		*"-"*)
-			__sx_str_glob_safe_suf_="-"
-			__sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_%%"-"*}${__sx_str_glob_safe_rest_#*"-"}"
-			;;
+	case "${2}" in *']'*)
+		__sx_str_glob_safe_pre_=']'
+	esac
+	case "${2}" in *-*)
+		__sx_str_glob_safe_suf_=-
+	esac
+	case "${2}" in *'!'*)
+		__sx_str_glob_safe_has_bang_=1
+	esac
+	case "${2}" in *'='*)
+		__sx_str_glob_safe_has_eq_=1
+	esac
+	case "${2}" in *'.'*)
+		__sx_str_glob_safe_has_dot_=1
+	esac
+	case "${2}" in *':'*)
+		__sx_str_glob_safe_has_colon_=1
 	esac
 
-	case "${__sx_str_glob_safe_rest_}" in
-		*"!"*)
-			__sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_%%"!"*}${__sx_str_glob_safe_rest_#*"!"}"
-			__sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_}!"
-			;;
-	esac
+	SX_CFG_UNSET_SOFT=2  __sx_str_tr __sx_str_glob_safe_rest_: "${2}" '-]!.:='
 
-	__sx_str_glob_safe_content_="${__sx_str_glob_safe_pre_}${__sx_str_glob_safe_rest_}${__sx_str_glob_safe_suf_}"
+	case "${__sx_str_glob_safe_has_eq_}" in 1) __sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_}="; esac
+	case "${__sx_str_glob_safe_has_dot_}" in 1) __sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_}."; esac
+	case "${__sx_str_glob_safe_has_colon_}" in 1) __sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_}:"; esac
+	case "${__sx_str_glob_safe_has_bang_}" in 1) __sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_}!"; esac
 
-	case "${__sx_str_glob_safe_content_}" in
-		"!"*) __sx_str_glob_safe_content_="${__sx_str_glob_safe_content_#?}${__sx_str_glob_safe_content_%${__sx_str_glob_safe_content_#?}}";;
-	esac
+	__sx_str_glob_safe_rest_="${__sx_str_glob_safe_pre_}${__sx_str_glob_safe_rest_}${__sx_str_glob_safe_suf_}"
 
-	case "${__sx_str_glob_safe_content_}" in
-		"!") eval "${1}=\"!\"";;
-		*) eval "${1}=\"[${__sx_str_glob_safe_content_}]\"";;
-	esac
+	__sx_var_set "${1}=[${__sx_str_glob_safe_rest_}]"
 
-	unset __sx_str_glob_safe_pre_ __sx_str_glob_safe_suf_ __sx_str_glob_safe_rest_ __sx_str_glob_safe_content_
+	unset __sx_str_glob_safe_pre_ __sx_str_glob_safe_suf_ __sx_str_glob_safe_rest_ __sx_str_glob_safe_has_bang_ __sx_str_glob_safe_has_eq_ __sx_str_glob_safe_has_dot_ __sx_str_glob_safe_has_colon_
 }
 
 ### sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する
@@ -6626,7 +6658,7 @@ sx_str_title() {
 __sx_str_title() {
 	set -- "${1}" "${2-}" "${3:-${SX_STR_SPACE}}"
 
-	__sx_str_glob_safe __sx_str_title_gs_ "${3}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_glob_safe __sx_str_title_gs_ "${3}"
 
 	SX_CFG_UNSET_SOFT=2 __sx_str_tr "__sx_str_title_tmp_:" "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${SX_NUM_I32_MAX}"
 	SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_str_title_tmp_ "${3%"${3#?}"}${__sx_str_title_tmp_}" "${__sx_str_title_gs_}[${SX_STR_LOWER}]" __sx_str_title_cb "${SX_NUM_I32_MAX}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
