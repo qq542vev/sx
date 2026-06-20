@@ -6572,20 +6572,14 @@ sx_str_glob_safe() {
 ## 終了ステータス:
 ##   常に 0 (SX_EX_OK)
 __sx_str_glob_safe() {
-	set -- "${1}" "${2:-}"
-
 	__sx_str_glob_safe_pre_=
 	__sx_str_glob_safe_suf_=
-	__sx_str_glob_safe_has_bang_=
-	__sx_str_glob_safe_has_eq_=
-	__sx_str_glob_safe_has_dot_=
-	__sx_str_glob_safe_has_colon_=
 
 	case "${2}" in
 		*[!!]*) ;;
 		*)
 			__sx_var_set "${1}=!"
-			unset __sx_str_glob_safe_pre_ __sx_str_glob_safe_suf_ __sx_str_glob_safe_has_bang_ __sx_str_glob_safe_has_eq_ __sx_str_glob_safe_has_dot_ __sx_str_glob_safe_has_colon_
+			unset __sx_str_glob_safe_pre_ __sx_str_glob_safe_suf_
 			return "${SX_EX_OK}"
 			;;
 	esac
@@ -6593,34 +6587,24 @@ __sx_str_glob_safe() {
 	case "${2}" in *']'*)
 		__sx_str_glob_safe_pre_=']'
 	esac
-	case "${2}" in *-*)
-		__sx_str_glob_safe_suf_=-
-	esac
-	case "${2}" in *'!'*)
-		__sx_str_glob_safe_has_bang_=1
-	esac
-	case "${2}" in *'='*)
-		__sx_str_glob_safe_has_eq_=1
-	esac
-	case "${2}" in *'.'*)
-		__sx_str_glob_safe_has_dot_=1
-	esac
-	case "${2}" in *':'*)
-		__sx_str_glob_safe_has_colon_=1
-	esac
+
+	case "${2}" in *'='*) __sx_str_glob_safe_suf_="${__sx_str_glob_safe_suf_}=";; esac
+	case "${2}" in *'.'*) __sx_str_glob_safe_suf_="${__sx_str_glob_safe_suf_}.";; esac
+	case "${2}" in *':'*) __sx_str_glob_safe_suf_="${__sx_str_glob_safe_suf_}:";; esac
+	case "${2}" in *'!'*) __sx_str_glob_safe_suf_="${__sx_str_glob_safe_suf_}!";; esac
+	case "${2}" in *'-'*) __sx_str_glob_safe_suf_="${__sx_str_glob_safe_suf_}-";; esac
 
 	SX_CFG_UNSET_SOFT=2  __sx_str_tr __sx_str_glob_safe_rest_: "${2}" '-]!.:='
 
-	case "${__sx_str_glob_safe_has_eq_}" in 1) __sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_}="; esac
-	case "${__sx_str_glob_safe_has_dot_}" in 1) __sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_}."; esac
-	case "${__sx_str_glob_safe_has_colon_}" in 1) __sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_}:"; esac
-	case "${__sx_str_glob_safe_has_bang_}" in 1) __sx_str_glob_safe_rest_="${__sx_str_glob_safe_rest_}!"; esac
-
 	__sx_str_glob_safe_rest_="${__sx_str_glob_safe_pre_}${__sx_str_glob_safe_rest_}${__sx_str_glob_safe_suf_}"
+
+	case "${__sx_str_glob_safe_rest_}" in '!-')
+		__sx_str_glob_safe_rest_='-!'
+	esac
 
 	__sx_var_set "${1}=[${__sx_str_glob_safe_rest_}]"
 
-	unset __sx_str_glob_safe_pre_ __sx_str_glob_safe_suf_ __sx_str_glob_safe_rest_ __sx_str_glob_safe_has_bang_ __sx_str_glob_safe_has_eq_ __sx_str_glob_safe_has_dot_ __sx_str_glob_safe_has_colon_
+	unset __sx_str_glob_safe_pre_ __sx_str_glob_safe_suf_ __sx_str_glob_safe_rest_
 }
 
 ### sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する
