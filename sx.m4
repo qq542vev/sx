@@ -6533,83 +6533,6 @@ __sx_str_swapcase() {
 }
 
 
-### sx_str_glob_safe - 文字セットを glob ブラケット式で安全な形に並べ替える
-##
-## 使い方:
-##   sx_str_glob_safe 結果変数名 [文字セット]
-##
-## 説明:
-##   指定された文字セットを、glob のブラケット式 [...] 内で安全に使用できる
-##   順序に並べ替える。以下の処理を行う:
-##   - ] は必ず先頭に配置
-##   - - は末尾に配置
-##   - ! = . : は末尾に配置（先頭にあると否定・等価クラス・照合記号・文字クラスと解釈されるため）
-##   結果は [...] で囲まれたブラケット式として返される。
-##   ただし、文字セットが ! のみの場合はブラケット式として表現できないため ! をそのまま返す。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_glob_safe() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_glob_safe "${@}"; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
-	case "${2-}" in '')
-		__sx_ex_remap "1:${SX_EX_USAGE}" false || return
-	esac
-
-	__sx_str_glob_safe "${@}"
-}
-
-### __sx_str_glob_safe - 文字セットを glob ブラケット式で安全な形に並べ替える（内部用）
-##
-## 使い方:
-##   __sx_str_glob_safe 結果変数名 文字セット
-##
-## 説明:
-##   sx_str_glob_safe の内部実装。引数チェックは行わない。
-##
-## 終了ステータス:
-##   常に 0 (SX_EX_OK)
-__sx_str_glob_safe() {
-	case "${2}" in
-		*[!^!]*) ;;
-		!*^* | ^*!*)
-			__sx_var_set "${1}=[[.!.]^]"
-			return "${SX_EX_OK}"
-			;;
-		*)
-			__sx_var_set "${1}=${2%"${2#?}"}"
-			return "${SX_EX_OK}"
-	esac
-
-	case "${2}" in *']'*)
-		__sx_str_glob_safe_pre_=']'
-	esac
-
-	case "${2}" in *'\'*)
-		__sx_str_glob_safe_suf_='\\'
-	esac
-
-	for __sx_str_glob_safe_c_ in = . : '!' '^' -; do
-		case "${2}" in *"${__sx_str_glob_safe_c_}"*)
-			__sx_str_glob_safe_suf_="${__sx_str_glob_safe_suf_-}${__sx_str_glob_safe_c_}"
-		esac
-	done
-
-	SX_CFG_UNSET_SOFT=2  __sx_str_tr __sx_str_glob_safe_rest_: "${2}" ']\.:=^!-'
-
-	__sx_str_glob_safe_rest_="${__sx_str_glob_safe_pre_-}${__sx_str_glob_safe_rest_}${__sx_str_glob_safe_suf_-}"
-
-	case "${__sx_str_glob_safe_rest_}" in '!-' | '^-' | '!^-')
-		__sx_str_glob_safe_rest_="-${__sx_str_glob_safe_rest_%-}"
-	esac
-
-	__sx_var_set "${1}=[${__sx_str_glob_safe_rest_}]"
-
-	unset __sx_str_glob_safe_pre_ __sx_str_glob_safe_suf_ __sx_str_glob_safe_c_ __sx_str_glob_safe_rest_
-}
-
 ### sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する
 ##
 ## 使い方:
@@ -6645,9 +6568,8 @@ sx_str_title() {
 __sx_str_title() {
 	set -- "${1}" "${2-}" "${3:-${SX_STR_SPACE}}"
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_glob_safe __sx_str_title_gs_ "${3}"
-
-	SX_CFG_UNSET_SOFT=2 __sx_str_tr "__sx_str_title_tmp_:" "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${SX_NUM_I32_MAX}"
+	SX_CFG_UNSET_SOFT=2 __sx_glob_bracket __sx_str_title_gs_ "${3}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_tr __sx_str_title_tmp_: "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${SX_NUM_I32_MAX}"
 	SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_str_title_tmp_ "${3%"${3#?}"}${__sx_str_title_tmp_}" "${__sx_str_title_gs_}[${SX_STR_LOWER}]" __sx_str_title_cb "${SX_NUM_I32_MAX}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
 
 	__sx_var_set "${1}=${__sx_str_title_tmp_#?}"
@@ -6724,6 +6646,87 @@ __sx_str_capital_cb() {
 		0:?* | [!0]*["${SX_STR_ALPHA}"]*) __sx_str_lower_cb "${@}";;
 		*) __sx_str_upper_cb "${@}";;
 	esac
+}
+
+# ========================================
+#  GLOB (Glob Pattern Operations)
+# ========================================
+
+### sx_glob_bracket - 文字セットを glob ブラケット式で安全な形に並べ替える
+##
+## 使い方:
+##   sx_glob_bracket 結果変数名 [文字セット]
+##
+## 説明:
+##   指定された文字セットを、glob のブラケット式 [...] 内で安全に使用できる
+##   順序に並べ替える。以下の処理を行う:
+##   - ] は必ず先頭に配置
+##   - - は末尾に配置
+##   - ! = . : は末尾に配置（先頭にあると否定・等価クラス・照合記号・文字クラスと解釈されるため）
+##   結果は [...] で囲まれたブラケット式として返される。
+##   ただし、文字セットが ! のみの場合はブラケット式として表現できないため ! をそのまま返す。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_glob_bracket() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_glob_bracket "${@}"; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+	case "${2-}" in '')
+		__sx_ex_remap "1:${SX_EX_USAGE}" false || return
+	esac
+
+	__sx_glob_bracket "${@}"
+}
+
+### __sx_glob_bracket - 文字セットを glob ブラケット式で安全な形に並べ替える（内部用）
+##
+## 使い方:
+##   __sx_glob_bracket 結果変数名 文字セット
+##
+## 説明:
+##   sx_glob_bracket の内部実装。引数チェックは行わない。
+##
+## 終了ステータス:
+##   常に 0 (SX_EX_OK)
+__sx_glob_bracket() {
+	case "${2}" in
+		*[!^!]*) ;;
+		!*^* | ^*!*)
+			__sx_var_set "${1}=[[.!.]^]"
+			return "${SX_EX_OK}"
+			;;
+		*)
+			__sx_var_set "${1}=${2%"${2#?}"}"
+			return "${SX_EX_OK}"
+	esac
+
+	case "${2}" in *']'*)
+		__sx_glob_bracket_pre_=']'
+	esac
+
+	case "${2}" in *'\'*)
+		__sx_glob_bracket_suf_='\\'
+	esac
+
+	for __sx_glob_bracket_c_ in = . : '!' '^' -; do
+		case "${2}" in *"${__sx_glob_bracket_c_}"*)
+			__sx_glob_bracket_suf_="${__sx_glob_bracket_suf_-}${__sx_glob_bracket_c_}"
+		esac
+	done
+
+	SX_CFG_UNSET_SOFT=2  __sx_str_tr __sx_glob_bracket_rest_: "${2}" ']\.:=!^-'
+
+	__sx_glob_bracket_rest_="${__sx_glob_bracket_pre_-}${__sx_glob_bracket_rest_}${__sx_glob_bracket_suf_-}"
+
+	case "${__sx_glob_bracket_rest_}" in '!-' | '^-' | '!^-')
+		__sx_glob_bracket_rest_="-${__sx_glob_bracket_rest_%-}"
+	esac
+
+	__sx_var_set "${1}=[${__sx_glob_bracket_rest_}]"
+
+	unset __sx_glob_bracket_pre_ __sx_glob_bracket_suf_ __sx_glob_bracket_c_ __sx_glob_bracket_rest_
 }
 
 # ========================================
