@@ -4667,6 +4667,67 @@ sx_str_eq() {
 	unset __sx_str_eq_first __sx_str_eq_arg
 }
 
+### sx_str_escape - 文字列内の指定された文字をエスケープする
+##
+## 使い方:
+##   sx_str_escape 結果変数名 [元文字列 [エスケープ対象文字集合 [開始エスケープ文字列 [終了エスケープ文字列]]]]
+##
+## 説明:
+##   元文字列の中に含まれるエスケープ対象文字の各文字を、
+##   開始エスケープ文字列 + その文字 + 終了エスケープ文字列 で置換する。
+##   エスケープ対象文字集合が空の場合は、元の文字列をそのまま結果変数に格納する。
+##   s=\, e=空 の場合はバックスラッシュエスケープ（シェルエスケープ）として動作する。
+##   s=[, e=] の場合は glob ブラケット式による quoting として動作する。
+##   s=', e=' の場合は SQL LIKE エスケープとして動作する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_escape() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_escape "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_str_escape "${@}"
+}
+
+define([|V|], [|__sx_str_escape_$1_|])dnl
+define([|CLEANUP|], [|V(gs)|])dnl
+
+### __sx_str_escape - 文字列内の指定された文字をエスケープする（内部用）
+##
+## 使い方:
+##   __sx_str_escape 結果変数名 [元文字列 [エスケープ対象文字集合 [開始エスケープ文字列 [終了エスケープ文字列]]]]
+##
+## 説明:
+##   sx_str_escape の内部実装。引数チェックは行わない。
+__sx_str_escape() {
+	set -- "${1}" "${2-}" "${3-}" "${4:-\\}" "${5:-}"
+
+	case "${3}" in '')
+		__sx_var_set "${1}=${2}"
+		return "${SX_EX_OK}"
+	esac
+
+	SX_CFG_UNSET_SOFT=2 __sx_glob_bracket __sx_str_escape_gs_ "${3}"
+
+	__sx_str_escape_cb_se_="${4}" __sx_str_escape_cb_ee_="${5}" SX_CFG_UNSET_SOFT=2 __sx_str_sub "${1}" "${2}" "${__sx_str_escape_gs_}" __sx_str_escape_cb '' "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+
+	unset CLEANUP
+}
+
+### __sx_str_escape_cb - sx_str_escape 用コールバック（内部用）
+##
+## 使い方:
+##   __sx_str_escape_cb 結果変数名 マッチ文字列 left right count
+##
+## 説明:
+##   sx_str_sub のコールバックモードから呼び出される。
+__sx_str_escape_cb() {
+	eval "${1}=\"\${__sx_str_escape_cb_se_}\${2}\${__sx_str_escape_cb_ee_}\""
+}
+
 ### sx_str_etrim - 文字列の末尾から指定された文字セットを削除する
 ##
 ## 使い方:
