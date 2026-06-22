@@ -5621,59 +5621,33 @@ sx_str_rev() {
 ##   sx_str_rev の内部実装。引数チェックは行わない。
 ##   チャンクサイズが正の場合は先頭基準、負の場合は末尾基準でチャンク単位の反転を行う。
 __sx_str_rev() {
-	__sx_str_rev_res_="${1}"
+	set -- "${1}" "${2-}" "${3:-1}"
+
 	__sx_str_rev_src_="${2-}"
-	__sx_str_rev_chunk_="${3:-1}"
-
-	case "${__sx_str_rev_chunk_}" in
-		-*)
-			__sx_str_rev_first_="${__sx_str_rev_chunk_#-}"
-			__sx_str_rev_chunk_="${__sx_str_rev_first_}"
-			;;
-		*)
-			__sx_str_rev_first_=$(((${#__sx_str_rev_src_} % __sx_str_rev_chunk_)))
-			case "${__sx_str_rev_first_}" in 0)
-				__sx_str_rev_first_="${__sx_str_rev_chunk_}"
-			esac
-			;;
-	esac
-
-	__sx_str_rep __sx_str_rev_pat_ '?' "${__sx_str_rev_chunk_}"
-
-	case "${__sx_str_rev_first_}" in "${__sx_str_rev_chunk_}")
-		__sx_str_rev_fpat_="${__sx_str_rev_pat_}"
-		__sx_str_rev_first_=0
-		;;
-	*)
-		__sx_str_rep __sx_str_rev_fpat_ '?' "${__sx_str_rev_first_}"
-		;;
-	esac
-
 	__sx_str_rev_out_=
+	__sx_str_rep __sx_str_rev_pat_ '?' "${3#-}"
 
-	while M_NUM_BOOL([|0 < ${#__sx_str_rev_src_}|]); do
-		if M_NUM_LT([|0|], [|__sx_str_rev_first_|]); then
-			__sx_str_rev_tail_="${__sx_str_rev_src_%${__sx_str_rev_fpat_}}"
-			__sx_str_rev_first_=0
-		else
-			__sx_str_rev_tail_="${__sx_str_rev_src_%${__sx_str_rev_pat_}}"
-		fi
+	if M_NUM_LT([|${3}|], [|0|]); then
+		set -- "${1}" "${2}" "${3#-}"
 
-		case "${__sx_str_rev_tail_}" in "${__sx_str_rev_src_}")
-			__sx_str_rev_out_="${__sx_str_rev_out_}${__sx_str_rev_src_}"
-			__sx_str_rev_src_=
-			;;
-		*)
-			__sx_str_rev_out_="${__sx_str_rev_out_}${__sx_str_rev_src_#"${__sx_str_rev_tail_}"}"
-			__sx_str_rev_src_="${__sx_str_rev_tail_}"
-			;;
-		esac
-	done
+		while M_NUM_BOOL([|${3} < ${#__sx_str_rev_src_}|]); do
+			__sx_str_rev_tmp_="${__sx_str_rev_src_%${__sx_str_rev_pat_}}"
+			__sx_str_rev_out_="${__sx_str_rev_out_}${__sx_str_rev_src_#${__sx_str_rev_tmp_}}"
+			__sx_str_rev_src_="${__sx_str_rev_tmp_}"
+		done
 
-	__sx_var_set "${__sx_str_rev_res_}=${__sx_str_rev_out_}"
-	unset __sx_str_rev_res_ __sx_str_rev_src_ __sx_str_rev_chunk_ \
-	       __sx_str_rev_out_ __sx_str_rev_tail_ __sx_str_rev_first_ \
-	       __sx_str_rev_pat_ __sx_str_rev_fpat_
+		__sx_var_set "${1}=${__sx_str_rev_out_}${__sx_str_rev_src_}"
+	else
+		while M_NUM_BOOL([|${3} < ${#__sx_str_rev_src_}|]); do
+			__sx_str_rev_tmp_="${__sx_str_rev_src_#${__sx_str_rev_pat_}}"
+			__sx_str_rev_out_="${__sx_str_rev_src_%"${__sx_str_rev_tmp_}"}${__sx_str_rev_out_}"
+			__sx_str_rev_src_="${__sx_str_rev_tmp_}"
+		done
+
+		__sx_var_set "${1}=${__sx_str_rev_src_}${__sx_str_rev_out_}"
+	fi
+
+	unset __sx_str_rev_src_ __sx_str_rev_out_ __sx_str_rev_pat_ __sx_str_rev_tmp_
 }
 
 ### sx_str_rfind - 文字列から指定された文字列を後方一致で探し、位置を取得する
