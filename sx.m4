@@ -5389,6 +5389,7 @@ __sx_str_lower_cb() {
 		U) eval "${1}=u";; V) eval "${1}=v";;
 		W) eval "${1}=w";; X) eval "${1}=x";;
 		Y) eval "${1}=y";; Z) eval "${1}=z";;
+		*) eval "${1}=\"\${2}\"";;
 	esac
 }
 
@@ -6493,6 +6494,7 @@ __sx_str_upper_cb() {
 		u) eval "${1}=U";; v) eval "${1}=V";;
 		w) eval "${1}=W";; x) eval "${1}=X";;
 		y) eval "${1}=Y";; z) eval "${1}=Z";;
+		*) eval "${1}=\"\${2}\"";;
 	esac
 }
 
@@ -6592,7 +6594,7 @@ __sx_str_title_cb() {
 ### sx_str_capital - 文頭または最初のアルファベットを大文字化し、他を小文字化する
 ##
 ## 使い方:
-##   sx_str_capital 結果変数名 [元文字列 [回数制限 [フラグ]]]
+##   sx_str_capital 結果変数名 [元文字列 [フラグ]]
 ##
 ## 説明:
 ##   指定された文字列のアルファベットを大文字化・小文字化する。
@@ -6611,7 +6613,7 @@ __sx_str_title_cb() {
 sx_str_capital() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_capital "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int_inv ${3:+"${3}"} ${4:+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3:+"${3}"} || return
 
 	__sx_str_capital "${@}"
 }
@@ -6619,33 +6621,29 @@ sx_str_capital() {
 ### __sx_str_capital - sx_str_capital の内部実装（内部用）
 ##
 ## 使い方:
-##   __sx_str_capital 結果変数名 [元文字列 [回数制限 [フラグ]]]
+##   __sx_str_capital 結果変数名 [元文字列 [フラグ]]
 ##
 ## 説明:
 ##   sx_str_capital の内部実装。引数チェックは行わない。
 __sx_str_capital() {
-	set -- "${1}" "${2-}" "${3:-${SX_NUM_I32_MAX}}" "${4:-0}"
+	set -- "${1}" "${2-}" "${3:-0}"
+	__sx_str_capital_str_="${2}"
+	__sx_str_capital_out_=
 
-	case "$(((${4} & SX_STR_CAPITAL_SENT) == 0 && (${4} & SX_STR_CAPITAL_KEEP) != 0))${2}" in 1[!"${SX_STR_LOWER}"]*)
-		set -- "${1}" "${2}" 0 "${4}"
+	case "$(((${3} & SX_STR_CAPITAL_SENT) != 0))${2}" in 0["${SX_STR_ALPHA}"]* | 1*["${SX_STR_ALPHA}"]*)
+		__sx_str_capital_out_="${2%%["${SX_STR_ALPHA}"]*}"
+		__sx_str_capital_str_="${2#"${__sx_str_capital_out_}"}"
+		__sx_str_upper_cb __sx_str_capital_tmp_ "${__sx_str_capital_str_%"${__sx_str_capital_str_#?}"}"
+		__sx_str_capital_out_="${__sx_str_capital_out_}${__sx_str_capital_tmp_}"
+		__sx_str_capital_str_="${__sx_str_capital_str_#?}"
 	esac
 
-	__sx_str_capital_cb_sent_=$((${4} & SX_STR_CAPITAL_SENT)) __sx_str_sub "${1}" "${2}" "[${SX_STR_ALPHA}]" __sx_str_capital_cb "$(((${4} & SX_STR_CAPITAL_KEEP) == 0 ? ${3} : ${3} != 0))" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
-}
-
-### __sx_str_capital_cb - sx_str_capital 用コールバック（内部用）
-##
-## 使い方:
-##   __sx_str_capital_cb 結果変数名 マッチ文字列 left right count
-##
-## 説明:
-##   sx_str_sub のコールバックモードから呼び出される。
-##   フラグに従い、対象文字を大文字または小文字に変換する。
-__sx_str_capital_cb() {
-	case "${__sx_str_capital_cb_sent_}:${3}" in
-		0:?* | [!0]*["${SX_STR_ALPHA}"]*) __sx_str_lower_cb "${@}";;
-		*) __sx_str_upper_cb "${@}";;
+	case "$((${3} & SX_STR_CAPITAL_KEEP))" in 0)
+		SX_CFG_UNSET_SOFT=2 __sx_str_lower __sx_str_capital_str_ "${__sx_str_capital_str_}"
 	esac
+
+	__sx_var_set "${1}=${__sx_str_capital_out_}${__sx_str_capital_str_}"
+	unset __sx_str_capital_str_ __sx_str_capital_out_ __sx_str_capital_tmp_
 }
 
 # ========================================
