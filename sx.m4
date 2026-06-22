@@ -5587,6 +5587,48 @@ __sx_str_rep() {
 	unset __sx_str_rep_out_
 }
 
+### sx_str_rev - 文字列を反転する
+##
+## 使い方:
+##   sx_str_rev 結果変数名 [元文字列]
+##
+## 説明:
+##   指定された文字列を反転（逆順）して結果変数に格納する。
+##   空文字列が渡された場合は空文字列を格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_rev() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rev "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_str_rev "${@}"
+}
+
+### __sx_str_rev - 文字列を反転する（内部用）
+##
+## 使い方:
+##   __sx_str_rev 結果変数名 [元文字列]
+##
+## 説明:
+##   sx_str_rev の内部実装。引数チェックは行わない。
+__sx_str_rev() {
+	__sx_str_rev_src_="${2-}"
+	__sx_str_rev_out_=
+
+	while M_NUM_BOOL([|0 < ${#__sx_str_rev_src_}|]); do
+		__sx_str_rev_tail_="${__sx_str_rev_src_%?}"
+		__sx_str_rev_out_="${__sx_str_rev_out_}${__sx_str_rev_src_#"${__sx_str_rev_tail_}"}"
+		__sx_str_rev_src_="${__sx_str_rev_tail_}"
+	done
+
+	__sx_var_set "${1}=${__sx_str_rev_out_}"
+	unset __sx_str_rev_src_ __sx_str_rev_out_ __sx_str_rev_tail_
+}
+
 ### sx_str_rfind - 文字列から指定された文字列を後方一致で探し、位置を取得する
 ##
 ## 使い方:
