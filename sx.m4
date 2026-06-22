@@ -4692,9 +4692,6 @@ sx_str_escape() {
 	__sx_str_escape "${@}"
 }
 
-define([|V|], [|__sx_str_escape_$1_|])dnl
-define([|CLEANUP|], [|V(gs)|])dnl
-
 ### __sx_str_escape - 文字列内の指定された文字をエスケープする（内部用）
 ##
 ## 使い方:
@@ -4714,7 +4711,7 @@ __sx_str_escape() {
 
 	__sx_str_escape_cb_se_="${4}" __sx_str_escape_cb_ee_="${5}" SX_CFG_UNSET_SOFT=2 __sx_str_sub "${1}" "${2}" "${__sx_str_escape_gs_}" __sx_str_escape_cb '' "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
 
-	unset CLEANUP
+	unset __sx_str_escape_gs_
 }
 
 ### __sx_str_escape_cb - sx_str_escape 用コールバック（内部用）
@@ -5590,11 +5587,13 @@ __sx_str_rep() {
 ### sx_str_rev - 文字列を反転する
 ##
 ## 使い方:
-##   sx_str_rev 結果変数名 [元文字列]
+##   sx_str_rev 結果変数名 [元文字列 [チャンクサイズ]]
 ##
 ## 説明:
 ##   指定された文字列を反転（逆順）して結果変数に格納する。
 ##   空文字列が渡された場合は空文字列を格納する。
+##   チャンクサイズが正の場合は先頭基準、負の場合は末尾基準でチャンク単位の反転を行う。
+##   チャンクサイズが 1 または省略された場合は従来通りの文字単位の反転を行う。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -5605,28 +5604,76 @@ sx_str_rev() {
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
+	__sx_num_is_sx_int_inv ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	case "$((${3:-1}))" in 0)
+		return "${SX_EX_USAGE}"
+	esac
+
 	__sx_str_rev "${@}"
 }
 
 ### __sx_str_rev - 文字列を反転する（内部用）
 ##
 ## 使い方:
-##   __sx_str_rev 結果変数名 [元文字列]
+##   __sx_str_rev 結果変数名 [元文字列 [チャンクサイズ]]
 ##
 ## 説明:
 ##   sx_str_rev の内部実装。引数チェックは行わない。
+##   チャンクサイズが正の場合は先頭基準、負の場合は末尾基準でチャンク単位の反転を行う。
 __sx_str_rev() {
+	__sx_str_rev_res_="${1}"
 	__sx_str_rev_src_="${2-}"
+	__sx_str_rev_chunk_="${3:-1}"
+
+	case "${__sx_str_rev_chunk_}" in
+		-*)
+			__sx_str_rev_first_="${__sx_str_rev_chunk_#-}"
+			__sx_str_rev_chunk_="${__sx_str_rev_first_}"
+			;;
+		*)
+			__sx_str_rev_first_=$(((${#__sx_str_rev_src_} % __sx_str_rev_chunk_)))
+			case "${__sx_str_rev_first_}" in 0)
+				__sx_str_rev_first_="${__sx_str_rev_chunk_}"
+			esac
+			;;
+	esac
+
+	__sx_str_rep __sx_str_rev_pat_ '?' "${__sx_str_rev_chunk_}"
+
+	case "${__sx_str_rev_first_}" in "${__sx_str_rev_chunk_}")
+		__sx_str_rev_fpat_="${__sx_str_rev_pat_}"
+		__sx_str_rev_first_=0
+		;;
+	*)
+		__sx_str_rep __sx_str_rev_fpat_ '?' "${__sx_str_rev_first_}"
+		;;
+	esac
+
 	__sx_str_rev_out_=
 
 	while M_NUM_BOOL([|0 < ${#__sx_str_rev_src_}|]); do
-		__sx_str_rev_tail_="${__sx_str_rev_src_%?}"
-		__sx_str_rev_out_="${__sx_str_rev_out_}${__sx_str_rev_src_#"${__sx_str_rev_tail_}"}"
-		__sx_str_rev_src_="${__sx_str_rev_tail_}"
+		if M_NUM_LT([|0|], [|__sx_str_rev_first_|]); then
+			__sx_str_rev_tail_="${__sx_str_rev_src_%${__sx_str_rev_fpat_}}"
+			__sx_str_rev_first_=0
+		else
+			__sx_str_rev_tail_="${__sx_str_rev_src_%${__sx_str_rev_pat_}}"
+		fi
+
+		case "${__sx_str_rev_tail_}" in "${__sx_str_rev_src_}")
+			__sx_str_rev_out_="${__sx_str_rev_out_}${__sx_str_rev_src_}"
+			__sx_str_rev_src_=
+			;;
+		*)
+			__sx_str_rev_out_="${__sx_str_rev_out_}${__sx_str_rev_src_#"${__sx_str_rev_tail_}"}"
+			__sx_str_rev_src_="${__sx_str_rev_tail_}"
+			;;
+		esac
 	done
 
-	__sx_var_set "${1}=${__sx_str_rev_out_}"
-	unset __sx_str_rev_src_ __sx_str_rev_out_ __sx_str_rev_tail_
+	__sx_var_set "${__sx_str_rev_res_}=${__sx_str_rev_out_}"
+	unset __sx_str_rev_res_ __sx_str_rev_src_ __sx_str_rev_chunk_ \
+	       __sx_str_rev_out_ __sx_str_rev_tail_ __sx_str_rev_first_ \
+	       __sx_str_rev_pat_ __sx_str_rev_fpat_
 }
 
 ### sx_str_rfind - 文字列から指定された文字列を後方一致で探し、位置を取得する
