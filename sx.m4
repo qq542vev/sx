@@ -6788,6 +6788,39 @@ __sx_glob_bracket() {
 	unset __sx_glob_bracket_pre_ __sx_glob_bracket_suf_ __sx_glob_bracket_c_ __sx_glob_bracket_rest_
 }
 
+### sx_glob_escape - 文字列内の glob 特殊文字をエスケープする
+##
+## 使い方:
+##   sx_glob_escape 結果変数名 [文字列]
+##
+## 説明:
+##   指定された文字列に含まれる glob 特殊文字（* ? [）を、
+##   glob ブラケット式 [*] [?] [[] に変換する。
+##   これにより、エスケープ後の文字列を case のパターン内で
+##   安全に使用できる（リテラルマッチ）。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_glob_escape() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_glob_escape "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_glob_escape "${@}" || return
+}
+
+### __sx_glob_escape - 文字列内の glob 特殊文字をエスケープする（内部用）
+##
+## 使い方:
+##   __sx_glob_escape 結果変数名 文字列
+##
+## 説明:
+##   sx_glob_escape の内部実装。引数チェックは行わない。
+__sx_glob_escape() {
+	__sx_str_escape "${1}" "${2-}" '*?[' '[' ']' || return
+}
+
 # ========================================
 #  ARR (Array Operations)
 # ========================================
