@@ -6799,17 +6799,18 @@ sx_str_words() {
 ### __sx_str_words - 命名規則を自動検出して単語に分割する（内部用）
 ##
 ## 使い方:
-##   __sx_str_words 結果変数名 [文字列]
+##   __sx_str_words 結果変数名 [文字列 [区切り文字 [区切り文字セット]]]
 ##
 ## 説明:
 ##   sx_str_words の内部実装。引数チェックは行わない。
-##   sx_str_sub のコールバックモードで大文字位置を検出し _ を挿入した後、
-##   小文字化、デリミタ類の空白化、squish を行う。
+##   sx_str_sub のコールバックモードで大文字位置を検出し、
+##   区切り文字セットの先頭文字を挿入した後、小文字化、
+##   区切り文字セット内の文字を区切り文字に置換する。
 __sx_str_words() {
-	set -- "${1}" "${2-}" "${3:-"_-/.:;${SX_STR_SPACE}"}" "${4:- }"
+	set -- "${1}" "${2-}" "${3:- }" "${4:-"_-/.:${SX_STR_SPACE}"}"
 
-	__sx_str_words_cb_c_="${3%"${3#?}"}" SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_str_words_tmp_ "${2}" "[${SX_STR_UPPER}]" __sx_str_words_cb '' "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
-	SX_CFG_UNSET_SOFT=2 __sx_str_squish __sx_str_words_tmp_ "${__sx_str_words_tmp_}" "${3}" "${4}"
+	__sx_str_words_cb_c_="${4%"${4#?}"}" SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_str_words_tmp_ "${2}" "[${SX_STR_UPPER}]" __sx_str_words_cb '' "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+	SX_CFG_UNSET_SOFT=2 __sx_str_squish __sx_str_words_tmp_ "${__sx_str_words_tmp_}" "${4}" "${3}"
 	__sx_str_lower "${1}" "${__sx_str_words_tmp_}"
 
 	unset __sx_str_words_tmp_
