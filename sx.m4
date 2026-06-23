@@ -6770,6 +6770,73 @@ __sx_str_capital() {
 	unset __sx_str_capital_str_ __sx_str_capital_out_ __sx_str_capital_tmp_
 }
 
+### sx_str_words - 命名規則を自動検出して単語に分割する
+##
+## 使い方:
+##   sx_str_words 結果変数名 [文字列]
+##
+## 説明:
+##   入力文字列の命名規則を自動検出し、単語をスペース区切りの小文字で
+##   結果変数に格納する。
+##   以下の命名規則に対応:
+##   - snake_case: _ で分割
+##   - kebab-case: - で分割
+##   - camelCase / PascalCase: 大文字の境界で分割
+##   - 連続大文字（頭字語）も適切に扱う
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_words() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_words "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
+
+	__sx_str_words "${@}"
+}
+
+### __sx_str_words - 命名規則を自動検出して単語に分割する（内部用）
+##
+## 使い方:
+##   __sx_str_words 結果変数名 [文字列]
+##
+## 説明:
+##   sx_str_words の内部実装。引数チェックは行わない。
+##   sx_str_sub のコールバックモードで大文字位置を検出し _ を挿入した後、
+##   小文字化、デリミタ類の空白化、squish を行う。
+__sx_str_words() {
+	set -- "${1}" "${2-}" "${3:-"_-/.:;${SX_STR_SPACE}"}" "${4:- }"
+
+	__sx_str_words_cb_c_="${3%"${3#?}"}" SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_str_words_tmp_ "${2}" "[${SX_STR_UPPER}]" __sx_str_words_cb '' "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+	SX_CFG_UNSET_SOFT=2 __sx_str_squish __sx_str_words_tmp_ "${__sx_str_words_tmp_}" "${3}" "${4}"
+	__sx_str_lower "${1}" "${__sx_str_words_tmp_}"
+
+	unset __sx_str_words_tmp_
+}
+
+### __sx_str_words_cb - sx_str_words 用コールバック（内部用）
+##
+## 使い方:
+##   __sx_str_words_cb 結果変数名 マッチ文字列 left right count
+##
+## 説明:
+##   sx_str_sub のコールバックモードから呼び出される。
+##   大文字の前後を判定し、単語境界なら _ を挿入する。
+__sx_str_words_cb() {
+	case "${3}" in
+		'') eval "${1}=\"\${2}\"";;
+		*[a-z]) eval "${1}=\"\${__sx_str_words_cb_c_}\${2}\"";;
+		*[A-Z])
+			case "${4}" in
+				[a-z]*) eval "${1}=\"\${__sx_str_words_cb_c_}\${2}\"";;
+				*) eval "${1}=\"\${2}\"";;
+			esac
+			;;
+		*) eval "${1}=\"\${2}\"";;
+	esac
+}
+
 # ========================================
 #  GLOB (Glob Pattern Operations)
 # ========================================
