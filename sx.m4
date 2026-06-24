@@ -6887,6 +6887,55 @@ __sx_str_words_cb() {
 	esac
 }
 
+### sx_str_camel - さまざまな命名規則を camelCase に変換する
+##
+## 使い方:
+##   sx_str_camel 結果変数名 [元文字列 [区切り文字セット]]
+##
+## 説明:
+##   入力文字列の命名規則を自動検出し、camelCase（先頭単語のみ小文字、
+##   以降の単語は先頭大文字、区切りなし）に変換する。
+##   内部で sx_str_words と sx_str_title を使用し、単語分割後に
+##   各単語をタイトルケース化して結合し、先頭を小文字にする。
+##   対応する入力形式:
+##   - snake_case: _ で分割
+##   - kebab-case: - で分割
+##   - camelCase / PascalCase: 大文字の境界で分割
+##   - 空白区切り: 空白で分割
+##   区切り文字セットの各文字は単語区切りとして扱われる。
+##   デフォルトの区切り文字セットは "_-/.:${SX_STR_SPACE}"。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_camel() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_camel "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
+
+	__sx_str_camel "${@}"
+}
+
+### __sx_str_camel - さまざまな命名規則を camelCase に変換する（内部用）
+##
+## 使い方:
+##   __sx_str_camel 結果変数名 [元文字列 [区切り文字セット]]
+##
+## 説明:
+##   sx_str_camel の内部実装。引数チェックは行わない。
+##   sx_str_words で単語分割し、先頭に _ を前置して sx_str_title で
+##   タイトルケース化した後、_ を除去して sx_str_squish で空白を除去する。
+__sx_str_camel() {
+	set -- "${1}" "${2-}" "${3:-"_-/.:${SX_STR_SPACE}"}"
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_words __sx_str_camel_tmp_ "${2}" ' ' "${3}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_title __sx_str_camel_tmp_ "_${__sx_str_camel_tmp_}" ' '
+	__sx_str_squish "${1}" "${__sx_str_camel_tmp_#?}" ' ' ''
+
+	unset __sx_str_camel_tmp_
+}
+
 # ========================================
 #  GLOB (Glob Pattern Operations)
 # ========================================
