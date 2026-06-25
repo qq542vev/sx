@@ -347,9 +347,9 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
       The status should equal 1
       The stdout should equal "1"
       eval "set -- $res"
-      The value "$1" should equal "a"
-      The value "$2" should equal "b"
-      The value "$3" should equal "!"
+      The value "$1" should equal "!"
+      The value "$2" should equal "a"
+      The value "$3" should equal "b"
       The value "$4" should equal "c"
       The value "$#" should equal 4
     End
@@ -360,8 +360,8 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
       The status should equal 42
       The stdout should equal "1"
       eval "set -- $res"
-      The value "$1" should equal "a"
-      The value "$2" should equal "E"
+      The value "$1" should equal "E"
+      The value "$2" should equal "a"
       The value "$3" should equal "b"
       The value "$#" should equal 3
     End
@@ -373,9 +373,9 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
       The status should equal 1
       The stdout should equal "1"
       eval "set -- $res"
-      The value "$1" should equal "a"
-      The value "$2" should equal "b"
-      The value "$3" should equal "X"
+      The value "$1" should equal "X"
+      The value "$2" should equal "a"
+      The value "$3" should equal "b"
       The value "$#" should equal 3
     End
 
@@ -392,11 +392,11 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
       The status should equal 1
       The stdout should equal "123"
       eval "set -- $res"
-      The value "$1" should equal "!"
+      The value "$1" should equal "(1)"
       The value "$2" should equal "a"
-      The value "$3" should equal "(2)"
+      The value "$3" should equal "!"
       The value "$4" should equal "b"
-      The value "$5" should equal "(1)"
+      The value "$5" should equal "(2)"
       The value "$#" should equal 5
     End
 
@@ -411,9 +411,9 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
         "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "a" "b"
       The status should equal 1
       eval "set -- $res"
-      The value "$1" should equal "!"
+      The value "$1" should equal "(1)"
       The value "$2" should equal "a"
-      The value "$3" should equal "(1)"
+      The value "$3" should equal "!"
       The value "$4" should equal "b"
       The value "$#" should equal 4
     End

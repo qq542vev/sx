@@ -1179,12 +1179,17 @@ __sx_arg_isep_cb() {
 
 		# === PRE セパレータ ===
 		case "$((${1} < ${7} && ${8} & SX_ARG_ISEP_PRE))" in 1)
-			"${5}" __sx_arg_isep_cb_ret_ "$((${1} + 1))" && set -- 0 "${@}" || set -- "${?}" "${@}"
+			if "${5}" __sx_arg_isep_cb_ret_ "$((${1} + 1))"; then
+				__sx_var_bind __sx_arg_isep_cb_ret_ "${4}" "${__sx_arg_isep_cb_ret_-}" "${SX_VAR_BIND_QUOTE}" || {
+					unset __sx_arg_isep_cb_ret_
+					return "${1}"
+				}
 
-			__sx_var_bind __sx_arg_isep_cb_ret_ "${5}" "${__sx_arg_isep_cb_ret_-}" "${SX_VAR_BIND_QUOTE}" || {
-				unset __sx_arg_isep_cb_ret_
-				return "${1}"
-			}
+				set -- 0 "${@}"
+			else
+				set -- "${?}" "${@}"
+				__sx_arg_isep_cb_ret_="${5}"
+			fi
 
 			__sx_arg_isep_cb_cb_="${6}"
 			eval 'shift 9;' set -- "$((${1-0} ? ${8} : ${2} + 1))" "${1}" "${4}" '"${__sx_arg_isep_cb_ret_}"' '"${__sx_arg_isep_cb_cb_}"' "${7}" "${8}" "${9}" '"${@}"'
@@ -1202,12 +1207,15 @@ __sx_arg_isep_cb() {
 
 			# 内部セパレータ挿入判定（前向き）
 			case "$((${1} < ${7} && 0 < ${3} && ${3} % ${6} == 0))" in 1)
-				"${5}" __sx_arg_isep_cb_ret_ "$((${1} + 1))" || set -- "${@}" "${?}"
-
-				__sx_var_bind __sx_arg_isep_cb_ret_ "${4}" "${__sx_arg_isep_cb_ret_-}" "${SX_VAR_BIND_QUOTE}" || {
-					unset __sx_arg_isep_cb_ret_
-					return "${10-${2}}"
-				}
+				if "${5}" __sx_arg_isep_cb_ret_ "$((${1} + 1))"; then
+					__sx_var_bind __sx_arg_isep_cb_ret_ "${4}" "${__sx_arg_isep_cb_ret_-}" "${SX_VAR_BIND_QUOTE}" || {
+						unset __sx_arg_isep_cb_ret_
+						return "${10-${2}}"
+					}
+				else
+					set -- "${@}" "${?}"
+					__sx_arg_isep_cb_ret_="${4}"
+				fi
 
 				set -- "$((${10-0} ? ${7} : ${1} + 1))" "${10-${2}}" "${3}" "${__sx_arg_isep_cb_ret_}" "${5}" "${6}" "${7}" "${8}" "${9}"
 			esac
@@ -1219,9 +1227,11 @@ __sx_arg_isep_cb() {
 
 		# === POST セパレータ ===
 		case "$((${1} < ${7} && ${8} & SX_ARG_ISEP_POST && (${3} + 1) % ${6} == 0))" in 1)
-			"${5}" __sx_arg_isep_cb_ret_ "$((${1} + 1))" || set -- "${1}" "${?}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}"
-
-			__sx_var_bind __sx_arg_isep_cb_ret_ "${4}" "${__sx_arg_isep_cb_ret_-}" "${SX_VAR_BIND_QUOTE}" || :
+			if "${5}" __sx_arg_isep_cb_ret_ "$((${1} + 1))"; then
+				__sx_var_bind __sx_arg_isep_cb_ret_ "${4}" "${__sx_arg_isep_cb_ret_-}" "${SX_VAR_BIND_QUOTE}" || :
+			else
+				set -- "" "${?}"
+			fi
 		esac
 
 		unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_arg_
@@ -1257,13 +1267,14 @@ __sx_arg_isep_cb() {
 		unset __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_cb_ __sx_arg_isep_cb_int_ __sx_arg_isep_cb_lim_ __sx_arg_isep_cb_flg_ __sx_arg_isep_cb_max_
 
 		while M_NUM_BOOL([|${6} < ${4} && ${7} == 0|]); do
-			# CB call + exit status capture in $1
-			"${2}" __sx_arg_isep_cb_ret_ "$((${6} + 1))" && set -- 0 "${@}" || set -- "${?}" "${@}"
-
-			__sx_arg_isep_cb_cb_="${3}"
-			# Prepend CB result to positional params
-			eval 'shift 8;' set -- "${2}" '"${__sx_arg_isep_cb_cb_}"' "${4}" "${5}" "${6}" "$((${7} + 1))" "${1}" '"${__sx_arg_isep_cb_ret_-}"' '"${@}"'
-
+			if "${2}" __sx_arg_isep_cb_ret_ "$((${6} + 1))"; then
+				__sx_arg_isep_cb_cb_="${2}"
+				eval 'shift 7;' set -- "${1}" '"${__sx_arg_isep_cb_cb_}"' "${3}" "${4}" "${5}" "$((${6} + 1))" "0" '"${__sx_arg_isep_cb_ret_}"' '"${@}"'
+			else
+				set -- "${?}" "${@}"
+				__sx_arg_isep_cb_cb_="${3}"
+				eval 'shift 8;' set -- "${2}" '"${__sx_arg_isep_cb_cb_}"' "${4}" "${5}" "${6}" "${7}" "${1}" '"${__sx_arg_isep_cb_ret_-}"' '"${@}"'
+			fi
 			unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_cb_
 		done
 

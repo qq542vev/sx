@@ -767,10 +767,9 @@ Describe 'sx_arg_isep'
       The value "$3" should equal "!"
       The value "$4" should equal "3"
       The value "$5" should equal "4"
-      The value "$6" should equal "!"
-      The value "$7" should equal "5"
-      The value "$8" should equal "6"
-      The value "$#" should equal 8
+      The value "$6" should equal "5"
+      The value "$7" should equal "6"
+      The value "$#" should equal 7
     End
 
     It 'PRE コールバックが失敗すると内部/POSTも挿入されないこと'
@@ -779,10 +778,9 @@ Describe 'sx_arg_isep'
         "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" ::: "a" "b"
       The status should equal 1
       eval "set -- $res"
-      The value "$1" should equal "X"
-      The value "$2" should equal "a"
-      The value "$3" should equal "b"
-      The value "$#" should equal 3
+      The value "$1" should equal "a"
+      The value "$2" should equal "b"
+      The value "$#" should equal 2
     End
 
     It 'POST コールバックが失敗しても内部/PREの値は挿入され、ステータスはエラーになること'
@@ -800,8 +798,7 @@ Describe 'sx_arg_isep'
       The value "$2" should equal "a"
       The value "$3" should equal "(2)"
       The value "$4" should equal "b"
-      The value "$5" should equal "!"
-      The value "$#" should equal 5
+      The value "$#" should equal 4
     End
 
     It 'コールバックエラーが status に伝搬されること'
@@ -810,9 +807,8 @@ Describe 'sx_arg_isep'
       The status should equal 42
       eval "set -- $res"
       The value "$1" should equal "a"
-      The value "$2" should equal "E"
-      The value "$3" should equal "b"
-      The value "$#" should equal 3
+      The value "$2" should equal "b"
+      The value "$#" should equal 2
     End
 
     It 'count 引数が PRE→内部→POST で連続して増加すること'
