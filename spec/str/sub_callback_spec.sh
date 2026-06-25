@@ -52,9 +52,9 @@ Describe 'sx_str_sub (callback)'
             return 1
         }
         When call sx_str_sub res "aaa" "a" cb_stop 2147483647 "${SX_STR_SUB_CB}"
-        # 1回目は置換され(X)、そこで終了するので残りの "aa" はそのまま
+        # エラーが発生した当該マッチは置換されず元の文字列のまま（今回から停止）
         The status should be failure
-        The variable res should eq "Xaa"
+        The variable res should eq "aaa"
     End
 
     It '後方置換でコールバックが非0を返すと置換を中断すること'
@@ -63,9 +63,9 @@ Describe 'sx_str_sub (callback)'
             return 1
         }
         When call sx_str_sub res "aaa" "a" cb_stop -2147483647 "${SX_STR_SUB_CB}"
-        # 後方から1回目は置換され(X)、そこで終了するので残りの "aa" はそのまま
+        # エラーが発生した当該マッチは置換されず元の文字列のまま（今回から停止）
         The status should be failure
-        The variable res should eq "aaX"
+        The variable res should eq "aaa"
     End
 
     It 'コールバックに正確な引数（match, left, right, count）が渡されること'

@@ -69,10 +69,10 @@ Describe 'sx_str_isep (callback)'
       [ "$4" -lt 2 ] # count=2 で非0を返す
     }
     # 1st: left=12, count=1 -> returns 0, inserts !
-    # 2nd: left=1234, count=2 -> returns 1, inserts !, stops
+    # 2nd: left=1234, count=2 -> returns 1、セパレータは空になり中断
     When call sx_str_isep res "123456" cb_stop 2 "" "$SX_STR_ISEP_CB"
     The status should be failure
-    The variable res should equal "12!34!56"
+    The variable res should equal "12!3456"
   End
 
   It 'コールバックが非0を返すと逆方向の挿入を中断すること'
@@ -82,10 +82,10 @@ Describe 'sx_str_isep (callback)'
     }
     # Backward "123456" int=-2
     # 1st: right=56, count=1 -> returns 0, inserts !
-    # 2nd: right=3456, count=2 -> returns 1, inserts !, stops
+    # 2nd: right=3456, count=2 -> returns 1、セパレータは空になり中断
     When call sx_str_isep res "123456" cb_stop -2 "" "$SX_STR_ISEP_CB"
     The status should be failure
-    The variable res should equal "12!34!56"
+    The variable res should equal "1234!56"
   End
 
   Context 'SX_STR_ISEP_PRE / POST フラグ (コールバック)'
