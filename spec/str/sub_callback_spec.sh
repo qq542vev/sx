@@ -87,8 +87,8 @@ Describe 'sx_str_sub (callback)'
             sx_var_set "$1=[$2:$5:$3|$4]"
         }
         # "a1b2c" で数字にマッチさせる (後方から)
-        # 1回目 (後ろから1つ目): match="2", left="a1b", right="c", count=1
-        # 2回目 (後ろから2つ目): match="1", left="a", right="b2c", count=2
+        # 1回目 (後ろから1つ目): match="2", left="a1b"(文字列左), right="c"(文字列右), count=1
+        # 2回目 (後ろから2つ目): match="1", left="a"(文字列左), right="b2c"(文字列右), count=2
         When call sx_str_sub res "a1b2c" "[0-9]" cb_check -2147483647 "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
         The variable res should eq "a[1:2:a|b2c]b[2:1:a1b|c]c"
     End
@@ -113,4 +113,27 @@ Describe 'sx_str_sub (callback)'
         # 3回目: 先頭 (left="", right="AB", count=3)
         The variable res should eq "<||AB|3>A<|A|B|2>B<|AB||1>"
     End
+
+    It '前方リテラル置換でコールバックに正確な引数（match, left, right, count）が渡されること'
+        cb_check() {
+            sx_var_set "$1=[$2:$5:$3|$4]"
+        }
+        # "a1b1c" で固定文字列 "1" に前方マッチ (GLOB無し)
+        # 1回目: match="1", left="a", right="b1c", count=1
+        # 2回目: match="1", left="a1b", right="c", count=2
+        When call sx_str_sub res "a1b1c" "1" cb_check 2147483647 "${SX_STR_SUB_CB}"
+        The variable res should eq "a[1:1:a|b1c]b[1:2:a1b|c]c"
+    End
+
+    It '後方リテラル置換でコールバックに正確な引数（match, left, right, count）が渡されること'
+        cb_check() {
+            sx_var_set "$1=[$2:$5:$3|$4]"
+        }
+        # "a1b1c" で固定文字列 "1" に後方マッチ (GLOB無し)
+        # 1回目 (後ろから1つ目): match="1", left="a1b", right="c", count=1
+        # 2回目 (後ろから2つ目): match="1", left="a", right="b1c", count=2
+        When call sx_str_sub res "a1b1c" "1" cb_check -2147483647 "${SX_STR_SUB_CB}"
+        The variable res should eq "a[1:2:a|b1c]b[1:1:a1b|c]c"
+    End
+
 End
