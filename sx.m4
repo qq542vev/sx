@@ -1513,6 +1513,90 @@ __sx_arg_len() {
 	__sx_var_set "${1}=$((${#} - 1))"
 }
 
+### sx_arg_map - 引数リストの各要素にコールバック関数を適用する
+##
+## 使い方:
+##   sx_arg_map 結果変数名（またはバインド形式） コールバック [値 ...]
+##
+## 説明:
+##   指定された値のリストの各要素に対してコールバック関数を適用し、
+##   その結果をバインド形式に従って結果変数に格納する。
+##
+##   コールバック関数のシグネチャ:
+##     callback 結果変数名 現在の値 インデックス
+##
+##   コールバックの戻り値と動作:
+##     - 成功 (0) + 結果変数に値を設定 => その値を変換後の要素としてバインド
+##     - 成功 (0) + 結果変数が unset のまま => その要素をスキップ
+##     - 失敗 (非0) => 元の値をそのままバインド、終了ステータスに反映
+##   最初のエラー以降の要素も元の値をバインドする。
+##
+## 終了ステータス:
+##   すべてのコールバックが成功 => 0 (SX_EX_OK)
+##   一部のコールバックが失敗 => 最初の失敗のステータス
+##   64 => 引数不正 (SX_EX_USAGE)
+##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_map() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_map "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+
+	__sx_arg_map "${@}"
+}
+
+### __sx_arg_map - 引数リストの各要素にコールバック関数を適用する（内部用）
+##
+## 使い方:
+##   __sx_arg_map 結果変数名（またはバインド形式） コールバック [値 ...]
+##
+## 説明:
+##   sx_arg_map の内部実装。引数チェックは行わない。
+##   状態は位置変数で管理し、for ループでイテレートする。
+##   カウンタの初期値を状態変数の個数 * -1 に設定し、
+##   cnt < 0 の間は状態変数領域としてスキップする。
+##
+__sx_arg_map() {
+	__sx_var_bind_init "${1}"
+
+	# $1: status, $2: count, $3: callback, $4: bind, $@: 処理対象の引数
+	set -- 0 -4 "${@}"
+
+	for __sx_arg_map_arg_ in "${@}"; do
+		set -- "${1}" "$((${2} + 1))" "${3}" "${4}" "${__sx_arg_map_arg_}"
+
+		case "$((${2} <= 0))" in 1)
+			continue
+		esac
+
+		case "${1}" in
+			0)
+				unset __sx_arg_map_arg_
+				shift
+
+				"${3}" __sx_arg_map_ret_ "${4}" "${1}" && set -- "${?}" "${@}" || {
+					set -- "${?}" "${@}"
+					__sx_arg_map_ret_="${5}"
+				}
+				;;
+			*) __sx_arg_map_ret_="${5}";;
+		esac
+
+		case "${__sx_arg_map_ret_+X}" in X)
+			__sx_var_bind __sx_arg_map_fmt_ "${3}" "${__sx_arg_map_ret_}" || {
+				unset __sx_arg_map_arg_ __sx_arg_map_ret_
+				return "${1}"
+			}
+
+			set -- "${1}" "${2}" "${__sx_arg_map_fmt_}" "${4}"
+		esac
+
+		unset __sx_arg_map_ret_ __sx_arg_map_fmt_
+	done
+
+	unset __sx_arg_map_arg_
+	return "${1}"
+}
+
 ### sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する
 ##
 ## 使い方:
@@ -4438,6 +4522,55 @@ sx_str_any() {
 	return 1
 }
 
+### sx_str_camel - さまざまな命名規則を camelCase に変換する
+##
+## 使い方:
+##   sx_str_camel 結果変数名 [元文字列 [区切り文字セット]]
+##
+## 説明:
+##   入力文字列の命名規則を自動検出し、camelCase（先頭単語のみ小文字、
+##   以降の単語は先頭大文字、区切りなし）に変換する。
+##   内部で sx_str_words と sx_str_title を使用し、単語分割後に
+##   各単語をタイトルケース化して結合し、先頭を小文字にする。
+##   対応する入力形式:
+##   - snake_case: _ で分割
+##   - kebab-case: - で分割
+##   - camelCase / PascalCase: 大文字の境界で分割
+##   - 空白区切り: 空白で分割
+##   区切り文字セットの各文字は単語区切りとして扱われる。
+##   デフォルトの区切り文字セットは "_-/.:${SX_STR_SPACE}"。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_camel() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_camel "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
+
+	__sx_str_camel "${@}"
+}
+
+### __sx_str_camel - さまざまな命名規則を camelCase に変換する（内部用）
+##
+## 使い方:
+##   __sx_str_camel 結果変数名 [元文字列 [区切り文字セット]]
+##
+## 説明:
+##   sx_str_camel の内部実装。引数チェックは行わない。
+##   sx_str_words で単語分割し、先頭に _ を前置して sx_str_title で
+##   タイトルケース化した後、_ を除去して sx_str_squish で空白を除去する。
+__sx_str_camel() {
+	set -- "${1}" "${2-}" "${3:-"_-/.:${SX_STR_SPACE}"}"
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_words __sx_str_camel_tmp_ "${2}" ' ' "${3}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_title __sx_str_camel_tmp_ "_${__sx_str_camel_tmp_}" ' '
+	__sx_str_squish "${1}" "${__sx_str_camel_tmp_#?}" ' ' ''
+
+	unset __sx_str_camel_tmp_
+}
+
 ### sx_str_center - 文字列を指定された幅で中央寄せする
 ##
 ## 使い方:
@@ -5536,6 +5669,55 @@ __sx_str_pad() {
 	esac
 
 	unset __sx_str_pad_needed_ __sx_str_pad_rep_ __sx_str_pad_fill_
+}
+
+### sx_str_pascal - さまざまな命名規則を PascalCase に変換する
+##
+## 使い方:
+##   sx_str_pascal 結果変数名 [元文字列 [区切り文字セット]]
+##
+## 説明:
+##   入力文字列の命名規則を自動検出し、PascalCase（各単語先頭大文字、
+##   残り小文字、区切りなし）に変換する。
+##   内部で sx_str_words と sx_str_title を使用し、単語分割後に
+##   各単語をタイトルケース化して結合する。
+##   対応する入力形式:
+##   - snake_case: _ で分割
+##   - kebab-case: - で分割
+##   - camelCase / PascalCase: 大文字の境界で分割
+##   - 空白区切り: 空白で分割
+##   区切り文字セットの各文字は単語区切りとして扱われる。
+##   デフォルトの区切り文字セットは "_-/.:${SX_STR_SPACE}"。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_pascal() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_pascal "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
+
+	__sx_str_pascal "${@}"
+}
+
+### __sx_str_pascal - さまざまな命名規則を PascalCase に変換する（内部用）
+##
+## 使い方:
+##   __sx_str_pascal 結果変数名 [元文字列 [区切り文字セット]]
+##
+## 説明:
+##   sx_str_pascal の内部実装。引数チェックは行わない。
+##   sx_str_words で単語分割し、sx_str_title でタイトルケース化し、
+##   sx_str_squish で空白を除去して結合する。
+__sx_str_pascal() {
+	set -- "${1}" "${2-}" "${3:-"_-/.:${SX_STR_SPACE}"}"
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_words __sx_str_pascal_tmp_ "${2}" ' ' "${3}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_title __sx_str_pascal_tmp_ "${__sx_str_pascal_tmp_}" ' '
+	__sx_str_squish "${1}" "${__sx_str_pascal_tmp_}" ' ' ''
+
+	unset __sx_str_pascal_tmp_
 }
 
 ### sx_str_rep - 文字列を繰り返す
@@ -6816,55 +6998,6 @@ __sx_str_words() {
 	unset __sx_str_words_tmp_
 }
 
-### sx_str_pascal - さまざまな命名規則を PascalCase に変換する
-##
-## 使い方:
-##   sx_str_pascal 結果変数名 [元文字列 [区切り文字セット]]
-##
-## 説明:
-##   入力文字列の命名規則を自動検出し、PascalCase（各単語先頭大文字、
-##   残り小文字、区切りなし）に変換する。
-##   内部で sx_str_words と sx_str_title を使用し、単語分割後に
-##   各単語をタイトルケース化して結合する。
-##   対応する入力形式:
-##   - snake_case: _ で分割
-##   - kebab-case: - で分割
-##   - camelCase / PascalCase: 大文字の境界で分割
-##   - 空白区切り: 空白で分割
-##   区切り文字セットの各文字は単語区切りとして扱われる。
-##   デフォルトの区切り文字セットは "_-/.:${SX_STR_SPACE}"。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_pascal() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_pascal "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
-
-	__sx_str_pascal "${@}"
-}
-
-### __sx_str_pascal - さまざまな命名規則を PascalCase に変換する（内部用）
-##
-## 使い方:
-##   __sx_str_pascal 結果変数名 [元文字列 [区切り文字セット]]
-##
-## 説明:
-##   sx_str_pascal の内部実装。引数チェックは行わない。
-##   sx_str_words で単語分割し、sx_str_title でタイトルケース化し、
-##   sx_str_squish で空白を除去して結合する。
-__sx_str_pascal() {
-	set -- "${1}" "${2-}" "${3:-"_-/.:${SX_STR_SPACE}"}"
-
-	SX_CFG_UNSET_SOFT=2 __sx_str_words __sx_str_pascal_tmp_ "${2}" ' ' "${3}"
-	SX_CFG_UNSET_SOFT=2 __sx_str_title __sx_str_pascal_tmp_ "${__sx_str_pascal_tmp_}" ' '
-	__sx_str_squish "${1}" "${__sx_str_pascal_tmp_}" ' ' ''
-
-	unset __sx_str_pascal_tmp_
-}
-
 ### __sx_str_words_cb - sx_str_words 用コールバック（内部用）
 ##
 ## 使い方:
@@ -6885,55 +7018,6 @@ __sx_str_words_cb() {
 			;;
 		*) eval "${1}=\"\${2}\"";;
 	esac
-}
-
-### sx_str_camel - さまざまな命名規則を camelCase に変換する
-##
-## 使い方:
-##   sx_str_camel 結果変数名 [元文字列 [区切り文字セット]]
-##
-## 説明:
-##   入力文字列の命名規則を自動検出し、camelCase（先頭単語のみ小文字、
-##   以降の単語は先頭大文字、区切りなし）に変換する。
-##   内部で sx_str_words と sx_str_title を使用し、単語分割後に
-##   各単語をタイトルケース化して結合し、先頭を小文字にする。
-##   対応する入力形式:
-##   - snake_case: _ で分割
-##   - kebab-case: - で分割
-##   - camelCase / PascalCase: 大文字の境界で分割
-##   - 空白区切り: 空白で分割
-##   区切り文字セットの各文字は単語区切りとして扱われる。
-##   デフォルトの区切り文字セットは "_-/.:${SX_STR_SPACE}"。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_camel() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_camel "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
-
-	__sx_str_camel "${@}"
-}
-
-### __sx_str_camel - さまざまな命名規則を camelCase に変換する（内部用）
-##
-## 使い方:
-##   __sx_str_camel 結果変数名 [元文字列 [区切り文字セット]]
-##
-## 説明:
-##   sx_str_camel の内部実装。引数チェックは行わない。
-##   sx_str_words で単語分割し、先頭に _ を前置して sx_str_title で
-##   タイトルケース化した後、_ を除去して sx_str_squish で空白を除去する。
-__sx_str_camel() {
-	set -- "${1}" "${2-}" "${3:-"_-/.:${SX_STR_SPACE}"}"
-
-	SX_CFG_UNSET_SOFT=2 __sx_str_words __sx_str_camel_tmp_ "${2}" ' ' "${3}"
-	SX_CFG_UNSET_SOFT=2 __sx_str_title __sx_str_camel_tmp_ "_${__sx_str_camel_tmp_}" ' '
-	__sx_str_squish "${1}" "${__sx_str_camel_tmp_#?}" ' ' ''
-
-	unset __sx_str_camel_tmp_
 }
 
 # ========================================
