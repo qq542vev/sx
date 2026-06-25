@@ -337,7 +337,7 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
   End
 
   Describe 'コールバック中断・エラー'
-    It 'cb が非0を返すと以後の内部挿入が中断されること'
+    It 'cb が非0を返すとその回も含めて以後挿入されないこと'
       cb() {
         __sx_var_set "${1}=!"
         printf '%d' "${2}"
@@ -347,11 +347,10 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
       The status should equal 1
       The stdout should equal "1"
       eval "set -- $res"
-      The value "$1" should equal "!"
-      The value "$2" should equal "a"
-      The value "$3" should equal "b"
-      The value "$4" should equal "c"
-      The value "$#" should equal 4
+      The value "$1" should equal "a"
+      The value "$2" should equal "b"
+      The value "$3" should equal "c"
+      The value "$#" should equal 3
     End
 
     It 'cb の終了ステータスがそのまま伝搬されること'
@@ -360,26 +359,24 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
       The status should equal 42
       The stdout should equal "1"
       eval "set -- $res"
-      The value "$1" should equal "E"
-      The value "$2" should equal "a"
-      The value "$3" should equal "b"
-      The value "$#" should equal 3
+      The value "$1" should equal "a"
+      The value "$2" should equal "b"
+      The value "$#" should equal 2
     End
 
-    It 'POST が非0を返すと内部もPREも挿入されないこと'
+    It 'cb が非0を返すとPREもPOSTも挿入されないこと'
       cb_fail_post_first() { __sx_var_set "${1}=X"; printf '%d' "${2}"; return 1; }
       When call sx_arg_isep res cb_fail_post_first -1 "" \
         "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE | SX_ARG_ISEP_POST))" ::: "a" "b"
       The status should equal 1
       The stdout should equal "1"
       eval "set -- $res"
-      The value "$1" should equal "X"
-      The value "$2" should equal "a"
-      The value "$3" should equal "b"
-      The value "$#" should equal 3
+      The value "$1" should equal "a"
+      The value "$2" should equal "b"
+      The value "$#" should equal 2
     End
 
-    It 'PRE が非0を返しても内部/POSTの値は挿入されること'
+    It '途中のcbが非0を返してもそれ以前のセパレータは挿入されること'
       cb_fail_pre_last() {
         printf '%d' "${2}"
         case "$2" in
@@ -392,15 +389,14 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
       The status should equal 1
       The stdout should equal "123"
       eval "set -- $res"
-      The value "$1" should equal "(1)"
-      The value "$2" should equal "a"
-      The value "$3" should equal "!"
-      The value "$4" should equal "b"
-      The value "$5" should equal "(2)"
-      The value "$#" should equal 5
+      The value "$1" should equal "a"
+      The value "$2" should equal "(2)"
+      The value "$3" should equal "b"
+      The value "$4" should equal "(1)"
+      The value "$#" should equal 4
     End
 
-    It 'PRE コールバックが非0を返すとエラーステータスが伝搬され、値は挿入されること'
+    It '途中のcbが非0を返すとエラーステータスが伝搬され以前の値は挿入されること'
       cb_fail_pre_back() {
         case "$2" in
           2) __sx_var_set "${1}=!"; return 1;;
@@ -411,11 +407,10 @@ Describe 'sx_arg_isep (backward CB mode, int < 0)'
         "$((SX_ARG_ISEP_CB | SX_ARG_ISEP_PRE))" ::: "a" "b"
       The status should equal 1
       eval "set -- $res"
-      The value "$1" should equal "(1)"
-      The value "$2" should equal "a"
-      The value "$3" should equal "!"
-      The value "$4" should equal "b"
-      The value "$#" should equal 4
+      The value "$1" should equal "a"
+      The value "$2" should equal "(1)"
+      The value "$3" should equal "b"
+      The value "$#" should equal 3
     End
   End
 

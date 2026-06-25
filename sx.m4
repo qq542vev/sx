@@ -1192,7 +1192,7 @@ __sx_arg_isep_cb() {
 			fi
 
 			__sx_arg_isep_cb_cb_="${6}"
-			eval 'shift 9;' set -- "$((${1-0} ? ${8} : ${2} + 1))" "${1}" "${4}" '"${__sx_arg_isep_cb_ret_}"' '"${__sx_arg_isep_cb_cb_}"' "${7}" "${8}" "${9}" '"${@}"'
+			eval 'shift 9;' set -- "$((${1-0} ? ${8} : ${2} + 1))" "${1}" "${4}" '"${__sx_arg_isep_cb_ret_-}"' '"${__sx_arg_isep_cb_cb_}"' "${7}" "${8}" "${9}" '"${@}"'
 
 			unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_cb_
 		esac
@@ -1269,12 +1269,13 @@ __sx_arg_isep_cb() {
 		while M_NUM_BOOL([|${6} < ${4} && ${7} == 0|]); do
 			if "${2}" __sx_arg_isep_cb_ret_ "$((${6} + 1))"; then
 				__sx_arg_isep_cb_cb_="${2}"
-				eval 'shift 7;' set -- "${1}" '"${__sx_arg_isep_cb_cb_}"' "${3}" "${4}" "${5}" "$((${6} + 1))" "0" '"${__sx_arg_isep_cb_ret_}"' '"${@}"'
+				eval 'shift 7;' set -- "${1}" '"${__sx_arg_isep_cb_cb_}"' "${3}" "${4}" "${5}" "$((${6} + 1))" 0 '"${__sx_arg_isep_cb_ret_-}"' '"${@}"'
 			else
 				set -- "${?}" "${@}"
 				__sx_arg_isep_cb_cb_="${3}"
-				eval 'shift 8;' set -- "${2}" '"${__sx_arg_isep_cb_cb_}"' "${4}" "${5}" "${6}" "${7}" "${1}" '"${__sx_arg_isep_cb_ret_-}"' '"${@}"'
+				eval 'shift 8;' set -- "${2}" '"${__sx_arg_isep_cb_cb_}"' "${4}" "${5}" "${6}" "${7}" "${1}" '"${@}"'
 			fi
+
 			unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_cb_
 		done
 
