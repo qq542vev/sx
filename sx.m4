@@ -987,7 +987,7 @@ sx_arg_find() {
 		*) __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3:+"${3}"} || return;;
 	esac
 
-	__sx_arg_find "${@}"
+	__sx_arg_find "${@}" || return
 }
 
 define([|V|], [|__sx_arg_find_$1_|])dnl
@@ -1558,7 +1558,7 @@ sx_arg_map() {
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
-	__sx_arg_map "${@}"
+	__sx_arg_map "${@}" || return
 }
 
 ### __sx_arg_map - 引数リストの各要素にコールバック関数を適用する（内部用）
@@ -1614,23 +1614,35 @@ __sx_arg_map() {
 	return "${1}"
 }
 
-
 ### sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する
 ##
 ## 使い方:
-##   sx_arg_enough コールバック 個数 [値 ...]
+##   sx_arg_enough [cb [need]] ::: [arg ...]
+##   sx_arg_enough [cb] [arg ...]
 ##
 ## 説明:
 ##   指定された値のリストの各要素に対してコールバック関数を適用し、
 ##   成功（終了ステータス 0）となった要素の数が指定された個数以上であれば
-##   終了ステータス 0、そうでなければ 1 を返す。
+##   0、そうでなければ 1 を返す。
+##
+##   第1形式（::: 形式）:
+##     [cb [need]] ::: [arg ...]
+##     ::: で metadata とデータを分離する。
+##     need を省略すると data の個数がデフォルト値となる。
+##     need に 0 を指定すると常に成功する（callback は呼ばれない）。
+##
+##   第2形式（短縮形式）:
+##     [cb] [arg ...]
+##     ::: を使用せず、第1引数が cb、第2引数以降が data となる。
+##     need は常に data の個数（明示指定不可）。
+##
+##   コールバック関数のシグネチャ:
+##     callback 値 インデックス
+##   コールバックが 0 を返すと、その要素は条件を満たしたとカウントされる。
 ##
 ##   短絡評価:
 ##   - 条件を満たす要素が必要数に達した時点で即座に 0 を返す
 ##   - 残りの要素すべてが条件を満たしても必要数に達しないことが確定した時点で即座に 1 を返す
-##
-##   コールバック関数のシグネチャ:
-##     callback 値 インデックス
 ##
 ## 終了ステータス:
 ##    0  条件を満たす要素が必要数以上存在する (SX_EX_OK)
@@ -1639,7 +1651,10 @@ __sx_arg_map() {
 sx_arg_enough() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_enough "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${2-}" || return
+	case "X${SX_CFG_SEP}" in
+		"${1+X${1}}" | "${2+X${2}}") ;;
+		"${3+X${3}}") __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${2}" || return;;
+	esac
 
 	__sx_arg_enough "${@}" || return
 }
@@ -1647,22 +1662,38 @@ sx_arg_enough() {
 ### __sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する（内部用）
 ##
 ## 使い方:
-##   __sx_arg_enough コールバック 個数 [値 ...]
+##   __sx_arg_enough [cb [need]] [:::] [arg ...]
 ##
 ## 説明:
 ##   sx_arg_enough の内部実装。引数チェックは行わない。
-##   状態は位置変数で管理し、for ループでイテレートする。
-##   カウンタの初期値を状態変数の個数 * -1 に設定し、
-##   cnt <= 0 の間は状態変数領域としてスキップする。
+##   SX_CFG_SEP を $1/$2/$3 のいずれかから検出し、cb・need を抽出した上で
+##   状態変数（idx, total, cb, need）を設定しループ処理する。
 ##   need をカウントダウン方式で管理し、状態変数を 4 個に抑えている。
 ##
 __sx_arg_enough() {
-	case "${2-}" in 0)
-		return "${SX_EX_OK}"
+	case "X${SX_CFG_SEP}" in
+		"${1+X${1}}") shift;;
+		"${2+X${2}}")
+			__sx_arg_enough_cb_="${1}"
+			shift 2
+			;;
+		"${3+X${3}}")
+			__sx_arg_enough_cb_="${1}" __sx_arg_enough_need_="${2}"
+			shift 3
+			;;
+		*)
+			__sx_arg_enough_cb_="${1-}"
+			shift "$((0${1+1}))"
+			;;
 	esac
 
 	# $1=idx(-4), $2=total, $3=cb, $4=need(count-found)
-	set -- -4 "$((${#} - 2))" "${@}"
+	set -- -4 "${#}" "${__sx_arg_enough_cb_-}" "$((${__sx_arg_enough_need_:-${#}}))" "${@}"
+	unset __sx_arg_enough_cb_ __sx_arg_enough_need_
+
+	case "${4}" in 0)
+		return "${SX_EX_OK}"
+	esac
 
 	for __sx_arg_enough_arg_ in "${@}"; do
 		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${__sx_arg_enough_arg_}"
@@ -1817,7 +1848,7 @@ sx_arg_rfind() {
 		*) __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3:+"${3}"} || return;;
 	esac
 
-	__sx_arg_rfind "${@}"
+	__sx_arg_rfind "${@}" || return
 }
 
 define([|V|], [|__sx_arg_rfind_$1_|])dnl
