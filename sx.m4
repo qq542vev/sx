@@ -960,7 +960,8 @@ sx_util_eval() {
 ### sx_arg_find - 引数リストから指定された値を探し、そのインデックスまたは値を取得する
 ##
 ## 使い方:
-##   sx_arg_find 結果変数名（またはバインド形式） [検索対象 [フラグ]] ::: [値 ...]
+##   sx_arg_find [結果変数名 [検索対象 [フラグ]]] ::: [値 ...]
+##   sx_arg_find 結果変数名 [値 ...]
 ##
 ## 説明:
 ##   検索対象が、指定された値のリストの中で何番目（1開始）にあるかを探し、
@@ -971,6 +972,13 @@ sx_util_eval() {
 ##   見つからない場合は空文字列を格納する。
 ##   取得件数はバインド形式によって決まる。
 ##   例: res（全件）、3res:（最大3件）、idx1:idx2（2件を分配）
+##   2つの呼び出し形式がある:
+##     1. ::: を使用する形式。bind, target, flg を :::
+##        で区切って指定する。すべて省略可能（::: が第1引数の場合、
+##        bind ごと省略）。
+##     2. ::: を使用しない簡易形式。第1引数が bind、
+##        第2引数以降が検索対象の値となる。
+##        target・flg は指定不可。
 ##
 ## 終了ステータス:
 ##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
@@ -980,11 +988,14 @@ sx_util_eval() {
 sx_arg_find() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_find "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+	case "X${SX_CFG_SEP}" in
+		"${1+X${1}}") ;;
+		*) __sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable ${1+"${1}"} || return
+	esac
 
 	case "X${SX_CFG_SEP}" in
-		"${2+X${2}}" | "${3+X${3}}") ;;
-		*) __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3:+"${3}"} || return;;
+		"${1+X${1}}" | "${2+X${2}}" | "${3+X${3}}") ;;
+		"${4+X${4}}") __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${3}" || return;;
 	esac
 
 	__sx_arg_find "${@}" || return
@@ -1002,31 +1013,33 @@ define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(text) V(out) V(i) V(arg) V
 ##   sx_arg_find の内部実装。先頭から末尾に向かって検索する。
 ##   引数チェックは行わない。
 __sx_arg_find() {
-	__sx_var_bind_init "${1}"
-	__sx_arg_find_bind_="${1}"
-
 	case "X${SX_CFG_SEP}" in
-		"${2+X${2}}") shift 2;;
+		"${1+X${1}}") shift;;
+		"${2+X${2}}")
+			__sx_arg_find_bind_="${1}"
+			shift 2;;
 		"${3+X${3}}")
-			__sx_arg_find_tgt_="${2}"
+			__sx_arg_find_bind_="${1}" __sx_arg_find_tgt_="${2}"
 			shift 3
 			;;
 		"${4+X${4}}")
-			__sx_arg_find_tgt_="${2}" __sx_arg_find_flg_="${3}"
+			__sx_arg_find_bind_="${1}" __sx_arg_find_tgt_="${2}" __sx_arg_find_flg_="${3}"
 			shift 4
 			;;
 		*)
-			__sx_arg_find_tgt_="${2-}"
-			shift "$((1 + 0${2+1}))"
+			__sx_arg_find_bind_="${1-}"
+			shift "$((0${1+1}))"
 			;;
 	esac
 
-	: "${__sx_arg_find_tgt_:=}" "${__sx_arg_find_flg_:=0}"
+	: "${__sx_arg_find_bind_=}" "${__sx_arg_find_tgt_=}" "${__sx_arg_find_flg_:=0}"
 
 	__sx_arg_find_glob_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0))
 	__sx_arg_find_text_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_TEXT) != 0))
 	__sx_arg_find_i_=1
 	__sx_arg_find_out_=
+
+	__sx_var_bind_init "${__sx_arg_find_bind_}"
 
 	for __sx_arg_find_arg_ in "${@}"; do
 		case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
@@ -1825,13 +1838,15 @@ __sx_arg_range() {
 ### sx_arg_rfind - 引数リストから指定された値を末尾から探し、そのインデックスまたは値を取得する
 ##
 ## 使い方:
-##   sx_arg_rfind 結果変数名（またはバインド形式） [検索対象 [フラグ]] ::: [値 ...]
+##   sx_arg_rfind [結果変数名 [検索対象 [フラグ]]] ::: [値 ...]
+##   sx_arg_rfind 結果変数名 [値 ...]
 ##
 ## 説明:
 ##   sx_arg_find と同じだが、末尾から前方向に検索する。
 ##   一致した項目のインデックスを発見順（末尾から）にスペース区切りで結果変数に格納する。
 ##   フラグに SX_ARG_RFIND_TEXT (4) を指定すると、インデックスの代わりにマッチした値を出力する。
 ##   取得件数はバインド形式によって決まる。
+##   呼び出し形式は sx_arg_find に準ずる。
 ##
 ## 終了ステータス:
 ##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
@@ -1841,11 +1856,14 @@ __sx_arg_range() {
 sx_arg_rfind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfind "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+	case "X${SX_CFG_SEP}" in
+		"${1+X${1}}") ;;
+		*) __sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable ${1+"${1}"} || return
+	esac
 
 	case "X${SX_CFG_SEP}" in
-		"${2+X${2}}" | "${3+X${3}}") ;;
-		*) __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 ${3:+"${3}"} || return;;
+		"${1+X${1}}" | "${2+X${2}}" | "${3+X${3}}") ;;
+		"${4+X${4}}") __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${3}" || return;;
 	esac
 
 	__sx_arg_rfind "${@}" || return
@@ -1863,31 +1881,33 @@ define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(text) V(out) V(i) V(arg) V
 ##   sx_arg_rfind の内部実装。末尾から先頭に向かって検索する。
 ##   引数チェックは行わない。
 __sx_arg_rfind() {
-	__sx_var_bind_init "${1}"
-	__sx_arg_rfind_bind_="${1}"
-
 	case "X${SX_CFG_SEP}" in
-		"${2+X${2}}") shift 2;;
+		"${1+X${1}}") shift;;
+		"${2+X${2}}")
+			__sx_arg_rfind_bind_="${1}"
+			shift 2;;
 		"${3+X${3}}")
-			__sx_arg_rfind_tgt_="${2}"
+			__sx_arg_rfind_bind_="${1}" __sx_arg_rfind_tgt_="${2}"
 			shift 3
 			;;
 		"${4+X${4}}")
-			__sx_arg_rfind_tgt_="${2}" __sx_arg_rfind_flg_="${3}"
+			__sx_arg_rfind_bind_="${1}" __sx_arg_rfind_tgt_="${2}" __sx_arg_rfind_flg_="${3}"
 			shift 4
 			;;
 		*)
-			__sx_arg_rfind_tgt_="${2-}"
-			shift "$((1 + 0${2+1}))"
+			__sx_arg_rfind_bind_="${1-}"
+			shift "$((0${1+1}))"
 			;;
 	esac
 
-	: "${__sx_arg_rfind_tgt_:=}" "${__sx_arg_rfind_flg_:=0}"
+	: "${__sx_arg_rfind_bind_=}" "${__sx_arg_rfind_tgt_=}" "${__sx_arg_rfind_flg_:=0}"
 
 	__sx_arg_rfind_glob_=$(((__sx_arg_rfind_flg_ & SX_ARG_RFIND_GLOB) != 0))
 	__sx_arg_rfind_text_=$(((__sx_arg_rfind_flg_ & SX_ARG_RFIND_TEXT) != 0))
 	__sx_arg_rfind_i_="${#}"
 	__sx_arg_rfind_out_=
+
+	__sx_var_bind_init "${__sx_arg_rfind_bind_}"
 
 	while M_NUM_LT([|0|], [|__sx_arg_rfind_i_|]); do
 		eval __sx_arg_rfind_arg_=\"\${${__sx_arg_rfind_i_}}\"
