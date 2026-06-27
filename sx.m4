@@ -1068,8 +1068,8 @@ define([|CLEANUP|], [|V(int) V(lim) V(flg)|])dnl
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
 ##
 ## 使い方:
-##   sx_arg_isep 結果変数名（またはバインド形式） セパレータ [値 ...]
-##   sx_arg_isep 結果変数名（またはバインド形式） [セパレータ [インターバル [リミット]]] ::: [値 ...]
+##   sx_arg_isep [bind [sep [inv [limit [flg]]]]] ::: [arg ...]
+##   sx_arg_isep [bind] [arg ...]
 ##
 ## 説明:
 ##   引数グループの間にセパレータを挿入し、すべての要素（セパレータを含む）を
@@ -1078,9 +1078,13 @@ define([|CLEANUP|], [|V(int) V(lim) V(flg)|])dnl
 ##   インターバルが正の場合は先頭から、負の場合は末尾から数えて挿入する。
 ##   リミットを指定すると、セパレータの挿入回数を制限できる。
 ##   インターバルに 0 は指定できない。
-##   ::: を使用することで、設定引数と対象データを分離できる。
-##   ::: を使用しない場合、第2引数はセパレータ、第3引数はインターバル、
-##   第4引数はリミットとして扱われ、データは第5引数から開始される。
+##
+##   2 つの呼び出し形式がある:
+##     1) ::: 形式: bind/sep/inv/limit/flg を ::: より前の位置引数で指定し、
+##        ::: 以降をデータとして扱う。設定引数とデータを明確に分離できる。
+##     2) 簡略形式: bind のみを第一引数で指定し、第二引数以降はすべてデータ
+##        として扱われる。この形式ではセパレータは空文字、インターバルは 1、
+##        リミットは無制限、フラグは 0 になる。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -1089,10 +1093,13 @@ define([|CLEANUP|], [|V(int) V(lim) V(flg)|])dnl
 sx_arg_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_isep "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+	case "X${SX_CFG_SEP}" in
+		"${1+X${1}}") ;;
+		*) __sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return;;
+	esac
 
 	case "X${SX_CFG_SEP}" in
-		"${2+X${2}}" | "${3+X${3}}") ;;
+		"${1+X${1}}" | "${2+X${2}}" | "${3+X${3}}") ;;
 		"${4+X${4}}") __sx_arg_isep_int="${3}";;
 		"${5+X${5}}") __sx_arg_isep_int="${3}" __sx_arg_isep_lim="${4}";;
 		"${6+X${6}}") __sx_arg_isep_int="${3}" __sx_arg_isep_lim="${4}" __sx_arg_isep_flg="${5}";;
@@ -1120,40 +1127,41 @@ define([|CLEANUP|], [|V(bind) V(sep) V(int) V(lim) V(flg)|])dnl
 ### __sx_arg_isep - 引数間にセパレータを挿入する（ディスパッチャ、内部用）
 ##
 ## 使い方:
-##   __sx_arg_isep 結果変数名 セパレータ [値 ...]
-##   __sx_arg_isep 結果変数名 [セパレータ [インターバル [リミット [フラグ]]]] ::: [値 ...]
+##   __sx_arg_isep [bind [sep [inv [limit [flg]]]]] ::: [arg ...]
+##   __sx_arg_isep [bind] [arg ...]
 ##
 ## 説明:
 ##   ::: のパースと、lit/cb の振り分けを行う。
 __sx_arg_isep() {
-	__sx_arg_isep_bind_="${1}"
-
 	# ::: の位置を特定 (Bounded Search: $2, $3, $4, $5, $6)
 	case "X${SX_CFG_SEP}" in
-		"${2+X${2}}") shift 2;;
+		"${1+X${1}}") shift;;
+		"${2+X${2}}")
+			__sx_arg_isep_bind_="${1}"
+			shift 2;;
 		"${3+X${3}}")
-			__sx_arg_isep_sep_="${2}"
+			__sx_arg_isep_bind_="${1}" __sx_arg_isep_sep_="${2}"
 			shift 3
 			;;
 		"${4+X${4}}")
-			__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}"
+			__sx_arg_isep_bind_="${1}" __sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}"
 			shift 4
 			;;
 		"${5+X${5}}")
-			__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}"
+			__sx_arg_isep_bind_="${1}" __sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}"
 			shift 5
 			;;
 		"${6+X${6}}")
-			__sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}" __sx_arg_isep_flg_="${5}"
+			__sx_arg_isep_bind_="${1}" __sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}" __sx_arg_isep_flg_="${5}"
 			shift 6
 			;;
 		*)
-			__sx_arg_isep_sep_="${2-}" __sx_arg_isep_int_=1 __sx_arg_isep_lim_="${SX_NUM_I32_MAX}" __sx_arg_isep_flg_=0
-			shift "$((1 + 0${2+1}))"
+			__sx_arg_isep_bind_="${1-}"
+			shift "$((0${1+1}))"
 			;;
 	esac
 
-	: "${__sx_arg_isep_sep_:=}" "${__sx_arg_isep_int_:=1}" "${__sx_arg_isep_lim_:=${SX_NUM_I32_MAX}}" "${__sx_arg_isep_flg_:=0}"
+	: "${__sx_arg_isep_bind_=}" "${__sx_arg_isep_sep_=}" "${__sx_arg_isep_int_:=1}" "${__sx_arg_isep_lim_:=${SX_NUM_I32_MAX}}" "${__sx_arg_isep_flg_:=0}"
 
 	set -- "${__sx_arg_isep_bind_}" "${__sx_arg_isep_sep_}" "${__sx_arg_isep_int_}" "${__sx_arg_isep_lim_}" "$((${__sx_arg_isep_flg_} & (${#} != 0 ? ~0 : (${__sx_arg_isep_int_} > 0 ? ~SX_ARG_ISEP_POST : ~SX_ARG_ISEP_PRE))))" "${@}"
 	unset CLEANUP

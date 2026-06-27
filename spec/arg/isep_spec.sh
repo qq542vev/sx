@@ -74,14 +74,16 @@ Describe 'sx_arg_isep'
     The status should equal 64
   End
 
-  It '従来形式では $2 のみをセパレータとして扱うこと'
+  It 'bind引数のみを消費し、$2以降はデータとして扱われること'
     When call sx_arg_isep res "-" "a" "b"
     The status should be success
     eval "set -- $res"
-    The value "$1" should equal "a"
-    The value "$2" should equal "-"
-    The value "$3" should equal "b"
-    The value "$#" should equal 3
+    The value "$1" should equal "-"
+    The value "$2" should equal ""
+    The value "$3" should equal "a"
+    The value "$4" should equal ""
+    The value "$5" should equal "b"
+    The value "$#" should equal 5
   End
 
   Describe 'PRE / POST と limit の境界条件'
