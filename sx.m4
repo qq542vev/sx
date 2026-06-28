@@ -199,6 +199,7 @@ readonly SX_STR_SUB_GLOB=1
 readonly SX_STR_SUB_CB=2
 readonly SX_STR_CAPITAL_KEEP=1
 readonly SX_STR_CAPITAL_SENT=2
+readonly SX_ARG_PAD_CB=1
 readonly SX_STR_ISEP_CB=1
 readonly SX_STR_ISEP_PRE=2
 readonly SX_STR_ISEP_POST=4
@@ -1161,9 +1162,7 @@ __sx_arg_isep() {
 			;;
 	esac
 
-	: "${__sx_arg_isep_bind_=}" "${__sx_arg_isep_sep_=}" "${__sx_arg_isep_int_:=1}" "${__sx_arg_isep_lim_:=${SX_NUM_I32_MAX}}" "${__sx_arg_isep_flg_:=0}"
-
-	set -- "${__sx_arg_isep_bind_}" "${__sx_arg_isep_sep_}" "${__sx_arg_isep_int_}" "${__sx_arg_isep_lim_}" "$((${__sx_arg_isep_flg_} & (${#} != 0 ? ~0 : (${__sx_arg_isep_int_} > 0 ? ~SX_ARG_ISEP_POST : ~SX_ARG_ISEP_PRE))))" "${@}"
+	set -- "${__sx_arg_isep_bind_-}" "${__sx_arg_isep_sep_-}" "${__sx_arg_isep_int_:-1}" "${__sx_arg_isep_lim_:-${SX_NUM_I32_MAX}}" "$((${__sx_arg_isep_flg_:-0} & (${#} != 0 ? ~0 : (${__sx_arg_isep_int_:-1} > 0 ? ~SX_ARG_ISEP_POST : ~SX_ARG_ISEP_PRE))))" "${@}"
 	unset CLEANUP
 
 	__sx_var_bind_init "${1}"
@@ -1787,6 +1786,129 @@ __sx_arg_quote() {
 
 	eval ${__sx_arg_quote_out_:+"${__sx_arg_quote_bind_}=\"\${__sx_arg_quote_out_}\""}
 
+	unset CLEANUP
+}
+
+### sx_arg_pad - 引数リストを指定された長さになるようパディングする
+##
+## 使い方:
+##   sx_arg_pad [bind [len [val [flg]]]] ::: [arg ...]
+##   sx_arg_pad [bind] [arg ...]
+##
+## 説明:
+##   与えられた引数リスト [arg ...] を、絶対値が |len| になるよう
+##   val で拡張する。len が正の場合は右側（末尾）に、
+##   負の場合は左側（先頭）にパディングする。
+##   元の引数リストの長さが |len| 以上の場合は、そのまま出力する。
+##   結果はシングルクォートで囲まれ、スペース区切りで結合された形式で
+##   結果変数に格納される。
+##   第一引数にはバインド形式を指定して分配代入を行うことも可能。
+##
+##   2 つの呼び出し形式がある:
+##     1) ::: 形式: bind/len/val/flg を ::: より前の位置引数で指定し、
+##        ::: 以降をデータとして扱う。設定引数とデータを明確に分離できる。
+##     2) 簡略形式: bind のみを第一引数で指定し、第二引数以降はすべてデータ
+##        として扱われる。この形式では len は 0、val は空文字、flg は 0 になる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_pad() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_pad "${@}" || return; return 0;; esac
+
+	case "X${SX_CFG_SEP}" in
+		"${1+X${1}}") ;;
+		*) __sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable ${1+"${1}"} || return
+	esac
+
+	case "X${SX_CFG_SEP}" in
+		"${1+X${1}}" | "${2+X${2}}") ;;
+		"${3+X${3}}" | "${4+X${4}}") __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int_inv "${2}" || return;;
+		"${5+X${5}}") __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int_inv "${2}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_int_inv "${4}" || return;;
+	esac
+
+	__sx_arg_pad "${@}" || return
+}
+
+__sx_arg_pad() {
+	case "X${SX_CFG_SEP}" in
+		"${1+X${1}}") shift;;
+		"${2+X${2}}")
+			__sx_arg_pad_bind_="${1}"
+			shift 2
+			;;
+		"${3+X${3}}")
+			__sx_arg_pad_bind_="${1}" __sx_arg_pad_len_="${2}"
+			shift 3
+			;;
+		"${4+X${4}}")
+			__sx_arg_pad_bind_="${1}" __sx_arg_pad_len_="${2}" __sx_arg_pad_val_="${3}"
+			shift 4
+			;;
+		"${5+X${5}}")
+			__sx_arg_pad_bind_="${1}" __sx_arg_pad_len_="${2}" __sx_arg_pad_val_="${3}" __sx_arg_pad_flg_="${4}"
+			shift 5
+			;;
+		*)
+			__sx_arg_pad_bind_="${1-}"
+			shift "$((0${1+1}))"
+			;;
+	esac
+
+	set -- "${__sx_arg_pad_bind_-}" "${__sx_arg_pad_len_:-0}" "${__sx_arg_pad_val_-}" "${__sx_arg_pad_flg_:-0}" "${@}"
+	unset  __sx_arg_pad_bind_ __sx_arg_pad_len_ __sx_arg_pad_val_ __sx_arg_pad_flg_
+
+	__sx_var_bind_init "${1}"
+
+	case "$((${4} & SX_ARG_PAD_CB))" in
+		0) __sx_arg_pad_lit "${@}";;
+		*) __sx_arg_pad_cb "${@}";;
+	esac || return
+}
+
+define([|V|], [|__sx_arg_pad_lit_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(len) V(val) V(needed) V(arg) __M_BIND_USEVAR|])dnl
+### __sx_arg_pad_lit - 引数リストをパディングする（内部用）
+##
+## 使い方:
+##   __sx_arg_pad_lit スキーマ 長さ パディング値 [値 ...]
+##
+## 説明:
+##   sx_arg_pad の内部実装。引数チェックは行わない。
+__sx_arg_pad_lit() {
+	__sx_arg_pad_lit_bind_="${1}"
+	__sx_arg_pad_lit_len_="${2}"
+	__sx_arg_pad_lit_val_="${3}"
+	__sx_arg_pad_lit_out_=
+	shift 4
+
+	__sx_arg_pad_lit_needed_=$((${__sx_arg_pad_lit_len_#-} - ${#}))
+
+	# 左パディング（needed <= 0 なら何もしない）
+	case "${__sx_arg_pad_lit_len_}" in -*)
+		while M_NUM_LT([|0|], [|__sx_arg_pad_lit_needed_|]); do
+			__M_BIND_QUOTE([|__sx_arg_pad_lit|], [|"${__sx_arg_pad_lit_val_}"|], CLEANUP)
+
+			: $((__sx_arg_pad_lit_needed_ -= 1))
+		done
+	esac
+
+	# 入力値を結合
+	for __sx_arg_pad_lit_arg_ in "${@}"; do
+		__M_BIND_QUOTE([|__sx_arg_pad_lit|], [|"${__sx_arg_pad_lit_arg_}"|], CLEANUP)
+	done
+
+	# 右パディング（needed <= 0 なら何もしない）
+	case "${__sx_arg_pad_lit_len_}" in [!-]*)
+		while M_NUM_LT([|0|], [|__sx_arg_pad_lit_needed_|]); do
+			__M_BIND_QUOTE([|__sx_arg_pad_lit|], [|"${__sx_arg_pad_lit_val_}"|], CLEANUP)
+
+			: $((__sx_arg_pad_lit_needed_ -= 1))
+		done
+	esac
+
+	eval ${__sx_arg_pad_lit_out_:+"${__sx_arg_pad_lit_bind_}=\"\${__sx_arg_pad_lit_out_}\""}
 	unset CLEANUP
 }
 
