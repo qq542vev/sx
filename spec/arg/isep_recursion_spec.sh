@@ -6,7 +6,7 @@ Describe 'sx_arg_isep (recursion support)'
   Describe 'Forward Callback Recursion'
     inner_cb() { __sx_var_set "${1}=>"; }
     outer_cb() {
-      _o_var="${1}" _o_cnt="${2}"
+      _o_var="${1}" _o_cnt="${3}"
       if [ "${_o_cnt}" = "1" ]; then
         sx_arg_isep inner_res inner_cb 1 "" "$SX_ARG_ISEP_CB" ::: "A" "B"
         __sx_var_set "${_o_var}=<${inner_res}>"
@@ -33,7 +33,7 @@ Describe 'sx_arg_isep (recursion support)'
   Describe 'Backward Callback Recursion'
     inner_cb_back() { __sx_var_set "${1}=>"; }
     outer_cb_back() {
-      _ob_var="${1}" _ob_cnt="${2}"
+      _ob_var="${1}" _ob_cnt="${3}"
       if [ "${_ob_cnt}" = "1" ]; then
         sx_arg_isep inner_res inner_cb_back -1 "" "$SX_ARG_ISEP_CB" ::: "X" "Y"
         __sx_var_set "${_ob_var}=<${inner_res}>"
@@ -58,7 +58,7 @@ Describe 'sx_arg_isep (recursion support)'
   Describe '3段階ネスト再帰'
     innermost_cb() { __sx_var_set "${1}=inner"; }
     middle_cb() {
-      _m_var="${1}" _m_cnt="${2}"
+      _m_var="${1}" _m_cnt="${3}"
       if [ "${_m_cnt}" = "1" ]; then
         sx_arg_isep innermost_res innermost_cb 1 "" "$SX_ARG_ISEP_CB" ::: "Z" "W"
         __sx_var_set "${_m_var}=inner_done"
@@ -68,7 +68,7 @@ Describe 'sx_arg_isep (recursion support)'
       unset _m_var _m_cnt innermost_res
     }
     outer_cb_deep() {
-      _od_var="${1}" _od_cnt="${2}"
+      _od_var="${1}" _od_cnt="${3}"
       if [ "${_od_cnt}" = "1" ]; then
         sx_arg_isep middle_res middle_cb 1 "" "$SX_ARG_ISEP_CB" ::: "X" "Y"
         __sx_var_set "${_od_var}=middle_done"
@@ -95,7 +95,7 @@ Describe 'sx_arg_isep (recursion support)'
   Describe '混在方向ネスト再帰 (Forward → Backward)'
     inner_cb_mixed() { __sx_var_set "${1}=CB"; }
     outer_cb_mixed() {
-      _om_var="${1}" _om_cnt="${2}"
+      _om_var="${1}" _om_cnt="${3}"
       if [ "${_om_cnt}" = "1" ]; then
         sx_arg_isep inner_res_mixed inner_cb_mixed -1 "" "$SX_ARG_ISEP_CB" ::: "P" "Q"
         __sx_var_set "${_om_var}=mixed_done"
@@ -123,7 +123,7 @@ Describe 'sx_arg_isep (recursion support)'
     It '内側の CB エラーが外側に影響しないこと'
       inner_res_err=
       cb_err_recurse() {
-        _e_var="${1}" _e_cnt="${2}"
+        _e_var="${1}" _e_cnt="${3}"
         if [ "${_e_cnt}" = "1" ]; then
           sx_arg_isep inner_res_err inner_cb_err 1 "" "$SX_ARG_ISEP_CB" ::: "A" "B"
           __sx_var_set "${_e_var}=err_handled"
