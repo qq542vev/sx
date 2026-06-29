@@ -210,6 +210,7 @@ readonly SX_ARG_FIND_GLOB=1
 readonly SX_ARG_FIND_TEXT=4
 readonly SX_ARG_RFIND_GLOB=1
 readonly SX_ARG_RFIND_TEXT=4
+readonly SX_ARG_COUNT_GLOB=1
 readonly SX_STR_FIND_GLOB=1
 readonly SX_STR_FIND_OVERLAP=2
 readonly SX_STR_FIND_TEXT=4
@@ -1749,6 +1750,54 @@ __sx_arg_enough() {
 
 	unset __sx_arg_enough_arg_
 	return 1
+}
+
+### sx_arg_count - 引数リストから指定された値の出現回数を取得する
+##
+## 使い方:
+##   sx_arg_count 結果変数名 [arg...]
+##   sx_arg_count 結果変数名 [検索対象 [フラグ]] ::: [arg ...]
+##
+## 説明:
+##   引数リストから検索対象と一致する値の出現回数を数え、結果変数に非負整数で格納する。
+##   フラグの意味は sx_arg_find と同一（SX_ARG_COUNT_GLOB）。
+##   実質的に __sx_arg_find に委譲し、結果のスペース区切り件数を __sx_arg_len で取得する。
+##
+##   空の検索対象を指定した場合、空文字の値のみが一致とみなされる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_count() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_count "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}" | "${3+X${3}}") ;;
+		"${4+X${4}}") __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${3}" || return;;
+	esac
+
+	__sx_arg_count "${@}"
+}
+
+### __sx_arg_count - 引数リストから指定された値の出現回数を取得する（内部用）
+##
+## 使い方:
+##   __sx_arg_count 結果変数名 [検索対象 [フラグ]] ::: [値 ...]
+##
+## 説明:
+##   sx_arg_count の内部実装。引数チェックは行わない。
+__sx_arg_count() {
+	__sx_arg_count_res_="${1}"
+	shift
+
+	SX_CFG_UNSET_SOFT=2 __sx_arg_find __sx_arg_count_tmp_ "${@}" || :
+
+	eval __sx_arg_len "${__sx_arg_count_res_}" "${__sx_arg_count_tmp_}"
+
+	unset __sx_arg_count_res_ __sx_arg_count_tmp_
 }
 
 ### sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する
