@@ -176,52 +176,52 @@ Describe 'sx_arg_pad'
 
   Describe 'コールバックモード (CB)'
     It '右パディング: cbで動的に値を生成'
-      cb() { __sx_var_set "${1}=($2)"; }
+      cb() { __sx_var_set "${1}=($3)"; }
       When call sx_arg_pad res 5 cb "$SX_ARG_PAD_CB" ::: a b c
       The status should be success
       eval "set -- $res"
       The value "$1" should equal "a"
       The value "$2" should equal "b"
       The value "$3" should equal "c"
-      The value "$4" should equal "(0)"
-      The value "$5" should equal "(1)"
+      The value "$4" should equal "(1)"
+      The value "$5" should equal "(2)"
       The value "$#" should equal 5
     End
-
+    
     It '左パディング: cbで動的に値を生成'
-      cb() { __sx_var_set "${1}=($2)"; }
+      cb() { __sx_var_set "${1}=($3)"; }
       When call sx_arg_pad res -5 cb "$SX_ARG_PAD_CB" ::: a b c
       The status should be success
       eval "set -- $res"
-      The value "$1" should equal "(0)"
-      The value "$2" should equal "(1)"
+      The value "$1" should equal "(1)"
+      The value "$2" should equal "(2)"
       The value "$3" should equal "a"
       The value "$4" should equal "b"
       The value "$5" should equal "c"
       The value "$#" should equal 5
     End
 
-    It 'CB引数 (count, idx, skip) が正しいこと'
+    It 'CB引数 (idx, cnt, skip) が正しいこと'
       cb() { __sx_var_set "${1}=($2:$3:$4)"; }
       When call sx_arg_pad res 5 cb "$SX_ARG_PAD_CB" ::: x y z
       The status should be success
       eval "set -- $res"
-      The value "$4" should equal "(0:3:0)"
-      The value "$5" should equal "(1:4:0)"
+      The value "$4" should equal "(4:1:0)"
+      The value "$5" should equal "(5:2:0)"
     End
-
-    It '左パディングでCB引数 (count, idx, skip) が正しいこと'
+    
+    It '左パディングでCB引数 (idx, cnt, skip) が正しいこと'
       cb() { __sx_var_set "${1}=($2:$3:$4)"; }
       When call sx_arg_pad res -5 cb "$SX_ARG_PAD_CB" ::: x y z
       The status should be success
       eval "set -- $res"
-      The value "$1" should equal "(0:0:0)"
-      The value "$2" should equal "(1:1:0)"
+      The value "$1" should equal "(1:1:0)"
+      The value "$2" should equal "(2:2:0)"
     End
 
     It 'skip: ret unsetでスロットが飛ばされる'
       cb() {
-        case "${2}" in 0|2) __sx_var_set "${1}=x";; *) unset "${1}";; esac
+        case "${3}" in 1|3) __sx_var_set "${1}=x";; *) unset "${1}";; esac
       }
       When call sx_arg_pad res 6 cb "$SX_ARG_PAD_CB" ::: a b c
       The status should be success
@@ -236,13 +236,13 @@ Describe 'sx_arg_pad'
 
     It 'skip+idx不変: skip時idxが変化しないこと'
       cb() {
-        case "${2}" in 0) unset "${1}";; *) __sx_var_set "${1}=($2:$3)";; esac
+        case "${3}" in 1) unset "${1}";; *) __sx_var_set "${1}=($2:$3)";; esac
       }
       When call sx_arg_pad res -6 cb "$SX_ARG_PAD_CB" ::: a b c
       The status should be success
       eval "set -- $res"
-      The value "$1" should equal "(1:0)"
-      The value "$2" should equal "(2:1)"
+      The value "$1" should equal "(1:2)"
+      The value "$2" should equal "(2:3)"
       The value "$#" should equal 5
     End
 
@@ -260,7 +260,7 @@ Describe 'sx_arg_pad'
     It '中断: cbが非0を返すと処理を中断'
       cb() {
         __sx_var_set "${1}=x"
-        [ "$2" -lt 1 ]
+        [ "$3" -lt 2 ]
       }
       When call sx_arg_pad res 5 cb "$SX_ARG_PAD_CB" ::: a b c
       The status should be failure
@@ -280,33 +280,33 @@ Describe 'sx_arg_pad'
     End
 
     It '空入力からの右パディング'
-      cb() { __sx_var_set "${1}=($2)"; }
+      cb() { __sx_var_set "${1}=($3)"; }
       When call sx_arg_pad res 3 cb "$SX_ARG_PAD_CB" :::
       The status should be success
       eval "set -- $res"
-      The value "$1" should equal "(0)"
-      The value "$2" should equal "(1)"
-      The value "$3" should equal "(2)"
+      The value "$1" should equal "(1)"
+      The value "$2" should equal "(2)"
+      The value "$3" should equal "(3)"
       The value "$#" should equal 3
     End
   End
 
   Describe 'コールバックモード - 拡張テスト'
     It '左パディング: パディング数 > 2 でも全て正しくバインドされる'
-      cb() { __sx_var_set "${1}=($2)"; }
+      cb() { __sx_var_set "${1}=($3)"; }
       When call sx_arg_pad res -5 cb "$SX_ARG_PAD_CB" :::
       The status should be success
       eval "set -- $res"
-      The value "$1" should equal "(0)"
-      The value "$2" should equal "(1)"
-      The value "$3" should equal "(2)"
-      The value "$4" should equal "(3)"
-      The value "$5" should equal "(4)"
+      The value "$1" should equal "(1)"
+      The value "$2" should equal "(2)"
+      The value "$3" should equal "(3)"
+      The value "$4" should equal "(4)"
+      The value "$5" should equal "(5)"
       The value "$#" should equal 5
     End
-
+    
     It '右パディング: 元の値が10個以上でも正しく動作'
-      cb() { __sx_var_set "${1}=($2)"; }
+      cb() { __sx_var_set "${1}=($3)"; }
       When call sx_arg_pad res 12 cb "$SX_ARG_PAD_CB" ::: 0 1 2 3 4 5 6 7 8 9 A B
       The status should be success
       eval "set -- $res"
@@ -316,51 +316,51 @@ Describe 'sx_arg_pad'
       The value "${12}" should equal "B"
       The value "$#"   should equal 12
     End
-
+    
     It '左パディング: 元の値が10個以上でも正しく動作'
-      cb() { __sx_var_set "${1}=($2)"; }
+      cb() { __sx_var_set "${1}=($3)"; }
       When call sx_arg_pad res -15 cb "$SX_ARG_PAD_CB" ::: 0 1 2 3 4 5 6 7 8 9 A B
       The status should be success
       eval "set -- $res"
-      The value "$1"   should equal "(0)"
-      The value "$2"   should equal "(1)"
-      The value "$3"   should equal "(2)"
+      The value "$1"   should equal "(1)"
+      The value "$2"   should equal "(2)"
+      The value "$3"   should equal "(3)"
       The value "$4"   should equal "0"
       The value "${15}" should equal "B"
       The value "$#"   should equal 15
     End
-
+    
     It '右パディング: パディング数 > 2 でも全て正しくバインドされる'
-      cb() { __sx_var_set "${1}=($2)"; }
+      cb() { __sx_var_set "${1}=($3)"; }
       When call sx_arg_pad res 5 cb "$SX_ARG_PAD_CB" :::
       The status should be success
       eval "set -- $res"
-      The value "$1" should equal "(0)"
-      The value "$2" should equal "(1)"
-      The value "$3" should equal "(2)"
-      The value "$4" should equal "(3)"
-      The value "$5" should equal "(4)"
+      The value "$1" should equal "(1)"
+      The value "$2" should equal "(2)"
+      The value "$3" should equal "(3)"
+      The value "$4" should equal "(4)"
+      The value "$5" should equal "(5)"
       The value "$#" should equal 5
     End
 
     It '左パディング+skip混在+元の値多数でidx/skipが正しい'
       cb() {
-        case "${2}" in 0|2|4) unset "${1}";; *) __sx_var_set "${1}=($2:$3:$4)";; esac
+        case "${3}" in 1|3|5) unset "${1}";; *) __sx_var_set "${1}=($2:$3:$4)";; esac
       }
       When call sx_arg_pad res -14 cb "$SX_ARG_PAD_CB" ::: a b c d e f g
       The status should be success
       eval "set -- $res"
-      The value "$1"  should equal "(1:0:1)"
-      The value "$2"  should equal "(3:1:2)"
-      The value "$3"  should equal "(5:2:3)"
-      The value "$4"  should equal "(6:3:3)"
+      The value "$1"  should equal "(1:2:1)"
+      The value "$2"  should equal "(2:4:2)"
+      The value "$3"  should equal "(3:6:3)"
+      The value "$4"  should equal "(4:7:3)"
       The value "$5"  should equal "a"
       The value "${11}" should equal "g"
       The value "$#"  should equal 11
     End
 
     It '右パディング+CB: 元値10個以上+実パディング'
-      cb() { __sx_var_set "${1}=($2)"; }
+      cb() { __sx_var_set "${1}=($3)"; }
       When call sx_arg_pad res 13 cb "$SX_ARG_PAD_CB" ::: 0 1 2 3 4 5 6 7 8 9 A B
       The status should be success
       eval "set -- $res"
@@ -368,14 +368,14 @@ Describe 'sx_arg_pad'
       The value "${10}" should equal "9"
       The value "${11}" should equal "A"
       The value "${12}" should equal "B"
-      The value "${13}" should equal "(0)"
+      The value "${13}" should equal "(1)"
       The value "$#"   should equal 13
     End
-
+    
     It '左パディング+CB: cbが非0を返すと中断'
       cb() {
         __sx_var_set "${1}=x"
-        [ "$2" -lt 1 ]
+        [ "$3" -lt 2 ]
       }
       When call sx_arg_pad res -5 cb "$SX_ARG_PAD_CB" ::: a b c
       The status should be failure
@@ -386,13 +386,13 @@ Describe 'sx_arg_pad'
 
     It '右パディング+skip+元値あり: idx/skipが正しい'
       cb() {
-        case "${2}" in 0) unset "${1}";; *) __sx_var_set "${1}=($2:$3)";; esac
+        case "${3}" in 1) unset "${1}";; *) __sx_var_set "${1}=($2:$3)";; esac
       }
       When call sx_arg_pad res 6 cb "$SX_ARG_PAD_CB" ::: a b c
       The status should be success
       eval "set -- $res"
-      The value "$4" should equal "(1:3)"
-      The value "$5" should equal "(2:4)"
+      The value "$4" should equal "(4:2)"
+      The value "$5" should equal "(5:3)"
       The value "$#" should equal 5
     End
 
@@ -407,12 +407,12 @@ Describe 'sx_arg_pad'
       The value "$#" should equal 3
     End
 
-    It 'padding数1のCB呼出: count/idx/skipが正しい'
+    It 'padding数1のCB呼出: idx/cnt/skipが正しい'
       cb() { __sx_var_set "${1}=($2:$3:$4)"; }
       When call sx_arg_pad res 4 cb "$SX_ARG_PAD_CB" ::: x y z
       The status should be success
       eval "set -- $res"
-      The value "$4" should equal "(0:3:0)"
+      The value "$4" should equal "(4:1:0)"
       The value "$#" should equal 4
     End
   End

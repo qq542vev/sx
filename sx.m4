@@ -1824,10 +1824,10 @@ __sx_arg_quote() {
 ##     flg に SX_ARG_PAD_CB (1) を設定すると、val はコールバック関数名として
 ##     解釈される。コールバックはパディングスロットごとに呼び出され、
 ##     動的にパディング値を生成する。
-##     コールバック契約: cb ret_var count idx skip
+##     コールバック契約: cb ret_var idx cnt skip
 ##       - ret_var: 結果を格納する変数名（unset するとそのスロットをスキップ）
-##       - count: 0-based パディングスロット番号
-##       - idx: 0-based 実際の出力位置（skip 考慮済み）
+##       - idx: 1-based 実際の出力位置（skip 考慮済み）
+##       - cnt: 1-based パディングスロット番号
 ##       - skip: スキップ累計数
 ##     callback が非 0 を返した場合、処理を中断する。
 ##
@@ -1941,21 +1941,22 @@ __sx_arg_pad_lit() {
 ## 説明:
 ##   sx_arg_pad のコールバックモード実装。パディング値の代わりに
 ##   コールバック関数を呼び出し、その戻り値をパディング値として使用する。
-##   コールバック契約: cb ret_var count idx skip
+##   コールバック契約: cb ret_var idx cnt skip
+##    cnt は 1-based。
 ##
 ##   コールバックが ret_var を unset した場合、そのスロットはスキップされる。
 ##   コールバックが非0を返した場合、処理を中断する。
 ##
 ##   状態レイアウト（位置パラメータ）:
-##     $1: idx, $2: skip, $3: cnt, $4: needed, $5: bind, $6: len, $7: cb, $8: flag
+##     $1: idx, $2: cnt, $3: skip, $4: needed, $5: bind, $6: len, $7: cb, $8: flag
 ##     $9+: 元の値
 __sx_arg_pad_cb() {
-	set -- 0 0 0 "$((${2#-} - ${#} + 4))" "${@}"
+	set -- 1 1 0 "$((${2#-} - ${#} + 4))" "${@}"
 
 	# 左パディング
 	case "$((${6} < 0))" in 1)
-		while M_NUM_LT([|${3}|], [|${4}|]); do
-			"${7}" __sx_arg_pad_cb_ret_ "${3}" "${1}" "${2}" || {
+		while M_NUM_LE([|${2}|], [|${4}|]); do
+			"${7}" __sx_arg_pad_cb_ret_ "${1}" "${2}" "${3}" || {
 				__sx_arg_pad_cb_ex_="${?}"
 				break
 			}
@@ -1963,9 +1964,9 @@ __sx_arg_pad_cb() {
 			case "${__sx_arg_pad_cb_ret_+X}" in
 				X)
 					__sx_var_bind __sx_arg_pad_cb_bind_ "${5}" "${__sx_arg_pad_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
-					eval 'shift 5;' set -- "$((${1} + 1))" "'${2}'" "$((${3} + 1))" "'${4}'" "'${__sx_arg_pad_cb_bind_}'" '"${@}"'
+					eval 'shift 5;' set -- "$((${1} + 1))" "$((${2} + 1))" "${3}" "${4}" "${__sx_arg_pad_cb_bind_}" '"${@}"'
 					;;
-				*) eval 'shift 3;' set -- "'${1}'" "$((${2} + 1))" "$((${3} + 1))" '"${@}"';;
+				*) eval 'shift 3;' set -- "${1}" "$((${2} + 1))" "$((${3} + 1))" '"${@}"';;
 			esac
 
 			unset __sx_arg_pad_cb_ret_ __sx_arg_pad_cb_bind_
@@ -1993,8 +1994,8 @@ __sx_arg_pad_cb() {
 	shift 1
 
 	case "$((${6} < 0))" in 0)
-		while M_NUM_LT([|${3}|], [|${4}|]); do
-			"${7}" __sx_arg_pad_cb_ret_ "${3}" "${1}" "${2}" || {
+		while M_NUM_LE([|${2}|], [|${4}|]); do
+			"${7}" __sx_arg_pad_cb_ret_ "${1}" "${2}" "${3}" || {
 				__sx_arg_pad_cb_ex_="${?}"
 				break
 			}
@@ -2002,7 +2003,7 @@ __sx_arg_pad_cb() {
 			case "${__sx_arg_pad_cb_ret_+X}" in
 				X)
 					__sx_var_bind __sx_arg_pad_cb_bind_ "${5}" "${__sx_arg_pad_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
-					eval 'shift 5;' set -- "$((${1} + 1))" "${2}" "$((${3} + 1))" "${4}" "${__sx_arg_pad_cb_bind_}" '"${@}"'
+					eval 'shift 5;' set -- "$((${1} + 1))" "$((${2} + 1))" "${3}" "${4}" "${__sx_arg_pad_cb_bind_}" '"${@}"'
 					;;
 				*) eval 'shift 3;' set -- "${1}" "$((${2} + 1))" "$((${3} + 1))" '"${@}"';;
 			esac
