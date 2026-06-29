@@ -1203,15 +1203,13 @@ __sx_arg_isep_cb() {
 				case "${__sx_arg_isep_cb_ret_+X}" in X)
 					__sx_var_bind __sx_arg_isep_cb_bind_ "${4}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}" || {
 						unset __sx_arg_isep_cb_ret_
-						return "${SX_EX_OK}"
+						return "${2}"
 					}
 				esac
 
-				__sx_arg_isep_cb_cb_="${5}"
-
-				eval 'shift 8;' set -- "$((${1} + 1))" 0 "${3}" "'${__sx_arg_isep_cb_bind_-${4}}'" '"${__sx_arg_isep_cb_cb_}"' "${6}" "${7}" "${8}" '"${@}"'
+				eval 'shift 4;' set -- "$((${1} + 1))" 0 "${3}" "'${__sx_arg_isep_cb_bind_-${4}}'" '"${@}"'
 			else
-				eval 'shift 8;' set -- "${7}" "${?}" "${3}" "${4}" '""' "${6}" "${7}" "${8}" '"${@}"'
+				eval 'shift 2;' set -- "${7}" "${?}" '"${@}"'
 			fi
 
 			unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_cb_
@@ -1221,7 +1219,9 @@ __sx_arg_isep_cb() {
 		for __sx_arg_isep_cb_arg_ in "${@}"; do
 			set -- "${1}" "${2}" "$((${3} + 1))" "${4}" "${5}" "${6}" "${7}" "${8}" "${__sx_arg_isep_cb_arg_}"
 
-			case "$((${3} < 0))" in 1) continue;; esac
+			case "$((${3} < 0))" in 1)
+				continue
+			esac
 
 			unset __sx_arg_isep_cb_arg_
 
@@ -1285,16 +1285,17 @@ __sx_arg_isep_cb() {
 		__sx_arg_isep_cb_lim_=$((__sx_arg_isep_cb_max_ < __sx_arg_isep_cb_lim_ ? __sx_arg_isep_cb_max_ : __sx_arg_isep_cb_lim_))
 
 		# ===== Phase 1: countベースCB呼出 + 結果prepend（save/restore対応） =====
-			# SAVE state (7 vars) — 再帰呼び出しでCLEANUPにより変数が消える対策
-		set -- "${__sx_arg_isep_cb_bind_}" "${__sx_arg_isep_cb_cb_}" "${__sx_arg_isep_cb_int_}" "${__sx_arg_isep_cb_lim_}" "${__sx_arg_isep_cb_flg_}" 0 0 "${@}"
+			# SAVE state (6 vars) — 再帰呼び出しでCLEANUPにより変数が消える対策
+		set -- "${__sx_arg_isep_cb_bind_}" "${__sx_arg_isep_cb_cb_}" "${__sx_arg_isep_cb_int_}" "${__sx_arg_isep_cb_lim_}" "${__sx_arg_isep_cb_flg_}" 0 "${@}"
 		unset __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_cb_ __sx_arg_isep_cb_int_ __sx_arg_isep_cb_lim_ __sx_arg_isep_cb_flg_ __sx_arg_isep_cb_max_
 
-		while M_NUM_BOOL([|${6} < ${4} && ${7} == 0|]); do
+		while M_NUM_BOOL([|${6} < ${4}|]); do
 			if "${2}" __sx_arg_isep_cb_ret_ "$((${6} + 1))"; then
 				__sx_arg_isep_cb_cb_="${2}"
-				eval 'shift 7;' set -- "${1}" '"${__sx_arg_isep_cb_cb_}"' "${3}" "${4}" "${5}" "$((${6} + 1))" 0 '"${__sx_arg_isep_cb_ret_+:}${__sx_arg_isep_cb_ret_-}"' '"${@}"'
+				eval 'shift 6;' set -- "${1}" '"${__sx_arg_isep_cb_cb_}"' "${3}" "${4}" "${5}" "$((${6} + 1))" '"${__sx_arg_isep_cb_ret_+:}${__sx_arg_isep_cb_ret_-}"' '"${@}"'
 			else
-				eval 'shift 7;' set -- "${1}" '""' "${3}" "${4}" "${5}" "${6}" "${?}" '"${@}"'
+				__sx_arg_isep_cb_stat_="${?}"
+				break
 			fi
 
 			unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_cb_
@@ -1304,8 +1305,8 @@ __sx_arg_isep_cb() {
 		__sx_arg_isep_cb_int_="${3}"
 		__sx_arg_isep_cb_flg_="${5}"
 		__sx_arg_isep_cb_cnt_="${6}"
-		__sx_arg_isep_cb_stat_="${7}"
-		shift 7
+		: "${__sx_arg_isep_cb_stat_=0}"
+		shift 6
 
 		# ===== Phase 2: 左→右bind (for ループ) =====
 		# $@ = sep_N ... sep_1 data_1 ... data_M
