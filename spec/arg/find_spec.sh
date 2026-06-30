@@ -60,6 +60,60 @@ Describe 'sx_arg_find'
 		End
 	End
 
+	Describe 'Callback 検索 (SX_ARG_FIND_CB)'
+		It 'コールバックの終了ステータスで一致を判定する'
+			is_even() { [ $(($2 % 2)) -eq 0 ]; }
+			sx_arg_find res is_even $SX_ARG_FIND_CB ::: 1 2 3 4 5
+			Assert [ "$res" = "2 4" ]
+		End
+
+		It 'コールバックが 0 を返すと一致とみなす'
+			all_true() { return 0; }
+			sx_arg_find res all_true $SX_ARG_FIND_CB ::: a b c
+			Assert [ "$res" = "1 2 3" ]
+		End
+
+		It 'コールバックが非0を返すと一致しない'
+			all_false() { return 1; }
+			When call sx_arg_find res all_false $SX_ARG_FIND_CB ::: a b c
+			The status should be failure
+			The variable res should equal ""
+		End
+
+		It 'SX_ARG_FIND_TEXT と併用して値自体を収集できる'
+			is_gt2() { [ "${2}" -gt 2 ]; }
+			sx_arg_find res is_gt2 $((SX_ARG_FIND_CB | SX_ARG_FIND_TEXT)) ::: 1 2 3 4 5
+			# TEXT モードでは値がクォートされるため eval で復元して比較
+			eval "set -- ${res}"
+			Assert [ "$*" = "3 4 5" ]
+		End
+
+		It 'バインド形式と併用できる'
+			is_even() { [ $(($2 % 2)) -eq 0 ]; }
+			sx_arg_find "2res:" is_even $SX_ARG_FIND_CB ::: 1 2 3 4 5 6
+			Assert [ "$res" = "2 4" ]
+		End
+
+		It '分配代入と併用できる'
+			is_even() { [ $(($2 % 2)) -eq 0 ]; }
+			sx_arg_find "idx1:idx2" is_even $SX_ARG_FIND_CB ::: 1 2 3 4 5 6
+			Assert [ "$idx1" = "2" ]
+			Assert [ "$idx2" = "4 6" ]
+		End
+
+		It 'コールバック内で外部変数を参照できる'
+			min_val=3
+			is_ge_min() { [ "${2}" -ge "${min_val}" ]; }
+			sx_arg_find res is_ge_min $SX_ARG_FIND_CB ::: 1 2 3 4 5
+			Assert [ "$res" = "3 4 5" ]
+		End
+
+		It 'GLOB + CALLBACK 同時指定は Usage Error'
+			When call sx_arg_find res cb $((SX_ARG_FIND_GLOB | SX_ARG_FIND_CB)) ::: a b
+			The status should equal "$SX_EX_USAGE"
+		End
+	End
+
 	Describe '一致項目なし'
 		It '終了ステータス 1 を返し、結果が空になる'
 			When call sx_arg_find res "x" ::: "a" "b" "c"

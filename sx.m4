@@ -208,6 +208,7 @@ readonly SX_ARG_ISEP_PRE=2
 readonly SX_ARG_ISEP_POST=4
 readonly SX_ARG_FIND_GLOB=1
 readonly SX_ARG_FIND_TEXT=4
+readonly SX_ARG_FIND_CB=2
 readonly SX_ARG_RFIND_GLOB=1
 readonly SX_ARG_RFIND_TEXT=4
 readonly SX_ARG_COUNT_GLOB=1
@@ -959,6 +960,161 @@ sx_util_eval() {
 #  ARG (Arguments)
 # ========================================
 
+### sx_arg_count - 引数リストから指定された値の出現回数を取得する
+##
+## 使い方:
+##   sx_arg_count 結果変数名 [arg...]
+##   sx_arg_count 結果変数名 [検索対象 [フラグ]] ::: [arg ...]
+##
+## 説明:
+##   引数リストから検索対象と一致する値の出現回数を数え、結果変数に非負整数で格納する。
+##   フラグの意味は sx_arg_find と同一（SX_ARG_COUNT_GLOB）。
+##   実質的に __sx_arg_find に委譲し、結果のスペース区切り件数を __sx_arg_len で取得する。
+##
+##   空の検索対象を指定した場合、空文字の値のみが一致とみなされる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_count() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_count "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}" | "${3+X${3}}") ;;
+		"${4+X${4}}") __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${3}" || return;;
+	esac
+
+	__sx_arg_count "${@}"
+}
+
+### __sx_arg_count - 引数リストから指定された値の出現回数を取得する（内部用）
+##
+## 使い方:
+##   __sx_arg_count 結果変数名 [検索対象 [フラグ]] ::: [値 ...]
+##
+## 説明:
+##   sx_arg_count の内部実装。引数チェックは行わない。
+__sx_arg_count() {
+	__sx_arg_count_res_="${1}"
+	shift
+
+	SX_CFG_UNSET_SOFT=2 __sx_arg_find __sx_arg_count_tmp_ "${@}" || :
+
+	eval __sx_arg_len "${__sx_arg_count_res_}" "${__sx_arg_count_tmp_}"
+
+	unset __sx_arg_count_res_ __sx_arg_count_tmp_
+}
+
+### sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する
+##
+## 使い方:
+##   sx_arg_enough [cb [need]] ::: [arg ...]
+##   sx_arg_enough [cb] [arg ...]
+##
+## 説明:
+##   指定された値のリストの各要素に対してコールバック関数を適用し、
+##   成功（終了ステータス 0）となった要素の数が指定された個数以上であれば
+##   0、そうでなければ 1 を返す。
+##
+##   第1形式（::: 形式）:
+##     [cb [need]] ::: [arg ...]
+##     ::: で metadata とデータを分離する。
+##     need を省略すると data の個数がデフォルト値となる。
+##     need に 0 を指定すると常に成功する（callback は呼ばれない）。
+##
+##   第2形式（短縮形式）:
+##     [cb] [arg ...]
+##     ::: を使用せず、第1引数が cb、第2引数以降が data となる。
+##     need は常に data の個数（明示指定不可）。
+##
+##   コールバック関数のシグネチャ:
+##     callback 値 インデックス
+##   コールバックが 0 を返すと、その要素は条件を満たしたとカウントされる。
+##
+##   短絡評価:
+##   - 条件を満たす要素が必要数に達した時点で即座に 0 を返す
+##   - 残りの要素すべてが条件を満たしても必要数に達しないことが確定した時点で即座に 1 を返す
+##
+## 終了ステータス:
+##    0  条件を満たす要素が必要数以上存在する (SX_EX_OK)
+##    1  条件を満たす要素が必要数未満
+##   64  引数不正 (SX_EX_USAGE)
+sx_arg_enough() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_enough "${@}" || return; return 0;; esac
+
+	case "X${SX_CFG_SEP}" in
+		"${1+X${1}}" | "${2+X${2}}") ;;
+		"${3+X${3}}") __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${2}" || return;;
+	esac
+
+	__sx_arg_enough "${@}" || return
+}
+
+### __sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する（内部用）
+##
+## 使い方:
+##   __sx_arg_enough [cb [need]] [:::] [arg ...]
+##
+## 説明:
+##   sx_arg_enough の内部実装。引数チェックは行わない。
+##   SX_CFG_SEP を $1/$2/$3 のいずれかから検出し、cb・need を抽出した上で
+##   状態変数（idx, total, cb, need）を設定しループ処理する。
+##   need をカウントダウン方式で管理し、状態変数を 4 個に抑えている。
+##
+__sx_arg_enough() {
+	case "X${SX_CFG_SEP}" in
+		"${1+X${1}}") shift;;
+		"${2+X${2}}")
+			__sx_arg_enough_cb_="${1}"
+			shift 2
+			;;
+		"${3+X${3}}")
+			__sx_arg_enough_cb_="${1}" __sx_arg_enough_need_="${2}"
+			shift 3
+			;;
+		*)
+			__sx_arg_enough_cb_="${1-}"
+			shift "$((0${1+1}))"
+			;;
+	esac
+
+	# $1=idx(-4), $2=total, $3=cb, $4=need(count-found)
+	set -- -4 "${#}" "${__sx_arg_enough_cb_-}" "$((${__sx_arg_enough_need_:-${#}}))" "${@}"
+	unset __sx_arg_enough_cb_ __sx_arg_enough_need_
+
+	case "${4}" in 0)
+		return "${SX_EX_OK}"
+	esac
+
+	for __sx_arg_enough_arg_ in "${@}"; do
+		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${__sx_arg_enough_arg_}"
+
+		case "$((${1} <= 0))" in 1)
+			continue
+		esac
+
+		unset __sx_arg_enough_arg_
+
+		# 短絡評価: 残りの全要素が成功しても必要数に達しない
+		case "$((${2} - ${1} + 1 < ${4}))" in 1)
+			return 1
+		esac
+
+		"${3}" "${5}" "${1}" && set -- "${1}" "${2}" "${3}" "$((${4} - 1))" || :
+
+		# 短絡評価: 必要数に達した
+		case "${4}" in 0)
+			return "${SX_EX_OK}"
+		esac
+	done
+
+	unset __sx_arg_enough_arg_
+	return 1
+}
+
 ### sx_arg_find - 引数リストから指定された値を探し、そのインデックスまたは値を取得する
 ##
 ## 使い方:
@@ -971,6 +1127,9 @@ sx_util_eval() {
 ##   第一引数にはバインド形式を指定して分配代入を行うことも可能。
 ##   フラグに SX_ARG_FIND_GLOB (1) を指定すると、検索対象を glob パターンとして扱う。
 ##   フラグに SX_ARG_FIND_TEXT (4) を指定すると、インデックスの代わりにマッチした値を出力する。
+##   フラグに SX_ARG_FIND_CB (2) を指定すると、検索対象をコールバック関数として扱う。
+##   コールバックシグネチャ: callback value index
+##     0 を返すと一致、非0 は不一致としてスキップ。
 ##   見つからない場合は空文字列を格納する。
 ##   取得件数はバインド形式によって決まる。
 ##   例: res（全件）、3res:（最大3件）、idx1:idx2（2件を分配）
@@ -997,22 +1156,25 @@ sx_arg_find() {
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}" | "${2+X${2}}" | "${3+X${3}}") ;;
-		"${4+X${4}}") __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${3}" || return;;
+		"${4+X${4}}")
+			__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${3}" || return
+			case "$(((${3} & (SX_ARG_FIND_GLOB | SX_ARG_FIND_CB)) == (SX_ARG_FIND_GLOB | SX_ARG_FIND_CB)))" in
+				1) return "${SX_EX_USAGE}";;
+			esac
+			;;
 	esac
 
 	__sx_arg_find "${@}" || return
 }
 
-define([|V|], [|__sx_arg_find_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(text) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
-
-### __sx_arg_find - 引数リストから指定された値を探す（内部用: 前向き）
+### __sx_arg_find - 引数リストから指定された値を探す（内部用: ディスパッチャ）
 ##
 ## 使い方:
 ##   __sx_arg_find 結果変数名 [検索対象 [フラグ]] ::: [値 ...]
 ##
 ## 説明:
-##   sx_arg_find の内部実装。先頭から末尾に向かって検索する。
+##   ::: セパレータをパースし、フラグに応じて __sx_arg_find_lit または
+##   __sx_arg_find_cb にディスパッチする。
 ##   引数チェックは行わない。
 __sx_arg_find() {
 	case "X${SX_CFG_SEP}" in
@@ -1034,34 +1196,166 @@ __sx_arg_find() {
 			;;
 	esac
 
-	: "${__sx_arg_find_bind_=}" "${__sx_arg_find_tgt_=}" "${__sx_arg_find_flg_:=0}"
+		set -- "${__sx_arg_find_bind_-}" "${__sx_arg_find_tgt_-}" "${__sx_arg_find_flg_:-0}" "${@}"
+	unset __sx_arg_find_bind_ __sx_arg_find_tgt_ __sx_arg_find_flg_
 
-	__sx_arg_find_glob_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_GLOB) != 0))
-	__sx_arg_find_text_=$(((__sx_arg_find_flg_ & SX_ARG_FIND_TEXT) != 0))
-	__sx_arg_find_i_=1
-	__sx_arg_find_out_=
+	case "$((${3} & SX_ARG_FIND_CB))" in
+		0) __sx_arg_find_lit "${@}";;
+		*) __sx_arg_find_cb "${@}";;
+	esac || return
+}
 
-	__sx_var_bind_init "${__sx_arg_find_bind_}"
+define([|V|], [|__sx_arg_find_lit_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(text) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
 
-	for __sx_arg_find_arg_ in "${@}"; do
-		case "${__sx_arg_find_glob_}${__sx_arg_find_arg_}" in "0${__sx_arg_find_tgt_}" | 1${__sx_arg_find_tgt_})
-			case "${__sx_arg_find_text_}" in
-				0) __M_BIND_UNQUOTE([|__sx_arg_find|], [|"${__sx_arg_find_i_}"|], CLEANUP);;
-				*) __M_BIND_QUOTE([|__sx_arg_find|], [|"${__sx_arg_find_arg_}"|], CLEANUP);;
+### __sx_arg_find_lit - 引数リストから指定された値を探す（内部用: リテラル/glob照合）
+##
+## 使い方:
+##   __sx_arg_find_lit 結果変数名 検索対象 フラグ [値 ...]
+##
+## 説明:
+##   __sx_arg_find から呼ばれる。先頭から末尾に向かって検索する。
+##   引数は正規化済み。引数チェックは行わない。
+__sx_arg_find_lit() {
+	__sx_arg_find_lit_bind_="${1}" __sx_arg_find_lit_tgt_="${2}" __sx_arg_find_lit_flg_="${3}"
+	shift 3
+
+	__sx_arg_find_lit_glob_=$(((__sx_arg_find_lit_flg_ & SX_ARG_FIND_GLOB) != 0))
+	__sx_arg_find_lit_text_=$(((__sx_arg_find_lit_flg_ & SX_ARG_FIND_TEXT) != 0))
+	__sx_arg_find_lit_i_=1
+	__sx_arg_find_lit_out_=
+
+	__sx_var_bind_init "${__sx_arg_find_lit_bind_}"
+
+	for __sx_arg_find_lit_arg_ in "${@}"; do
+		case "${__sx_arg_find_lit_glob_}${__sx_arg_find_lit_arg_}" in "0${__sx_arg_find_lit_tgt_}" | 1${__sx_arg_find_lit_tgt_})
+			case "${__sx_arg_find_lit_text_}" in
+				0) __M_BIND_UNQUOTE([|__sx_arg_find_lit|], [|"${__sx_arg_find_lit_i_}"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_arg_find_lit|], [|"${__sx_arg_find_lit_arg_}"|], CLEANUP);;
 			esac
 
-			__sx_arg_find_sts_="${SX_EX_OK}"
+			__sx_arg_find_lit_sts_="${SX_EX_OK}"
 		esac
 
-		: $((__sx_arg_find_i_ += 1))
+		: $((__sx_arg_find_lit_i_ += 1))
 	done
 
-	eval ${__sx_arg_find_out_:+"${__sx_arg_find_bind_}=\"\${__sx_arg_find_out_# }\""}
+	eval ${__sx_arg_find_lit_out_:+"${__sx_arg_find_lit_bind_}=\"\${__sx_arg_find_lit_out_# }\""}
 
-	set -- "${__sx_arg_find_sts_-1}"
+	set -- "${__sx_arg_find_lit_sts_-1}"
 
 	unset CLEANUP
 	return "${1}"
+}
+
+### __sx_arg_find_cb - 引数リストからコールバックで値を検索する（内部用）
+##
+## 使い方:
+##   __sx_arg_find_cb 結果変数名 コールバック フラグ [値 ...]
+##
+## 説明:
+##   __sx_arg_find から呼ばれる。コールバックの終了ステータスで一致を判定する。
+##   コールバックシグネチャ: callback value index
+##     0 を返すと一致、非0 は不一致としてスキップ。
+##   引数は正規化済み。引数チェックは行わない。
+##   状態は位置変数で管理し、__sx_var_bind でバインドする。
+__sx_arg_find_cb() {
+	__sx_var_bind_init "${1}"
+
+	set -- 1 -6 "$(((${3} & SX_ARG_FIND_TEXT) != 0))" "${@}"
+
+	for __sx_arg_find_cb_arg_ in "${@}"; do
+		set -- "${1}" "$((${2} + 1))" "${3}" "${4}" "${5}" "${6}" "${__sx_arg_find_cb_arg_}"
+
+		case "$((${2} <= 0))" in 1)
+			continue
+		esac
+
+		unset __sx_arg_find_cb_arg_ __sx_arg_find_cb_tmp_
+
+		# $1=sts, $2=i, $3=txt_flg, $4=bind, $5=cb, $6=flg, $7=value
+		"${5}" "${7}" "${2}" && {
+			case "${3}" in
+				0) __sx_var_bind __sx_arg_find_cb_tmp_ "${4}" "${2}" 0 || break;;
+				*) __sx_var_bind __sx_arg_find_cb_tmp_ "${4}" "${7}" "${SX_VAR_BIND_QUOTE}" || break;;
+			esac
+
+			set -- 0 "${2}" "${3}" "${__sx_arg_find_cb_tmp_}" "${5}" "${6}"
+		}
+	done
+
+	unset __sx_arg_find_cb_arg_ __sx_arg_find_cb_tmp_
+
+	return "${1}"
+}
+
+### sx_arg_fold - 引数リストをコールバックで畳み込む（fold）
+##
+## 使い方:
+##   sx_arg_fold 結果変数 コールバック 初期値 [値 ...]
+##
+## 説明:
+##   指定された値のリストの各要素に対してコールバック関数を適用し、
+##   アキュムレータを更新しながら畳み込みを行う。
+##   コールバック契約: callback ret_var acc current_value index
+##     - ret_var: 新しいアキュムレータ値を格納する変数名
+##     - acc: 現在のアキュムレータ値
+##     - current_value: 現在処理中の要素の値
+##     - index: 1-based インデックス
+##   コールバックが ret_var を unset した場合、アキュムレータは変更されない。
+##   コールバックが非0を返した場合、その時点のアキュムレータ値を結果変数に格納し、
+##   直ちに終了する。
+##
+## 終了ステータス:
+##   すべてのコールバックが成功 => 0 (SX_EX_OK)
+##   コールバックが失敗 => 最初のエラーのステータス
+##   64 => 引数不正 (SX_EX_USAGE)
+##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_fold() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_fold "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_arg_fold "${@}" || return
+}
+
+### __sx_arg_fold - 引数リストをコールバックで畳み込む（内部用）
+##
+## 使い方:
+##   __sx_arg_fold 結果変数 コールバック 初期値 [値 ...]
+##
+## 説明:
+##   sx_arg_fold の内部実装。引数チェックは行わない。
+##   状態は位置変数で管理し、for ループでイテレートする。
+##   カウンタの初期値を状態変数の個数 * -1 に設定し、
+##   cnt < 0 の間は状態変数領域としてスキップする。
+##
+__sx_arg_fold() {
+	# $1: count, $2: res, $3: cb, $4: acc, $@: data
+	set -- -4 "${@}"
+
+	for __sx_arg_fold_arg_ in "${@}"; do
+		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${__sx_arg_fold_arg_}"
+
+		case "$((${1} <= 0))" in 1)
+			continue
+		esac
+
+		unset __sx_arg_fold_arg_
+
+		"${3}" __sx_arg_fold_ret_ "${4}" "${5}" "${1}" || {
+			set -- "${@}" "${?}"
+			__sx_var_set "${2}=${4}"
+			unset __sx_arg_fold_ret_
+			return "${6}"
+		}
+
+		set -- "${1}" "${2}" "${3}" "${__sx_arg_fold_ret_-${4}}"
+		unset __sx_arg_fold_ret_
+	done
+
+	__sx_var_set "${2}=${4}"
+	unset __sx_arg_fold_arg_
 }
 
 define([|V|], [|__sx_arg_isep_$1|])dnl
@@ -1645,291 +1939,6 @@ __sx_arg_map() {
 	return "${1}"
 }
 
-### sx_arg_fold - 引数リストをコールバックで畳み込む（fold）
-##
-## 使い方:
-##   sx_arg_fold 結果変数 コールバック 初期値 [値 ...]
-##
-## 説明:
-##   指定された値のリストの各要素に対してコールバック関数を適用し、
-##   アキュムレータを更新しながら畳み込みを行う。
-##   コールバック契約: callback ret_var acc current_value index
-##     - ret_var: 新しいアキュムレータ値を格納する変数名
-##     - acc: 現在のアキュムレータ値
-##     - current_value: 現在処理中の要素の値
-##     - index: 1-based インデックス
-##   コールバックが ret_var を unset した場合、アキュムレータは変更されない。
-##   コールバックが非0を返した場合、その時点のアキュムレータ値を結果変数に格納し、
-##   直ちに終了する。
-##
-## 終了ステータス:
-##   すべてのコールバックが成功 => 0 (SX_EX_OK)
-##   コールバックが失敗 => 最初のエラーのステータス
-##   64 => 引数不正 (SX_EX_USAGE)
-##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_fold() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_fold "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
-
-	__sx_arg_fold "${@}" || return
-}
-
-### __sx_arg_fold - 引数リストをコールバックで畳み込む（内部用）
-##
-## 使い方:
-##   __sx_arg_fold 結果変数 コールバック 初期値 [値 ...]
-##
-## 説明:
-##   sx_arg_fold の内部実装。引数チェックは行わない。
-##   状態は位置変数で管理し、for ループでイテレートする。
-##   カウンタの初期値を状態変数の個数 * -1 に設定し、
-##   cnt < 0 の間は状態変数領域としてスキップする。
-##
-__sx_arg_fold() {
-	# $1: count, $2: res, $3: cb, $4: acc, $@: data
-	set -- -4 "${@}"
-
-	for __sx_arg_fold_arg_ in "${@}"; do
-		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${__sx_arg_fold_arg_}"
-
-		case "$((${1} <= 0))" in 1)
-			continue
-		esac
-
-		unset __sx_arg_fold_arg_
-
-		"${3}" __sx_arg_fold_ret_ "${4}" "${5}" "${1}" || {
-			set -- "${@}" "${?}"
-			__sx_var_set "${2}=${4}"
-			unset __sx_arg_fold_ret_
-			return "${6}"
-		}
-
-		set -- "${1}" "${2}" "${3}" "${__sx_arg_fold_ret_-${4}}"
-		unset __sx_arg_fold_ret_
-	done
-
-	__sx_var_set "${2}=${4}"
-	unset __sx_arg_fold_arg_
-}
-
-### sx_arg_rfold - 引数リストを右からコールバックで畳み込む（rfold）
-##
-## 使い方:
-##   sx_arg_rfold 結果変数 コールバック 初期値 [値 ...]
-##
-## 説明:
-##   sx_arg_fold と同様に畳み込みを行うが、右端の要素から処理を開始する。
-##   コールバック契約: callback ret_var acc current_value index
-##     - ret_var: 新しいアキュムレータ値を格納する変数名
-##     - acc: 現在のアキュムレータ値
-##     - current_value: 現在処理中の要素の値
-##     - index: 元の引数リストにおける 1-based インデックス
-##   コールバックが ret_var を unset した場合、アキュムレータは変更されない。
-##   コールバックが非0を返した場合、その時点のアキュムレータ値を結果変数に格納し、
-##   直ちに終了する。
-##
-## 終了ステータス:
-##   すべてのコールバックが成功 => 0 (SX_EX_OK)
-##   コールバックが失敗 => 最初のエラーのステータス
-##   64 => 引数不正 (SX_EX_USAGE)
-##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_rfold() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfold "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
-
-	__sx_arg_rfold "${@}" || return
-}
-
-### __sx_arg_rfold - 引数リストを右からコールバックで畳み込む（内部用）
-##
-## 使い方:
-##   __sx_arg_rfold 結果変数 コールバック 初期値 [値 ...]
-##
-## 説明:
-##   sx_arg_rfold の内部実装。引数チェックは行わない。
-##   状態（cnt, res, cb, acc）は位置変数で管理し、eval で後方から間接参照する。
-##   各イテレーション後は shift 4 で状態を退避し、set -- ... "${@}" で
-##   データを保持したまま状態だけを更新する。これにより再帰呼び出しにも安全。
-##
-__sx_arg_rfold() {
-	set -- "$((${#} - 3))" "${@}"
-
-	while M_NUM_LT([|0|], [|${1}|]); do
-		eval '"${3}"' __sx_arg_rfold_ret_ '"${4}"' "\"\${$((${1} + 4))}\"" "${1}" || {
-			set -- "${?}" "${@}"
-			__sx_var_set "${3}=${5}"
-			unset __sx_arg_rfold_ret_
-			return "${1}"
-		}
-
-		__sx_arg_rfold_cb_="${3}"
-		: "${__sx_arg_rfold_ret_=${4}}"
-
-		eval 'shift 4;' set -- "$((${1} - 1))" "${2}" '"${__sx_arg_rfold_cb_}"' '"${__sx_arg_rfold_ret_}"' '"${@}"'
-
-		unset __sx_arg_rfold_ret_ __sx_arg_rfold_cb_
-	done
-
-	__sx_var_set "${2}=${4}"
-}
-
-### sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する
-##
-## 使い方:
-##   sx_arg_enough [cb [need]] ::: [arg ...]
-##   sx_arg_enough [cb] [arg ...]
-##
-## 説明:
-##   指定された値のリストの各要素に対してコールバック関数を適用し、
-##   成功（終了ステータス 0）となった要素の数が指定された個数以上であれば
-##   0、そうでなければ 1 を返す。
-##
-##   第1形式（::: 形式）:
-##     [cb [need]] ::: [arg ...]
-##     ::: で metadata とデータを分離する。
-##     need を省略すると data の個数がデフォルト値となる。
-##     need に 0 を指定すると常に成功する（callback は呼ばれない）。
-##
-##   第2形式（短縮形式）:
-##     [cb] [arg ...]
-##     ::: を使用せず、第1引数が cb、第2引数以降が data となる。
-##     need は常に data の個数（明示指定不可）。
-##
-##   コールバック関数のシグネチャ:
-##     callback 値 インデックス
-##   コールバックが 0 を返すと、その要素は条件を満たしたとカウントされる。
-##
-##   短絡評価:
-##   - 条件を満たす要素が必要数に達した時点で即座に 0 を返す
-##   - 残りの要素すべてが条件を満たしても必要数に達しないことが確定した時点で即座に 1 を返す
-##
-## 終了ステータス:
-##    0  条件を満たす要素が必要数以上存在する (SX_EX_OK)
-##    1  条件を満たす要素が必要数未満
-##   64  引数不正 (SX_EX_USAGE)
-sx_arg_enough() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_enough "${@}" || return; return 0;; esac
-
-	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}" | "${2+X${2}}") ;;
-		"${3+X${3}}") __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${2}" || return;;
-	esac
-
-	__sx_arg_enough "${@}" || return
-}
-
-### __sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する（内部用）
-##
-## 使い方:
-##   __sx_arg_enough [cb [need]] [:::] [arg ...]
-##
-## 説明:
-##   sx_arg_enough の内部実装。引数チェックは行わない。
-##   SX_CFG_SEP を $1/$2/$3 のいずれかから検出し、cb・need を抽出した上で
-##   状態変数（idx, total, cb, need）を設定しループ処理する。
-##   need をカウントダウン方式で管理し、状態変数を 4 個に抑えている。
-##
-__sx_arg_enough() {
-	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}") shift;;
-		"${2+X${2}}")
-			__sx_arg_enough_cb_="${1}"
-			shift 2
-			;;
-		"${3+X${3}}")
-			__sx_arg_enough_cb_="${1}" __sx_arg_enough_need_="${2}"
-			shift 3
-			;;
-		*)
-			__sx_arg_enough_cb_="${1-}"
-			shift "$((0${1+1}))"
-			;;
-	esac
-
-	# $1=idx(-4), $2=total, $3=cb, $4=need(count-found)
-	set -- -4 "${#}" "${__sx_arg_enough_cb_-}" "$((${__sx_arg_enough_need_:-${#}}))" "${@}"
-	unset __sx_arg_enough_cb_ __sx_arg_enough_need_
-
-	case "${4}" in 0)
-		return "${SX_EX_OK}"
-	esac
-
-	for __sx_arg_enough_arg_ in "${@}"; do
-		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${__sx_arg_enough_arg_}"
-
-		case "$((${1} <= 0))" in 1)
-			continue
-		esac
-
-		unset __sx_arg_enough_arg_
-
-		# 短絡評価: 残りの全要素が成功しても必要数に達しない
-		case "$((${2} - ${1} + 1 < ${4}))" in 1)
-			return 1
-		esac
-
-		"${3}" "${5}" "${1}" && set -- "${1}" "${2}" "${3}" "$((${4} - 1))" || :
-
-		# 短絡評価: 必要数に達した
-		case "${4}" in 0)
-			return "${SX_EX_OK}"
-		esac
-	done
-
-	unset __sx_arg_enough_arg_
-	return 1
-}
-
-### sx_arg_count - 引数リストから指定された値の出現回数を取得する
-##
-## 使い方:
-##   sx_arg_count 結果変数名 [arg...]
-##   sx_arg_count 結果変数名 [検索対象 [フラグ]] ::: [arg ...]
-##
-## 説明:
-##   引数リストから検索対象と一致する値の出現回数を数え、結果変数に非負整数で格納する。
-##   フラグの意味は sx_arg_find と同一（SX_ARG_COUNT_GLOB）。
-##   実質的に __sx_arg_find に委譲し、結果のスペース区切り件数を __sx_arg_len で取得する。
-##
-##   空の検索対象を指定した場合、空文字の値のみが一致とみなされる。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_count() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_count "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
-
-	case "X${SX_CFG_SEP}" in
-		"${2+X${2}}" | "${3+X${3}}") ;;
-		"${4+X${4}}") __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${3}" || return;;
-	esac
-
-	__sx_arg_count "${@}"
-}
-
-### __sx_arg_count - 引数リストから指定された値の出現回数を取得する（内部用）
-##
-## 使い方:
-##   __sx_arg_count 結果変数名 [検索対象 [フラグ]] ::: [値 ...]
-##
-## 説明:
-##   sx_arg_count の内部実装。引数チェックは行わない。
-__sx_arg_count() {
-	__sx_arg_count_res_="${1}"
-	shift
-
-	SX_CFG_UNSET_SOFT=2 __sx_arg_find __sx_arg_count_tmp_ "${@}" || :
-
-	eval __sx_arg_len "${__sx_arg_count_res_}" "${__sx_arg_count_tmp_}"
-
-	unset __sx_arg_count_res_ __sx_arg_count_tmp_
-}
 
 ### sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する
 ##
@@ -2150,6 +2159,7 @@ __sx_arg_pad_cb() {
 	unset __sx_arg_pad_cb_ex_ __sx_arg_pad_cb_ret_
 	return "${1}"
 }
+
 define([|V|], [|__sx_arg_pad_lit_$1_|])dnl
 define([|CLEANUP|], [|V(bind) V(out) V(len) V(val) V(needed) V(arg) __M_BIND_USEVAR|])dnl
 ### __sx_arg_pad_lit - 引数リストをパディングする（内部用）
@@ -2342,6 +2352,68 @@ __sx_arg_rfind() {
 
 	unset CLEANUP
 	return "${1}"
+}
+
+### sx_arg_rfold - 引数リストを右からコールバックで畳み込む（rfold）
+##
+## 使い方:
+##   sx_arg_rfold 結果変数 コールバック 初期値 [値 ...]
+##
+## 説明:
+##   sx_arg_fold と同様に畳み込みを行うが、右端の要素から処理を開始する。
+##   コールバック契約: callback ret_var acc current_value index
+##     - ret_var: 新しいアキュムレータ値を格納する変数名
+##     - acc: 現在のアキュムレータ値
+##     - current_value: 現在処理中の要素の値
+##     - index: 元の引数リストにおける 1-based インデックス
+##   コールバックが ret_var を unset した場合、アキュムレータは変更されない。
+##   コールバックが非0を返した場合、その時点のアキュムレータ値を結果変数に格納し、
+##   直ちに終了する。
+##
+## 終了ステータス:
+##   すべてのコールバックが成功 => 0 (SX_EX_OK)
+##   コールバックが失敗 => 最初のエラーのステータス
+##   64 => 引数不正 (SX_EX_USAGE)
+##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_rfold() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfold "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_arg_rfold "${@}" || return
+}
+
+### __sx_arg_rfold - 引数リストを右からコールバックで畳み込む（内部用）
+##
+## 使い方:
+##   __sx_arg_rfold 結果変数 コールバック 初期値 [値 ...]
+##
+## 説明:
+##   sx_arg_rfold の内部実装。引数チェックは行わない。
+##   状態（cnt, res, cb, acc）は位置変数で管理し、eval で後方から間接参照する。
+##   各イテレーション後は shift 4 で状態を退避し、set -- ... "${@}" で
+##   データを保持したまま状態だけを更新する。これにより再帰呼び出しにも安全。
+##
+__sx_arg_rfold() {
+	set -- "$((${#} - 3))" "${@}"
+
+	while M_NUM_LT([|0|], [|${1}|]); do
+		eval '"${3}"' __sx_arg_rfold_ret_ '"${4}"' "\"\${$((${1} + 4))}\"" "${1}" || {
+			set -- "${?}" "${@}"
+			__sx_var_set "${3}=${5}"
+			unset __sx_arg_rfold_ret_
+			return "${1}"
+		}
+
+		__sx_arg_rfold_cb_="${3}"
+		: "${__sx_arg_rfold_ret_=${4}}"
+
+		eval 'shift 4;' set -- "$((${1} - 1))" "${2}" '"${__sx_arg_rfold_cb_}"' '"${__sx_arg_rfold_ret_}"' '"${@}"'
+
+		unset __sx_arg_rfold_ret_ __sx_arg_rfold_cb_
+	done
+
+	__sx_var_set "${2}=${4}"
 }
 
 ### __sx_arg_norm - 引数リスト内の数値をプレースホルダに展開して正規化する（内部用）
