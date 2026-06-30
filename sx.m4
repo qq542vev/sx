@@ -1706,12 +1706,74 @@ __sx_arg_reduce() {
 			return "${6}"
 		}
 
-		set -- "${1}" "${2}" "${3}" "${__sx_arg_reduce_ret_:-${4}}"
+		set -- "${1}" "${2}" "${3}" "${__sx_arg_reduce_ret_-${4}}"
 		unset __sx_arg_reduce_ret_
 	done
 
 	__sx_var_set "${2}=${4}"
 	unset __sx_arg_reduce_arg_
+}
+
+### sx_arg_reduce_right - 引数リストを右からコールバックで畳み込む（right fold）
+##
+## 使い方:
+##   sx_arg_reduce_right 結果変数 コールバック 初期値 [値 ...]
+##
+## 説明:
+##   sx_arg_reduce と同様に畳み込みを行うが、右端の要素から処理を開始する。
+##   コールバック契約: callback ret_var acc current_value index
+##     - ret_var: 新しいアキュムレータ値を格納する変数名
+##     - acc: 現在のアキュムレータ値
+##     - current_value: 現在処理中の要素の値
+##     - index: 元の引数リストにおける 1-based インデックス
+##   コールバックが ret_var を unset した場合、アキュムレータは変更されない。
+##   コールバックが非0を返した場合、その時点のアキュムレータ値を結果変数に格納し、
+##   直ちに終了する。
+##
+## 終了ステータス:
+##   すべてのコールバックが成功 => 0 (SX_EX_OK)
+##   コールバックが失敗 => 最初のエラーのステータス
+##   64 => 引数不正 (SX_EX_USAGE)
+##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_reduce_right() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_reduce_right "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_arg_reduce_right "${@}" || return
+}
+
+### __sx_arg_reduce_right - 引数リストを右からコールバックで畳み込む（内部用）
+##
+## 使い方:
+##   __sx_arg_reduce_right 結果変数 コールバック 初期値 [値 ...]
+##
+## 説明:
+##   sx_arg_reduce_right の内部実装。引数チェックは行わない。
+##   状態（cnt, res, cb, acc）は位置変数で管理し、eval で後方から間接参照する。
+##   各イテレーション後は shift 4 で状態を退避し、set -- ... "${@}" で
+##   データを保持したまま状態だけを更新する。これにより再帰呼び出しにも安全。
+##
+__sx_arg_reduce_right() {
+	set -- "$((${#} - 3))" "${@}"
+
+	while M_NUM_LT([|0|], [|${1}|]); do
+		eval '"${3}"' __sx_arg_reduce_right_ret_ '"${4}"' "\"\${$((${1} + 4))}\"" "${1}" || {
+			set -- "${?}" "${@}"
+			__sx_var_set "${3}=${5}"
+			unset __sx_arg_reduce_right_ret_
+			return "${1}"
+		}
+
+		__sx_arg_reduce_right_cb_="${3}"
+		: "${__sx_arg_reduce_right_ret_=${4}}"
+
+		eval 'shift 4;' set -- "$((${1} - 1))" "${2}" '"${__sx_arg_reduce_right_cb_}"' '"${__sx_arg_reduce_right_ret_}"' '"${@}"'
+
+		unset __sx_arg_reduce_right_ret_ __sx_arg_reduce_right_cb_
+	done
+
+	__sx_var_set "${2}=${4}"
 }
 
 ### sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する
