@@ -1645,10 +1645,10 @@ __sx_arg_map() {
 	return "${1}"
 }
 
-### sx_arg_reduce - 引数リストをコールバックで畳み込む（reduce / fold）
+### sx_arg_fold - 引数リストをコールバックで畳み込む（fold）
 ##
 ## 使い方:
-##   sx_arg_reduce 結果変数 コールバック 初期値 [値 ...]
+##   sx_arg_fold 結果変数 コールバック 初期値 [値 ...]
 ##
 ## 説明:
 ##   指定された値のリストの各要素に対してコールバック関数を適用し、
@@ -1667,60 +1667,60 @@ __sx_arg_map() {
 ##   コールバックが失敗 => 最初のエラーのステータス
 ##   64 => 引数不正 (SX_EX_USAGE)
 ##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_reduce() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_reduce "${@}" || return; return 0;; esac
+sx_arg_fold() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_fold "${@}" || return; return 0;; esac
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
-	__sx_arg_reduce "${@}" || return
+	__sx_arg_fold "${@}" || return
 }
 
-### __sx_arg_reduce - 引数リストをコールバックで畳み込む（内部用）
+### __sx_arg_fold - 引数リストをコールバックで畳み込む（内部用）
 ##
 ## 使い方:
-##   __sx_arg_reduce 結果変数 コールバック 初期値 [値 ...]
+##   __sx_arg_fold 結果変数 コールバック 初期値 [値 ...]
 ##
 ## 説明:
-##   sx_arg_reduce の内部実装。引数チェックは行わない。
+##   sx_arg_fold の内部実装。引数チェックは行わない。
 ##   状態は位置変数で管理し、for ループでイテレートする。
 ##   カウンタの初期値を状態変数の個数 * -1 に設定し、
 ##   cnt < 0 の間は状態変数領域としてスキップする。
 ##
-__sx_arg_reduce() {
+__sx_arg_fold() {
 	# $1: count, $2: res, $3: cb, $4: acc, $@: data
 	set -- -4 "${@}"
 
-	for __sx_arg_reduce_arg_ in "${@}"; do
-		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${__sx_arg_reduce_arg_}"
+	for __sx_arg_fold_arg_ in "${@}"; do
+		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${__sx_arg_fold_arg_}"
 
 		case "$((${1} <= 0))" in 1)
 			continue
 		esac
 
-		unset __sx_arg_reduce_arg_
+		unset __sx_arg_fold_arg_
 
-		"${3}" __sx_arg_reduce_ret_ "${4}" "${5}" "${1}" || {
+		"${3}" __sx_arg_fold_ret_ "${4}" "${5}" "${1}" || {
 			set -- "${@}" "${?}"
 			__sx_var_set "${2}=${4}"
-			unset __sx_arg_reduce_ret_
+			unset __sx_arg_fold_ret_
 			return "${6}"
 		}
 
-		set -- "${1}" "${2}" "${3}" "${__sx_arg_reduce_ret_-${4}}"
-		unset __sx_arg_reduce_ret_
+		set -- "${1}" "${2}" "${3}" "${__sx_arg_fold_ret_-${4}}"
+		unset __sx_arg_fold_ret_
 	done
 
 	__sx_var_set "${2}=${4}"
-	unset __sx_arg_reduce_arg_
+	unset __sx_arg_fold_arg_
 }
 
-### sx_arg_reduce_right - 引数リストを右からコールバックで畳み込む（right fold）
+### sx_arg_rfold - 引数リストを右からコールバックで畳み込む（rfold）
 ##
 ## 使い方:
-##   sx_arg_reduce_right 結果変数 コールバック 初期値 [値 ...]
+##   sx_arg_rfold 結果変数 コールバック 初期値 [値 ...]
 ##
 ## 説明:
-##   sx_arg_reduce と同様に畳み込みを行うが、右端の要素から処理を開始する。
+##   sx_arg_fold と同様に畳み込みを行うが、右端の要素から処理を開始する。
 ##   コールバック契約: callback ret_var acc current_value index
 ##     - ret_var: 新しいアキュムレータ値を格納する変数名
 ##     - acc: 現在のアキュムレータ値
@@ -1735,42 +1735,42 @@ __sx_arg_reduce() {
 ##   コールバックが失敗 => 最初のエラーのステータス
 ##   64 => 引数不正 (SX_EX_USAGE)
 ##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_arg_reduce_right() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_reduce_right "${@}" || return; return 0;; esac
+sx_arg_rfold() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfold "${@}" || return; return 0;; esac
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
-	__sx_arg_reduce_right "${@}" || return
+	__sx_arg_rfold "${@}" || return
 }
 
-### __sx_arg_reduce_right - 引数リストを右からコールバックで畳み込む（内部用）
+### __sx_arg_rfold - 引数リストを右からコールバックで畳み込む（内部用）
 ##
 ## 使い方:
-##   __sx_arg_reduce_right 結果変数 コールバック 初期値 [値 ...]
+##   __sx_arg_rfold 結果変数 コールバック 初期値 [値 ...]
 ##
 ## 説明:
-##   sx_arg_reduce_right の内部実装。引数チェックは行わない。
+##   sx_arg_rfold の内部実装。引数チェックは行わない。
 ##   状態（cnt, res, cb, acc）は位置変数で管理し、eval で後方から間接参照する。
 ##   各イテレーション後は shift 4 で状態を退避し、set -- ... "${@}" で
 ##   データを保持したまま状態だけを更新する。これにより再帰呼び出しにも安全。
 ##
-__sx_arg_reduce_right() {
+__sx_arg_rfold() {
 	set -- "$((${#} - 3))" "${@}"
 
 	while M_NUM_LT([|0|], [|${1}|]); do
-		eval '"${3}"' __sx_arg_reduce_right_ret_ '"${4}"' "\"\${$((${1} + 4))}\"" "${1}" || {
+		eval '"${3}"' __sx_arg_rfold_ret_ '"${4}"' "\"\${$((${1} + 4))}\"" "${1}" || {
 			set -- "${?}" "${@}"
 			__sx_var_set "${3}=${5}"
-			unset __sx_arg_reduce_right_ret_
+			unset __sx_arg_rfold_ret_
 			return "${1}"
 		}
 
-		__sx_arg_reduce_right_cb_="${3}"
-		: "${__sx_arg_reduce_right_ret_=${4}}"
+		__sx_arg_rfold_cb_="${3}"
+		: "${__sx_arg_rfold_ret_=${4}}"
 
-		eval 'shift 4;' set -- "$((${1} - 1))" "${2}" '"${__sx_arg_reduce_right_cb_}"' '"${__sx_arg_reduce_right_ret_}"' '"${@}"'
+		eval 'shift 4;' set -- "$((${1} - 1))" "${2}" '"${__sx_arg_rfold_cb_}"' '"${__sx_arg_rfold_ret_}"' '"${@}"'
 
-		unset __sx_arg_reduce_right_ret_ __sx_arg_reduce_right_cb_
+		unset __sx_arg_rfold_ret_ __sx_arg_rfold_cb_
 	done
 
 	__sx_var_set "${2}=${4}"
