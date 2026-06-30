@@ -1645,6 +1645,75 @@ __sx_arg_map() {
 	return "${1}"
 }
 
+### sx_arg_reduce - 引数リストをコールバックで畳み込む（reduce / fold）
+##
+## 使い方:
+##   sx_arg_reduce 結果変数 コールバック 初期値 [値 ...]
+##
+## 説明:
+##   指定された値のリストの各要素に対してコールバック関数を適用し、
+##   アキュムレータを更新しながら畳み込みを行う。
+##   コールバック契約: callback ret_var acc current_value index
+##     - ret_var: 新しいアキュムレータ値を格納する変数名
+##     - acc: 現在のアキュムレータ値
+##     - current_value: 現在処理中の要素の値
+##     - index: 1-based インデックス
+##   コールバックが ret_var を unset した場合、アキュムレータは変更されない。
+##   コールバックが非0を返した場合、その時点のアキュムレータ値を結果変数に格納し、
+##   直ちに終了する。
+##
+## 終了ステータス:
+##   すべてのコールバックが成功 => 0 (SX_EX_OK)
+##   コールバックが失敗 => 最初のエラーのステータス
+##   64 => 引数不正 (SX_EX_USAGE)
+##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_reduce() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_reduce "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_arg_reduce "${@}" || return
+}
+
+### __sx_arg_reduce - 引数リストをコールバックで畳み込む（内部用）
+##
+## 使い方:
+##   __sx_arg_reduce 結果変数 コールバック 初期値 [値 ...]
+##
+## 説明:
+##   sx_arg_reduce の内部実装。引数チェックは行わない。
+##   状態は位置変数で管理し、for ループでイテレートする。
+##   カウンタの初期値を状態変数の個数 * -1 に設定し、
+##   cnt < 0 の間は状態変数領域としてスキップする。
+##
+__sx_arg_reduce() {
+	# $1: count, $2: res, $3: cb, $4: acc, $@: data
+	set -- -4 "${@}"
+
+	for __sx_arg_reduce_arg_ in "${@}"; do
+		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${__sx_arg_reduce_arg_}"
+
+		case "$((${1} <= 0))" in 1)
+			continue
+		esac
+
+		unset __sx_arg_reduce_arg_
+
+		"${3}" __sx_arg_reduce_ret_ "${4}" "${5}" "${1}" || {
+			set -- "${@}" "${?}"
+			__sx_var_set "${2}=${4}"
+			unset __sx_arg_reduce_ret_
+			return "${6}"
+		}
+
+		set -- "${1}" "${2}" "${3}" "${__sx_arg_reduce_ret_:-${4}}"
+		unset __sx_arg_reduce_ret_
+	done
+
+	__sx_var_set "${2}=${4}"
+	unset __sx_arg_reduce_arg_
+}
+
 ### sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する
 ##
 ## 使い方:
@@ -1937,6 +2006,88 @@ __sx_arg_pad() {
 	esac || return
 }
 
+### __sx_arg_pad_cb - 引数リストをコールバックでパディングする（内部用）
+##
+## 使い方:
+##   __sx_arg_pad_cb スキーマ 長さ コールバック フラグ [値 ...]
+##
+## 説明:
+##   sx_arg_pad のコールバックモード実装。パディング値の代わりに
+##   コールバック関数を呼び出し、その戻り値をパディング値として使用する。
+##   コールバック契約: cb ret_var idx cnt skip
+##    cnt は 1-based。
+##
+##   コールバックが ret_var を unset した場合、そのスロットはスキップされる。
+##   コールバックが非0を返した場合、処理を中断する。
+##
+##   状態レイアウト（位置パラメータ）:
+##     $1: idx, $2: cnt, $3: skip, $4: needed, $5: bind, $6: len, $7: cb, $8: flag
+##     $9+: 元の値
+__sx_arg_pad_cb() {
+	set -- 1 1 0 "$((${2#-} - ${#} + 4))" "${@}"
+
+	# 左パディング
+	case "$((${6} < 0))" in 1)
+		while M_NUM_LE([|${2}|], [|${4}|]); do
+			"${7}" __sx_arg_pad_cb_ret_ "${1}" "${2}" "${3}" || {
+				__sx_arg_pad_cb_ex_="${?}"
+				break
+			}
+
+			case "${__sx_arg_pad_cb_ret_+X}" in
+				X)
+					__sx_var_bind __sx_arg_pad_cb_bind_ "${5}" "${__sx_arg_pad_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
+					eval 'shift 5;' set -- "$((${1} + 1))" "$((${2} + 1))" "${3}" "${4}" "${__sx_arg_pad_cb_bind_}" '"${@}"'
+					;;
+				*) eval 'shift 3;' set -- "${1}" "$((${2} + 1))" "$((${3} + 1))" '"${@}"';;
+			esac
+
+			unset __sx_arg_pad_cb_ret_ __sx_arg_pad_cb_bind_
+		done
+	esac
+
+	# idx は左パディングで消費済み。残り8フィールドを-8カウンタでスキップ
+	shift 1
+	set -- -8 "${@}"
+
+	for __sx_arg_pad_cb_arg_ in "${@}"; do
+		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}"
+
+		case "$((${1} <= 0))" in 1)
+			continue
+		esac
+
+		__sx_var_bind __sx_arg_pad_cb_bind_ "${5}" "${__sx_arg_pad_cb_arg_}" "${SX_VAR_BIND_QUOTE}"
+		eval 'shift 5;' set -- "${1}" "${2}" "${3}" "${4}" "${__sx_arg_pad_cb_bind_}" '"${@}"'
+	done
+
+	unset __sx_arg_pad_cb_arg_ __sx_arg_pad_cb_bind_
+
+	eval 'shift;' set -- "$((${1} + 1))" '"${@}"'
+
+	case "$((${6} < 0))" in 0)
+		while M_NUM_LE([|${2}|], [|${4}|]); do
+			"${7}" __sx_arg_pad_cb_ret_ "${1}" "${2}" "${3}" || {
+				__sx_arg_pad_cb_ex_="${?}"
+				break
+			}
+
+			case "${__sx_arg_pad_cb_ret_+X}" in
+				X)
+					__sx_var_bind __sx_arg_pad_cb_bind_ "${5}" "${__sx_arg_pad_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
+					eval 'shift 5;' set -- "$((${1} + 1))" "$((${2} + 1))" "${3}" "${4}" "${__sx_arg_pad_cb_bind_}" '"${@}"'
+					;;
+				*) eval 'shift 3;' set -- "${1}" "$((${2} + 1))" "$((${3} + 1))" '"${@}"';;
+			esac
+
+			unset __sx_arg_pad_cb_ret_ __sx_arg_pad_cb_bind_
+		done
+	esac
+
+	set -- "${__sx_arg_pad_cb_ex_-0}"
+	unset __sx_arg_pad_cb_ex_ __sx_arg_pad_cb_ret_
+	return "${1}"
+}
 define([|V|], [|__sx_arg_pad_lit_$1_|])dnl
 define([|CLEANUP|], [|V(bind) V(out) V(len) V(val) V(needed) V(arg) __M_BIND_USEVAR|])dnl
 ### __sx_arg_pad_lit - 引数リストをパディングする（内部用）
@@ -1980,90 +2131,6 @@ __sx_arg_pad_lit() {
 
 	eval ${__sx_arg_pad_lit_out_:+"${__sx_arg_pad_lit_bind_}=\"\${__sx_arg_pad_lit_out_}\""}
 	unset CLEANUP
-}
-
-### __sx_arg_pad_cb - 引数リストをコールバックでパディングする（内部用）
-##
-## 使い方:
-##   __sx_arg_pad_cb スキーマ 長さ コールバック フラグ [値 ...]
-##
-## 説明:
-##   sx_arg_pad のコールバックモード実装。パディング値の代わりに
-##   コールバック関数を呼び出し、その戻り値をパディング値として使用する。
-##   コールバック契約: cb ret_var idx cnt skip
-##    cnt は 1-based。
-##
-##   コールバックが ret_var を unset した場合、そのスロットはスキップされる。
-##   コールバックが非0を返した場合、処理を中断する。
-##
-##   状態レイアウト（位置パラメータ）:
-##     $1: idx, $2: cnt, $3: skip, $4: needed, $5: bind, $6: len, $7: cb, $8: flag
-##     $9+: 元の値
-__sx_arg_pad_cb() {
-	set -- 1 1 0 "$((${2#-} - ${#} + 4))" "${@}"
-
-	# 左パディング
-	case "$((${6} < 0))" in 1)
-		while M_NUM_LE([|${2}|], [|${4}|]); do
-			"${7}" __sx_arg_pad_cb_ret_ "${1}" "${2}" "${3}" || {
-				__sx_arg_pad_cb_ex_="${?}"
-				break
-			}
-
-			case "${__sx_arg_pad_cb_ret_+X}" in
-				X)
-					__sx_var_bind __sx_arg_pad_cb_bind_ "${5}" "${__sx_arg_pad_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
-					eval 'shift 5;' set -- "$((${1} + 1))" "$((${2} + 1))" "${3}" "${4}" "${__sx_arg_pad_cb_bind_}" '"${@}"'
-					;;
-				*) eval 'shift 3;' set -- "${1}" "$((${2} + 1))" "$((${3} + 1))" '"${@}"';;
-			esac
-
-			unset __sx_arg_pad_cb_ret_ __sx_arg_pad_cb_bind_
-		done
-	esac
-
-	# 元の値をバインド（$10+ が元の値）
-	# カウンタを先頭に追加し、ループ内でデータインデックスを追跡
-	set -- -10 "${@}"
-
-	for __sx_arg_pad_cb_arg_ in "${@}"; do
-		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}"
-
-		case "$((${1} < 0))" in 1)
-			continue
-		esac
-
-		__sx_var_bind __sx_arg_pad_cb_bind_ "${6}" "${__sx_arg_pad_cb_arg_}" "${SX_VAR_BIND_QUOTE}"
-		eval 'shift 6;' set -- "${1}" "$((${2} + 1))" "${3}" "${4}" "${5}" "${__sx_arg_pad_cb_bind_}" '"${@}"'
-	done
-
-	unset __sx_arg_pad_cb_arg_ __sx_arg_pad_cb_bind_
-
-	# 右パディング（元の値領域を削除）
-	shift 1
-
-	case "$((${6} < 0))" in 0)
-		while M_NUM_LE([|${2}|], [|${4}|]); do
-			"${7}" __sx_arg_pad_cb_ret_ "${1}" "${2}" "${3}" || {
-				__sx_arg_pad_cb_ex_="${?}"
-				break
-			}
-
-			case "${__sx_arg_pad_cb_ret_+X}" in
-				X)
-					__sx_var_bind __sx_arg_pad_cb_bind_ "${5}" "${__sx_arg_pad_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
-					eval 'shift 5;' set -- "$((${1} + 1))" "$((${2} + 1))" "${3}" "${4}" "${__sx_arg_pad_cb_bind_}" '"${@}"'
-					;;
-				*) eval 'shift 3;' set -- "${1}" "$((${2} + 1))" "$((${3} + 1))" '"${@}"';;
-			esac
-
-			unset __sx_arg_pad_cb_ret_ __sx_arg_pad_cb_bind_
-		done
-	esac
-
-	set -- "${__sx_arg_pad_cb_ex_-0}"
-	unset __sx_arg_pad_cb_ex_ __sx_arg_pad_cb_ret_
-	return "${1}"
 }
 
 ### sx_arg_range - 位置パラメータの参照文字列を生成する
