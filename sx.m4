@@ -2361,49 +2361,52 @@ __sx_arg_rfind() {
 ##    コールバックシグネチャ: callback value index count
 ##      0 を返すと一致、非0 は不一致としてスキップ。
 ##    引数は正規化済み。引数チェックは行わない。
-##    状態は名前付き変数で管理し、__sx_var_bind でバインドする。
+##    状態は位置変数で管理し、__sx_var_bind でバインドする。
 __sx_arg_rfind_cb() {
-	__sx_arg_rfind_cb_bind_="${1}"
-	__sx_arg_rfind_cb_cb_="${2}"
-	__sx_arg_rfind_cb_txt_=$(((${3} & SX_ARG_RFIND_TEXT) != 0))
-	__sx_arg_rfind_cb_i_="${#}"
-	__sx_arg_rfind_cb_match_=0
+	# 初期状態を設定
+	# $1: 現在のインデックス i (最初は ${#})
+	# $2: 一致件数 match (最初は 0)
+	# $3: 現在のバインド状態 bind (最初は元の $1 = 結果変数名)
+	# $4: コールバック cb (元の $2)
+	# $5: テキストフラグ txt (元の $3 から計算)
+	# $6以降: 元の引数リスト (結果変数名 コールバック フラグ [値 ...])
+	set -- "${#}" 0 "${1}" "${2}" "$(((${3} & SX_ARG_RFIND_TEXT) != 0))" "${@}"
 
 	while :; do
-		case "${__sx_arg_rfind_cb_bind_}" in '') break;; esac
-		case "$((${__sx_arg_rfind_cb_i_} <= 3))" in 1) break;; esac
+		case "${3}" in '') break;; esac
+		case "$((${1} <= 3))" in 1) break;; esac
 
-		eval __sx_arg_rfind_cb_val_=\"\${${__sx_arg_rfind_cb_i_}}\"
+		# コールバックを実行。一時変数を使わずに、eval で間接参照する。
+		if eval '"${4}"' "\"\${$((${1} + 5))}\"" '"$((${1} - 3))"' '"${2}"'; then
+			__sx_arg_rfind_cb_match_=$(( ${2} + 1 ))
 
-		if "${__sx_arg_rfind_cb_cb_}" "${__sx_arg_rfind_cb_val_}" "$((${__sx_arg_rfind_cb_i_} - 3))" "${__sx_arg_rfind_cb_match_}"; then
-			__sx_arg_rfind_cb_match_=$((__sx_arg_rfind_cb_match_ + 1))
-
-			case "${__sx_arg_rfind_cb_txt_}" in
+			case "${5}" in
 				0)
 					__sx_var_bind __sx_arg_rfind_cb_newbind_ \
-						"${__sx_arg_rfind_cb_bind_}" \
-						"$((${__sx_arg_rfind_cb_i_} - 3))" 0
+						"${3}" \
+						"$((${1} - 3))" 0
 					;;
 				*)
-					__sx_var_bind __sx_arg_rfind_cb_newbind_ \
-						"${__sx_arg_rfind_cb_bind_}" \
-						"${__sx_arg_rfind_cb_val_}" "${SX_VAR_BIND_QUOTE}"
+					eval __sx_var_bind __sx_arg_rfind_cb_newbind_ \
+						' "${3}" ' \
+						"\"\${$((${1} + 5))}\"" '"${SX_VAR_BIND_QUOTE}"'
 					;;
 			esac
-
-			__sx_arg_rfind_cb_bind_="${__sx_arg_rfind_cb_newbind_}"
-			unset __sx_arg_rfind_cb_newbind_
+		else
+			__sx_arg_rfind_cb_newbind_="${3}"
+			__sx_arg_rfind_cb_match_="${2}"
 		fi
 
-		: $((__sx_arg_rfind_cb_i_ -= 1))
+		__sx_arg_rfind_cb_i_="$((${1} - 1))"
+		__sx_arg_rfind_cb_cb_="${4}"
+		__sx_arg_rfind_cb_txt_="${5}"
+
+		eval 'shift 5;' set -- '"${__sx_arg_rfind_cb_i_}"' '"${__sx_arg_rfind_cb_match_}"' '"${__sx_arg_rfind_cb_newbind_}"' '"${__sx_arg_rfind_cb_cb_}"' '"${__sx_arg_rfind_cb_txt_}"' '"${@}"'
+
+		unset __sx_arg_rfind_cb_newbind_ __sx_arg_rfind_cb_match_ __sx_arg_rfind_cb_i_ __sx_arg_rfind_cb_cb_ __sx_arg_rfind_cb_txt_
 	done
 
-	set -- "$((!__sx_arg_rfind_cb_match_))"
-
-	unset __sx_arg_rfind_cb_bind_ __sx_arg_rfind_cb_cb_ __sx_arg_rfind_cb_txt_ \
-		__sx_arg_rfind_cb_i_ __sx_arg_rfind_cb_val_ __sx_arg_rfind_cb_newbind_ \
-		__sx_arg_rfind_cb_match_
-
+	set -- "$((!${2}))"
 	return "${1}"
 }
 

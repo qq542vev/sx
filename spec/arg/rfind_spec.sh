@@ -90,6 +90,21 @@ Describe 'sx_arg_rfind'
 			Assert [ "$res" = "5 4 3" ]
 		End
 
+		It 'コールバック内で sx_arg_rfind を再帰呼び出ししても状態が壊れないこと'
+			recursive_cb() {
+				if [ "$1" = "4" ]; then
+					sx_arg_rfind inner_res is_even_rec $SX_ARG_RFIND_CB ::: 1 2 3
+				fi
+				[ $(($1 % 2)) -eq 0 ]
+			}
+			is_even_rec() {
+				[ $(($1 % 2)) -eq 0 ]
+			}
+			sx_arg_rfind res recursive_cb $SX_ARG_RFIND_CB ::: 1 2 3 4 5
+			Assert [ "$res" = "4 2" ]
+			Assert [ "$inner_res" = "2" ]
+		End
+
 		It 'GLOB + CALLBACK 同時指定は Usage Error'
 			When call sx_arg_rfind res cb $((SX_ARG_RFIND_GLOB | SX_ARG_RFIND_CB)) ::: a b
 			The status should equal "$SX_EX_USAGE"
