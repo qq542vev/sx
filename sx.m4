@@ -1265,26 +1265,26 @@ __sx_arg_find_cb() {
 	set -- 1 -6 "$(((${3} & SX_ARG_FIND_TEXT) != 0))" "${@}"
 
 	for __sx_arg_find_cb_arg_ in "${@}"; do
-		set -- "${1}" "$((${2} + 1))" "${3}" "${4}" "${5}" "${6}" "${__sx_arg_find_cb_arg_}"
+		set -- "${1}" "$((${2} + 1))" "${3}" "${4}" "${5}" "${__sx_arg_find_cb_arg_}"
 
 		case "$((${2} <= 0))" in 1)
 			continue
 		esac
 
-		unset __sx_arg_find_cb_arg_ __sx_arg_find_cb_tmp_
+		unset __sx_arg_find_cb_arg_ __sx_arg_find_cb_bind_
 
-		# $1=sts, $2=i, $3=txt_flg, $4=bind, $5=cb, $6=flg, $7=value
-		"${5}" "${7}" "${2}" && {
+		# $1=sts, $2=i, $3=txt_flg, $4=bind, $5=cb, $6=value
+		"${5}" "${6}" "${2}" && {
 			case "${3}" in
-				0) __sx_var_bind __sx_arg_find_cb_tmp_ "${4}" "${2}" 0 || break;;
-				*) __sx_var_bind __sx_arg_find_cb_tmp_ "${4}" "${7}" "${SX_VAR_BIND_QUOTE}" || break;;
+				0) __sx_var_bind __sx_arg_find_cb_bind_ "${4}" "${2}" 0 || break;;
+				*) __sx_var_bind __sx_arg_find_cb_bind_ "${4}" "${6}" "${SX_VAR_BIND_QUOTE}" || break;;
 			esac
 
-			set -- 0 "${2}" "${3}" "${__sx_arg_find_cb_tmp_}" "${5}" "${6}"
+			set -- 0 "${2}" "${3}" "${__sx_arg_find_cb_bind_}" "${5}"
 		}
 	done
 
-	unset __sx_arg_find_cb_arg_ __sx_arg_find_cb_tmp_
+	unset __sx_arg_find_cb_arg_ __sx_arg_find_cb_bind_
 
 	return "${1}"
 }
