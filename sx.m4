@@ -2364,50 +2364,31 @@ __sx_arg_rfind() {
 ##    状態は位置変数で管理し、__sx_var_bind でバインドする。
 __sx_arg_rfind_cb() {
 	# 初期状態を設定
-	# $1: 現在のインデックス i (最初は ${#})
+	# $1: 現在のインデックス i (最初は値の個数)
 	# $2: 一致件数 match (最初は 0)
 	# $3: 現在のバインド状態 bind (最初は元の $1 = 結果変数名)
 	# $4: コールバック cb (元の $2)
 	# $5: テキストフラグ txt (元の $3 から計算)
 	# $6以降: 元の引数リスト (結果変数名 コールバック フラグ [値 ...])
-	set -- "${#}" 0 "${1}" "${2}" "$(((${3} & SX_ARG_RFIND_TEXT) != 0))" "${@}"
+	set -- "$((${#} - 3))" 0 "${1}" "${2}" "$(((${3} & SX_ARG_RFIND_TEXT) != 0))" "${@}"
 
-	while :; do
-		case "${3}" in '') break;; esac
-		case "$((${1} <= 3))" in 1) break;; esac
-
+	while M_NUM_LT([|0|], [|${1}|]) && M_STR_NE([|"${3}"|], [|''|]); do
 		# コールバックを実行。一時変数を使わずに、eval で間接参照する。
-		if eval '"${4}"' "\"\${$((${1} + 5))}\"" '"$((${1} - 3))"' '"${2}"'; then
-			__sx_arg_rfind_cb_match_=$(( ${2} + 1 ))
-
+		if eval '"${4}"' "\"\${$((${1} + 8))}\"" "${1}" "${2}"; then
 			case "${5}" in
-				0)
-					__sx_var_bind __sx_arg_rfind_cb_newbind_ \
-						"${3}" \
-						"$((${1} - 3))" 0
-					;;
-				*)
-					eval __sx_var_bind __sx_arg_rfind_cb_newbind_ \
-						' "${3}" ' \
-						"\"\${$((${1} + 5))}\"" '"${SX_VAR_BIND_QUOTE}"'
-					;;
+				0) __sx_var_bind __sx_arg_rfind_cb_bind_ "${3}" "${1}";;
+				*) eval __sx_var_bind __sx_arg_rfind_cb_bind_ "${3}" "\"\${$((${1} + 8))}\"" "${SX_VAR_BIND_QUOTE}";;
 			esac
+
+			eval 'shift 3;' set -- "$((${1} - 1))" "$((${2} + 1))" '"${__sx_arg_rfind_cb_bind_}"' '"${@}"'
 		else
-			__sx_arg_rfind_cb_newbind_="${3}"
-			__sx_arg_rfind_cb_match_="${2}"
+			eval 'shift 1;' set -- "$((${1} - 1))" '"${@}"'
 		fi
 
-		__sx_arg_rfind_cb_i_="$((${1} - 1))"
-		__sx_arg_rfind_cb_cb_="${4}"
-		__sx_arg_rfind_cb_txt_="${5}"
-
-		eval 'shift 5;' set -- '"${__sx_arg_rfind_cb_i_}"' '"${__sx_arg_rfind_cb_match_}"' '"${__sx_arg_rfind_cb_newbind_}"' '"${__sx_arg_rfind_cb_cb_}"' '"${__sx_arg_rfind_cb_txt_}"' '"${@}"'
-
-		unset __sx_arg_rfind_cb_newbind_ __sx_arg_rfind_cb_match_ __sx_arg_rfind_cb_i_ __sx_arg_rfind_cb_cb_ __sx_arg_rfind_cb_txt_
+		unset __sx_arg_rfind_cb_bind_
 	done
 
-	set -- "$((!${2}))"
-	return "${1}"
+	return "$((!${2}))"
 }
 
 define([|V|], [|__sx_arg_rfind_lit_$1_|])dnl
