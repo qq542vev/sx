@@ -1273,11 +1273,15 @@ __sx_arg_find_cb() {
 
 		unset __sx_arg_find_cb_arg_ __sx_arg_find_cb_bind_
 
+		case "${4}" in '')
+			break
+		esac
+
 		# $1=sts, $2=i, $3=txt_flg, $4=bind, $5=cb, $6=value
 		"${5}" "${6}" "${2}" && {
 			case "${3}" in
-				0) __sx_var_bind __sx_arg_find_cb_bind_ "${4}" "${2}" 0 || break;;
-				*) __sx_var_bind __sx_arg_find_cb_bind_ "${4}" "${6}" "${SX_VAR_BIND_QUOTE}" || break;;
+				0) __sx_var_bind __sx_arg_find_cb_bind_ "${4}" "${2}" 0;;
+				*) __sx_var_bind __sx_arg_find_cb_bind_ "${4}" "${6}" "${SX_VAR_BIND_QUOTE}";;
 			esac
 
 			set -- 0 "${2}" "${3}" "${__sx_arg_find_cb_bind_}" "${5}"
@@ -1492,15 +1496,15 @@ __sx_arg_isep_cb() {
 		# 状態レイアウトに再構築: $1=sep_cnt $2=skip $3=stat $4=i $5=bind $6=cb $7=int $8=lim $9=flags
 		set -- 0 0 0 -10 "${@}"
 
+		case "${5}" in '')
+			return "${3}"
+		esac
+
 		# === PRE セパレータ ===
 		case "$((${1} < ${8} && ${9} & SX_ARG_ISEP_PRE))" in 1)
 			if "${6}" __sx_arg_isep_cb_ret_ 0 "$((${1} + 1))" "${2}"; then
 				case "${__sx_arg_isep_cb_ret_+X}" in X)
-					__sx_var_bind __sx_arg_isep_cb_bind_ "${5}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}" || {
-						unset __sx_arg_isep_cb_ret_
-						return "${3}"
-					}
-
+					__sx_var_bind __sx_arg_isep_cb_bind_ "${5}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
 					eval 'shift 5;' set -- "$((${1} + 1))" "${2}" 0 "${4}" "${__sx_arg_isep_cb_bind_}" '"${@}"';;
 				*)
 					eval 'shift 2;' set -- "$((${1} + 1))" "$((${2} + 1))" '"${@}"';;
@@ -1522,14 +1526,15 @@ __sx_arg_isep_cb() {
 
 			unset __sx_arg_isep_cb_arg_
 
+			case "${5}" in '')
+				return "${3}"
+			esac
+
 			# 内部セパレータ挿入判定（前向き）
 			case "$((${1} < ${8} && 0 < ${4} && ${4} % ${7} == 0))" in 1)
 				if "${6}" __sx_arg_isep_cb_ret_ "${4}" "$((${1} + 1))" "${2}"; then
 					case "${__sx_arg_isep_cb_ret_+X}" in X)
-						__sx_var_bind __sx_arg_isep_cb_bind_ "${5}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}" || {
-							unset __sx_arg_isep_cb_ret_
-							return "${3}"
-						}
+						__sx_var_bind __sx_arg_isep_cb_bind_ "${5}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
 
 						set -- "$((${1} + 1))" "${2}" 0 "${4}" "${__sx_arg_isep_cb_bind_}" "${6}" "${7}" "${8}" "${9}" "${10}";;
 					*)
@@ -1540,10 +1545,15 @@ __sx_arg_isep_cb() {
 				fi
 			esac
 
-			__sx_var_bind __sx_arg_isep_cb_bind_ "${5}" "${10}" "${SX_VAR_BIND_QUOTE}"
+			__sx_var_bind __sx_arg_isep_cb_bind_ "${5}" "${10}" "${SX_VAR_BIND_QUOTE}" || :
 			set -- "${1}" "${2}" "${3}" "${4}" "${__sx_arg_isep_cb_bind_}" "${6}" "${7}" "${8}" "${9}"
 			unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_bind_
 		done
+
+		case "${5}" in '')
+			unset __sx_arg_isep_cb_arg_
+			return "${3}"
+		esac
 
 		# === POST セパレータ ===
 		case "$((${1} < ${8} && ${9} & SX_ARG_ISEP_POST && (${4} + 1) % ${7} == 0))" in 1)
@@ -1910,6 +1920,8 @@ __sx_arg_map() {
 			continue
 		esac
 
+		case "${3}" in '') break;; esac
+
 		case "${1}" in
 			0)
 				unset __sx_arg_map_arg_
@@ -1924,10 +1936,7 @@ __sx_arg_map() {
 		esac
 
 		case "${__sx_arg_map_ret_+X}" in X)
-			__sx_var_bind __sx_arg_map_fmt_ "${3}" "${__sx_arg_map_ret_}" || {
-				unset __sx_arg_map_arg_ __sx_arg_map_ret_
-				return "${1}"
-			}
+			__sx_var_bind __sx_arg_map_fmt_ "${3}" "${__sx_arg_map_ret_}"
 
 			set -- "${1}" "${2}" "${__sx_arg_map_fmt_}" "${4}"
 		esac
@@ -2099,7 +2108,7 @@ __sx_arg_pad_cb() {
 
 	# 左パディング
 	case "$((${6} < 0))" in 1)
-		while M_NUM_LE([|${2}|], [|${4}|]); do
+		while M_NUM_LE([|${2}|], [|${4}|]) && M_STR_NE([|"${5}"|], [|''|]); do
 			"${7}" __sx_arg_pad_cb_ret_ "${1}" "${2}" "${3}" || {
 				__sx_arg_pad_cb_ex_="${?}"
 				break
@@ -2128,7 +2137,7 @@ __sx_arg_pad_cb() {
 			continue
 		esac
 
-		__sx_var_bind __sx_arg_pad_cb_bind_ "${5}" "${__sx_arg_pad_cb_arg_}" "${SX_VAR_BIND_QUOTE}"
+		__sx_var_bind __sx_arg_pad_cb_bind_ "${5}" "${__sx_arg_pad_cb_arg_}" "${SX_VAR_BIND_QUOTE}" || break
 		eval 'shift 5;' set -- "${1}" "${2}" "${3}" "${4}" "${__sx_arg_pad_cb_bind_}" '"${@}"'
 	done
 
@@ -2137,7 +2146,7 @@ __sx_arg_pad_cb() {
 	eval 'shift;' set -- "$((${1} + 1))" '"${@}"'
 
 	case "$((${6} < 0))" in 0)
-		while M_NUM_LE([|${2}|], [|${4}|]); do
+		while M_NUM_LE([|${2}|], [|${4}|]) && M_STR_NE([|"${5}"|], [|''|]); do
 			"${7}" __sx_arg_pad_cb_ret_ "${1}" "${2}" "${3}" || {
 				__sx_arg_pad_cb_ex_="${?}"
 				break
