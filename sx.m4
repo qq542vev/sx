@@ -1199,6 +1199,8 @@ __sx_arg_find() {
 		set -- "${__sx_arg_find_bind_-}" "${__sx_arg_find_tgt_-}" "${__sx_arg_find_flg_:-0}" "${@}"
 	unset __sx_arg_find_bind_ __sx_arg_find_tgt_ __sx_arg_find_flg_
 
+	__sx_var_bind_init "${1}"
+
 	case "$((${3} & SX_ARG_FIND_CB))" in
 		0) __sx_arg_find_lit "${@}";;
 		*) __sx_arg_find_cb "${@}";;
@@ -1217,15 +1219,14 @@ define([|CLEANUP|], [|V(bind) V(tgt) V(flg) V(glob) V(text) V(out) V(i) V(arg) V
 ##   __sx_arg_find から呼ばれる。先頭から末尾に向かって検索する。
 ##   引数は正規化済み。引数チェックは行わない。
 __sx_arg_find_lit() {
-	__sx_arg_find_lit_bind_="${1}" __sx_arg_find_lit_tgt_="${2}" __sx_arg_find_lit_flg_="${3}"
-	shift 3
+	__sx_arg_find_lit_bind_="${1}" __sx_arg_find_lit_tgt_="${2}"
 
-	__sx_arg_find_lit_glob_=$(((__sx_arg_find_lit_flg_ & SX_ARG_FIND_GLOB) != 0))
-	__sx_arg_find_lit_text_=$(((__sx_arg_find_lit_flg_ & SX_ARG_FIND_TEXT) != 0))
+	__sx_arg_find_lit_glob_=$(((${3} & SX_ARG_FIND_GLOB) != 0))
+	__sx_arg_find_lit_text_=$(((${3} & SX_ARG_FIND_TEXT) != 0))
 	__sx_arg_find_lit_i_=1
 	__sx_arg_find_lit_out_=
 
-	__sx_var_bind_init "${__sx_arg_find_lit_bind_}"
+	shift 3
 
 	for __sx_arg_find_lit_arg_ in "${@}"; do
 		case "${__sx_arg_find_lit_glob_}${__sx_arg_find_lit_arg_}" in "0${__sx_arg_find_lit_tgt_}" | 1${__sx_arg_find_lit_tgt_})
@@ -1255,19 +1256,17 @@ __sx_arg_find_lit() {
 ##
 ## 説明:
 ##   __sx_arg_find から呼ばれる。コールバックの終了ステータスで一致を判定する。
-##   コールバックシグネチャ: callback value index
+##   コールバックシグネチャ: callback value index count
 ##     0 を返すと一致、非0 は不一致としてスキップ。
 ##   引数は正規化済み。引数チェックは行わない。
 ##   状態は位置変数で管理し、__sx_var_bind でバインドする。
 __sx_arg_find_cb() {
-	__sx_var_bind_init "${1}"
-
-	set -- 1 -6 "$(((${3} & SX_ARG_FIND_TEXT) != 0))" "${@}"
+	set -- -6 0 "$(((${3} & SX_ARG_FIND_TEXT) != 0))" "${@}"
 
 	for __sx_arg_find_cb_arg_ in "${@}"; do
-		set -- "${1}" "$((${2} + 1))" "${3}" "${4}" "${5}" "${__sx_arg_find_cb_arg_}"
+		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${5}" "${__sx_arg_find_cb_arg_}"
 
-		case "$((${2} <= 0))" in 1)
+		case "$((${1} <= 0))" in 1)
 			continue
 		esac
 
@@ -1277,20 +1276,20 @@ __sx_arg_find_cb() {
 			break
 		esac
 
-		# $1=sts, $2=i, $3=txt_flg, $4=bind, $5=cb, $6=value
-		"${5}" "${6}" "${2}" && {
+		# $1=i, $2=match_cnt, $3=txt_flg, $4=bind, $5=cb, $6=value
+		"${5}" "${6}" "${1}" "${2}" && {
 			case "${3}" in
-				0) __sx_var_bind __sx_arg_find_cb_bind_ "${4}" "${2}" 0;;
+				0) __sx_var_bind __sx_arg_find_cb_bind_ "${4}" "${1}" 0;;
 				*) __sx_var_bind __sx_arg_find_cb_bind_ "${4}" "${6}" "${SX_VAR_BIND_QUOTE}";;
 			esac
 
-			set -- 0 "${2}" "${3}" "${__sx_arg_find_cb_bind_}" "${5}"
+			set -- "${1}" "$((${2} + 1))" "${3}" "${__sx_arg_find_cb_bind_}" "${5}"
 		}
 	done
 
 	unset __sx_arg_find_cb_arg_ __sx_arg_find_cb_bind_
 
-	return "${1}"
+	return "$((!${2}))"
 }
 
 ### sx_arg_fold - 引数リストをコールバックで畳み込む（fold）
