@@ -213,6 +213,7 @@ readonly SX_ARG_RFIND_GLOB=1
 readonly SX_ARG_RFIND_TEXT=4
 readonly SX_ARG_RFIND_CB=2
 readonly SX_ARG_COUNT_GLOB=1
+readonly SX_ARG_COUNT_CB=2
 readonly SX_STR_FIND_GLOB=1
 readonly SX_STR_FIND_OVERLAP=2
 readonly SX_STR_FIND_TEXT=4
@@ -969,7 +970,10 @@ sx_util_eval() {
 ##
 ## 説明:
 ##   引数リストから検索対象と一致する値の出現回数を数え、結果変数に非負整数で格納する。
-##   フラグの意味は sx_arg_find と同一（SX_ARG_COUNT_GLOB）。
+##   フラグの意味は sx_arg_find と同一（SX_ARG_COUNT_GLOB, SX_ARG_COUNT_CB）。
+##   SX_ARG_COUNT_CB (2) を指定すると、検索対象をコールバック関数として扱う。
+##   コールバックシグネチャ: callback 値 インデックス 一致数
+##     0 を返すと一致、非0 は不一致としてスキップ。
 ##   実質的に __sx_arg_find に委譲し、結果のスペース区切り件数を __sx_arg_len で取得する。
 ##
 ##   空の検索対象を指定した場合、空文字の値のみが一致とみなされる。
@@ -985,7 +989,13 @@ sx_arg_count() {
 
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}" | "${3+X${3}}") ;;
-		"${4+X${4}}") __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${3}" || return;;
+		"${4+X${4}}")
+			__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${3}" || return
+
+			case "$(((${3} & SX_ARG_COUNT_GLOB) * (${3} & SX_ARG_COUNT_CB)))" in [!0])
+				return "${SX_EX_USAGE}"
+			esac
+			;;
 	esac
 
 	__sx_arg_count "${@}"
@@ -1159,6 +1169,7 @@ sx_arg_find() {
 		"${1+X${1}}" | "${2+X${2}}" | "${3+X${3}}") ;;
 		"${4+X${4}}")
 			__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${3}" || return
+
 			case "$(((${3} & SX_ARG_FIND_GLOB) * (${3} & SX_ARG_FIND_CB)))" in [!0])
 				return "${SX_EX_USAGE}"
 			esac
