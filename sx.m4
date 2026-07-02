@@ -5435,17 +5435,28 @@ sx_str_chunk() {
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} || return
 
-	__sx_num_is_sx_int_inv ${3:+"${3}"} && __sx_num_is_sx_nat0 ${4:+"${4}"} ${5:+"${5}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_sx_nat0 ${4:+"${4}"} ${5:+"${5}"} || return "${SX_EX_USAGE}"
 
-	case "$((${3:-1}))" in 0)
-		return "${SX_EX_USAGE}"
-	esac
+	__sx_str_chunk_validate_ints="${3:-1}:"
+	while case "${__sx_str_chunk_validate_ints}" in ?*) true;; *) false;; esac; do
+		__sx_str_chunk_validate_cur="${__sx_str_chunk_validate_ints%%:*}"
+		__sx_str_chunk_validate_ints="${__sx_str_chunk_validate_ints#*:}"
+		__sx_num_is_sx_int_inv "${__sx_str_chunk_validate_cur}" || {
+			unset __sx_str_chunk_validate_cur __sx_str_chunk_validate_ints
+			return "${SX_EX_USAGE}"
+		}
+		case "${__sx_str_chunk_validate_cur}" in 0)
+			unset __sx_str_chunk_validate_cur __sx_str_chunk_validate_ints
+			return "${SX_EX_USAGE}"
+		esac
+	done
+	unset __sx_str_chunk_validate_cur __sx_str_chunk_validate_ints
 
 	__sx_str_chunk "${@}"
 }
 
 define([|V|], [|__sx_str_chunk_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(str) V(len) V(lim) V(flg) V(out) V(qm) V(next) __M_BIND_USEVAR|])dnl
+define([|CLEANUP|], [|V(bind) V(str) V(len) V(lim) V(flg) V(out) V(rem_len) V(fwd_list) V(bwd_list) V(seq) V(ints_cycle) V(cur) V(cur_abs) V(chunk) V(size) V(size_abs) __M_BIND_USEVAR|])dnl
 
 ### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
 ##
@@ -5457,55 +5468,75 @@ define([|CLEANUP|], [|V(bind) V(str) V(len) V(lim) V(flg) V(out) V(qm) V(next) _
 ##   引数チェックは行わない。
 __sx_str_chunk() {
 	__sx_var_bind_init "${1}"
-	__sx_str_chunk_bind_="${1}"
-	__sx_str_chunk_str_="${2-}"
-	__sx_str_chunk_len_="${3:-1}"
-	__sx_str_chunk_lim_="${4:-${SX_NUM_I32_MAX}}"
-	__sx_str_chunk_flg_="${5:-0}"
+	V(bind)="${1}"
+	V(str)="${2-}"
+	V(len)="${3:-1}"
+	V(lim)="${4:-${SX_NUM_I32_MAX}}"
+	V(flg)="${5:-0}"
 
-		SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_#[+-]}"
+	V(rem_len)="${#V(str)}"
+	V(fwd_list)=
+	V(bwd_list)=
 
-	if M_NUM_LT([|0|], [|__sx_str_chunk_len_|]); then
-		# Forward: 早期終了をサポート
-		__sx_str_chunk_out_=
+	V(ints_cycle)="${V(len)}:"
 
-		while M_NUM_BOOL([|__sx_str_chunk_len_ < ${#__sx_str_chunk_str_} && __sx_str_chunk_lim_ != 0|]); do
-			__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
-			__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], CLEANUP)
+	# 第1パス: 文字列長・limit から切り取りサイズリストを構築
+	while M_NUM_BOOL([|0 < V(rem_len) && 0 < V(lim)|]); do
+		V(cur)="${V(ints_cycle)%%:*}"
+		V(ints_cycle)="${V(ints_cycle)#*:}${V(cur)}:"
 
-			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
-			: $((__sx_str_chunk_lim_ -= 1))
-		done
-
-		case "${__sx_str_chunk_str_}" in ?*)
-			__sx_num_cmp_arith "${#__sx_str_chunk_str_}" "${__sx_str_chunk_len_}" ||
-			case "${?}0" in "1$((__sx_str_chunk_flg_ & SX_STR_CHUNK_SKIP_SHORT))" | 20 | "3$((__sx_str_chunk_flg_ & SX_STR_CHUNK_SKIP_LONG))")
-			__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_}"|], CLEANUP)
+		case "${V(cur)}" in
+			-*) V(cur_abs)="${V(cur)#-}" ;;
+			*)  V(cur_abs)="${V(cur)}" ;;
 		esac
-	esac
 
-		eval ${__sx_str_chunk_out_:+"${__sx_str_chunk_bind_}=\"\${__sx_str_chunk_out_}\""}
-	else
-		# Backward: 全走査が必要なため set -- で収集
-		set --
-		: $((__sx_str_chunk_len_ *= -1))
+		if M_NUM_LT([|V(rem_len)|], [|V(cur_abs)|]); then
+			break
+		fi
 
-		while M_NUM_BOOL([|__sx_str_chunk_len_ < ${#__sx_str_chunk_str_} && __sx_str_chunk_lim_ != 0|]); do
-			__sx_str_chunk_next_="${__sx_str_chunk_str_%${__sx_str_chunk_qm_}}"
-			set -- "${__sx_str_chunk_str_#${__sx_str_chunk_next_}}" "${@}"
-			__sx_str_chunk_str_="${__sx_str_chunk_next_}"
-			: $((__sx_str_chunk_lim_ -= 1))
-		done
-
-	case "${__sx_str_chunk_str_}" in ?*)
-		__sx_num_cmp_arith "${#__sx_str_chunk_str_}" "${__sx_str_chunk_len_}" ||
-		case "${?}0" in "1$((__sx_str_chunk_flg_ & SX_STR_CHUNK_SKIP_SHORT))" | 20 | "3$((__sx_str_chunk_flg_ & SX_STR_CHUNK_SKIP_LONG))")
-			set -- "${__sx_str_chunk_str_}" "${@}"
+		case "${V(cur)}" in
+			-*) V(bwd_list)="${V(cur_abs)}${V(bwd_list):+ }${V(bwd_list)}" ;;
+			*)  V(fwd_list)="${V(fwd_list)}${V(fwd_list):+ }${V(cur_abs)}" ;;
 		esac
-	esac
 
-		__sx_arg_quote "${__sx_str_chunk_bind_}" "${@}"
+		: $((V(rem_len) -= V(cur_abs)))
+		: $((V(lim) -= 1))
+	done
+
+	# 余り処理: limit 到達 or 文字列不足
+	V(seq)=${V(fwd_list)}
+	if M_NUM_LT([|0|], [|V(rem_len)|]); then
+		if M_NUM_BOOL([|V(lim) == 0|]); then
+			case "$((V(flg) & SX_STR_CHUNK_SKIP_LONG))" in
+				0) V(seq)="${V(seq)}${V(seq):+ }${V(rem_len)}" ;;
+				*) V(seq)="${V(seq)}${V(seq):+ }-${V(rem_len)}" ;;
+			esac
+		else
+			case "$((V(flg) & SX_STR_CHUNK_SKIP_SHORT))" in
+				0) V(seq)="${V(seq)}${V(seq):+ }${V(rem_len)}" ;;
+				*) V(seq)="${V(seq)}${V(seq):+ }-${V(rem_len)}" ;;
+			esac
+		fi
 	fi
+	V(seq)="${V(seq)}${V(seq):+ }${V(bwd_list)}"
+
+	# 第2パス: 切り取りリストを左から処理
+	V(out)=
+	for V(size) in ${V(seq)}; do
+		case "${V(size)}" in
+			-*)
+				V(size_abs)="${V(size)#-}"
+				SX_CFG_UNSET_SOFT=2 __sx_str_substr V(str) "${V(str)}" "${V(size_abs)}"
+				;;
+			*)
+				SX_CFG_UNSET_SOFT=2 __sx_str_substr V(chunk) "${V(str)}" 0 "${V(size)}"
+				SX_CFG_UNSET_SOFT=2 __sx_str_substr V(str) "${V(str)}" "${V(size)}"
+				__M_BIND_QUOTE([|__sx_str_chunk|], [|"${V(chunk)}"|], CLEANUP)
+				;;
+		esac
+	done
+
+	eval ${V(out):+"${V(bind)}=\"\${V(out)}\""}
 
 	unset CLEANUP
 }

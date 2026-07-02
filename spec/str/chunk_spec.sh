@@ -200,4 +200,149 @@ Describe "sx_str_chunk"
     The variable v1 should equal "ab"
     The variable v2 should equal "cd"
   End
+
+  Describe "サイクル interval"
+    It "2:3 で前方サイクル分割できること"
+      When call sx_str_chunk res "abcdefghij" "2:3"
+      The status should be success
+      The variable res should equal "'ab' 'cde' 'fg' 'hij'"
+    End
+
+    It "1:2:3 で前方3値サイクルできること"
+      When call sx_str_chunk res "abcdef" "1:2:3"
+      The status should be success
+      The variable res should equal "'a' 'bc' 'def'"
+    End
+
+    It "2:-3:4 で前方・後方混合サイクルできること"
+      When call sx_str_chunk res "abcdefghij" "2:-3:4"
+      The status should be success
+      The variable res should equal "'ab' 'cdef' 'g' 'hij'"
+    End
+
+    It "-2:-4:3 で後方・前方混合サイクルできること"
+      When call sx_str_chunk res "abcdefghij" "-2:-4:3"
+      The status should be success
+      The variable res should equal "'abc' 'd' 'efgh' 'ij'"
+    End
+
+    It "-2:-3 で全後方サイクルできること"
+      When call sx_str_chunk res "abcdefghij" "-2:-3"
+      The status should be success
+      The variable res should equal "'abc' 'de' 'fgh' 'ij'"
+    End
+
+    It "単一値のサイクルが従来の単一値と同等であること"
+      When call sx_str_chunk res "abcde" "2"
+      The status should be success
+      The variable res should equal "'ab' 'cd' 'e'"
+    End
+
+    It "SKIP_SHORT でサイクルの残余をスキップできること"
+      When call sx_str_chunk res "abcdefghij" "2:-3:4" '' "${SX_STR_CHUNK_SKIP_SHORT}"
+      The status should be success
+      The variable res should equal "'ab' 'cdef' 'hij'"
+    End
+
+    It "SKIP_LONG でlimit到達時のサイクル残余をスキップできること"
+      When call sx_str_chunk res "abcdefghij" "2:-3:4" 2 "${SX_STR_CHUNK_SKIP_LONG}"
+      The status should be success
+      The variable res should equal "'ab' 'hij'"
+    End
+
+    It "limit 1 でサイクルが1回で停止すること"
+      When call sx_str_chunk res "abcdefghij" "2:-3:4" 1
+      The status should be success
+      The variable res should equal "'ab' 'cdefghij'"
+    End
+
+    It "limit 2 でサイクルが2回で停止すること"
+      When call sx_str_chunk res "abcdefghij" "2:-3:4" 2
+      The status should be success
+      The variable res should equal "'ab' 'cdefg' 'hij'"
+    End
+
+    It "バインドチェーンでサイクルを分配代入できること"
+      When call sx_str_chunk "v1:v2:rest" "abcdefghij" "2:-3:4"
+      The status should be success
+      The variable v1 should equal "ab"
+      The variable v2 should equal "cdef"
+      The variable rest should equal "'g' 'hij'"
+    End
+
+    It "バインドチェーン + 早期終了でサイクルを途中停止できること"
+      When call sx_str_chunk "v1:v2:" "abcdefghij" "2:-3:4"
+      The status should be success
+      The variable v1 should equal "ab"
+      The variable v2 should equal "cdef"
+    End
+
+    It "バインドチェーン + SKIP_SHORT でサイクルの残余をスキップできること"
+      When call sx_str_chunk "v1:v2:rest" "abcdefghij" "2:-3:4" '' "${SX_STR_CHUNK_SKIP_SHORT}"
+      The status should be success
+      The variable v1 should equal "ab"
+      The variable v2 should equal "cdef"
+      The variable rest should equal "'hij'"
+    End
+
+    It "文字列より大きいサイクル値は全体を1チャンクとして扱うこと"
+      When call sx_str_chunk res "a" "2:-3:4"
+      The status should be success
+      The variable res should equal "'a'"
+    End
+
+    It "空文字列にサイクルを適用しても空文字列を返すこと"
+      When call sx_str_chunk res "" "2:-3:4"
+      The status should be success
+      The variable res should equal ""
+    End
+
+    It "割り切れるサイクルで残余が出ないこと"
+      When call sx_str_chunk res "abcde" "2:3"
+      The status should be success
+      The variable res should equal "'ab' 'cde'"
+    End
+
+    It "サイクル内に0を含むと EX_USAGE を返すこと"
+      When call sx_str_chunk res "abc" "2:0:3"
+      The status should equal 64
+    End
+
+    It "サイクル内に不正文字を含むと EX_USAGE を返すこと"
+      When call sx_str_chunk res "abc" "2:a:3"
+      The status should equal 64
+    End
+
+    It "limit 0 でサイクルは全文字列を1チャンクとして返すこと"
+      When call sx_str_chunk res "abcdefghij" "2:-3:4" 0
+      The status should be success
+      The variable res should equal "'abcdefghij'"
+    End
+
+    It "特殊文字を含む文字列をサイクルで安全に処理できること"
+      When call sx_str_chunk res "a*b? c'd" "2:-3:4"
+      The status should be success
+      The variable res should equal "'a*' 'b? ' 'c'\''d'"
+    End
+
+    It "2:3:4 で SKIP_SHORT + SKIP_LONG 両フラグが exact fit で正しく動作すること"
+      When call sx_str_chunk res "abcdefghi" "2:3:4" '' "$((SX_STR_CHUNK_SKIP_SHORT + SX_STR_CHUNK_SKIP_LONG))"
+      The status should be success
+      The variable res should equal "'ab' 'cde' 'fghi'"
+    End
+  End
+
+  Describe "互換性: 従来の単一intervalが変わらず動作すること"
+    It "前方分割: 既存テストと同じ結果"
+      When call sx_str_chunk res "abcde" 2
+      The status should be success
+      The variable res should equal "'ab' 'cd' 'e'"
+    End
+
+    It "後方分割: 既存テストと同じ結果"
+      When call sx_str_chunk res "abcde" -2
+      The status should be success
+      The variable res should equal "'a' 'bc' 'de'"
+    End
+  End
 End
