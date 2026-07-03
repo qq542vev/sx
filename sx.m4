@@ -5438,7 +5438,7 @@ sx_str_chunk() {
 	__sx_num_is_sx_nat0 ${4:+"${4}"} ${5:+"${5}"} || return "${SX_EX_USAGE}"
 
 	case "${3:-1}" in
-		*[1-9A-Fa-f]*) ;;
+		*[1-9ABCDEFabcdef]*) ;;
 		*) return "${SX_EX_USAGE}";;
 	esac
 
@@ -5452,6 +5452,9 @@ sx_str_chunk() {
 
 	__sx_str_chunk "${@}"
 }
+
+define([|V|], [|__sx_str_chunk_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(str) V(cycle) V(lim) V(len) V(bwd) V(out) V(newcycle) V(cur) V(qm) V(abs) V(next) V(chunk) __M_BIND_USEVAR|])dnl
 
 ### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
 ##
@@ -5483,7 +5486,6 @@ __sx_str_chunk() {
 	done
 
 	__sx_str_chunk_cycle_="${__sx_str_chunk_newcycle_}"
-	unset __sx_str_chunk_newcycle_
 
 	# 第1パス: 文字列長・limit から切り取りサイズリストを構築
 	while
@@ -5503,7 +5505,7 @@ __sx_str_chunk() {
 
 		__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
 
-		__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_len_ __sx_str_chunk_bwd_ __sx_str_chunk_cycle_ __sx_str_chunk_cur_ __sx_str_chunk_num_ __sx_str_chunk_qm_ __sx_str_chunk_abs_ __sx_str_chunk_chunk_ __sx_str_chunk_next_ __sx_str_chunk_bind_cnt_ __sx_str_chunk_bind_name_ __sx_str_chunk_bind_esc_)
+		__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], CLEANUP)
 
 		__sx_str_chunk_str_="${__sx_str_chunk_next_}"
 	done
@@ -5531,14 +5533,14 @@ __sx_str_chunk() {
 		__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
 		__sx_str_chunk_chunk_=""
 
-		__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_len_ __sx_str_chunk_bwd_ __sx_str_chunk_cycle_ __sx_str_chunk_cur_ __sx_str_chunk_num_ __sx_str_chunk_qm_ __sx_str_chunk_abs_ __sx_str_chunk_chunk_ __sx_str_chunk_next_ __sx_str_chunk_bind_cnt_ __sx_str_chunk_bind_name_ __sx_str_chunk_bind_esc_)
+		__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], CLEANUP)
 
 		__sx_str_chunk_str_="${__sx_str_chunk_next_}"
 	done
 
 	eval ${__sx_str_chunk_out_:+"${__sx_str_chunk_bind_}=\"\${__sx_str_chunk_out_}\""}
 
-	unset __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_len_ __sx_str_chunk_bwd_ __sx_str_chunk_cycle_ __sx_str_chunk_cur_ __sx_str_chunk_num_ __sx_str_chunk_qm_ __sx_str_chunk_abs_ __sx_str_chunk_chunk_ __sx_str_chunk_next_ __sx_str_chunk_bind_cnt_ __sx_str_chunk_bind_name_ __sx_str_chunk_bind_esc_
+	unset CLEANUP
 }
 
 ### sx_str_count - 文字列から指定された文字列の出現回数を取得する
