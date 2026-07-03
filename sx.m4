@@ -5471,8 +5471,8 @@ __sx_str_chunk() {
 	__sx_str_chunk_cycle_="${3}:"
 	__sx_str_chunk_lim_="${4}"
 	__sx_str_chunk_len_="${#__sx_str_chunk_str_}"
-	__sx_str_chunk_fwd_=
 	__sx_str_chunk_bwd_=
+	__sx_str_chunk_out_=
 
 	# 第1パス: 文字列長・limit から切り取りサイズリストを構築
 	while
@@ -5481,44 +5481,48 @@ __sx_str_chunk() {
 		M_NUM_BOOL([|${__sx_str_chunk_abs_} <= __sx_str_chunk_len_ && 0 < __sx_str_chunk_lim_|])
 	do
 		__sx_str_chunk_cycle_="${__sx_str_chunk_cycle_#*:}${__sx_str_chunk_cur_}:"
-
-		case "${__sx_str_chunk_cur_}" in
-			-*) __sx_str_chunk_bwd_="${__sx_str_chunk_abs_} ${__sx_str_chunk_bwd_}";;
-			*)  __sx_str_chunk_fwd_="${__sx_str_chunk_fwd_} ${__sx_str_chunk_abs_}";;
-		esac
-
 		: $((__sx_str_chunk_len_ -= __sx_str_chunk_abs_))
 		: $((__sx_str_chunk_lim_ -= 1))
+
+		case "${__sx_str_chunk_cur_}" in -*)
+			__sx_str_chunk_bwd_="${__sx_str_chunk_abs_} ${__sx_str_chunk_bwd_}"
+			continue
+		esac
+
+		SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_chunk_chunk_ "${__sx_str_chunk_str_}" 0 "${__sx_str_chunk_abs_}"
+		__sx_str_chunk_str_="${__sx_str_chunk_str_#"${__sx_str_chunk_chunk_}"}"
+
+		__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_chunk_}"|], __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_len_ __sx_str_chunk_bwd_ __sx_str_chunk_cycle_ __sx_str_chunk_cur_ __sx_str_chunk_abs_ __sx_str_chunk_chunk_ __sx_str_chunk_bind_cnt_ __sx_str_chunk_bind_name_ __sx_str_chunk_bind_esc_)
 	done
 
 	# 余り処理: limit 到達 or 文字列不足
 	if M_NUM_LT([|0|], [|__sx_str_chunk_len_|]); then
-			__sx_str_chunk_seq_="${__sx_str_chunk_fwd_} $((__sx_str_chunk_len_ * (
+		case "$((
 			(__sx_str_chunk_len_ < __sx_str_chunk_abs_ && ${5} & SX_STR_CHUNK_SKIP_SHORT) ||
 			(__sx_str_chunk_abs_ < __sx_str_chunk_len_ && ${5} & SX_STR_CHUNK_SKIP_LONG)
-		 ? -1 : 1))) ${__sx_str_chunk_bwd_}"
+		))" in
+			0) eval set -- "${__sx_str_chunk_len_}" "${__sx_str_chunk_bwd_}";;
+		*)
+			SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_chunk_chunk_ "${__sx_str_chunk_str_}" 0 "${__sx_str_chunk_len_}"
+			__sx_str_chunk_str_="${__sx_str_chunk_str_#"${__sx_str_chunk_chunk_}"}"
+			eval set -- "${__sx_str_chunk_bwd_}"
+			;;
+		esac
 	else
-		__sx_str_chunk_seq_="${__sx_str_chunk_fwd_} ${__sx_str_chunk_bwd_}"
+		eval set -- "${__sx_str_chunk_bwd_}"
 	fi
 
 	# 第2パス: 切り取りリストを左から処理
-	__sx_str_chunk_out_=
-	for __sx_str_chunk_size_ in ${__sx_str_chunk_seq_}; do
-		case "${__sx_str_chunk_size_}" in
-			-*)
-				SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_chunk_str_ "${__sx_str_chunk_str_}" "${__sx_str_chunk_size_#-}"
-				;;
-			*)
-				SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_chunk_chunk_ "${__sx_str_chunk_str_}" 0 "${__sx_str_chunk_size_}"
-				SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_chunk_str_ "${__sx_str_chunk_str_}" "${__sx_str_chunk_size_}"
-				__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_chunk_}"|], __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_len_ __sx_str_chunk_fwd_ __sx_str_chunk_bwd_ __sx_str_chunk_seq_ __sx_str_chunk_cycle_ __sx_str_chunk_cur_ __sx_str_chunk_abs_ __sx_str_chunk_chunk_ __sx_str_chunk_size_ __sx_str_chunk_bind_cnt_ __sx_str_chunk_bind_name_ __sx_str_chunk_bind_esc_)
-				;;
-		esac
+	for __sx_str_chunk_cur_ in "${@}"; do
+			SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_chunk_chunk_ "${__sx_str_chunk_str_}" 0 "${__sx_str_chunk_cur_#-}"
+		__sx_str_chunk_str_="${__sx_str_chunk_str_#"${__sx_str_chunk_chunk_}"}"
+
+		__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_chunk_}"|], __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_len_ __sx_str_chunk_bwd_ __sx_str_chunk_cycle_ __sx_str_chunk_cur_ __sx_str_chunk_abs_ __sx_str_chunk_chunk_ __sx_str_chunk_bind_cnt_ __sx_str_chunk_bind_name_ __sx_str_chunk_bind_esc_)
 	done
 
 	eval ${__sx_str_chunk_out_:+"${__sx_str_chunk_bind_}=\"\${__sx_str_chunk_out_}\""}
 
-	unset __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_len_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_len_ __sx_str_chunk_fwd_ __sx_str_chunk_bwd_ __sx_str_chunk_seq_ __sx_str_chunk_cycle_ __sx_str_chunk_cur_ __sx_str_chunk_abs_ __sx_str_chunk_chunk_ __sx_str_chunk_size_ __sx_str_chunk_bind_cnt_ __sx_str_chunk_bind_name_ __sx_str_chunk_bind_esc_
+	unset __sx_str_chunk_bind_ __sx_str_chunk_str_ __sx_str_chunk_lim_ __sx_str_chunk_out_ __sx_str_chunk_len_ __sx_str_chunk_bwd_ __sx_str_chunk_cycle_ __sx_str_chunk_cur_ __sx_str_chunk_abs_ __sx_str_chunk_chunk_ __sx_str_chunk_bind_cnt_ __sx_str_chunk_bind_name_ __sx_str_chunk_bind_esc_
 }
 
 ### sx_str_count - 文字列から指定された文字列の出現回数を取得する
