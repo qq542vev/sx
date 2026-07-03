@@ -5437,20 +5437,18 @@ sx_str_chunk() {
 
 	__sx_num_is_sx_nat0 ${4:+"${4}"} ${5:+"${5}"} || return "${SX_EX_USAGE}"
 
-	__sx_str_chunk_validate_ints="${3:-1}:"
-	while case "${__sx_str_chunk_validate_ints}" in ?*) true;; *) false;; esac; do
-		__sx_str_chunk_validate_cur="${__sx_str_chunk_validate_ints%%:*}"
-		__sx_str_chunk_validate_ints="${__sx_str_chunk_validate_ints#*:}"
-		__sx_num_is_sx_int_inv "${__sx_str_chunk_validate_cur}" || {
-			unset __sx_str_chunk_validate_cur __sx_str_chunk_validate_ints
-			return "${SX_EX_USAGE}"
-		}
-		case "${__sx_str_chunk_validate_cur}" in 0)
-			unset __sx_str_chunk_validate_cur __sx_str_chunk_validate_ints
-			return "${SX_EX_USAGE}"
-		esac
-	done
-	unset __sx_str_chunk_validate_cur __sx_str_chunk_validate_ints
+	case "${3:-1}" in
+		*[1-9A-Fa-f]*) ;;
+		*) return "${SX_EX_USAGE}";;
+	esac
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_split __sx_str_chunk_ints "${3:-1}" :
+	if ! eval __sx_num_is_sx_int_inv "${__sx_str_chunk_ints}"; then
+		unset __sx_str_chunk_ints
+		return "${SX_EX_USAGE}"
+	fi
+
+	unset __sx_str_chunk_ints
 
 	__sx_str_chunk "${@}"
 }
@@ -5481,7 +5479,7 @@ __sx_str_chunk() {
 		__sx_str_chunk_cycle_="${__sx_str_chunk_cycle_#*:}"
 
 		SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_cur_#-}"
-		__sx_str_chunk_newcycle_="${__sx_str_chunk_newcycle_}$((0 < __sx_str_chunk_cur_))${__sx_str_chunk_qm_}:"
+		__sx_str_chunk_newcycle_="${__sx_str_chunk_newcycle_}$((0 <= __sx_str_chunk_cur_))${__sx_str_chunk_qm_}:"
 	done
 
 	__sx_str_chunk_cycle_="${__sx_str_chunk_newcycle_}"

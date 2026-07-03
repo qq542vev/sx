@@ -303,9 +303,16 @@ Describe "sx_str_chunk"
       The variable res should equal "'ab' 'cde'"
     End
 
-    It "サイクル内に0を含むと EX_USAGE を返すこと"
+    It "サイクル先頭が0の場合に空チャンクを生成すること"
+      When call sx_str_chunk res "abc" "0:1:2"
+      The status should be success
+      The variable res should equal "'' 'a' 'bc' ''"
+    End
+
+    It "サイクルに0を含むと空チャンクを生成すること"
       When call sx_str_chunk res "abc" "2:0:3"
-      The status should equal 64
+      The status should be success
+      The variable res should equal "'ab' '' 'c'"
     End
 
     It "サイクル内に不正文字を含むと EX_USAGE を返すこと"
