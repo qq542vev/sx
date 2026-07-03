@@ -6768,6 +6768,55 @@ __sx_str_rfind() {
 	return "${1}"
 }
 
+### sx_str_rot - 文字セット内で文字をシフトして変換する
+##
+## 使い方:
+##   sx_str_rot 結果変数名 [元文字列 [文字セット [シフト量]]]
+##
+## 説明:
+##   指定された文字セット内で各文字をシフト量だけ移動させる暗号変換を行う。
+##   デフォルトは ROT13（SX_STR_ALPHA を13シフト）。
+##   シフト量が正の場合は前方に、負の場合は後方に移動する。
+##   文字セットに含まれない文字はそのまま保持される。
+##
+##   使用例:
+##     sx_str_rot res "HELLO"              # → URYYB (ROT13)
+##     sx_str_rot res "ABC" SX_STR_UPPER 3 # → DEF (Caesar)
+##     sx_str_rot res "999" SX_STR_DIGIT 1 # → 000 (数字シフト)
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_rot() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rot "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sx_int_inv ${4:+"${4}"} || return
+
+	__sx_str_rot "${@}"
+}
+
+### __sx_str_rot - sx_str_rot の内部実装（内部用）
+##
+## 使い方:
+##   __sx_str_rot 結果変数名 [元文字列 [文字セット [シフト量]]]
+##
+## 説明:
+##   sx_str_rot の内部実装。引数チェックは行わない。
+__sx_str_rot() {
+	set -- "${1}" "${2-}" "${3-${SX_STR_ALPHA}}" "${4:-13}"
+
+	case '' in "${2}" | "${3}")
+		__sx_var_set "${1}=${2}"
+		return "${SX_EX_OK}"
+	esac
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_cycle __sx_str_rot_rotated_ "${3}" "${4}"
+	__sx_str_tr "${1}:" "${2}" "${3}" "${__sx_str_rot_rotated_}"
+
+	unset __sx_str_rot_rotated_
+}
+
 ### sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する
 ##
 ## 使い方:
@@ -7790,6 +7839,52 @@ __sx_str_capital() {
 
 	__sx_var_set "${1}=${__sx_str_capital_out_}${__sx_str_capital_str_}"
 	unset __sx_str_capital_str_ __sx_str_capital_out_ __sx_str_capital_tmp_
+}
+
+### sx_str_cycle - 文字列を指定された位置だけ循環させる
+##
+## 使い方:
+##   sx_str_cycle 結果変数名 [元文字列 [シフト量]]
+##
+## 説明:
+##   元文字列を指定されたシフト量だけ左方向に循環シフトする。
+##   シフト量が負の場合は右方向に循環シフトする。
+##   例えば "ABCDE" を 2 シフトすると "CDEAB"、-1 シフトすると "EABCD" となる。
+##   シフト量が文字列長を超える場合は、文字列長で割った余りを使用する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_cycle() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_cycle "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_sx_int_inv ${3:+"${3}"} || return
+
+	__sx_str_cycle "${@}"
+}
+
+### __sx_str_cycle - sx_str_cycle の内部実装（内部用）
+##
+## 使い方:
+##   __sx_str_cycle 結果変数名 [元文字列 [シフト量]]
+##
+## 説明:
+##   sx_str_cycle の内部実装。引数チェックは行わない。
+__sx_str_cycle() {
+	set -- "${1}" "${2-}" "${3:-1}"
+	set -- "${@}" "${#2}"
+	set -- "${1}" "${2}" "$((${3} % (${4} ? ${4} : 1)))" "${4}"
+
+	case ${3} in 0)
+		__sx_var_set "${1}=${2}"
+		return "${SX_EX_OK}"
+	esac
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_cycle_head_:__sx_str_cycle_tail_: "${2}" "$((0 < ${3} ? ${3} : ${3} + ${4}))" 1
+	__sx_var_set "${1}=${__sx_str_cycle_tail_}${__sx_str_cycle_head_}"
+
+	unset __sx_str_cycle_head_ __sx_str_cycle_tail_
 }
 
 ### sx_str_words - 命名規則を自動検出して単語に分割する
