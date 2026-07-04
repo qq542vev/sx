@@ -5346,14 +5346,17 @@ __sx_str_camel() {
 ### sx_str_center - 文字列を指定された幅で中央寄せする
 ##
 ## 使い方:
-##   sx_str_center 結果変数名 文字列 幅 [埋め込み文字列]
+##   sx_str_center 結果変数名 文字列 幅 [左埋め文字列 [右埋め文字列]]
 ##
 ## 説明:
 ##   文字列の長さが「幅」の絶対値に満たない場合、埋め込み文字列で中央寄せするように埋める。
 ##   幅が正の場合、余り（奇数の場合）は右側に振る。
 ##   幅が負の場合、余りは左側に振る。
-##   埋め込み文字列が指定されない場合は半角スペースを使用する。
-##   埋め込み文字列が明示的に空の場合は何もせずそのまま返す。
+##   左埋め文字列のみ指定された場合は右側にも同じ文字列を使用する（後方互換）。
+##   左埋め文字列も右埋め文字列も指定されない場合は半角スペースを使用する。
+##   左埋め文字列が明示的に空の場合は左側に何も埋めない。
+##   右埋め文字列が明示的に空の場合は右側に何も埋めない。
+##   両方とも明示的に空の場合は何もせずそのまま返す。
 ##   元の文字列が既に指定された幅以上の場合は、そのまま返す。
 ##
 ## 終了ステータス:
@@ -5363,7 +5366,7 @@ __sx_str_camel() {
 sx_str_center() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_center "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} ${4+"${#4}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_sx_nat0 ${2+"${#2}"} ${4+"${#4}"} ${5+"${#5}"} || return
 
 	__sx_num_is_sx_int_inv ${3+"${3}"} || return "${SX_EX_USAGE}"
 
@@ -5373,30 +5376,41 @@ sx_str_center() {
 ### __sx_str_center - 文字列を指定された幅で中央寄せする（内部用）
 ##
 ## 使い方:
-##   __sx_str_center 結果変数名 文字列 幅 [埋め込み文字列]
+##   __sx_str_center 結果変数名 文字列 幅 [左埋め文字列 [右埋め文字列]]
 ##
 ## 説明:
 ##   sx_str_center の内部実装。
-##   引数チェックは行わないが、埋め込み文字列が空の場合は何もせず成功を返す。
+##   引数チェックは行わないが、左右の埋め文字が両方とも空の場合は何もせず成功を返す。
+##   $5 が未指定の場合、最適化パス（左と同じfillで1回のstr_rep）を使用する。
 __sx_str_center() {
-	set -- "${1}" "${2-}" "${3-0}" "${4- }"
+	set -- "${1}" "${2-}" "${3-0}" "${4- }" "${5-${4- }}"
 
 	__sx_str_center_needed_=$((${3#-} - ${#2}))
 
-	M_NUM_LT([|0|], [|__sx_str_center_needed_|]) && M_STR_NE([|"${4}"|], [|''|]) || {
+	case "$((0 < __sx_str_center_needed_))${4}${5}" in 0* | 1)
 		__sx_var_set "${1}=${2}"
 		unset __sx_str_center_needed_
 		return "${SX_EX_OK}"
-	}
+	esac
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_center_rep_ "${4}" "$((((__sx_str_center_needed_ + 1) / 2 - 1) / ${#4} + 1))"
-	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_center_spad_ "${__sx_str_center_rep_}" 0 "$(((__sx_str_center_needed_ + (${3} < 0)) / 2))"
+	__sx_str_center_lpad_=$(( (__sx_str_center_needed_ + (${3} < 0)) / 2 ))
+	__sx_str_center_rpad_=$(( __sx_str_center_needed_ - __sx_str_center_lpad_ ))
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_center_epad_ "${__sx_str_center_rep_}" 0 "$((__sx_str_center_needed_ - ${#__sx_str_center_spad_}))"
+	case "${4}" in ?*)
+		SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_center_lrep_ "${4}" "$((((__sx_str_center_needed_ + 1) / 2 - 1) / ${#4} + 1))"
+	esac
+
+	case "${5}" in
+		"${4}") __sx_str_center_rrep_="${__sx_str_center_lrep_}";;
+		?*) SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_center_rrep_ "${5}" "$(((__sx_str_center_rpad_ - 1) / ${#5} + 1))";;
+	esac
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_center_spad_ "${__sx_str_center_lrep_-}" 0 "${__sx_str_center_lpad_}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_substr __sx_str_center_epad_ "${__sx_str_center_rrep_-}" 0 "${__sx_str_center_rpad_}"
 
 	__sx_var_set "${1}=${__sx_str_center_spad_}${2}${__sx_str_center_epad_}"
 
-	unset __sx_str_center_needed_ __sx_str_center_rep_ __sx_str_center_spad_ __sx_str_center_epad_
+	unset __sx_str_center_needed_ __sx_str_center_lpad_ __sx_str_center_rpad_ __sx_str_center_lrep_ __sx_str_center_rrep_ __sx_str_center_spad_ __sx_str_center_epad_
 }
 
 ### sx_str_chunk - 文字列を一定の長さで区切って結果変数（またはバインドチェーン）に格納する

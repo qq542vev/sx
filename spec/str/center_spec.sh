@@ -73,4 +73,43 @@ Describe 'sx_str_center'
     When call sx_str_center res "ABC" 5 ""
     The variable res should equal "ABC"
   End
+
+  It '右埋め文字列を指定できること (A 5 . = -> ..A==)'
+    # needed=4, lpad=2, rpad=2
+    When call sx_str_center res "A" 5 "." "="
+    The variable res should equal "..A=="
+  End
+
+  It '負の幅で右埋め文字列を指定できること (A -5 . = -> ..A==)'
+    # needed=4, lpad=2, rpad=2（偶数なので左右均等）
+    When call sx_str_center res "A" -5 "." "="
+    The variable res should equal "..A=="
+  End
+
+  It '左埋め文字列のみ指定で従来動作（後方互換）(A 4 = -> =A==)'
+    When call sx_str_center res "A" 4 "="
+    The variable res should equal "=A=="
+  End
+
+  It '左埋め文字列が空で右埋め文字列のみの場合 (A 5 "" = -> A==)'
+    # 左が空のため左パッド無し、右のみ"="×2
+    When call sx_str_center res "A" 5 "" "="
+    The variable res should equal "A=="
+  End
+
+  It '右埋め文字列が空で左埋め文字列のみの場合 (A 5 . "" -> ..A)'
+    # 右が空のため右パッド無し、左のみ"."×2
+    When call sx_str_center res "A" 5 "." ""
+    The variable res should equal "..A"
+  End
+
+  It '複数文字の左右別埋め文字列を使用すること (A 6 ab xy -> abAxyx)'
+    When call sx_str_center res "A" 6 "ab" "xy"
+    The variable res should equal "abAxyx"
+  End
+
+  It '両方とも空の埋め文字列の場合は元の文字列を返すこと (A 5 "" "" -> A)'
+    When call sx_str_center res "A" 5 "" ""
+    The variable res should equal "A"
+  End
 End
