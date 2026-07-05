@@ -200,6 +200,7 @@ readonly SX_STR_SUB_CB=2
 readonly SX_STR_CAPITAL_KEEP=1
 readonly SX_STR_CAPITAL_SENT=2
 readonly SX_ARG_PAD_CB=1
+readonly SX_ARG_RESIZE_PAD_LEFT=2
 readonly SX_STR_ISEP_CB=1
 readonly SX_STR_ISEP_PRE=2
 readonly SX_STR_ISEP_POST=4
@@ -2282,12 +2283,12 @@ __sx_arg_pad_lit() {
 ### sx_arg_resize - 引数リストを指定された形状にリサイズする
 ##
 ## 使い方:
-##   sx_arg_resize [bind [shape [pad_val]]] ::: [arg ...]
+##   sx_arg_resize [bind [shape [pad_val [flag]]]] ::: [arg ...]
 ##   sx_arg_resize [bind] [arg ...]
 ##
 ## 説明:
 ##   与えられた引数リスト [arg ...] を、指定された shape の総要素数に
-##   リサイズする。要素が不足している場合は pad_val で埋め（右詰め）、
+##   リサイズする。要素が不足している場合は pad_val で埋め、
 ##   超過している場合は切り詰める。
 ##
 ##   shape は ":" 区切りの多次元形式で指定する。
@@ -2297,8 +2298,11 @@ __sx_arg_pad_lit() {
 ##   切り上げ ceil(要素数 / 既知の軸の積) で自動計算する。
 ##   ただし -1 は1つまで。
 ##
+##   flag には以下のビットマスクを指定できる（省略時は 0）:
+##     SX_ARG_RESIZE_PAD_LEFT (2) — 不足要素を左側に詰める
+##
 ##   2 つの呼び出し形式がある:
-##     1) ::: 形式: bind/shape/val を ::: より前の位置引数で指定し、
+##     1) ::: 形式: bind/shape/val/flag を ::: より前の位置引数で指定し、
 ##        ::: 以降をデータとして扱う。設定引数とデータを明確に分離できる。
 ##     2) 簡略形式: bind のみを第一引数で指定し、第二引数以降はすべてデータ
 ##        として扱われる。この形式では shape は空になり、
@@ -2318,13 +2322,16 @@ sx_arg_resize() {
 
 	__sx_arg_resize_shape=
 	case "X${SX_CFG_SEP}" in
-		"${3+X${3}}" | "${4+X${4}}") __sx_arg_resize_shape="${2-}";;
+		"${3+X${3}}" | "${4+X${4}}") __sx_arg_resize_shape="${2}";;
+		"${5+X${5}}")
+			__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_sx_nat0 "${4:-}" || return
+			__sx_arg_resize_shape="${2}"
+			;;
 	esac
 
-	case "${__sx_arg_resize_shape}" in
-		*::* | *-[02-9]* | *[!:0-9-]* | *-1*-1* | :* | *: | *-1[!:]*)
-			unset __sx_arg_resize_shape
-			return "${SX_EX_USAGE}"
+	case "${__sx_arg_resize_shape}" in *::* | *-[02-9]* | *[!:0-9-]* | *-1*-1* | :* | *: | *-1[!:]*)
+		unset __sx_arg_resize_shape
+		return "${SX_EX_USAGE}"
 	esac
 
 	unset __sx_arg_resize_shape
@@ -2357,13 +2364,17 @@ __sx_arg_resize() {
 			__sx_arg_resize_bind_="${1}" __sx_arg_resize_shape_="${2}" __sx_arg_resize_val_="${3}"
 			shift 4
 			;;
+		"${5+X${5}}")
+			__sx_arg_resize_bind_="${1}" __sx_arg_resize_shape_="${2}" __sx_arg_resize_val_="${3}" __sx_arg_resize_flg_="${4}"
+			shift 5
+			;;
 		*)
 			__sx_arg_resize_bind_="${1-}"
 			shift "$((0${1+1}))"
 			;;
 	esac
 
-	: "${__sx_arg_resize_shape_:=${#}}" "${__sx_arg_resize_val_=}"
+	: "${__sx_arg_resize_bind_=}" "${__sx_arg_resize_shape_:=${#}}" "${__sx_arg_resize_val_=}" "${__sx_arg_resize_flg_:=0}"
 	__sx_var_bind_init "${__sx_arg_resize_bind_}"
 
 	SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_arg_resize_shape_ "${__sx_arg_resize_shape_}" : '*'
@@ -2378,9 +2389,9 @@ __sx_arg_resize() {
 		SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_arg_resize_shape_ "${__sx_arg_resize_shape_}" -1 "${__sx_arg_resize_inferred_}"
 	esac
 
-	SX_CFG_UNSET_SOFT=2 __sx_arg_pad __sx_arg_resize_padded_ "${__sx_arg_resize_total_}" "${__sx_arg_resize_val_}" ::: "${@}"
+	SX_CFG_UNSET_SOFT=2 __sx_arg_pad __sx_arg_resize_padded_ "$((__sx_arg_resize_total_ * (${__sx_arg_resize_flg_} & SX_ARG_RESIZE_PAD_LEFT ? -1 : 1)))" "${__sx_arg_resize_val_}" ::: "${@}"
 
-	eval set -- "${__sx_arg_resize_paded_}"
+	eval set -- "${__sx_arg_resize_padded_}"
 
 	# Phase 1-N: grouping (最内→最外)
 	while M_STR_HAS([|"${__sx_arg_resize_shape_}"|], [|'*'|]); do
@@ -2419,7 +2430,8 @@ __sx_arg_resize() {
 		__sx_arg_resize_inferred_ \
 		__sx_arg_resize_total_ __sx_arg_resize_out_ __sx_arg_resize_arg_ \
 		__sx_arg_resize_tmp_ __sx_arg_resize_cnt_ \
-		__sx_arg_resize_dim_ __sx_arg_resize_group_
+		__sx_arg_resize_dim_ __sx_arg_resize_group_ \
+		__sx_arg_resize_flg_
 }
 
 ### sx_arg_range - 位置パラメータの参照文字列を生成する
