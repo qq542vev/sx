@@ -2279,6 +2279,149 @@ __sx_arg_pad_lit() {
 	unset CLEANUP
 }
 
+### sx_arg_resize - 引数リストを指定された形状にリサイズする
+##
+## 使い方:
+##   sx_arg_resize [bind [shape [pad_val]]] ::: [arg ...]
+##   sx_arg_resize [bind] [arg ...]
+##
+## 説明:
+##   与えられた引数リスト [arg ...] を、指定された shape の総要素数に
+##   リサイズする。要素が不足している場合は pad_val で埋め（右詰め）、
+##   超過している場合は切り詰める。
+##
+##   shape は ":" 区切りの多次元形式で指定する。
+##     2:3   → 2行×3列 = 6要素
+##     2:3:4 → 2行×3列×4層 = 24要素
+##   いずれかの軸に -1 を指定すると、その軸のサイズを
+##   切り上げ ceil(要素数 / 既知の軸の積) で自動計算する。
+##   ただし -1 は1つまで。
+##
+##   2 つの呼び出し形式がある:
+##     1) ::: 形式: bind/shape/val を ::: より前の位置引数で指定し、
+##        ::: 以降をデータとして扱う。設定引数とデータを明確に分離できる。
+##     2) 簡略形式: bind のみを第一引数で指定し、第二引数以降はすべてデータ
+##        として扱われる。この形式では shape は空になり、
+##        リサイズは行われず単にクォートのみ行う。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE) - shape の形式が不正
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_arg_resize() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_resize "${@}" || return; return 0;; esac
+
+	case "X${SX_CFG_SEP}" in
+		"${1+X${1}}") ;;
+		*) __sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable ${1+"${1}"} || return
+	esac
+
+	__sx_arg_resize_shape=
+	case "X${SX_CFG_SEP}" in
+		"${3+X${3}}" | "${4+X${4}}") __sx_arg_resize_shape="${2-}";;
+	esac
+
+	case "${__sx_arg_resize_shape}" in
+		*::* | *-[02-9]* | *[!:0-9-]* | *-1*-1* | :* | *: | *-1[!:]*)
+			unset __sx_arg_resize_shape
+			return "${SX_EX_USAGE}"
+	esac
+
+	unset __sx_arg_resize_shape
+
+	__sx_arg_resize "${@}"
+}
+
+### __sx_arg_resize - 引数リストをリサイズする（内部用）
+##
+## 使い方:
+##   __sx_arg_resize 結果変数名 [形状 [パディング値]] ::: [値 ...]
+##
+## 説明:
+##   ::: セパレータをパースし、形状を解析してリサイズを実行する。
+##   引数チェックは行わない。
+##   形状が空または1次元（":"なし）の場合はフラット出力、
+##   2次元以上の場合は階層出力を行う。
+__sx_arg_resize() {
+	case "X${SX_CFG_SEP}" in
+		"${1+X${1}}") shift;;
+		"${2+X${2}}")
+			__sx_arg_resize_bind_="${1}"
+			shift 2
+			;;
+		"${3+X${3}}")
+			__sx_arg_resize_bind_="${1}" __sx_arg_resize_shape_="${2}"
+			shift 3
+			;;
+		"${4+X${4}}")
+			__sx_arg_resize_bind_="${1}" __sx_arg_resize_shape_="${2}" __sx_arg_resize_val_="${3}"
+			shift 4
+			;;
+		*)
+			__sx_arg_resize_bind_="${1-}"
+			shift "$((0${1+1}))"
+			;;
+	esac
+
+	: "${__sx_arg_resize_shape_:=${#}}" "${__sx_arg_resize_val_=}"
+	__sx_var_bind_init "${__sx_arg_resize_bind_}"
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_arg_resize_shape_ "${__sx_arg_resize_shape_}" : '*'
+	SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_arg_resize_tmp_ "${__sx_arg_resize_shape_}" -1 1
+	__sx_arg_resize_total_=$(( ${__sx_arg_resize_tmp_} ))
+
+	# 形状解析
+	case "${__sx_arg_resize_shape_}" in *-1*)
+		__sx_arg_resize_inferred_=$((__sx_arg_resize_total_ == 0 ? 0 : (${#} + __sx_arg_resize_total_ - 1) / __sx_arg_resize_total_))
+
+		__sx_arg_resize_total_=$((__sx_arg_resize_total_ * __sx_arg_resize_inferred_))
+		SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_arg_resize_shape_ "${__sx_arg_resize_shape_}" -1 "${__sx_arg_resize_inferred_}"
+	esac
+
+	SX_CFG_UNSET_SOFT=2 __sx_arg_pad __sx_arg_resize_padded_ "${__sx_arg_resize_total_}" "${__sx_arg_resize_val_}" ::: "${@}"
+
+	eval set -- "${__sx_arg_resize_paded_}"
+
+	# Phase 1-N: grouping (最内→最外)
+	while M_STR_HAS([|"${__sx_arg_resize_shape_}"|], [|'*'|]); do
+		__sx_arg_resize_dim_="${__sx_arg_resize_shape_##*'*'}"
+		__sx_arg_resize_shape_="${__sx_arg_resize_shape_%'*'*}"
+		__sx_arg_resize_cnt_=$((${__sx_arg_resize_shape_}))
+		__sx_arg_resize_out_=
+
+		while M_NUM_LT([|0|], [|__sx_arg_resize_cnt_|]); do
+			case ${__sx_arg_resize_dim_} in
+				[!0]*) __sx_arg_quote "${__sx_arg_resize_dim_}__sx_arg_resize_group_:" "${@}";;
+				*) __sx_arg_resize_group_=;;
+			esac
+
+			__sx_arg_quote __sx_arg_resize_tmp_ "${__sx_arg_resize_group_}"
+			__sx_arg_resize_out_="${__sx_arg_resize_out_} ${__sx_arg_resize_tmp_}"
+
+			shift "${__sx_arg_resize_dim_}"
+			: $((__sx_arg_resize_cnt_ -= 1))
+		done
+
+		eval "set -- ${__sx_arg_resize_out_}"
+	done
+
+	for __sx_arg_resize_arg_ in "${@}"; do
+		case "$((0 < __sx_arg_resize_shape_))" in 0)
+			break
+		esac
+
+		__sx_var_bind __sx_arg_resize_bind_ "${__sx_arg_resize_bind_}" "${__sx_arg_resize_arg_}" "${SX_VAR_BIND_QUOTE}" || break
+		: $((__sx_arg_resize_shape_ -= 1))
+	done
+
+	# クリーンアップ
+	unset __sx_arg_resize_padded_ __sx_arg_resize_bind_ __sx_arg_resize_shape_ __sx_arg_resize_val_ \
+		__sx_arg_resize_inferred_ \
+		__sx_arg_resize_total_ __sx_arg_resize_out_ __sx_arg_resize_arg_ \
+		__sx_arg_resize_tmp_ __sx_arg_resize_cnt_ \
+		__sx_arg_resize_dim_ __sx_arg_resize_group_
+}
+
 ### sx_arg_range - 位置パラメータの参照文字列を生成する
 ##
 ## 使い方:
