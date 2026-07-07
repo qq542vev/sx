@@ -2375,11 +2375,11 @@ __sx_arg_resize() {
 	esac
 
 	: "${__sx_arg_resize_bind_=}" "${__sx_arg_resize_shape_:=${#}}" "${__sx_arg_resize_val_=}" "${__sx_arg_resize_flg_:=0}"
-	__sx_var_bind_init "${__sx_arg_resize_bind_}"
 
+	__sx_var_bind_init "${__sx_arg_resize_bind_}"
 	SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_arg_resize_shape_ "${__sx_arg_resize_shape_}" : '*'
 	SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_arg_resize_tmp_ "${__sx_arg_resize_shape_}" -1 1
-	__sx_arg_resize_total_=$(( ${__sx_arg_resize_tmp_} ))
+	__sx_arg_resize_total_=$((${__sx_arg_resize_tmp_}))
 
 	# 形状解析
 	case "${__sx_arg_resize_shape_}" in *-1*)
@@ -2406,14 +2406,14 @@ __sx_arg_resize() {
 				*) __sx_arg_resize_group_=;;
 			esac
 
-			__sx_arg_quote __sx_arg_resize_tmp_ "${__sx_arg_resize_group_}"
-			__sx_arg_resize_out_="${__sx_arg_resize_out_} ${__sx_arg_resize_tmp_}"
+			__sx_arg_quote __sx_arg_resize_group_ "${__sx_arg_resize_group_}"
+			__sx_arg_resize_out_="${__sx_arg_resize_out_} ${__sx_arg_resize_group_}"
 
 			shift "${__sx_arg_resize_dim_}"
 			: $((__sx_arg_resize_cnt_ -= 1))
 		done
 
-		eval "set -- ${__sx_arg_resize_out_}"
+		eval set -- "${__sx_arg_resize_out_}"
 	done
 
 	for __sx_arg_resize_arg_ in "${@}"; do
@@ -2426,12 +2426,7 @@ __sx_arg_resize() {
 	done
 
 	# クリーンアップ
-	unset __sx_arg_resize_padded_ __sx_arg_resize_bind_ __sx_arg_resize_shape_ __sx_arg_resize_val_ \
-		__sx_arg_resize_inferred_ \
-		__sx_arg_resize_total_ __sx_arg_resize_out_ __sx_arg_resize_arg_ \
-		__sx_arg_resize_tmp_ __sx_arg_resize_cnt_ \
-		__sx_arg_resize_dim_ __sx_arg_resize_group_ \
-		__sx_arg_resize_flg_
+	unset __sx_arg_resize_padded_ __sx_arg_resize_bind_ __sx_arg_resize_shape_ __sx_arg_resize_val_ __sx_arg_resize_inferred_ __sx_arg_resize_total_ __sx_arg_resize_out_ __sx_arg_resize_arg_ __sx_arg_resize_tmp_ __sx_arg_resize_cnt_ __sx_arg_resize_dim_ __sx_arg_resize_group_ __sx_arg_resize_flg_
 }
 
 ### sx_arg_range - 位置パラメータの参照文字列を生成する
@@ -5368,6 +5363,7 @@ __sx_num_rel() {
 	unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
 }
 
+
 ### __sx_num_rel_classify - 比較方式を分類する（内部用）
 ##
 ## 終了ステータス:
@@ -5385,6 +5381,88 @@ __sx_num_rel_classify() {
 	return "$(((${2} < ${#1}) + 1))"
 }
 
+
+### __sx_num_int_add_abs - 複数の絶対値をチャンク加算する（内部用）
+##
+## 使い方:
+##   __sx_num_int_add_abs 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   符号なし10進整数の絶対値を加算する。
+##   引数はすべて検証済みの正しい10進整数であることを前提とする。
+##   逐次方式でアキュムレータに各数値を順次加算する。
+
+define([|V|], [|__sx_num_int_add_abs_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(acc) V(arg) V(wlen) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(sum) V(zr)|])dnl
+
+__sx_num_int_add_abs() {
+	__sx_num_int_add_abs_bind_="${1}"
+	shift
+
+	case "${#}" in [01])
+		eval "${__sx_num_int_add_abs_bind_}=${1-0}"
+		unset __sx_num_int_add_abs_bind_
+		return "${SX_EX_OK}"
+	esac
+
+	__sx_num_int_add_abs_acc_="${1}"
+	shift
+
+	# (2) チャンク処理定数（ループ不変）
+	__sx_num_int_add_abs_wlen_=$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_add_abs_qm_ '?' "${__sx_num_int_add_abs_wlen_}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_add_abs_zr_ '0' "${__sx_num_int_add_abs_wlen_}"
+
+	for __sx_num_int_add_abs_arg_ in "${@}"; do
+		# (2) 右端→左端 チャンク処理
+		__sx_num_int_add_abs_carry_=0
+		__sx_num_int_add_abs_out_=
+		__sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_acc_}"
+		__sx_num_int_add_abs_rem2_="${__sx_num_int_add_abs_arg_}"
+
+		while
+			# rem1 からチャンク抽出
+			if M_NUM_LT([|${#__sx_num_int_add_abs_rem1_}|], [|${__sx_num_int_add_abs_wlen_}|]); then
+				__sx_num_int_add_abs_ch1_="${__sx_num_int_add_abs_rem1_}"
+				__sx_num_int_add_abs_rem1_=
+			else
+				__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_rem1_%${__sx_num_int_add_abs_qm_}}"
+				__sx_num_int_add_abs_ch1_="${__sx_num_int_add_abs_rem1_#"${__sx_num_int_add_abs_tmp_}"}"
+				__sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_tmp_}"
+				__sx_num_int_add_abs_ch1_="${__sx_num_int_add_abs_ch1_#"${__sx_num_int_add_abs_ch1_%%[!0]*}"}"
+			fi
+
+			# rem2 からチャンク抽出
+			if M_NUM_LT([|${#__sx_num_int_add_abs_rem2_}|], [|${__sx_num_int_add_abs_wlen_}|]); then
+				__sx_num_int_add_abs_ch2_="${__sx_num_int_add_abs_rem2_}"
+				__sx_num_int_add_abs_rem2_=
+			else
+				__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_rem2_%${__sx_num_int_add_abs_qm_}}"
+				__sx_num_int_add_abs_ch2_="${__sx_num_int_add_abs_rem2_#"${__sx_num_int_add_abs_tmp_}"}"
+				__sx_num_int_add_abs_rem2_="${__sx_num_int_add_abs_tmp_}"
+				__sx_num_int_add_abs_ch2_="${__sx_num_int_add_abs_ch2_#"${__sx_num_int_add_abs_ch2_%%[!0]*}"}"
+			fi
+
+			__sx_num_int_add_abs_sum_=$((${__sx_num_int_add_abs_ch1_:-0} + ${__sx_num_int_add_abs_ch2_:-0} + __sx_num_int_add_abs_carry_))
+
+			__sx_num_int_add_abs_carry_=$((${__sx_num_int_add_abs_wlen_} < ${#__sx_num_int_add_abs_sum_}))
+
+			case "${#__sx_num_int_add_abs_rem1_}:${#__sx_num_int_add_abs_rem2_}:${__sx_num_int_add_abs_carry_}" in
+				0:0:[01] | [1-9]*:0:0 | 0:[1-9]*:0) __sx_num_int_add_abs_acc_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_sum_}${__sx_num_int_add_abs_out_}" && ! :;;
+				*:0)
+					# ゼロ埋めして前置
+					__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_zr_}${__sx_num_int_add_abs_sum_}"
+					__sx_num_int_add_abs_out_="${__sx_num_int_add_abs_tmp_#"${__sx_num_int_add_abs_tmp_%${__sx_num_int_add_abs_qm_}}"}${__sx_num_int_add_abs_out_}"
+					;;
+				*) __sx_num_int_add_abs_out_="${__sx_num_int_add_abs_sum_#?}${__sx_num_int_add_abs_out_}";;
+			esac
+		do :; done
+	done
+
+	eval "${__sx_num_int_add_abs_bind_}=${__sx_num_int_add_abs_acc_}"
+
+	unset CLEANUP
+}
 
 # ========================================
 #  UUID (UUID Operations)
