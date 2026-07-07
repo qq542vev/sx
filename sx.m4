@@ -5393,7 +5393,7 @@ __sx_num_rel_classify() {
 ##   逐次方式でアキュムレータに各数値を順次加算する。
 
 define([|V|], [|__sx_num_int_add_abs_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(acc) V(arg) V(wlen) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(sum) V(zr)|])dnl
+define([|CLEANUP|], [|V(bind) V(wlen) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(sum) V(zr)|])dnl
 
 __sx_num_int_add_abs() {
 	__sx_num_int_add_abs_bind_="${1}"
@@ -5405,7 +5405,7 @@ __sx_num_int_add_abs() {
 		return "${SX_EX_OK}"
 	esac
 
-	__sx_num_int_add_abs_acc_="${1}"
+	__sx_num_int_add_abs_rem1_="${1}"
 	shift
 
 	# (2) チャンク処理定数（ループ不変）
@@ -5413,16 +5413,14 @@ __sx_num_int_add_abs() {
 	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_add_abs_qm_ '?' "${__sx_num_int_add_abs_wlen_}"
 	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_add_abs_zr_ '0' "${__sx_num_int_add_abs_wlen_}"
 
-	for __sx_num_int_add_abs_arg_ in "${@}"; do
+	for __sx_num_int_add_abs_rem2_ in "${@}"; do
 		# (2) 右端→左端 チャンク処理
 		__sx_num_int_add_abs_carry_=0
 		__sx_num_int_add_abs_out_=
-		__sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_acc_}"
-		__sx_num_int_add_abs_rem2_="${__sx_num_int_add_abs_arg_}"
 
 		while
 			# rem1 からチャンク抽出
-			if M_NUM_LT([|${#__sx_num_int_add_abs_rem1_}|], [|${__sx_num_int_add_abs_wlen_}|]); then
+			if M_NUM_LE([|${#__sx_num_int_add_abs_rem1_}|], [|${__sx_num_int_add_abs_wlen_}|]); then
 				__sx_num_int_add_abs_ch1_="${__sx_num_int_add_abs_rem1_}"
 				__sx_num_int_add_abs_rem1_=
 			else
@@ -5433,7 +5431,7 @@ __sx_num_int_add_abs() {
 			fi
 
 			# rem2 からチャンク抽出
-			if M_NUM_LT([|${#__sx_num_int_add_abs_rem2_}|], [|${__sx_num_int_add_abs_wlen_}|]); then
+			if M_NUM_LE([|${#__sx_num_int_add_abs_rem2_}|], [|${__sx_num_int_add_abs_wlen_}|]); then
 				__sx_num_int_add_abs_ch2_="${__sx_num_int_add_abs_rem2_}"
 				__sx_num_int_add_abs_rem2_=
 			else
@@ -5448,7 +5446,7 @@ __sx_num_int_add_abs() {
 			__sx_num_int_add_abs_carry_=$((${__sx_num_int_add_abs_wlen_} < ${#__sx_num_int_add_abs_sum_}))
 
 			case "${#__sx_num_int_add_abs_rem1_}:${#__sx_num_int_add_abs_rem2_}:${__sx_num_int_add_abs_carry_}" in
-				0:0:[01] | [1-9]*:0:0 | 0:[1-9]*:0) __sx_num_int_add_abs_acc_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_sum_}${__sx_num_int_add_abs_out_}" && ! :;;
+				0:0:[01] | [1-9]*:0:0 | 0:[1-9]*:0) __sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_sum_}${__sx_num_int_add_abs_out_}" && ! :;;
 				*:0)
 					# ゼロ埋めして前置
 					__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_zr_}${__sx_num_int_add_abs_sum_}"
@@ -5459,7 +5457,7 @@ __sx_num_int_add_abs() {
 		do :; done
 	done
 
-	eval "${__sx_num_int_add_abs_bind_}=${__sx_num_int_add_abs_acc_}"
+	eval "${__sx_num_int_add_abs_bind_}=${__sx_num_int_add_abs_rem1_}"
 
 	unset CLEANUP
 }
