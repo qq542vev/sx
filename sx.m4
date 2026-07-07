@@ -5420,26 +5420,38 @@ __sx_num_int_add_abs() {
 
 		while
 			# rem1 からチャンク抽出
-			if M_NUM_LE([|${#__sx_num_int_add_abs_rem1_}|], [|${__sx_num_int_add_abs_wlen_}|]); then
-				__sx_num_int_add_abs_ch1_="${__sx_num_int_add_abs_rem1_}"
-				__sx_num_int_add_abs_rem1_=
-			else
-				__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_rem1_%${__sx_num_int_add_abs_qm_}}"
-				__sx_num_int_add_abs_ch1_="${__sx_num_int_add_abs_rem1_#"${__sx_num_int_add_abs_tmp_}"}"
-				__sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_tmp_}"
-				__sx_num_int_add_abs_ch1_="${__sx_num_int_add_abs_ch1_#"${__sx_num_int_add_abs_ch1_%%[!0]*}"}"
-			fi
+			case "${__sx_num_int_add_abs_rem1_}" in
+				${__sx_num_int_add_abs_qm_}?*)
+					__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_rem1_%${__sx_num_int_add_abs_qm_}}"
+					__sx_num_int_add_abs_ch1_="${__sx_num_int_add_abs_rem1_#"${__sx_num_int_add_abs_tmp_}"}"
+					__sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_tmp_}"
+
+					case "${__sx_num_int_add_abs_ch1_}" in 0*)
+						__sx_num_int_add_abs_ch1_="${__sx_num_int_add_abs_ch1_#"${__sx_num_int_add_abs_ch1_%%[!0]*}"}"
+					esac
+					;;
+				*)
+					__sx_num_int_add_abs_ch1_="${__sx_num_int_add_abs_rem1_}"
+					__sx_num_int_add_abs_rem1_=
+					;;
+			esac
 
 			# rem2 からチャンク抽出
-			if M_NUM_LE([|${#__sx_num_int_add_abs_rem2_}|], [|${__sx_num_int_add_abs_wlen_}|]); then
-				__sx_num_int_add_abs_ch2_="${__sx_num_int_add_abs_rem2_}"
-				__sx_num_int_add_abs_rem2_=
-			else
-				__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_rem2_%${__sx_num_int_add_abs_qm_}}"
-				__sx_num_int_add_abs_ch2_="${__sx_num_int_add_abs_rem2_#"${__sx_num_int_add_abs_tmp_}"}"
-				__sx_num_int_add_abs_rem2_="${__sx_num_int_add_abs_tmp_}"
-				__sx_num_int_add_abs_ch2_="${__sx_num_int_add_abs_ch2_#"${__sx_num_int_add_abs_ch2_%%[!0]*}"}"
-			fi
+			case "${__sx_num_int_add_abs_rem2_}" in
+				${__sx_num_int_add_abs_qm_}?*)
+					__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_rem2_%${__sx_num_int_add_abs_qm_}}"
+					__sx_num_int_add_abs_ch2_="${__sx_num_int_add_abs_rem2_#"${__sx_num_int_add_abs_tmp_}"}"
+					__sx_num_int_add_abs_rem2_="${__sx_num_int_add_abs_tmp_}"
+
+					case "${__sx_num_int_add_abs_ch2_}" in 0*)
+						__sx_num_int_add_abs_ch2_="${__sx_num_int_add_abs_ch2_#"${__sx_num_int_add_abs_ch2_%%[!0]*}"}"
+					esac
+					;;
+				*)
+					__sx_num_int_add_abs_ch2_="${__sx_num_int_add_abs_rem2_}"
+					__sx_num_int_add_abs_rem2_=
+					;;
+			esac
 
 			__sx_num_int_add_abs_sum_=$((${__sx_num_int_add_abs_ch1_:-0} + ${__sx_num_int_add_abs_ch2_:-0} + __sx_num_int_add_abs_carry_))
 
