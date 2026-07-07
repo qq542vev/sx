@@ -5474,6 +5474,113 @@ __sx_num_int_add_abs() {
 	unset CLEANUP
 }
 
+### __sx_num_int_sub_abs - 絶対値のチャンク減算を行う（内部用）
+##
+## 使い方:
+##   __sx_num_int_sub_abs 結果変数名 被減数 減数
+##
+## 説明:
+##   符号なし10進整数の絶対値（被減数 - 減数）を減算する。
+##   引数はすべて検証済みの正しい10進整数であることを前提とする。
+##   被減数 >= 減数 が保証されていること。
+
+define([|V|], [|__sx_num_int_sub_abs_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(wlen) V(qm) V(borrow) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(diff) V(zr)|])dnl
+
+__sx_num_int_sub_abs() {
+	__sx_num_int_sub_abs_bind_="${1}"
+	shift
+
+	case "${#}" in [01])
+		eval "${__sx_num_int_sub_abs_bind_}=${1-0}"
+		unset __sx_num_int_sub_abs_bind_
+		return "${SX_EX_OK}"
+	esac
+
+	__sx_num_int_sub_abs_rem1_="${1}"
+	shift
+
+	__sx_num_int_sub_abs_wlen_=$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))
+	case "${__sx_num_int_sub_abs_wlen_}" in 0) __sx_num_int_sub_abs_wlen_=1;; esac
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_sub_abs_qm_ '?' "${__sx_num_int_sub_abs_wlen_}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_sub_abs_zr_ '0' "${__sx_num_int_sub_abs_wlen_}"
+
+	__sx_num_int_sub_abs_borrow_=0
+	__sx_num_int_sub_abs_out_=
+
+	for __sx_num_int_sub_abs_rem2_ in "${@}"; do
+		__sx_num_int_sub_abs_borrow_=0
+		__sx_num_int_sub_abs_out_=
+
+		while
+			case "${__sx_num_int_sub_abs_rem1_}" in
+				${__sx_num_int_sub_abs_qm_}?*)
+					__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_rem1_%${__sx_num_int_sub_abs_qm_}}"
+					__sx_num_int_sub_abs_ch1_="${__sx_num_int_sub_abs_rem1_#"${__sx_num_int_sub_abs_tmp_}"}"
+					__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_tmp_}"
+					case "${__sx_num_int_sub_abs_ch1_}" in 0*)
+						__sx_num_int_sub_abs_ch1_="${__sx_num_int_sub_abs_ch1_#"${__sx_num_int_sub_abs_ch1_%%[!0]*}"}"
+					esac
+					;;
+				*)
+					__sx_num_int_sub_abs_ch1_="${__sx_num_int_sub_abs_rem1_}"
+					__sx_num_int_sub_abs_rem1_=
+					;;
+			esac
+
+			case "${__sx_num_int_sub_abs_rem2_}" in
+				${__sx_num_int_sub_abs_qm_}?*)
+					__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_rem2_%${__sx_num_int_sub_abs_qm_}}"
+					__sx_num_int_sub_abs_ch2_="${__sx_num_int_sub_abs_rem2_#"${__sx_num_int_sub_abs_tmp_}"}"
+					__sx_num_int_sub_abs_rem2_="${__sx_num_int_sub_abs_tmp_}"
+					case "${__sx_num_int_sub_abs_ch2_}" in 0*)
+						__sx_num_int_sub_abs_ch2_="${__sx_num_int_sub_abs_ch2_#"${__sx_num_int_sub_abs_ch2_%%[!0]*}"}"
+					esac
+					;;
+				*)
+					__sx_num_int_sub_abs_ch2_="${__sx_num_int_sub_abs_rem2_}"
+					__sx_num_int_sub_abs_rem2_=
+					;;
+			esac
+
+			__sx_num_int_sub_abs_diff_=$((${__sx_num_int_sub_abs_ch1_:-0} - ${__sx_num_int_sub_abs_ch2_:-0} - __sx_num_int_sub_abs_borrow_))
+
+			__sx_num_int_sub_abs_borrow_=0
+			case "${__sx_num_int_sub_abs_diff_}" in -*)
+				__sx_num_int_sub_abs_diff_=$((__sx_num_int_sub_abs_diff_ + 1${__sx_num_int_sub_abs_zr_}))
+				__sx_num_int_sub_abs_borrow_=1
+			esac
+
+			case "${#__sx_num_int_sub_abs_rem1_}:${#__sx_num_int_sub_abs_rem2_}:${__sx_num_int_sub_abs_borrow_}" in
+				0:0:0)
+					case "${__sx_num_int_sub_abs_diff_}" in 0*)
+						__sx_num_int_sub_abs_diff_="${__sx_num_int_sub_abs_diff_#"${__sx_num_int_sub_abs_diff_%%[!0]*}"}"
+					esac
+					__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_diff_}${__sx_num_int_sub_abs_out_}"
+					case "${__sx_num_int_sub_abs_out_}" in '') __sx_num_int_sub_abs_out_=0;; esac
+					__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_out_}"
+					;;
+				[1-9]*:0:0)
+					case "${__sx_num_int_sub_abs_diff_}" in 0*)
+						__sx_num_int_sub_abs_diff_="${__sx_num_int_sub_abs_diff_#"${__sx_num_int_sub_abs_diff_%%[!0]*}"}"
+					esac
+					__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_diff_}${__sx_num_int_sub_abs_out_}"
+					case "${__sx_num_int_sub_abs_out_}" in '') __sx_num_int_sub_abs_out_=0;; esac
+					__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_out_}"
+					;;
+				*)
+					__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_zr_}${__sx_num_int_sub_abs_diff_}"
+					__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_tmp_#"${__sx_num_int_sub_abs_tmp_%${__sx_num_int_sub_abs_qm_}}"}${__sx_num_int_sub_abs_out_}"
+					;;
+			esac
+		do :; done
+	done
+
+	eval "${__sx_num_int_sub_abs_bind_}=${__sx_num_int_sub_abs_rem1_}"
+
+	unset CLEANUP
+}
+
 # ========================================
 #  UUID (UUID Operations)
 # ========================================
