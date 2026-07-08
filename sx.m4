@@ -243,6 +243,19 @@ readonly SX_NUM_I128_MAX=170141183460469231731687303715884105727
 readonly SX_NUM_I128_MIN=-170141183460469231731687303715884105728
 readonly SX_NUM_U128_MAX=340282366920938463463374607431768211455
 
+# SX_CFG_NUM_RANGE に対応するチャンク処理定数（事前定義）
+# wlen = (SX_CFG_NUM_RANGE - 2) * 30103 / 100000 により
+# 2 * 10^wlen <= 2^(SX_CFG_NUM_RANGE - 1) を保証
+readonly SX_NUM_RANGE_32_WLEN=9
+readonly SX_NUM_RANGE_32_QM='?????????'
+readonly SX_NUM_RANGE_32_ZR='000000000'
+readonly SX_NUM_RANGE_64_WLEN=18
+readonly SX_NUM_RANGE_64_QM='??????????????????'
+readonly SX_NUM_RANGE_64_ZR='000000000000000000'
+readonly SX_NUM_RANGE_128_WLEN=37
+readonly SX_NUM_RANGE_128_QM='?????????????????????????????????????'
+readonly SX_NUM_RANGE_128_ZR='0000000000000000000000000000000000000'
+
 # 浮動小数点数限界 (IEEE 754 準拠)
 readonly SX_NUM_DBL_MAX='1.7976931348623157e+308'
 readonly SX_NUM_DBL_MIN='2.2250738585072014e-308'
@@ -5408,10 +5421,8 @@ __sx_num_int_add_abs() {
 	__sx_num_int_add_abs_rem1_="${1}"
 	shift
 
-	# (2) チャンク処理定数（ループ不変）
-	__sx_num_int_add_abs_wlen_=$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_add_abs_qm_ '?' "${__sx_num_int_add_abs_wlen_}"
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_add_abs_zr_ '0' "${__sx_num_int_add_abs_wlen_}"
+	# チャンク処理定数（事前定義値から選択）
+	eval "__sx_num_int_add_abs_wlen_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN} __sx_num_int_add_abs_qm_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM} __sx_num_int_add_abs_zr_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}"
 
 	for __sx_num_int_add_abs_rem2_ in "${@}"; do
 		# (2) 右端→左端 チャンク処理
@@ -5505,76 +5516,72 @@ __sx_num_int_sub_abs() {
 	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_sub_abs_qm_ '?' "${__sx_num_int_sub_abs_wlen_}"
 	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_sub_abs_zr_ '0' "${__sx_num_int_sub_abs_wlen_}"
 
+	__sx_num_int_sub_abs_rem2_="${1}"
 	__sx_num_int_sub_abs_borrow_=0
 	__sx_num_int_sub_abs_out_=
 
-	for __sx_num_int_sub_abs_rem2_ in "${@}"; do
-		__sx_num_int_sub_abs_borrow_=0
-		__sx_num_int_sub_abs_out_=
-
-		while
-			case "${__sx_num_int_sub_abs_rem1_}" in
-				${__sx_num_int_sub_abs_qm_}?*)
-					__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_rem1_%${__sx_num_int_sub_abs_qm_}}"
-					__sx_num_int_sub_abs_ch1_="${__sx_num_int_sub_abs_rem1_#"${__sx_num_int_sub_abs_tmp_}"}"
-					__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_tmp_}"
-					case "${__sx_num_int_sub_abs_ch1_}" in 0*)
-						__sx_num_int_sub_abs_ch1_="${__sx_num_int_sub_abs_ch1_#"${__sx_num_int_sub_abs_ch1_%%[!0]*}"}"
-					esac
-					;;
-				*)
-					__sx_num_int_sub_abs_ch1_="${__sx_num_int_sub_abs_rem1_}"
-					__sx_num_int_sub_abs_rem1_=
-					;;
-			esac
-
-			case "${__sx_num_int_sub_abs_rem2_}" in
-				${__sx_num_int_sub_abs_qm_}?*)
-					__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_rem2_%${__sx_num_int_sub_abs_qm_}}"
-					__sx_num_int_sub_abs_ch2_="${__sx_num_int_sub_abs_rem2_#"${__sx_num_int_sub_abs_tmp_}"}"
-					__sx_num_int_sub_abs_rem2_="${__sx_num_int_sub_abs_tmp_}"
-					case "${__sx_num_int_sub_abs_ch2_}" in 0*)
-						__sx_num_int_sub_abs_ch2_="${__sx_num_int_sub_abs_ch2_#"${__sx_num_int_sub_abs_ch2_%%[!0]*}"}"
-					esac
-					;;
-				*)
-					__sx_num_int_sub_abs_ch2_="${__sx_num_int_sub_abs_rem2_}"
-					__sx_num_int_sub_abs_rem2_=
-					;;
-			esac
-
-			__sx_num_int_sub_abs_diff_=$((${__sx_num_int_sub_abs_ch1_:-0} - ${__sx_num_int_sub_abs_ch2_:-0} - __sx_num_int_sub_abs_borrow_))
-
-			__sx_num_int_sub_abs_borrow_=0
-			case "${__sx_num_int_sub_abs_diff_}" in -*)
-				__sx_num_int_sub_abs_diff_=$((__sx_num_int_sub_abs_diff_ + 1${__sx_num_int_sub_abs_zr_}))
-				__sx_num_int_sub_abs_borrow_=1
-			esac
-
-			case "${#__sx_num_int_sub_abs_rem1_}:${#__sx_num_int_sub_abs_rem2_}:${__sx_num_int_sub_abs_borrow_}" in
-				0:0:0)
-					case "${__sx_num_int_sub_abs_diff_}" in 0*)
-						__sx_num_int_sub_abs_diff_="${__sx_num_int_sub_abs_diff_#"${__sx_num_int_sub_abs_diff_%%[!0]*}"}"
-					esac
-					__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_diff_}${__sx_num_int_sub_abs_out_}"
-					case "${__sx_num_int_sub_abs_out_}" in '') __sx_num_int_sub_abs_out_=0;; esac
-				__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_out_}" && ! :
+	while
+		case "${__sx_num_int_sub_abs_rem1_}" in
+			${__sx_num_int_sub_abs_qm_}?*)
+				__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_rem1_%${__sx_num_int_sub_abs_qm_}}"
+				__sx_num_int_sub_abs_ch1_="${__sx_num_int_sub_abs_rem1_#"${__sx_num_int_sub_abs_tmp_}"}"
+				__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_tmp_}"
+				case "${__sx_num_int_sub_abs_ch1_}" in 0*)
+					__sx_num_int_sub_abs_ch1_="${__sx_num_int_sub_abs_ch1_#"${__sx_num_int_sub_abs_ch1_%%[!0]*}"}"
+				esac
 				;;
-			[1-9]*:0:0)
+			*)
+				__sx_num_int_sub_abs_ch1_="${__sx_num_int_sub_abs_rem1_}"
+				__sx_num_int_sub_abs_rem1_=
+				;;
+		esac
+
+		case "${__sx_num_int_sub_abs_rem2_}" in
+			${__sx_num_int_sub_abs_qm_}?*)
+				__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_rem2_%${__sx_num_int_sub_abs_qm_}}"
+				__sx_num_int_sub_abs_ch2_="${__sx_num_int_sub_abs_rem2_#"${__sx_num_int_sub_abs_tmp_}"}"
+				__sx_num_int_sub_abs_rem2_="${__sx_num_int_sub_abs_tmp_}"
+				case "${__sx_num_int_sub_abs_ch2_}" in 0*)
+					__sx_num_int_sub_abs_ch2_="${__sx_num_int_sub_abs_ch2_#"${__sx_num_int_sub_abs_ch2_%%[!0]*}"}"
+				esac
+				;;
+			*)
+				__sx_num_int_sub_abs_ch2_="${__sx_num_int_sub_abs_rem2_}"
+				__sx_num_int_sub_abs_rem2_=
+				;;
+		esac
+
+		__sx_num_int_sub_abs_diff_=$((${__sx_num_int_sub_abs_ch1_:-0} - ${__sx_num_int_sub_abs_ch2_:-0} - __sx_num_int_sub_abs_borrow_))
+
+		__sx_num_int_sub_abs_borrow_=0
+		case "${__sx_num_int_sub_abs_diff_}" in -*)
+			__sx_num_int_sub_abs_diff_=$((__sx_num_int_sub_abs_diff_ + 1${__sx_num_int_sub_abs_zr_}))
+			__sx_num_int_sub_abs_borrow_=1
+		esac
+
+		case "${#__sx_num_int_sub_abs_rem1_}:${#__sx_num_int_sub_abs_rem2_}:${__sx_num_int_sub_abs_borrow_}" in
+			0:0:0)
 				case "${__sx_num_int_sub_abs_diff_}" in 0*)
 					__sx_num_int_sub_abs_diff_="${__sx_num_int_sub_abs_diff_#"${__sx_num_int_sub_abs_diff_%%[!0]*}"}"
 				esac
 				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_diff_}${__sx_num_int_sub_abs_out_}"
 				case "${__sx_num_int_sub_abs_out_}" in '') __sx_num_int_sub_abs_out_=0;; esac
-				__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_out_}" && ! :
-					;;
-				*)
-					__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_zr_}${__sx_num_int_sub_abs_diff_}"
-					__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_tmp_#"${__sx_num_int_sub_abs_tmp_%${__sx_num_int_sub_abs_qm_}}"}${__sx_num_int_sub_abs_out_}"
-					;;
+			__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_out_}" && ! :
+			;;
+		[1-9]*:0:0)
+			case "${__sx_num_int_sub_abs_diff_}" in 0*)
+				__sx_num_int_sub_abs_diff_="${__sx_num_int_sub_abs_diff_#"${__sx_num_int_sub_abs_diff_%%[!0]*}"}"
 			esac
-		do :; done
-	done
+			__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_diff_}${__sx_num_int_sub_abs_out_}"
+			case "${__sx_num_int_sub_abs_out_}" in '') __sx_num_int_sub_abs_out_=0;; esac
+			__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_out_}" && ! :
+				;;
+			*)
+				__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_zr_}${__sx_num_int_sub_abs_diff_}"
+				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_tmp_#"${__sx_num_int_sub_abs_tmp_%${__sx_num_int_sub_abs_qm_}}"}${__sx_num_int_sub_abs_out_}"
+				;;
+		esac
+	do :; done
 
 	eval "${__sx_num_int_sub_abs_bind_}=${__sx_num_int_sub_abs_rem1_}"
 
