@@ -4235,7 +4235,7 @@ __sx_num_cmp_float_uint() {
 		"$((${#2} < ${#1}))") return 3;;
 	esac
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_uint_qm_ '?' "${3-$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))}"
+__eval "__sx_num_cmp_float_uint_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
 	set -- "${__sx_num_cmp_float_uint_qm_}" "${1}" "${2}"
 	unset __sx_num_cmp_float_uint_qm_
 
@@ -4246,7 +4246,7 @@ __sx_num_cmp_float_uint() {
 		esac
 	done
 
-	__sx_num_cmp_float_arith "${2}" "${3}" || return "${?}"
+	__sx_num_cmp_arith "${2}" "${3}" || return "${?}"
 }
 
 ### sx_num_is_base_int - 指定された基数で整数か確認する
@@ -5444,16 +5444,8 @@ define([|CLEANUP|], [|V(res) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2)
 
 __sx_num_int_add_abs() {
 	__sx_num_int_add_abs_res_="${1}"
-	shift
-
-	case "${#}" in [01])
-		eval "${__sx_num_int_add_abs_res_}=${1-0}"
-		unset __sx_num_int_add_abs_res_
-		return "${SX_EX_OK}"
-	esac
-
-	__sx_num_int_add_abs_rem1_="${1}"
-	shift
+	__sx_num_int_add_abs_rem1_="${2-0}"
+	shift "$((1 + 0${2+1}))"
 
 	# チャンク処理定数（事前定義値から選択）
 	eval "__sx_num_int_add_abs_qm_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM} __sx_num_int_add_abs_zr_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}"
@@ -5499,7 +5491,6 @@ __sx_num_int_add_abs() {
 			esac
 
 			__sx_num_int_add_abs_tmp_=$((${__sx_num_int_add_abs_ch1_:-0} + ${__sx_num_int_add_abs_ch2_:-0} + __sx_num_int_add_abs_carry_))
-
 			__sx_num_int_add_abs_carry_=$((${#__sx_num_int_add_abs_qm_} < ${#__sx_num_int_add_abs_tmp_}))
 
 			case "${#__sx_num_int_add_abs_rem1_}:${#__sx_num_int_add_abs_rem2_}:${__sx_num_int_add_abs_carry_}" in
@@ -5514,8 +5505,42 @@ __sx_num_int_add_abs() {
 		do :; done
 	done
 
-	 __sx_var_set "${__sx_num_int_add_abs_res_}=${__sx_num_int_add_abs_rem1_}"
+	__sx_var_set "${__sx_num_int_add_abs_res_}=${__sx_num_int_add_abs_rem1_}"
 
+	unset CLEANUP
+}
+
+### sx_num_int_sub_abs - 2つの絶対値の差（被減数 - 減数）を計算する
+##
+## 使い方:
+##   sx_num_int_sub_abs 結果変数名 被減数 減数
+##
+## 説明:
+##   符号なし10進整数の減算（被減数 - 減数）を行う。
+##   引数の検証を行い、すべて符号なし整数（nat0）であることを確認する。
+##
+## 終了ステータス:
+##   0  成功 (SX_EX_OK)
+##  64  引数不正 (SX_EX_USAGE) — 数値以外、または符号付き整数が含まれる
+##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+
+define([|V|], [|__sx_num_int_sub_abs_$1|])dnl
+define([|CLEANUP|], [|V(res)|])dnl
+
+sx_num_int_sub_abs() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_sub_abs "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_num_int_sub_abs_res="${1}"
+	shift
+
+	sx_num_is_nat0 "${@}" || {
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	}
+
+	__sx_num_int_sub_abs "${__sx_num_int_sub_abs_res}" "${@}"
 	unset CLEANUP
 }
 
@@ -5534,20 +5559,12 @@ define([|CLEANUP|], [|V(res) V(qm) V(borrow) V(out) V(rem1) V(rem2) V(ch1) V(ch2
 
 __sx_num_int_sub_abs() {
 	__sx_num_int_sub_abs_res_="${1}"
-	shift
-
-	case "${#}" in [01])
-		eval "${__sx_num_int_sub_abs_res_}=${1-0}"
-		unset __sx_num_int_sub_abs_res_
-		return "${SX_EX_OK}"
-	esac
-
-	eval "__sx_num_int_sub_abs_qm_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM} __sx_num_int_sub_abs_zr_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}"
-
-	__sx_num_int_sub_abs_rem1_="${1}"
-	__sx_num_int_sub_abs_rem2_="${2}"
+	__sx_num_int_sub_abs_rem1_="${2-0}"
+	__sx_num_int_sub_abs_rem2_="${3-0}"
 	__sx_num_int_sub_abs_borrow_=0
 	__sx_num_int_sub_abs_out_=
+
+	eval "__sx_num_int_sub_abs_qm_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM} __sx_num_int_sub_abs_zr_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}"
 
 	while
 		case "${__sx_num_int_sub_abs_rem1_}" in
@@ -5591,7 +5608,7 @@ __sx_num_int_sub_abs() {
 
 				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_tmp_}${__sx_num_int_sub_abs_out_}" && ! :
 				;;
-			*:1) : "$((__sx_num_int_sub_abs_tmp_ += 1${__sx_num_int_sub_abs_zr_}))${__sx_num_int_sub_abs_out_}";&
+			*:1) : "$((__sx_num_int_sub_abs_tmp_ += 1${__sx_num_int_sub_abs_zr_}))";&
 			*)
 				__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_zr_}${__sx_num_int_sub_abs_tmp_}"
 				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_tmp_#"${__sx_num_int_sub_abs_tmp_%${__sx_num_int_sub_abs_qm_}}"}${__sx_num_int_sub_abs_out_}"
@@ -5599,7 +5616,7 @@ __sx_num_int_sub_abs() {
 		esac
 	do :; done
 
-	eval "${__sx_num_int_sub_abs_res_}=${__sx_num_int_sub_abs_out_:-0}"
+	__sx_var_set "${__sx_num_int_sub_abs_res_}=${__sx_num_int_sub_abs_out_:-0}"
 
 	unset CLEANUP
 }
