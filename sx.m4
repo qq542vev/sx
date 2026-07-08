@@ -5440,7 +5440,7 @@ sx_num_int_add_abs() {
 ##   逐次方式でアキュムレータに各数値を順次加算する。
 
 define([|V|], [|__sx_num_int_add_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(sum) V(zr)|])dnl
+define([|CLEANUP|], [|V(res) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(zr)|])dnl
 
 __sx_num_int_add_abs() {
 	__sx_num_int_add_abs_res_="${1}"
@@ -5498,18 +5498,18 @@ __sx_num_int_add_abs() {
 					;;
 			esac
 
-			__sx_num_int_add_abs_sum_=$((${__sx_num_int_add_abs_ch1_:-0} + ${__sx_num_int_add_abs_ch2_:-0} + __sx_num_int_add_abs_carry_))
+			__sx_num_int_add_abs_tmp_=$((${__sx_num_int_add_abs_ch1_:-0} + ${__sx_num_int_add_abs_ch2_:-0} + __sx_num_int_add_abs_carry_))
 
-			__sx_num_int_add_abs_carry_=$((${#__sx_num_int_add_abs_qm_} < ${#__sx_num_int_add_abs_sum_}))
+			__sx_num_int_add_abs_carry_=$((${#__sx_num_int_add_abs_qm_} < ${#__sx_num_int_add_abs_tmp_}))
 
 			case "${#__sx_num_int_add_abs_rem1_}:${#__sx_num_int_add_abs_rem2_}:${__sx_num_int_add_abs_carry_}" in
-				0:0:[01] | [1-9]*:0:0 | 0:[1-9]*:0) __sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_sum_}${__sx_num_int_add_abs_out_}" && ! :;;
+				0:0:[01] | [1-9]*:0:0 | 0:[1-9]*:0) __sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_tmp_}${__sx_num_int_add_abs_out_}" && ! :;;
 				*:0)
 					# ゼロ埋めして前置
-					__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_zr_}${__sx_num_int_add_abs_sum_}"
+					__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_zr_}${__sx_num_int_add_abs_tmp_}"
 					__sx_num_int_add_abs_out_="${__sx_num_int_add_abs_tmp_#"${__sx_num_int_add_abs_tmp_%${__sx_num_int_add_abs_qm_}}"}${__sx_num_int_add_abs_out_}"
 					;;
-				*) __sx_num_int_add_abs_out_="${__sx_num_int_add_abs_sum_#?}${__sx_num_int_add_abs_out_}";;
+				*) __sx_num_int_add_abs_out_="${__sx_num_int_add_abs_tmp_#?}${__sx_num_int_add_abs_out_}";;
 			esac
 		do :; done
 	done
@@ -5595,6 +5595,7 @@ __sx_num_int_sub_abs() {
 				esac
 
 				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_tmp_}${__sx_num_int_sub_abs_out_}" && ! :
+				;;
 			*)
 				__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_zr_}${__sx_num_int_sub_abs_tmp_}"
 				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_tmp_#"${__sx_num_int_sub_abs_tmp_%${__sx_num_int_sub_abs_qm_}}"}${__sx_num_int_sub_abs_out_}"
