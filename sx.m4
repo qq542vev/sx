@@ -5394,6 +5394,40 @@ __sx_num_rel_classify() {
 	return "$(((${2} < ${#1}) + 1))"
 }
 
+### sx_num_int_add_abs - 複数の絶対値をチャンク加算する
+##
+## 使い方:
+##   sx_num_int_add_abs 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   符号なし10進整数の絶対値を加算する。
+##   引数の検証を行い、符号なし整数でない場合はエラーとする。
+##   逐次方式でアキュムレータに各数値を順次加算する。
+##
+## 終了ステータス:
+##   0  成功 (SX_EX_OK)
+##  64  引数不正 (SX_EX_USAGE) — 数値以外、または符号付き整数が含まれる
+##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+
+define([|V|], [|__sx_num_int_add_abs_$1|])dnl
+define([|CLEANUP|], [|V(res)|])dnl
+
+sx_num_int_add_abs() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_add_abs "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_num_int_add_abs_res="${1}"
+	shift
+
+	sx_num_is_nat0 "${@}" || {
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	}
+
+	__sx_num_int_add_abs "${__sx_num_int_add_abs_res}" "${@}"
+	unset CLEANUP
+}
 
 ### __sx_num_int_add_abs - 複数の絶対値をチャンク加算する（内部用）
 ##
@@ -5406,15 +5440,15 @@ __sx_num_rel_classify() {
 ##   逐次方式でアキュムレータに各数値を順次加算する。
 
 define([|V|], [|__sx_num_int_add_abs_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(wlen) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(sum) V(zr)|])dnl
+define([|CLEANUP|], [|V(res) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(sum) V(zr)|])dnl
 
 __sx_num_int_add_abs() {
-	__sx_num_int_add_abs_bind_="${1}"
+	__sx_num_int_add_abs_res_="${1}"
 	shift
 
 	case "${#}" in [01])
-		eval "${__sx_num_int_add_abs_bind_}=${1-0}"
-		unset __sx_num_int_add_abs_bind_
+		eval "${__sx_num_int_add_abs_res_}=${1-0}"
+		unset __sx_num_int_add_abs_res_
 		return "${SX_EX_OK}"
 	esac
 
@@ -5422,7 +5456,7 @@ __sx_num_int_add_abs() {
 	shift
 
 	# チャンク処理定数（事前定義値から選択）
-	eval "__sx_num_int_add_abs_wlen_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN} __sx_num_int_add_abs_qm_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM} __sx_num_int_add_abs_zr_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}"
+	eval "__sx_num_int_add_abs_qm_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM} __sx_num_int_add_abs_zr_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}"
 
 	for __sx_num_int_add_abs_rem2_ in "${@}"; do
 		# (2) 右端→左端 チャンク処理
@@ -5466,7 +5500,7 @@ __sx_num_int_add_abs() {
 
 			__sx_num_int_add_abs_sum_=$((${__sx_num_int_add_abs_ch1_:-0} + ${__sx_num_int_add_abs_ch2_:-0} + __sx_num_int_add_abs_carry_))
 
-			__sx_num_int_add_abs_carry_=$((${__sx_num_int_add_abs_wlen_} < ${#__sx_num_int_add_abs_sum_}))
+			__sx_num_int_add_abs_carry_=$((${#__sx_num_int_add_abs_qm_} < ${#__sx_num_int_add_abs_sum_}))
 
 			case "${#__sx_num_int_add_abs_rem1_}:${#__sx_num_int_add_abs_rem2_}:${__sx_num_int_add_abs_carry_}" in
 				0:0:[01] | [1-9]*:0:0 | 0:[1-9]*:0) __sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_sum_}${__sx_num_int_add_abs_out_}" && ! :;;
@@ -5480,7 +5514,7 @@ __sx_num_int_add_abs() {
 		do :; done
 	done
 
-	eval "${__sx_num_int_add_abs_bind_}=${__sx_num_int_add_abs_rem1_}"
+	 __sx_var_set "${__sx_num_int_add_abs_res_}=${__sx_num_int_add_abs_rem1_}"
 
 	unset CLEANUP
 }
