@@ -4237,9 +4237,11 @@ __sx_num_cmp_float_frac() {
 ##   2  数値1 = 数値2
 ##   3  数値1 > 数値2
 ##  64  引数不正 (SX_EX_USAGE)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_num_cmp_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_nat0 "${@}" || return; return 0;; esac
 
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_base_nat0 10 "${1-}" "${2-}" || return
 
 	__sx_num_cmp_nat0 "${1}" "${2}" || return
@@ -4252,14 +4254,17 @@ sx_num_cmp_nat0() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_cmp_nat0() {
-	case 1 in
-		"$((${#1} < ${#2}))") return 1;;
-		"$((${#2} < ${#1}))") return 3;;
-	esac
-
-__eval "__sx_num_cmp_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
+	__eval "__sx_num_cmp_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
 	set -- "${__sx_num_cmp_nat0_qm_}" "${1}" "${2}"
 	unset __sx_num_cmp_nat0_qm_
+
+	if M_STR_MATCH([|"${#2}"|], [|${1}?*|]) || M_STR_MATCH([|"${#3}"|], [|*${1}?|]); then
+		__sx_num_cmp_nat0 "${#2}" "${#3}"
+	else
+		__sx_num_cmp_arith "${#2}" "${#3}"
+	fi || case "${?}" in 1 | 3)
+		return "${?}"
+	esac
 
 	while M_STR_MATCH([|"${2}"|], [|${1}*|]); do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
