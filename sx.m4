@@ -5581,12 +5581,7 @@ __sx_num_int_sub_abs() {
 		esac
 
 		__sx_num_int_sub_abs_tmp_=$((${__sx_num_int_sub_abs_ch1_:-0} - ${__sx_num_int_sub_abs_ch2_:-0} - __sx_num_int_sub_abs_borrow_))
-
-		__sx_num_int_sub_abs_borrow_=0
-		case "${__sx_num_int_sub_abs_tmp_}" in -*)
-			: "$((__sx_num_int_sub_abs_tmp_ += 1${__sx_num_int_sub_abs_zr_}))"
-			__sx_num_int_sub_abs_borrow_=1
-		esac
+		__sx_num_int_sub_abs_borrow_=$((__sx_num_int_sub_abs_tmp_ < 0))
 
 		case "${#__sx_num_int_sub_abs_rem2_}:${__sx_num_int_sub_abs_borrow_}" in
 			0:0)
@@ -5596,6 +5591,7 @@ __sx_num_int_sub_abs() {
 
 				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_tmp_}${__sx_num_int_sub_abs_out_}" && ! :
 				;;
+			*:1) : "$((__sx_num_int_sub_abs_tmp_ += 1${__sx_num_int_sub_abs_zr_}))${__sx_num_int_sub_abs_out_}";&
 			*)
 				__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_zr_}${__sx_num_int_sub_abs_tmp_}"
 				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_tmp_#"${__sx_num_int_sub_abs_tmp_%${__sx_num_int_sub_abs_qm_}}"}${__sx_num_int_sub_abs_out_}"
