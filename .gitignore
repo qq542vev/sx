@@ -1,3 +1,9 @@
-sx.sh
-*.swp
-sx_traced.sh
+*
+!.gitignore
+!AGENTS.md
+!GEMINI.md
+!Makefile
+!sx.m4
+!.shellcheckrc
+!.shellspec
+!spec/**

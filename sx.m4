@@ -4080,11 +4080,7 @@ sx_num_cmp_arith() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_cmp_arith() {
-	case 1 in
-		"$((${1} < ${2}))") return 1;;
-		"$((${1} > ${2}))") return 3;;
-		*) return 2;;
-	esac
+	return "$((${1} < ${2} ? 1 : (${1} > ${2} ? 3 : 2)))"
 }
 
 ### sx_num_cmp_float - 2つの数値を比較する
