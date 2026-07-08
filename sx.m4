@@ -4240,7 +4240,7 @@ __sx_num_cmp_float_frac() {
 sx_num_cmp_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_nat0 "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0 "${1-}" "${2-}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_base_nat0 10 "${1-}" "${2-}" || return
 
 	__sx_num_cmp_nat0 "${1}" "${2}" || return
 }
@@ -5442,7 +5442,7 @@ sx_num_int_add_abs() {
 	__sx_num_int_add_abs_res="${1}"
 	shift
 
-	sx_num_is_nat0 "${@}" || {
+	sx_num_is_base_nat0 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -5557,7 +5557,7 @@ sx_num_int_sub_abs() {
 	__sx_num_int_sub_abs_res="${1}"
 	shift
 
-	sx_num_is_nat0 "${@}" || {
+	sx_num_is_base_nat0 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
