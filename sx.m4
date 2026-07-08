@@ -5530,27 +5530,22 @@ __sx_num_int_add_abs() {
 ##   被減数 >= 減数 が保証されていること。
 
 define([|V|], [|__sx_num_int_sub_abs_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(wlen) V(qm) V(borrow) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(diff) V(zr)|])dnl
+define([|CLEANUP|], [|V(res) V(qm) V(borrow) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(zr)|])dnl
 
 __sx_num_int_sub_abs() {
-	__sx_num_int_sub_abs_bind_="${1}"
-	hift
+	__sx_num_int_sub_abs_res_="${1}"
+	shift
 
 	case "${#}" in [01])
-		eval "${__sx_num_int_sub_abs_bind_}=${1-0}"
-		unset __sx_num_int_sub_abs_bind_
+		eval "${__sx_num_int_sub_abs_res_}=${1-0}"
+		unset __sx_num_int_sub_abs_res_
 		return "${SX_EX_OK}"
 	esac
 
+	eval "__sx_num_int_sub_abs_qm_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM} __sx_num_int_sub_abs_zr_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}"
+
 	__sx_num_int_sub_abs_rem1_="${1}"
-	shift
-
-	__sx_num_int_sub_abs_wlen_=$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))
-	case "${__sx_num_int_sub_abs_wlen_}" in 0) __sx_num_int_sub_abs_wlen_=1;; esac
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_sub_abs_qm_ '?' "${__sx_num_int_sub_abs_wlen_}"
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_sub_abs_zr_ '0' "${__sx_num_int_sub_abs_wlen_}"
-
-	__sx_num_int_sub_abs_rem2_="${1}"
+	__sx_num_int_sub_abs_rem2_="${2}"
 	__sx_num_int_sub_abs_borrow_=0
 	__sx_num_int_sub_abs_out_=
 
@@ -5585,39 +5580,29 @@ __sx_num_int_sub_abs() {
 				;;
 		esac
 
-		__sx_num_int_sub_abs_diff_=$((${__sx_num_int_sub_abs_ch1_:-0} - ${__sx_num_int_sub_abs_ch2_:-0} - __sx_num_int_sub_abs_borrow_))
+		__sx_num_int_sub_abs_tmp_=$((${__sx_num_int_sub_abs_ch1_:-0} - ${__sx_num_int_sub_abs_ch2_:-0} - __sx_num_int_sub_abs_borrow_))
 
 		__sx_num_int_sub_abs_borrow_=0
-		case "${__sx_num_int_sub_abs_diff_}" in -*)
-			__sx_num_int_sub_abs_diff_=$((__sx_num_int_sub_abs_diff_ + 1${__sx_num_int_sub_abs_zr_}))
+		case "${__sx_num_int_sub_abs_tmp_}" in -*)
+			: "$((__sx_num_int_sub_abs_tmp_ += 1${__sx_num_int_sub_abs_zr_}))"
 			__sx_num_int_sub_abs_borrow_=1
 		esac
 
-		case "${#__sx_num_int_sub_abs_rem1_}:${#__sx_num_int_sub_abs_rem2_}:${__sx_num_int_sub_abs_borrow_}" in
-			0:0:0)
-				case "${__sx_num_int_sub_abs_diff_}" in 0*)
-					__sx_num_int_sub_abs_diff_="${__sx_num_int_sub_abs_diff_#"${__sx_num_int_sub_abs_diff_%%[!0]*}"}"
+		case "${#__sx_num_int_sub_abs_rem2_}:${__sx_num_int_sub_abs_borrow_}" in
+			0:0)
+				case "${__sx_num_int_sub_abs_tmp_}" in 0*)
+					__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_tmp_#"${__sx_num_int_sub_abs_tmp_%%[!0]*}"}"
 				esac
-				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_diff_}${__sx_num_int_sub_abs_out_}"
-				case "${__sx_num_int_sub_abs_out_}" in '') __sx_num_int_sub_abs_out_=0;; esac
-			__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_out_}" && ! :
-			;;
-		[1-9]*:0:0)
-			case "${__sx_num_int_sub_abs_diff_}" in 0*)
-				__sx_num_int_sub_abs_diff_="${__sx_num_int_sub_abs_diff_#"${__sx_num_int_sub_abs_diff_%%[!0]*}"}"
-			esac
-			__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_diff_}${__sx_num_int_sub_abs_out_}"
-			case "${__sx_num_int_sub_abs_out_}" in '') __sx_num_int_sub_abs_out_=0;; esac
-			__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_out_}" && ! :
-				;;
+
+				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_tmp_}${__sx_num_int_sub_abs_out_}" && ! :
 			*)
-				__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_zr_}${__sx_num_int_sub_abs_diff_}"
+				__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_zr_}${__sx_num_int_sub_abs_tmp_}"
 				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_tmp_#"${__sx_num_int_sub_abs_tmp_%${__sx_num_int_sub_abs_qm_}}"}${__sx_num_int_sub_abs_out_}"
 				;;
 		esac
 	do :; done
 
-	eval "${__sx_num_int_sub_abs_bind_}=${__sx_num_int_sub_abs_rem1_}"
+	eval "${__sx_num_int_sub_abs_res_}=${__sx_num_int_sub_abs_out_:-0}"
 
 	unset CLEANUP
 }
