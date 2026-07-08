@@ -5489,7 +5489,7 @@ define([|CLEANUP|], [|V(bind) V(wlen) V(qm) V(borrow) V(out) V(rem1) V(rem2) V(c
 
 __sx_num_int_sub_abs() {
 	__sx_num_int_sub_abs_bind_="${1}"
-	shift
+	hift
 
 	case "${#}" in [01])
 		eval "${__sx_num_int_sub_abs_bind_}=${1-0}"
@@ -5558,15 +5558,15 @@ __sx_num_int_sub_abs() {
 					esac
 					__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_diff_}${__sx_num_int_sub_abs_out_}"
 					case "${__sx_num_int_sub_abs_out_}" in '') __sx_num_int_sub_abs_out_=0;; esac
-					__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_out_}"
-					;;
-				[1-9]*:0:0)
-					case "${__sx_num_int_sub_abs_diff_}" in 0*)
-						__sx_num_int_sub_abs_diff_="${__sx_num_int_sub_abs_diff_#"${__sx_num_int_sub_abs_diff_%%[!0]*}"}"
-					esac
-					__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_diff_}${__sx_num_int_sub_abs_out_}"
-					case "${__sx_num_int_sub_abs_out_}" in '') __sx_num_int_sub_abs_out_=0;; esac
-					__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_out_}"
+				__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_out_}" && ! :
+				;;
+			[1-9]*:0:0)
+				case "${__sx_num_int_sub_abs_diff_}" in 0*)
+					__sx_num_int_sub_abs_diff_="${__sx_num_int_sub_abs_diff_#"${__sx_num_int_sub_abs_diff_%%[!0]*}"}"
+				esac
+				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_diff_}${__sx_num_int_sub_abs_out_}"
+				case "${__sx_num_int_sub_abs_out_}" in '') __sx_num_int_sub_abs_out_=0;; esac
+				__sx_num_int_sub_abs_rem1_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_out_}" && ! :
 					;;
 				*)
 					__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_zr_}${__sx_num_int_sub_abs_diff_}"
