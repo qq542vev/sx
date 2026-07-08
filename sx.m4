@@ -4148,7 +4148,7 @@ __sx_num_cmp_float_abs() {
 
 	set -- "${@}" "$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))"
 
-	__sx_num_cmp_float_uint "${1}" "${2}" "${5}" || case "${?}" in 1 | 3)
+	__sx_num_cmp_nat0 "${1}" "${2}" "${5}" || case "${?}" in 1 | 3)
 		return "${?}"
 	esac
 
@@ -4223,21 +4223,21 @@ __sx_num_cmp_float_frac() {
 	__sx_num_cmp_float_arith "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
 }
 
-### __sx_num_cmp_float_uint - 符号なし10進整数文字列を比較する（内部用）
+### __sx_num_cmp_nat0 - 符号なし10進整数文字列を比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_cmp_float_uint() {
+__sx_num_cmp_nat0() {
 	case 1 in
 		"$((${#1} < ${#2}))") return 1;;
 		"$((${#2} < ${#1}))") return 3;;
 	esac
 
-__eval "__sx_num_cmp_float_uint_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
-	set -- "${__sx_num_cmp_float_uint_qm_}" "${1}" "${2}"
-	unset __sx_num_cmp_float_uint_qm_
+__eval "__sx_num_cmp_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
+	set -- "${__sx_num_cmp_nat0_qm_}" "${1}" "${2}"
+	unset __sx_num_cmp_nat0_qm_
 
 	while M_STR_MATCH([|"${2}"|], [|${1}*|]); do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
@@ -4736,7 +4736,7 @@ __sx_num_is_int_width_core() {
 					*)  set -- "${1}"   "${__sx_num_is_int_width_dmax_}";;
 					esac
 
-				__sx_num_cmp_float_uint "${@}" 9 || case "${?}" in 3)
+				__sx_num_cmp_nat0 "${@}" 9 || case "${?}" in 3)
 					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_  __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
 					return 1
 				esac
