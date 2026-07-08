@@ -4223,6 +4223,28 @@ __sx_num_cmp_float_frac() {
 	__sx_num_cmp_float_arith "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
 }
 
+### sx_num_cmp_nat0 - 2つの符号なし10進整数を比較する
+##
+## 使い方:
+##   sx_num_cmp_nat0 数値1 数値2
+##
+## 説明:
+##   指定された2つの符号なし10進整数を比較する。
+##   引数はすべて 0 以上の整数である必要がある。
+##
+## 終了ステータス:
+##   1  数値1 < 数値2
+##   2  数値1 = 数値2
+##   3  数値1 > 数値2
+##  64  引数不正 (SX_EX_USAGE)
+sx_num_cmp_nat0() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_nat0 "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0 "${1-}" "${2-}" || return
+
+	__sx_num_cmp_nat0 "${1}" "${2}" || return
+}
+
 ### __sx_num_cmp_nat0 - 符号なし10進整数文字列を比較する（内部用）
 ##
 ## 終了ステータス:
