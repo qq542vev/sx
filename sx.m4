@@ -5352,7 +5352,7 @@ sx_num_rel() {
 ##   引数チェックを行わずに数値と演算子の関係を順次評価する。
 __sx_num_rel() {
 	__sx_num_rel_op_='eq'
-	eval "__sx_num_rel_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\""
+	eval "__sx_num_rel_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
 
 	for __sx_num_rel_arg_ in "${@}"; do
 		case "${__sx_num_rel_arg_}" in
@@ -5365,14 +5365,14 @@ __sx_num_rel() {
 			*) ! :;;
 		esac && continue
 
-		__sx_num_rel_classify "${__sx_num_rel_arg_}" "${__sx_num_rel_wlen_}" || __sx_num_rel_rcls_="${?}"
+		__sx_num_rel_classify "${__sx_num_rel_arg_}" "${__sx_num_rel_qm_}" || __sx_num_rel_rcls_="${?}"
 
 			case "${__sx_num_rel_rcls_}" in
 				1) : $((__sx_num_rel_arg_ += 0));;
 				2) __sx_num_rel_arg_="${__sx_num_rel_arg_#+}";;
 				*)
 					SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_rel_arg_ "${__sx_num_rel_arg_}"
-					__sx_num_rel_classify "${__sx_num_rel_arg_}" "${__sx_num_rel_wlen_}" || __sx_num_rel_rcls_="${?}"
+					__sx_num_rel_classify "${__sx_num_rel_arg_}" "${__sx_num_rel_qm_}" || __sx_num_rel_rcls_="${?}"
 					;;
 			esac
 
@@ -5383,7 +5383,7 @@ __sx_num_rel() {
 			esac || case "${__sx_num_rel_op_}:${?}" in
 				eq:2 | ne:1 | ne:3 | lt:1 | le:1 | le:2 | gt:3 | ge:2 | ge:3) ;;
 				*)
-					unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
+					unset __sx_num_rel_op_ __sx_num_rel_qm_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
 					return 1
 					;;
 			esac
@@ -5393,9 +5393,8 @@ __sx_num_rel() {
 		__sx_num_rel_lhs_="${__sx_num_rel_arg_}"
 	done
 
-	unset __sx_num_rel_op_ __sx_num_rel_wlen_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
+	unset __sx_num_rel_op_ __sx_num_rel_qm_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
 }
-
 
 ### __sx_num_rel_classify - 比較方式を分類する（内部用）
 ##
@@ -5409,9 +5408,13 @@ __sx_num_rel_classify() {
 		*0[Xx]* | 0[0-9]* | [+-]0[0-9]*) return 1;;
 	esac
 
-	set -- "${1#[+-]}" "${2-9}"
+	set -- "${1#[+-]}" "${2-'?????????'}"
 
-	return "$(((${2} < ${#1}) + 1))"
+	case "${1}" in ${2}?*)
+		return 2
+	esac
+
+	return 1
 }
 
 ### sx_num_int_add_abs - 複数の絶対値をチャンク加算する
