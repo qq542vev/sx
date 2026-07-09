@@ -4142,13 +4142,11 @@ __sx_num_cmp_float_abs() {
 		*) set -- "${1}" "${2}" "${3}" '';;
 	esac
 
-	set -- "${@}" "$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))"
-
-	__sx_num_cmp_nat0 "${1}" "${2}" "${5}" || case "${?}" in 1 | 3)
+	__sx_num_cmp_nat0 "${1}" "${2}" || case "${?}" in 1 | 3)
 		return "${?}"
 	esac
 
-	__sx_num_cmp_float_frac "${3}" "${4}" "${5}" || return "${?}"
+	__sx_num_cmp_float_frac "${3}" "${4}" || return "${?}"
 }
 
 ### __sx_num_cmp_float_core - 正規化済み数値を比較する（内部用）
@@ -4198,13 +4196,13 @@ __sx_num_cmp_float_frac() {
 	case "${2}" in "${1}"*) return 1;; esac
 
 	# 窓幅パターン（?????????）を準備
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_frac_q_ '?' "${3-$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))}"
+	eval "__sx_num_cmp_float_frac_q_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
 	# $1: qm, $2: lhs, $3: rhs
 	set -- "${__sx_num_cmp_float_frac_q_}" "${1}" "${2}"
 	unset __sx_num_cmp_float_frac_q_
 
 	# 両方の文字列が窓幅以上の間、チャンクごとに比較
-	while M_STR_MATCH([|"${2}"|], [|${1}*|]) && M_STR_MATCH([|"${3}"|], [|${1}*|]); do
+	while M_STR_MATCH([|"${2}"|], [|${1}?*|]) && M_STR_MATCH([|"${3}"|], [|${1}?*|]); do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
 		__sx_num_cmp_float_arith "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
 			1 | 3) return "${?}";;
@@ -4212,7 +4210,7 @@ __sx_num_cmp_float_frac() {
 	done
 
 	# 接頭辞の関係にない（＝どこかの桁で異なる）残りの部分をパディングして最後の比較
-	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_cmp_float_frac_z_ '0' "${#1}"
+	eval "__sx_num_cmp_float_frac_z_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
 	set -- "${1}" "${2}${__sx_num_cmp_float_frac_z_}" "${3}${__sx_num_cmp_float_frac_z_}"
 	unset __sx_num_cmp_float_frac_z_
 
@@ -4250,7 +4248,7 @@ sx_num_cmp_nat0() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_cmp_nat0() {
-	__eval "__sx_num_cmp_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
+	eval "__sx_num_cmp_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
 	set -- "${__sx_num_cmp_nat0_qm_}" "${1}" "${2}"
 	unset __sx_num_cmp_nat0_qm_
 
@@ -4262,14 +4260,14 @@ __sx_num_cmp_nat0() {
 		return "${?}"
 	esac
 
-	while M_STR_MATCH([|"${2}"|], [|${1}*|]); do
+	while M_STR_MATCH([|"${2}"|], [|${1}?*|]); do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
 		__sx_num_cmp_float_arith "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
 			1 | 3) return "${?}";;
 		esac
 	done
 
-	__sx_num_cmp_arith "${2}" "${3}" || return "${?}"
+	__sx_num_cmp_float_arith "${2}" "${3}" || return "${?}"
 }
 
 ### sx_num_is_base_int - 指定された基数で整数か確認する
@@ -5354,8 +5352,7 @@ sx_num_rel() {
 ##   引数チェックを行わずに数値と演算子の関係を順次評価する。
 __sx_num_rel() {
 	__sx_num_rel_op_='eq'
-	__sx_num_rel_wlen_=$(((SX_CFG_NUM_RANGE - 1) * 30103 / 100000))
-	case "${__sx_num_rel_wlen_}" in 0) __sx_num_rel_wlen_=1;; esac
+	eval "__sx_num_rel_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\""
 
 	for __sx_num_rel_arg_ in "${@}"; do
 		case "${__sx_num_rel_arg_}" in
@@ -5471,7 +5468,7 @@ __sx_num_int_add_abs() {
 	shift "$((1 + 0${2+1}))"
 
 	# チャンク処理定数（事前定義値から選択）
-	eval "__sx_num_int_add_abs_qm_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM} __sx_num_int_add_abs_zr_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}"
+	eval "__sx_num_int_add_abs_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_int_add_abs_zr_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
 
 	for __sx_num_int_add_abs_rem2_ in "${@}"; do
 		# (2) 右端→左端 チャンク処理
@@ -5587,7 +5584,7 @@ __sx_num_int_sub_abs() {
 	__sx_num_int_sub_abs_borrow_=0
 	__sx_num_int_sub_abs_out_=
 
-	eval "__sx_num_int_sub_abs_qm_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM} __sx_num_int_sub_abs_zr_=\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}"
+	eval "__sx_num_int_sub_abs_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_int_sub_abs_zr_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
 
 	while
 		case "${__sx_num_int_sub_abs_rem1_}" in

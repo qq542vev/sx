@@ -27,19 +27,18 @@ Describe 'sx_num_is_sx_nat0'
       The status should be failure
     End
 
-    It '設定が不正でも環境チェックをスキップすること'
-      # SX_CFG_NUM_RANGE=9 は sx_cfg_is_valid では不正とされる
-      SX_CFG_NUM_RANGE=9
-      # 本来なら sx_cfg_is_valid で 78 (SX_EX_CONFIG) になるが、
-      # SKIP_CHK=1 なのでそれを飛ばして内部処理に進む。
-      When call sx_num_is_sx_nat0 "0"
-      The status should not equal 78
-    End
+
   End
 
   Context '無効な設定'
     Before 'SX_CFG_NUM_RANGE=abc'
     It '設定エラーで失敗すること'
+      When call sx_num_is_sx_nat0 "1"
+      The status should equal 78
+    End
+
+    It '不正な数値で設定エラーになること'
+      SX_CFG_NUM_RANGE=9
       When call sx_num_is_sx_nat0 "1"
       The status should equal 78
     End

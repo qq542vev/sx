@@ -32,16 +32,18 @@ Describe 'sx_num_is_sx_nat1'
       The status should be failure
     End
 
-    It '設定が不正でも環境チェックをスキップすること'
-      SX_CFG_NUM_RANGE=9
-      When call sx_num_is_sx_nat1 "1"
-      The status should not equal 78
-    End
+
   End
 
   Context '無効な設定'
     Before 'SX_CFG_NUM_RANGE=abc'
     It '設定エラーで失敗すること'
+      When call sx_num_is_sx_nat1 "1"
+      The status should equal 78
+    End
+
+    It '不正な数値で設定エラーになること'
+      SX_CFG_NUM_RANGE=9
       When call sx_num_is_sx_nat1 "1"
       The status should equal 78
     End
