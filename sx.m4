@@ -4149,6 +4149,28 @@ __sx_num_cmp_fixed_abs() {
 	__sx_num_cmp_fixed_frac "${3}" "${4}" || return "${?}"
 }
 
+### sx_num_cmp_fixed - 2つの固定小数点数を比較する
+##
+## 使い方:
+##   sx_num_cmp_fixed 左辺 右辺
+##
+## 説明:
+##   指定された2つの固定小数点数を比較する。
+##   引数は sx_num_norm 等で正規化された10進固定小数点形式である必要がある。
+##
+## 終了ステータス:
+##    1  左辺 < 右辺
+##    2  左辺 = 右辺
+##    3  左辺 > 右辺
+##   64  引数が正規化済み数値ではない (SX_EX_USAGE)
+sx_num_cmp_fixed() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_fixed "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_fixed "${1-}" "${2-}" || return
+
+	__sx_num_cmp_fixed "${1}" "${2}" || return
+}
+
 ### __sx_num_cmp_fixed - 正規化済み数値を比較する（内部用）
 ##
 ## 終了ステータス:
@@ -5544,7 +5566,7 @@ __sx_num_int_add_abs() {
 ##
 ## 終了ステータス:
 ##   0  成功 (SX_EX_OK)
-##  64  引数不正 (SX_EX_USAGE) — 数値以外、または符号付き整数が含まれる
+##  64  引数不正 (SX_EX_USAGE) — 数値以外、符号付き整数、または被減数 &lt; 減数
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 
 define([|V|], [|__sx_num_int_sub_abs_$1|])dnl
@@ -5562,6 +5584,11 @@ sx_num_int_sub_abs() {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
+
+	__sx_num_cmp_nat0 "${1}" "${2}" || case "${?}" in 1)
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	esac
 
 	__sx_num_int_sub_abs "${__sx_num_int_sub_abs_res}" "${@}"
 	unset CLEANUP
