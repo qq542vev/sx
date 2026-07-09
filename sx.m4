@@ -4169,13 +4169,13 @@ __sx_num_cmp_fixed() {
 	esac || return "${?}"
 }
 
-### __sx_num_cmp_float_arith - 10進整数文字列を算術展開で比較する（内部用）
+### __sx_num_cmp_arith_digit - 10進整数文字列を算術展開で比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_cmp_float_arith() {
+__sx_num_cmp_arith_digit() {
 	set -- "${1#${1%%[!0]*}}" "${2#${2%%[!0]*}}"
 	__sx_num_cmp_arith "${1:-0}" "${2:-0}"
 }
@@ -4204,7 +4204,7 @@ __sx_num_cmp_fixed_frac() {
 	# 両方の文字列が窓幅以上の間、チャンクごとに比較
 	while M_STR_MATCH([|"${2}"|], [|${1}?*|]) && M_STR_MATCH([|"${3}"|], [|${1}?*|]); do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_cmp_float_arith "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
+		__sx_num_cmp_arith_digit "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
 			1 | 3) return "${?}";;
 		esac
 	done
@@ -4214,7 +4214,7 @@ __sx_num_cmp_fixed_frac() {
 	set -- "${1}" "${2}${__sx_num_cmp_fixed_frac_z_}" "${3}${__sx_num_cmp_fixed_frac_z_}"
 	unset __sx_num_cmp_fixed_frac_z_
 
-	__sx_num_cmp_float_arith "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
+	__sx_num_cmp_arith_digit "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
 }
 
 ### sx_num_cmp_nat0 - 2つの符号なし10進整数を比較する
@@ -4262,12 +4262,12 @@ __sx_num_cmp_nat0() {
 
 	while M_STR_MATCH([|"${2}"|], [|${1}?*|]); do
 		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_cmp_float_arith "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
+		__sx_num_cmp_arith_digit "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
 			1 | 3) return "${?}";;
 		esac
 	done
 
-	__sx_num_cmp_float_arith "${2}" "${3}" || return "${?}"
+	__sx_num_cmp_arith_digit "${2}" "${3}" || return "${?}"
 }
 
 ### sx_num_is_base_int - 指定された基数で整数か確認する
