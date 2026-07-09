@@ -4122,16 +4122,16 @@ __sx_num_cmp_float() {
 	set -- "${__sx_num_cmp_float_a_}" "${__sx_num_cmp_float_b_}"
 	unset __sx_num_cmp_float_a_ __sx_num_cmp_float_b_
 
-	__sx_num_cmp_float_core "${@}" || return
+	__sx_num_cmp_fixed "${@}" || return
 }
 
-### __sx_num_cmp_float_abs - 正規化済み絶対値同士を比較する（内部用）
+### __sx_num_cmp_fixed_abs - 正規化済み絶対値同士を比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_cmp_float_abs() {
+__sx_num_cmp_fixed_abs() {
 	case "${1}" in
 		*.*) set -- "${1%%.*}" "${2}" "${1#*.}";;
 		*) set -- "${1}" "${2}" '';;
@@ -4146,16 +4146,16 @@ __sx_num_cmp_float_abs() {
 		return "${?}"
 	esac
 
-	__sx_num_cmp_float_frac "${3}" "${4}" || return "${?}"
+	__sx_num_cmp_fixed_frac "${3}" "${4}" || return "${?}"
 }
 
-### __sx_num_cmp_float_core - 正規化済み数値を比較する（内部用）
+### __sx_num_cmp_fixed - 正規化済み数値を比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_cmp_float_core() {
+__sx_num_cmp_fixed() {
 	set -- "${1#[+-]}" "${2#[+-]}" "${1%%[!-]*}" "${2%%[!-]*}"
 
 	case "${3:-+}${4:-+}" in
@@ -4164,8 +4164,8 @@ __sx_num_cmp_float_core() {
 	esac
 
 	case "${3}" in
-		-*) __sx_num_cmp_float_abs "${2}" "${1}";;
-		*)  __sx_num_cmp_float_abs "${1}" "${2}";;
+		-*) __sx_num_cmp_fixed_abs "${2}" "${1}";;
+		*)  __sx_num_cmp_fixed_abs "${1}" "${2}";;
 	esac || return "${?}"
 }
 
@@ -4180,13 +4180,13 @@ __sx_num_cmp_float_arith() {
 	__sx_num_cmp_arith "${1:-0}" "${2:-0}"
 }
 
-### __sx_num_cmp_float_frac - 小数部を左から比較する（内部用）
+### __sx_num_cmp_fixed_frac - 小数部を左から比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
-__sx_num_cmp_float_frac() {
+__sx_num_cmp_fixed_frac() {
 	# 完全に一致する場合は即座に終了 (EQ)
 	case "${1}" in "${2}") return 2;; esac
 
@@ -4196,10 +4196,10 @@ __sx_num_cmp_float_frac() {
 	case "${2}" in "${1}"*) return 1;; esac
 
 	# 窓幅パターン（?????????）を準備
-	eval "__sx_num_cmp_float_frac_q_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
+	eval "__sx_num_cmp_fixed_frac_q_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
 	# $1: qm, $2: lhs, $3: rhs
-	set -- "${__sx_num_cmp_float_frac_q_}" "${1}" "${2}"
-	unset __sx_num_cmp_float_frac_q_
+	set -- "${__sx_num_cmp_fixed_frac_q_}" "${1}" "${2}"
+	unset __sx_num_cmp_fixed_frac_q_
 
 	# 両方の文字列が窓幅以上の間、チャンクごとに比較
 	while M_STR_MATCH([|"${2}"|], [|${1}?*|]) && M_STR_MATCH([|"${3}"|], [|${1}?*|]); do
@@ -4210,9 +4210,9 @@ __sx_num_cmp_float_frac() {
 	done
 
 	# 接頭辞の関係にない（＝どこかの桁で異なる）残りの部分をパディングして最後の比較
-	eval "__sx_num_cmp_float_frac_z_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
-	set -- "${1}" "${2}${__sx_num_cmp_float_frac_z_}" "${3}${__sx_num_cmp_float_frac_z_}"
-	unset __sx_num_cmp_float_frac_z_
+	eval "__sx_num_cmp_fixed_frac_z_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
+	set -- "${1}" "${2}${__sx_num_cmp_fixed_frac_z_}" "${3}${__sx_num_cmp_fixed_frac_z_}"
+	unset __sx_num_cmp_fixed_frac_z_
 
 	__sx_num_cmp_float_arith "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
 }
@@ -5379,7 +5379,7 @@ __sx_num_rel() {
 		case "${__sx_num_rel_lhs_+X}" in X)
 			case "${__sx_num_rel_lcls_}:${__sx_num_rel_rcls_}" in
 				1:1) __sx_num_cmp_arith "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
-				*) __sx_num_cmp_float_core "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
+				*) __sx_num_cmp_fixed "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
 			esac || case "${__sx_num_rel_op_}:${?}" in
 				eq:2 | ne:1 | ne:3 | lt:1 | le:1 | le:2 | gt:3 | ge:2 | ge:3) ;;
 				*)
