@@ -4883,7 +4883,7 @@ __sx_num_is_int_fit() {
 						M_STR_MATCH([|"${1}"|], [|-0[Xx][9ABCDEFabcdef]*|], [|-0[Xx]8*[!0]*|], [|0[Xx][89ABCDEFabcdef]*|])
 					}
 				then
-					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_dmax_ __sx_num_is_int_fit_dmin_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
 					return 1
 				fi
 				;;
@@ -4906,31 +4906,20 @@ __sx_num_is_int_fit() {
 						M_STR_MATCH([|"${1}"|], [|-0[!1-${4}]*|], [|-0${4}*[!0]*|], [|0[!1-${4}-]*|])
 					}
 				then
-					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_dmax_ __sx_num_is_int_fit_dmin_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
 					return 1
 				fi
 				;;
 			*)
-				# 基数10のパラメータ計算
-				case "${__sx_num_is_int_fit_dmax_+X}" in '')
-					eval "__sx_num_is_int_fit_dmax_=\"\${SX_NUM_I${__sx_num_is_int_fit_bits_}_MAX}\""
-				esac
-				: ${__sx_num_is_int_fit_dmin_="${__sx_num_is_int_fit_dmax_%7}8"}
-
-				case "${1}" in
-					-*) set -- "${1#-}" "${__sx_num_is_int_fit_dmin_}";;
-					*)  set -- "${1}"   "${__sx_num_is_int_fit_dmax_}";;
-					esac
-
-				__sx_num_cmp_nat0 "${@}" 9 || case "${?}" in 3)
-					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_dmax_ __sx_num_is_int_fit_dmin_  __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+				__sx_num_is_int_fit_dec "${__sx_num_is_int_fit_bits_}" "${__sx_num_is_int_fit_arg_}" || {
+					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
 					return 1
-				esac
+				}
 				;;
 			esac
 	done
 
-	unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_dmax_ __sx_num_is_int_fit_dmin_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+	unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
 }
 
 ### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
