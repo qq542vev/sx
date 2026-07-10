@@ -4676,10 +4676,24 @@ sx_num_is_int() {
 	unset __sx_num_is_int_arg
 }
 
+### sx_num_is_int_fit_dec - すべての引数が指定されたビット幅の符号付き10進整数の範囲内か確認する
+##
+## 使い方:
+##   sx_num_is_int_fit_dec ビット幅 [整数1 [整数2 ...]]
+##
+## 説明:
+##   第1引数で指定されたビット幅の符号付き整数として、
+##   後続のすべての引数が、その範囲内の10進整数であるか確認する。
+##   8進数 (0...) や 16進数 (0x...) 形式はサポートしない。
+##
+## 終了ステータス:
+##    0  すべて範囲内である (SX_EX_OK)
+##    1  範囲内に収まらない値が含まれる（ビット幅は正しい）
+##   64  ビット幅指定が不正、または整数として不正な値が含まれる (SX_EX_USAGE)
 sx_num_is_int_fit_dec() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_fit_dec "${@}" || return; return 0;; esac
 
-	case "${1-32}" in
+	case "${1-}" in
 		8 | 16 | 32 | 64 | 128) ;;
 		*) return "${SX_EX_USAGE}";;
 	esac
@@ -4690,7 +4704,7 @@ sx_num_is_int_fit_dec() {
 }
 
 __sx_num_is_int_fit_dec() {
-	__sx_num_is_int_fit_dec_width_="${1-32}"
+	__sx_num_is_int_fit_dec_bit_="${1}"
 	shift
 
 	for __sx_num_is_int_fit_dec_arg_ in "${@}"; do
@@ -4702,7 +4716,7 @@ __sx_num_is_int_fit_dec() {
 
 		__sx_num_is_int_fit_dec_arg_=${__sx_num_is_int_fit_dec_arg_#[+-]}
 
-		case "${__sx_num_is_int_fit_dec_width_}" in
+		case "${__sx_num_is_int_fit_dec_bit_}" in
 			8)
 				case "${#__sx_num_is_int_fit_dec_arg_}" in
 					[12]) ! :;;
@@ -4782,41 +4796,12 @@ __sx_num_is_int_fit_dec() {
 			esac
 			;;
 		esac && {
-			unset __sx_num_is_int_fit_dec_width_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
+			unset __sx_num_is_int_fit_dec_bit_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
 			return 1
 		}
 	done
 
-	unset __sx_num_is_int_fit_dec_width_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
-}
-
-### sx_num_is_int_fit - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
-##
-## 使い方:
-##   sx_num_is_int_fit [ビット幅] [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   第1引数で指定されたビット幅（デフォルト32）の符号付き整数として、
-##   後続のすべての引数が、その範囲内の符号付き整数であるか確認する。
-##   8進数 (0...)、16進数 (0x...) 形式もサポートする。
-##
-## 終了ステータス:
-##    0  すべて範囲内である (SX_EX_OK)
-##    1  範囲内に収まらない値が含まれる（ビット幅は正しい）
-##   64  ビット幅指定が不正、または整数として不正な値が含まれる (SX_EX_USAGE)
-sx_num_is_int_fit() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_fit "${@}" || return; return 0;; esac
-
-	case "${1-32}" in
-		8 | 16 | 32 | 64 | 128) ;;
-		*) return "${SX_EX_USAGE}";;
-	esac
-
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_int "${@}" || return
-
-	case "${2+1}" in '') return 0;; esac
-
-	__sx_num_is_int_fit "${@}" || return
+	unset __sx_num_is_int_fit_dec_bit_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
 }
 
 ### sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
@@ -4860,9 +4845,36 @@ __sx_num_is_int_width() {
 	__sx_num_is_int_fit "${@}" || return
 }
 
+### sx_num_is_int_fit - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
+##
+## 使い方:
+##   sx_num_is_int_fit ビット幅 [整数1 [整数2 ...]]
+##
+## 説明:
+##   第1引数で指定されたビット幅の符号付き整数として、
+##   後続のすべての引数が、その範囲内の符号付き整数であるか確認する。
+##   8進数 (0...)、16進数 (0x...) 形式もサポートする。
+##
+## 終了ステータス:
+##    0  すべて範囲内である (SX_EX_OK)
+##    1  範囲内に収まらない値が含まれる（ビット幅は正しい）
+##   64  ビット幅指定が不正、または整数として不正な値が含まれる (SX_EX_USAGE)
+sx_num_is_int_fit() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_fit "${@}" || return; return 0;; esac
+
+	case "${1-}" in
+		8 | 16 | 32 | 64 | 128) ;;
+		*) return "${SX_EX_USAGE}";;
+	esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_int "${@}" || return
+
+	__sx_num_is_int_fit "${@}" || return
+}
+
 ### __sx_num_is_int_fit - 指定されたビット幅の符号付き整数の範囲内か確認する（内部ロジック）
 __sx_num_is_int_fit() {
-	__sx_num_is_int_fit_bits_="${1}"
+	__sx_num_is_int_fit_bit_="${1}"
 	shift
 
 	for __sx_num_is_int_fit_arg_ in "${@}"; do
@@ -4875,7 +4887,7 @@ __sx_num_is_int_fit() {
 		case "${1}" in
 			0[Xx]* | -0[Xx]*)
 			# 基数16のパラメータ計算
-			: ${__sx_num_is_int_fit_xlen_=$((__sx_num_is_int_fit_bits_ / 4 + 2))}
+			: ${__sx_num_is_int_fit_xlen_=$((__sx_num_is_int_fit_bit_ / 4 + 2))}
 
 				if
 					M_NUM_LT([|__sx_num_is_int_fit_xlen_|], [|${2}|]) || {
@@ -4883,14 +4895,14 @@ __sx_num_is_int_fit() {
 						M_STR_MATCH([|"${1}"|], [|-0[Xx][9ABCDEFabcdef]*|], [|-0[Xx]8*[!0]*|], [|0[Xx][89ABCDEFabcdef]*|])
 					}
 				then
-					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
 					return 1
 				fi
 				;;
 			0?* | -0?*)
 				# 基数8のパラメータ計算
-				: ${__sx_num_is_int_fit_olenn_=$(((__sx_num_is_int_fit_bits_ - 1) / 3 + 2))}
-				: ${__sx_num_is_int_fit_oleadn_=$((1 << ((__sx_num_is_int_fit_bits_ - 1) % 3)))}
+				: ${__sx_num_is_int_fit_olenn_=$(((__sx_num_is_int_fit_bit_ - 1) / 3 + 2))}
+				: ${__sx_num_is_int_fit_oleadn_=$((1 << ((__sx_num_is_int_fit_bit_ - 1) % 3)))}
 				: ${__sx_num_is_int_fit_olenp_=$((__sx_num_is_int_fit_olenn_ - (__sx_num_is_int_fit_oleadn_ == 1)))}
 				: ${__sx_num_is_int_fit_oleadp_=$((__sx_num_is_int_fit_oleadn_ == 1 ? 7 : __sx_num_is_int_fit_oleadn_ - 1))}
 
@@ -4906,20 +4918,20 @@ __sx_num_is_int_fit() {
 						M_STR_MATCH([|"${1}"|], [|-0[!1-${4}]*|], [|-0${4}*[!0]*|], [|0[!1-${4}-]*|])
 					}
 				then
-					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
 					return 1
 				fi
 				;;
 			*)
-				__sx_num_is_int_fit_dec "${__sx_num_is_int_fit_bits_}" "${__sx_num_is_int_fit_arg_}" || {
-					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+				__sx_num_is_int_fit_dec "${__sx_num_is_int_fit_bit_}" "${__sx_num_is_int_fit_arg_}" || {
+					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
 					return 1
 				}
 				;;
 			esac
 	done
 
-	unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+	unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
 }
 
 ### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
