@@ -4790,6 +4790,35 @@ __sx_num_is_int_fit_dec() {
 	unset __sx_num_is_int_fit_dec_width_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
 }
 
+### sx_num_is_int_fit - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
+##
+## 使い方:
+##   sx_num_is_int_fit [ビット幅] [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第1引数で指定されたビット幅（デフォルト32）の符号付き整数として、
+##   後続のすべての引数が、その範囲内の符号付き整数であるか確認する。
+##   8進数 (0...)、16進数 (0x...) 形式もサポートする。
+##
+## 終了ステータス:
+##    0  すべて範囲内である (SX_EX_OK)
+##    1  範囲内に収まらない値が含まれる（ビット幅は正しい）
+##   64  ビット幅指定が不正、または整数として不正な値が含まれる (SX_EX_USAGE)
+sx_num_is_int_fit() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_fit "${@}" || return; return 0;; esac
+
+	case "${1-32}" in
+		8 | 16 | 32 | 64 | 128) ;;
+		*) return "${SX_EX_USAGE}";;
+	esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_int "${@}" || return
+
+	case "${2+1}" in '') return 0;; esac
+
+	__sx_num_is_int_fit "${@}" || return
+}
+
 ### sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
 ##
 ## 使い方:
@@ -4828,17 +4857,17 @@ __sx_num_is_int_width() {
 	set -- "${__sx_num_is_int_width_bits_}" "${@}"
 	unset __sx_num_is_int_width_bits_
 
-	__sx_num_is_int_width_core "${@}" || return
+	__sx_num_is_int_fit "${@}" || return
 }
 
-### __sx_num_is_int_width_core - 指定されたビット幅の符号付き整数の範囲内か確認する（内部ロジック）
-__sx_num_is_int_width_core() {
-	__sx_num_is_int_width_bits_="${1}"
+### __sx_num_is_int_fit - 指定されたビット幅の符号付き整数の範囲内か確認する（内部ロジック）
+__sx_num_is_int_fit() {
+	__sx_num_is_int_fit_bits_="${1}"
 	shift
 
-	for __sx_num_is_int_width_arg_ in "${@}"; do
+	for __sx_num_is_int_fit_arg_ in "${@}"; do
 		# $1: 値（符号正規化）, $2: 数値部分の長さ
-		set -- "${__sx_num_is_int_width_arg_#+}" "${#__sx_num_is_int_width_arg_}"
+		set -- "${__sx_num_is_int_fit_arg_#+}" "${#__sx_num_is_int_fit_arg_}"
 		case "${1}" in +* | -*)
 			set -- "${1}" "$((${2} - 1))"
 		esac
@@ -4846,29 +4875,29 @@ __sx_num_is_int_width_core() {
 		case "${1}" in
 			0[Xx]* | -0[Xx]*)
 			# 基数16のパラメータ計算
-			: ${__sx_num_is_int_width_xlen_=$((__sx_num_is_int_width_bits_ / 4 + 2))}
+			: ${__sx_num_is_int_fit_xlen_=$((__sx_num_is_int_fit_bits_ / 4 + 2))}
 
 				if
-					M_NUM_LT([|__sx_num_is_int_width_xlen_|], [|${2}|]) || {
-						M_STR_EQ([|"${__sx_num_is_int_width_xlen_}"|], [|"${2}"|]) &&
+					M_NUM_LT([|__sx_num_is_int_fit_xlen_|], [|${2}|]) || {
+						M_STR_EQ([|"${__sx_num_is_int_fit_xlen_}"|], [|"${2}"|]) &&
 						M_STR_MATCH([|"${1}"|], [|-0[Xx][9ABCDEFabcdef]*|], [|-0[Xx]8*[!0]*|], [|0[Xx][89ABCDEFabcdef]*|])
 					}
 				then
-					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
+					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_dmax_ __sx_num_is_int_fit_dmin_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
 					return 1
 				fi
 				;;
 			0?* | -0?*)
 				# 基数8のパラメータ計算
-				: ${__sx_num_is_int_width_olenn_=$(((__sx_num_is_int_width_bits_ - 1) / 3 + 2))}
-				: ${__sx_num_is_int_width_oleadn_=$((1 << ((__sx_num_is_int_width_bits_ - 1) % 3)))}
-				: ${__sx_num_is_int_width_olenp_=$((__sx_num_is_int_width_olenn_ - (__sx_num_is_int_width_oleadn_ == 1)))}
-				: ${__sx_num_is_int_width_oleadp_=$((__sx_num_is_int_width_oleadn_ == 1 ? 7 : __sx_num_is_int_width_oleadn_ - 1))}
+				: ${__sx_num_is_int_fit_olenn_=$(((__sx_num_is_int_fit_bits_ - 1) / 3 + 2))}
+				: ${__sx_num_is_int_fit_oleadn_=$((1 << ((__sx_num_is_int_fit_bits_ - 1) % 3)))}
+				: ${__sx_num_is_int_fit_olenp_=$((__sx_num_is_int_fit_olenn_ - (__sx_num_is_int_fit_oleadn_ == 1)))}
+				: ${__sx_num_is_int_fit_oleadp_=$((__sx_num_is_int_fit_oleadn_ == 1 ? 7 : __sx_num_is_int_fit_oleadn_ - 1))}
 
 				# $3: 制限長さ, $4: 制限先頭文字
 				case "${1}" in
-					-*) set -- "${1}" "${2}" "${__sx_num_is_int_width_olenn_}" "${__sx_num_is_int_width_oleadn_}";;
-					*)  set -- "${1}" "${2}" "${__sx_num_is_int_width_olenp_}" "${__sx_num_is_int_width_oleadp_}";;
+					-*) set -- "${1}" "${2}" "${__sx_num_is_int_fit_olenn_}" "${__sx_num_is_int_fit_oleadn_}";;
+					*)  set -- "${1}" "${2}" "${__sx_num_is_int_fit_olenp_}" "${__sx_num_is_int_fit_oleadp_}";;
 				esac
 
 				if
@@ -4877,31 +4906,31 @@ __sx_num_is_int_width_core() {
 						M_STR_MATCH([|"${1}"|], [|-0[!1-${4}]*|], [|-0${4}*[!0]*|], [|0[!1-${4}-]*|])
 					}
 				then
-					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
+					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_dmax_ __sx_num_is_int_fit_dmin_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
 					return 1
 				fi
 				;;
 			*)
 				# 基数10のパラメータ計算
-				case "${__sx_num_is_int_width_dmax_+X}" in '')
-					eval "__sx_num_is_int_width_dmax_=\"\${SX_NUM_I${__sx_num_is_int_width_bits_}_MAX}\""
+				case "${__sx_num_is_int_fit_dmax_+X}" in '')
+					eval "__sx_num_is_int_fit_dmax_=\"\${SX_NUM_I${__sx_num_is_int_fit_bits_}_MAX}\""
 				esac
-				: ${__sx_num_is_int_width_dmin_="${__sx_num_is_int_width_dmax_%7}8"}
+				: ${__sx_num_is_int_fit_dmin_="${__sx_num_is_int_fit_dmax_%7}8"}
 
 				case "${1}" in
-					-*) set -- "${1#-}" "${__sx_num_is_int_width_dmin_}";;
-					*)  set -- "${1}"   "${__sx_num_is_int_width_dmax_}";;
+					-*) set -- "${1#-}" "${__sx_num_is_int_fit_dmin_}";;
+					*)  set -- "${1}"   "${__sx_num_is_int_fit_dmax_}";;
 					esac
 
 				__sx_num_cmp_nat0 "${@}" 9 || case "${?}" in 3)
-					unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_  __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
+					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_dmax_ __sx_num_is_int_fit_dmin_  __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
 					return 1
 				esac
 				;;
 			esac
 	done
 
-	unset __sx_num_is_int_width_arg_ __sx_num_is_int_width_bits_ __sx_num_is_int_width_dmax_ __sx_num_is_int_width_dmin_ __sx_num_is_int_width_xlen_ __sx_num_is_int_width_olenn_ __sx_num_is_int_width_oleadn_ __sx_num_is_int_width_olenp_ __sx_num_is_int_width_oleadp_
+	unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bits_ __sx_num_is_int_fit_dmax_ __sx_num_is_int_fit_dmin_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
 }
 
 ### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
@@ -5174,7 +5203,7 @@ sx_num_is_sx_nat0() {
 ##   sx_num_is_sx_nat0 の内部実装。引数チェックは行わない。
 __sx_num_is_sx_nat0() {
 	sx_num_is_nat0 "${@}" || return
-	__sx_num_is_int_width_core "${SX_CFG_NUM_RANGE}" "${@}" || return
+	__sx_num_is_int_fit "${SX_CFG_NUM_RANGE}" "${@}" || return
 }
 
 ### sx_num_is_sx_nat1 - shcore の標準的な数値範囲（SX_CFG_NUM_RANGE）の自然数（1以上）か確認する
@@ -5203,7 +5232,7 @@ sx_num_is_sx_nat1() {
 ##   sx_num_is_sx_nat1 の内部実装。引数チェックは行わない。
 __sx_num_is_sx_nat1() {
 	sx_num_is_nat1 "${@}" || return
-	__sx_num_is_int_width_core "${SX_CFG_NUM_RANGE}" "${@}" || return
+	__sx_num_is_int_fit "${SX_CFG_NUM_RANGE}" "${@}" || return
 }
 
 ### sx_num_is_sx_num - すべての引数が有効な数値（整数または実数）であるか確認する
