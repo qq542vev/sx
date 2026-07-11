@@ -5532,14 +5532,14 @@ __sx_num_rel() {
 
 		__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
 
-			case "${__sx_num_rel_rcls_}" in
-				1) : $((__sx_num_rel_arg_ += 0));;
-				2) __sx_num_rel_arg_="${__sx_num_rel_arg_#+}";;
-				*)
-					SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_rel_arg_ "${__sx_num_rel_arg_}"
-					__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
-					;;
-			esac
+		case "${__sx_num_rel_rcls_}" in
+			1) : $((__sx_num_rel_arg_ += 0));;
+			2) __sx_num_rel_arg_="${__sx_num_rel_arg_#+}";;
+			*)
+				SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_rel_arg_ "${__sx_num_rel_arg_}"
+				__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
+				;;
+		esac
 
 		case "${__sx_num_rel_lhs_+X}" in X)
 			case "${__sx_num_rel_lcls_}:${__sx_num_rel_rcls_}" in
@@ -5806,6 +5806,89 @@ __sx_num_int_sub_abs() {
 	do :; done
 
 	__sx_var_set "${__sx_num_int_sub_abs_res_}=${__sx_num_int_sub_abs_out_:-0}"
+
+	unset CLEANUP
+}
+
+### sx_num_int_add - 複数の符号付き整数を加算する
+##
+## 使い方:
+##   sx_num_int_add 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   符号付き10進整数を加算する。正数群と負数群に分けて絶対値加算を行い、
+##   最後に絶対値を比較して符号を決定する。
+##
+## 終了ステータス:
+##   0  成功 (SX_EX_OK)
+##  64  引数不正 (SX_EX_USAGE) — 整数として不正な値が含まれる
+##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+
+define([|V|], [|__sx_num_int_add_$1|])dnl
+define([|CLEANUP|], [|V(res)|])dnl
+
+sx_num_int_add() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_add "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_num_int_add_res="${1}"
+	shift
+
+	sx_num_is_base_int 10 "${@}" || {
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	}
+
+	__sx_num_int_add "${__sx_num_int_add_res}" "${@}"
+	unset CLEANUP
+}
+
+### __sx_num_int_add - 複数の符号付き整数を加算する（内部用）
+##
+## 使い方:
+##   __sx_num_int_add 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   符号付き10進整数を加算する。まず正数と負数に分けてそれぞれ
+##   __sx_num_int_add_abs で絶対値加算を行い、最後に絶対値を比較し
+##   減算して符号を決定する。
+
+define([|V|], [|__sx_num_int_add_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(pos) V(neg) V(pos_sum) V(neg_sum) V(arg) V(acc)|])dnl
+
+__sx_num_int_add() {
+	__sx_num_int_add_res_="${1}"
+	shift
+
+	# Step 1: 正数と負数に分離
+	__sx_num_int_add_pos_=
+	__sx_num_int_add_neg_=
+
+	for __sx_num_int_add_arg_ in "${@}"; do
+		case "${__sx_num_int_add_arg_}" in
+			-*) __sx_num_int_add_neg_="${__sx_num_int_add_neg_} ${__sx_num_int_add_arg_#-}";;
+			*)  __sx_num_int_add_pos_="${__sx_num_int_add_pos_} ${__sx_num_int_add_arg_#+}";;
+		esac
+	done
+
+	# Step 2: 正数の合計
+	eval __sx_num_int_add_abs __sx_num_int_add_pos_sum_ "${__sx_num_int_add_pos_}"
+
+	# Step 3: 負数（絶対値）の合計
+	eval __sx_num_int_add_abs __sx_num_int_add_neg_sum_ "${__sx_num_int_add_neg_}"
+
+	# Step 4: 絶対値を比較して最終結果を決定
+	__sx_num_cmp_nat0 "${__sx_num_int_add_pos_sum_}" "${__sx_num_int_add_neg_sum_}" || case "${?}" in
+		1)
+			SX_CFG_UNSET_SOFT=2 __sx_num_int_sub_abs __sx_num_int_add_acc_ "${__sx_num_int_add_neg_sum_}" "${__sx_num_int_add_pos_sum_}"
+			__sx_num_int_add_acc_="-${__sx_num_int_add_acc_}"
+		;;
+		2) __sx_num_int_add_acc_=0;;
+		3) SX_CFG_UNSET_SOFT=2 __sx_num_int_sub_abs __sx_num_int_add_acc_ "${__sx_num_int_add_pos_sum_}" "${__sx_num_int_add_neg_sum_}";;
+	esac
+
+	__sx_var_set "${__sx_num_int_add_res_}=${__sx_num_int_add_acc_}"
 
 	unset CLEANUP
 }
