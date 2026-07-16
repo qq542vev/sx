@@ -5883,13 +5883,99 @@ __sx_num_int_add() {
 		1)
 			SX_CFG_UNSET_SOFT=2 __sx_num_int_sub_abs __sx_num_int_add_acc_ "${__sx_num_int_add_neg_sum_}" "${__sx_num_int_add_pos_sum_}"
 			__sx_num_int_add_acc_="-${__sx_num_int_add_acc_}"
-		;;
+			;;
 		2) __sx_num_int_add_acc_=0;;
 		3) SX_CFG_UNSET_SOFT=2 __sx_num_int_sub_abs __sx_num_int_add_acc_ "${__sx_num_int_add_pos_sum_}" "${__sx_num_int_add_neg_sum_}";;
 	esac
 
 	__sx_var_set "${__sx_num_int_add_res_}=${__sx_num_int_add_acc_}"
 
+	unset CLEANUP
+}
+
+### sx_num_int_sub - 複数の符号付き整数を減算する
+##
+## 使い方:
+##   sx_num_int_sub 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   符号付き10進整数を減算する（第1引数から残りの引数を順次減算）。
+##   内部で第2引数以降を __sx_num_int_add で合計し、第1引数と符号付き減算する。
+##
+## 終了ステータス:
+##   0  成功 (SX_EX_OK)
+##  64  引数不正 (SX_EX_USAGE) — 整数として不正な値が含まれる
+##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+
+define([|V|], [|__sx_num_int_sub_$1|])dnl
+define([|CLEANUP|], [|V(res)|])dnl
+
+sx_num_int_sub() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_sub "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_num_int_sub_res="${1}"
+	shift
+
+	sx_num_is_base_int 10 "${@}" || {
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	}
+
+	__sx_num_int_sub "${__sx_num_int_sub_res}" "${@}"
+	unset CLEANUP
+}
+
+define([|V|], [|__sx_num_int_sub_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(first) V(sign) V(sum) V(tmp)|])dnl
+
+__sx_num_int_sub() {
+	__sx_num_int_sub_res_="${1}"
+	__sx_num_int_sub_first_="${2-0}"
+	__sx_num_int_sub_sign_=
+
+	shift "$((1 + 0${2+1}))"
+
+	# $2...$n の合計（符号付き加算）
+	SX_CFG_UNSET_SOFT=2 __sx_num_int_add __sx_num_int_sub_sum_ "${@}"
+
+	# 合計が 0 なら第1引数がそのまま結果
+	case "${__sx_num_int_sub_sum_}" in 0)
+		__sx_var_set "${__sx_num_int_sub_res_}=${__sx_num_int_sub_first_#+}"
+		unset CLEANUP
+		return
+	esac
+
+	# a - sum を符号の組み合わせ4ケースに分けて直接演算
+	case "${__sx_num_int_sub_first_}${__sx_num_int_sub_sum_}" in
+		# ケース4: (-a) - (-s) = |s| - |a|
+		-*-*)
+			__sx_num_cmp_nat0 "${__sx_num_int_sub_first_#-}" "${__sx_num_int_sub_sum_#-}" || case "${?}" in
+				1) SX_CFG_UNSET_SOFT=2 __sx_num_int_sub_abs __sx_num_int_sub_tmp_ "${__sx_num_int_sub_sum_#-}" "${__sx_num_int_sub_first_#-}";;
+				3)
+					__sx_num_int_sub_sign_='-'
+					SX_CFG_UNSET_SOFT=2 __sx_num_int_sub_abs __sx_num_int_sub_tmp_ "${__sx_num_int_sub_first_#-}" "${__sx_num_int_sub_sum_#-}"
+					;;
+			esac
+			;;
+		# ケース3: (-a) - s = -(a + s)
+		-*) __sx_num_int_sub_sign_='-';&
+		# ケース2: a - (-s) = a + s
+		*-*) SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_sub_tmp_ "${__sx_num_int_sub_first_#[+-]}" "${__sx_num_int_sub_sum_#-}";;
+		# ケース1: a - s
+		*)
+			__sx_num_cmp_nat0 "${__sx_num_int_sub_first_#+}" "${__sx_num_int_sub_sum_}" || case "${?}" in
+				1)
+					__sx_num_int_sub_sign_='-'
+					SX_CFG_UNSET_SOFT=2 __sx_num_int_sub_abs __sx_num_int_sub_tmp_ "${__sx_num_int_sub_sum_}" "${__sx_num_int_sub_first_#+}"
+					;;
+				3) SX_CFG_UNSET_SOFT=2 __sx_num_int_sub_abs __sx_num_int_sub_tmp_ "${__sx_num_int_sub_first_#+}" "${__sx_num_int_sub_sum_#+}";;
+			esac
+			;;
+	esac
+
+	__sx_var_set "${__sx_num_int_sub_res_}=${__sx_num_int_sub_sign_}${__sx_num_int_sub_tmp_-0}"
 	unset CLEANUP
 }
 
