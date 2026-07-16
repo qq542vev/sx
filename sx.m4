@@ -256,6 +256,19 @@ readonly SX_NUM_RANGE_128_WLEN=37
 readonly SX_NUM_RANGE_128_QM='?????????????????????????????????????'
 readonly SX_NUM_RANGE_128_ZR='0000000000000000000000000000000000000'
 
+# 乗算用チャンク処理定数
+# wlen_mul = wlen - 1 (32-bit) または wlen (64/128-bit) により
+# 9 * 10^wlen_mul <= 2^(SX_CFG_NUM_RANGE - 1) を保証
+readonly SX_NUM_RANGE_32_WLEN_MUL=8
+readonly SX_NUM_RANGE_32_QM_MUL='????????'
+readonly SX_NUM_RANGE_32_ZR_MUL='00000000'
+readonly SX_NUM_RANGE_64_WLEN_MUL=18
+readonly SX_NUM_RANGE_64_QM_MUL='??????????????????'
+readonly SX_NUM_RANGE_64_ZR_MUL='000000000000000000'
+readonly SX_NUM_RANGE_128_WLEN_MUL=37
+readonly SX_NUM_RANGE_128_QM_MUL='?????????????????????????????????????'
+readonly SX_NUM_RANGE_128_ZR_MUL='0000000000000000000000000000000000000'
+
 # 浮動小数点数限界 (IEEE 754 準拠)
 readonly SX_NUM_DBL_MAX='1.7976931348623157e+308'
 readonly SX_NUM_DBL_MIN='2.2250738585072014e-308'
@@ -5806,6 +5819,173 @@ __sx_num_int_sub_abs() {
 	do :; done
 
 	__sx_var_set "${__sx_num_int_sub_abs_res_}=${__sx_num_int_sub_abs_out_:-0}"
+
+	unset CLEANUP
+}
+
+### __sx_num_int_mul_by_digit - 多倍長絶対値 × 1桁の乗算（内部用）
+##
+## 使い方:
+##   __sx_num_int_mul_by_digit 結果変数名 被乗数 桁値
+##
+## 説明:
+##   符号なし10進整数の絶対値に 0〜9 の1桁を乗算する。
+##   引数はすべて検証済みの正しい10進整数であることを前提とする。
+
+define([|V|], [|__sx_num_int_mul_by_digit_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(a) V(digit) V(qm) V(zr) V(carry) V(out) V(rem) V(ch) V(tmp) V(try)|])dnl
+
+__sx_num_int_mul_by_digit() {
+	__sx_num_int_mul_by_digit_res_="${1}"
+	__sx_num_int_mul_by_digit_a_="${2-0}"
+	__sx_num_int_mul_by_digit_digit_="${3-0}"
+
+	case "${__sx_num_int_mul_by_digit_a_}:${__sx_num_int_mul_by_digit_digit_}" in
+		0:* | *:0)
+			__sx_var_set "${__sx_num_int_mul_by_digit_res_}=0"
+			unset CLEANUP
+			return
+			;;
+		*:1)
+			__sx_var_set "${__sx_num_int_mul_by_digit_res_}=${__sx_num_int_mul_by_digit_a_}"
+			unset CLEANUP
+			return
+			;;
+	esac
+
+	eval "__sx_num_int_mul_by_digit_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM_MUL}\" __sx_num_int_mul_by_digit_zr_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR_MUL}\""
+
+	__sx_num_int_mul_by_digit_rem_="${__sx_num_int_mul_by_digit_a_}"
+	__sx_num_int_mul_by_digit_carry_=0
+	__sx_num_int_mul_by_digit_out_=
+
+	while :; do
+		case "${__sx_num_int_mul_by_digit_rem_}" in
+			${__sx_num_int_mul_by_digit_qm_}?*)
+				__sx_num_int_mul_by_digit_tmp_="${__sx_num_int_mul_by_digit_rem_%${__sx_num_int_mul_by_digit_qm_}}"
+				__sx_num_int_mul_by_digit_ch_="${__sx_num_int_mul_by_digit_rem_#"${__sx_num_int_mul_by_digit_tmp_}"}"
+				__sx_num_int_mul_by_digit_rem_="${__sx_num_int_mul_by_digit_tmp_}"
+
+				case "${__sx_num_int_mul_by_digit_ch_}" in 0*)
+					__sx_num_int_mul_by_digit_ch_="${__sx_num_int_mul_by_digit_ch_#"${__sx_num_int_mul_by_digit_ch_%%[!0]*}"}"
+				esac
+				;;
+			*)
+				__sx_num_int_mul_by_digit_ch_="${__sx_num_int_mul_by_digit_rem_}"
+				__sx_num_int_mul_by_digit_rem_=
+				;;
+		esac
+
+		__sx_num_int_mul_by_digit_tmp_=$((${__sx_num_int_mul_by_digit_ch_:-0} * __sx_num_int_mul_by_digit_digit_ + __sx_num_int_mul_by_digit_carry_))
+
+		# WLEN_MUL の桁数を超えているか判定
+		__sx_num_int_mul_by_digit_try_="${__sx_num_int_mul_by_digit_tmp_%${__sx_num_int_mul_by_digit_qm_}}"
+
+		case "${__sx_num_int_mul_by_digit_try_}" in
+			"${__sx_num_int_mul_by_digit_tmp_}")
+				# tmp_ が WLEN_MUL 未満: キャリーなし
+				case "${__sx_num_int_mul_by_digit_rem_}" in
+					?*)
+						# 左にさらにチャンクがあるのでゼロ埋め
+						__sx_num_int_mul_by_digit_tmp_="${__sx_num_int_mul_by_digit_zr_}${__sx_num_int_mul_by_digit_tmp_}"
+						__sx_num_int_mul_by_digit_ch_="${__sx_num_int_mul_by_digit_tmp_#"${__sx_num_int_mul_by_digit_tmp_%${__sx_num_int_mul_by_digit_qm_}}"}${__sx_num_int_mul_by_digit_out_}"
+						;;
+					*) __sx_num_int_mul_by_digit_ch_="${__sx_num_int_mul_by_digit_tmp_}${__sx_num_int_mul_by_digit_out_}";;
+				esac
+				__sx_num_int_mul_by_digit_out_="${__sx_num_int_mul_by_digit_ch_}"
+				__sx_num_int_mul_by_digit_carry_=0
+				;;
+			"")
+				# tmp_ が WLEN_MUL 桁ぴったり: キャリーなし
+				__sx_num_int_mul_by_digit_out_="${__sx_num_int_mul_by_digit_tmp_}${__sx_num_int_mul_by_digit_out_}"
+				__sx_num_int_mul_by_digit_carry_=0
+				;;
+			*)
+				# tmp_ が WLEN_MUL 超過: キャリーあり
+				__sx_num_int_mul_by_digit_carry_="${__sx_num_int_mul_by_digit_try_}"
+				__sx_num_int_mul_by_digit_out_="${__sx_num_int_mul_by_digit_tmp_#"${__sx_num_int_mul_by_digit_carry_}"}${__sx_num_int_mul_by_digit_out_}"
+
+				case "${__sx_num_int_mul_by_digit_carry_}" in 0*)
+					__sx_num_int_mul_by_digit_carry_="${__sx_num_int_mul_by_digit_carry_#"${__sx_num_int_mul_by_digit_carry_%%[!0]*}"}"
+				esac
+				case "${__sx_num_int_mul_by_digit_carry_}" in "") __sx_num_int_mul_by_digit_carry_=0;; esac
+				;;
+		esac
+
+		case "${__sx_num_int_mul_by_digit_rem_}" in ?*) ;; *)
+			case "${__sx_num_int_mul_by_digit_carry_}" in 0) break;; esac
+		esac
+	done
+
+	case "${__sx_num_int_mul_by_digit_out_}" in
+		0*) __sx_num_int_mul_by_digit_out_="${__sx_num_int_mul_by_digit_out_#"${__sx_num_int_mul_by_digit_out_%%[!0]*}"}";;
+	esac
+	case "${__sx_num_int_mul_by_digit_out_}" in "") __sx_num_int_mul_by_digit_out_=0;; esac
+
+	__sx_var_set "${__sx_num_int_mul_by_digit_res_}=${__sx_num_int_mul_by_digit_out_}"
+
+	unset CLEANUP
+}
+
+### __sx_num_int_mul_abs - 多倍長絶対値 × 多倍長絶対値の乗算（内部用）
+##
+## 使い方:
+##   __sx_num_int_mul_abs 結果変数名 被乗数 乗数
+##
+## 説明:
+##   符号なし10進整数の絶対値同士を乗算する。
+##   引数はすべて検証済みの正しい10進整数であることを前提とする。
+
+define([|V|], [|__sx_num_int_mul_abs_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(a) V(b) V(acc) V(shift) V(digit) V(part) V(tmp)|])dnl
+
+__sx_num_int_mul_abs() {
+	__sx_num_int_mul_abs_res_="${1}"
+	__sx_num_int_mul_abs_a_="${2-0}"
+	__sx_num_int_mul_abs_b_="${3-0}"
+
+	case "${__sx_num_int_mul_abs_a_}:${__sx_num_int_mul_abs_b_}" in
+		0:* | *:0)
+			__sx_var_set "${__sx_num_int_mul_abs_res_}=0"
+			unset CLEANUP
+			return
+			;;
+	esac
+
+	__sx_num_int_mul_abs_acc_=0
+	__sx_num_int_mul_abs_shift_=
+
+	while :; do
+		case "${__sx_num_int_mul_abs_b_}" in
+			?*?)
+				__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_b_%?}"
+				__sx_num_int_mul_abs_digit_="${__sx_num_int_mul_abs_b_#"${__sx_num_int_mul_abs_tmp_}"}"
+				__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_tmp_}"
+				;;
+			*)
+				__sx_num_int_mul_abs_digit_="${__sx_num_int_mul_abs_b_}"
+				__sx_num_int_mul_abs_b_=0
+				;;
+		esac
+
+		case "${__sx_num_int_mul_abs_digit_}" in 0) ;; *)
+			SX_CFG_UNSET_SOFT=2 __sx_num_int_mul_by_digit __sx_num_int_mul_abs_part_ \
+				"${__sx_num_int_mul_abs_a_}" "${__sx_num_int_mul_abs_digit_}"
+
+			SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_acc_ \
+				"${__sx_num_int_mul_abs_acc_}" "${__sx_num_int_mul_abs_part_}${__sx_num_int_mul_abs_shift_}"
+		esac
+
+		case "${__sx_num_int_mul_abs_b_}" in 0) break;; esac
+		__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_shift_}0"
+	done
+
+	case "${__sx_num_int_mul_abs_acc_}" in
+		0*) __sx_num_int_mul_abs_acc_="${__sx_num_int_mul_abs_acc_#"${__sx_num_int_mul_abs_acc_%%[!0]*}"}";;
+	esac
+	case "${__sx_num_int_mul_abs_acc_}" in "") __sx_num_int_mul_abs_acc_=0;; esac
+
+	__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_acc_}"
 
 	unset CLEANUP
 }
