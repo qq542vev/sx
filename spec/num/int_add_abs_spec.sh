@@ -103,4 +103,10 @@ Describe 'sx_num_int_add_abs'
     When call sx_num_int_add_abs result +42
     The status should equal 64
   End
+
+  It 'チャンク境界で先頭ゼロを含む右端チャンクの加算ができること'
+    When call sx_num_int_add_abs result 32239684 70066520000
+    The status should be success
+    The variable result should equal "70098759684"
+  End
 End
