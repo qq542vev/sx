@@ -4734,10 +4734,9 @@ __sx_num_is_int_fit_dec() {
 	shift
 
 	for __sx_num_is_int_fit_dec_arg_ in "${@}"; do
-		__sx_num_is_int_fit_dec_e_=7
-
-		case "${__sx_num_is_int_fit_dec_arg_}" in -*)
-			__sx_num_is_int_fit_dec_e_=8
+		case "${__sx_num_is_int_fit_dec_arg_}" in
+			-*) __sx_num_is_int_fit_dec_e_=8;;
+			*) __sx_num_is_int_fit_dec_e_=7;;
 		esac
 
 		__sx_num_is_int_fit_dec_arg_=${__sx_num_is_int_fit_dec_arg_#[+-]}
@@ -4745,55 +4744,55 @@ __sx_num_is_int_fit_dec() {
 		case "${__sx_num_is_int_fit_dec_bit_}" in
 			8)
 				case "${#__sx_num_is_int_fit_dec_arg_}" in
-					[12]) ! :;;
+					[12]) continue;;
 					3)
 						case "${__sx_num_is_int_fit_dec_arg_}" in
-							1[01]* | 12[0-${__sx_num_is_int_fit_dec_e_}]) ! :;;
+							1[01]* | 12[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
 						esac
 						;;
 				esac
 				;;
 			16)
 				case "${#__sx_num_is_int_fit_dec_arg_}" in
-					[1-4]) ! :;;
+					[1-4]) continue;;
 					5)
 						case "${__sx_num_is_int_fit_dec_arg_}" in
 							[12]* | 3[01]* | 32[0-6]* | 327[0-5]* | \
-							3276[0-${__sx_num_is_int_fit_dec_e_}]) ! :;;
+							3276[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
 						esac
 						;;
 				esac
 				;;
 			32)
 				case "${#__sx_num_is_int_fit_dec_arg_}" in
-					[1-9]) ! :;;
+					[1-9]) continue;;
 					10)
 						case "${__sx_num_is_int_fit_dec_arg_}" in
-						1* | 20* | 21[0-3]* | 214[0-6]* | 2147[0-3]* | 21474[0-7]* | \
-						214748[0-2]* | 2147483[0-5]* | 21474836[0-3]* | \
-						214748364[0-${__sx_num_is_int_fit_dec_e_}]) ! :;;
-					esac
-					;;
+							1* | 20* | 21[0-3]* | 214[0-6]* | 2147[0-3]* | 21474[0-7]* | \
+							214748[0-2]* | 2147483[0-5]* | 21474836[0-3]* | \
+							214748364[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+						esac
+						;;
 				esac
 				;;
 			64)
 				case "${#__sx_num_is_int_fit_dec_arg_}" in
-					[1-9] | 1[0-8]) ! :;;
+					[1-9] | 1[0-8]) continue;;
 					19)
 						case "${__sx_num_is_int_fit_dec_arg_}" in
 							[1-8]* | 9[01]* | 92[01]* | 922[0-2]* | 9223[0-2]* | \
 							92233[0-6]* | 922337[01]* | 92233720[0-2]* | 922337203[0-5]* |\
-						9223372036[0-7]* | 92233720368[0-4]* | 922337203685[0-3]* | \
-						9223372036854[0-6]* | 92233720368547[0-6]* | \
-						922337203685477[0-4]* | 9223372036854775[0-7]* | \
-						922337203685477580[0-${__sx_num_is_int_fit_dec_e_}]) ! :;;
-					esac
-					;;
+							9223372036[0-7]* | 92233720368[0-4]* | 922337203685[0-3]* | \
+							9223372036854[0-6]* | 92233720368547[0-6]* | \
+							922337203685477[0-4]* | 9223372036854775[0-7]* | \
+							922337203685477580[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+						esac
+						;;
 				esac
 				;;
 			128)
 				case "${#__sx_num_is_int_fit_dec_arg_}" in
-					[1-9] | [12][0-9] | 3[0-8]) ! :;;
+					[1-9] | [12][0-9] | 3[0-8]) continue;;
 					39)
 						case "${__sx_num_is_int_fit_dec_arg_}" in
 							1[0-6]* | 1700* | 1701[0-3]* | 170140* | 1701410* | \
@@ -4816,15 +4815,15 @@ __sx_num_is_int_fit_dec() {
 							17014118346046923173168730371588410[0-4]* | \
 							170141183460469231731687303715884105[0-6]* | \
 							1701411834604692317316873037158841057[01]* | \
-							17014118346046923173168730371588410572[0-${__sx_num_is_int_fit_dec_e_}]) ! :;;
-					esac
-					;;
-			esac
-			;;
-		esac && {
-			unset __sx_num_is_int_fit_dec_bit_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
-			return 1
-		}
+							17014118346046923173168730371588410572[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+						esac
+						;;
+				esac
+				;;
+		esac
+
+		unset __sx_num_is_int_fit_dec_bit_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
+		return 1
 	done
 
 	unset __sx_num_is_int_fit_dec_bit_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
@@ -5824,7 +5823,7 @@ __sx_num_int_sub_abs() {
 				# 両方の剰余が枯渇 → tmp_ が最上位桁、先頭ゼロ除去のみでゼロ埋め不要
 				case "${__sx_num_int_sub_abs_tmp_}" in [!0]*)
 					__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_tmp_}${__sx_num_int_sub_abs_out_}"
-				esac && !:
+				esac && ! :
 				;;
 			*:0:0)
 				# rem2 のみ枯渇、rem1 に未処理チャンクあり → ゼロ埋めして桁揃え
