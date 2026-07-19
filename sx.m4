@@ -5967,7 +5967,7 @@ __sx_num_int_mul_by_digit() {
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 
 define([|V|], [|__sx_num_int_mul_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(a) V(b) V(wchunk) V(qchunk) V(zchunk) V(acc) V(shift) V(digit) V(part) V(tmp) V(in_shift) V(rem_a) V(rem_b) V(ch_a) V(ch_b) V(wlen_mul) V(len_a) V(len_b) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops_a) V(ops_b) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b)|])dnl
+define([|CLEANUP|], [|V(res) V(a) V(b) V(wlen) V(qm) V(acc) V(shift) V(digit) V(part) V(tmp) V(in_shift) V(rem_a) V(rem_b) V(ch_a) V(ch_b) V(wlen_mul) V(len_a) V(len_b) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops_a) V(ops_b) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b)|])dnl
 
 __sx_num_int_mul_abs() {
 	__sx_num_int_mul_abs_res_="${1}"
@@ -5980,13 +5980,13 @@ __sx_num_int_mul_abs() {
 		return
 	esac
 
-	eval "__sx_num_int_mul_abs_wchunk_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN_CHUNK}\" __sx_num_int_mul_abs_qchunk_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM_CHUNK}\" __sx_num_int_mul_abs_zchunk_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR_CHUNK}\""
+	eval "__sx_num_int_mul_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" __sx_num_int_mul_abs_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
 
-	# 戦略A: 両オペランドが1チャンクに収まる → 直接乗算
-	case "${__sx_num_int_mul_abs_a_}:${__sx_num_int_mul_abs_b_}" in
-		${__sx_num_int_mul_abs_qchunk_}?*:* | *:${__sx_num_int_mul_abs_qchunk_}?*) ;;
+	# 戦略A: 両オペランドの合計桁数が WLEN 以下 → 直接乗算
+	case "${__sx_num_int_mul_abs_a_}${__sx_num_int_mul_abs_b_}" in
+		${__sx_num_int_mul_abs_qm_}?*) ;;
 		*)
-			__sx_var_set "${__sx_num_int_mul_abs_res_}=$((${__sx_num_int_mul_abs_a_} * ${__sx_num_int_mul_abs_b_}))"
+			__sx_var_set "${__sx_num_int_mul_abs_res_}=$((__sx_num_int_mul_abs_a_ * __sx_num_int_mul_abs_b_))"
 			unset CLEANUP
 			return
 			;;
