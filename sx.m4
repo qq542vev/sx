@@ -5967,7 +5967,7 @@ __sx_num_int_mul_by_digit() {
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 
 define([|V|], [|__sx_num_int_mul_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(a) V(b) V(wlen) V(qm) V(acc) V(shift) V(digit) V(part) V(tmp) V(in_shift) V(rem_a) V(rem_b) V(ch_a) V(ch_b) V(wlen_mul) V(len_a) V(len_b) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops_a) V(ops_b) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b)|])dnl
+define([|CLEANUP|], [|V(res) V(a) V(b) V(wlen) V(qm) V(acc) V(shift) V(digit) V(part) V(tmp) V(in_shift) V(rem_a) V(rem_b) V(ch_a) V(ch_b) V(wlen_mul) V(a_len) V(b_len) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b)|])dnl
 
 __sx_num_int_mul_abs() {
 	__sx_num_int_mul_abs_res_="${1}"
@@ -6008,37 +6008,49 @@ __sx_num_int_mul_abs() {
 			esac
 			;;
 		*)
+			case "${__sx_num_int_mul_abs_a_}" in
+				1*[!0]* | [!1]*) ;;
+				*)
+					__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_b_}${__sx_num_int_mul_abs_a_#1}"
+					unset CLEANUP
+					return
+			esac
+
+			case "${__sx_num_int_mul_abs_b_}" in
+				1*[!0]* | [!1]*) ;;
+				*)
+					__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_a_}${__sx_num_int_mul_abs_b_#1}"
+					unset CLEANUP
+					return
+			esac
+
 			# 戦略C: 両オペランドを最適な x, y 桁チャンクに分割して直接乗算
 			eval "__sx_num_int_mul_abs_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN_MUL}\""
 
 			# 1. 被乗数 a と乗数 b の桁数から、全体の乗算・加算回数 (ops) が最小となる
 			#    最適なチャンク分割幅 x (opt_x_) を決定する探索ループ。
 			#    x + y = wlen_mul_ (安全な合計最大桁数) の制限を満たす範囲で探索。
-			__sx_num_int_mul_abs_len_a_="${#__sx_num_int_mul_abs_a_}"
-			__sx_num_int_mul_abs_len_b_="${#__sx_num_int_mul_abs_b_}"
-			__sx_num_int_mul_abs_min_ops_=-1
+			__sx_num_int_mul_abs_a_len_="${#__sx_num_int_mul_abs_a_}"
+			__sx_num_int_mul_abs_b_len_="${#__sx_num_int_mul_abs_b_}"
 			__sx_num_int_mul_abs_opt_x_=0
+			eval "__sx_num_int_mul_abs_min_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
 
 			__sx_num_int_mul_abs_x_=1
-			while :; do
+			while M_NUM_LT([|__sx_num_int_mul_abs_x_|], [|__sx_num_int_mul_abs_wlen_mul_|]); do
 				# x を 1 から wlen_mul_ - 1 までループ
-				case "$((__sx_num_int_mul_abs_x_ < __sx_num_int_mul_abs_wlen_mul_))" in
-					0) break ;;
-				esac
 				__sx_num_int_mul_abs_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_x_))
 				# ops_a = ceil(len_a / x), ops_b = ceil(len_b / y)
-				__sx_num_int_mul_abs_ops_a_=$(((__sx_num_int_mul_abs_len_a_ + __sx_num_int_mul_abs_x_ - 1) / __sx_num_int_mul_abs_x_))
-				__sx_num_int_mul_abs_ops_b_=$(((__sx_num_int_mul_abs_len_b_ + __sx_num_int_mul_abs_y_ - 1) / __sx_num_int_mul_abs_y_))
-				__sx_num_int_mul_abs_ops_=$((__sx_num_int_mul_abs_ops_a_ * __sx_num_int_mul_abs_ops_b_))
+				__sx_num_int_mul_abs_ops_=$((
+					((__sx_num_int_mul_abs_a_len_ + __sx_num_int_mul_abs_x_ - 1) / __sx_num_int_mul_abs_x_) * ((__sx_num_int_mul_abs_b_len_ + __sx_num_int_mul_abs_y_ - 1) / __sx_num_int_mul_abs_y_)
+				))
 
 				# 乗算回数 ops がこれまでの最小値なら更新
-				case "$((__sx_num_int_mul_abs_min_ops_ == -1 || __sx_num_int_mul_abs_ops_ < __sx_num_int_mul_abs_min_ops_))" in
-					1)
-						__sx_num_int_mul_abs_min_ops_="${__sx_num_int_mul_abs_ops_}"
-						__sx_num_int_mul_abs_opt_x_="${__sx_num_int_mul_abs_x_}"
-						;;
+				case "$((__sx_num_int_mul_abs_ops_ < __sx_num_int_mul_abs_min_ops_))" in 1)
+					__sx_num_int_mul_abs_min_ops_="${__sx_num_int_mul_abs_ops_}"
+					__sx_num_int_mul_abs_opt_x_="${__sx_num_int_mul_abs_x_}"
 				esac
-				__sx_num_int_mul_abs_x_=$((__sx_num_int_mul_abs_x_ + 1))
+
+				: "$((__sx_num_int_mul_abs_x_ += 1))"
 			done
 
 			__sx_num_int_mul_abs_opt_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_opt_x_))
