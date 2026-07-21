@@ -5967,7 +5967,7 @@ __sx_num_int_mul_by_digit() {
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 
 define([|V|], [|__sx_num_int_mul_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(a) V(b) V(wlen) V(qm) V(acc) V(shift) V(digit) V(part) V(tmp) V(in_shift) V(rem_a) V(rem_b) V(ch_a) V(ch_b) V(wlen_mul) V(a_len) V(b_len) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b)|])dnl
+define([|CLEANUP|], [|V(res) V(a) V(b) V(wlen) V(qm) V(acc) V(shift) V(digit) V(part) V(tmp) V(in_shift) V(rem_a) V(rem_b) V(ch_a) V(ch_b) V(wlen_mul) V(a_len) V(b_len) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(a_endz) V(b_endz)|])dnl
 
 __sx_num_int_mul_abs() {
 	__sx_num_int_mul_abs_res_="${1}"
@@ -6008,21 +6008,23 @@ __sx_num_int_mul_abs() {
 			esac
 			;;
 		*)
-			case "${__sx_num_int_mul_abs_a_}" in
-				1*[!0]* | [!1]*) ;;
-				*)
-					__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_b_}${__sx_num_int_mul_abs_a_#1}"
-					unset CLEANUP
-					return
-			esac
+			# 末尾ゼロを除去してチャンク分割乗算の演算量を削減
+			__sx_num_int_mul_abs_a_endz_="${__sx_num_int_mul_abs_a_##*[!0]}"
+			__sx_num_int_mul_abs_b_endz_="${__sx_num_int_mul_abs_b_##*[!0]}"
+			__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_a_%${__sx_num_int_mul_abs_a_endz_}}"
+			__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_b_%${__sx_num_int_mul_abs_b_endz_}}"
 
-			case "${__sx_num_int_mul_abs_b_}" in
-				1*[!0]* | [!1]*) ;;
-				*)
-					__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_a_}${__sx_num_int_mul_abs_b_#1}"
-					unset CLEANUP
-					return
-			esac
+			# 特定のパターンであれば早期リターン
+			case "${__sx_num_int_mul_abs_a_}:${__sx_num_int_mul_abs_b_}" in
+				1:*) __sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_b_}" && ! :;;
+				*:1) __sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_a_}" && ! :;;
+				${__sx_num_int_mul_abs_qm_}??*) ;;
+				*) ! : "$((__sx_num_int_mul_abs_a_ *= __sx_num_int_mul_abs_b_))"
+			esac || {
+				__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_a_}${__sx_num_int_mul_abs_a_endz_}${__sx_num_int_mul_abs_b_endz_}"
+				unset CLEANUP
+				return
+			}
 
 			# 戦略C: 両オペランドを最適な x, y 桁チャンクに分割して直接乗算
 			eval "__sx_num_int_mul_abs_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN_MUL}\""
@@ -6139,7 +6141,7 @@ __sx_num_int_mul_abs() {
 	esac
 	case "${__sx_num_int_mul_abs_acc_}" in "") __sx_num_int_mul_abs_acc_=0;; esac
 
-	__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_acc_}"
+	__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_acc_}${__sx_num_int_mul_abs_a_endz_}${__sx_num_int_mul_abs_b_endz_}"
 
 	unset CLEANUP
 }
