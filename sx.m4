@@ -6008,11 +6008,19 @@ __sx_num_int_mul_abs() {
 			esac
 			;;
 		*)
+			__sx_num_int_mul_abs_a_endz_=
+			__sx_num_int_mul_abs_b_endz_=
+
 			# 末尾ゼロを除去してチャンク分割乗算の演算量を削減
-			__sx_num_int_mul_abs_a_endz_="${__sx_num_int_mul_abs_a_##*[!0]}"
-			__sx_num_int_mul_abs_b_endz_="${__sx_num_int_mul_abs_b_##*[!0]}"
-			__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_a_%${__sx_num_int_mul_abs_a_endz_}}"
-			__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_b_%${__sx_num_int_mul_abs_b_endz_}}"
+			case "${__sx_num_int_mul_abs_a_}" in *0)
+				__sx_num_int_mul_abs_a_endz_="${__sx_num_int_mul_abs_a_##*[!0]}"
+				__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_a_%${__sx_num_int_mul_abs_a_endz_}}"
+			esac
+
+			case "${__sx_num_int_mul_abs_b_}" in *0)
+				__sx_num_int_mul_abs_b_endz_="${__sx_num_int_mul_abs_b_##*[!0]}"
+				__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_b_%${__sx_num_int_mul_abs_b_endz_}}"
+			esac
 
 			# 特定のパターンであれば早期リターン
 			case "${__sx_num_int_mul_abs_a_}:${__sx_num_int_mul_abs_b_}" in
@@ -6034,7 +6042,6 @@ __sx_num_int_mul_abs() {
 			#    x + y = wlen_mul_ (安全な合計最大桁数) の制限を満たす範囲で探索。
 			__sx_num_int_mul_abs_a_len_="${#__sx_num_int_mul_abs_a_}"
 			__sx_num_int_mul_abs_b_len_="${#__sx_num_int_mul_abs_b_}"
-			__sx_num_int_mul_abs_opt_x_=0
 			eval "__sx_num_int_mul_abs_min_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
 
 			__sx_num_int_mul_abs_x_=1
@@ -6070,7 +6077,7 @@ __sx_num_int_mul_abs() {
 			__sx_num_int_mul_abs_shift_=
 
 			# 3. 被乗数 a を下位から opt_x 桁ずつ切り出しながらアウターループ
-			while :; do
+			while M_STR_NE([|"${__sx_num_int_mul_abs_rem_a_}"|], [|''|]); do
 				# a の右端から opt_x 桁を ch_a_ に抽出
 				case "${__sx_num_int_mul_abs_rem_a_}" in
 					${__sx_num_int_mul_abs_qchunk_a_}?*)
@@ -6088,13 +6095,16 @@ __sx_num_int_mul_abs() {
 						__sx_num_int_mul_abs_rem_a_=
 						;;
 				esac
-				case "${__sx_num_int_mul_abs_ch_a_}" in "") __sx_num_int_mul_abs_ch_a_=0;; esac
+
+				case "${__sx_num_int_mul_abs_ch_a_}" in '')
+					__sx_num_int_mul_abs_ch_a_=0
+				esac
 
 				# 4. 乗数 b を下位から opt_y 桁ずつ切り出しながらインナーループ
 				__sx_num_int_mul_abs_rem_b_="${__sx_num_int_mul_abs_b_}"
 				__sx_num_int_mul_abs_in_shift_=
 
-				while :; do
+				while M_STR_NE([|"${__sx_num_int_mul_abs_rem_b_}"|], [|''|]); do
 					# b の右端から opt_y 桁を ch_b_ に抽出
 					case "${__sx_num_int_mul_abs_rem_b_}" in
 						${__sx_num_int_mul_abs_qchunk_b_}?*)
@@ -6112,13 +6122,16 @@ __sx_num_int_mul_abs() {
 							__sx_num_int_mul_abs_rem_b_=
 							;;
 					esac
-					case "${__sx_num_int_mul_abs_ch_b_}" in "") __sx_num_int_mul_abs_ch_b_=0;; esac
+
+					case "${__sx_num_int_mul_abs_ch_b_}" in '')
+						__sx_num_int_mul_abs_ch_b_=0
+					esac
 
 					# 5. チャンク同士を直接乗算し、桁位置に対応するゼロ埋めを結合して累積
 					case "${__sx_num_int_mul_abs_ch_a_}:${__sx_num_int_mul_abs_ch_b_}" in
 						0:* | *:0) ;;
 						*)
-							__sx_num_int_mul_abs_tmp_=$((${__sx_num_int_mul_abs_ch_a_} * ${__sx_num_int_mul_abs_ch_b_}))
+							__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_ch_a_ * __sx_num_int_mul_abs_ch_b_))
 
 							# 積の後ろにアウターループ分 (shift) とインナーループ分 (in_shift) のゼロを連結して加算
 							SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_acc_ \
@@ -6126,20 +6139,21 @@ __sx_num_int_mul_abs() {
 							;;
 					esac
 
-					case "${__sx_num_int_mul_abs_rem_b_}" in ?*) ;; *) break;; esac
 					__sx_num_int_mul_abs_in_shift_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_in_shift_}"
 				done
 
-				case "${__sx_num_int_mul_abs_rem_a_}" in ?*) ;; *) break;; esac
 				__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_shift_}"
 			done
 			;;
 	esac
 
-	case "${__sx_num_int_mul_abs_acc_}" in
-		0*) __sx_num_int_mul_abs_acc_="${__sx_num_int_mul_abs_acc_#"${__sx_num_int_mul_abs_acc_%%[!0]*}"}";;
+	case "${__sx_num_int_mul_abs_acc_}" in 0*)
+		__sx_num_int_mul_abs_acc_="${__sx_num_int_mul_abs_acc_#"${__sx_num_int_mul_abs_acc_%%[!0]*}"}"
 	esac
-	case "${__sx_num_int_mul_abs_acc_}" in "") __sx_num_int_mul_abs_acc_=0;; esac
+
+	case "${__sx_num_int_mul_abs_acc_}" in '')
+		__sx_num_int_mul_abs_acc_=0
+	esac
 
 	__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_acc_}${__sx_num_int_mul_abs_a_endz_}${__sx_num_int_mul_abs_b_endz_}"
 
