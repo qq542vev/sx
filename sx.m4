@@ -6146,14 +6146,6 @@ __sx_num_int_mul_abs() {
 			;;
 	esac
 
-	case "${__sx_num_int_mul_abs_acc_}" in 0*)
-		__sx_num_int_mul_abs_acc_="${__sx_num_int_mul_abs_acc_#"${__sx_num_int_mul_abs_acc_%%[!0]*}"}"
-	esac
-
-	case "${__sx_num_int_mul_abs_acc_}" in '')
-		__sx_num_int_mul_abs_acc_=0
-	esac
-
 	__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_acc_}${__sx_num_int_mul_abs_a_endz_}${__sx_num_int_mul_abs_b_endz_}"
 
 	unset CLEANUP
