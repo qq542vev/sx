@@ -6135,20 +6135,11 @@ __sx_num_int_mul_abs() {
 							;;
 					esac
 
-					case "${__sx_num_int_mul_abs_ch_b_}" in '')
-						__sx_num_int_mul_abs_ch_b_=0
-					esac
-
 					# 5. チャンク同士を直接乗算し、桁位置に対応するゼロ埋めを結合して累積
-					case "${__sx_num_int_mul_abs_ch_a_}:${__sx_num_int_mul_abs_ch_b_}" in
-						0:* | *:0) ;;
-						*)
-							__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_ch_a_ * __sx_num_int_mul_abs_ch_b_))
-
-							# 積の後ろにアウターループ分 (shift) とインナーループ分 (in_shift) のゼロを連結して加算
-							SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_acc_ \
-								"${__sx_num_int_mul_abs_acc_}" "${__sx_num_int_mul_abs_tmp_}${__sx_num_int_mul_abs_shift_}${__sx_num_int_mul_abs_in_shift_}"
-							;;
+					case "${__sx_num_int_mul_abs_ch_b_}" in [!0]*)
+						# 積の後ろにアウターループ分 (shift) とインナーループ分 (in_shift) のゼロを連結して加算
+						SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_acc_ \
+							"${__sx_num_int_mul_abs_acc_}" "$((__sx_num_int_mul_abs_ch_a_ * __sx_num_int_mul_abs_ch_b_))${__sx_num_int_mul_abs_shift_}${__sx_num_int_mul_abs_in_shift_}"
 					esac
 
 					__sx_num_int_mul_abs_in_shift_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_in_shift_}"
