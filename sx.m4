@@ -6034,6 +6034,13 @@ __sx_num_int_mul_abs() {
 				return
 			}
 
+			# 短い方を外側ループ（a）に割り当てて内側ループの反復回数を削減
+			case "$((${#__sx_num_int_mul_abs_a_} > ${#__sx_num_int_mul_abs_b_}))" in 1)
+				__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_b_}"
+				__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_a_}"
+				__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_tmp_}"
+			esac
+
 			# 戦略C: 両オペランドを最適な x, y 桁チャンクに分割して直接乗算
 			eval "__sx_num_int_mul_abs_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN_MUL}\""
 
@@ -6098,6 +6105,11 @@ __sx_num_int_mul_abs() {
 
 				case "${__sx_num_int_mul_abs_ch_a_}" in '')
 					__sx_num_int_mul_abs_ch_a_=0
+				esac
+
+				case "${__sx_num_int_mul_abs_ch_a_}" in 0)
+					__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_shift_}"
+					continue
 				esac
 
 				# 4. 乗数 b を下位から opt_y 桁ずつ切り出しながらインナーループ
