@@ -6093,19 +6093,18 @@ __sx_num_int_mul_abs() {
 						__sx_num_int_mul_abs_rem_a_="${__sx_num_int_mul_abs_tmp_}"
 
 						# 先頭の0をトリム（8進数誤認防止）
-						case "${__sx_num_int_mul_abs_ch_a_}" in 0*)
-							__sx_num_int_mul_abs_ch_a_="${__sx_num_int_mul_abs_ch_a_#"${__sx_num_int_mul_abs_ch_a_%%[!0]*}"}"
+						case "${__sx_num_int_mul_abs_ch_a_}" in
+							0*[1-9]*) __sx_num_int_mul_abs_ch_a_="${__sx_num_int_mul_abs_ch_a_#"${__sx_num_int_mul_abs_ch_a_%%[!0]*}"}";;
+							0*)
+								__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_shift_}"
+								continue
+								;;
 						esac
 						;;
 					*)
 						__sx_num_int_mul_abs_ch_a_="${__sx_num_int_mul_abs_rem_a_}"
 						__sx_num_int_mul_abs_rem_a_=
 						;;
-				esac
-
-				case "${__sx_num_int_mul_abs_ch_a_}" in '')
-					__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_shift_}"
-					continue
 				esac
 
 				# 4. 乗数 b を下位から opt_y 桁ずつ切り出しながらインナーループ
@@ -6121,8 +6120,12 @@ __sx_num_int_mul_abs() {
 							__sx_num_int_mul_abs_rem_b_="${__sx_num_int_mul_abs_tmp_}"
 
 							# 先頭の0をトリム（8進数誤認防止）
-							case "${__sx_num_int_mul_abs_ch_b_}" in 0*)
-								__sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_ch_b_#"${__sx_num_int_mul_abs_ch_b_%%[!0]*}"}"
+							case "${__sx_num_int_mul_abs_ch_b_}" in
+								0*[1-9]*) __sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_ch_b_#"${__sx_num_int_mul_abs_ch_b_%%[!0]*}"}";;
+								0*)
+									__sx_num_int_mul_abs_in_shift_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_in_shift_}"
+									continue
+									;;
 							esac
 							;;
 						*)
@@ -6132,11 +6135,8 @@ __sx_num_int_mul_abs() {
 					esac
 
 					# 5. チャンク同士を直接乗算し、桁位置に対応するゼロ埋めを結合して累積
-					case "${__sx_num_int_mul_abs_ch_b_}" in ?*)
 						# 積の後ろにアウターループ分 (shift) とインナーループ分 (in_shift) のゼロを連結して加算
-						SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_acc_ \
-							"${__sx_num_int_mul_abs_acc_}" "$((__sx_num_int_mul_abs_ch_a_ * __sx_num_int_mul_abs_ch_b_))${__sx_num_int_mul_abs_shift_}${__sx_num_int_mul_abs_in_shift_}"
-					esac
+					SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_acc_ "${__sx_num_int_mul_abs_acc_}" "$((__sx_num_int_mul_abs_ch_a_ * __sx_num_int_mul_abs_ch_b_))${__sx_num_int_mul_abs_shift_}${__sx_num_int_mul_abs_in_shift_}"
 
 					__sx_num_int_mul_abs_in_shift_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_in_shift_}"
 				done
