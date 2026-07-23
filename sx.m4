@@ -5967,7 +5967,7 @@ __sx_num_int_mul_by_digit() {
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 
 define([|V|], [|__sx_num_int_mul_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(a) V(b) V(wlen) V(qm) V(acc) V(shift) V(digit) V(part) V(tmp) V(in_shift) V(rem_a) V(rem_b) V(ch_a) V(ch_b) V(wlen_mul) V(a_len) V(b_len) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(a_endz) V(b_endz)|])dnl
+define([|CLEANUP|], [|V(res) V(a) V(b) V(wlen) V(qm) V(acc) V(shift) V(digit) V(part) V(tmp) V(rem_a) V(rem_b) V(ch_a) V(ch_b) V(wlen_mul) V(a_len) V(b_len) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(a_endz) V(b_endz) V(parts) V(carry) V(g) V(base)|])dnl
 
 __sx_num_int_mul_abs() {
 	__sx_num_int_mul_abs_res_="${1}"
@@ -6079,12 +6079,13 @@ __sx_num_int_mul_abs() {
 			      __sx_num_int_mul_abs_qchunk_b_=\"\${SX_QM_${__sx_num_int_mul_abs_opt_y_}}\" \
 			      __sx_num_int_mul_abs_zchunk_b_=\"\${SX_ZR_${__sx_num_int_mul_abs_opt_y_}}\""
 
-			__sx_num_int_mul_abs_acc_=0
+			__sx_num_int_mul_abs_parts_=
 			__sx_num_int_mul_abs_rem_a_="${__sx_num_int_mul_abs_a_}"
 			__sx_num_int_mul_abs_shift_=
+			__sx_num_int_mul_abs_base_=$((1${__sx_num_int_mul_abs_zchunk_b_}))
 
 			# 3. 被乗数 a を下位から opt_x 桁ずつ切り出しながらアウターループ
-			while M_STR_NE([|"${__sx_num_int_mul_abs_rem_a_}"|], [|''|]); do
+			while
 				# a の右端から opt_x 桁を ch_a_ に抽出
 				case "${__sx_num_int_mul_abs_rem_a_}" in
 					${__sx_num_int_mul_abs_qchunk_a_}?*)
@@ -6107,11 +6108,12 @@ __sx_num_int_mul_abs() {
 						;;
 				esac
 
-				# 4. 乗数 b を下位から opt_y 桁ずつ切り出しながらインナーループ
+				# 4. carry式で ch_a_ × b を計算
+				__sx_num_int_mul_abs_g_=
+				__sx_num_int_mul_abs_carry_=0
 				__sx_num_int_mul_abs_rem_b_="${__sx_num_int_mul_abs_b_}"
-				__sx_num_int_mul_abs_in_shift_=
 
-				while M_STR_NE([|"${__sx_num_int_mul_abs_rem_b_}"|], [|''|]); do
+				while
 					# b の右端から opt_y 桁を ch_b_ に抽出
 					case "${__sx_num_int_mul_abs_rem_b_}" in
 						${__sx_num_int_mul_abs_qchunk_b_}?*)
@@ -6123,7 +6125,7 @@ __sx_num_int_mul_abs() {
 							case "${__sx_num_int_mul_abs_ch_b_}" in
 								0*[1-9]*) __sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_ch_b_#"${__sx_num_int_mul_abs_ch_b_%%[!0]*}"}";;
 								0*)
-									__sx_num_int_mul_abs_in_shift_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_in_shift_}"
+									__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_g_}"
 									continue
 									;;
 							esac
@@ -6134,15 +6136,37 @@ __sx_num_int_mul_abs() {
 							;;
 					esac
 
-					# 5. チャンク同士を直接乗算し、桁位置に対応するゼロ埋めを結合して累積
-						# 積の後ろにアウターループ分 (shift) とインナーループ分 (in_shift) のゼロを連結して加算
-					SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_acc_ "${__sx_num_int_mul_abs_acc_}" "$((__sx_num_int_mul_abs_ch_a_ * __sx_num_int_mul_abs_ch_b_))${__sx_num_int_mul_abs_shift_}${__sx_num_int_mul_abs_in_shift_}"
+					# carry式: r = ch_a_ × ch_b_ + carry_
+					__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_ch_a_ * __sx_num_int_mul_abs_ch_b_ + __sx_num_int_mul_abs_carry_))
+					__sx_num_int_mul_abs_carry_=$((__sx_num_int_mul_abs_tmp_ / __sx_num_int_mul_abs_base_))
+					__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_tmp_ %= __sx_num_int_mul_abs_base_))
 
-					__sx_num_int_mul_abs_in_shift_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_in_shift_}"
+					M_STR_NE([|"${__sx_num_int_mul_abs_rem_b_}"|], [|''|])
+				do
+					# tmp_ を opt_y 桁にゼロパディング
+					__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_tmp_}"
+					__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_b_}}"}${__sx_num_int_mul_abs_g_}"
 				done
 
+				# 最終桁上がりを g_ に前置
+				case "${__sx_num_int_mul_abs_carry_}" in
+					0) __sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_}${__sx_num_int_mul_abs_g_}";;
+					*)
+						__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_tmp_}"
+						__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_carry_}${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_b_}}"}${__sx_num_int_mul_abs_g_}"
+						;;
+				esac
+
+				# parts_ に収集（外側シフト付き）
+				__sx_num_int_mul_abs_parts_="${__sx_num_int_mul_abs_parts_}${__sx_num_int_mul_abs_parts_:+ }${__sx_num_int_mul_abs_g_}${__sx_num_int_mul_abs_shift_}"
+
+				# 外側シフト更新
 				__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_shift_}"
-			done
+
+				M_STR_NE([|"${__sx_num_int_mul_abs_rem_a_}"|], [|''|])
+			do :; done
+
+			eval SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_acc_ "${__sx_num_int_mul_abs_parts_}"
 			;;
 	esac
 
