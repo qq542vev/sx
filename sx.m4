@@ -5853,109 +5853,6 @@ __sx_num_int_sub_abs() {
 	unset CLEANUP
 }
 
-### __sx_num_int_mul_by_digit - 多倍長絶対値 × 1桁の乗算（内部用）
-##
-## 使い方:
-##   __sx_num_int_mul_by_digit 結果変数名 被乗数 桁値
-##
-## 説明:
-##   符号なし10進整数の絶対値に 0〜9 の1桁を乗算する。
-##   引数はすべて検証済みの正しい10進整数であることを前提とする。
-
-define([|V|], [|__sx_num_int_mul_by_digit_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(a) V(digit) V(qm) V(zr) V(carry) V(out) V(rem) V(ch) V(tmp) V(try)|])dnl
-
-__sx_num_int_mul_by_digit() {
-	__sx_num_int_mul_by_digit_res_="${1}"
-	__sx_num_int_mul_by_digit_a_="${2-0}"
-	__sx_num_int_mul_by_digit_digit_="${3-0}"
-
-	case "${__sx_num_int_mul_by_digit_a_}:${__sx_num_int_mul_by_digit_digit_}" in
-		0:* | *:0)
-			__sx_var_set "${__sx_num_int_mul_by_digit_res_}=0"
-			unset CLEANUP
-			return
-			;;
-		*:1)
-			__sx_var_set "${__sx_num_int_mul_by_digit_res_}=${__sx_num_int_mul_by_digit_a_}"
-			unset CLEANUP
-			return
-			;;
-	esac
-
-	eval "__sx_num_int_mul_by_digit_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM_MUL}\" __sx_num_int_mul_by_digit_zr_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR_MUL}\""
-
-	__sx_num_int_mul_by_digit_rem_="${__sx_num_int_mul_by_digit_a_}"
-	__sx_num_int_mul_by_digit_carry_=0
-	__sx_num_int_mul_by_digit_out_=
-
-	while :; do
-		case "${__sx_num_int_mul_by_digit_rem_}" in
-			${__sx_num_int_mul_by_digit_qm_}?*)
-				__sx_num_int_mul_by_digit_tmp_="${__sx_num_int_mul_by_digit_rem_%${__sx_num_int_mul_by_digit_qm_}}"
-				__sx_num_int_mul_by_digit_ch_="${__sx_num_int_mul_by_digit_rem_#"${__sx_num_int_mul_by_digit_tmp_}"}"
-				__sx_num_int_mul_by_digit_rem_="${__sx_num_int_mul_by_digit_tmp_}"
-
-				case "${__sx_num_int_mul_by_digit_ch_}" in 0*)
-					__sx_num_int_mul_by_digit_ch_="${__sx_num_int_mul_by_digit_ch_#"${__sx_num_int_mul_by_digit_ch_%%[!0]*}"}"
-				esac
-				;;
-			*)
-				__sx_num_int_mul_by_digit_ch_="${__sx_num_int_mul_by_digit_rem_}"
-				__sx_num_int_mul_by_digit_rem_=
-				;;
-		esac
-
-		__sx_num_int_mul_by_digit_tmp_=$((${__sx_num_int_mul_by_digit_ch_:-0} * __sx_num_int_mul_by_digit_digit_ + __sx_num_int_mul_by_digit_carry_))
-
-		# WLEN_MUL の桁数を超えているか判定
-		__sx_num_int_mul_by_digit_try_="${__sx_num_int_mul_by_digit_tmp_%${__sx_num_int_mul_by_digit_qm_}}"
-
-		case "${__sx_num_int_mul_by_digit_try_}" in
-			"${__sx_num_int_mul_by_digit_tmp_}")
-				# tmp_ が WLEN_MUL 未満: キャリーなし
-				case "${__sx_num_int_mul_by_digit_rem_}" in
-					?*)
-						# 左にさらにチャンクがあるのでゼロ埋め
-						__sx_num_int_mul_by_digit_tmp_="${__sx_num_int_mul_by_digit_zr_}${__sx_num_int_mul_by_digit_tmp_}"
-						__sx_num_int_mul_by_digit_ch_="${__sx_num_int_mul_by_digit_tmp_#"${__sx_num_int_mul_by_digit_tmp_%${__sx_num_int_mul_by_digit_qm_}}"}${__sx_num_int_mul_by_digit_out_}"
-						;;
-					*) __sx_num_int_mul_by_digit_ch_="${__sx_num_int_mul_by_digit_tmp_}${__sx_num_int_mul_by_digit_out_}";;
-				esac
-				__sx_num_int_mul_by_digit_out_="${__sx_num_int_mul_by_digit_ch_}"
-				__sx_num_int_mul_by_digit_carry_=0
-				;;
-			"")
-				# tmp_ が WLEN_MUL 桁ぴったり: キャリーなし
-				__sx_num_int_mul_by_digit_out_="${__sx_num_int_mul_by_digit_tmp_}${__sx_num_int_mul_by_digit_out_}"
-				__sx_num_int_mul_by_digit_carry_=0
-				;;
-			*)
-				# tmp_ が WLEN_MUL 超過: キャリーあり
-				__sx_num_int_mul_by_digit_carry_="${__sx_num_int_mul_by_digit_try_}"
-				__sx_num_int_mul_by_digit_out_="${__sx_num_int_mul_by_digit_tmp_#"${__sx_num_int_mul_by_digit_carry_}"}${__sx_num_int_mul_by_digit_out_}"
-
-				case "${__sx_num_int_mul_by_digit_carry_}" in 0*)
-					__sx_num_int_mul_by_digit_carry_="${__sx_num_int_mul_by_digit_carry_#"${__sx_num_int_mul_by_digit_carry_%%[!0]*}"}"
-				esac
-				case "${__sx_num_int_mul_by_digit_carry_}" in "") __sx_num_int_mul_by_digit_carry_=0;; esac
-				;;
-		esac
-
-		case "${__sx_num_int_mul_by_digit_rem_}" in ?*) ;; *)
-			case "${__sx_num_int_mul_by_digit_carry_}" in 0) break;; esac
-		esac
-	done
-
-	case "${__sx_num_int_mul_by_digit_out_}" in
-		0*) __sx_num_int_mul_by_digit_out_="${__sx_num_int_mul_by_digit_out_#"${__sx_num_int_mul_by_digit_out_%%[!0]*}"}";;
-	esac
-	case "${__sx_num_int_mul_by_digit_out_}" in "") __sx_num_int_mul_by_digit_out_=0;; esac
-
-	__sx_var_set "${__sx_num_int_mul_by_digit_res_}=${__sx_num_int_mul_by_digit_out_}"
-
-	unset CLEANUP
-}
 
 ### __sx_num_int_mul_abs - 多倍長絶対値 × 多倍長絶対値の乗算（内部用）
 ##
@@ -5967,7 +5864,7 @@ __sx_num_int_mul_by_digit() {
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 
 define([|V|], [|__sx_num_int_mul_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(a) V(b) V(wlen) V(qm) V(acc) V(shift) V(digit) V(part) V(tmp) V(rem_a) V(rem_b) V(ch_a) V(ch_b) V(wlen_mul) V(a_len) V(b_len) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(a_endz) V(b_endz) V(parts) V(carry) V(g) V(base)|])dnl
+define([|CLEANUP|], [|V(res) V(a) V(b) V(wlen) V(qm) V(acc) V(shift) V(tmp) V(rem_a) V(rem_b) V(ch_a) V(ch_b) V(wlen_mul) V(a_len) V(b_len) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(a_endz) V(b_endz) V(parts) V(carry) V(g) V(base)|])dnl
 
 __sx_num_int_mul_abs() {
 	__sx_num_int_mul_abs_res_="${1}"
@@ -5992,61 +5889,52 @@ __sx_num_int_mul_abs() {
 			;;
 	esac
 
-	# 戦略B/C 選択: 乗数が1桁 → 現行の1桁ずつ方式（×1 ショートカット維持）
-	case "${__sx_num_int_mul_abs_b_}" in
+	__sx_num_int_mul_abs_a_endz_=
+	__sx_num_int_mul_abs_b_endz_=
+
+	# 末尾ゼロを除去してチャンク分割乗算の演算量を削減
+	case "${__sx_num_int_mul_abs_a_}" in *0)
+		__sx_num_int_mul_abs_a_endz_="${__sx_num_int_mul_abs_a_##*[!0]}"
+		__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_a_%${__sx_num_int_mul_abs_a_endz_}}"
+	esac
+
+	case "${__sx_num_int_mul_abs_b_}" in *0)
+		__sx_num_int_mul_abs_b_endz_="${__sx_num_int_mul_abs_b_##*[!0]}"
+		__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_b_%${__sx_num_int_mul_abs_b_endz_}}"
+	esac
+
+	# 特定のパターンであれば早期リターン
+	case "${__sx_num_int_mul_abs_a_}:${__sx_num_int_mul_abs_b_}" in
+		1:*) __sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_b_}" && ! :;;
+		*:1) __sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_a_}" && ! :;;
+		${__sx_num_int_mul_abs_qm_}??*) ;;
+		*) ! : "$((__sx_num_int_mul_abs_a_ *= __sx_num_int_mul_abs_b_))"
+	esac || {
+		__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_a_}${__sx_num_int_mul_abs_a_endz_}${__sx_num_int_mul_abs_b_endz_}"
+		unset CLEANUP
+		return
+	}
+
+	# 短い方を外側ループ（a）に割り当てて内側ループの反復回数を削減
+	case "$((${#__sx_num_int_mul_abs_a_} > ${#__sx_num_int_mul_abs_b_}))" in 1)
+		__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_b_}"
+		__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_a_}"
+		__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_tmp_}"
+	esac
+
+	# 戦略C: 両オペランドを最適な x, y 桁チャンクに分割して直接乗算
+	eval "__sx_num_int_mul_abs_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN_MUL}\""
+
+	# 1. a が1桁なら最適幅が自明なので探索不要
+	case "${__sx_num_int_mul_abs_a_}" in
 		?)
-			__sx_num_int_mul_abs_acc_=0
-			__sx_num_int_mul_abs_shift_=
-			__sx_num_int_mul_abs_digit_="${__sx_num_int_mul_abs_b_}"
-			__sx_num_int_mul_abs_b_=0
-
-			case "${__sx_num_int_mul_abs_digit_}" in 0) ;; *)
-				SX_CFG_UNSET_SOFT=2 __sx_num_int_mul_by_digit __sx_num_int_mul_abs_part_ \
-					"${__sx_num_int_mul_abs_a_}" "${__sx_num_int_mul_abs_digit_}"
-
-				__sx_num_int_mul_abs_acc_="${__sx_num_int_mul_abs_part_}"
-			esac
+			__sx_num_int_mul_abs_opt_x_=1
+			__sx_num_int_mul_abs_opt_y_=$((__sx_num_int_mul_abs_wlen_mul_ - 1))
 			;;
 		*)
-			__sx_num_int_mul_abs_a_endz_=
-			__sx_num_int_mul_abs_b_endz_=
-
-			# 末尾ゼロを除去してチャンク分割乗算の演算量を削減
-			case "${__sx_num_int_mul_abs_a_}" in *0)
-				__sx_num_int_mul_abs_a_endz_="${__sx_num_int_mul_abs_a_##*[!0]}"
-				__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_a_%${__sx_num_int_mul_abs_a_endz_}}"
-			esac
-
-			case "${__sx_num_int_mul_abs_b_}" in *0)
-				__sx_num_int_mul_abs_b_endz_="${__sx_num_int_mul_abs_b_##*[!0]}"
-				__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_b_%${__sx_num_int_mul_abs_b_endz_}}"
-			esac
-
-			# 特定のパターンであれば早期リターン
-			case "${__sx_num_int_mul_abs_a_}:${__sx_num_int_mul_abs_b_}" in
-				1:*) __sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_b_}" && ! :;;
-				*:1) __sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_a_}" && ! :;;
-				${__sx_num_int_mul_abs_qm_}??*) ;;
-				*) ! : "$((__sx_num_int_mul_abs_a_ *= __sx_num_int_mul_abs_b_))"
-			esac || {
-				__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_a_}${__sx_num_int_mul_abs_a_endz_}${__sx_num_int_mul_abs_b_endz_}"
-				unset CLEANUP
-				return
-			}
-
-			# 短い方を外側ループ（a）に割り当てて内側ループの反復回数を削減
-			case "$((${#__sx_num_int_mul_abs_a_} > ${#__sx_num_int_mul_abs_b_}))" in 1)
-				__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_b_}"
-				__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_a_}"
-				__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_tmp_}"
-			esac
-
-			# 戦略C: 両オペランドを最適な x, y 桁チャンクに分割して直接乗算
-			eval "__sx_num_int_mul_abs_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN_MUL}\""
-
-			# 1. 被乗数 a と乗数 b の桁数から、全体の乗算・加算回数 (ops) が最小となる
-			#    最適なチャンク分割幅 x (opt_x_) を決定する探索ループ。
-			#    x + y = wlen_mul_ (安全な合計最大桁数) の制限を満たす範囲で探索。
+			# 被乗数 a と乗数 b の桁数から、全体の乗算・加算回数 (ops) が最小となる
+			# 最適なチャンク分割幅 x (opt_x_) を決定する探索ループ。
+			# x + y = wlen_mul_ (安全な合計最大桁数) の制限を満たす範囲で探索。
 			__sx_num_int_mul_abs_a_len_="${#__sx_num_int_mul_abs_a_}"
 			__sx_num_int_mul_abs_b_len_="${#__sx_num_int_mul_abs_b_}"
 			eval "__sx_num_int_mul_abs_min_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
@@ -6070,105 +5958,105 @@ __sx_num_int_mul_abs() {
 			done
 
 			__sx_num_int_mul_abs_opt_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_opt_x_))
-
-			# 2. 定数テーブルから最適な x, y に対応する qchunk, zchunk を O(1) で取得
-			#    qchunk_a: aの切り出しパターン（opt_x 個の ?）
-			#    zchunk_a: aの桁合わせ用ゼロ（opt_x 個の 0）
-			eval "__sx_num_int_mul_abs_qchunk_a_=\"\${SX_QM_${__sx_num_int_mul_abs_opt_x_}}\" \
-			      __sx_num_int_mul_abs_zchunk_a_=\"\${SX_ZR_${__sx_num_int_mul_abs_opt_x_}}\" \
-			      __sx_num_int_mul_abs_qchunk_b_=\"\${SX_QM_${__sx_num_int_mul_abs_opt_y_}}\" \
-			      __sx_num_int_mul_abs_zchunk_b_=\"\${SX_ZR_${__sx_num_int_mul_abs_opt_y_}}\""
-
-			__sx_num_int_mul_abs_parts_=
-			__sx_num_int_mul_abs_rem_a_="${__sx_num_int_mul_abs_a_}"
-			__sx_num_int_mul_abs_shift_=
-			__sx_num_int_mul_abs_base_=$((1${__sx_num_int_mul_abs_zchunk_b_}))
-
-			# 3. 被乗数 a を下位から opt_x 桁ずつ切り出しながらアウターループ
-			while
-				# a の右端から opt_x 桁を ch_a_ に抽出
-				case "${__sx_num_int_mul_abs_rem_a_}" in
-					${__sx_num_int_mul_abs_qchunk_a_}?*)
-						__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_rem_a_%${__sx_num_int_mul_abs_qchunk_a_}}"
-						__sx_num_int_mul_abs_ch_a_="${__sx_num_int_mul_abs_rem_a_#"${__sx_num_int_mul_abs_tmp_}"}"
-						__sx_num_int_mul_abs_rem_a_="${__sx_num_int_mul_abs_tmp_}"
-
-						# 先頭の0をトリム（8進数誤認防止）
-						case "${__sx_num_int_mul_abs_ch_a_}" in
-							0*[1-9]*) __sx_num_int_mul_abs_ch_a_="${__sx_num_int_mul_abs_ch_a_#"${__sx_num_int_mul_abs_ch_a_%%[!0]*}"}";;
-							0*)
-								__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_shift_}"
-								continue
-								;;
-						esac
-						;;
-					*)
-						__sx_num_int_mul_abs_ch_a_="${__sx_num_int_mul_abs_rem_a_}"
-						__sx_num_int_mul_abs_rem_a_=
-						;;
-				esac
-
-				# 4. carry式で ch_a_ × b を計算
-				__sx_num_int_mul_abs_g_=
-				__sx_num_int_mul_abs_carry_=0
-				__sx_num_int_mul_abs_rem_b_="${__sx_num_int_mul_abs_b_}"
-
-				while
-					# b の右端から opt_y 桁を ch_b_ に抽出
-					case "${__sx_num_int_mul_abs_rem_b_}" in
-						${__sx_num_int_mul_abs_qchunk_b_}?*)
-							__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_rem_b_%${__sx_num_int_mul_abs_qchunk_b_}}"
-							__sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_rem_b_#"${__sx_num_int_mul_abs_tmp_}"}"
-							__sx_num_int_mul_abs_rem_b_="${__sx_num_int_mul_abs_tmp_}"
-
-							# 先頭の0をトリム（8進数誤認防止）
-							case "${__sx_num_int_mul_abs_ch_b_}" in
-								0*[1-9]*) __sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_ch_b_#"${__sx_num_int_mul_abs_ch_b_%%[!0]*}"}";;
-								0*)
-									__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_g_}"
-									continue
-									;;
-							esac
-							;;
-						*)
-							__sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_rem_b_}"
-							__sx_num_int_mul_abs_rem_b_=
-							;;
-					esac
-
-					# carry式: r = ch_a_ × ch_b_ + carry_
-					__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_ch_a_ * __sx_num_int_mul_abs_ch_b_ + __sx_num_int_mul_abs_carry_))
-					__sx_num_int_mul_abs_carry_=$((__sx_num_int_mul_abs_tmp_ / __sx_num_int_mul_abs_base_))
-					__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_tmp_ %= __sx_num_int_mul_abs_base_))
-
-					M_STR_NE([|"${__sx_num_int_mul_abs_rem_b_}"|], [|''|])
-				do
-					# tmp_ を opt_y 桁にゼロパディング
-					__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_tmp_}"
-					__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_b_}}"}${__sx_num_int_mul_abs_g_}"
-				done
-
-				# 最終桁上がりを g_ に前置
-				case "${__sx_num_int_mul_abs_carry_}" in
-					0) __sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_}${__sx_num_int_mul_abs_g_}";;
-					*)
-						__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_tmp_}"
-						__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_carry_}${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_b_}}"}${__sx_num_int_mul_abs_g_}"
-						;;
-				esac
-
-				# parts_ に収集（外側シフト付き）
-				__sx_num_int_mul_abs_parts_="${__sx_num_int_mul_abs_parts_}${__sx_num_int_mul_abs_parts_:+ }${__sx_num_int_mul_abs_g_}${__sx_num_int_mul_abs_shift_}"
-
-				# 外側シフト更新
-				__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_shift_}"
-
-				M_STR_NE([|"${__sx_num_int_mul_abs_rem_a_}"|], [|''|])
-			do :; done
-
-			eval SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_acc_ "${__sx_num_int_mul_abs_parts_}"
 			;;
 	esac
+
+	# 2. 定数テーブルから最適な x, y に対応する qchunk, zchunk を O(1) で取得
+	#    qchunk_a: aの切り出しパターン（opt_x 個の ?）
+	#    zchunk_a: aの桁合わせ用ゼロ（opt_x 個の 0）
+	eval "__sx_num_int_mul_abs_qchunk_a_=\"\${SX_QM_${__sx_num_int_mul_abs_opt_x_}}\" \
+	      __sx_num_int_mul_abs_zchunk_a_=\"\${SX_ZR_${__sx_num_int_mul_abs_opt_x_}}\" \
+	      __sx_num_int_mul_abs_qchunk_b_=\"\${SX_QM_${__sx_num_int_mul_abs_opt_y_}}\" \
+	      __sx_num_int_mul_abs_zchunk_b_=\"\${SX_ZR_${__sx_num_int_mul_abs_opt_y_}}\""
+
+	__sx_num_int_mul_abs_parts_=
+	__sx_num_int_mul_abs_rem_a_="${__sx_num_int_mul_abs_a_}"
+	__sx_num_int_mul_abs_shift_=
+	__sx_num_int_mul_abs_base_=$((1${__sx_num_int_mul_abs_zchunk_b_}))
+
+	# 3. 被乗数 a を下位から opt_x 桁ずつ切り出しながらアウターループ
+	while
+		# a の右端から opt_x 桁を ch_a_ に抽出
+		case "${__sx_num_int_mul_abs_rem_a_}" in
+			${__sx_num_int_mul_abs_qchunk_a_}?*)
+				__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_rem_a_%${__sx_num_int_mul_abs_qchunk_a_}}"
+				__sx_num_int_mul_abs_ch_a_="${__sx_num_int_mul_abs_rem_a_#"${__sx_num_int_mul_abs_tmp_}"}"
+				__sx_num_int_mul_abs_rem_a_="${__sx_num_int_mul_abs_tmp_}"
+
+				# 先頭の0をトリム（8進数誤認防止）
+				case "${__sx_num_int_mul_abs_ch_a_}" in
+					0*[1-9]*) __sx_num_int_mul_abs_ch_a_="${__sx_num_int_mul_abs_ch_a_#"${__sx_num_int_mul_abs_ch_a_%%[!0]*}"}";;
+					0*)
+						__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_shift_}"
+						continue
+						;;
+				esac
+				;;
+			*)
+				__sx_num_int_mul_abs_ch_a_="${__sx_num_int_mul_abs_rem_a_}"
+				__sx_num_int_mul_abs_rem_a_=
+				;;
+		esac
+
+		# 4. carry式で ch_a_ × b を計算
+		__sx_num_int_mul_abs_g_=
+		__sx_num_int_mul_abs_carry_=0
+		__sx_num_int_mul_abs_rem_b_="${__sx_num_int_mul_abs_b_}"
+
+		while
+			# b の右端から opt_y 桁を ch_b_ に抽出
+			case "${__sx_num_int_mul_abs_rem_b_}" in
+				${__sx_num_int_mul_abs_qchunk_b_}?*)
+					__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_rem_b_%${__sx_num_int_mul_abs_qchunk_b_}}"
+					__sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_rem_b_#"${__sx_num_int_mul_abs_tmp_}"}"
+					__sx_num_int_mul_abs_rem_b_="${__sx_num_int_mul_abs_tmp_}"
+
+					# 先頭の0をトリム（8進数誤認防止）
+					case "${__sx_num_int_mul_abs_ch_b_}" in
+						0*[1-9]*) __sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_ch_b_#"${__sx_num_int_mul_abs_ch_b_%%[!0]*}"}";;
+						0*)
+							__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_g_}"
+							continue
+							;;
+					esac
+					;;
+				*)
+					__sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_rem_b_}"
+					__sx_num_int_mul_abs_rem_b_=
+					;;
+			esac
+
+			# carry式: r = ch_a_ × ch_b_ + carry_
+			__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_ch_a_ * __sx_num_int_mul_abs_ch_b_ + __sx_num_int_mul_abs_carry_))
+			__sx_num_int_mul_abs_carry_=$((__sx_num_int_mul_abs_tmp_ / __sx_num_int_mul_abs_base_))
+			__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_tmp_ %= __sx_num_int_mul_abs_base_))
+
+			M_STR_NE([|"${__sx_num_int_mul_abs_rem_b_}"|], [|''|])
+		do
+			# tmp_ を opt_y 桁にゼロパディング
+			__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_tmp_}"
+			__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_b_}}"}${__sx_num_int_mul_abs_g_}"
+		done
+
+		# 最終桁上がりを g_ に前置
+		case "${__sx_num_int_mul_abs_carry_}" in
+			0) __sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_}${__sx_num_int_mul_abs_g_}";;
+			*)
+				__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_tmp_}"
+				__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_carry_}${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_b_}}"}${__sx_num_int_mul_abs_g_}"
+				;;
+		esac
+
+		# parts_ に収集（外側シフト付き）
+		__sx_num_int_mul_abs_parts_="${__sx_num_int_mul_abs_parts_}${__sx_num_int_mul_abs_parts_:+ }${__sx_num_int_mul_abs_g_}${__sx_num_int_mul_abs_shift_}"
+
+		# 外側シフト更新
+		__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_shift_}"
+
+		M_STR_NE([|"${__sx_num_int_mul_abs_rem_a_}"|], [|''|])
+	do :; done
+
+	eval SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_acc_ "${__sx_num_int_mul_abs_parts_}"
 
 	__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_acc_}${__sx_num_int_mul_abs_a_endz_}${__sx_num_int_mul_abs_b_endz_}"
 
