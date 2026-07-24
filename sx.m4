@@ -5865,7 +5865,7 @@ __sx_num_int_sub_abs() {
 ##   逐次方式でアキュムレータに各数値を順次乗算する。
 
 define([|V|], [|__sx_num_int_mul_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(a) V(b) V(endz) V(qm) V(shift) V(tmp) V(ch_a) V(ch_b) V(wlen_mul) V(a_len) V(b_len) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(parts) V(carry) V(g) V(base)|])dnl
+define([|CLEANUP|], [|V(res) V(a) V(b) V(endz) V(qm) V(shift) V(tmp) V(ch_a) V(ch_b) V(wlen_mul) V(max_ops) V(a_len) V(b_len) V(max_x) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(parts) V(carry) V(g) V(base)|])dnl
 
 __sx_num_int_mul_abs() {
 	__sx_num_int_mul_abs_res_="${1}"
@@ -5877,14 +5877,16 @@ __sx_num_int_mul_abs() {
 		set --
 	esac
 
+	eval "__sx_num_int_mul_abs_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" \
+	      __sx_num_int_mul_abs_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN_MUL}\" \
+	      __sx_num_int_mul_abs_max_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
+
 	for __sx_num_int_mul_abs_b_ in "${@}"; do
 		case "${__sx_num_int_mul_abs_b_}" in 0)
 			__sx_num_int_mul_abs_a_=0
 			__sx_num_int_mul_abs_endz_=
 			break
 		esac
-
-		eval "__sx_num_int_mul_abs_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
 
 		case "${__sx_num_int_mul_abs_a_}${__sx_num_int_mul_abs_b_}" in
 			${__sx_num_int_mul_abs_qm_}?*) ;;
@@ -5919,36 +5921,32 @@ __sx_num_int_mul_abs() {
 			__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_tmp_}"
 		esac
 
-		eval "__sx_num_int_mul_abs_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN_MUL}\""
-
-		case "${__sx_num_int_mul_abs_a_}" in
-			?)
-				__sx_num_int_mul_abs_opt_x_=1
-				__sx_num_int_mul_abs_opt_y_=$((__sx_num_int_mul_abs_wlen_mul_ - 1))
-				;;
-			*)
-				__sx_num_int_mul_abs_a_len_="${#__sx_num_int_mul_abs_a_}"
-				__sx_num_int_mul_abs_b_len_="${#__sx_num_int_mul_abs_b_}"
-				eval "__sx_num_int_mul_abs_min_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
-
-				__sx_num_int_mul_abs_x_=1
-				while M_NUM_LT([|__sx_num_int_mul_abs_x_|], [|__sx_num_int_mul_abs_wlen_mul_|]); do
-					__sx_num_int_mul_abs_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_x_))
-					__sx_num_int_mul_abs_ops_=$((
-						((__sx_num_int_mul_abs_a_len_ + __sx_num_int_mul_abs_x_ - 1) / __sx_num_int_mul_abs_x_) * ((__sx_num_int_mul_abs_b_len_ + __sx_num_int_mul_abs_y_ - 1) / __sx_num_int_mul_abs_y_)
-					))
-
-					case "$((__sx_num_int_mul_abs_ops_ < __sx_num_int_mul_abs_min_ops_))" in 1)
-						__sx_num_int_mul_abs_min_ops_="${__sx_num_int_mul_abs_ops_}"
-						__sx_num_int_mul_abs_opt_x_="${__sx_num_int_mul_abs_x_}"
-					esac
-
-					: "$((__sx_num_int_mul_abs_x_ += 1))"
-				done
-
-				__sx_num_int_mul_abs_opt_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_opt_x_))
-				;;
+		__sx_num_int_mul_abs_a_len_="${#__sx_num_int_mul_abs_a_}"
+		__sx_num_int_mul_abs_b_len_="${#__sx_num_int_mul_abs_b_}"
+		__sx_num_int_mul_abs_max_x_="${__sx_num_int_mul_abs_a_len_}"
+		case "$((__sx_num_int_mul_abs_max_x_ >= __sx_num_int_mul_abs_wlen_mul_))" in 1)
+			__sx_num_int_mul_abs_max_x_=$((__sx_num_int_mul_abs_wlen_mul_ - 1))
 		esac
+
+		__sx_num_int_mul_abs_min_ops_="${__sx_num_int_mul_abs_max_ops_}"
+		__sx_num_int_mul_abs_opt_x_=1
+
+		__sx_num_int_mul_abs_x_=1
+		while case "$((__sx_num_int_mul_abs_x_ <= __sx_num_int_mul_abs_max_x_))" in 1) :;; *) ! :;; esac; do
+			__sx_num_int_mul_abs_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_x_))
+			__sx_num_int_mul_abs_ops_=$((
+				((__sx_num_int_mul_abs_a_len_ + __sx_num_int_mul_abs_x_ - 1) / __sx_num_int_mul_abs_x_) * ((__sx_num_int_mul_abs_b_len_ + __sx_num_int_mul_abs_y_ - 1) / __sx_num_int_mul_abs_y_)
+			))
+
+			case "$((__sx_num_int_mul_abs_ops_ < __sx_num_int_mul_abs_min_ops_))" in 1)
+				__sx_num_int_mul_abs_min_ops_="${__sx_num_int_mul_abs_ops_}"
+				__sx_num_int_mul_abs_opt_x_="${__sx_num_int_mul_abs_x_}"
+			esac
+
+			: "$((__sx_num_int_mul_abs_x_ += 1))"
+		done
+
+		__sx_num_int_mul_abs_opt_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_opt_x_))
 
 		eval "__sx_num_int_mul_abs_qchunk_a_=\"\${SX_QM_${__sx_num_int_mul_abs_opt_x_}}\" \
 		      __sx_num_int_mul_abs_zchunk_a_=\"\${SX_ZR_${__sx_num_int_mul_abs_opt_x_}}\" \
