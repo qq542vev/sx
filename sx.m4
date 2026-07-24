@@ -5980,23 +5980,29 @@ __sx_num_int_mul_abs() {
 			esac
 
 			__sx_num_int_mul_abs_g_=
-			__sx_num_int_mul_abs_carry_=0
+			__sx_num_int_mul_abs_carry_=
 
 			for __sx_num_int_mul_abs_ch_b_ in "${@}"; do
-				__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_ch_a_ * __sx_num_int_mul_abs_ch_b_ + __sx_num_int_mul_abs_carry_))
-				__sx_num_int_mul_abs_carry_=$((__sx_num_int_mul_abs_tmp_ / __sx_num_int_mul_abs_base_))
-				__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_tmp_ %= __sx_num_int_mul_abs_base_))
+				__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_ch_a_ * __sx_num_int_mul_abs_ch_b_ + ${__sx_num_int_mul_abs_carry_:-0}))
 
-				__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_tmp_}"
-				__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_b_}}"}${__sx_num_int_mul_abs_g_}"
+				case "${__sx_num_int_mul_abs_tmp_}" in
+					${__sx_num_int_mul_abs_qchunk_b_}?*)
+						__sx_num_int_mul_abs_carry_=$((__sx_num_int_mul_abs_tmp_ / __sx_num_int_mul_abs_base_))
+						__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_carry_}"}${__sx_num_int_mul_abs_g_}"
+						;;
+					*)
+						__sx_num_int_mul_abs_carry_=
+						__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_tmp_}"
+						__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_b_}}"}${__sx_num_int_mul_abs_g_}"
+						;;
+				esac
 			done
 
-			case "${__sx_num_int_mul_abs_carry_}" in
-				0) __sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_g_#"${__sx_num_int_mul_abs_g_%%[!0]*}"}";;
-				*) __sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_carry_}${__sx_num_int_mul_abs_g_}";;
+			case "${__sx_num_int_mul_abs_carry_}" in '')
+				__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_g_#"${__sx_num_int_mul_abs_g_%%[!0]*}"}"
 			esac
 
-			__sx_num_int_mul_abs_parts_="${__sx_num_int_mul_abs_parts_}${__sx_num_int_mul_abs_parts_:+ }${__sx_num_int_mul_abs_g_}${__sx_num_int_mul_abs_shift_}"
+			__sx_num_int_mul_abs_parts_="${__sx_num_int_mul_abs_parts_}${__sx_num_int_mul_abs_parts_:+ }${__sx_num_int_mul_abs_carry_}${__sx_num_int_mul_abs_g_}${__sx_num_int_mul_abs_shift_}"
 
 			__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_shift_}"
 			M_STR_NE([|"${__sx_num_int_mul_abs_a_}"|], [|''|])
