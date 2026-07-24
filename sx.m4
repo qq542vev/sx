@@ -257,30 +257,17 @@ readonly SX_NUM_RANGE_128_QM='?????????????????????????????????????'
 readonly SX_NUM_RANGE_128_ZR='0000000000000000000000000000000000000'
 
 # 乗算用チャンク処理定数
-# wlen_mul = wlen - 1 (32-bit) または wlen (64/128-bit) により
-# 9 * 10^wlen_mul <= 2^(SX_CFG_NUM_RANGE - 1) を保証
-readonly SX_NUM_RANGE_32_WLEN_MUL=8
-readonly SX_NUM_RANGE_32_QM_MUL='????????'
-readonly SX_NUM_RANGE_32_ZR_MUL='00000000'
+# wlen_mul = wlen (全ビット幅共通) により
+# 10^wlen_mul <= 2^(SX_CFG_NUM_RANGE - 1) を保証
+readonly SX_NUM_RANGE_32_WLEN_MUL=9
+readonly SX_NUM_RANGE_32_QM_MUL='?????????'
+readonly SX_NUM_RANGE_32_ZR_MUL='000000000'
 readonly SX_NUM_RANGE_64_WLEN_MUL=18
 readonly SX_NUM_RANGE_64_QM_MUL='??????????????????'
 readonly SX_NUM_RANGE_64_ZR_MUL='000000000000000000'
-readonly SX_NUM_RANGE_128_WLEN_MUL=37
-readonly SX_NUM_RANGE_128_QM_MUL='?????????????????????????????????????'
-readonly SX_NUM_RANGE_128_ZR_MUL='0000000000000000000000000000000000000'
-
-# 直接乗算チャンク定数（両オペランドを分割して直接乗算）
-# wlen_chunk = floor(log10(sqrt(2^(SX_CFG_NUM_RANGE - 1) - 1))) により
-# (10^wlen_chunk - 1)^2 <= 2^(SX_CFG_NUM_RANGE - 1) を保証
-readonly SX_NUM_RANGE_32_WLEN_CHUNK=4
-readonly SX_NUM_RANGE_32_QM_CHUNK='????'
-readonly SX_NUM_RANGE_32_ZR_CHUNK='0000'
-readonly SX_NUM_RANGE_64_WLEN_CHUNK=9
-readonly SX_NUM_RANGE_64_QM_CHUNK='?????????'
-readonly SX_NUM_RANGE_64_ZR_CHUNK='000000000'
-readonly SX_NUM_RANGE_128_WLEN_CHUNK=19
-readonly SX_NUM_RANGE_128_QM_CHUNK='???????????????????'
-readonly SX_NUM_RANGE_128_ZR_CHUNK='0000000000000000000'
+readonly SX_NUM_RANGE_128_WLEN_MUL=38
+readonly SX_NUM_RANGE_128_QM_MUL='??????????????????????????????????????'
+readonly SX_NUM_RANGE_128_ZR_MUL='00000000000000000000000000000000000000'
 
 # 最適乗算チャンク用動的定数の事前定義 (1〜37桁)
 define([|__sx_m4_gen_qm|], [|readonly SX_QM_$1='$2'
@@ -5923,16 +5910,12 @@ __sx_num_int_mul_abs() {
 
 		__sx_num_int_mul_abs_a_len_="${#__sx_num_int_mul_abs_a_}"
 		__sx_num_int_mul_abs_b_len_="${#__sx_num_int_mul_abs_b_}"
-		__sx_num_int_mul_abs_max_x_="${__sx_num_int_mul_abs_a_len_}"
-		case "$((__sx_num_int_mul_abs_max_x_ >= __sx_num_int_mul_abs_wlen_mul_))" in 1)
-			__sx_num_int_mul_abs_max_x_=$((__sx_num_int_mul_abs_wlen_mul_ - 1))
-		esac
-
+		__sx_num_int_mul_abs_max_x_="$((__sx_num_int_mul_abs_a_len_ < __sx_num_int_mul_abs_wlen_mul_ ? __sx_num_int_mul_abs_a_len_ : __sx_num_int_mul_abs_wlen_mul_ - 1))"
 		__sx_num_int_mul_abs_min_ops_="${__sx_num_int_mul_abs_max_ops_}"
 		__sx_num_int_mul_abs_opt_x_=1
-
 		__sx_num_int_mul_abs_x_=1
-		while case "$((__sx_num_int_mul_abs_x_ <= __sx_num_int_mul_abs_max_x_))" in 1) :;; *) ! :;; esac; do
+
+		while M_NUM_LE([|__sx_num_int_mul_abs_x_|], [|__sx_num_int_mul_abs_max_x_|]); do
 			__sx_num_int_mul_abs_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_x_))
 			__sx_num_int_mul_abs_ops_=$((
 				((__sx_num_int_mul_abs_a_len_ + __sx_num_int_mul_abs_x_ - 1) / __sx_num_int_mul_abs_x_) * ((__sx_num_int_mul_abs_b_len_ + __sx_num_int_mul_abs_y_ - 1) / __sx_num_int_mul_abs_y_)
