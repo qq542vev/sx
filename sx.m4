@@ -5873,12 +5873,8 @@ __sx_num_int_mul_abs() {
 	__sx_num_int_mul_abs_endz_=
 	shift "$((1 + 0${2+1}))"
 
-	case "${__sx_num_int_mul_abs_a_}" in
-		0) set --;;
-		*0)
-			__sx_num_int_mul_abs_endz_="${__sx_num_int_mul_abs_a_##*[!0]}"
-			__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_a_%${__sx_num_int_mul_abs_endz_}}"
-			;;
+	case "${__sx_num_int_mul_abs_a_}" in 0)
+		set --
 	esac
 
 	for __sx_num_int_mul_abs_b_ in "${@}"; do
@@ -5896,6 +5892,12 @@ __sx_num_int_mul_abs() {
 				: "$((__sx_num_int_mul_abs_a_ *= __sx_num_int_mul_abs_b_))"
 				continue
 				;;
+		esac
+
+		case "${__sx_num_int_mul_abs_a_}" in *0)
+			__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_a_##*[!0]}"
+			__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_a_%${__sx_num_int_mul_abs_tmp_}}"
+			__sx_num_int_mul_abs_endz_="${__sx_num_int_mul_abs_endz_}${__sx_num_int_mul_abs_tmp_}"
 		esac
 
 		case "${__sx_num_int_mul_abs_b_}" in *0)
