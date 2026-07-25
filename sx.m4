@@ -5852,7 +5852,7 @@ __sx_num_int_sub_abs() {
 ##   逐次方式でアキュムレータに各数値を順次乗算する。
 
 define([|V|], [|__sx_num_int_mul_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(a) V(b) V(endz) V(qm) V(shift) V(tmp) V(ch_a) V(ch_b) V(wlen_mul) V(max_ops) V(a_len) V(b_len) V(max_x) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(parts) V(carry) V(g) V(base)|])dnl
+define([|CLEANUP|], [|V(res) V(a) V(b) V(endz) V(qm) V(shift) V(tmp) V(ch_a) V(ch_b) V(wlen_mul) V(max_ops) V(a_len) V(b_len) V(max_x) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(parts) V(carry) V(g)|])dnl
 
 __sx_num_int_mul_abs() {
 	__sx_num_int_mul_abs_res_="${1}"
@@ -5938,7 +5938,6 @@ __sx_num_int_mul_abs() {
 
 		__sx_num_int_mul_abs_parts_=
 		__sx_num_int_mul_abs_shift_=
-		__sx_num_int_mul_abs_base_=$((1${__sx_num_int_mul_abs_zchunk_b_}))
 
 		set --
 
@@ -5987,7 +5986,7 @@ __sx_num_int_mul_abs() {
 
 				case "${__sx_num_int_mul_abs_tmp_}" in
 					${__sx_num_int_mul_abs_qchunk_b_}?*)
-						__sx_num_int_mul_abs_carry_=$((__sx_num_int_mul_abs_tmp_ / __sx_num_int_mul_abs_base_))
+						__sx_num_int_mul_abs_carry_="${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_b_}}"
 						__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_carry_}"}${__sx_num_int_mul_abs_g_}"
 						;;
 					*)
