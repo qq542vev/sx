@@ -5896,13 +5896,13 @@ __sx_num_int_mul_abs() {
 		esac
 
 		case "${__sx_num_int_mul_abs_a_}:${__sx_num_int_mul_abs_b_}" in
-			1:*) __sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_b_}" && ! :;;
-			*:1) __sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_a_}" && ! :;;
+			1:*) __sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_b_}";&
+			*:1) ! :;;
 			${__sx_num_int_mul_abs_qm_}??*) ;;
 			*) ! : "$((__sx_num_int_mul_abs_a_ *= __sx_num_int_mul_abs_b_))"
 		esac || continue
 
-		case "$((${#__sx_num_int_mul_abs_a_} > ${#__sx_num_int_mul_abs_b_}))" in 1)
+		case "$((${#__sx_num_int_mul_abs_a_} < ${#__sx_num_int_mul_abs_b_}))" in 1)
 			__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_b_}"
 			__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_a_}"
 			__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_tmp_}"
@@ -5910,7 +5910,7 @@ __sx_num_int_mul_abs() {
 
 		__sx_num_int_mul_abs_a_len_="${#__sx_num_int_mul_abs_a_}"
 		__sx_num_int_mul_abs_b_len_="${#__sx_num_int_mul_abs_b_}"
-		__sx_num_int_mul_abs_max_x_="$((__sx_num_int_mul_abs_a_len_ < __sx_num_int_mul_abs_wlen_mul_ ? __sx_num_int_mul_abs_a_len_ : __sx_num_int_mul_abs_wlen_mul_ - 1))"
+		__sx_num_int_mul_abs_max_x_="$((__sx_num_int_mul_abs_b_len_ < __sx_num_int_mul_abs_wlen_mul_ ? __sx_num_int_mul_abs_b_len_ : __sx_num_int_mul_abs_wlen_mul_ - 1))"
 		__sx_num_int_mul_abs_min_ops_="${__sx_num_int_mul_abs_max_ops_}"
 		__sx_num_int_mul_abs_opt_x_=1
 		__sx_num_int_mul_abs_x_=1
@@ -5918,7 +5918,7 @@ __sx_num_int_mul_abs() {
 		while M_NUM_LE([|__sx_num_int_mul_abs_x_|], [|__sx_num_int_mul_abs_max_x_|]); do
 			__sx_num_int_mul_abs_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_x_))
 			__sx_num_int_mul_abs_ops_=$((
-				((__sx_num_int_mul_abs_a_len_ + __sx_num_int_mul_abs_x_ - 1) / __sx_num_int_mul_abs_x_) * ((__sx_num_int_mul_abs_b_len_ + __sx_num_int_mul_abs_y_ - 1) / __sx_num_int_mul_abs_y_)
+				((__sx_num_int_mul_abs_b_len_ + __sx_num_int_mul_abs_x_ - 1) / __sx_num_int_mul_abs_x_) * ((__sx_num_int_mul_abs_a_len_ + __sx_num_int_mul_abs_y_ - 1) / __sx_num_int_mul_abs_y_)
 			))
 
 			case "$((__sx_num_int_mul_abs_ops_ < __sx_num_int_mul_abs_min_ops_))" in 1)
@@ -5931,10 +5931,10 @@ __sx_num_int_mul_abs() {
 
 		__sx_num_int_mul_abs_opt_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_opt_x_))
 
-		eval "__sx_num_int_mul_abs_qchunk_a_=\"\${SX_QM_${__sx_num_int_mul_abs_opt_x_}}\" \
-		      __sx_num_int_mul_abs_zchunk_a_=\"\${SX_ZR_${__sx_num_int_mul_abs_opt_x_}}\" \
-		      __sx_num_int_mul_abs_qchunk_b_=\"\${SX_QM_${__sx_num_int_mul_abs_opt_y_}}\" \
-		      __sx_num_int_mul_abs_zchunk_b_=\"\${SX_ZR_${__sx_num_int_mul_abs_opt_y_}}\""
+		eval "__sx_num_int_mul_abs_qchunk_a_=\"\${SX_QM_${__sx_num_int_mul_abs_opt_y_}}\" \
+		      __sx_num_int_mul_abs_zchunk_a_=\"\${SX_ZR_${__sx_num_int_mul_abs_opt_y_}}\" \
+		      __sx_num_int_mul_abs_qchunk_b_=\"\${SX_QM_${__sx_num_int_mul_abs_opt_x_}}\" \
+		      __sx_num_int_mul_abs_zchunk_b_=\"\${SX_ZR_${__sx_num_int_mul_abs_opt_x_}}\""
 
 		__sx_num_int_mul_abs_parts_=
 		__sx_num_int_mul_abs_shift_=
@@ -5942,58 +5942,58 @@ __sx_num_int_mul_abs() {
 		set --
 
 		while
-			case "${__sx_num_int_mul_abs_b_}" in
-				${__sx_num_int_mul_abs_qchunk_b_}?*)
-					__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_b_%${__sx_num_int_mul_abs_qchunk_b_}}"
-					__sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_b_#"${__sx_num_int_mul_abs_tmp_}"}"
-					__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_tmp_}"
-					case "${__sx_num_int_mul_abs_ch_b_}" in
-						0*[1-9]*) set -- "${@}" "${__sx_num_int_mul_abs_ch_b_#"${__sx_num_int_mul_abs_ch_b_%%[!0]*}"}";;
-						0*) set -- "${@}" 0;;
-						*) set -- "${@}" "${__sx_num_int_mul_abs_ch_b_}";;
-					esac
-					;;
-				*) set -- "${@}" "${__sx_num_int_mul_abs_b_}" && ! :;;
-			esac
-		do :; done
-
-		while
 			case "${__sx_num_int_mul_abs_a_}" in
 				${__sx_num_int_mul_abs_qchunk_a_}?*)
 					__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_a_%${__sx_num_int_mul_abs_qchunk_a_}}"
 					__sx_num_int_mul_abs_ch_a_="${__sx_num_int_mul_abs_a_#"${__sx_num_int_mul_abs_tmp_}"}"
 					__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_tmp_}"
-
 					case "${__sx_num_int_mul_abs_ch_a_}" in
-						0*[1-9]*) __sx_num_int_mul_abs_ch_a_="${__sx_num_int_mul_abs_ch_a_#"${__sx_num_int_mul_abs_ch_a_%%[!0]*}"}";;
+						0*[1-9]*) set -- "${@}" "${__sx_num_int_mul_abs_ch_a_#"${__sx_num_int_mul_abs_ch_a_%%[!0]*}"}";;
+						0*) set -- "${@}" 0;;
+						*) set -- "${@}" "${__sx_num_int_mul_abs_ch_a_}";;
+					esac
+					;;
+				*) set -- "${@}" "${__sx_num_int_mul_abs_a_}" && ! :;;
+			esac
+		do :; done
+
+		while
+			case "${__sx_num_int_mul_abs_b_}" in
+				${__sx_num_int_mul_abs_qchunk_b_}?*)
+					__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_b_%${__sx_num_int_mul_abs_qchunk_b_}}"
+					__sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_b_#"${__sx_num_int_mul_abs_tmp_}"}"
+					__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_tmp_}"
+
+					case "${__sx_num_int_mul_abs_ch_b_}" in
+						0*[1-9]*) __sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_ch_b_#"${__sx_num_int_mul_abs_ch_b_%%[!0]*}"}";;
 						0*)
-							__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_shift_}"
+							__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_shift_}"
 							continue
 							;;
 					esac
 					;;
 				*)
-					__sx_num_int_mul_abs_ch_a_="${__sx_num_int_mul_abs_a_}"
-					__sx_num_int_mul_abs_a_=
+					__sx_num_int_mul_abs_ch_b_="${__sx_num_int_mul_abs_b_}"
+					__sx_num_int_mul_abs_b_=
 					;;
 			esac
 
 			__sx_num_int_mul_abs_g_=
 			__sx_num_int_mul_abs_carry_=
 
-			for __sx_num_int_mul_abs_ch_b_ in "${@}"; do
-				__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_ch_a_ * __sx_num_int_mul_abs_ch_b_ + ${__sx_num_int_mul_abs_carry_:-0}))
+			for __sx_num_int_mul_abs_ch_a_ in "${@}"; do
+				__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_ch_b_ * __sx_num_int_mul_abs_ch_a_ + ${__sx_num_int_mul_abs_carry_:-0}))
 
 				case "${__sx_num_int_mul_abs_tmp_}" in
-					${__sx_num_int_mul_abs_qchunk_b_}?*)
-						__sx_num_int_mul_abs_carry_="${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_b_}}"
-						__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_carry_}"}${__sx_num_int_mul_abs_g_}"
-						;;
-					*)
-						__sx_num_int_mul_abs_carry_=
-						__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_tmp_}"
-						__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_b_}}"}${__sx_num_int_mul_abs_g_}"
-						;;
+				${__sx_num_int_mul_abs_qchunk_a_}?*)
+					__sx_num_int_mul_abs_carry_="${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_a_}}"
+					__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_carry_}"}${__sx_num_int_mul_abs_g_}"
+					;;
+				*)
+					__sx_num_int_mul_abs_carry_=
+					__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_tmp_}"
+					__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_a_}}"}${__sx_num_int_mul_abs_g_}"
+					;;
 				esac
 			done
 
@@ -6003,8 +6003,8 @@ __sx_num_int_mul_abs() {
 
 			__sx_num_int_mul_abs_parts_="${__sx_num_int_mul_abs_parts_}${__sx_num_int_mul_abs_parts_:+ }${__sx_num_int_mul_abs_carry_}${__sx_num_int_mul_abs_g_}${__sx_num_int_mul_abs_shift_}"
 
-			__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_shift_}"
-			M_STR_NE([|"${__sx_num_int_mul_abs_a_}"|], [|''|])
+			__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_shift_}"
+			M_STR_NE([|"${__sx_num_int_mul_abs_b_}"|], [|''|])
 		do :; done
 
 		eval SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_a_ "${__sx_num_int_mul_abs_parts_}"
