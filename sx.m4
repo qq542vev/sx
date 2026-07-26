@@ -5852,12 +5852,13 @@ __sx_num_int_sub_abs() {
 ##   逐次方式でアキュムレータに各数値を順次乗算する。
 
 define([|V|], [|__sx_num_int_mul_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(a) V(b) V(endz) V(qm) V(shift) V(tmp) V(ch_a) V(ch_b) V(wlen_mul) V(max_ops) V(a_len) V(b_len) V(max_x) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(parts) V(carry) V(g)|])dnl
+define([|CLEANUP|], [|V(res) V(a) V(b) V(endz) V(qm) V(shift) V(tmp) V(ch_a) V(ch_b) V(wlen_mul) V(max_ops) V(a_len) V(b_len) V(max_x) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(parts) V(carry) V(g) V(fit) V(safe)|])dnl
 
 __sx_num_int_mul_abs() {
 	__sx_num_int_mul_abs_res_="${1}"
 	__sx_num_int_mul_abs_a_="${2-1}"
 	__sx_num_int_mul_abs_endz_=
+	__sx_num_int_mul_abs_fit_=1
 	shift "$((1 + 0${2+1}))"
 
 	case "${__sx_num_int_mul_abs_a_}" in 0)
@@ -5868,6 +5869,9 @@ __sx_num_int_mul_abs() {
 	      __sx_num_int_mul_abs_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN_MUL}\" \
 	      __sx_num_int_mul_abs_max_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
 
+	# safe_: 分割探索式の (len + (x - 1)) が INT_MAX を超えないための上限
+	__sx_num_int_mul_abs_safe_="$((__sx_num_int_mul_abs_max_ops_ - __sx_num_int_mul_abs_wlen_mul_ + 2))"
+
 	for __sx_num_int_mul_abs_b_ in "${@}"; do
 		case "${__sx_num_int_mul_abs_b_}" in 0)
 			__sx_num_int_mul_abs_a_=0
@@ -5875,6 +5879,7 @@ __sx_num_int_mul_abs() {
 			break
 		esac
 
+		# 高速パス: 両因数が1語に収まればシェル算術で直接乗算
 		case "${__sx_num_int_mul_abs_a_}${__sx_num_int_mul_abs_b_}" in
 			${__sx_num_int_mul_abs_qm_}?*) ;;
 			*)
@@ -5883,6 +5888,7 @@ __sx_num_int_mul_abs() {
 				;;
 		esac
 
+		# 末尾のゼロを一時分離し、後で結合する
 		case "${__sx_num_int_mul_abs_a_}" in *0)
 			__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_a_##*[!0]}"
 			__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_a_%${__sx_num_int_mul_abs_tmp_}}"
@@ -5895,6 +5901,7 @@ __sx_num_int_mul_abs() {
 			__sx_num_int_mul_abs_endz_="${__sx_num_int_mul_abs_endz_}${__sx_num_int_mul_abs_tmp_}"
 		esac
 
+		# 1の乗算をスキップ / 1語に収まらなければ多倍長処理へ
 		case "${__sx_num_int_mul_abs_a_}:${__sx_num_int_mul_abs_b_}" in
 			1:*) __sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_b_}";&
 			*:1) ! :;;
@@ -5902,33 +5909,48 @@ __sx_num_int_mul_abs() {
 			*) ! : "$((__sx_num_int_mul_abs_a_ *= __sx_num_int_mul_abs_b_))"
 		esac || continue
 
-		case "$((${#__sx_num_int_mul_abs_a_} < ${#__sx_num_int_mul_abs_b_}))" in 1)
+		# fit_: 桁数そのものが INT_MAX を超えると算術展開できないため、
+		#       範囲内に収まる桁数かどうかを確認する
+		__sx_num_int_mul_abs_a_len_="${#__sx_num_int_mul_abs_a_}"
+		__sx_num_int_mul_abs_b_len_="${#__sx_num_int_mul_abs_b_}"
+
+		case "${__sx_num_int_mul_abs_fit_}" in 1)
+			__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_int_mul_abs_a_len_}" "${__sx_num_int_mul_abs_b_len_}" || __sx_num_int_mul_abs_fit_=0
+		esac
+
+		# 長い方を a に統一し、分割最適化の効果を最大化
+		case "$((__sx_num_int_mul_abs_fit_ && __sx_num_int_mul_abs_a_len_ < __sx_num_int_mul_abs_b_len_))" in 1)
 			__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_b_}"
 			__sx_num_int_mul_abs_b_="${__sx_num_int_mul_abs_a_}"
 			__sx_num_int_mul_abs_a_="${__sx_num_int_mul_abs_tmp_}"
+			__sx_num_int_mul_abs_a_len_="${#__sx_num_int_mul_abs_a_}"
+			__sx_num_int_mul_abs_b_len_="${#__sx_num_int_mul_abs_b_}"
 		esac
 
-		__sx_num_int_mul_abs_a_len_="${#__sx_num_int_mul_abs_a_}"
-		__sx_num_int_mul_abs_b_len_="${#__sx_num_int_mul_abs_b_}"
-		__sx_num_int_mul_abs_max_x_="$((__sx_num_int_mul_abs_b_len_ < __sx_num_int_mul_abs_wlen_mul_ ? __sx_num_int_mul_abs_b_len_ : __sx_num_int_mul_abs_wlen_mul_ - 1))"
-		__sx_num_int_mul_abs_min_ops_="${__sx_num_int_mul_abs_max_ops_}"
-		__sx_num_int_mul_abs_opt_x_=1
-		__sx_num_int_mul_abs_x_=1
+		# 安全: 桁数が算術展開可能な範囲内 → 全分割点を探索
+		# 危険: 桁数が算術展開不能 or 範囲超過 → 均等分割にフォールバック
+		if M_NUM_BOOL([|__sx_num_int_mul_abs_fit_ && __sx_num_int_mul_abs_a_len_ <= __sx_num_int_mul_abs_safe_ && __sx_num_int_mul_abs_b_len_ <= __sx_num_int_mul_abs_safe_|]); then
+			__sx_num_int_mul_abs_max_x_="$((__sx_num_int_mul_abs_b_len_ < __sx_num_int_mul_abs_wlen_mul_ ? __sx_num_int_mul_abs_b_len_ : __sx_num_int_mul_abs_wlen_mul_ - 1))"
+			__sx_num_int_mul_abs_min_ops_="${__sx_num_int_mul_abs_max_ops_}"
+			__sx_num_int_mul_abs_opt_x_=1
+			__sx_num_int_mul_abs_x_=1
 
-		while M_NUM_LE([|__sx_num_int_mul_abs_x_|], [|__sx_num_int_mul_abs_max_x_|]); do
-			__sx_num_int_mul_abs_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_x_))
-			__sx_num_int_mul_abs_ops_=$((
-				((__sx_num_int_mul_abs_b_len_ + __sx_num_int_mul_abs_x_ - 1) / __sx_num_int_mul_abs_x_) * ((__sx_num_int_mul_abs_a_len_ + __sx_num_int_mul_abs_y_ - 1) / __sx_num_int_mul_abs_y_)
-			))
+			while M_NUM_LE([|__sx_num_int_mul_abs_x_|], [|__sx_num_int_mul_abs_max_x_|]); do
+				__sx_num_int_mul_abs_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_x_))
+				__sx_num_int_mul_abs_ops_=$((((__sx_num_int_mul_abs_b_len_ + (__sx_num_int_mul_abs_x_ - 1)) / __sx_num_int_mul_abs_x_) * ((__sx_num_int_mul_abs_a_len_ + (__sx_num_int_mul_abs_y_ - 1)) / __sx_num_int_mul_abs_y_)))
 
-			case "$((__sx_num_int_mul_abs_ops_ < __sx_num_int_mul_abs_min_ops_))" in 1)
-				__sx_num_int_mul_abs_min_ops_="${__sx_num_int_mul_abs_ops_}"
-				__sx_num_int_mul_abs_opt_x_="${__sx_num_int_mul_abs_x_}"
-			esac
+				case "$((__sx_num_int_mul_abs_ops_ < __sx_num_int_mul_abs_min_ops_))" in 1)
+					__sx_num_int_mul_abs_min_ops_="${__sx_num_int_mul_abs_ops_}"
+					__sx_num_int_mul_abs_opt_x_="${__sx_num_int_mul_abs_x_}"
+				esac
 
-			: "$((__sx_num_int_mul_abs_x_ += 1))"
-		done
+				: "$((__sx_num_int_mul_abs_x_ += 1))"
+			done
+		else
+			__sx_num_int_mul_abs_opt_x_=$(((__sx_num_int_mul_abs_wlen_mul_ + 1) / 2))
+		fi
 
+		# 最適分割サイズに基づきチャンク用 QM/ZR をロード
 		__sx_num_int_mul_abs_opt_y_=$((__sx_num_int_mul_abs_wlen_mul_ - __sx_num_int_mul_abs_opt_x_))
 
 		eval "__sx_num_int_mul_abs_qchunk_a_=\"\${SX_QM_${__sx_num_int_mul_abs_opt_y_}}\" \
@@ -5941,6 +5963,7 @@ __sx_num_int_mul_abs() {
 
 		set --
 
+		# a を opt_y 桁ずつ下位からチャンク分割し位置パラメータに格納
 		while
 			case "${__sx_num_int_mul_abs_a_}" in
 				${__sx_num_int_mul_abs_qchunk_a_}?*)
@@ -5957,6 +5980,7 @@ __sx_num_int_mul_abs() {
 			esac
 		do :; done
 
+		# b を opt_x 桁ずつ分割しながら a の全チャンクと乗算
 		while
 			case "${__sx_num_int_mul_abs_b_}" in
 				${__sx_num_int_mul_abs_qchunk_b_}?*)
@@ -5981,6 +6005,7 @@ __sx_num_int_mul_abs() {
 			__sx_num_int_mul_abs_g_=
 			__sx_num_int_mul_abs_carry_=
 
+			# チャンク同士の乗算と桁上げ処理
 			for __sx_num_int_mul_abs_ch_a_ in "${@}"; do
 				__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_ch_b_ * __sx_num_int_mul_abs_ch_a_ + ${__sx_num_int_mul_abs_carry_:-0}))
 
@@ -6001,12 +6026,14 @@ __sx_num_int_mul_abs() {
 				__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_g_#"${__sx_num_int_mul_abs_g_%%[!0]*}"}"
 			esac
 
+			# 部分積を結果リストに追加
 			__sx_num_int_mul_abs_parts_="${__sx_num_int_mul_abs_parts_}${__sx_num_int_mul_abs_parts_:+ }${__sx_num_int_mul_abs_carry_}${__sx_num_int_mul_abs_g_}${__sx_num_int_mul_abs_shift_}"
 
 			__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_shift_}"
 			M_STR_NE([|"${__sx_num_int_mul_abs_b_}"|], [|''|])
 		do :; done
 
+		# 全部分積を加算しアキュムレータに反映
 		eval SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_a_ "${__sx_num_int_mul_abs_parts_}"
 	done
 
