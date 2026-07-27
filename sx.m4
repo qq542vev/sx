@@ -6245,6 +6245,78 @@ __sx_num_int_sub() {
 	unset CLEANUP
 }
 
+### sx_num_int_mul - 複数の符号付き整数を乗算する
+##
+## 使い方:
+##   sx_num_int_mul 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   符号付き10進整数を乗算する。負号の個数で符号を決定し、
+##   __sx_num_int_mul_abs で絶対値乗算を行う。
+##
+## 終了ステータス:
+##   0  成功 (SX_EX_OK)
+##  64  引数不正 (SX_EX_USAGE) — 整数として不正な値が含まれる
+##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|V|], [|__sx_num_int_mul_$1|])dnl
+define([|CLEANUP|], [|V(res)|])dnl
+
+sx_num_int_mul() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_mul "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_int_mul_res="${1}"
+	shift
+
+	sx_num_is_base_int 10 "${@}" || {
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	}
+
+	__sx_num_int_mul "${__sx_num_int_mul_res}" "${@}"
+	unset CLEANUP
+}
+
+define([|V|], [|__sx_num_int_mul_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(qty) V(arg) V(abs_args) V(sign) V(acc)|])dnl
+
+__sx_num_int_mul() {
+	__sx_num_int_mul_res_="${1}"
+	shift
+
+	__sx_num_int_mul_qty_=0
+	__sx_num_int_mul_abs_args_=
+
+	for __sx_num_int_mul_arg_ in "${@}"; do
+		case "${__sx_num_int_mul_arg_}" in
+			0 | +0 | -0)
+				__sx_var_set "${__sx_num_int_mul_res_}=0"
+				unset CLEANUP
+				return
+				;;
+			-*) __sx_num_int_mul_qty_="$((~__sx_num_int_mul_qty_))";;
+		esac
+
+		__sx_num_int_mul_abs_args_="${__sx_num_int_mul_abs_args_} ${__sx_num_int_mul_arg_#[+-]}"
+	done
+
+	case "$((__sx_num_int_mul_qty_ & 1))" in
+		1) __sx_num_int_mul_sign_=-;;
+		*) __sx_num_int_mul_sign_=;;
+	esac
+
+	eval SX_CFG_UNSET_SOFT=2 __sx_num_int_mul_abs __sx_num_int_mul_acc_ "${__sx_num_int_mul_abs_args_}"
+
+	__sx_var_set "${__sx_num_int_mul_res_}=${__sx_num_int_mul_sign_}${__sx_num_int_mul_acc_}"
+
+	unset CLEANUP
+}
+
 # ========================================
 #  UUID (UUID Operations)
 # ========================================
