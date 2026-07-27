@@ -256,19 +256,6 @@ readonly SX_NUM_RANGE_128_WLEN=37
 readonly SX_NUM_RANGE_128_QM='?????????????????????????????????????'
 readonly SX_NUM_RANGE_128_ZR='0000000000000000000000000000000000000'
 
-# 乗算用チャンク処理定数
-# wlen_mul = wlen (全ビット幅共通) により
-# 10^wlen_mul <= 2^(SX_CFG_NUM_RANGE - 1) を保証
-readonly SX_NUM_RANGE_32_WLEN_MUL=9
-readonly SX_NUM_RANGE_32_QM_MUL='?????????'
-readonly SX_NUM_RANGE_32_ZR_MUL='000000000'
-readonly SX_NUM_RANGE_64_WLEN_MUL=18
-readonly SX_NUM_RANGE_64_QM_MUL='??????????????????'
-readonly SX_NUM_RANGE_64_ZR_MUL='000000000000000000'
-readonly SX_NUM_RANGE_128_WLEN_MUL=38
-readonly SX_NUM_RANGE_128_QM_MUL='??????????????????????????????????????'
-readonly SX_NUM_RANGE_128_ZR_MUL='00000000000000000000000000000000000000'
-
 # 最適乗算チャンク用動的定数の事前定義 (1〜37桁)
 define([|__sx_m4_gen_qm|], [|readonly SX_QM_$1='$2'
 ifelse([|$1|], [|37|], [||], [|__sx_m4_gen_qm(incr($1), $2?)|])|])dnl
@@ -5613,6 +5600,7 @@ __sx_num_rel_classify() {
 ##   0  成功 (SX_EX_OK)
 ##  64  引数不正 (SX_EX_USAGE) — 数値以外、または符号付き整数が含まれる
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
 define([|V|], [|__sx_num_int_add_abs_$1|])dnl
 define([|CLEANUP|], [|V(res)|])dnl
@@ -5621,6 +5609,8 @@ sx_num_int_add_abs() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_add_abs "${@}" || return; return 0;; esac
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
 	__sx_num_int_add_abs_res="${1}"
 	shift
@@ -5732,6 +5722,7 @@ __sx_num_int_add_abs() {
 ##   0  成功 (SX_EX_OK)
 ##  64  引数不正 (SX_EX_USAGE) — 数値以外、符号付き整数、または被減数 &lt; 減数
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
 define([|V|], [|__sx_num_int_sub_abs_$1|])dnl
 define([|CLEANUP|], [|V(res)|])dnl
@@ -5740,6 +5731,8 @@ sx_num_int_sub_abs() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_sub_abs "${@}" || return; return 0;; esac
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
 	__sx_num_int_sub_abs_res="${1}"
 	shift
@@ -5841,6 +5834,44 @@ __sx_num_int_sub_abs() {
 }
 
 
+### sx_num_int_mul_abs - 複数の絶対値を乗算する
+##
+## 使い方:
+##   sx_num_int_mul_abs 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   符号なし10進整数の絶対値を乗算する。
+##   引数の検証を行い、符号なし整数でない場合はエラーとする。
+##   逐次方式でアキュムレータに各数値を順次乗算する。
+##
+## 終了ステータス:
+##   0  成功 (SX_EX_OK)
+##  64  引数不正 (SX_EX_USAGE) — 数値以外、または符号付き整数が含まれる
+##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|V|], [|__sx_num_int_mul_abs_$1|])dnl
+define([|CLEANUP|], [|V(res)|])dnl
+
+sx_num_int_mul_abs() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_mul_abs "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_int_mul_abs_res="${1}"
+	shift
+
+	sx_num_is_base_nat0 10 "${@}" || {
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	}
+
+	__sx_num_int_mul_abs "${__sx_num_int_mul_abs_res}" "${@}"
+	unset CLEANUP
+}
+
 ### __sx_num_int_mul_abs - 複数の絶対値を乗算する（内部用）
 ##
 ## 使い方:
@@ -5866,7 +5897,7 @@ __sx_num_int_mul_abs() {
 	esac
 
 	eval "__sx_num_int_mul_abs_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" \
-	      __sx_num_int_mul_abs_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN_MUL}\" \
+	      __sx_num_int_mul_abs_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" \
 	      __sx_num_int_mul_abs_max_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
 
 	# safe_: 分割探索式の (len + (x - 1)) が INT_MAX を超えないための上限
