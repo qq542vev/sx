@@ -6083,6 +6083,7 @@ __sx_num_int_mul_abs() {
 ##   0  成功 (SX_EX_OK)
 ##  64  引数不正 (SX_EX_USAGE) — 整数として不正な値が含まれる
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
 define([|V|], [|__sx_num_int_add_$1|])dnl
 define([|CLEANUP|], [|V(res)|])dnl
@@ -6091,6 +6092,8 @@ sx_num_int_add() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_add "${@}" || return; return 0;; esac
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
 	__sx_num_int_add_res="${1}"
 	shift
@@ -6166,6 +6169,7 @@ __sx_num_int_add() {
 ##   0  成功 (SX_EX_OK)
 ##  64  引数不正 (SX_EX_USAGE) — 整数として不正な値が含まれる
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
 define([|V|], [|__sx_num_int_sub_$1|])dnl
 define([|CLEANUP|], [|V(res)|])dnl
@@ -6174,6 +6178,8 @@ sx_num_int_sub() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_sub "${@}" || return; return 0;; esac
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
 	__sx_num_int_sub_res="${1}"
 	shift
