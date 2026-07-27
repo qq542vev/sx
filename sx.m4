@@ -5852,7 +5852,7 @@ __sx_num_int_sub_abs() {
 ##   逐次方式でアキュムレータに各数値を順次乗算する。
 
 define([|V|], [|__sx_num_int_mul_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(a) V(b) V(endz) V(qm) V(shift) V(tmp) V(ch_a) V(ch_b) V(wlen_mul) V(max_ops) V(a_len) V(b_len) V(max_x) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(parts) V(carry) V(g) V(fit) V(safe)|])dnl
+define([|CLEANUP|], [|V(res) V(a) V(b) V(endz) V(qm) V(shift) V(tmp) V(ch_a) V(ch_b) V(wlen_mul) V(max_ops) V(a_len) V(b_len) V(max_x) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(carry) V(g) V(fit) V(safe)|])dnl
 
 __sx_num_int_mul_abs() {
 	__sx_num_int_mul_abs_res_="${1}"
@@ -5958,7 +5958,6 @@ __sx_num_int_mul_abs() {
 		      __sx_num_int_mul_abs_qchunk_b_=\"\${SX_QM_${__sx_num_int_mul_abs_opt_x_}}\" \
 		      __sx_num_int_mul_abs_zchunk_b_=\"\${SX_ZR_${__sx_num_int_mul_abs_opt_x_}}\""
 
-		__sx_num_int_mul_abs_parts_=
 		__sx_num_int_mul_abs_shift_=
 
 		set --
@@ -5979,6 +5978,8 @@ __sx_num_int_mul_abs() {
 				*) set -- "${@}" "${__sx_num_int_mul_abs_a_}" && ! :;;
 			esac
 		do :; done
+
+		__sx_num_int_mul_abs_a_=0
 
 		# b を opt_x 桁ずつ分割しながら a の全チャンクと乗算
 		while
@@ -6027,14 +6028,11 @@ __sx_num_int_mul_abs() {
 			esac
 
 			# 部分積を結果リストに追加
-			__sx_num_int_mul_abs_parts_="${__sx_num_int_mul_abs_parts_}${__sx_num_int_mul_abs_parts_:+ }${__sx_num_int_mul_abs_carry_}${__sx_num_int_mul_abs_g_}${__sx_num_int_mul_abs_shift_}"
+			SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_a_ "${__sx_num_int_mul_abs_a_}" "${__sx_num_int_mul_abs_carry_}${__sx_num_int_mul_abs_g_}${__sx_num_int_mul_abs_shift_}"
 
 			__sx_num_int_mul_abs_shift_="${__sx_num_int_mul_abs_zchunk_b_}${__sx_num_int_mul_abs_shift_}"
 			M_STR_NE([|"${__sx_num_int_mul_abs_b_}"|], [|''|])
 		do :; done
-
-		# 全部分積を加算しアキュムレータに反映
-		eval SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_mul_abs_a_ "${__sx_num_int_mul_abs_parts_}"
 	done
 
 	__sx_var_set "${__sx_num_int_mul_abs_res_}=${__sx_num_int_mul_abs_a_}${__sx_num_int_mul_abs_endz_}"
