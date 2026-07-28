@@ -6042,15 +6042,15 @@ __sx_num_int_mul_abs() {
 				__sx_num_int_mul_abs_tmp_=$((__sx_num_int_mul_abs_ch_b_ * __sx_num_int_mul_abs_ch_a_ + ${__sx_num_int_mul_abs_carry_:-0}))
 
 				case "${__sx_num_int_mul_abs_tmp_}" in
-				${__sx_num_int_mul_abs_qchunk_a_}?*)
-					__sx_num_int_mul_abs_carry_="${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_a_}}"
-					__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_carry_}"}${__sx_num_int_mul_abs_g_}"
-					;;
-				*)
-					__sx_num_int_mul_abs_carry_=
-					__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_tmp_}"
-					__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_a_}}"}${__sx_num_int_mul_abs_g_}"
-					;;
+					${__sx_num_int_mul_abs_qchunk_a_}?*)
+						__sx_num_int_mul_abs_carry_="${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_a_}}"
+						__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_carry_}"}${__sx_num_int_mul_abs_g_}"
+						;;
+					*)
+						__sx_num_int_mul_abs_carry_=
+						__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_tmp_}"
+						__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_a_}}"}${__sx_num_int_mul_abs_g_}"
+						;;
 				esac
 			done
 
