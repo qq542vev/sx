@@ -6317,6 +6317,349 @@ __sx_num_int_mul() {
 	unset CLEANUP
 }
 
+### sx_num_int_divmod_abs - 絶対値の除算で商と余りを同時に求める
+##
+## 使い方:
+##   sx_num_int_divmod_abs 商変数名 余り変数名 被除数 除数
+##
+## 説明:
+##   符号なし10進整数の絶対値の除算を行い、商と余りを同時に求める。
+##   除数に 0 を指定した場合はエラーとする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   65  除数が 0 (SX_EX_DATAERR)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+
+sx_num_int_divmod_abs() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_divmod_abs "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" "${2-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_int_divmod_abs_qres="${1}"
+	__sx_num_int_divmod_abs_rres="${2}"
+	shift 2
+
+	sx_num_is_base_nat0 10 "${@}" || {
+		unset __sx_num_int_divmod_abs_qres __sx_num_int_divmod_abs_rres
+		return "${SX_EX_USAGE}"
+	}
+
+	case "${2-}" in
+		0 | '')
+			unset __sx_num_int_divmod_abs_qres __sx_num_int_divmod_abs_rres
+			return "${SX_EX_DATAERR}"
+			;;
+	esac
+
+	__sx_num_int_divmod_abs "${__sx_num_int_divmod_abs_qres}" "${__sx_num_int_divmod_abs_rres}" "${@}"
+	unset __sx_num_int_divmod_abs_qres __sx_num_int_divmod_abs_rres
+}
+
+### sx_num_int_div_abs - 絶対値の除算で商を求める
+##
+## 使い方:
+##   sx_num_int_div_abs 結果変数名 被除数 除数
+##
+## 説明:
+##   符号なし10進整数の絶対値の除算を行い、商（切り捨て）を求める。
+##   除数に 0 を指定した場合はエラーとする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   65  除数が 0 (SX_EX_DATAERR)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+
+sx_num_int_div_abs() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_divmod_abs "${1-}" __sx_num_int_div_abs_junk_ "${2-}" "${3-}" || return; unset __sx_num_int_div_abs_junk_; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_int_div_abs_res="${1}"
+	shift
+
+	sx_num_is_base_nat0 10 "${@}" || {
+		unset __sx_num_int_div_abs_res
+		return "${SX_EX_USAGE}"
+	}
+
+	case "${2-}" in
+		0 | '')
+			unset __sx_num_int_div_abs_res
+			return "${SX_EX_DATAERR}"
+			;;
+	esac
+
+	__sx_num_int_divmod_abs "${__sx_num_int_div_abs_res}" __sx_num_int_div_abs_junk_ "${@}"
+	unset __sx_num_int_div_abs_res __sx_num_int_div_abs_junk_
+}
+
+### sx_num_int_mod_abs - 絶対値の除算で剰余を求める
+##
+## 使い方:
+##   sx_num_int_mod_abs 結果変数名 被除数 除数
+##
+## 説明:
+##   符号なし10進整数の絶対値の除算を行い、剰余を求める。
+##   除数に 0 を指定した場合はエラーとする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   65  除数が 0 (SX_EX_DATAERR)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+
+sx_num_int_mod_abs() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_divmod_abs __sx_num_int_mod_abs_junk_ "${1-}" "${2-}" "${3-}" || return; unset __sx_num_int_mod_abs_junk_; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_int_mod_abs_res="${1}"
+	shift
+
+	sx_num_is_base_nat0 10 "${@}" || {
+		unset __sx_num_int_mod_abs_res
+		return "${SX_EX_USAGE}"
+	}
+
+	case "${2-}" in
+		0 | '')
+			unset __sx_num_int_mod_abs_res
+			return "${SX_EX_DATAERR}"
+			;;
+	esac
+
+	__sx_num_int_divmod_abs __sx_num_int_mod_abs_junk_ "${__sx_num_int_mod_abs_res}" "${@}"
+	unset __sx_num_int_mod_abs_res __sx_num_int_mod_abs_junk_
+}
+
+### __sx_num_int_divmod_abs - 絶対値の除算で商と余りを同時に求める（内部用）
+##
+## 使い方:
+##   __sx_num_int_divmod_abs 商変数名 余り変数名 被除数 除数
+##
+## 説明:
+##   符号なし10進整数の絶対値の除算を行う。
+##   引数はすべて検証済みの正しい10進整数であることを前提とする。
+##   除数が 0 でないことが保証されていること。
+##
+##   アルゴリズム: BW 桁ずつ商を確定するチャンク筆算法。
+##   各チャンクでネイティブ整数演算による商の見積りを行い、
+##   __sx_num_cmp_nat0 / __sx_num_int_mul_abs / __sx_num_int_sub_abs による
+##   厳密な比較・乗算・減算で補正する（外部コマンドは使用しない）。
+##   見積り計算に使える精度予算は WLEN 桁のため、
+##   除数側 k 桁 + 被除数側 (k+BW) 桁 が WLEN 桁に収まるよう k = WLEN - BW とする。
+##   BW を大きくしすぎると見積り精度が不足し補正ループが増大するため、
+##   余裕を持たせて BW は WLEN の半分程度に留めている。
+
+define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
+define([|CLEANUP|], [|V(qres) V(rres) V(u) V(v) V(wlen) V(bw) V(k) V(lv) V(qmlv) V(qmunit) V(n) V(zsrc) V(rpad) V(qmbw) V(qmk) V(vtail) V(vest) V(vest_n) V(vestlen) V(vint) V(r) V(q) V(rest) V(tail) V(g) V(gw) V(np) V(nps) V(qd) V(npestw) V(qmnpw) V(npesttail) V(npest) V(npest_n) V(j) V(trial) V(rcand) V(qdpad)|])dnl
+
+__sx_num_int_divmod_abs() {
+	__sx_num_int_divmod_abs_qres_="${1}"
+	__sx_num_int_divmod_abs_rres_="${2}"
+	__sx_num_int_divmod_abs_u_="${3}"
+	__sx_num_int_divmod_abs_v_="${4}"
+
+	eval "__sx_num_int_divmod_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\""
+
+	__sx_num_cmp_nat0 "${__sx_num_int_divmod_abs_u_}" "${__sx_num_int_divmod_abs_v_}"
+	case "${?}" in
+		1)
+			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=0"
+			__sx_var_set "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_u_}"
+			unset CLEANUP
+			return 0
+			;;
+		2)
+			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=1"
+			__sx_var_set "${__sx_num_int_divmod_abs_rres_}=0"
+			unset CLEANUP
+			return 0
+			;;
+	esac
+
+	# U が1ワードに収まるならネイティブ除算で確定（U > V は保証済み）
+	case "$((${#__sx_num_int_divmod_abs_u_} <= __sx_num_int_divmod_abs_wlen_))" in
+		1)
+			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=$((__sx_num_int_divmod_abs_u_ / __sx_num_int_divmod_abs_v_))"
+			__sx_var_set "${__sx_num_int_divmod_abs_rres_}=$((__sx_num_int_divmod_abs_u_ % __sx_num_int_divmod_abs_v_))"
+			unset CLEANUP
+			return 0
+			;;
+	esac
+
+	# 一般ケース: BW桁ずつ商を確定するチャンク筆算（見積り + 誤差補正）
+	__sx_num_int_divmod_abs_bw_="$(( (__sx_num_int_divmod_abs_wlen_ - 2) / 2 ))"
+	case "${__sx_num_int_divmod_abs_bw_}" in
+		0 | -*) __sx_num_int_divmod_abs_bw_=1;;
+	esac
+	__sx_num_int_divmod_abs_k_="$((__sx_num_int_divmod_abs_wlen_ - __sx_num_int_divmod_abs_bw_))"
+	__sx_num_int_divmod_abs_lv_="${#__sx_num_int_divmod_abs_v_}"
+
+	eval "__sx_num_int_divmod_abs_qmbw_=\"\${SX_QM_${__sx_num_int_divmod_abs_bw_}}\""
+
+	# v_est_: 除数の先頭 k 桁（k >= 桁数ならそのまま）。V は不変なのでループの外で1回だけ計算する。
+	case "$((__sx_num_int_divmod_abs_k_ < __sx_num_int_divmod_abs_lv_))" in
+		1)
+			eval "__sx_num_int_divmod_abs_qmk_=\"\${SX_QM_${__sx_num_int_divmod_abs_k_}}\""
+			__sx_num_int_divmod_abs_vtail_="${__sx_num_int_divmod_abs_v_#${__sx_num_int_divmod_abs_qmk_}}"
+			__sx_num_int_divmod_abs_vest_="${__sx_num_int_divmod_abs_v_%"${__sx_num_int_divmod_abs_vtail_}"}"
+			;;
+		*)
+			__sx_num_int_divmod_abs_vest_="${__sx_num_int_divmod_abs_v_}"
+			;;
+	esac
+	# 先頭ゼロを除去してからネイティブ整数演算に渡す
+	case "${__sx_num_int_divmod_abs_vest_}" in
+		0*) __sx_num_int_divmod_abs_vest_="${__sx_num_int_divmod_abs_vest_#"${__sx_num_int_divmod_abs_vest_%%[!0]*}"}";;
+	esac
+	__sx_num_int_divmod_abs_vest_n_="$((__sx_num_int_divmod_abs_vest_))"
+	__sx_num_int_divmod_abs_vestlen_="${#__sx_num_int_divmod_abs_vest_}"
+	__sx_num_int_divmod_abs_vint_="${__sx_num_int_divmod_abs_v_}"
+
+	# qmlv_: 長さ Lv の "?" 文字列を高速指数化（繰り返し二乗）で O(log Lv) 構築する。
+	# Lv は除算全体を通じて不変なので、ここで一度だけ作り、以降のゼロ埋めに使い回す。
+	__sx_num_int_divmod_abs_qmlv_=
+	__sx_num_int_divmod_abs_qmunit_='?'
+	__sx_num_int_divmod_abs_n_="${__sx_num_int_divmod_abs_lv_}"
+	while [ "${__sx_num_int_divmod_abs_n_}" -gt 0 ]; do
+		case "$((__sx_num_int_divmod_abs_n_ % 2))" in
+			1) __sx_num_int_divmod_abs_qmlv_="${__sx_num_int_divmod_abs_qmlv_}${__sx_num_int_divmod_abs_qmunit_}";;
+		esac
+		__sx_num_int_divmod_abs_qmunit_="${__sx_num_int_divmod_abs_qmunit_}${__sx_num_int_divmod_abs_qmunit_}"
+		__sx_num_int_divmod_abs_n_="$((__sx_num_int_divmod_abs_n_ / 2))"
+	done
+	# zsrc_: 長さ Lv 以上のゼロ文字列（前置してから qmlv_ で末尾 Lv 桁を切り出すための種）
+	__sx_num_int_divmod_abs_zsrc_=0
+	while [ "${#__sx_num_int_divmod_abs_zsrc_}" -lt "${__sx_num_int_divmod_abs_lv_}" ]; do
+		__sx_num_int_divmod_abs_zsrc_="${__sx_num_int_divmod_abs_zsrc_}${__sx_num_int_divmod_abs_zsrc_}"
+	done
+
+	# R_: 除数と同じ桁数にゼロ埋めした余り（初期値0）
+	__sx_num_int_divmod_abs_rpad_="${__sx_num_int_divmod_abs_zsrc_}"
+	__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_rpad_#"${__sx_num_int_divmod_abs_rpad_%${__sx_num_int_divmod_abs_qmlv_}}"}"
+	__sx_num_int_divmod_abs_q_=
+	__sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_u_}"
+
+	while [ -n "${__sx_num_int_divmod_abs_rest_}" ]; do
+		case "${__sx_num_int_divmod_abs_rest_}" in
+			${__sx_num_int_divmod_abs_qmbw_}?*)
+				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_rest_#${__sx_num_int_divmod_abs_qmbw_}}"
+				__sx_num_int_divmod_abs_g_="${__sx_num_int_divmod_abs_rest_%"${__sx_num_int_divmod_abs_tail_}"}"
+				__sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_tail_}"
+				;;
+			*)
+				__sx_num_int_divmod_abs_g_="${__sx_num_int_divmod_abs_rest_}"
+				__sx_num_int_divmod_abs_rest_=
+				;;
+		esac
+		__sx_num_int_divmod_abs_gw_="${#__sx_num_int_divmod_abs_g_}"
+
+		__sx_num_int_divmod_abs_np_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_g_}"
+		__sx_num_int_divmod_abs_nps_="${__sx_num_int_divmod_abs_np_#"${__sx_num_int_divmod_abs_np_%%[!0]*}"}"
+		case "${__sx_num_int_divmod_abs_nps_}" in '') __sx_num_int_divmod_abs_nps_=0;; esac
+
+		__sx_num_cmp_nat0 "${__sx_num_int_divmod_abs_nps_}" "${__sx_num_int_divmod_abs_v_}"
+		case "${?}" in
+			1)
+				# NP < V -> この桁の商は0
+				__sx_num_int_divmod_abs_qd_=0
+				__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_nps_}"
+				;;
+			*)
+				# 見積り: NP の先頭 (v_est の桁数+gw) 桁だけを取り出し、
+				# v_est との比をネイティブ整数除算で概算する（外部コマンド不使用）。
+				# 誤差は後続の厳密な補正ループで必ず解消されるため、概算精度の要求は緩い。
+				__sx_num_int_divmod_abs_npestw_="$((__sx_num_int_divmod_abs_vestlen_ + __sx_num_int_divmod_abs_gw_))"
+				eval "__sx_num_int_divmod_abs_qmnpw_=\"\${SX_QM_${__sx_num_int_divmod_abs_npestw_}}\""
+				__sx_num_int_divmod_abs_npesttail_="${__sx_num_int_divmod_abs_np_#${__sx_num_int_divmod_abs_qmnpw_}}"
+				__sx_num_int_divmod_abs_npest_="${__sx_num_int_divmod_abs_np_%"${__sx_num_int_divmod_abs_npesttail_}"}"
+				# 先頭ゼロを除去
+				case "${__sx_num_int_divmod_abs_npest_}" in
+					0*) __sx_num_int_divmod_abs_npest_="${__sx_num_int_divmod_abs_npest_#"${__sx_num_int_divmod_abs_npest_%%[!0]*}"}";;
+				esac
+				case "${__sx_num_int_divmod_abs_npest_}" in '') __sx_num_int_divmod_abs_npest_=0;; esac
+				__sx_num_int_divmod_abs_npest_n_="$((__sx_num_int_divmod_abs_npest_))"
+				__sx_num_int_divmod_abs_qd_="$((__sx_num_int_divmod_abs_npest_n_ / __sx_num_int_divmod_abs_vest_n_))"
+
+				# qd_ が gw 桁を超えていたら gw 桁の 9...9 でクランプ
+				case "${#__sx_num_int_divmod_abs_qd_}" in
+					"$((__sx_num_int_divmod_abs_gw_ + 1))"*)
+						__sx_num_int_divmod_abs_qd_=9
+						__sx_num_int_divmod_abs_j_=1
+						while [ "${__sx_num_int_divmod_abs_j_}" -lt "${__sx_num_int_divmod_abs_gw_}" ]; do
+							__sx_num_int_divmod_abs_qd_="${__sx_num_int_divmod_abs_qd_}9"
+							__sx_num_int_divmod_abs_j_="$((__sx_num_int_divmod_abs_j_ + 1))"
+						done
+						;;
+				esac
+				case "${__sx_num_int_divmod_abs_qd_}" in
+					-*) __sx_num_int_divmod_abs_qd_=0;;
+				esac
+
+				# 誤差補正ループ（cmp/mul/subは常に厳密なので必ず収束する）
+				while :; do
+					SX_CFG_UNSET_SOFT=2 __sx_num_int_mul_abs __sx_num_int_divmod_abs_trial_ "${__sx_num_int_divmod_abs_vint_}" "${__sx_num_int_divmod_abs_qd_}"
+					__sx_num_int_divmod_abs_trial_="${__sx_num_int_divmod_abs_trial_#"${__sx_num_int_divmod_abs_trial_%%[!0]*}"}"
+					case "${__sx_num_int_divmod_abs_trial_}" in '') __sx_num_int_divmod_abs_trial_=0;; esac
+					__sx_num_cmp_nat0 "${__sx_num_int_divmod_abs_trial_}" "${__sx_num_int_divmod_abs_nps_}"
+					case "${?}" in
+						3)
+							__sx_num_int_divmod_abs_qd_="$((__sx_num_int_divmod_abs_qd_ - 1))"
+							continue
+							;;
+					esac
+					SX_CFG_UNSET_SOFT=2 __sx_num_int_sub_abs __sx_num_int_divmod_abs_rcand_ "${__sx_num_int_divmod_abs_nps_}" "${__sx_num_int_divmod_abs_trial_}"
+					__sx_num_int_divmod_abs_rcand_="${__sx_num_int_divmod_abs_rcand_#"${__sx_num_int_divmod_abs_rcand_%%[!0]*}"}"
+					case "${__sx_num_int_divmod_abs_rcand_}" in '') __sx_num_int_divmod_abs_rcand_=0;; esac
+					__sx_num_cmp_nat0 "${__sx_num_int_divmod_abs_rcand_}" "${__sx_num_int_divmod_abs_v_}"
+					case "${?}" in
+						1) ;;
+						*)
+							__sx_num_int_divmod_abs_qd_="$((__sx_num_int_divmod_abs_qd_ + 1))"
+							continue
+							;;
+					esac
+					break
+				done
+				__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_rcand_}"
+				;;
+		esac
+
+		# R を Lv 桁にゼロ埋めしなおす（前置してから qmlv_ で末尾 Lv 桁を切り出す。O(1)ループ）
+		__sx_num_int_divmod_abs_rpad_="${__sx_num_int_divmod_abs_zsrc_}${__sx_num_int_divmod_abs_r_}"
+		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_rpad_#"${__sx_num_int_divmod_abs_rpad_%${__sx_num_int_divmod_abs_qmlv_}}"}"
+		# qd を gw 桁にゼロ埋めして商に連結
+		__sx_num_int_divmod_abs_qdpad_="${__sx_num_int_divmod_abs_qd_}"
+		while [ "${#__sx_num_int_divmod_abs_qdpad_}" -lt "${__sx_num_int_divmod_abs_gw_}" ]; do
+			__sx_num_int_divmod_abs_qdpad_="0${__sx_num_int_divmod_abs_qdpad_}"
+		done
+		__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_qdpad_}"
+	done
+
+	__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_#"${__sx_num_int_divmod_abs_q_%%[!0]*}"}"
+	case "${__sx_num_int_divmod_abs_q_}" in '') __sx_num_int_divmod_abs_q_=0;; esac
+	__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
+	case "${__sx_num_int_divmod_abs_r_}" in '') __sx_num_int_divmod_abs_r_=0;; esac
+
+	__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}"
+	__sx_var_set "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_}"
+
+	unset CLEANUP
+}
+
 # ========================================
 #  UUID (UUID Operations)
 # ========================================
