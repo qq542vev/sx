@@ -6547,12 +6547,16 @@ __sx_num_int_divmod_abs() {
 		__sx_num_int_divmod_abs_zsrc_="${__sx_num_int_divmod_abs_zsrc_}${__sx_num_int_divmod_abs_zsrc_}"
 	done
 
-	# R_: 除数と同じ桁数にゼロ埋めした余り（初期値0）
+	# R: 各チャンク（BW桁）の処理後に V*qd を減じた余り。
+	# 常に除数 V 未満であることが保証される（不変条件）。
+	# 初期値 0、除数と同じ桁数にゼロ埋めして保持する。
 	__sx_num_int_divmod_abs_rpad_="${__sx_num_int_divmod_abs_zsrc_}"
 	__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_rpad_#"${__sx_num_int_divmod_abs_rpad_%${__sx_num_int_divmod_abs_qmlv_}}"}"
 	__sx_num_int_divmod_abs_q_=
 	__sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_u_}"
 
+	# メインループ: 被除数 U を上位から BW 桁ずつ取り出し、筆算と同じ手順で
+	# 各チャンクの商桁 qd を確定する。ループ1回で商が BW 桁確定する。
 	while [ -n "${__sx_num_int_divmod_abs_rest_}" ]; do
 		case "${__sx_num_int_divmod_abs_rest_}" in
 			${__sx_num_int_divmod_abs_qmbw_}?*)
@@ -6567,10 +6571,12 @@ __sx_num_int_divmod_abs() {
 		esac
 		__sx_num_int_divmod_abs_gw_="${#__sx_num_int_divmod_abs_g_}"
 
+		# NP = R の右に G を連結 = 筆算で「余りを左にずらし、被除数から桁を下ろす」操作
 		__sx_num_int_divmod_abs_np_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_g_}"
 		__sx_num_int_divmod_abs_nps_="${__sx_num_int_divmod_abs_np_#"${__sx_num_int_divmod_abs_np_%%[!0]*}"}"
 		case "${__sx_num_int_divmod_abs_nps_}" in '') __sx_num_int_divmod_abs_nps_=0;; esac
 
+		# NP < V なら商桁は 0（このチャンクはスキップ）。NP >= V なら推定処理へ進む。
 		__sx_num_cmp_nat0 "${__sx_num_int_divmod_abs_nps_}" "${__sx_num_int_divmod_abs_v_}"
 		case "${?}" in
 			1)
@@ -6579,9 +6585,10 @@ __sx_num_int_divmod_abs() {
 				__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_nps_}"
 				;;
 			*)
-				# 見積り: NP の先頭 (v_est の桁数+gw) 桁だけを取り出し、
-				# v_est との比をネイティブ整数除算で概算する（外部コマンド不使用）。
-				# 誤差は後続の厳密な補正ループで必ず解消されるため、概算精度の要求は緩い。
+				# 真の商 q = NP / V を直接計算するのは桁数が大きく困難。
+				# V の先頭 k 桁を v_est、NP の先頭 (k+gw) 桁を np_est として
+				# qd ≈ np_est / v_est で近似する（ネイティブ整数除算、外部コマンド不使用）。
+				# 真値との誤差は高々 1〜2 で、後続の厳密な補正ループで解消される。
 				__sx_num_int_divmod_abs_npestw_="$((__sx_num_int_divmod_abs_vestlen_ + __sx_num_int_divmod_abs_gw_))"
 				eval "__sx_num_int_divmod_abs_qmnpw_=\"\${SX_QM_${__sx_num_int_divmod_abs_npestw_}}\""
 				__sx_num_int_divmod_abs_npesttail_="${__sx_num_int_divmod_abs_np_#${__sx_num_int_divmod_abs_qmnpw_}}"
@@ -6594,7 +6601,7 @@ __sx_num_int_divmod_abs() {
 				__sx_num_int_divmod_abs_npest_n_="$((__sx_num_int_divmod_abs_npest_))"
 				__sx_num_int_divmod_abs_qd_="$((__sx_num_int_divmod_abs_npest_n_ / __sx_num_int_divmod_abs_vest_n_))"
 
-				# qd_ が gw 桁を超えていたら gw 桁の 9...9 でクランプ
+				# np_est/v_est が gw+1 桁になるのは丸め誤差による。安全のため 9…9（gw桁）で上限を切る。
 				case "${#__sx_num_int_divmod_abs_qd_}" in
 					"$((__sx_num_int_divmod_abs_gw_ + 1))"*)
 						__sx_num_int_divmod_abs_qd_=9
@@ -6609,7 +6616,10 @@ __sx_num_int_divmod_abs() {
 					-*) __sx_num_int_divmod_abs_qd_=0;;
 				esac
 
-				# 誤差補正ループ（cmp/mul/subは常に厳密なので必ず収束する）
+				# 誤差補正ループ: V*qd を厳密に計算し NP と比較、qd を微調整する。
+				# trial > NP → qd 過大（デクリメント）
+				# (NP-trial) >= V → qd 過小（インクリメント）
+				# 厳密演算 (mul/cmp/sub) のみを使うため必ず収束する。
 				while :; do
 					SX_CFG_UNSET_SOFT=2 __sx_num_int_mul_abs __sx_num_int_divmod_abs_trial_ "${__sx_num_int_divmod_abs_vint_}" "${__sx_num_int_divmod_abs_qd_}"
 					__sx_num_int_divmod_abs_trial_="${__sx_num_int_divmod_abs_trial_#"${__sx_num_int_divmod_abs_trial_%%[!0]*}"}"
@@ -6638,10 +6648,13 @@ __sx_num_int_divmod_abs() {
 				;;
 		esac
 
-		# R を Lv 桁にゼロ埋めしなおす（前置してから qmlv_ で末尾 Lv 桁を切り出す。O(1)ループ）
+		# R を次チャンクの NP = R+G 形成に備えて Lv 桁にゼロ埋めしなおす。
+		# 実質的に「余りを左に Lv 桁シフト」する操作に相当。
+		# 手法: 左に十分なゼロを前置し、? マーカー qmlv_ で末尾 Lv 桁を摘出（ループ不要の O(1) 実装）。
 		__sx_num_int_divmod_abs_rpad_="${__sx_num_int_divmod_abs_zsrc_}${__sx_num_int_divmod_abs_r_}"
 		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_rpad_#"${__sx_num_int_divmod_abs_rpad_%${__sx_num_int_divmod_abs_qmlv_}}"}"
-		# qd を gw 桁にゼロ埋めして商に連結
+		# QD は見積りの桁数が GW より少ない可能性がある。
+		# 商の桁位置を正しく保つため必ず GW 桁にゼロ埋めして Q に連結する。
 		__sx_num_int_divmod_abs_qdpad_="${__sx_num_int_divmod_abs_qd_}"
 		while [ "${#__sx_num_int_divmod_abs_qdpad_}" -lt "${__sx_num_int_divmod_abs_gw_}" ]; do
 			__sx_num_int_divmod_abs_qdpad_="0${__sx_num_int_divmod_abs_qdpad_}"
