@@ -13,7 +13,7 @@
 ##   modified - 2026-05-08
 ##   copyright - Copyright (C) 2026-2026 qq542vev. All rights reserved.
 ##   license - <GPL-3.0-only at https://www.gnu.org/licenses/gpl-3.0.txt>
-##   depends - chmod, echo, m4, rm, shellspec
+##   depends - chmod, echo, m4, rm, sed, shellspec
 ##
 ## See Also:
 ##
@@ -43,8 +43,11 @@ SOURCE = sx.m4
 all: $(TARGET)
 
 $(TARGET): $(SOURCE)
-	m4 -- $(SOURCE) > $(TARGET)
-	chmod 755 -- $(TARGET)
+	m4 -- $(SOURCE) >$@.tmp
+	sed -E '/^[[:space:]]*#([^!]|$$)/d' -- $@.tmp >$@.tmp2
+	chmod 755 -- $@.tmp2
+	mv -f -- $@.tmp2 $@
+	rm -f -- $@.tmp
 
 # Test
 # ====
@@ -56,7 +59,7 @@ test: all
 # =====
 
 clean:
-	rm -f -- $(TARGET)
+	rm -f -- $(TARGET) $(TARGET).tmp $(TARGET).tmp2
 
 rebuild: clean
 	$(MAKE)
