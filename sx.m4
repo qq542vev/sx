@@ -6324,12 +6324,13 @@ __sx_num_int_mul() {
 ##
 ## 説明:
 ##   符号なし10進整数の絶対値の除算を行い、商と余りを同時に求める。
-##   除数に 0 を指定した場合はエラーとする。
+##   被除数は 0 以上の自然数、除数は 1 以上の自然数。
+##   除数に 0 を指定した場合は引数不正とみなす。
+##   被除数・除数は省略可能で、省略した場合はそれぞれ 0、1 として扱われる。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  除数が 0 (SX_EX_DATAERR)
 ##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
 
@@ -6344,104 +6345,13 @@ sx_num_int_divmod_abs() {
 	__sx_num_int_divmod_abs_rres="${2}"
 	shift 2
 
-	sx_num_is_base_nat0 10 "${@}" || {
+	sx_num_is_base_nat0 10 "${1-0}" && sx_num_is_base_nat1 10 "${2-1}" || {
 		unset __sx_num_int_divmod_abs_qres __sx_num_int_divmod_abs_rres
 		return "${SX_EX_USAGE}"
 	}
 
-	case "${2-}" in
-		0 | '')
-			unset __sx_num_int_divmod_abs_qres __sx_num_int_divmod_abs_rres
-			return "${SX_EX_DATAERR}"
-			;;
-	esac
-
 	__sx_num_int_divmod_abs "${__sx_num_int_divmod_abs_qres}" "${__sx_num_int_divmod_abs_rres}" "${@}"
 	unset __sx_num_int_divmod_abs_qres __sx_num_int_divmod_abs_rres
-}
-
-### sx_num_int_div_abs - 絶対値の除算で商を求める
-##
-## 使い方:
-##   sx_num_int_div_abs 結果変数名 被除数 除数
-##
-## 説明:
-##   符号なし10進整数の絶対値の除算を行い、商（切り捨て）を求める。
-##   除数に 0 を指定した場合はエラーとする。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   65  除数が 0 (SX_EX_DATAERR)
-##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
-
-sx_num_int_div_abs() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_divmod_abs "${1-}" __sx_num_int_div_abs_junk_ "${2-}" "${3-}" || return; unset __sx_num_int_div_abs_junk_; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-
-	__sx_num_int_div_abs_res="${1}"
-	shift
-
-	sx_num_is_base_nat0 10 "${@}" || {
-		unset __sx_num_int_div_abs_res
-		return "${SX_EX_USAGE}"
-	}
-
-	case "${2-}" in
-		0 | '')
-			unset __sx_num_int_div_abs_res
-			return "${SX_EX_DATAERR}"
-			;;
-	esac
-
-	__sx_num_int_divmod_abs "${__sx_num_int_div_abs_res}" __sx_num_int_div_abs_junk_ "${@}"
-	unset __sx_num_int_div_abs_res __sx_num_int_div_abs_junk_
-}
-
-### sx_num_int_mod_abs - 絶対値の除算で剰余を求める
-##
-## 使い方:
-##   sx_num_int_mod_abs 結果変数名 被除数 除数
-##
-## 説明:
-##   符号なし10進整数の絶対値の除算を行い、剰余を求める。
-##   除数に 0 を指定した場合はエラーとする。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   65  除数が 0 (SX_EX_DATAERR)
-##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
-
-sx_num_int_mod_abs() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_divmod_abs __sx_num_int_mod_abs_junk_ "${1-}" "${2-}" "${3-}" || return; unset __sx_num_int_mod_abs_junk_; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-
-	__sx_num_int_mod_abs_res="${1}"
-	shift
-
-	sx_num_is_base_nat0 10 "${@}" || {
-		unset __sx_num_int_mod_abs_res
-		return "${SX_EX_USAGE}"
-	}
-
-	case "${2-}" in
-		0 | '')
-			unset __sx_num_int_mod_abs_res
-			return "${SX_EX_DATAERR}"
-			;;
-	esac
-
-	__sx_num_int_divmod_abs __sx_num_int_mod_abs_junk_ "${__sx_num_int_mod_abs_res}" "${@}"
-	unset __sx_num_int_mod_abs_res __sx_num_int_mod_abs_junk_
 }
 
 ### __sx_num_int_divmod_abs - 絶対値の除算で商と余りを同時に求める（内部用）
@@ -6453,6 +6363,7 @@ sx_num_int_mod_abs() {
 ##   符号なし10進整数の絶対値の除算を行う。
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 ##   除数が 0 でないことが保証されていること。
+##   被除数・除数は省略時、それぞれ 0、1 として扱われる。
 ##
 ##   アルゴリズム: BW 桁ずつ商を確定するチャンク筆算法。
 ##   各チャンクでネイティブ整数演算による商の見積りを行い、
@@ -6469,36 +6380,37 @@ define([|CLEANUP|], [|V(qres) V(rres) V(u) V(v) V(wlen) V(bw) V(k) V(lv) V(qmlv)
 __sx_num_int_divmod_abs() {
 	__sx_num_int_divmod_abs_qres_="${1}"
 	__sx_num_int_divmod_abs_rres_="${2}"
-	__sx_num_int_divmod_abs_u_="${3}"
-	__sx_num_int_divmod_abs_v_="${4}"
+	__sx_num_int_divmod_abs_u_="${3-0}"
+	__sx_num_int_divmod_abs_v_="${4-1}"
 
-	eval "__sx_num_int_divmod_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\""
 
-	__sx_num_cmp_nat0 "${__sx_num_int_divmod_abs_u_}" "${__sx_num_int_divmod_abs_v_}"
-	case "${?}" in
+	case "${__sx_num_int_divmod_abs_v_}" in 1)
+		__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_u_}" "${__sx_num_int_divmod_abs_rres_}=0"
+		unset CLEANUP
+		return "${SX_EX_OK}"
+	esac
+
+	__sx_num_cmp_nat0 "${__sx_num_int_divmod_abs_u_}" "${__sx_num_int_divmod_abs_v_}" || case "${?}" in
 		1)
-			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=0"
-			__sx_var_set "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_u_}"
+			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=0" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_u_}"
 			unset CLEANUP
-			return 0
+			return "${SX_EX_OK}"
 			;;
 		2)
-			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=1"
-			__sx_var_set "${__sx_num_int_divmod_abs_rres_}=0"
+			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=1" "${__sx_num_int_divmod_abs_rres_}=0"
 			unset CLEANUP
-			return 0
+			return "${SX_EX_OK}"
 			;;
 	esac
 
 	# U が1ワードに収まるならネイティブ除算で確定（U > V は保証済み）
-	case "$((${#__sx_num_int_divmod_abs_u_} <= __sx_num_int_divmod_abs_wlen_))" in
-		1)
-			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=$((__sx_num_int_divmod_abs_u_ / __sx_num_int_divmod_abs_v_))"
-			__sx_var_set "${__sx_num_int_divmod_abs_rres_}=$((__sx_num_int_divmod_abs_u_ % __sx_num_int_divmod_abs_v_))"
-			unset CLEANUP
-			return 0
-			;;
-	esac
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_int_divmod_abs_u_}"; then
+		__sx_var_set "${__sx_num_int_divmod_abs_qres_}=$((__sx_num_int_divmod_abs_u_ / __sx_num_int_divmod_abs_v_))" "${__sx_num_int_divmod_abs_rres_}=$((__sx_num_int_divmod_abs_u_ % __sx_num_int_divmod_abs_v_))"
+		unset CLEANUP
+		return "${SX_EX_OK}"
+	fi
+
+	eval "__sx_num_int_divmod_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\""
 
 	# 一般ケース: BW桁ずつ商を確定するチャンク筆算（見積り + 誤差補正）
 	__sx_num_int_divmod_abs_bw_="$(( (__sx_num_int_divmod_abs_wlen_ - 2) / 2 ))"
@@ -6659,6 +6571,91 @@ __sx_num_int_divmod_abs() {
 
 	unset CLEANUP
 }
+
+### sx_num_int_div_abs - 絶対値の除算で商を求める
+##
+## 使い方:
+##   sx_num_int_div_abs 結果変数名 被除数 除数
+##
+## 説明:
+##   符号なし10進整数の絶対値の除算を行い、商（切り捨て）を求める。
+##   除数に 0 を指定した場合はエラーとする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   65  除数が 0 (SX_EX_DATAERR)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+
+sx_num_int_div_abs() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_divmod_abs "${1-}" __sx_num_int_div_abs_junk_ "${2-}" "${3-}" || return; unset __sx_num_int_div_abs_junk_; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_int_div_abs_res="${1}"
+	shift
+
+	sx_num_is_base_nat0 10 "${@}" || {
+		unset __sx_num_int_div_abs_res
+		return "${SX_EX_USAGE}"
+	}
+
+	case "${2-}" in
+		0 | '')
+			unset __sx_num_int_div_abs_res
+			return "${SX_EX_DATAERR}"
+			;;
+	esac
+
+	__sx_num_int_divmod_abs "${__sx_num_int_div_abs_res}" __sx_num_int_div_abs_junk_ "${@}"
+	unset __sx_num_int_div_abs_res __sx_num_int_div_abs_junk_
+}
+
+### sx_num_int_mod_abs - 絶対値の除算で剰余を求める
+##
+## 使い方:
+##   sx_num_int_mod_abs 結果変数名 被除数 除数
+##
+## 説明:
+##   符号なし10進整数の絶対値の除算を行い、剰余を求める。
+##   除数に 0 を指定した場合はエラーとする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   65  除数が 0 (SX_EX_DATAERR)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+
+sx_num_int_mod_abs() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_divmod_abs __sx_num_int_mod_abs_junk_ "${1-}" "${2-}" "${3-}" || return; unset __sx_num_int_mod_abs_junk_; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_int_mod_abs_res="${1}"
+	shift
+
+	sx_num_is_base_nat0 10 "${@}" || {
+		unset __sx_num_int_mod_abs_res
+		return "${SX_EX_USAGE}"
+	}
+
+	case "${2-}" in
+		0 | '')
+			unset __sx_num_int_mod_abs_res
+			return "${SX_EX_DATAERR}"
+			;;
+	esac
+
+	__sx_num_int_divmod_abs __sx_num_int_mod_abs_junk_ "${__sx_num_int_mod_abs_res}" "${@}"
+	unset __sx_num_int_mod_abs_res __sx_num_int_mod_abs_junk_
+}
+
 
 # ========================================
 #  UUID (UUID Operations)
