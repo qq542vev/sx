@@ -6375,7 +6375,7 @@ sx_num_int_divmod_abs() {
 ##   余裕を持たせて BW は WLEN の半分程度に留めている。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(qres) V(rres) V(u) V(v) V(wlen) V(bw) V(k) V(lv) V(qmlv) V(qmunit) V(n) V(zsrc) V(rpad) V(qmbw) V(qmk) V(vtail) V(vest) V(vest_n) V(vestlen) V(vint) V(r) V(q) V(rest) V(tail) V(g) V(gw) V(np) V(nps) V(qd) V(npestw) V(qmnpw) V(npesttail) V(npest) V(npest_n) V(j) V(trial) V(rcand) V(qdpad)|])dnl
+define([|CLEANUP|], [|V(qres) V(rres) V(u) V(v) V(wlen) V(bw) V(k) V(lv) V(qmlv) V(zsrc) V(rpad) V(qmbw) V(qmk) V(vtail) V(vest) V(vest_n) V(vestlen) V(vint) V(r) V(q) V(rest) V(tail) V(g) V(gw) V(np) V(nps) V(qd) V(npestw) V(qmnpw) V(npesttail) V(npest) V(npest_n) V(j) V(trial) V(rcand) V(qdpad)|])dnl
 
 __sx_num_int_divmod_abs() {
 	__sx_num_int_divmod_abs_qres_="${1}"
@@ -6414,9 +6414,6 @@ __sx_num_int_divmod_abs() {
 
 	# 一般ケース: BW桁ずつ商を確定するチャンク筆算（見積り + 誤差補正）
 	__sx_num_int_divmod_abs_bw_="$(( (__sx_num_int_divmod_abs_wlen_ - 2) / 2 ))"
-	case "${__sx_num_int_divmod_abs_bw_}" in
-		0 | -*) __sx_num_int_divmod_abs_bw_=1;;
-	esac
 	__sx_num_int_divmod_abs_k_="$((__sx_num_int_divmod_abs_wlen_ - __sx_num_int_divmod_abs_bw_))"
 	__sx_num_int_divmod_abs_lv_="${#__sx_num_int_divmod_abs_v_}"
 
@@ -6443,21 +6440,9 @@ __sx_num_int_divmod_abs() {
 
 	# qmlv_: 長さ Lv の "?" 文字列を高速指数化（繰り返し二乗）で O(log Lv) 構築する。
 	# Lv は除算全体を通じて不変なので、ここで一度だけ作り、以降のゼロ埋めに使い回す。
-	__sx_num_int_divmod_abs_qmlv_=
-	__sx_num_int_divmod_abs_qmunit_='?'
-	__sx_num_int_divmod_abs_n_="${__sx_num_int_divmod_abs_lv_}"
-	while [ "${__sx_num_int_divmod_abs_n_}" -gt 0 ]; do
-		case "$((__sx_num_int_divmod_abs_n_ % 2))" in
-			1) __sx_num_int_divmod_abs_qmlv_="${__sx_num_int_divmod_abs_qmlv_}${__sx_num_int_divmod_abs_qmunit_}";;
-		esac
-		__sx_num_int_divmod_abs_qmunit_="${__sx_num_int_divmod_abs_qmunit_}${__sx_num_int_divmod_abs_qmunit_}"
-		__sx_num_int_divmod_abs_n_="$((__sx_num_int_divmod_abs_n_ / 2))"
-	done
-	# zsrc_: 長さ Lv 以上のゼロ文字列（前置してから qmlv_ で末尾 Lv 桁を切り出すための種）
-	__sx_num_int_divmod_abs_zsrc_=0
-	while [ "${#__sx_num_int_divmod_abs_zsrc_}" -lt "${__sx_num_int_divmod_abs_lv_}" ]; do
-		__sx_num_int_divmod_abs_zsrc_="${__sx_num_int_divmod_abs_zsrc_}${__sx_num_int_divmod_abs_zsrc_}"
-	done
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_qmlv_ '?' "${__sx_num_int_divmod_abs_lv_}"
+	# zsrc_: 長さ Lv のゼロ文字列（前置してから qmlv_ で末尾 Lv 桁を切り出すための種）
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_zsrc_ '0' "${__sx_num_int_divmod_abs_lv_}"
 
 	# R_: 除数と同じ桁数にゼロ埋めした余り（初期値0）
 	__sx_num_int_divmod_abs_rpad_="${__sx_num_int_divmod_abs_zsrc_}"
