@@ -6450,7 +6450,7 @@ __sx_num_int_divmod_abs() {
 	__sx_num_int_divmod_abs_q_=
 	__sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_u_}"
 
-	while [ -n "${__sx_num_int_divmod_abs_rest_}" ]; do
+	while M_STR_NE([|"${__sx_num_int_divmod_abs_rest_}"|], [|''|]); do
 		case "${__sx_num_int_divmod_abs_rest_}" in
 			${__sx_num_int_divmod_abs_qmbw_}?*)
 				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_rest_#${__sx_num_int_divmod_abs_qmbw_}}"
