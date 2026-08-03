@@ -6375,7 +6375,7 @@ sx_num_int_divmod_abs() {
 ##   余裕を持たせて BW は WLEN の半分程度に留めている。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(qres) V(rres) V(u) V(v) V(wlen) V(bw) V(k) V(lv) V(qmlv) V(zsrc) V(rpad) V(qmbw) V(qmk) V(vtail) V(vest) V(vest_n) V(vestlen) V(vint) V(r) V(q) V(rest) V(tail) V(g) V(gw) V(np) V(nps) V(qd) V(npestw) V(qmnpw) V(npesttail) V(npest) V(npest_n) V(j) V(trial) V(rcand) V(qdpad)|])dnl
+define([|CLEANUP|], [|V(qres) V(rres) V(u) V(v) V(wlen) V(bw) V(k) V(lv) V(qmlv) V(zsrc) V(q9w) V(zrw) V(rpad) V(qmbw) V(qmk) V(vtail) V(vest) V(vest_n) V(vestlen) V(vint) V(r) V(q) V(rest) V(tail) V(g) V(gw) V(qmgw) V(np) V(nps) V(qd) V(npestw) V(qmnpw) V(npesttail) V(npest) V(npest_n) V(trial) V(rcand) V(qdpad)|])dnl
 
 __sx_num_int_divmod_abs() {
 	__sx_num_int_divmod_abs_qres_="${1}"
@@ -6443,6 +6443,9 @@ __sx_num_int_divmod_abs() {
 	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_qmlv_ '?' "${__sx_num_int_divmod_abs_lv_}"
 	# zsrc_: 長さ Lv のゼロ文字列（前置してから qmlv_ で末尾 Lv 桁を切り出すための種）
 	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_zsrc_ '0' "${__sx_num_int_divmod_abs_lv_}"
+	# q9w_/zrw_: 長さ WLEN の "9"/"0" 文字列。クランプと qd_ のゼロ埋めを O(1) 切り出しするための種
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_q9w_ '9' "${__sx_num_int_divmod_abs_wlen_}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_zrw_ '0' "${__sx_num_int_divmod_abs_wlen_}"
 
 	# R_: 除数と同じ桁数にゼロ埋めした余り（初期値0）
 	__sx_num_int_divmod_abs_rpad_="${__sx_num_int_divmod_abs_zsrc_}"
@@ -6463,6 +6466,9 @@ __sx_num_int_divmod_abs() {
 				;;
 		esac
 		__sx_num_int_divmod_abs_gw_="${#__sx_num_int_divmod_abs_g_}"
+
+		# qmgw_: gw 桁の "?" マーカー。q9w_/zrw_ からの桁切り出しに使う
+		eval "__sx_num_int_divmod_abs_qmgw_=\"\${SX_QM_${__sx_num_int_divmod_abs_gw_}}\""
 
 		__sx_num_int_divmod_abs_np_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_g_}"
 		__sx_num_int_divmod_abs_nps_="${__sx_num_int_divmod_abs_np_#"${__sx_num_int_divmod_abs_np_%%[!0]*}"}"
@@ -6491,15 +6497,10 @@ __sx_num_int_divmod_abs() {
 				__sx_num_int_divmod_abs_npest_n_="$((__sx_num_int_divmod_abs_npest_))"
 				__sx_num_int_divmod_abs_qd_="$((__sx_num_int_divmod_abs_npest_n_ / __sx_num_int_divmod_abs_vest_n_))"
 
-				# qd_ が gw 桁を超えていたら gw 桁の 9...9 でクランプ
+				# qd_ が gw 桁を超えていたら q9w_ から gw 桁の 9...9 を O(1) で切り出してクランプ
 				case "${#__sx_num_int_divmod_abs_qd_}" in
 					"$((__sx_num_int_divmod_abs_gw_ + 1))"*)
-						__sx_num_int_divmod_abs_qd_=9
-						__sx_num_int_divmod_abs_j_=1
-						while [ "${__sx_num_int_divmod_abs_j_}" -lt "${__sx_num_int_divmod_abs_gw_}" ]; do
-							__sx_num_int_divmod_abs_qd_="${__sx_num_int_divmod_abs_qd_}9"
-							__sx_num_int_divmod_abs_j_="$((__sx_num_int_divmod_abs_j_ + 1))"
-						done
+						__sx_num_int_divmod_abs_qd_="${__sx_num_int_divmod_abs_q9w_%"${__sx_num_int_divmod_abs_q9w_#${__sx_num_int_divmod_abs_qmgw_}}}"}"
 						;;
 				esac
 				case "${__sx_num_int_divmod_abs_qd_}" in
@@ -6538,11 +6539,9 @@ __sx_num_int_divmod_abs() {
 		# R を Lv 桁にゼロ埋めしなおす（前置してから qmlv_ で末尾 Lv 桁を切り出す。O(1)ループ）
 		__sx_num_int_divmod_abs_rpad_="${__sx_num_int_divmod_abs_zsrc_}${__sx_num_int_divmod_abs_r_}"
 		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_rpad_#"${__sx_num_int_divmod_abs_rpad_%${__sx_num_int_divmod_abs_qmlv_}}"}"
-		# qd を gw 桁にゼロ埋めして商に連結
-		__sx_num_int_divmod_abs_qdpad_="${__sx_num_int_divmod_abs_qd_}"
-		while [ "${#__sx_num_int_divmod_abs_qdpad_}" -lt "${__sx_num_int_divmod_abs_gw_}" ]; do
-			__sx_num_int_divmod_abs_qdpad_="0${__sx_num_int_divmod_abs_qdpad_}"
-		done
+		# qd を gw 桁にゼロ埋めして商に連結（zrw_ 前置して qmgw_ で末尾 gw 桁を切り出す。O(1)）
+		__sx_num_int_divmod_abs_qdpad_="${__sx_num_int_divmod_abs_zrw_}${__sx_num_int_divmod_abs_qd_}"
+		__sx_num_int_divmod_abs_qdpad_="${__sx_num_int_divmod_abs_qdpad_#"${__sx_num_int_divmod_abs_qdpad_%${__sx_num_int_divmod_abs_qmgw_}}"}"
 		__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_qdpad_}"
 	done
 
