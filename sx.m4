@@ -6366,6 +6366,10 @@ sx_num_int_divmod_abs() {
 ##   被除数・除数は省略時、それぞれ 0、1 として扱われる。
 ##
 ##   アルゴリズム: 語サイズ c = min(WLEN/2, 9) 桁で語分割する融合 Knuth D 法。
+##   0) 除数が末尾ゼロを持つ場合、v = m × 10^k に分解して被除数も 10^k で縮小する
+##      （q = (u ÷ 10^k) ÷ m、r = ((u ÷ 10^k) mod m) × 10^k + (u mod 10^k)）。
+##      商は不変で、余りは最後に 10^k を復元する。ネイティブ演算に落ちるか
+##      1 語以上の縮小が見込める場合のみ適用する。
 ##   1) 被除数が 1 語以内（ネイティブ演算が保証される 18 桁まで）なら
 ##      ネイティブ除算で確定する。
 ##   2) 除数が 1 語（c 桁）以内なら語単位のネイティブ筆算で O(語数) に確定する。
@@ -6376,7 +6380,7 @@ sx_num_int_divmod_abs() {
 ##   RANGE 128 でも 64 ビット演算の範囲で正しく動作する。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(ru) V(rv) V(cu) V(cv) V(t) V(ulen) V(vn) V(nv) V(qd) V(qpad) V(dv) V(s) V(vtop) V(v2) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w)|])dnl
+define([|CLEANUP|], [|V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(ru) V(rv) V(cu) V(cv) V(t) V(ulen) V(vn) V(nv) V(qd) V(qpad) V(dv) V(s) V(vtop) V(v2) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(qmk) V(btail)|])dnl
 
 __sx_num_int_divmod_abs() {
 	__sx_num_int_divmod_abs_qres_="${1}"
@@ -6433,17 +6437,45 @@ __sx_num_int_divmod_abs() {
 
 	eval "__sx_num_int_divmod_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\""
 
+	# 語サイズ c = WLEN/2（RANGE 128 は 9 にキャップ: 語積が 10^18 < 2^63 に収まるようにする）
+	__sx_num_int_divmod_abs_c_="$((__sx_num_int_divmod_abs_wlen_ / 2))"
+	case "$((__sx_num_int_divmod_abs_c_ > 9))" in 1) __sx_num_int_divmod_abs_c_=9;; esac
+
+	# 末尾ゼロ分解: v = m × 10^k に分解して被除数も 10^k で縮小する
+	#   q = u ÷ v = (u ÷ 10^k) ÷ m、r = ((u ÷ 10^k) mod m) × 10^k + (u mod 10^k)
+	#   商は不変、余りは最後に 10^k を復元する
+	#   ネイティブ演算（m が WLEN 桁以内）か、1 語以上の縮小（k >= c）になる場合のみ適用
+	#   （k > 37 は SX_QM_ 定数の上限を超えるためスキップ）
+	case "${__sx_num_int_divmod_abs_v_}" in *0)
+		__sx_num_int_divmod_abs_zv_="${__sx_num_int_divmod_abs_v_##*[!0]}"
+		__sx_num_int_divmod_abs_kz_="${#__sx_num_int_divmod_abs_zv_}"
+		case "$(( __sx_num_int_divmod_abs_kz_ <= 37 && ( ${#__sx_num_int_divmod_abs_v_} - ${#__sx_num_int_divmod_abs_zv_} <= __sx_num_int_divmod_abs_wlen_ || __sx_num_int_divmod_abs_kz_ >= __sx_num_int_divmod_abs_c_ ) ))" in 1)
+			eval "__sx_num_int_divmod_abs_qmk_=\"\${SX_QM_${__sx_num_int_divmod_abs_kz_}}\""
+			__sx_num_int_divmod_abs_up_=${__sx_num_int_divmod_abs_u_%${__sx_num_int_divmod_abs_qmk_}}
+			__sx_num_int_divmod_abs_btail_="${__sx_num_int_divmod_abs_u_#"${__sx_num_int_divmod_abs_up_}"}"
+			__sx_num_int_divmod_abs_v_="${__sx_num_int_divmod_abs_v_%"${__sx_num_int_divmod_abs_zv_}"}"
+			__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_up_}"
+			;;
+		esac
+	esac
+
 	# 高速パス 4: 被除数がネイティブ演算可能な桁数なら除算で確定
 	# （RANGE 128 は WLEN=37 だが、64 ビット演算が保証されるのは 18 桁まで）
 	case "$(( ${#__sx_num_int_divmod_abs_u_} <= __sx_num_int_divmod_abs_wlen_ && ${#__sx_num_int_divmod_abs_u_} <= 18 ))" in 1)
-		__sx_var_set "${__sx_num_int_divmod_abs_qres_}=$((__sx_num_int_divmod_abs_u_ / __sx_num_int_divmod_abs_v_))" "${__sx_num_int_divmod_abs_rres_}=$((__sx_num_int_divmod_abs_u_ % __sx_num_int_divmod_abs_v_))"
+		__sx_num_int_divmod_abs_q_=$((__sx_num_int_divmod_abs_u_ / __sx_num_int_divmod_abs_v_))
+		__sx_num_int_divmod_abs_r_=$((__sx_num_int_divmod_abs_u_ % __sx_num_int_divmod_abs_v_))
+		case "${__sx_num_int_divmod_abs_btail_+x}" in x)
+			__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_btail_}"
+			case "${__sx_num_int_divmod_abs_r_}" in 0*)
+				__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
+			esac
+			case "${__sx_num_int_divmod_abs_r_}" in '') __sx_num_int_divmod_abs_r_=0;; esac
+		esac
+		__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_}"
 		unset CLEANUP
 		return "${SX_EX_OK}"
 	esac
 
-	# 語サイズ c = WLEN/2（RANGE 128 は 9 にキャップ: 語積が 10^18 < 2^63 に収まるようにする）
-	__sx_num_int_divmod_abs_c_="$((__sx_num_int_divmod_abs_wlen_ / 2))"
-	case "$((__sx_num_int_divmod_abs_c_ > 9))" in 1) __sx_num_int_divmod_abs_c_=9;; esac
 	eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_c_}}\""
 	eval "__sx_num_int_divmod_abs_zr_=\"\${SX_ZR_${__sx_num_int_divmod_abs_c_}}\""
 	__sx_num_int_divmod_abs_b_="1${__sx_num_int_divmod_abs_zr_}"
@@ -6489,6 +6521,13 @@ __sx_num_int_divmod_abs() {
 			__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_#"${__sx_num_int_divmod_abs_q_%%[!0]*}"}"
 		esac
 		case "${__sx_num_int_divmod_abs_q_}" in '') __sx_num_int_divmod_abs_q_=0;; esac
+		case "${__sx_num_int_divmod_abs_btail_+x}" in x)
+			__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_btail_}"
+			case "${__sx_num_int_divmod_abs_r_}" in 0*)
+				__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
+			esac
+			case "${__sx_num_int_divmod_abs_r_}" in '') __sx_num_int_divmod_abs_r_=0;; esac
+		esac
 		__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_}"
 		unset CLEANUP
 		return "${SX_EX_OK}"
@@ -6683,6 +6722,13 @@ __sx_num_int_divmod_abs() {
 		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
 	esac
 	case "${__sx_num_int_divmod_abs_r_}" in '') __sx_num_int_divmod_abs_r_=0;; esac
+	case "${__sx_num_int_divmod_abs_btail_+x}" in x)
+		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_btail_}"
+		case "${__sx_num_int_divmod_abs_r_}" in 0*)
+			__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
+		esac
+		case "${__sx_num_int_divmod_abs_r_}" in '') __sx_num_int_divmod_abs_r_=0;; esac
+	esac
 	case "${__sx_num_int_divmod_abs_q_}" in 0*)
 		__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_#"${__sx_num_int_divmod_abs_q_%%[!0]*}"}"
 	esac
