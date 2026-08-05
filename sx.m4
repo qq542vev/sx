@@ -4272,6 +4272,9 @@ sx_num_cmp_nat0() {
 	__sx_num_cmp_nat0 "${1}" "${2}" || return
 }
 
+define([|V|], [|__sx_num_cmp_nat0_$1_|])dnl
+define([|CLEANUP|], [|V(l) V(r) V(qm)|])dnl
+
 ### __sx_num_cmp_nat0 - 符号なし10進整数文字列を比較する（内部用）
 ##
 ## 終了ステータス:
@@ -4279,26 +4282,37 @@ sx_num_cmp_nat0() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_cmp_nat0() {
-	eval "__sx_num_cmp_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
-	set -- "${__sx_num_cmp_nat0_qm_}" "${1}" "${2}"
-	unset __sx_num_cmp_nat0_qm_
-
-	if M_STR_MATCH([|"${#2}"|], [|${1}?*|]) || M_STR_MATCH([|"${#3}"|], [|*${1}?|]); then
-		__sx_num_cmp_nat0 "${#2}" "${#3}"
-	else
-		__sx_num_cmp_arith "${#2}" "${#3}"
-	fi || case "${?}" in 1 | 3)
-		return "${?}"
+	case "${1}" in "${2}")
+		return 2
 	esac
 
-	while M_STR_MATCH([|"${2}"|], [|${1}?*|]); do
-		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_cmp_arith_digit "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
-			1 | 3) return "${?}";;
+	__sx_num_cmp_nat0_l_="${#1}"
+	__sx_num_cmp_nat0_r_="${#2}"
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_cmp_nat0_l_}" "${__sx_num_cmp_nat0_r_}"; then
+		__sx_num_cmp_arith "${__sx_num_cmp_nat0_l_}" "${__sx_num_cmp_nat0_r_}"
+	else
+		__sx_num_cmp_nat0 "${__sx_num_cmp_nat0_l_}" "${__sx_num_cmp_nat0_r_}"
+	fi || case "${?}" in 1 | 3)
+		set -- "${?}"
+		unset CLEANUP
+		return "${1}"
+	esac
+
+	eval "__sx_num_cmp_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
+
+	while M_STR_MATCH([|"${1}"|], [|${__sx_num_cmp_nat0_qm_}?*|]); do
+		set -- "${1#${__sx_num_cmp_nat0_qm_}}" "${2#${__sx_num_cmp_nat0_qm_}}" "${1}" "${2}"
+		__sx_num_cmp_arith_digit "${3%"${1}"}" "${4%"${2}"}" || case "${?}" in 1 | 3)
+			set -- "${?}"
+			unset CLEANUP
+			return "${1}"
 		esac
 	done
 
-	__sx_num_cmp_arith_digit "${2}" "${3}" || return "${?}"
+	unset CLEANUP
+
+	__sx_num_cmp_arith_digit "${1}" "${2}" || return "${?}"
 }
 
 ### sx_num_is_base_int - 指定された基数で整数か確認する
@@ -6366,86 +6380,76 @@ sx_num_int_divmod_abs() {
 ##   被除数・除数は省略時、それぞれ 0、1 として扱われる。
 ##
 ##   アルゴリズム: 語サイズ c = min(WLEN/2, 9) 桁で語分割する融合 Knuth D 法。
-##   0) 除数が末尾ゼロを持つ場合、v = m × 10^k に分解して被除数も 10^k で縮小する
-##      （q = (u ÷ 10^k) ÷ m、r = ((u ÷ 10^k) mod m) × 10^k + (u mod 10^k)）。
-##      商は不変で、余りは最後に 10^k を復元する。ネイティブ演算に落ちるか
-##      1 語以上の縮小が見込める場合のみ適用する。
-##   1) 被除数が 1 語以内（ネイティブ演算が保証される 18 桁まで）なら
+##   語の並びは常に「最上位語が先頭」で、v_1 が最上位語、v_n が最下位語。
+##   u は先頭にゼロ語 u_1 = 0 を 1 語追加して合計 K 語で持ち、実データは u_2..u_K
+##   （u_1 は主ループの最初の窓が参照するために確保するセンチネル語）。
+##
+##   実行フロー（ステップ 1〜8）:
+##   1) 引数の取得（商・余りの結果変数名、被除数 u、除数 v）。
+##   2) 高速パス 1〜3: 自明なケースを確定する。
+##      v = 1 → 商 = u、余り = 0 ／ u = v → 商 = 1、余り = 0
+##      u < v → 商 = 0、余り = u（同桁数は最上位桁から 1 桁ずつ比較する）。
+##   3) 語サイズ c の決定（語積 10^(2c) < 2^63 が成り立つ範囲で最大の語長）。
+##   4) 末尾ゼロ分解: v = m × 10^k に分解し、u も 10^k で縮小する
+##      （商は不変、余りは最後に u の下位 k 桁を復元する）。
+##   5) 高速パス 4: 被除数全体が 64 ビット演算可能な桁数（18 桁）以下なら
 ##      ネイティブ除算で確定する。
-##   2) 除数が 1 語（c 桁）以内なら語単位のネイティブ筆算で O(語数) に確定する。
-##   3) 一般ケースは 10^d で正規化（v の先頭語をちょうど c 桁に揃える）した後、
-##      1 語ずつ商の見積り (D2) → 精緻化 (D3) → 融合 multiply-subtract (D4) →
-##      加算復帰 (D5) のループで O(n*K) に商を確定する。
+##   6) 高速パス 5: 除数が 1 語（c 桁）以内なら語単位のネイティブ筆算で
+##      O(語数) に確定する。
+##   7) 一般パス: 融合 Knuth D 法（u > v、u は 19 桁以上、v は 2 語以上）。
+##      7.1 正規化: u、v を 10^d 倍して v の先頭語をちょうど c 桁に揃える。
+##      7.2 語分割: v を n 語（v_1..v_n）、u を K 語（u_1..u_K）に分解する。
+##      7.3 主ループ: 窓を 1 語ずつ左へずらしながら商を 1 語ずつ確定する。
+##          D2 商の見積り → D3 精緻化 → D4 融合 multiply-subtract → D5 加算復帰。
+##      7.4 余り抽出: 末尾 n 語（u_{K-n+1}..u_K）を連結する。
+##      7.5 逆正規化: 余りの末尾 d 桁を除去して 10^d 倍を戻す。
+##   8) 商・余りを結果変数に格納し、内部変数を全て解放する。
 ##   ネイティブ演算の語積は必ず qhat*v_j < b^2 = 10^(2c) <= 10^18 < 2^63 に収まり、
 ##   RANGE 128 でも 64 ビット演算の範囲で正しく動作する。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(ru) V(rv) V(cu) V(cv) V(t) V(ulen) V(vn) V(nv) V(qd) V(qpad) V(dv) V(s) V(vtop) V(v2) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(qmk) V(btail)|])dnl
+define([|CLEANUP|], [|V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(t) V(ulen) V(vn) V(nv) V(qd) V(qpad) V(dv) V(s) V(vtop) V(v2) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(qmk) V(btail)|])dnl
 
 __sx_num_int_divmod_abs() {
+	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
 	__sx_num_int_divmod_abs_qres_="${1}"
 	__sx_num_int_divmod_abs_rres_="${2}"
 	__sx_num_int_divmod_abs_u_="${3-0}"
 	__sx_num_int_divmod_abs_v_="${4-1}"
 
-	# 高速パス 1: 除数が 1 なら商 = 被除数、余り = 0
+	# ステップ 2: 高速パス 1〜3（自明なケースを即座に確定する）
+	#   高速パス 1: 除数が 1 なら商 = 被除数、余り = 0
 	case "${__sx_num_int_divmod_abs_v_}" in 1)
 		__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_u_}" "${__sx_num_int_divmod_abs_rres_}=0"
 		unset CLEANUP
 		return "${SX_EX_OK}"
 	esac
 
-	# 高速パス 2: 被除数 == 除数なら商 = 1、余り = 0
-	case "${__sx_num_int_divmod_abs_u_}" in
-		"${__sx_num_int_divmod_abs_v_}")
-			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=1" "${__sx_num_int_divmod_abs_rres_}=0"
-			unset CLEANUP
-			return "${SX_EX_OK}"
-			;;
-	esac
-
 	# 高速パス 3: 被除数 < 除数なら商 = 0、余り = 被除数
-	# （同桁数は最上位桁から辞書式に比較する。LSB 側の大小で判断してはならない）
-	case "$(( ${#__sx_num_int_divmod_abs_u_} < ${#__sx_num_int_divmod_abs_v_} ))" in 1)
-		__sx_var_set "${__sx_num_int_divmod_abs_qres_}=0" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_u_}"
+	__sx_num_cmp_nat0 "${__sx_num_int_divmod_abs_u_}" "${__sx_num_int_divmod_abs_v_}" || case "${?}" in
+		1) __sx_var_set "${__sx_num_int_divmod_abs_qres_}=0" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_u_}" && ! :;;
+		2) __sx_var_set "${__sx_num_int_divmod_abs_qres_}=1" "${__sx_num_int_divmod_abs_rres_}=0" && ! :;;
+	esac || {
 		unset CLEANUP
 		return "${SX_EX_OK}"
-	esac
-	case "$(( ${#__sx_num_int_divmod_abs_u_} - ${#__sx_num_int_divmod_abs_v_} ))" in 0)
-		__sx_num_int_divmod_abs_ru_="${__sx_num_int_divmod_abs_u_}"
-		__sx_num_int_divmod_abs_rv_="${__sx_num_int_divmod_abs_v_}"
-		while :; do
-			case "${__sx_num_int_divmod_abs_ru_}" in '') break;; esac
-			__sx_num_int_divmod_abs_t_="${__sx_num_int_divmod_abs_ru_#?}"
-			__sx_num_int_divmod_abs_cu_="${__sx_num_int_divmod_abs_ru_%"${__sx_num_int_divmod_abs_t_}"}"
-			__sx_num_int_divmod_abs_ru_="${__sx_num_int_divmod_abs_t_}"
-			__sx_num_int_divmod_abs_t_="${__sx_num_int_divmod_abs_rv_#?}"
-			__sx_num_int_divmod_abs_cv_="${__sx_num_int_divmod_abs_rv_%"${__sx_num_int_divmod_abs_t_}"}"
-			__sx_num_int_divmod_abs_rv_="${__sx_num_int_divmod_abs_t_}"
-			case "$((__sx_num_int_divmod_abs_cu_ < __sx_num_int_divmod_abs_cv_))" in
-				1)
-					__sx_var_set "${__sx_num_int_divmod_abs_qres_}=0" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_u_}"
-					unset CLEANUP
-					return "${SX_EX_OK}"
-					;;
-			esac
-			case "$((__sx_num_int_divmod_abs_cu_ > __sx_num_int_divmod_abs_cv_))" in 1) break;; esac
-		done
-		unset __sx_num_int_divmod_abs_ru_ __sx_num_int_divmod_abs_rv_ __sx_num_int_divmod_abs_t_ __sx_num_int_divmod_abs_cu_ __sx_num_int_divmod_abs_cv_
-		;;
-	esac
+	}
 
 	eval "__sx_num_int_divmod_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\""
 
-	# 語サイズ c = WLEN/2（RANGE 128 は 9 にキャップ: 語積が 10^18 < 2^63 に収まるようにする）
+	# ステップ 3: 語サイズ c の決定
+	#   基本は WLEN/2。RANGE 128 では 9 にキャップする（語積 10^(2c) < 2^63 を保証）
 	__sx_num_int_divmod_abs_c_="$((__sx_num_int_divmod_abs_wlen_ / 2))"
 	case "$((__sx_num_int_divmod_abs_c_ > 9))" in 1) __sx_num_int_divmod_abs_c_=9;; esac
 
-	# 末尾ゼロ分解: v = m × 10^k に分解して被除数も 10^k で縮小する
-	#   q = u ÷ v = (u ÷ 10^k) ÷ m、r = ((u ÷ 10^k) mod m) × 10^k + (u mod 10^k)
-	#   商は不変、余りは最後に 10^k を復元する
-	#   ネイティブ演算（m が WLEN 桁以内）か、1 語以上の縮小（k >= c）になる場合のみ適用
-	#   （k > 37 は SX_QM_ 定数の上限を超えるためスキップ）
+	# ステップ 4: 末尾ゼロ分解（v = m × 10^k に分解して両者を 10^k で縮小する）
+	#   数式: q = (u ÷ 10^k) ÷ m、r = ((u ÷ 10^k) mod m) × 10^k + (u mod 10^k)
+	#   商は変化せず、余りには縮小で取り除いた u の下位 k 桁（btail）を最後に復元する。
+	#   例: 1234500 ÷ 1200 → m = 12、k = 2、12345 ÷ 12 = 商 1028 余り 9
+	#      → 余り = 9 × 100 + 00 = 900（商は縮小の影響を受けない）
+	#   適用条件（下の複合 case 式）:
+	#     縮小後の除数 m がネイティブ演算可能（WLEN 桁以内）
+	#     または k >= c（1 語以上縮小され、後の除算が確実に減る）場合のみ。
+	#   k > 37 は SX_QM_ 定数テーブルの上限を超えるためスキップする。
 	case "${__sx_num_int_divmod_abs_v_}" in *0)
 		__sx_num_int_divmod_abs_zv_="${__sx_num_int_divmod_abs_v_##*[!0]}"
 		__sx_num_int_divmod_abs_kz_="${#__sx_num_int_divmod_abs_zv_}"
@@ -6459,11 +6463,12 @@ __sx_num_int_divmod_abs() {
 		esac
 	esac
 
-	# 高速パス 4: 被除数がネイティブ演算可能な桁数なら除算で確定
+	# ステップ 5: 高速パス 4 — 被除数全体がネイティブ除算で確定できる場合
 	# （RANGE 128 は WLEN=37 だが、64 ビット演算が保証されるのは 18 桁まで）
 	case "$(( ${#__sx_num_int_divmod_abs_u_} <= __sx_num_int_divmod_abs_wlen_ && ${#__sx_num_int_divmod_abs_u_} <= 18 ))" in 1)
 		__sx_num_int_divmod_abs_q_=$((__sx_num_int_divmod_abs_u_ / __sx_num_int_divmod_abs_v_))
 		__sx_num_int_divmod_abs_r_=$((__sx_num_int_divmod_abs_u_ % __sx_num_int_divmod_abs_v_))
+		# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
 		case "${__sx_num_int_divmod_abs_btail_+x}" in x)
 			__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_btail_}"
 			case "${__sx_num_int_divmod_abs_r_}" in 0*)
@@ -6480,7 +6485,8 @@ __sx_num_int_divmod_abs() {
 	eval "__sx_num_int_divmod_abs_zr_=\"\${SX_ZR_${__sx_num_int_divmod_abs_c_}}\""
 	__sx_num_int_divmod_abs_b_="1${__sx_num_int_divmod_abs_zr_}"
 
-	# 高速パス 5: 除数が 1 語（c 桁）以内なら語単位のネイティブ筆算
+	# 以後で使う定数の意味: b = 10^c（語の基数）、qm = c 桁ちょうどに一致するパターン、zr = c 桁のゼロ埋め文字列
+	# ステップ 6: 高速パス 5 — 除数が 1 語（c 桁）以内なら語単位のネイティブ筆算
 	case "$(( ${#__sx_num_int_divmod_abs_v_} <= __sx_num_int_divmod_abs_c_ ))" in 1)
 		__sx_num_int_divmod_abs_ulen_="${#__sx_num_int_divmod_abs_u_}"
 		__sx_num_int_divmod_abs_pad_="$(( (__sx_num_int_divmod_abs_c_ - __sx_num_int_divmod_abs_ulen_ % __sx_num_int_divmod_abs_c_) % __sx_num_int_divmod_abs_c_ ))"
@@ -6493,6 +6499,7 @@ __sx_num_int_divmod_abs() {
 		__sx_num_int_divmod_abs_q_=
 		__sx_num_int_divmod_abs_r_=0
 		__sx_num_int_divmod_abs_vn_=$((__sx_num_int_divmod_abs_v_))
+		# 筆算の1語分: 前語までの余りを基数倍して次の語を結合し、ネイティブ除算で商1語を確定する
 		while :; do
 			case "${__sx_num_int_divmod_abs_rest_}" in
 				${__sx_num_int_divmod_abs_qm_}?*)
@@ -6521,6 +6528,7 @@ __sx_num_int_divmod_abs() {
 			__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_#"${__sx_num_int_divmod_abs_q_%%[!0]*}"}"
 		esac
 		case "${__sx_num_int_divmod_abs_q_}" in '') __sx_num_int_divmod_abs_q_=0;; esac
+		# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
 		case "${__sx_num_int_divmod_abs_btail_+x}" in x)
 			__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_btail_}"
 			case "${__sx_num_int_divmod_abs_r_}" in 0*)
@@ -6533,8 +6541,9 @@ __sx_num_int_divmod_abs() {
 		return "${SX_EX_OK}"
 	esac
 
-	# 一般パス: 融合 Knuth D 法（u > v、u は 19 桁以上、v は 2 語以上）
-	# 正規化シフト量 d = c - s（s = v の桁数を c で割った余り。0 なら d = 0）
+	# ステップ 7: 一般パス — 融合 Knuth D 法（u > v、u は 19 桁以上、v は 2 語以上）
+	# ステップ 7.1: 正規化 — v の先頭語をちょうど c 桁に揃える（10^d 倍する）
+	#   商の見積り精度を保証するため。d = c - s（s は v の桁数を c で割った余り。0 なら d = 0）
 	__sx_num_int_divmod_abs_dv_="${#__sx_num_int_divmod_abs_v_}"
 	__sx_num_int_divmod_abs_s_=$((__sx_num_int_divmod_abs_dv_ % __sx_num_int_divmod_abs_c_))
 	case "${__sx_num_int_divmod_abs_s_}" in 0) __sx_num_int_divmod_abs_s_="${__sx_num_int_divmod_abs_c_}";; esac
@@ -6552,7 +6561,8 @@ __sx_num_int_divmod_abs() {
 			;;
 	esac
 
-	# v' を n 語（ちょうど n*c 桁）に分割し v_1..v_n に格納する
+	# ステップ 7.2: 語分割 — v' をちょうど n*c 桁の n 語に分割し v_1..v_n に格納する
+	#   （v_1 が最上位語、v_n が最下位語。以後 v の語は動的変数 v_1..v_n で保持する）
 	__sx_num_int_divmod_abs_n_=$(( ${#__sx_num_int_divmod_abs_vp_} / __sx_num_int_divmod_abs_c_ ))
 	__sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_vp_}"
 	__sx_num_int_divmod_abs_i_=1
@@ -6577,7 +6587,8 @@ __sx_num_int_divmod_abs() {
 		__sx_num_int_divmod_abs_i_=$((__sx_num_int_divmod_abs_i_ + 1))
 	done
 
-	# u' を K 語に分割。全語が c 桁になるよう上位ゼロをパディングし、u_1 は最上位語
+	# u' を K 語に分割する。実データは u_2..u_K、u_1 は主ループの最初の窓（D2）が
+	# 参照するために先頭に確保するゼロ語（センチネル）。全語を c 桁に揃えるよう上位ゼロをパディングする
 	__sx_num_int_divmod_abs_du_="${#__sx_num_int_divmod_abs_up_}"
 	__sx_num_int_divmod_abs_k_=$(( (__sx_num_int_divmod_abs_du_ + __sx_num_int_divmod_abs_c_ - 1) / __sx_num_int_divmod_abs_c_ + 1 ))
 	eval "__sx_num_int_divmod_abs_u_1=0"
@@ -6612,13 +6623,14 @@ __sx_num_int_divmod_abs() {
 	eval "__sx_num_int_divmod_abs_vtop_=\"\${__sx_num_int_divmod_abs_v_1}\""
 	eval "__sx_num_int_divmod_abs_v2_=\"\${__sx_num_int_divmod_abs_v_2}\""
 
-	# 主ループ: ウィンドウ = u_{W-n}..u_W を 1 語ずつ左へずらしながら商を確定する
+	# ステップ 7.3: 主ループ — 窓（u_{W-n}..u_W）を 1 語ずつ左へずらしながら商を 1 語ずつ確定する
 	__sx_num_int_divmod_abs_w_=$((__sx_num_int_divmod_abs_n_ + 1))
 	__sx_num_int_divmod_abs_q_=
 	while :; do
 		case "$((__sx_num_int_divmod_abs_w_ <= __sx_num_int_divmod_abs_k_))" in 0) break;; esac
 
-		# D2: qhat の見積り（top2 = u_{W-n}*b + u_{W-n+1}）
+		# D2: 商の見積り — 窓の先頭 2 語を v_1 で割って qhat を仮定する
+		#   top2 = u_{W-n}*b + u_{W-n+1}、qhat = top2 ÷ v_1（b を超えたら b-1 に丸める）
 		eval "__sx_num_int_divmod_abs_uw1_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_))}\" __sx_num_int_divmod_abs_uw2_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_ + 1))}\""
 		__sx_num_int_divmod_abs_top2_=$((__sx_num_int_divmod_abs_uw1_ * __sx_num_int_divmod_abs_b_ + __sx_num_int_divmod_abs_uw2_))
 		__sx_num_int_divmod_abs_qhat_=$((__sx_num_int_divmod_abs_top2_ / __sx_num_int_divmod_abs_vtop_))
@@ -6628,7 +6640,8 @@ __sx_num_int_divmod_abs() {
 			__sx_num_int_divmod_abs_rhat_=$((__sx_num_int_divmod_abs_top2_ - __sx_num_int_divmod_abs_qhat_ * __sx_num_int_divmod_abs_vtop_))
 		esac
 
-		# D3: qhat*v_2 > b*rhat + u_{W-n+2} の間 qhat を減らして精緻化
+		# D3: 精緻化 — qhat×v_2 が b×rhat + u_{W-n+2} を超える間 qhat を 1 ずつ減らす
+		#   （qhat の過大見積りを補正する。rhat が b 未満である限り繰り返す）
 		eval "__sx_num_int_divmod_abs_uw3_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_ + 2))}\""
 		while :; do
 			case "$((__sx_num_int_divmod_abs_rhat_ < __sx_num_int_divmod_abs_b_))" in 0) break;; esac
@@ -6639,8 +6652,9 @@ __sx_num_int_divmod_abs() {
 			__sx_num_int_divmod_abs_rhat_=$((__sx_num_int_divmod_abs_rhat_ + __sx_num_int_divmod_abs_vtop_))
 		done
 
-		# D4: 融合 multiply-subtract（u_{W-n+1}..u_W -= qhat*v、下位語から上位へ）
-		# 読み込み 2 本を 1 本に統合し、書き込みと次反復の読み込みを 1 本の eval に融合する
+		# D4: 融合 multiply-subtract — 窓の語 u_{W-n+1}..u_W から qhat×v を一括減算する
+		#   語積 p = qhat×v_j + carry を一度に算出し、下位語から上位語へ繰り上がりを伝搬する
+		#   （パフォーマンス最適化: 各語の読み込みと書き込みを 1 本の eval に融合している）
 		__sx_num_int_divmod_abs_carry_=0
 		__sx_num_int_divmod_abs_i_=1
 		eval "__sx_num_int_divmod_abs_uw_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_))}\" __sx_num_int_divmod_abs_vv_=\"\${__sx_num_int_divmod_abs_v_$((__sx_num_int_divmod_abs_n_))}\""
@@ -6669,7 +6683,8 @@ __sx_num_int_divmod_abs() {
 		done
 		__sx_num_int_divmod_abs_ut_=$((__sx_num_int_divmod_abs_uw1_ - __sx_num_int_divmod_abs_carry_))
 
-		# D5: 加算復帰（qhat が過大だった場合。通常 0 回、最大 2 回で収束する）
+		# D5: 加算復帰 — D4 の減算結果が負（qhat が過大）だった場合に v を加算して qhat を 1 減らす
+		#   （通常 0 回、最大 2 回で収束する）
 		while :; do
 			case "$((__sx_num_int_divmod_abs_ut_ < 0))" in 0) break;; esac
 			__sx_num_int_divmod_abs_ck_=0
@@ -6702,7 +6717,7 @@ __sx_num_int_divmod_abs() {
 		__sx_num_int_divmod_abs_w_=$((__sx_num_int_divmod_abs_w_ + 1))
 	done
 
-	# 余り抽出: 末尾 n 語（u_{K-n+1}..u_K）を c 桁ゼロ埋めで連結
+	# ステップ 7.4: 余り抽出 — 末尾 n 語（u_{K-n+1}..u_K）を c 桁ゼロ埋めで連結する
 	__sx_num_int_divmod_abs_r_=
 	__sx_num_int_divmod_abs_i_=$((__sx_num_int_divmod_abs_k_ - __sx_num_int_divmod_abs_n_ + 1))
 	while :; do
@@ -6714,7 +6729,7 @@ __sx_num_int_divmod_abs() {
 		case "$((__sx_num_int_divmod_abs_i_ <= __sx_num_int_divmod_abs_k_))" in 0) break;; esac
 	done
 
-	# 逆正規化: 余りの末尾 d 桁を除去（商は正規化の影響を受けない）
+	# ステップ 7.5: 逆正規化 — 余りの末尾 d 桁を除去して 10^d 倍を戻す（商は影響を受けない）
 	case "$((__sx_num_int_divmod_abs_d_ > 0))" in 1)
 		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_%${__sx_num_int_divmod_abs_qmd_}}"
 	esac
@@ -6722,6 +6737,7 @@ __sx_num_int_divmod_abs() {
 		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
 	esac
 	case "${__sx_num_int_divmod_abs_r_}" in '') __sx_num_int_divmod_abs_r_=0;; esac
+	# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
 	case "${__sx_num_int_divmod_abs_btail_+x}" in x)
 		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_btail_}"
 		case "${__sx_num_int_divmod_abs_r_}" in 0*)
@@ -6734,6 +6750,7 @@ __sx_num_int_divmod_abs() {
 	esac
 	case "${__sx_num_int_divmod_abs_q_}" in '') __sx_num_int_divmod_abs_q_=0;; esac
 
+	# ステップ 8: 商・余りを結果変数に格納し、内部変数を全て解放する
 	__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_}"
 
 	# 動的語変数（u_1..u_K、v_1..v_n）を解放
