@@ -6467,8 +6467,8 @@ __sx_num_int_divmod_abs() {
 	case "${__sx_num_int_divmod_abs_u_}" in
 		${__sx_num_int_divmod_abs_wqm_}?*) ;;
 		*)
-		__sx_num_int_divmod_abs_q_="$((__sx_num_int_divmod_abs_u_ / __sx_num_int_divmod_abs_v_))"
-		__sx_num_int_divmod_abs_r_="$((__sx_num_int_divmod_abs_u_ % __sx_num_int_divmod_abs_v_))${__sx_num_int_divmod_abs_btail_}"
+			__sx_num_int_divmod_abs_q_="$((__sx_num_int_divmod_abs_u_ / __sx_num_int_divmod_abs_v_))"
+			__sx_num_int_divmod_abs_r_="$((__sx_num_int_divmod_abs_u_ % __sx_num_int_divmod_abs_v_))${__sx_num_int_divmod_abs_btail_}"
 
 			# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
 			case "${__sx_num_int_divmod_abs_r_}" in
@@ -6491,68 +6491,68 @@ __sx_num_int_divmod_abs() {
 	case "${__sx_num_int_divmod_abs_v_}" in
 		${__sx_num_int_divmod_abs_qm_}?*) ;;
 		*)
-		# v の桁数 s に応じて語幅を m = WLEN - s へ拡大する。
-		# 余り r は常に r < v なので、1 反復で取る u の桁を s のぶんだけ増やしても
-		# nv = r * 10^m + chunk < 10^WLEN が保たれ、ネイティブ演算に収まる。
-		__sx_num_int_divmod_abs_m_="$((__sx_num_int_divmod_abs_wlen_ - ${#__sx_num_int_divmod_abs_v_}))"
-		eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_m_}}\" __sx_num_int_divmod_abs_zr_=\"\${SX_ZR_${__sx_num_int_divmod_abs_m_}}\""
-		__sx_num_int_divmod_abs_b_="1${__sx_num_int_divmod_abs_zr_}"
-		__sx_num_int_divmod_abs_ulen_="${#__sx_num_int_divmod_abs_u_}"
-		__sx_num_int_divmod_abs_pad_="$(( (__sx_num_int_divmod_abs_m_ - __sx_num_int_divmod_abs_ulen_ % __sx_num_int_divmod_abs_m_) % __sx_num_int_divmod_abs_m_ ))"
+			# v の桁数 s に応じて語幅を m = WLEN - s へ拡大する。
+			# 余り r は常に r < v なので、1 反復で取る u の桁を s のぶんだけ増やしても
+			# nv = r * 10^m + chunk < 10^WLEN が保たれ、ネイティブ演算に収まる。
+			__sx_num_int_divmod_abs_m_="$((__sx_num_int_divmod_abs_wlen_ - ${#__sx_num_int_divmod_abs_v_}))"
+			eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_m_}}\" __sx_num_int_divmod_abs_zr_=\"\${SX_ZR_${__sx_num_int_divmod_abs_m_}}\""
+			__sx_num_int_divmod_abs_b_="1${__sx_num_int_divmod_abs_zr_}"
+			__sx_num_int_divmod_abs_ulen_="${#__sx_num_int_divmod_abs_u_}"
+			__sx_num_int_divmod_abs_pad_="$(( (__sx_num_int_divmod_abs_m_ - __sx_num_int_divmod_abs_ulen_ % __sx_num_int_divmod_abs_m_) % __sx_num_int_divmod_abs_m_ ))"
 
-		case "$((__sx_num_int_divmod_abs_pad_ > 0))" in 1)
-			eval "__sx_num_int_divmod_abs_padz_=\"\${SX_ZR_${__sx_num_int_divmod_abs_pad_}}\""
-			__sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_padz_}${__sx_num_int_divmod_abs_u_}"
-			;;
-		0) __sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_u_}";;
-		esac
-		__sx_num_int_divmod_abs_q_=
-		__sx_num_int_divmod_abs_r_=0
-		__sx_num_int_divmod_abs_vn_=$((__sx_num_int_divmod_abs_v_))
-		# 筆算の1語分: 前語までの余りを基数倍して次の語を結合し、ネイティブ除算で商1語を確定する
-		while
-			case "${__sx_num_int_divmod_abs_rest_}" in
-				${__sx_num_int_divmod_abs_qm_}?*)
-					__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_rest_#${__sx_num_int_divmod_abs_qm_}}"
-					__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_rest_%"${__sx_num_int_divmod_abs_tail_}"}"
-					__sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_tail_}"
-					;;
-				*)
-					__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_rest_}"
-					__sx_num_int_divmod_abs_rest_=
-					;;
+			case "$((__sx_num_int_divmod_abs_pad_ > 0))" in 1)
+				eval "__sx_num_int_divmod_abs_padz_=\"\${SX_ZR_${__sx_num_int_divmod_abs_pad_}}\""
+				__sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_padz_}${__sx_num_int_divmod_abs_u_}"
+				;;
+			0) __sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_u_}";;
+			esac
+			__sx_num_int_divmod_abs_q_=
+			__sx_num_int_divmod_abs_r_=0
+			__sx_num_int_divmod_abs_vn_=$((__sx_num_int_divmod_abs_v_))
+			# 筆算の1語分: 前語までの余りを基数倍して次の語を結合し、ネイティブ除算で商1語を確定する
+			while
+				case "${__sx_num_int_divmod_abs_rest_}" in
+					${__sx_num_int_divmod_abs_qm_}?*)
+						__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_rest_#${__sx_num_int_divmod_abs_qm_}}"
+						__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_rest_%"${__sx_num_int_divmod_abs_tail_}"}"
+						__sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_tail_}"
+						;;
+					*)
+						__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_rest_}"
+						__sx_num_int_divmod_abs_rest_=
+						;;
+				esac
+
+				case "${__sx_num_int_divmod_abs_chunk_}" in
+					0*[1-9]*) __sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_chunk_#"${__sx_num_int_divmod_abs_chunk_%%[!0]*}"}";;
+					0*) __sx_num_int_divmod_abs_chunk_=0;;
+				esac
+
+				__sx_num_int_divmod_abs_nv_=$((__sx_num_int_divmod_abs_r_ * __sx_num_int_divmod_abs_b_ + __sx_num_int_divmod_abs_chunk_))
+				__sx_num_int_divmod_abs_r_=$((__sx_num_int_divmod_abs_nv_ % __sx_num_int_divmod_abs_vn_))
+				__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_zr_}$((__sx_num_int_divmod_abs_nv_ / __sx_num_int_divmod_abs_vn_))"
+				__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_qpad_#"${__sx_num_int_divmod_abs_qpad_%${__sx_num_int_divmod_abs_qm_}}"}"
+				__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_qpad_}"
+
+				case "${__sx_num_int_divmod_abs_rest_}" in '') ! :;; esac
+			do :; done
+
+			case "${__sx_num_int_divmod_abs_q_}" in
+				0*[1-9]*) __sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_#"${__sx_num_int_divmod_abs_q_%%[!0]*}"}";;
+				0*) __sx_num_int_divmod_abs_q_=0;;
 			esac
 
-			case "${__sx_num_int_divmod_abs_chunk_}" in
-				0*[1-9]*) __sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_chunk_#"${__sx_num_int_divmod_abs_chunk_%%[!0]*}"}";;
-				0*) __sx_num_int_divmod_abs_chunk_=0;;
-			esac
-
-			__sx_num_int_divmod_abs_nv_=$((__sx_num_int_divmod_abs_r_ * __sx_num_int_divmod_abs_b_ + __sx_num_int_divmod_abs_chunk_))
-			__sx_num_int_divmod_abs_qd_=$((__sx_num_int_divmod_abs_nv_ / __sx_num_int_divmod_abs_vn_))
-			__sx_num_int_divmod_abs_r_=$((__sx_num_int_divmod_abs_nv_ % __sx_num_int_divmod_abs_vn_))
-			__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_zr_}${__sx_num_int_divmod_abs_qd_}"
-			__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_qpad_#"${__sx_num_int_divmod_abs_qpad_%${__sx_num_int_divmod_abs_qm_}}"}"
-			__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_qpad_}"
-
-			case "${__sx_num_int_divmod_abs_rest_}" in '') ! :;; esac
-		do :; done
-
-		case "${__sx_num_int_divmod_abs_q_}" in 0*)
-			__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_#"${__sx_num_int_divmod_abs_q_%%[!0]*}"}"
-		esac
-		case "${__sx_num_int_divmod_abs_q_}" in '') __sx_num_int_divmod_abs_q_=0;; esac
-		# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
-		case "${__sx_num_int_divmod_abs_btail_+x}" in x)
+			# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
 			__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_btail_}"
-			case "${__sx_num_int_divmod_abs_r_}" in 0*)
-				__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
+
+			case "${__sx_num_int_divmod_abs_r_}" in
+				0*[1-9]*) __sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}";;
+				0*) __sx_num_int_divmod_abs_r_=0;;
 			esac
-			case "${__sx_num_int_divmod_abs_r_}" in '') __sx_num_int_divmod_abs_r_=0;; esac
-		esac
-		__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_}"
-		unset CLEANUP
-		return "${SX_EX_OK}"
+
+			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_}"
+			unset CLEANUP
+			return "${SX_EX_OK}"
 		;;
 	esac
 
