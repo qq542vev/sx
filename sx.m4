@@ -6525,8 +6525,16 @@ __sx_num_int_divmod_abs() {
 				# chunk を nv（r * 10^m + chunk）として再利用する
 				__sx_num_int_divmod_abs_chunk_=$((__sx_num_int_divmod_abs_r_ * __sx_num_int_divmod_abs_b_ + __sx_num_int_divmod_abs_chunk_))
 				__sx_num_int_divmod_abs_r_=$((__sx_num_int_divmod_abs_chunk_ % __sx_num_int_divmod_abs_v_))
-				__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_zr_}$((__sx_num_int_divmod_abs_chunk_ / __sx_num_int_divmod_abs_v_))"
-				__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_qpad_#"${__sx_num_int_divmod_abs_qpad_%${__sx_num_int_divmod_abs_qm_}}"}"
+				# 商1語がちょうど m 桁ならゼロ埋め・切り出しを省略し、それ以外は m 桁に整形する
+				__sx_num_int_divmod_abs_qpad_=$((__sx_num_int_divmod_abs_chunk_ / __sx_num_int_divmod_abs_v_))
+
+				case "${__sx_num_int_divmod_abs_qpad_}" in
+					${__sx_num_int_divmod_abs_qm_}) ;;
+					*)
+						__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_zr_}${__sx_num_int_divmod_abs_qpad_}"
+						__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_qpad_#"${__sx_num_int_divmod_abs_qpad_%${__sx_num_int_divmod_abs_qm_}}"}"
+				esac
+
 				__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_qpad_}"
 
 				case "${__sx_num_int_divmod_abs_u_}" in '') ! :;; esac
