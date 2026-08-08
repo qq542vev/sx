@@ -6408,7 +6408,7 @@ sx_num_int_divmod_abs() {
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(t) V(qd) V(qpad) V(dv) V(s) V(vtop) V(v2) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(qmk) V(btail) V(wqm) V(vs) V(m)|])dnl
+define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(t) V(qd) V(qpad) V(dv) V(s) V(vtop) V(v2) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(qmk) V(btail) V(wqm) V(vs) V(m)|])dnl
 
 __sx_num_int_divmod_abs() {
 	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
@@ -6456,10 +6456,10 @@ __sx_num_int_divmod_abs() {
 
 		case "$(( __sx_num_int_divmod_abs_kz_ <= 37 && ( ${#__sx_num_int_divmod_abs_v_} - ${#__sx_num_int_divmod_abs_zv_} <= __sx_num_int_divmod_abs_wlen_ || __sx_num_int_divmod_abs_kz_ >= __sx_num_int_divmod_abs_c_ ) ))" in 1)
 			eval "__sx_num_int_divmod_abs_qmk_=\"\${SX_QM_${__sx_num_int_divmod_abs_kz_}}\""
-			__sx_num_int_divmod_abs_up_=${__sx_num_int_divmod_abs_u_%${__sx_num_int_divmod_abs_qmk_}}
-			__sx_num_int_divmod_abs_btail_="${__sx_num_int_divmod_abs_u_#"${__sx_num_int_divmod_abs_up_}"}"
+			__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_u_%${__sx_num_int_divmod_abs_qmk_}}"
+			__sx_num_int_divmod_abs_btail_="${__sx_num_int_divmod_abs_u_#"${__sx_num_int_divmod_abs_tmp_}"}"
 			__sx_num_int_divmod_abs_v_="${__sx_num_int_divmod_abs_v_%"${__sx_num_int_divmod_abs_zv_}"}"
-			__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_up_}"
+			__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_tmp_}"
 		esac
 	esac
 
@@ -6507,8 +6507,9 @@ __sx_num_int_divmod_abs() {
 			while
 				case "${__sx_num_int_divmod_abs_u_}" in
 					${__sx_num_int_divmod_abs_qm_}?*)
-						__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_u_%"${__sx_num_int_divmod_abs_u_#${__sx_num_int_divmod_abs_qm_}}"}"
-						__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_u_#${__sx_num_int_divmod_abs_qm_}}"
+						__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_u_#${__sx_num_int_divmod_abs_qm_}}"
+						__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_u_%"${__sx_num_int_divmod_abs_tmp_}"}"
+						__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_tmp_}"
 						;;
 					*)
 						__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_u_}"
@@ -6547,7 +6548,7 @@ __sx_num_int_divmod_abs() {
 			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_}"
 			unset CLEANUP
 			return "${SX_EX_OK}"
-		;;
+			;;
 	esac
 
 	# ステップ 7: 一般パス — 融合 Knuth D 法（u > v、u は 19 桁以上、v は 2 語以上）
