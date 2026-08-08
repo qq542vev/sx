@@ -6498,13 +6498,12 @@ __sx_num_int_divmod_abs() {
 			eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_m_}}\" __sx_num_int_divmod_abs_zr_=\"\${SX_ZR_${__sx_num_int_divmod_abs_m_}}\""
 			__sx_num_int_divmod_abs_b_="1${__sx_num_int_divmod_abs_zr_}"
 			__sx_num_int_divmod_abs_ulen_="${#__sx_num_int_divmod_abs_u_}"
-			__sx_num_int_divmod_abs_pad_="$(( (__sx_num_int_divmod_abs_m_ - __sx_num_int_divmod_abs_ulen_ % __sx_num_int_divmod_abs_m_) % __sx_num_int_divmod_abs_m_ ))"
+			__sx_num_int_divmod_abs_pad_="$(((__sx_num_int_divmod_abs_m_ - (__sx_num_int_divmod_abs_ulen_ % __sx_num_int_divmod_abs_m_)) % __sx_num_int_divmod_abs_m_))"
 
-			case "$((__sx_num_int_divmod_abs_pad_ > 0))" in 1)
-				eval "__sx_num_int_divmod_abs_padz_=\"\${SX_ZR_${__sx_num_int_divmod_abs_pad_}}\""
-				__sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_padz_}${__sx_num_int_divmod_abs_u_}"
+			case "$((__sx_num_int_divmod_abs_pad_ > 0))" in
+				1) eval "__sx_num_int_divmod_abs_rest_=\"\${SX_ZR_${__sx_num_int_divmod_abs_pad_}}\${__sx_num_int_divmod_abs_u_}\""
 				;;
-			0) __sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_u_}";;
+				0) __sx_num_int_divmod_abs_rest_="${__sx_num_int_divmod_abs_u_}";;
 			esac
 			__sx_num_int_divmod_abs_q_=
 			__sx_num_int_divmod_abs_r_=0
@@ -8233,14 +8232,17 @@ sx_str_rep() {
 ##   引数チェックは行わない。
 __sx_str_rep() {
 	set -- "${1}" "${2-}" "$((${3-1}))"
+
 	__sx_str_rep_out_=
 
-	while M_STR_NE([|"${3}"|], [|0|]); do
+	while :; do
 		case "$((${3} % 2))" in 1)
 			__sx_str_rep_out_="${__sx_str_rep_out_}${2}"
 		esac
 
-		set -- "${1}" "${2}${2}" "$((${3} / 2))"
+		set -- "${1}" "${2}" "$((${3} / 2))"
+		M_STR_NE([|"${3}"|], [|0|]) || break
+		set -- "${1}" "${2}${2}" "${3}"
 	done
 
 	__sx_var_set "${1}=${__sx_str_rep_out_}"
