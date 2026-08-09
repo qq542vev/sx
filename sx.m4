@@ -5649,7 +5649,7 @@ sx_num_int_add_abs() {
 ##   逐次方式でアキュムレータに各数値を順次加算する。
 
 define([|V|], [|__sx_num_int_add_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(wlen) V(b)|])dnl
+define([|CLEANUP|], [|V(res) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(wlen) V(b) V(len)|])dnl
 
 __sx_num_int_add_abs() {
 	__sx_num_int_add_abs_res_="${1}"
@@ -5700,13 +5700,14 @@ __sx_num_int_add_abs() {
 			esac
 
 			__sx_num_int_add_abs_tmp_=$((${__sx_num_int_add_abs_ch1_:-0} + ${__sx_num_int_add_abs_ch2_:-0} + __sx_num_int_add_abs_carry_))
-			__sx_num_int_add_abs_carry_=$((__sx_num_int_add_abs_wlen_ < ${#__sx_num_int_add_abs_tmp_}))
+			__sx_num_int_add_abs_len_=${#__sx_num_int_add_abs_tmp_}
+			__sx_num_int_add_abs_carry_=$((__sx_num_int_add_abs_wlen_ < __sx_num_int_add_abs_len_))
 
 			case "${#__sx_num_int_add_abs_rem1_}:${#__sx_num_int_add_abs_rem2_}:${__sx_num_int_add_abs_carry_}" in
 				0:0:[01]) __sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_tmp_}${__sx_num_int_add_abs_out_}" && ! :;;
 				[1-9]*:0:0 | 0:[1-9]*:0)
-					case "${__sx_num_int_add_abs_tmp_}" in
-						${__sx_num_int_add_abs_qm_}) __sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_tmp_}${__sx_num_int_add_abs_out_}";;
+					case "${__sx_num_int_add_abs_len_}" in
+						"${__sx_num_int_add_abs_wlen_}") __sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_tmp_}${__sx_num_int_add_abs_out_}";;
 						*)
 							# ゼロ埋めして前置（片方のチャンクが先頭ゼロ除去で短くなった場合の桁揃え）
 							: "$(( __sx_num_int_add_abs_tmp_ += __sx_num_int_add_abs_b_))"
@@ -5714,8 +5715,8 @@ __sx_num_int_add_abs() {
 							;;
 						esac && ! :;;
 				*:0)
-					case "${__sx_num_int_add_abs_tmp_}" in
-						${__sx_num_int_add_abs_qm_}) __sx_num_int_add_abs_out_="${__sx_num_int_add_abs_tmp_}${__sx_num_int_add_abs_out_}";;
+					case "${__sx_num_int_add_abs_len_}" in
+						"${__sx_num_int_add_abs_wlen_}") __sx_num_int_add_abs_out_="${__sx_num_int_add_abs_tmp_}${__sx_num_int_add_abs_out_}";;
 						*)
 							# ゼロ埋めして前置
 							: "$((__sx_num_int_add_abs_tmp_ += __sx_num_int_add_abs_b_))"
