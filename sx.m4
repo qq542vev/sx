@@ -5649,7 +5649,7 @@ sx_num_int_add_abs() {
 ##   逐次方式でアキュムレータに各数値を順次加算する。
 
 define([|V|], [|__sx_num_int_add_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(zr) V(wlen)|])dnl
+define([|CLEANUP|], [|V(res) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(wlen) V(b)|])dnl
 
 __sx_num_int_add_abs() {
 	__sx_num_int_add_abs_res_="${1}"
@@ -5657,7 +5657,7 @@ __sx_num_int_add_abs() {
 	shift "$((1 + 0${2+1}))"
 
 	# チャンク処理定数（事前定義値から選択）
-	eval "__sx_num_int_add_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" __sx_num_int_add_abs_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_int_add_abs_zr_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
+	eval "__sx_num_int_add_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" __sx_num_int_add_abs_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_int_add_abs_b_=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
 
 	for __sx_num_int_add_abs_rem2_ in "${@}"; do
 		# (2) 右端→左端 チャンク処理
@@ -5709,8 +5709,8 @@ __sx_num_int_add_abs() {
 						${__sx_num_int_add_abs_qm_}) __sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_tmp_}${__sx_num_int_add_abs_out_}";;
 						*)
 							# ゼロ埋めして前置（片方のチャンクが先頭ゼロ除去で短くなった場合の桁揃え）
-							__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_zr_}${__sx_num_int_add_abs_tmp_}"
-							__sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_tmp_#"${__sx_num_int_add_abs_tmp_%${__sx_num_int_add_abs_qm_}}"}${__sx_num_int_add_abs_out_}"
+							: "$(( __sx_num_int_add_abs_tmp_ += __sx_num_int_add_abs_b_))"
+							__sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_tmp_#1}${__sx_num_int_add_abs_out_}"
 							;;
 						esac && ! :;;
 				*:0)
@@ -5718,8 +5718,8 @@ __sx_num_int_add_abs() {
 						${__sx_num_int_add_abs_qm_}) __sx_num_int_add_abs_out_="${__sx_num_int_add_abs_tmp_}${__sx_num_int_add_abs_out_}";;
 						*)
 							# ゼロ埋めして前置
-							__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_zr_}${__sx_num_int_add_abs_tmp_}"
-							__sx_num_int_add_abs_out_="${__sx_num_int_add_abs_tmp_#"${__sx_num_int_add_abs_tmp_%${__sx_num_int_add_abs_qm_}}"}${__sx_num_int_add_abs_out_}"
+							: "$((__sx_num_int_add_abs_tmp_ += __sx_num_int_add_abs_b_))"
+							__sx_num_int_add_abs_out_="${__sx_num_int_add_abs_tmp_#1}${__sx_num_int_add_abs_out_}"
 							;;
 					esac
 					;;
