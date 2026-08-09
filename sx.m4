@@ -5705,13 +5705,23 @@ __sx_num_int_add_abs() {
 			case "${#__sx_num_int_add_abs_rem1_}:${#__sx_num_int_add_abs_rem2_}:${__sx_num_int_add_abs_carry_}" in
 				0:0:[01]) __sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_tmp_}${__sx_num_int_add_abs_out_}" && ! :;;
 				[1-9]*:0:0 | 0:[1-9]*:0)
-					# ゼロ埋めして前置（片方のチャンクが先頭ゼロ除去で短くなった場合の桁揃え）
-					__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_zr_}${__sx_num_int_add_abs_tmp_}"
-					__sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_tmp_#"${__sx_num_int_add_abs_tmp_%${__sx_num_int_add_abs_qm_}}"}${__sx_num_int_add_abs_out_}" && ! :;;
+					case "${__sx_num_int_add_abs_tmp_}" in
+						${__sx_num_int_add_abs_qm_}) __sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_tmp_}${__sx_num_int_add_abs_out_}";;
+						*)
+							# ゼロ埋めして前置（片方のチャンクが先頭ゼロ除去で短くなった場合の桁揃え）
+							__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_zr_}${__sx_num_int_add_abs_tmp_}"
+							__sx_num_int_add_abs_rem1_="${__sx_num_int_add_abs_rem1_}${__sx_num_int_add_abs_rem2_}${__sx_num_int_add_abs_tmp_#"${__sx_num_int_add_abs_tmp_%${__sx_num_int_add_abs_qm_}}"}${__sx_num_int_add_abs_out_}"
+							;;
+						esac && ! :;;
 				*:0)
-					# ゼロ埋めして前置
-					__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_zr_}${__sx_num_int_add_abs_tmp_}"
-					__sx_num_int_add_abs_out_="${__sx_num_int_add_abs_tmp_#"${__sx_num_int_add_abs_tmp_%${__sx_num_int_add_abs_qm_}}"}${__sx_num_int_add_abs_out_}"
+					case "${__sx_num_int_add_abs_tmp_}" in
+						${__sx_num_int_add_abs_qm_}) __sx_num_int_add_abs_out_="${__sx_num_int_add_abs_tmp_}${__sx_num_int_add_abs_out_}";;
+						*)
+							# ゼロ埋めして前置
+							__sx_num_int_add_abs_tmp_="${__sx_num_int_add_abs_zr_}${__sx_num_int_add_abs_tmp_}"
+							__sx_num_int_add_abs_out_="${__sx_num_int_add_abs_tmp_#"${__sx_num_int_add_abs_tmp_%${__sx_num_int_add_abs_qm_}}"}${__sx_num_int_add_abs_out_}"
+							;;
+					esac
 					;;
 				*) __sx_num_int_add_abs_out_="${__sx_num_int_add_abs_tmp_#?}${__sx_num_int_add_abs_out_}";;
 			esac
@@ -6533,11 +6543,12 @@ __sx_num_int_divmod_abs() {
 					*)
 						__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_zr_}${__sx_num_int_divmod_abs_qpad_}"
 						__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_qpad_#"${__sx_num_int_divmod_abs_qpad_%${__sx_num_int_divmod_abs_qm_}}"}"
+						;;
 				esac
 
 				__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_qpad_}"
 
-				case "${__sx_num_int_divmod_abs_u_}" in '') ! :;; esac
+				M_STR_NE([|"${__sx_num_int_divmod_abs_u_}"|], [|''|])
 			do :; done
 
 			case "${__sx_num_int_divmod_abs_q_}" in
