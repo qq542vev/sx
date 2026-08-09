@@ -5786,7 +5786,7 @@ sx_num_int_sub_abs() {
 ##   被減数 >= 減数 が保証されていること。
 
 define([|V|], [|__sx_num_int_sub_abs_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(qm) V(borrow) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(zr)|])dnl
+define([|CLEANUP|], [|V(res) V(qm) V(borrow) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(b)|])dnl
 
 __sx_num_int_sub_abs() {
 	__sx_num_int_sub_abs_res_="${1}"
@@ -5795,7 +5795,7 @@ __sx_num_int_sub_abs() {
 	__sx_num_int_sub_abs_borrow_=0
 	__sx_num_int_sub_abs_out_=
 
-	eval "__sx_num_int_sub_abs_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_int_sub_abs_zr_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
+	eval "__sx_num_int_sub_abs_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_int_sub_abs_b_=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
 
 	while
 		case "${__sx_num_int_sub_abs_rem1_}" in
@@ -5839,15 +5839,24 @@ __sx_num_int_sub_abs() {
 				esac && ! :
 				;;
 			*:0:0)
-				# rem2 のみ枯渇、rem1 に未処理チャンクあり → ゼロ埋めして桁揃え
-				__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_zr_}${__sx_num_int_sub_abs_tmp_}"
-				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_tmp_#"${__sx_num_int_sub_abs_tmp_%${__sx_num_int_sub_abs_qm_}}"}${__sx_num_int_sub_abs_out_}" && ! :
+				case "${__sx_num_int_sub_abs_tmp_}" in
+					${__sx_num_int_sub_abs_qm_}*) __sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_tmp_}${__sx_num_int_sub_abs_out_}";;
+					*)
+						# rem2 のみ枯渇、rem1 に未処理チャンクあり → ゼロ埋めして桁揃え
+						: "$((__sx_num_int_sub_abs_tmp_ += __sx_num_int_sub_abs_b_))"
+						__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_rem1_}${__sx_num_int_sub_abs_tmp_#1}${__sx_num_int_sub_abs_out_}"
+						;;
+				esac && ! :
 				;;
-			*:*:1)
-				: "$((__sx_num_int_sub_abs_tmp_ += 1${__sx_num_int_sub_abs_zr_}))";&
+			*:*:1) : "$((__sx_num_int_sub_abs_tmp_ += ${__sx_num_int_sub_abs_b_}))";&
 			*)
-				__sx_num_int_sub_abs_tmp_="${__sx_num_int_sub_abs_zr_}${__sx_num_int_sub_abs_tmp_}"
-				__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_tmp_#"${__sx_num_int_sub_abs_tmp_%${__sx_num_int_sub_abs_qm_}}"}${__sx_num_int_sub_abs_out_}"
+				case "${__sx_num_int_sub_abs_tmp_}" in
+					${__sx_num_int_sub_abs_qm_}*)  __sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_tmp_}${__sx_num_int_sub_abs_out_}";;
+					*)
+						: "$((__sx_num_int_sub_abs_tmp_ += __sx_num_int_sub_abs_b_))"
+						__sx_num_int_sub_abs_out_="${__sx_num_int_sub_abs_tmp_#1}${__sx_num_int_sub_abs_out_}"
+						;;
+				esac
 				;;
 		esac
 	do :; done
