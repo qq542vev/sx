@@ -6679,15 +6679,14 @@ __sx_num_int_divmod_abs() {
 	# ステップ 7.3: 主ループ — 窓（u_{W-n}..u_W）を 1 語ずつ左へずらしながら商を 1 語ずつ確定する
 	__sx_num_int_divmod_abs_w_=$((__sx_num_int_divmod_abs_n_ + 1))
 	__sx_num_int_divmod_abs_q_=
-	while :; do
-		case "$((__sx_num_int_divmod_abs_w_ <= __sx_num_int_divmod_abs_k_))" in 0) break;; esac
-
+	while M_NUM_LE([|__sx_num_int_divmod_abs_w_|], [|__sx_num_int_divmod_abs_k_|]); do
 		# D2: 商の見積り — 窓の先頭 2 語を v_1 で割って qhat を仮定する
 		#   top2 = u_{W-n}*b + u_{W-n+1}、qhat = top2 ÷ v_1（b を超えたら b-1 に丸める）
 		eval "__sx_num_int_divmod_abs_uw1_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_))}\" __sx_num_int_divmod_abs_uw2_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_ + 1))}\""
 		__sx_num_int_divmod_abs_top2_=$((__sx_num_int_divmod_abs_uw1_ * __sx_num_int_divmod_abs_b_ + __sx_num_int_divmod_abs_uw2_))
 		__sx_num_int_divmod_abs_qhat_=$((__sx_num_int_divmod_abs_top2_ / __sx_num_int_divmod_abs_vtop_))
 		__sx_num_int_divmod_abs_rhat_=$((__sx_num_int_divmod_abs_top2_ % __sx_num_int_divmod_abs_vtop_))
+
 		case "$((__sx_num_int_divmod_abs_qhat_ >= __sx_num_int_divmod_abs_b_))" in 1)
 			__sx_num_int_divmod_abs_qhat_=$((__sx_num_int_divmod_abs_b_ - 1))
 			__sx_num_int_divmod_abs_rhat_=$((__sx_num_int_divmod_abs_top2_ - __sx_num_int_divmod_abs_qhat_ * __sx_num_int_divmod_abs_vtop_))
@@ -6696,13 +6695,15 @@ __sx_num_int_divmod_abs() {
 		# D3: 精緻化 — qhat×v_2 が b×rhat + u_{W-n+2} を超える間 qhat を 1 ずつ減らす
 		#   （qhat の過大見積りを補正する。rhat が b 未満である限り繰り返す）
 		eval "__sx_num_int_divmod_abs_uw3_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_ + 2))}\""
-		while :; do
-			case "$((__sx_num_int_divmod_abs_rhat_ < __sx_num_int_divmod_abs_b_))" in 0) break;; esac
+		while M_NUM_LT([|__sx_num_int_divmod_abs_rhat_|], [|__sx_num_int_divmod_abs_b_|]); do
 			__sx_num_int_divmod_abs_lhs_=$((__sx_num_int_divmod_abs_qhat_ * __sx_num_int_divmod_abs_v2_))
 			__sx_num_int_divmod_abs_rhs_=$((__sx_num_int_divmod_abs_b_ * __sx_num_int_divmod_abs_rhat_ + __sx_num_int_divmod_abs_uw3_))
-			case "$((__sx_num_int_divmod_abs_lhs_ <= __sx_num_int_divmod_abs_rhs_))" in 1) break;; esac
-			__sx_num_int_divmod_abs_qhat_=$((__sx_num_int_divmod_abs_qhat_ - 1))
-			__sx_num_int_divmod_abs_rhat_=$((__sx_num_int_divmod_abs_rhat_ + __sx_num_int_divmod_abs_vtop_))
+			case "$((__sx_num_int_divmod_abs_lhs_ <= __sx_num_int_divmod_abs_rhs_))" in 1)
+				break
+			esac
+
+			: "$((__sx_num_int_divmod_abs_qhat_ -= 1))"
+			: "$((__sx_num_int_divmod_abs_rhat_ += __sx_num_int_divmod_abs_vtop_))"
 		done
 
 		# D4: 融合 multiply-subtract — 窓の語 u_{W-n+1}..u_W から qhat×v を一括減算する
@@ -6738,8 +6739,7 @@ __sx_num_int_divmod_abs() {
 
 		# D5: 加算復帰 — D4 の減算結果が負（qhat が過大）だった場合に v を加算して qhat を 1 減らす
 		#   （通常 0 回、最大 2 回で収束する）
-		while :; do
-			case "$((__sx_num_int_divmod_abs_ut_ < 0))" in 0) break;; esac
+		while M_NUM_LT([|__sx_num_int_divmod_abs_ut_|], [|0|]); do
 			__sx_num_int_divmod_abs_ck_=0
 			__sx_num_int_divmod_abs_i_=0
 			while :; do
