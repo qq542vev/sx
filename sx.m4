@@ -6081,8 +6081,13 @@ __sx_num_int_mul_abs() {
 						;;
 					*)
 						__sx_num_int_mul_abs_carry_=
-						__sx_num_int_mul_abs_tmp_="${__sx_num_int_mul_abs_zchunk_a_}${__sx_num_int_mul_abs_tmp_}"
-						__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#"${__sx_num_int_mul_abs_tmp_%${__sx_num_int_mul_abs_qchunk_a_}}"}${__sx_num_int_mul_abs_g_}"
+						case "${__sx_num_int_mul_abs_tmp_}" in
+							${__sx_num_int_mul_abs_qchunk_a_}) __sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_}${__sx_num_int_mul_abs_g_}";;
+							*)
+								: "$((__sx_num_int_mul_abs_tmp_ += 1${__sx_num_int_mul_abs_zchunk_a_}))"
+								__sx_num_int_mul_abs_g_="${__sx_num_int_mul_abs_tmp_#1}${__sx_num_int_mul_abs_g_}"
+								;;
+						esac
 						;;
 				esac
 			done
@@ -6512,7 +6517,7 @@ __sx_num_int_divmod_abs() {
 			# v の桁数 s に応じて語幅を m = WLEN - s へ拡大する。
 			# 余り r は常に r < v なので、1 反復で取る u の桁を s のぶんだけ増やしても
 			# nv = r * 10^m + chunk < 10^WLEN が保たれ、ネイティブ演算に収まる。
-			__sx_num_int_divmod_abs_m_="$((__sx_num_int_divmod_abs_wlen_ - ${#__sx_num_int_divmod_abs_v_}))"
+			__sx_num_int_divmod_abs_m_=$((__sx_num_int_divmod_abs_wlen_ - ${#__sx_num_int_divmod_abs_v_}))
 			eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_m_}}\" __sx_num_int_divmod_abs_zr_=\"\${SX_ZR_${__sx_num_int_divmod_abs_m_}}\""
 			__sx_num_int_divmod_abs_b_="1${__sx_num_int_divmod_abs_zr_}"
 			# 被除数 u を m 桁チャンクに分割できるよう先頭にゼロを埋める（以後 u は消費する）
@@ -6542,20 +6547,18 @@ __sx_num_int_divmod_abs() {
 				esac
 
 				# chunk を nv（r * 10^m + chunk）として再利用する
-				__sx_num_int_divmod_abs_chunk_=$((__sx_num_int_divmod_abs_r_ * __sx_num_int_divmod_abs_b_ + __sx_num_int_divmod_abs_chunk_))
+				: "$((__sx_num_int_divmod_abs_chunk_ += __sx_num_int_divmod_abs_r_ * __sx_num_int_divmod_abs_b_))"
 				__sx_num_int_divmod_abs_r_=$((__sx_num_int_divmod_abs_chunk_ % __sx_num_int_divmod_abs_v_))
 				# 商1語がちょうど m 桁ならゼロ埋め・切り出しを省略し、それ以外は m 桁に整形する
-				__sx_num_int_divmod_abs_qpad_=$((__sx_num_int_divmod_abs_chunk_ / __sx_num_int_divmod_abs_v_))
+				__sx_num_int_divmod_abs_tmp_=$((__sx_num_int_divmod_abs_chunk_ / __sx_num_int_divmod_abs_v_))
 
-				case "${__sx_num_int_divmod_abs_qpad_}" in
-					${__sx_num_int_divmod_abs_qm_}) ;;
+				case "${__sx_num_int_divmod_abs_tmp_}" in
+					${__sx_num_int_divmod_abs_qm_}) __sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_tmp_}";;
 					*)
-						__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_zr_}${__sx_num_int_divmod_abs_qpad_}"
-						__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_qpad_#"${__sx_num_int_divmod_abs_qpad_%${__sx_num_int_divmod_abs_qm_}}"}"
+						: "$((__sx_num_int_divmod_abs_tmp_ += __sx_num_int_divmod_abs_b_))"
+						__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_tmp_#1}"
 						;;
 				esac
-
-				__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_qpad_}"
 
 				M_STR_NE([|"${__sx_num_int_divmod_abs_u_}"|], [|''|])
 			do :; done
