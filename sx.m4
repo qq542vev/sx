@@ -6596,9 +6596,8 @@ __sx_num_int_divmod_abs() {
 	# ステップ 7: 一般パス — 融合 Knuth D 法（u > v、u は 19 桁以上、v は 2 語以上）
 	# ステップ 7.1: 正規化 — v の先頭語をちょうど c 桁に揃える（10^d 倍する）
 	#   商の見積り精度を保証するため。d = c - s（s は v の桁数を c で割った余り。0 なら d = 0）
-	__sx_num_int_divmod_abs_dv_="${#__sx_num_int_divmod_abs_v_}"
-	__sx_num_int_divmod_abs_s_=$((__sx_num_int_divmod_abs_dv_ % __sx_num_int_divmod_abs_c_))
-	case "${__sx_num_int_divmod_abs_s_}" in 0) __sx_num_int_divmod_abs_s_="${__sx_num_int_divmod_abs_c_}";; esac
+	__sx_num_int_divmod_abs_s_=$((((${#__sx_num_int_divmod_abs_v_} - 1) % __sx_num_int_divmod_abs_c_) + 1))
+
 	__sx_num_int_divmod_abs_d_=$((__sx_num_int_divmod_abs_c_ - __sx_num_int_divmod_abs_s_))
 	case "$((__sx_num_int_divmod_abs_d_ > 0))" in
 		1)
@@ -6631,12 +6630,13 @@ __sx_num_int_divmod_abs() {
 				__sx_num_int_divmod_abs_rest_=
 				;;
 		esac
+
 		case "${__sx_num_int_divmod_abs_chunk_}" in 0*)
 			__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_chunk_#"${__sx_num_int_divmod_abs_chunk_%%[!0]*}"}"
 		esac
-		case "${__sx_num_int_divmod_abs_chunk_}" in '') __sx_num_int_divmod_abs_chunk_=0;; esac
-		eval "__sx_num_int_divmod_abs_v_${__sx_num_int_divmod_abs_i_}=\${__sx_num_int_divmod_abs_chunk_}"
-		__sx_num_int_divmod_abs_i_=$((__sx_num_int_divmod_abs_i_ + 1))
+
+		eval "__sx_num_int_divmod_abs_v_${__sx_num_int_divmod_abs_i_}=\${__sx_num_int_divmod_abs_chunk_:-0}"
+		: "$((__sx_num_int_divmod_abs_i_ += 1))"
 	done
 
 	# u' を K 語に分割する。実データは u_2..u_K、u_1 は主ループの最初の窓（D2）が
@@ -6664,12 +6664,13 @@ __sx_num_int_divmod_abs() {
 				__sx_num_int_divmod_abs_rest_=
 				;;
 		esac
+
 		case "${__sx_num_int_divmod_abs_chunk_}" in 0*)
 			__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_chunk_#"${__sx_num_int_divmod_abs_chunk_%%[!0]*}"}"
 		esac
-		case "${__sx_num_int_divmod_abs_chunk_}" in '') __sx_num_int_divmod_abs_chunk_=0;; esac
-		eval "__sx_num_int_divmod_abs_u_${__sx_num_int_divmod_abs_i_}=\${__sx_num_int_divmod_abs_chunk_}"
-		__sx_num_int_divmod_abs_i_=$((__sx_num_int_divmod_abs_i_ + 1))
+
+		eval "__sx_num_int_divmod_abs_u_${__sx_num_int_divmod_abs_i_}=\${__sx_num_int_divmod_abs_chunk_:-0}"
+		: "$((__sx_num_int_divmod_abs_i_ += 1))"
 	done
 
 	eval "__sx_num_int_divmod_abs_vtop_=\"\${__sx_num_int_divmod_abs_v_1}\""
