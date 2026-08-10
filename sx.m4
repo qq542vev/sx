@@ -6543,7 +6543,18 @@ __sx_num_int_divmod_abs() {
 
 				case "${__sx_num_int_divmod_abs_chunk_}" in
 					0*[1-9]*) __sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_chunk_#"${__sx_num_int_divmod_abs_chunk_%%[!0]*}"}";;
-					0*) __sx_num_int_divmod_abs_chunk_=0;;
+					0*)
+						case "${__sx_num_int_divmod_abs_r_}" in
+							0)
+								__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_zr_}"
+								case "${__sx_num_int_divmod_abs_u_}" in
+									'') break;;
+									*) continue;;
+								esac
+								;;
+						esac
+						__sx_num_int_divmod_abs_chunk_=0
+						;;
 				esac
 
 				# chunk を nv（r * 10^m + chunk）として再利用する
