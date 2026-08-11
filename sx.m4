@@ -6432,7 +6432,7 @@ sx_num_int_divmod_abs() {
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(t) V(qd) V(qpad) V(dv) V(s) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(qmk) V(btail) V(wqm) V(vs) V(m)|])dnl
+define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(t) V(qpad) V(s) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(qmk) V(btail) V(wqm) V(m)|])dnl
 
 __sx_num_int_divmod_abs() {
 	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
@@ -6529,29 +6529,26 @@ __sx_num_int_divmod_abs() {
 			# 筆算の1語分: 前語までの余りを基数倍して次の語を結合し、ネイティブ除算で商1語を確定する
 			while
 				case "${__sx_num_int_divmod_abs_u_}" in
-					${__sx_num_int_divmod_abs_qm_}?*)
+					'') break;;
+					${__sx_num_int_divmod_abs_qm_})
+						__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_u_}"
+						__sx_num_int_divmod_abs_u_=
+						;;
+					*)
 						__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_u_#${__sx_num_int_divmod_abs_qm_}}"
 						__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_u_%"${__sx_num_int_divmod_abs_tmp_}"}"
 						__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_tmp_}"
-						;;
-					*)
-						__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_u_}"
-						__sx_num_int_divmod_abs_u_=
 						;;
 				esac
 
 				case "${__sx_num_int_divmod_abs_chunk_}" in
 					0*[1-9]*) __sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_chunk_#"${__sx_num_int_divmod_abs_chunk_%%[!0]*}"}";;
 					0*)
-						case "${__sx_num_int_divmod_abs_r_}" in
-							0)
-								__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_zr_}"
-								case "${__sx_num_int_divmod_abs_u_}" in
-									'') break;;
-									*) continue;;
-								esac
-								;;
+						case "${__sx_num_int_divmod_abs_r_}" in 0)
+							__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_zr_}"
+							continue
 						esac
+
 						__sx_num_int_divmod_abs_chunk_=0
 						;;
 				esac
@@ -6569,8 +6566,6 @@ __sx_num_int_divmod_abs() {
 						__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_tmp_#1}"
 						;;
 				esac
-
-				M_STR_NE([|"${__sx_num_int_divmod_abs_u_}"|], [|''|])
 			do :; done
 
 			case "${__sx_num_int_divmod_abs_q_}" in 0*)
