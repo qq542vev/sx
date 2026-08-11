@@ -6432,7 +6432,7 @@ sx_num_int_divmod_abs() {
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(t) V(qd) V(qpad) V(dv) V(s) V(vtop) V(v2) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(qmk) V(btail) V(wqm) V(vs) V(m)|])dnl
+define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(t) V(qd) V(qpad) V(dv) V(s) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(qmk) V(btail) V(wqm) V(vs) V(m)|])dnl
 
 __sx_num_int_divmod_abs() {
 	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
@@ -6594,8 +6594,24 @@ __sx_num_int_divmod_abs() {
 	esac
 
 	# ステップ 7: 一般パス — 融合 Knuth D 法（u > v、u は 19 桁以上、v は 2 語以上）
-	# ステップ 7.1: 正規化 — v の先頭語をちょうど c 桁に揃える（10^d 倍する）
-	#   商の見積り精度を保証するため。d = c - s（s は v の桁数を c で割った余り。0 なら d = 0）
+	# ステップ 7.1: 正規化 — u・v を 10^d 倍し、v の先頭語をちょうど c 桁に揃える
+	#   d = c - s（s は v の先頭語の桁数、s = (len(v) - 1) mod c + 1。s がちょうど c なら d = 0）
+	#
+	#   古典 Knuth D 法の正規化（v1 の値から d = floor(b / (v1 + 1)) を求め、u・v を d 倍して
+	#   v1 >= b/2 を保証する方式）とは異なり、ここでは値に依存せず 10^d 倍（末尾へのゼロ付加）
+	#   だけで先頭語を c 桁に揃える。保証されるのは v1 >= 10^(c-1) = b/10 であり b/2 には届かない。
+	#
+	#   正しさの根拠:
+	#   - 10^d 倍は文字列連結で実現でき、多倍長乗算を要求しない（u*d、v*d の乗算は
+	#     この除数自体を多倍長で扱うことになり、高速除算の利点を失う）。
+	#   - D2 の見積りは窓の不変条件 u_{W-n} < v1 より q <= top2/v1 が常に成立し、
+	#     過小見積り（qhat < q）は起きない。
+	#   - D3 の精緻化テスト（qhat*v2 <= b*rhat + u3）は v1 の大きさに依存せず成立し、
+	#     その後は v の最下位 n-2 語の寄与のみが誤差の源泉となる。v1 >= b/10 より
+	#     qhat - q < qhat*Lv/v <= b^(n-2)/v <= 1/v1 <= 1 となり（整数性から高々 1）、
+	#     D5 加算復帰は実質 1 回で収束する（古典の最悪 2 回と同等以下）。
+	#   - D3 が rhat >= b で脱出する場合（先頭語が b/2 より小さいと頻発する）も
+	#     qhat*v <= 窓値 が成立し、過大見積り（D5 の反復）は発生しない。
 	__sx_num_int_divmod_abs_s_=$((((${#__sx_num_int_divmod_abs_v_} - 1) % __sx_num_int_divmod_abs_c_) + 1))
 
 	__sx_num_int_divmod_abs_d_=$((__sx_num_int_divmod_abs_c_ - __sx_num_int_divmod_abs_s_))
@@ -6673,9 +6689,6 @@ __sx_num_int_divmod_abs() {
 		: "$((__sx_num_int_divmod_abs_i_ += 1))"
 	done
 
-	eval "__sx_num_int_divmod_abs_vtop_=\"\${__sx_num_int_divmod_abs_v_1}\""
-	eval "__sx_num_int_divmod_abs_v2_=\"\${__sx_num_int_divmod_abs_v_2}\""
-
 	# ステップ 7.3: 主ループ — 窓（u_{W-n}..u_W）を 1 語ずつ左へずらしながら商を 1 語ずつ確定する
 	__sx_num_int_divmod_abs_w_=$((__sx_num_int_divmod_abs_n_ + 1))
 	__sx_num_int_divmod_abs_q_=
@@ -6684,26 +6697,26 @@ __sx_num_int_divmod_abs() {
 		#   top2 = u_{W-n}*b + u_{W-n+1}、qhat = top2 ÷ v_1（b を超えたら b-1 に丸める）
 		eval "__sx_num_int_divmod_abs_uw1_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_))}\" __sx_num_int_divmod_abs_uw2_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_ + 1))}\""
 		__sx_num_int_divmod_abs_top2_=$((__sx_num_int_divmod_abs_uw1_ * __sx_num_int_divmod_abs_b_ + __sx_num_int_divmod_abs_uw2_))
-		__sx_num_int_divmod_abs_qhat_=$((__sx_num_int_divmod_abs_top2_ / __sx_num_int_divmod_abs_vtop_))
-		__sx_num_int_divmod_abs_rhat_=$((__sx_num_int_divmod_abs_top2_ % __sx_num_int_divmod_abs_vtop_))
+		__sx_num_int_divmod_abs_qhat_=$((__sx_num_int_divmod_abs_top2_ / __sx_num_int_divmod_abs_v_1))
+		__sx_num_int_divmod_abs_rhat_=$((__sx_num_int_divmod_abs_top2_ % __sx_num_int_divmod_abs_v_1))
 
 		case "$((__sx_num_int_divmod_abs_qhat_ >= __sx_num_int_divmod_abs_b_))" in 1)
 			__sx_num_int_divmod_abs_qhat_=$((__sx_num_int_divmod_abs_b_ - 1))
-			__sx_num_int_divmod_abs_rhat_=$((__sx_num_int_divmod_abs_top2_ - __sx_num_int_divmod_abs_qhat_ * __sx_num_int_divmod_abs_vtop_))
+			__sx_num_int_divmod_abs_rhat_=$((__sx_num_int_divmod_abs_top2_ - __sx_num_int_divmod_abs_qhat_ * __sx_num_int_divmod_abs_v_1))
 		esac
 
 		# D3: 精緻化 — qhat×v_2 が b×rhat + u_{W-n+2} を超える間 qhat を 1 ずつ減らす
 		#   （qhat の過大見積りを補正する。rhat が b 未満である限り繰り返す）
 		eval "__sx_num_int_divmod_abs_uw3_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_ + 2))}\""
 		while M_NUM_LT([|__sx_num_int_divmod_abs_rhat_|], [|__sx_num_int_divmod_abs_b_|]); do
-			__sx_num_int_divmod_abs_lhs_=$((__sx_num_int_divmod_abs_qhat_ * __sx_num_int_divmod_abs_v2_))
+			__sx_num_int_divmod_abs_lhs_=$((__sx_num_int_divmod_abs_qhat_ * __sx_num_int_divmod_abs_v_2))
 			__sx_num_int_divmod_abs_rhs_=$((__sx_num_int_divmod_abs_b_ * __sx_num_int_divmod_abs_rhat_ + __sx_num_int_divmod_abs_uw3_))
 			case "$((__sx_num_int_divmod_abs_lhs_ <= __sx_num_int_divmod_abs_rhs_))" in 1)
 				break
 			esac
 
 			: "$((__sx_num_int_divmod_abs_qhat_ -= 1))"
-			: "$((__sx_num_int_divmod_abs_rhat_ += __sx_num_int_divmod_abs_vtop_))"
+			: "$((__sx_num_int_divmod_abs_rhat_ += __sx_num_int_divmod_abs_v_1))"
 		done
 
 		# D4: 融合 multiply-subtract — 窓の語 u_{W-n+1}..u_W から qhat×v を一括減算する
