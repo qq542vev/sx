@@ -6502,41 +6502,37 @@ __sx_num_int_divmod_abs() {
 		return "${SX_EX_OK}"
 	fi
 
-	eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_c_}}\" __sx_num_int_divmod_abs_zr_=\"\${SX_ZR_${__sx_num_int_divmod_abs_c_}}\""
-	__sx_num_int_divmod_abs_b_="1${__sx_num_int_divmod_abs_zr_}"
+	eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_$(((__sx_num_int_divmod_abs_wlen_ - 1) * 9 / 10))}\""
 
 	# 以後で使う定数の意味: b = 10^c（語の基数）、qm = c 桁ちょうどに一致するパターン、zr = c 桁のゼロ埋め文字列
 	# ステップ 6: 高速パス 5 — 除数が (WLEN-1)*9/10 桁以内なら語単位のネイティブ筆算
 	#   語幅 m = WLEN - len(v) は約 WLEN/10 + 1 以上に保たれる。m が小さいと反復回数と
 	#   商文字列の連結コスト（O(len(q)^2)）が増え、被除数が長い場合は Knuth D 法に
 	#   逆転される（実測では m = 2 で ulen ~ 500 付近から逆転）ため安全マージンを確保する。
-	case "$(( ${#__sx_num_int_divmod_abs_v_} < (__sx_num_int_divmod_abs_wlen_ - 1) * 9 / 10 + 1 ))" in
-		1)
+	case "${__sx_num_int_divmod_abs_v_}" in
+		${__sx_num_int_divmod_abs_qm_}?*) ;;
+		*)
 			# v の桁数 s に応じて語幅を m = WLEN - s へ拡大する。
 			# 余り r は常に r < v なので、1 反復で取る u の桁を s のぶんだけ増やしても
 			# nv = r * 10^m + chunk < 10^WLEN が保たれ、ネイティブ演算に収まる。
 			__sx_num_int_divmod_abs_m_=$((__sx_num_int_divmod_abs_wlen_ - ${#__sx_num_int_divmod_abs_v_}))
-			eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_m_}}\" __sx_num_int_divmod_abs_zr_=\"\${SX_ZR_${__sx_num_int_divmod_abs_m_}}\""
-			__sx_num_int_divmod_abs_b_="1${__sx_num_int_divmod_abs_zr_}"
-			# 被除数 u を m 桁チャンクに分割できるよう先頭にゼロを埋める（以後 u は消費する）
-			__sx_num_int_divmod_abs_pad_="$(((__sx_num_int_divmod_abs_m_ - (${#__sx_num_int_divmod_abs_u_} % __sx_num_int_divmod_abs_m_)) % __sx_num_int_divmod_abs_m_))"
-			case "$((__sx_num_int_divmod_abs_pad_ > 0))" in
-				1) eval "__sx_num_int_divmod_abs_u_=\"\${SX_ZR_${__sx_num_int_divmod_abs_pad_}}\${__sx_num_int_divmod_abs_u_}\""
-			esac
+			eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_m_}}\" __sx_num_int_divmod_abs_b_=\"1\${SX_ZR_${__sx_num_int_divmod_abs_m_}}\""
 			__sx_num_int_divmod_abs_q_=
 			__sx_num_int_divmod_abs_r_=0
 			# 筆算の1語分: 前語までの余りを基数倍して次の語を結合し、ネイティブ除算で商1語を確定する
 			while
 				case "${__sx_num_int_divmod_abs_u_}" in
 					'') break;;
-					${__sx_num_int_divmod_abs_qm_})
-						__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_u_}"
-						__sx_num_int_divmod_abs_u_=
-						;;
-					*)
+					${__sx_num_int_divmod_abs_qm_}?*)
 						__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_u_#${__sx_num_int_divmod_abs_qm_}}"
 						__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_u_%"${__sx_num_int_divmod_abs_tmp_}"}"
 						__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_tmp_}"
+						;;
+					*)
+						__sx_num_int_divmod_abs_m_="${#__sx_num_int_divmod_abs_u_}"
+						eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_m_}}\" __sx_num_int_divmod_abs_b_=\"1\${SX_ZR_${__sx_num_int_divmod_abs_m_}}\""
+						__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_u_}"
+						__sx_num_int_divmod_abs_u_=
 						;;
 				esac
 
@@ -6544,7 +6540,7 @@ __sx_num_int_divmod_abs() {
 					0*[1-9]*) __sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_chunk_#"${__sx_num_int_divmod_abs_chunk_%%[!0]*}"}";;
 					0*)
 						case "${__sx_num_int_divmod_abs_r_}" in 0)
-							__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_zr_}"
+							__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_b_#1}"
 							continue
 						esac
 
@@ -6584,6 +6580,8 @@ __sx_num_int_divmod_abs() {
 			;;
 	esac
 
+	eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_c_}}\" __sx_num_int_divmod_abs_zr_=\"\${SX_ZR_${__sx_num_int_divmod_abs_c_}}\""
+	__sx_num_int_divmod_abs_b_="1${__sx_num_int_divmod_abs_zr_}"
 	# ステップ 7: 一般パス — 融合 Knuth D 法（u > v、u は 19 桁以上、v は 2 語以上）
 	# ステップ 7.1: 正規化 — u・v を 10^d 倍し、v の先頭語をちょうど c 桁に揃える
 	#   d = c - s（s は v の先頭語の桁数、s = (len(v) - 1) mod c + 1。s がちょうど c なら d = 0）
