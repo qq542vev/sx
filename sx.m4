@@ -6495,12 +6495,11 @@ __sx_num_int_divmod_abs() {
 			__sx_num_int_divmod_abs_r_="$((__sx_num_int_divmod_abs_u_ % __sx_num_int_divmod_abs_v_))${__sx_num_int_divmod_abs_btail_}"
 
 			# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
-			case "${__sx_num_int_divmod_abs_r_}" in
-				0*[1-9]*) __sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}";;
-				0*) __sx_num_int_divmod_abs_r_=0;;
+			case "${__sx_num_int_divmod_abs_r_}" in 0*)
+				__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
 			esac
 
-			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_}"
+			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_:-0}"
 			unset CLEANUP
 			return "${SX_EX_OK}"
 			;;
@@ -6574,20 +6573,18 @@ __sx_num_int_divmod_abs() {
 				M_STR_NE([|"${__sx_num_int_divmod_abs_u_}"|], [|''|])
 			do :; done
 
-			case "${__sx_num_int_divmod_abs_q_}" in
-				0*[1-9]*) __sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_#"${__sx_num_int_divmod_abs_q_%%[!0]*}"}";;
-				0*) __sx_num_int_divmod_abs_q_=0;;
+			case "${__sx_num_int_divmod_abs_q_}" in 0*)
+				__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_#"${__sx_num_int_divmod_abs_q_%%[!0]*}"}"
 			esac
 
 			# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
 			__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_btail_}"
 
-			case "${__sx_num_int_divmod_abs_r_}" in
-				0*[1-9]*) __sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}";;
-				0*) __sx_num_int_divmod_abs_r_=0;;
+			case "${__sx_num_int_divmod_abs_r_}" in 0*)
+				__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}";;
 			esac
 
-			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_}"
+			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_:-0}"
 			unset CLEANUP
 			return "${SX_EX_OK}"
 			;;
