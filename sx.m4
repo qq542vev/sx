@@ -6432,7 +6432,7 @@ sx_num_int_divmod_abs() {
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(t) V(qpad) V(s) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(qmk) V(btail) V(wqm) V(m)|])dnl
+define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(t) V(qpad) V(s) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(qmk) V(btail) V(m)|])dnl
 
 __sx_num_int_divmod_abs() {
 	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
@@ -6458,7 +6458,7 @@ __sx_num_int_divmod_abs() {
 		return "${SX_EX_OK}"
 	}
 
-	eval "__sx_num_int_divmod_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" __sx_num_int_divmod_abs_wqm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
+	eval "__sx_num_int_divmod_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\""
 
 	# ステップ 3: 語サイズ c の決定
 	__sx_num_int_divmod_abs_c_="$((__sx_num_int_divmod_abs_wlen_ / 2))"
@@ -6488,22 +6488,19 @@ __sx_num_int_divmod_abs() {
 	esac
 
 	# ステップ 5: 高速パス 4 — 被除数全体がネイティブ除算で確定できる場合
-	case "${__sx_num_int_divmod_abs_u_}" in
-		${__sx_num_int_divmod_abs_wqm_}?*) ;;
-		*)
-			__sx_num_int_divmod_abs_q_="$((__sx_num_int_divmod_abs_u_ / __sx_num_int_divmod_abs_v_))"
-			__sx_num_int_divmod_abs_r_="$((__sx_num_int_divmod_abs_u_ % __sx_num_int_divmod_abs_v_))${__sx_num_int_divmod_abs_btail_}"
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_int_divmod_abs_u_}"; then
+		__sx_num_int_divmod_abs_q_="$((__sx_num_int_divmod_abs_u_ / __sx_num_int_divmod_abs_v_))"
+		__sx_num_int_divmod_abs_r_="$((__sx_num_int_divmod_abs_u_ % __sx_num_int_divmod_abs_v_))${__sx_num_int_divmod_abs_btail_}"
 
-			# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
-			case "${__sx_num_int_divmod_abs_r_}" in 0*)
-				__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
-			esac
+		# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
+		case "${__sx_num_int_divmod_abs_r_}" in 0*)
+			__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
+		esac
 
-			__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_:-0}"
-			unset CLEANUP
-			return "${SX_EX_OK}"
-			;;
-	esac
+		__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_:-0}"
+		unset CLEANUP
+		return "${SX_EX_OK}"
+	fi
 
 	eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_c_}}\" __sx_num_int_divmod_abs_zr_=\"\${SX_ZR_${__sx_num_int_divmod_abs_c_}}\""
 	__sx_num_int_divmod_abs_b_="1${__sx_num_int_divmod_abs_zr_}"
