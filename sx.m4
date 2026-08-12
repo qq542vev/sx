@@ -6479,7 +6479,12 @@ __sx_num_int_divmod_abs() {
 		__sx_num_int_divmod_abs_kz_="${#__sx_num_int_divmod_abs_zv_}"
 
 		if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_int_divmod_abs_kz_}"; then
-			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_qm_ '?' "${__sx_num_int_divmod_abs_kz_}"
+			if __sx_var_is_set "SX_QM_${__sx_num_int_divmod_abs_kz_}"; then
+				eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_kz_}}\""
+			else
+				SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_qm_ '?' "${__sx_num_int_divmod_abs_kz_}"
+			fi
+
 			__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_u_%${__sx_num_int_divmod_abs_qm_}}"
 			__sx_num_int_divmod_abs_btail_="${__sx_num_int_divmod_abs_u_#"${__sx_num_int_divmod_abs_tmp_}"}"
 			__sx_num_int_divmod_abs_v_="${__sx_num_int_divmod_abs_v_%"${__sx_num_int_divmod_abs_zv_}"}"
