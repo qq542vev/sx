@@ -6432,7 +6432,7 @@ sx_num_int_divmod_abs() {
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(t) V(qpad) V(s) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(qmk) V(btail) V(m)|])dnl
+define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(vp) V(up) V(n) V(k) V(du) V(rest) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(t) V(qpad) V(s) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(btail) V(m)|])dnl
 
 __sx_num_int_divmod_abs() {
 	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
@@ -6459,6 +6459,7 @@ __sx_num_int_divmod_abs() {
 	}
 
 	eval "__sx_num_int_divmod_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\""
+	eval "__sx_num_int_divmod_abs_zr_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
 
 	# ステップ 3: 語サイズ c の決定
 	__sx_num_int_divmod_abs_c_="$((__sx_num_int_divmod_abs_wlen_ / 2))"
@@ -6468,23 +6469,22 @@ __sx_num_int_divmod_abs() {
 	#   商は変化せず、余りには縮小で取り除いた u の下位 k 桁（btail）を最後に復元する。
 	#   例: 1234500 ÷ 1200 → m = 12、k = 2、12345 ÷ 12 = 商 1028 余り 9
 	#      → 余り = 9 × 100 + 00 = 900（商は縮小の影響を受けない）
-	#   適用条件（下の複合 case 式）:
-	#     縮小後の除数 m がネイティブ演算可能（WLEN 桁以内）
-	#     または k >= c（1 語以上縮小され、後の除算が確実に減る）場合のみ。
-	#   k > 37 は SX_QM_ 定数テーブルの上限を超えるためスキップする。
+	#   適用条件:
+	#     kz > WLEN（末尾ゼロが 1 語幅を超える）場合のみ縮小する。
+	#     kz は fit_dec によりネイティブ演算の桁数上限に制限される。
 	__sx_num_int_divmod_abs_btail_=
 
-	case "${__sx_num_int_divmod_abs_v_}" in *0)
+	case "${__sx_num_int_divmod_abs_v_}" in *0${__sx_num_int_divmod_abs_zr_})
 		__sx_num_int_divmod_abs_zv_="${__sx_num_int_divmod_abs_v_##*[!0]}"
 		__sx_num_int_divmod_abs_kz_="${#__sx_num_int_divmod_abs_zv_}"
 
-		case "$(( __sx_num_int_divmod_abs_kz_ <= 37 && ( ${#__sx_num_int_divmod_abs_v_} - ${#__sx_num_int_divmod_abs_zv_} <= __sx_num_int_divmod_abs_wlen_ || __sx_num_int_divmod_abs_kz_ >= __sx_num_int_divmod_abs_c_ ) ))" in 1)
-			eval "__sx_num_int_divmod_abs_qmk_=\"\${SX_QM_${__sx_num_int_divmod_abs_kz_}}\""
-			__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_u_%${__sx_num_int_divmod_abs_qmk_}}"
+		if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_int_divmod_abs_kz_}"; then
+			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_qm_ '?' "${__sx_num_int_divmod_abs_kz_}"
+			__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_u_%${__sx_num_int_divmod_abs_qm_}}"
 			__sx_num_int_divmod_abs_btail_="${__sx_num_int_divmod_abs_u_#"${__sx_num_int_divmod_abs_tmp_}"}"
 			__sx_num_int_divmod_abs_v_="${__sx_num_int_divmod_abs_v_%"${__sx_num_int_divmod_abs_zv_}"}"
 			__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_tmp_}"
-		esac
+		fi
 	esac
 
 	# ステップ 5: 高速パス 4 — 被除数全体がネイティブ除算で確定できる場合
