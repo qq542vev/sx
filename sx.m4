@@ -6619,6 +6619,7 @@ __sx_num_int_divmod_abs() {
 	__sx_num_int_divmod_abs_i_=1
 	while :; do
 		case "${__sx_num_int_divmod_abs_v_}" in
+			'') break;;
 			${__sx_num_int_divmod_abs_qm_}?*)
 				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_v_#${__sx_num_int_divmod_abs_qm_}}"
 				__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_v_%"${__sx_num_int_divmod_abs_tail_}"}"
@@ -6627,14 +6628,17 @@ __sx_num_int_divmod_abs() {
 			*)
 				# 残余が 1..c 文字 = 最下位語 v_n。ここで s → d が確定する
 				# （残余がちょうど c 文字のときもこの分岐に入り d = 0 になる）。
+				# 残余は v_ に残っている（chunk_ は直前の c 文字チャンクのため使用しない）。
+				__sx_num_int_divmod_abs_d_=$((__sx_num_int_divmod_abs_c_ - ${#__sx_num_int_divmod_abs_v_}))
+
+				case "$((0 < __sx_num_int_divmod_abs_d_))" in 1)
+					eval "__sx_num_int_divmod_abs_zrd_=\"\${SX_ZR_${__sx_num_int_divmod_abs_d_}}\" __sx_num_int_divmod_abs_qmd_=\"\${SX_QM_${__sx_num_int_divmod_abs_d_}}\""
+					__sx_num_int_divmod_abs_v_="${__sx_num_int_divmod_abs_v_}${__sx_num_int_divmod_abs_zrd_}"
+					__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_u_}${__sx_num_int_divmod_abs_zrd_}"
+				esac
+
 				__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_v_}"
 				__sx_num_int_divmod_abs_v_=
-				__sx_num_int_divmod_abs_d_=$((__sx_num_int_divmod_abs_c_ - ${#__sx_num_int_divmod_abs_chunk_}))
-
-				case "$((__sx_num_int_divmod_abs_d_ > 0))" in 1)
-					eval "__sx_num_int_divmod_abs_zrd_=\"\${SX_ZR_${__sx_num_int_divmod_abs_d_}}\" __sx_num_int_divmod_abs_qmd_=\"\${SX_QM_${__sx_num_int_divmod_abs_d_}}\""
-					__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_chunk_}${__sx_num_int_divmod_abs_zrd_}"
-				esac
 				;;
 		esac
 
@@ -6644,20 +6648,9 @@ __sx_num_int_divmod_abs() {
 
 		eval "__sx_num_int_divmod_abs_v_${__sx_num_int_divmod_abs_i_}=\${__sx_num_int_divmod_abs_chunk_:-0}"
 		: "$((__sx_num_int_divmod_abs_i_ += 1))"
-
-		case "${__sx_num_int_divmod_abs_v_}" in '')
-			break
-		esac
 	done
+
 	__sx_num_int_divmod_abs_n_=$((__sx_num_int_divmod_abs_i_ - 1))
-	case "$((__sx_num_int_divmod_abs_d_ > 0))" in
-		1)
-			__sx_num_int_divmod_abs_up_="${__sx_num_int_divmod_abs_u_}${__sx_num_int_divmod_abs_zrd_}"
-			;;
-		*)
-			__sx_num_int_divmod_abs_up_="${__sx_num_int_divmod_abs_u_}"
-			;;
-	esac
 
 	# ステップ 7.2 の u 側: u' を K 語に分割する。語は変数ではなく位置パラメータ上で保持する
 	# （MS-first: $1 = u_1 = センチネル 0、$2..$# = u_2..u_K の語値。主ループの窓を
@@ -6672,21 +6665,22 @@ __sx_num_int_divmod_abs() {
 	# ありゼロストリップ不要。ゼロストリップは分割済みチャンクに対してのみ行う）。
 	#   up_ は分割中に消費される（分割後は使用しない）。
 	set --
+
 	while :; do
-		case "${__sx_num_int_divmod_abs_up_}" in
+		case "${__sx_num_int_divmod_abs_u_}" in
 			'') break;;
 			${__sx_num_int_divmod_abs_qm_}?*)
-				__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_up_%${__sx_num_int_divmod_abs_qm_}}"
-				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_up_#${__sx_num_int_divmod_abs_tmp_}}"
-				__sx_num_int_divmod_abs_up_="${__sx_num_int_divmod_abs_tmp_}"
+				__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_u_%${__sx_num_int_divmod_abs_qm_}}"
+				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_u_#${__sx_num_int_divmod_abs_tmp_}}"
+				__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_tmp_}"
 
 				case "${__sx_num_int_divmod_abs_tail_}" in 0*)
 					__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_tail_#"${__sx_num_int_divmod_abs_tail_%%[!0]*}"}"
 				esac
 				;;
 			*)
-				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_up_}"
-				__sx_num_int_divmod_abs_up_=
+				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_u_}"
+				__sx_num_int_divmod_abs_u_=
 				;;
 		esac
 
