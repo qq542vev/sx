@@ -6436,7 +6436,7 @@ sx_num_int_divmod_abs() {
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(up) V(rev) V(n) V(k) V(tail) V(chunk) V(i) V(q) V(r) V(t) V(qpad) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(new) V(new2) V(w) V(zv) V(kz) V(btail) V(m)|])dnl
+define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(up) V(n) V(k) V(tail) V(chunk) V(i) V(q) V(r) V(t) V(qpad) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(new) V(new2) V(w) V(zv) V(kz) V(btail) V(m)|])dnl
 
 __sx_num_int_divmod_abs() {
 	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
@@ -6665,32 +6665,35 @@ __sx_num_int_divmod_abs() {
 	# 参照するために先頭に確保するゼロ語）。
 	# up_（= u_ + 0^d）の右剥ぎチャンクは語境界ちょうどで語になる（正規化ゼロは末尾に付加され、
 	# パディング padz は先頭にのみ挿入されるため。v と違い位相ずれが起きない）。
-	# 右剥ぎチャンクは下位の語から得られるため rev_ への前置で逆順（MS-first）に整列し、
-	# 残余（高々 c 桁 = 先頭語 u_2 の元）をゼロストリップして後続に連結する。
+	# 右剥ぎチャンクは下位の語から得られるため、位置パラメータへの前置（set -- "${tail_}" "${@}"）
+	# により逆順（MS-first）に整列する。ループ前に位置パラメータを空クリア（set --）してから
+	# 蓄積を開始する（関数の元引数が語列の末尾に混入しないようにするため）。
+	# 残余（高々 c 桁 = 先頭語 u_2 の元）はそのまま末尾に連結する（正規入力では先頭桁が非ゼロで
+	# ありゼロストリップ不要。ゼロストリップは分割済みチャンクに対してのみ行う）。
 	#   up_ は分割中に消費される（分割後は使用しない）。
-	__sx_num_int_divmod_abs_rev_=
+	set --
 	while :; do
 		case "${__sx_num_int_divmod_abs_up_}" in
+			'') break;;
 			${__sx_num_int_divmod_abs_qm_}?*)
-				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_up_#${__sx_num_int_divmod_abs_up_%${__sx_num_int_divmod_abs_qm_}}}"
-				__sx_num_int_divmod_abs_up_="${__sx_num_int_divmod_abs_up_%${__sx_num_int_divmod_abs_qm_}}"
+				__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_up_%${__sx_num_int_divmod_abs_qm_}}"
+				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_up_#${__sx_num_int_divmod_abs_tmp_}}"
+				__sx_num_int_divmod_abs_up_="${__sx_num_int_divmod_abs_tmp_}"
+
 				case "${__sx_num_int_divmod_abs_tail_}" in 0*)
 					__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_tail_#"${__sx_num_int_divmod_abs_tail_%%[!0]*}"}"
 				esac
-				__sx_num_int_divmod_abs_rev_="${__sx_num_int_divmod_abs_tail_:-0}${__sx_num_int_divmod_abs_rev_:+ ${__sx_num_int_divmod_abs_rev_}}"
 				;;
-			*) break;;
+			*)
+				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_up_}"
+				__sx_num_int_divmod_abs_up_=
+				;;
 		esac
+
+		set -- "${__sx_num_int_divmod_abs_tail_:-0}" "${@}"
 	done
 
-	# 先頭語 u_2（残余が残った場合のみ）: ゼロストリップして語値に直す
-	case "${__sx_num_int_divmod_abs_up_}" in 0*)
-		__sx_num_int_divmod_abs_up_="${__sx_num_int_divmod_abs_up_#"${__sx_num_int_divmod_abs_up_%%[!0]*}"}"
-	esac
-	case "${__sx_num_int_divmod_abs_up_}" in '') __sx_num_int_divmod_abs_up_=0;; esac
-
-	set -- 0 ${__sx_num_int_divmod_abs_up_} ${__sx_num_int_divmod_abs_rev_}
-
+	set -- 0 "${@}"
 	# ステップ 7.3: 主ループ — 位置パラメータを窓として扱い、1 語ずつ左へずらしながら商を 1 語ずつ確定する
 	#   窓 = $1..$(n+1) = u_{W-n}..u_W。D2/D3 は窓先頭 2〜3 語を $1..$3 から直接参照する
 	#   （eval 不要）。D4（稀に D5）の書き込みは eval を避けて new_ に前置で蓄積し、
