@@ -6422,19 +6422,21 @@ sx_num_int_divmod_abs() {
 ##      語単位ネイティブ筆算で O(語数) に確定する。
 ##   7) 一般パス: 融合 Knuth D 法（u > v、u は 19 桁以上、v は 2 語以上）。
 ##      7.1 正規化: u、v を 10^d 倍して v の先頭語をちょうど c 桁に揃える。
-##      7.2 語分割: v を n 語（v_1..v_n）、u を K 語（u_1..u_K）に分解する。
+##      7.2 語分割: v を n 語（v_1..v_n）、u を K 語に分解する。u 語は変数ではなく
+##          位置パラメータ上で保持する（MS-first: $1 = u_1 = センチネル 0、$2..$# = u_2..u_K）。
 ##          （7.1 の v 左切り出しと正規化は 1 ループで同時に行い、u も右剥ぎ 1 ループで
 ##          語の中身を取りながら分割する。v の正規化は最下位語 v_n への 0^d 付加のみ）。
-##      7.3 主ループ: 窓を 1 語ずつ左へずらしながら商を 1 語ずつ確定する。
+##      7.3 主ループ: 窓（$1..$(n+1) = u_{W-n}..u_W）を 1 語ずつ左へずらしながら商を 1 語ずつ確定する。
 ##          D2 商の見積り → D3 精緻化 → D4 融合 multiply-subtract → D5 加算復帰。
-##      7.4 余り抽出: 末尾 n 語（u_{K-n+1}..u_K）を連結する。
+##          各反復末尾で shift n+1 → set -- ${new_} "$@" → shift 1 により窓を更新する。
+##      7.4 余り抽出: ループ終了後に位置パラメータへ残る末尾 n 語（u_{K-n+1}..u_K）を連結する。
 ##      7.5 逆正規化: 余りの末尾 d 桁を除去して 10^d 倍を戻す。
 ##   8) 商・余りを結果変数に格納し、内部変数を全て解放する。
 ##   ネイティブ演算の語積は必ず qhat*v_j < b^2 = 10^(2c) に収まり、
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(up) V(n) V(k) V(full) V(tail) V(chunk) V(i) V(pad) V(padz) V(q) V(r) V(t) V(qpad) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(w) V(zv) V(kz) V(btail) V(m)|])dnl
+define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(up) V(rev) V(n) V(k) V(tail) V(chunk) V(i) V(q) V(r) V(t) V(qpad) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(new) V(new2) V(w) V(zv) V(kz) V(btail) V(m)|])dnl
 
 __sx_num_int_divmod_abs() {
 	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
@@ -6657,73 +6659,52 @@ __sx_num_int_divmod_abs() {
 			;;
 	esac
 
-	# ステップ 7.2 の u 側: u' を K 語に分割する。実データは u_2..u_K、u_1 は主ループの
-	# 最初の窓（D2）が参照するために先頭に確保するゼロ語（センチネル）。
+	# ステップ 7.2 の u 側: u' を K 語に分割する。語は変数ではなく位置パラメータ上で保持する
+	# （MS-first: $1 = u_1 = センチネル 0、$2..$# = u_2..u_K の語値。主ループの窓を
+	# $1..$(n+1) 固定で扱えるようにした D1 の改良。u_1 は主ループの最初の窓（D2）が
+	# 参照するために先頭に確保するゼロ語）。
 	# up_（= u_ + 0^d）の右剥ぎチャンクは語境界ちょうどで語になる（正規化ゼロは末尾に付加され、
 	# パディング padz は先頭にのみ挿入されるため。v と違い位相ずれが起きない）。
-	# 位置パラメータに下位の語から積み、残余長 t∈[0,c] と剥がした語数 full から
-	# k = full + (残余非空 ? 1 : 0) + 1（センチネル）、pad = (c - t) % c を確定する。
+	# 右剥ぎチャンクは下位の語から得られるため rev_ への前置で逆順（MS-first）に整列し、
+	# 残余（高々 c 桁 = 先頭語 u_2 の元）をゼロストリップして後続に連結する。
 	#   up_ は分割中に消費される（分割後は使用しない）。
-	eval "__sx_num_int_divmod_abs_u_1=0"
-	set --
-	__sx_num_int_divmod_abs_full_=0
+	__sx_num_int_divmod_abs_rev_=
 	while :; do
 		case "${__sx_num_int_divmod_abs_up_}" in
 			${__sx_num_int_divmod_abs_qm_}?*)
 				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_up_#${__sx_num_int_divmod_abs_up_%${__sx_num_int_divmod_abs_qm_}}}"
 				__sx_num_int_divmod_abs_up_="${__sx_num_int_divmod_abs_up_%${__sx_num_int_divmod_abs_qm_}}"
-				set -- "${@}" "${__sx_num_int_divmod_abs_tail_}"
-				: $((__sx_num_int_divmod_abs_full_ += 1))
+				case "${__sx_num_int_divmod_abs_tail_}" in 0*)
+					__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_tail_#"${__sx_num_int_divmod_abs_tail_%%[!0]*}"}"
+				esac
+				__sx_num_int_divmod_abs_rev_="${__sx_num_int_divmod_abs_tail_:-0}${__sx_num_int_divmod_abs_rev_:+ ${__sx_num_int_divmod_abs_rev_}}"
 				;;
 			*) break;;
 		esac
 	done
 
-	__sx_num_int_divmod_abs_t_="${#__sx_num_int_divmod_abs_up_}"
-	case "${__sx_num_int_divmod_abs_up_}" in '')
-		__sx_num_int_divmod_abs_t_=0
-		__sx_num_int_divmod_abs_k_=$((__sx_num_int_divmod_abs_full_ + 1))
-		;;
-		*)
-		__sx_num_int_divmod_abs_k_=$((__sx_num_int_divmod_abs_full_ + 2))
-		;;
+	# 先頭語 u_2（残余が残った場合のみ）: ゼロストリップして語値に直す
+	case "${__sx_num_int_divmod_abs_up_}" in 0*)
+		__sx_num_int_divmod_abs_up_="${__sx_num_int_divmod_abs_up_#"${__sx_num_int_divmod_abs_up_%%[!0]*}"}"
 	esac
-	__sx_num_int_divmod_abs_pad_=$((( __sx_num_int_divmod_abs_c_ - __sx_num_int_divmod_abs_t_ ) % __sx_num_int_divmod_abs_c_))
+	case "${__sx_num_int_divmod_abs_up_}" in '') __sx_num_int_divmod_abs_up_=0;; esac
 
-	# 位置パラメータ $1..$# は下位の語から順に積まれている（$1 = u_K, $# = u_2 または u_3）。
-	# 語番号を k から降下させて語変数 u_k..u_3（残余が残る場合は u_2 まで）に格納する。
-	__sx_num_int_divmod_abs_i_=$((__sx_num_int_divmod_abs_k_))
-	for __sx_num_int_divmod_abs_chunk_ in "${@}"; do
-		case "${__sx_num_int_divmod_abs_chunk_}" in 0*)
-			__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_chunk_#"${__sx_num_int_divmod_abs_chunk_%%[!0]*}"}"
-		esac
+	set -- 0 ${__sx_num_int_divmod_abs_up_} ${__sx_num_int_divmod_abs_rev_}
 
-		eval "__sx_num_int_divmod_abs_u_${__sx_num_int_divmod_abs_i_}=\${__sx_num_int_divmod_abs_chunk_:-0}"
-		: "$((__sx_num_int_divmod_abs_i_ -= 1))"
-	done
-
-	# 先頭語 u_2（残余が残った場合のみ）: 残余 t 文字に pad ゼロを先頭付加して c 桁に揃える
-	case "${__sx_num_int_divmod_abs_up_}" in
-		'') ;;
-		*)
-			case "$((__sx_num_int_divmod_abs_pad_ > 0))" in 1)
-				eval "__sx_num_int_divmod_abs_padz_=\"\${SX_ZR_${__sx_num_int_divmod_abs_pad_}}\""
-				__sx_num_int_divmod_abs_up_="${__sx_num_int_divmod_abs_padz_}${__sx_num_int_divmod_abs_up_}"
-			esac
-			case "${__sx_num_int_divmod_abs_up_}" in 0*)
-				__sx_num_int_divmod_abs_up_="${__sx_num_int_divmod_abs_up_#"${__sx_num_int_divmod_abs_up_%%[!0]*}"}"
-			esac
-			eval "__sx_num_int_divmod_abs_u_2=\${__sx_num_int_divmod_abs_up_:-0}"
-			;;
-	esac
-
-	# ステップ 7.3: 主ループ — 窓（u_{W-n}..u_W）を 1 語ずつ左へずらしながら商を 1 語ずつ確定する
+	# ステップ 7.3: 主ループ — 位置パラメータを窓として扱い、1 語ずつ左へずらしながら商を 1 語ずつ確定する
+	#   窓 = $1..$(n+1) = u_{W-n}..u_W。D2/D3 は窓先頭 2〜3 語を $1..$3 から直接参照する
+	#   （eval 不要）。D4（稀に D5）の書き込みは eval を避けて new_ に前置で蓄積し、
+	#   反復末尾に shift n+1 → set -- ${new_} "$@" → shift 1（退出語 u_{W-n} を破棄）で
+	#   次窓 $1..$(n+1) = u_{W-n+1}..u_{W+1} を確定する。
+	#   D4/D5 は下位語（窓の末尾側）から上位語へ走査するため、読み出しのみ eval を使用する。
+	__sx_num_int_divmod_abs_k_=$#
 	__sx_num_int_divmod_abs_w_=$((__sx_num_int_divmod_abs_n_ + 1))
 	__sx_num_int_divmod_abs_q_=
 	while M_NUM_LE([|__sx_num_int_divmod_abs_w_|], [|__sx_num_int_divmod_abs_k_|]); do
-		# D2: 商の見積り — 窓の先頭 2 語を v_1 で割って qhat を仮定する
+		# D2: 商の見積り — 窓の先頭 2 語（$1, $2）を v_1 で割って qhat を仮定する
 		#   top2 = u_{W-n}*b + u_{W-n+1}、qhat = top2 ÷ v_1（b を超えたら b-1 に丸める）
-		eval "__sx_num_int_divmod_abs_uw1_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_))}\" __sx_num_int_divmod_abs_uw2_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_ + 1))}\""
+		__sx_num_int_divmod_abs_uw1_=${1-0}
+		__sx_num_int_divmod_abs_uw2_=${2-0}
 		__sx_num_int_divmod_abs_top2_=$((__sx_num_int_divmod_abs_uw1_ * __sx_num_int_divmod_abs_b_ + __sx_num_int_divmod_abs_uw2_))
 		__sx_num_int_divmod_abs_qhat_=$((__sx_num_int_divmod_abs_top2_ / __sx_num_int_divmod_abs_v_1))
 		__sx_num_int_divmod_abs_rhat_=$((__sx_num_int_divmod_abs_top2_ % __sx_num_int_divmod_abs_v_1))
@@ -6733,9 +6714,9 @@ __sx_num_int_divmod_abs() {
 			__sx_num_int_divmod_abs_rhat_=$((__sx_num_int_divmod_abs_top2_ - __sx_num_int_divmod_abs_qhat_ * __sx_num_int_divmod_abs_v_1))
 		esac
 
-		# D3: 精緻化 — qhat×v_2 が b×rhat + u_{W-n+2} を超える間 qhat を 1 ずつ減らす
+		# D3: 精緻化 — qhat×v_2 が b×rhat + u_{W-n+2}（= $3）を超える間 qhat を 1 ずつ減らす
 		#   （qhat の過大見積りを補正する。rhat が b 未満である限り繰り返す）
-		eval "__sx_num_int_divmod_abs_uw3_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_ + 2))}\""
+		__sx_num_int_divmod_abs_uw3_=${3-0}
 		while M_NUM_LT([|__sx_num_int_divmod_abs_rhat_|], [|__sx_num_int_divmod_abs_b_|]); do
 			__sx_num_int_divmod_abs_lhs_=$((__sx_num_int_divmod_abs_qhat_ * __sx_num_int_divmod_abs_v_2))
 			__sx_num_int_divmod_abs_rhs_=$((__sx_num_int_divmod_abs_b_ * __sx_num_int_divmod_abs_rhat_ + __sx_num_int_divmod_abs_uw3_))
@@ -6747,13 +6728,15 @@ __sx_num_int_divmod_abs() {
 			: "$((__sx_num_int_divmod_abs_rhat_ += __sx_num_int_divmod_abs_v_1))"
 		done
 
-		# D4: 融合 multiply-subtract — 窓の語 u_{W-n+1}..u_W から qhat×v を一括減算する
+		# D4: 融合 multiply-subtract — 窓の語 u_{W-n+1}..u_W（= $2..$(n+1)）から qhat×v を一括減算する
 		#   語積 p = qhat×v_j + carry を一度に算出し、下位語から上位語へ繰り上がりを伝搬する
-		#   （パフォーマンス最適化: 各語の読み込みと書き込みを 1 本の eval に融合している）
+		#   （読み出しは eval 1 本に uw と vv を融合し、書き込みは new_ への前置で蓄積する。
+		#   下位語から順に前置すると new_ は MS-first に整列する）
 		__sx_num_int_divmod_abs_carry_=0
 		__sx_num_int_divmod_abs_i_=1
-		eval "__sx_num_int_divmod_abs_uw_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_))}\" __sx_num_int_divmod_abs_vv_=\"\${__sx_num_int_divmod_abs_v_$((__sx_num_int_divmod_abs_n_))}\""
+		__sx_num_int_divmod_abs_new_=
 		while :; do
+			eval "__sx_num_int_divmod_abs_uw_=\"\${$((( __sx_num_int_divmod_abs_n_ + 2 ) - __sx_num_int_divmod_abs_i_))}\" __sx_num_int_divmod_abs_vv_=\"\${__sx_num_int_divmod_abs_v_$((( __sx_num_int_divmod_abs_n_ + 1 ) - __sx_num_int_divmod_abs_i_))}\""
 			__sx_num_int_divmod_abs_p_=$((__sx_num_int_divmod_abs_qhat_ * __sx_num_int_divmod_abs_vv_ + __sx_num_int_divmod_abs_carry_))
 			__sx_num_int_divmod_abs_t_=$((__sx_num_int_divmod_abs_uw_ - __sx_num_int_divmod_abs_p_ % __sx_num_int_divmod_abs_b_))
 			case "$((__sx_num_int_divmod_abs_t_ < 0))" in
@@ -6765,26 +6748,26 @@ __sx_num_int_divmod_abs() {
 					__sx_num_int_divmod_abs_carry_=$((__sx_num_int_divmod_abs_p_ / __sx_num_int_divmod_abs_b_))
 					;;
 			esac
-			case "$((__sx_num_int_divmod_abs_i_ < __sx_num_int_divmod_abs_n_))" in
-				1)
-					eval "__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_i_ + 1))=\${__sx_num_int_divmod_abs_t_} __sx_num_int_divmod_abs_uw_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_i_))}\" __sx_num_int_divmod_abs_vv_=\"\${__sx_num_int_divmod_abs_v_$((__sx_num_int_divmod_abs_n_ - __sx_num_int_divmod_abs_i_))}\""
-					;;
-				*)
-					eval "__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_i_ + 1))=\${__sx_num_int_divmod_abs_t_}"
-					;;
-			esac
+			__sx_num_int_divmod_abs_new_="${__sx_num_int_divmod_abs_t_}${__sx_num_int_divmod_abs_new_:+ ${__sx_num_int_divmod_abs_new_}}"
 			__sx_num_int_divmod_abs_i_=$((__sx_num_int_divmod_abs_i_ + 1))
 			case "$((__sx_num_int_divmod_abs_i_ <= __sx_num_int_divmod_abs_n_))" in 0) break;; esac
 		done
 		__sx_num_int_divmod_abs_ut_=$((__sx_num_int_divmod_abs_uw1_ - __sx_num_int_divmod_abs_carry_))
 
 		# D5: 加算復帰 — D4 の減算結果が負（qhat が過大）だった場合に v を加算して qhat を 1 減らす
-		#   （通常 0 回、最大 2 回で収束する）
+		#   （通常 0 回、最大 2 回で収束する。new_ は MS-first なので末尾語が窓の最下位語 u_W に
+		#   対応し、末尾から 1 語ずつ取り出して加算し new2_ に前置で再構築する）
 		while M_NUM_LT([|__sx_num_int_divmod_abs_ut_|], [|0|]); do
 			__sx_num_int_divmod_abs_ck_=0
 			__sx_num_int_divmod_abs_i_=0
+			__sx_num_int_divmod_abs_new2_=
 			while :; do
-				eval "__sx_num_int_divmod_abs_uw_=\"\${__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_i_))}\" __sx_num_int_divmod_abs_vv_=\"\${__sx_num_int_divmod_abs_v_$((__sx_num_int_divmod_abs_n_ - __sx_num_int_divmod_abs_i_))}\""
+				__sx_num_int_divmod_abs_uw_="${__sx_num_int_divmod_abs_new_##* }"
+				case "${__sx_num_int_divmod_abs_new_}" in
+					*" ${__sx_num_int_divmod_abs_uw_}") __sx_num_int_divmod_abs_new_="${__sx_num_int_divmod_abs_new_% ${__sx_num_int_divmod_abs_uw_}}";;
+					${__sx_num_int_divmod_abs_uw_}) __sx_num_int_divmod_abs_new_=;;
+				esac
+				eval "__sx_num_int_divmod_abs_vv_=\"\${__sx_num_int_divmod_abs_v_$((__sx_num_int_divmod_abs_n_ - __sx_num_int_divmod_abs_i_))}\""
 				__sx_num_int_divmod_abs_t_=$((__sx_num_int_divmod_abs_uw_ + __sx_num_int_divmod_abs_vv_ + __sx_num_int_divmod_abs_ck_))
 				case "$((__sx_num_int_divmod_abs_t_ >= __sx_num_int_divmod_abs_b_))" in
 					1)
@@ -6795,14 +6778,21 @@ __sx_num_int_divmod_abs() {
 						__sx_num_int_divmod_abs_ck_=0
 						;;
 				esac
-				eval "__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_i_))=\${__sx_num_int_divmod_abs_t_}"
+				__sx_num_int_divmod_abs_new2_="${__sx_num_int_divmod_abs_t_}${__sx_num_int_divmod_abs_new2_:+ ${__sx_num_int_divmod_abs_new2_}}"
 				__sx_num_int_divmod_abs_i_=$((__sx_num_int_divmod_abs_i_ + 1))
 				case "$((__sx_num_int_divmod_abs_i_ < __sx_num_int_divmod_abs_n_))" in 0) break;; esac
 			done
+			__sx_num_int_divmod_abs_new_="$__sx_num_int_divmod_abs_new2_"
 			__sx_num_int_divmod_abs_qhat_=$((__sx_num_int_divmod_abs_qhat_ - 1))
 			__sx_num_int_divmod_abs_ut_=$((__sx_num_int_divmod_abs_ut_ + __sx_num_int_divmod_abs_ck_))
 		done
-		eval "__sx_num_int_divmod_abs_u_$((__sx_num_int_divmod_abs_w_ - __sx_num_int_divmod_abs_n_))=\${__sx_num_int_divmod_abs_ut_}"
+
+		# 窓の置換 — 旧窓 n+1 語を除去し、退出語 u_{W-n}（= ut）+ 新窓語（new_）を前置で再構築する。
+		# 続けて shift 1 で退出語を破棄すると次窓 $1..$(n+1) = u_{W-n+1}..u_{W+1} が確定する。
+		__sx_num_int_divmod_abs_new_="${__sx_num_int_divmod_abs_ut_} ${__sx_num_int_divmod_abs_new_}"
+		shift "$((__sx_num_int_divmod_abs_n_ + 1))"
+		set -- ${__sx_num_int_divmod_abs_new_} "$@"
+		shift 1
 
 		# 商に qhat を c 桁ゼロ埋めで連結
 		__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_zr_}${__sx_num_int_divmod_abs_qhat_}"
@@ -6811,16 +6801,13 @@ __sx_num_int_divmod_abs() {
 		__sx_num_int_divmod_abs_w_=$((__sx_num_int_divmod_abs_w_ + 1))
 	done
 
-	# ステップ 7.4: 余り抽出 — 末尾 n 語（u_{K-n+1}..u_K）を c 桁ゼロ埋めで連結する
+	# ステップ 7.4: 余り抽出 — 位置パラメータに残る末尾 n 語（u_{K-n+1}..u_K）を c 桁ゼロ埋めで連結する
+	#   （主ループが各反復で 1 語ずつ破棄したため、ループ終了後の $@ がちょうど余りの n 語になる）
 	__sx_num_int_divmod_abs_r_=
-	__sx_num_int_divmod_abs_i_=$((__sx_num_int_divmod_abs_k_ - __sx_num_int_divmod_abs_n_ + 1))
-	while :; do
-		eval "__sx_num_int_divmod_abs_uw_=\"\${__sx_num_int_divmod_abs_u_${__sx_num_int_divmod_abs_i_}}\""
+	for __sx_num_int_divmod_abs_uw_ in "${@}"; do
 		__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_zr_}${__sx_num_int_divmod_abs_uw_}"
 		__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_qpad_#"${__sx_num_int_divmod_abs_qpad_%${__sx_num_int_divmod_abs_qm_}}"}"
 		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_qpad_}"
-		__sx_num_int_divmod_abs_i_=$((__sx_num_int_divmod_abs_i_ + 1))
-		case "$((__sx_num_int_divmod_abs_i_ <= __sx_num_int_divmod_abs_k_))" in 0) break;; esac
 	done
 
 	# ステップ 7.5: 逆正規化 — 余りの末尾 d 桁を除去して 10^d 倍を戻す（商は影響を受けない）
@@ -6847,13 +6834,7 @@ __sx_num_int_divmod_abs() {
 	# ステップ 8: 商・余りを結果変数に格納し、内部変数を全て解放する
 	__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_}"
 
-	# 動的語変数（u_1..u_K、v_1..v_n）を解放
-	__sx_num_int_divmod_abs_i_=1
-	while :; do
-		case "$((__sx_num_int_divmod_abs_i_ <= __sx_num_int_divmod_abs_k_))" in 0) break;; esac
-		eval "unset __sx_num_int_divmod_abs_u_${__sx_num_int_divmod_abs_i_}"
-		__sx_num_int_divmod_abs_i_=$((__sx_num_int_divmod_abs_i_ + 1))
-	done
+	# 動的語変数（v_1..v_n）を解放（u 語は位置パラメータ上で保持しており解放不要）
 	__sx_num_int_divmod_abs_i_=1
 	while :; do
 		case "$((__sx_num_int_divmod_abs_i_ <= __sx_num_int_divmod_abs_n_))" in 0) break;; esac
