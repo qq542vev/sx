@@ -6617,7 +6617,7 @@ __sx_num_int_divmod_abs() {
 	#   文字列の全長を算術式に入れず、残余は高々 c 桁なので ${#残余} のみ算術に使う。
 	#   v_ は分割中に消費される（分割後は使用しない）。
 	__sx_num_int_divmod_abs_i_=1
-	while :; do
+	while
 		case "${__sx_num_int_divmod_abs_v_}" in
 			'') break;;
 			${__sx_num_int_divmod_abs_qm_}?*)
@@ -6648,7 +6648,7 @@ __sx_num_int_divmod_abs() {
 
 		eval "__sx_num_int_divmod_abs_v_${__sx_num_int_divmod_abs_i_}=\${__sx_num_int_divmod_abs_chunk_:-0}"
 		: "$((__sx_num_int_divmod_abs_i_ += 1))"
-	done
+	do :; done
 
 	__sx_num_int_divmod_abs_n_=$((__sx_num_int_divmod_abs_i_ - 1))
 
@@ -6666,7 +6666,7 @@ __sx_num_int_divmod_abs() {
 	#   up_ は分割中に消費される（分割後は使用しない）。
 	set --
 
-	while :; do
+	while
 		case "${__sx_num_int_divmod_abs_u_}" in
 			'') break;;
 			${__sx_num_int_divmod_abs_qm_}?*)
@@ -6685,7 +6685,7 @@ __sx_num_int_divmod_abs() {
 		esac
 
 		set -- "${__sx_num_int_divmod_abs_tail_:-0}" "${@}"
-	done
+	do :; done
 
 	set -- 0 "${@}"
 	# ステップ 7.3: 主ループ — 位置パラメータを窓として扱い、1 語ずつ左へずらしながら商を 1 語ずつ確定する
@@ -6696,7 +6696,7 @@ __sx_num_int_divmod_abs() {
 	#   D4/D5 は下位語（窓の末尾側）から上位語へ走査するため、読み出しのみ eval を使用する。
 	__sx_num_int_divmod_abs_q_=
 
-	while M_NUM_LT([|__sx_num_int_divmod_abs_n_|], [|${#}|]); do
+	while M_STR_NE([|"${__sx_num_int_divmod_abs_n_}"|], [|"${#}"|]); do
 		# D2: 商の見積り — 窓の先頭 2 語（$1, $2）を v_1 で割って qhat を仮定する
 		#   top2 = u_{W-n}*b + u_{W-n+1}、qhat = top2 ÷ v_1（b を超えたら b-1 に丸める）
 		__sx_num_int_divmod_abs_top2_=$((${1} * __sx_num_int_divmod_abs_b_ + ${2}))
