@@ -6436,7 +6436,7 @@ sx_num_int_divmod_abs() {
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(up) V(n) V(k) V(tail) V(chunk) V(i) V(q) V(r) V(t) V(qpad) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(new) V(new2) V(w) V(zv) V(kz) V(btail) V(m)|])dnl
+define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(up) V(n) V(tail) V(chunk) V(i) V(q) V(r) V(t) V(qpad) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(new) V(new2) V(zv) V(kz) V(btail) V(m)|])dnl
 
 __sx_num_int_divmod_abs() {
 	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
@@ -6694,10 +6694,9 @@ __sx_num_int_divmod_abs() {
 	#   反復末尾に shift n+1 → set -- ${new_} "$@" → shift 1（退出語 u_{W-n} を破棄）で
 	#   次窓 $1..$(n+1) = u_{W-n+1}..u_{W+1} を確定する。
 	#   D4/D5 は下位語（窓の末尾側）から上位語へ走査するため、読み出しのみ eval を使用する。
-	__sx_num_int_divmod_abs_k_=$#
-	__sx_num_int_divmod_abs_w_=$((__sx_num_int_divmod_abs_n_ + 1))
 	__sx_num_int_divmod_abs_q_=
-	while M_NUM_LE([|__sx_num_int_divmod_abs_w_|], [|__sx_num_int_divmod_abs_k_|]); do
+
+	while M_NUM_LT([|__sx_num_int_divmod_abs_n_|], [|${#}|]); do
 		# D2: 商の見積り — 窓の先頭 2 語（$1, $2）を v_1 で割って qhat を仮定する
 		#   top2 = u_{W-n}*b + u_{W-n+1}、qhat = top2 ÷ v_1（b を超えたら b-1 に丸める）
 		__sx_num_int_divmod_abs_top2_=$((${1} * __sx_num_int_divmod_abs_b_ + ${2}))
@@ -6788,7 +6787,6 @@ __sx_num_int_divmod_abs() {
 		__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_zr_}${__sx_num_int_divmod_abs_qhat_}"
 		__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_qpad_#"${__sx_num_int_divmod_abs_qpad_%${__sx_num_int_divmod_abs_qm_}}"}"
 		__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_qpad_}"
-		__sx_num_int_divmod_abs_w_=$((__sx_num_int_divmod_abs_w_ + 1))
 	done
 
 	# ステップ 7.4: 余り抽出 — 位置パラメータに残る末尾 n 語（u_{K-n+1}..u_K）を c 桁ゼロ埋めで連結する
