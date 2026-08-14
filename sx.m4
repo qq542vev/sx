@@ -6418,7 +6418,7 @@ sx_num_int_divmod_abs() {
 ##      （商は不変、余りは最後に u の下位 k 桁を復元する）。
 ##   5) 高速パス 4: 被除数全体が RANGE の算術幅（WLEN 桁）以内なら
 ##      ネイティブ除算で確定する。
-##   6) 高速パス 5: 除数が (WLEN-1)*9/10 桁以内なら語幅 m = WLEN - len(v)（約 WLEN/10 + 1）の
+##   6) 高速パス 5: 除数が (WLEN-1)*9/10 桁以内なら語幅 c = WLEN - len(v)（約 WLEN/10 + 1）の
 ##      語単位ネイティブ筆算で O(語数) に確定する。
 ##   7) 一般パス: 融合 Knuth D 法（u > v、u は 19 桁以上、v は 2 語以上）。
 ##      7.1 正規化: u、v を 10^d 倍して v の先頭語をちょうど c 桁に揃える。
@@ -6436,7 +6436,7 @@ sx_num_int_divmod_abs() {
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(n) V(chunk) V(q) V(r) V(t) V(top2) V(qhat) V(rhat) V(uw) V(p) V(carry) V(ck) V(ut) V(new) V(zv) V(kz) V(btail) V(m) V(vstr) V(v1) V(v2)|])dnl
+define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(n) V(chunk) V(q) V(r) V(t) V(top2) V(qhat) V(rhat) V(uw) V(p) V(carry) V(ck) V(ut) V(new) V(zv) V(btail) V(vstr) V(v1) V(v2)|])dnl
 
 __sx_num_int_divmod_abs() {
 	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
@@ -6462,8 +6462,7 @@ __sx_num_int_divmod_abs() {
 		return "${SX_EX_OK}"
 	}
 
-	eval "__sx_num_int_divmod_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\""
-	eval "__sx_num_int_divmod_abs_zr_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
+	eval "__sx_num_int_divmod_abs_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" __sx_num_int_divmod_abs_zr_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
 
 	# ステップ 3: 語サイズ c の決定
 	__sx_num_int_divmod_abs_c_="$((__sx_num_int_divmod_abs_wlen_ / 2))"
@@ -6480,13 +6479,13 @@ __sx_num_int_divmod_abs() {
 
 	case "${__sx_num_int_divmod_abs_v_}" in *0${__sx_num_int_divmod_abs_zr_})
 		__sx_num_int_divmod_abs_zv_="${__sx_num_int_divmod_abs_v_##*[!0]}"
-		__sx_num_int_divmod_abs_kz_="${#__sx_num_int_divmod_abs_zv_}"
+		__sx_num_int_divmod_abs_tmp_="${#__sx_num_int_divmod_abs_zv_}"
 
-		if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_int_divmod_abs_kz_}"; then
-			if __sx_var_is_set "SX_QM_${__sx_num_int_divmod_abs_kz_}"; then
-				eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_kz_}}\""
+		if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_int_divmod_abs_tmp_}"; then
+			if __sx_var_is_set "SX_QM_${__sx_num_int_divmod_abs_tmp_}"; then
+				eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_tmp_}}\""
 			else
-				SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_qm_ '?' "${__sx_num_int_divmod_abs_kz_}"
+				SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_qm_ '?' "${__sx_num_int_divmod_abs_tmp_}"
 			fi
 
 			__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_u_%${__sx_num_int_divmod_abs_qm_}}"
@@ -6513,19 +6512,18 @@ __sx_num_int_divmod_abs() {
 
 	eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_$(((__sx_num_int_divmod_abs_wlen_ - 1) * 9 / 10))}\""
 
-	# 以後で使う定数の意味: b = 10^c（語の基数）、qm = c 桁ちょうどに一致するパターン、zr = c 桁のゼロ埋め文字列
 	# ステップ 6: 高速パス 5 — 除数が (WLEN-1)*9/10 桁以内なら語単位のネイティブ筆算
-	#   語幅 m = WLEN - len(v) は約 WLEN/10 + 1 以上に保たれる。m が小さいと反復回数と
+	#   語幅 c = WLEN - len(v) は約 WLEN/10 + 1 以上に保たれる。c が小さいと反復回数と
 	#   商文字列の連結コスト（O(len(q)^2)）が増え、被除数が長い場合は Knuth D 法に
-	#   逆転される（実測では m = 2 で ulen ~ 500 付近から逆転）ため安全マージンを確保する。
+	#   逆転される（実測では c = 2 で ulen ~ 500 付近から逆転）ため安全マージンを確保する。
 	case "${__sx_num_int_divmod_abs_v_}" in
 		${__sx_num_int_divmod_abs_qm_}?*) ;;
 		*)
-			# v の桁数 s に応じて語幅を m = WLEN - s へ拡大する。
+			# v の桁数 s に応じて語幅を c = WLEN - s へ拡大する。
 			# 余り r は常に r < v なので、1 反復で取る u の桁を s のぶんだけ増やしても
-			# nv = r * 10^m + chunk < 10^WLEN が保たれ、ネイティブ演算に収まる。
-			__sx_num_int_divmod_abs_m_=$((__sx_num_int_divmod_abs_wlen_ - ${#__sx_num_int_divmod_abs_v_}))
-			eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_m_}}\" __sx_num_int_divmod_abs_b_=\"1\${SX_ZR_${__sx_num_int_divmod_abs_m_}}\""
+			# nv = r * 10^c + chunk < 10^WLEN が保たれ、ネイティブ演算に収まる。
+			__sx_num_int_divmod_abs_c_=$((__sx_num_int_divmod_abs_wlen_ - ${#__sx_num_int_divmod_abs_v_}))
+			eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_c_}}\" __sx_num_int_divmod_abs_b_=\"1\${SX_ZR_${__sx_num_int_divmod_abs_c_}}\""
 			__sx_num_int_divmod_abs_q_=
 			__sx_num_int_divmod_abs_r_=0
 			# 筆算の1語分: 前語までの余りを基数倍して次の語を結合し、ネイティブ除算で商1語を確定する
@@ -6538,8 +6536,8 @@ __sx_num_int_divmod_abs() {
 						__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_tmp_}"
 						;;
 					*)
-						__sx_num_int_divmod_abs_m_="${#__sx_num_int_divmod_abs_u_}"
-						eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_m_}}\" __sx_num_int_divmod_abs_b_=\"1\${SX_ZR_${__sx_num_int_divmod_abs_m_}}\""
+						__sx_num_int_divmod_abs_c_="${#__sx_num_int_divmod_abs_u_}"
+						eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${__sx_num_int_divmod_abs_c_}}\" __sx_num_int_divmod_abs_b_=\"1\${SX_ZR_${__sx_num_int_divmod_abs_c_}}\""
 						__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_u_}"
 						__sx_num_int_divmod_abs_u_=
 						;;
@@ -6557,10 +6555,10 @@ __sx_num_int_divmod_abs() {
 						;;
 				esac
 
-				# chunk を nv（r * 10^m + chunk）として再利用する
+				# chunk を nv（r * 10^c + chunk）として再利用する
 				: "$((__sx_num_int_divmod_abs_chunk_ += __sx_num_int_divmod_abs_r_ * __sx_num_int_divmod_abs_b_))"
 				__sx_num_int_divmod_abs_r_=$((__sx_num_int_divmod_abs_chunk_ % __sx_num_int_divmod_abs_v_))
-				# 商1語がちょうど m 桁ならゼロ埋め・切り出しを省略し、それ以外は m 桁に整形する
+				# 商1語がちょうど c 桁ならゼロ埋め・切り出しを省略し、それ以外は c 桁に整形する
 				__sx_num_int_divmod_abs_tmp_=$((__sx_num_int_divmod_abs_chunk_ / __sx_num_int_divmod_abs_v_))
 
 				case "${__sx_num_int_divmod_abs_tmp_}" in
@@ -6632,9 +6630,9 @@ __sx_num_int_divmod_abs() {
 				__sx_num_int_divmod_abs_d_=$((__sx_num_int_divmod_abs_c_ - ${#__sx_num_int_divmod_abs_v_}))
 
 				case "${__sx_num_int_divmod_abs_d_}" in [!0]*)
-					eval "__sx_num_int_divmod_abs_zrd_=\"\${SX_ZR_${__sx_num_int_divmod_abs_d_}}\" __sx_num_int_divmod_abs_qmd_=\"\${SX_QM_${__sx_num_int_divmod_abs_d_}}\""
-					__sx_num_int_divmod_abs_v_="${__sx_num_int_divmod_abs_v_}${__sx_num_int_divmod_abs_zrd_}"
-					__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_u_}${__sx_num_int_divmod_abs_zrd_}"
+					eval "__sx_num_int_divmod_abs_tmp_=\"\${SX_ZR_${__sx_num_int_divmod_abs_d_}}\" __sx_num_int_divmod_abs_qmd_=\"\${SX_QM_${__sx_num_int_divmod_abs_d_}}\""
+					__sx_num_int_divmod_abs_v_="${__sx_num_int_divmod_abs_v_}${__sx_num_int_divmod_abs_tmp_}"
+					__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_u_}${__sx_num_int_divmod_abs_tmp_}"
 				esac
 
 				__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_v_}"
