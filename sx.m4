@@ -6786,10 +6786,14 @@ __sx_num_int_divmod_abs() {
 			: "$((__sx_num_int_divmod_abs_qhat_ -= 1))" "$((__sx_num_int_divmod_abs_ut_ += __sx_num_int_divmod_abs_ck_))"
 		done
 
-		# 商に qhat を c 桁ゼロ埋めで連結
-		__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_zr_}${__sx_num_int_divmod_abs_qhat_}"
-		__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_qpad_#"${__sx_num_int_divmod_abs_qpad_%${__sx_num_int_divmod_abs_qm_}}"}"
-		__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_qpad_}"
+		case "${__sx_num_int_divmod_abs_qhat_}" in
+			${__sx_num_int_divmod_abs_qm_}) __sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_qhat_}";;
+			*)
+				# 商に qhat を c 桁ゼロ埋めで連結
+				__sx_num_int_divmod_abs_qhat_="${__sx_num_int_divmod_abs_zr_}${__sx_num_int_divmod_abs_qhat_}"
+				__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_}${__sx_num_int_divmod_abs_qhat_#"${__sx_num_int_divmod_abs_qhat_%${__sx_num_int_divmod_abs_qm_}}"}"
+				;;
+		esac
 	done
 
 	# ステップ 7.4: 余り抽出 — 位置パラメータに残る末尾 n 語（u_{K-n+1}..u_K）を c 桁ゼロ埋めで連結する
