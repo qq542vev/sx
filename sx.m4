@@ -6750,31 +6750,35 @@ __sx_num_int_divmod_abs() {
 		#   対応し、末尾から 1 語ずつ取り出して加算し new2_ に前置で再構築する）
 		while M_NUM_LT([|__sx_num_int_divmod_abs_ut_|], [|0|]); do
 			__sx_num_int_divmod_abs_ck_=0
-			__sx_num_int_divmod_abs_i_=0
 			__sx_num_int_divmod_abs_new2_=
-			while :; do
+
+			eval set -- "${__sx_num_int_divmod_abs_vstr_}" - '"${@}"'
+
+			while M_STR_NE([|${1}|], [|-|]); do
 				__sx_num_int_divmod_abs_uw_="${__sx_num_int_divmod_abs_new_##* }"
+
 				case "${__sx_num_int_divmod_abs_new_}" in
 					*" ${__sx_num_int_divmod_abs_uw_}") __sx_num_int_divmod_abs_new_="${__sx_num_int_divmod_abs_new_% ${__sx_num_int_divmod_abs_uw_}}";;
 					${__sx_num_int_divmod_abs_uw_}) __sx_num_int_divmod_abs_new_=;;
 				esac
-				eval "__sx_num_int_divmod_abs_vv_=\"\${__sx_num_int_divmod_abs_v_$((__sx_num_int_divmod_abs_n_ - __sx_num_int_divmod_abs_i_))}\""
-				__sx_num_int_divmod_abs_t_=$((__sx_num_int_divmod_abs_uw_ + __sx_num_int_divmod_abs_vv_ + __sx_num_int_divmod_abs_ck_))
-				case "$((__sx_num_int_divmod_abs_t_ >= __sx_num_int_divmod_abs_b_))" in
+
+				__sx_num_int_divmod_abs_t_=$((__sx_num_int_divmod_abs_uw_ + ${1} + __sx_num_int_divmod_abs_ck_))
+				case "$((__sx_num_int_divmod_abs_b_ <= __sx_num_int_divmod_abs_t_))" in
 					1)
 						__sx_num_int_divmod_abs_t_=$((__sx_num_int_divmod_abs_t_ - __sx_num_int_divmod_abs_b_))
 						__sx_num_int_divmod_abs_ck_=1
 						;;
-					*)
-						__sx_num_int_divmod_abs_ck_=0
-						;;
+					*) __sx_num_int_divmod_abs_ck_=0;;
 				esac
+
 				__sx_num_int_divmod_abs_new2_="${__sx_num_int_divmod_abs_t_}${__sx_num_int_divmod_abs_new2_:+ ${__sx_num_int_divmod_abs_new2_}}"
-				__sx_num_int_divmod_abs_i_=$((__sx_num_int_divmod_abs_i_ + 1))
-				case "$((__sx_num_int_divmod_abs_i_ < __sx_num_int_divmod_abs_n_))" in 0) break;; esac
+
+				shift
 			done
 
-			__sx_num_int_divmod_abs_new_="$__sx_num_int_divmod_abs_new2_"
+			shift
+
+			__sx_num_int_divmod_abs_new_="${__sx_num_int_divmod_abs_new2_}"
 			__sx_num_int_divmod_abs_qhat_=$((__sx_num_int_divmod_abs_qhat_ - 1))
 			__sx_num_int_divmod_abs_ut_=$((__sx_num_int_divmod_abs_ut_ + __sx_num_int_divmod_abs_ck_))
 		done
