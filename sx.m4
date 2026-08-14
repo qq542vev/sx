@@ -6436,7 +6436,7 @@ sx_num_int_divmod_abs() {
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(n) V(chunk) V(i) V(q) V(r) V(t) V(top2) V(qhat) V(rhat) V(uw) V(p) V(carry) V(ck) V(ut) V(new) V(zv) V(kz) V(btail) V(m) V(vstr) V(v1) V(v2)|])dnl
+define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(n) V(chunk) V(q) V(r) V(t) V(top2) V(qhat) V(rhat) V(uw) V(p) V(carry) V(ck) V(ut) V(new) V(zv) V(kz) V(btail) V(m) V(vstr) V(v1) V(v2)|])dnl
 
 __sx_num_int_divmod_abs() {
 	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
@@ -6616,11 +6616,10 @@ __sx_num_int_divmod_abs() {
 	#   正規化量 d = c - s を確定し、v_n に 0^d を末尾付加して正規化する。
 	#   文字列の全長を算術式に入れず、残余は高々 c 桁なので ${#残余} のみ算術に使う。
 	#   v_ は分割中に消費される（分割後は使用しない）。
-	__sx_num_int_divmod_abs_i_=1
 	__sx_num_int_divmod_abs_vstr_=
+	__sx_num_int_divmod_abs_n_=1
 	while
 		case "${__sx_num_int_divmod_abs_v_}" in
-			'') break;;
 			${__sx_num_int_divmod_abs_qm_}?*)
 				__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_v_#${__sx_num_int_divmod_abs_qm_}}"
 				__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_v_%"${__sx_num_int_divmod_abs_tmp_}"}"
@@ -6647,16 +6646,18 @@ __sx_num_int_divmod_abs() {
 			__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_chunk_#"${__sx_num_int_divmod_abs_chunk_%%[!0]*}"}"
 		esac
 
-		__sx_num_int_divmod_abs_vstr_="${__sx_num_int_divmod_abs_chunk_:-0} \"\${${__sx_num_int_divmod_abs_i_}}\" ${__sx_num_int_divmod_abs_vstr_}"
+		__sx_num_int_divmod_abs_vstr_="${__sx_num_int_divmod_abs_chunk_:-0} \"\${${__sx_num_int_divmod_abs_n_}}\" ${__sx_num_int_divmod_abs_vstr_}"
 
-		case "${__sx_num_int_divmod_abs_i_}" in [12])
-			eval "__sx_num_int_divmod_abs_v${__sx_num_int_divmod_abs_i_}_=\${__sx_num_int_divmod_abs_chunk_:-0}"
+		case "${__sx_num_int_divmod_abs_n_}" in [12])
+			eval "__sx_num_int_divmod_abs_v${__sx_num_int_divmod_abs_n_}_=\${__sx_num_int_divmod_abs_chunk_:-0}"
 		esac
 
-		: "$((__sx_num_int_divmod_abs_i_ += 1))"
-	do :; done
+		case "${__sx_num_int_divmod_abs_v_}" in '')
+			break
+		esac
 
-	__sx_num_int_divmod_abs_n_=$((__sx_num_int_divmod_abs_i_ - 1))
+		SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_divmod_abs_n_ "${__sx_num_int_divmod_abs_n_}" 1
+	do :; done
 
 	# ステップ 7.2 の u 側: u' を K 語に分割する。語は変数ではなく位置パラメータ上で保持する
 	# （MS-first: $1 = u_1 = センチネル 0、$2..$# = u_2..u_K の語値。主ループの窓を
@@ -6737,11 +6738,11 @@ __sx_num_int_divmod_abs() {
 			__sx_num_int_divmod_abs_t_=$((${2} - __sx_num_int_divmod_abs_p_ % __sx_num_int_divmod_abs_b_))
 			__sx_num_int_divmod_abs_carry_=$((__sx_num_int_divmod_abs_p_ / __sx_num_int_divmod_abs_b_))
 
-			case "$((__sx_num_int_divmod_abs_t_ < 0))" in 1)
+			case "${__sx_num_int_divmod_abs_t_}" in -*)
 				: "$((__sx_num_int_divmod_abs_t_ += __sx_num_int_divmod_abs_b_))" "$((__sx_num_int_divmod_abs_carry_ += 1))"
 			esac
 
-			__sx_num_int_divmod_abs_new_="${__sx_num_int_divmod_abs_t_}${__sx_num_int_divmod_abs_new_:+ ${__sx_num_int_divmod_abs_new_}}"
+			__sx_num_int_divmod_abs_new_="${__sx_num_int_divmod_abs_t_} ${__sx_num_int_divmod_abs_new_}"
 			shift 2
 
 			case "${1}" in -)
@@ -6766,12 +6767,13 @@ __sx_num_int_divmod_abs() {
 				__sx_num_int_divmod_abs_t_=$((${2} + ${1} + __sx_num_int_divmod_abs_ck_))
 				case "$((__sx_num_int_divmod_abs_b_ <= __sx_num_int_divmod_abs_t_))" in
 					1)
-						: "$((__sx_num_int_divmod_abs_t_ -= __sx_num_int_divmod_abs_b_))" "$((__sx_num_int_divmod_abs_ck_ = 1))"
+						: "$((__sx_num_int_divmod_abs_t_ -= __sx_num_int_divmod_abs_b_))"
+						__sx_num_int_divmod_abs_ck_=1
 						;;
 					*) __sx_num_int_divmod_abs_ck_=0;;
 				esac
 
-				__sx_num_int_divmod_abs_new_="${__sx_num_int_divmod_abs_t_}${__sx_num_int_divmod_abs_new_:+ ${__sx_num_int_divmod_abs_new_}}"
+				__sx_num_int_divmod_abs_new_="${__sx_num_int_divmod_abs_t_} ${__sx_num_int_divmod_abs_new_}"
 				shift 2
 
 				case "${1}" in -)
