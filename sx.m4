@@ -6436,7 +6436,7 @@ sx_num_int_divmod_abs() {
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(up) V(n) V(tail) V(chunk) V(i) V(q) V(r) V(t) V(qpad) V(top2) V(qhat) V(rhat) V(lhs) V(rhs) V(uw1) V(uw2) V(uw3) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(new) V(new2) V(zv) V(kz) V(btail) V(m)|])dnl
+define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(n) V(chunk) V(i) V(q) V(r) V(t) V(qpad) V(top2) V(qhat) V(rhat) V(uw) V(vv) V(p) V(carry) V(ck) V(ut) V(new) V(new2) V(zv) V(kz) V(btail) V(m) V(vstr)|])dnl
 
 __sx_num_int_divmod_abs() {
 	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
@@ -6617,13 +6617,14 @@ __sx_num_int_divmod_abs() {
 	#   文字列の全長を算術式に入れず、残余は高々 c 桁なので ${#残余} のみ算術に使う。
 	#   v_ は分割中に消費される（分割後は使用しない）。
 	__sx_num_int_divmod_abs_i_=1
+	__sx_num_int_divmod_abs_vstr_=
 	while
 		case "${__sx_num_int_divmod_abs_v_}" in
 			'') break;;
 			${__sx_num_int_divmod_abs_qm_}?*)
-				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_v_#${__sx_num_int_divmod_abs_qm_}}"
-				__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_v_%"${__sx_num_int_divmod_abs_tail_}"}"
-				__sx_num_int_divmod_abs_v_="${__sx_num_int_divmod_abs_tail_}"
+				__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_v_#${__sx_num_int_divmod_abs_qm_}}"
+				__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_v_%"${__sx_num_int_divmod_abs_tmp_}"}"
+				__sx_num_int_divmod_abs_v_="${__sx_num_int_divmod_abs_tmp_}"
 				;;
 			*)
 				# 残余が 1..c 文字 = 最下位語 v_n。ここで s → d が確定する
@@ -6648,6 +6649,7 @@ __sx_num_int_divmod_abs() {
 
 		eval "__sx_num_int_divmod_abs_v_${__sx_num_int_divmod_abs_i_}=\${__sx_num_int_divmod_abs_chunk_:-0}"
 		: "$((__sx_num_int_divmod_abs_i_ += 1))"
+		__sx_num_int_divmod_abs_vstr_="${__sx_num_int_divmod_abs_chunk_:-0} ${__sx_num_int_divmod_abs_vstr_}"
 	do :; done
 
 	__sx_num_int_divmod_abs_n_=$((__sx_num_int_divmod_abs_i_ - 1))
@@ -6671,20 +6673,20 @@ __sx_num_int_divmod_abs() {
 			'') break;;
 			${__sx_num_int_divmod_abs_qm_}?*)
 				__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_u_%${__sx_num_int_divmod_abs_qm_}}"
-				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_u_#${__sx_num_int_divmod_abs_tmp_}}"
+				__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_u_#${__sx_num_int_divmod_abs_tmp_}}"
 				__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_tmp_}"
 
-				case "${__sx_num_int_divmod_abs_tail_}" in 0*)
-					__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_tail_#"${__sx_num_int_divmod_abs_tail_%%[!0]*}"}"
+				case "${__sx_num_int_divmod_abs_chunk_}" in 0*)
+					__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_chunk_#"${__sx_num_int_divmod_abs_chunk_%%[!0]*}"}"
 				esac
 				;;
 			*)
-				__sx_num_int_divmod_abs_tail_="${__sx_num_int_divmod_abs_u_}"
+				__sx_num_int_divmod_abs_chunk_="${__sx_num_int_divmod_abs_u_}"
 				__sx_num_int_divmod_abs_u_=
 				;;
 		esac
 
-		set -- "${__sx_num_int_divmod_abs_tail_:-0}" "${@}"
+		set -- "${__sx_num_int_divmod_abs_chunk_:-0}" "${@}"
 	do :; done
 
 	set -- 0 "${@}"
@@ -6771,6 +6773,7 @@ __sx_num_int_divmod_abs() {
 				__sx_num_int_divmod_abs_i_=$((__sx_num_int_divmod_abs_i_ + 1))
 				case "$((__sx_num_int_divmod_abs_i_ < __sx_num_int_divmod_abs_n_))" in 0) break;; esac
 			done
+
 			__sx_num_int_divmod_abs_new_="$__sx_num_int_divmod_abs_new2_"
 			__sx_num_int_divmod_abs_qhat_=$((__sx_num_int_divmod_abs_qhat_ - 1))
 			__sx_num_int_divmod_abs_ut_=$((__sx_num_int_divmod_abs_ut_ + __sx_num_int_divmod_abs_ck_))
