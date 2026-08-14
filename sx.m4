@@ -6436,7 +6436,7 @@ sx_num_int_divmod_abs() {
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(n) V(chunk) V(i) V(q) V(r) V(t) V(qpad) V(top2) V(qhat) V(rhat) V(uw) V(p) V(carry) V(ck) V(ut) V(new) V(zv) V(kz) V(btail) V(m) V(vstr) V(v1) V(v2)|])dnl
+define([|CLEANUP|], [|V(tmp) V(qres) V(rres) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(zrd) V(n) V(chunk) V(i) V(q) V(r) V(t) V(top2) V(qhat) V(rhat) V(uw) V(p) V(carry) V(ck) V(ut) V(new) V(zv) V(kz) V(btail) V(m) V(vstr) V(v1) V(v2)|])dnl
 
 __sx_num_int_divmod_abs() {
 	# ステップ 1: 引数の取得（商・余りの結果変数名と、被除数 u・除数 v の値）
