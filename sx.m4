@@ -6632,7 +6632,7 @@ __sx_num_int_divmod_abs() {
 				# 残余は v_ に残っている（chunk_ は直前の c 文字チャンクのため使用しない）。
 				__sx_num_int_divmod_abs_d_=$((__sx_num_int_divmod_abs_c_ - ${#__sx_num_int_divmod_abs_v_}))
 
-				case "$((0 < __sx_num_int_divmod_abs_d_))" in 1)
+				case "${__sx_num_int_divmod_abs_d_}" in [!0]*)
 					eval "__sx_num_int_divmod_abs_zrd_=\"\${SX_ZR_${__sx_num_int_divmod_abs_d_}}\" __sx_num_int_divmod_abs_qmd_=\"\${SX_QM_${__sx_num_int_divmod_abs_d_}}\""
 					__sx_num_int_divmod_abs_v_="${__sx_num_int_divmod_abs_v_}${__sx_num_int_divmod_abs_zrd_}"
 					__sx_num_int_divmod_abs_u_="${__sx_num_int_divmod_abs_u_}${__sx_num_int_divmod_abs_zrd_}"
@@ -6796,38 +6796,36 @@ __sx_num_int_divmod_abs() {
 		esac
 	done
 
+	case "${__sx_num_int_divmod_abs_q_}" in 0*)
+		__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_#"${__sx_num_int_divmod_abs_q_%%[!0]*}"}"
+	esac
+
 	# ステップ 7.4: 余り抽出 — 位置パラメータに残る末尾 n 語（u_{K-n+1}..u_K）を c 桁ゼロ埋めで連結する
 	#   （主ループが各反復で 1 語ずつ破棄したため、ループ終了後の $@ がちょうど余りの n 語になる）
 	__sx_num_int_divmod_abs_r_=
 	for __sx_num_int_divmod_abs_uw_ in "${@}"; do
-		__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_zr_}${__sx_num_int_divmod_abs_uw_}"
-		__sx_num_int_divmod_abs_qpad_="${__sx_num_int_divmod_abs_qpad_#"${__sx_num_int_divmod_abs_qpad_%${__sx_num_int_divmod_abs_qm_}}"}"
-		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_qpad_}"
+		case "${__sx_num_int_divmod_abs_uw_}" in
+			${__sx_num_int_divmod_abs_qm_}) __sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_uw_}";;
+			*)
+				__sx_num_int_divmod_abs_uw_="${__sx_num_int_divmod_abs_zr_}${__sx_num_int_divmod_abs_uw_}"
+				__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_uw_#"${__sx_num_int_divmod_abs_uw_%${__sx_num_int_divmod_abs_qm_}}"}"
+				;;
+		esac
 	done
 
 	# ステップ 7.5: 逆正規化 — 余りの末尾 d 桁を除去して 10^d 倍を戻す（商は影響を受けない）
-	case "$((__sx_num_int_divmod_abs_d_ > 0))" in 1)
+	case "${__sx_num_int_divmod_abs_d_}" in [!0]*)
 		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_%${__sx_num_int_divmod_abs_qmd_}}"
 	esac
+
+	__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_btail_}"
+
 	case "${__sx_num_int_divmod_abs_r_}" in 0*)
-		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
+		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}";;
 	esac
-	case "${__sx_num_int_divmod_abs_r_}" in '') __sx_num_int_divmod_abs_r_=0;; esac
-	# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
-	case "${__sx_num_int_divmod_abs_btail_+x}" in x)
-		__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_btail_}"
-		case "${__sx_num_int_divmod_abs_r_}" in 0*)
-			__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
-		esac
-		case "${__sx_num_int_divmod_abs_r_}" in '') __sx_num_int_divmod_abs_r_=0;; esac
-	esac
-	case "${__sx_num_int_divmod_abs_q_}" in 0*)
-		__sx_num_int_divmod_abs_q_="${__sx_num_int_divmod_abs_q_#"${__sx_num_int_divmod_abs_q_%%[!0]*}"}"
-	esac
-	case "${__sx_num_int_divmod_abs_q_}" in '') __sx_num_int_divmod_abs_q_=0;; esac
 
 	# ステップ 8: 商・余りを結果変数に格納し、内部変数を全て解放する
-	__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_}"
+	__sx_var_set "${__sx_num_int_divmod_abs_qres_}=${__sx_num_int_divmod_abs_q_:-0}" "${__sx_num_int_divmod_abs_rres_}=${__sx_num_int_divmod_abs_r_:-0}"
 
 	unset CLEANUP
 }
