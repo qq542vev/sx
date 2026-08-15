@@ -6355,17 +6355,22 @@ __sx_num_int_mul() {
 	unset CLEANUP
 }
 
-### sx_num_int_divmod_abs - 絶対値の除算で商と余りを同時に求める
+### sx_num_int_divmod_abs - 絶対値の除算で整数商・余剰・実数商を同時に求める
 ##
 ## 使い方:
-##   sx_num_int_divmod_abs バインド形式 被除数 除数
+##   sx_num_int_divmod_abs バインド形式 被除数 除数 [小数桁数]
 ##
 ## 説明:
-##   符号なし10進整数の絶対値の除算を行い、商と余りを同時に求める。
-##   第一引数は商・余りの割り当て先を指定する分配代入バインド形式（例: "q:r:"）。
-##   被除数は 0 以上の自然数、除数は 1 以上の自然数。
+##   符号なし10進整数の絶対値の除算を行い、整数商・余剰・実数商を同時に求める。
+##   第一引数は商・余剰・実数商の割り当て先を指定する分配代入バインド形式（例: "q:r:d:"）。
+##   第1セグメントには整数商、第2セグメントには余剰が格納される。
+##   第3セグメントには実数商（整数商 + 小数）が格納され、小数桁数（第4引数）で
+##   小数以下が指定桁数に丸められる。小数部の末尾 0 は除去される
+##   （例: "q:r:d:" 100 3 2 → q=33, r=1, d=33.33 / 5 10 2 → d=0.5）。
+##   被除数は 0 以上の自然数、除数は 1 以上の自然数、小数桁数は 0 以上の自然数。
 ##   除数に 0 を指定した場合は引数不正とみなす。
-##   被除数・除数は省略可能で、省略した場合はそれぞれ 0、1 として扱われる。
+##   被除数・除数・小数桁数は省略可能で、省略した場合はそれぞれ 0、1、0 として扱われる
+##   （小数桁数省略時は実数商 = 整数商）。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -6383,7 +6388,7 @@ sx_num_int_divmod_abs() {
 	__sx_num_int_divmod_abs_bind="${1}"
 	shift
 
-	sx_num_is_base_nat0 10 "${1-0}" && sx_num_is_base_nat1 10 "${2-1}" || {
+	sx_num_is_base_nat0 10 "${1-0}" "${3-0}" && sx_num_is_base_nat1 10 "${2-1}" || {
 		unset __sx_num_int_divmod_abs_bind
 		return "${SX_EX_USAGE}"
 	}
@@ -6392,25 +6397,28 @@ sx_num_int_divmod_abs() {
 	unset __sx_num_int_divmod_abs_bind
 }
 
-### __sx_num_int_divmod_abs - 絶対値の除算で商と余りを同時に求める（内部用）
+### __sx_num_int_divmod_abs - 絶対値の除算で整数商・余剰・実数商を同時に求める（内部用）
 ##
 ## 使い方:
-##   __sx_num_int_divmod_abs バインド形式 被除数 除数
+##   __sx_num_int_divmod_abs バインド形式 被除数 除数 [小数桁数]
 ##
 ## 説明:
 ##   符号なし10進整数の絶対値の除算を行う。
-##   第一引数は商・余りの割り当て先を指定する分配代入バインド形式（例: "q:r:"）。
+##   第一引数は商・余剰・実数商の割り当て先を指定する分配代入バインド形式（例: "q:r:d:"）。
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 ##   除数が 0 でないことが保証されていること。
-##   被除数・除数は省略時、それぞれ 0、1 として扱われる。
+##   被除数・除数・小数桁数は省略時、それぞれ 0、1、0 として扱われる。
+##   小数桁数が 1 以上で余剰が 0 でない場合、実数商の小数部は
+##   floor(余剰 × 10^dp ÷ 除数) を dp 桁にゼロ埋めして末尾 0 を除去した文字列で構成される。
+##   余剰 × 10^dp が除数より小さければ桁数比較のみで小数商 0 を即時確定できる。
 ##
 ##   アルゴリズム: 語サイズ c = WLEN/2 桁で語分割する融合 Knuth D 法。
 ##   語の並びは常に「最上位語が先頭」で、v_1 が最上位語、v_n が最下位語。
 ##   u は先頭にゼロ語 u_1 = 0 を 1 語追加して合計 K 語で持ち、実データは u_2..u_K
 ##   （u_1 は主ループの最初の窓が参照するために確保するセンチネル語）。
 ##
-##   実行フロー（ステップ 1〜8）:
-##   1) 引数の取得（商・余りの結果変数名、被除数 u、除数 v）。
+##   実行フロー（ステップ 1〜9）:
+##   1) 引数の取得（商・余剰・実数商の結果変数名、被除数 u、除数 v、小数桁数 dp）。
 ##   2) 高速パス 1〜3: 自明なケースを確定する。
 ##      v = 1 → 商 = u、余り = 0 ／ u = v → 商 = 1、余り = 0
 ##      u < v → 商 = 0、余り = u（同桁数は最上位桁から 1 桁ずつ比較する）。
@@ -6432,19 +6440,29 @@ sx_num_int_divmod_abs() {
 ##          各反復末尾で shift n+1 → set -- ${new_} "$@" → shift 1 により窓を更新する。
 ##      7.4 余り抽出: ループ終了後に位置パラメータへ残る末尾 n 語（u_{K-n+1}..u_K）を連結する。
 ##      7.5 逆正規化: 余りの末尾 d 桁を除去して 10^d 倍を戻す。
-##   8) 商・余りを結果変数に格納し、内部変数を全て解放する。
+##   8) 商・余剰を結果変数に格納し、内部変数を全て解放する。
+##   9) 小数桁数 dp が 1 以上で余剰が非ゼロなら、余剰 × 10^dp ÷ 除数 の商を
+##      dp 桁ゼロ埋め・末尾 0 除去して実数商の小数部を求める。
+##      まず桁数比較でゼロ小数を確定できる場合は除算せずに済ませ、それ以外は再帰呼び出しで
+##      商を求める。ゼロ埋めの '?'×桁数 は SX_QM 定数（1〜37 桁）から参照して生成を避ける。
+##      余剰 × 10^dp ÷ 除数 が 0（小数が 1 桁目から 0）の場合は小数部を付けず整数のまま。
 ##   ネイティブ演算の語積は必ず qhat*v_j < b^2 = 10^(2c) に収まり、
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_int_divmod_abs_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(bind) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(n) V(chunk) V(q) V(r) V(t) V(top2) V(qhat) V(rhat) V(uw) V(p) V(carry) V(ck) V(ut) V(new) V(zv) V(btail) V(vstr) V(v1) V(v2)|])dnl
+define([|CLEANUP|], [|V(tmp) V(bind) V(u) V(v) V(dp) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(n) V(chunk) V(q) V(r) V(t) V(top2) V(qhat) V(rhat) V(uw) V(p) V(carry) V(ck) V(ut) V(new) V(zv) V(btail) V(vstr) V(v1) V(v2)|])dnl
 
 __sx_num_int_divmod_abs() {
-	# ステップ 1: 引数の取得（バインド形式と、被除数 u・除数 v の値）
+	# ステップ 1: 引数の取得（バインド形式と、被除数 u・除数 v・小数桁数 dp の値）
+	#   q_/r_ は直前のフレーム（再帰呼び出し元）から値が残っている場合があるため、
+	#   計算前に必ずクリアする（6505 の分岐が q_ の残存値に誤導されるのを防ぐ）。
 	__sx_var_bind_init "${1}"
 	__sx_num_int_divmod_abs_bind_="${1}"
 	__sx_num_int_divmod_abs_u_="${2-0}"
 	__sx_num_int_divmod_abs_v_="${3-1}"
+	__sx_num_int_divmod_abs_dp_="${4-0}"
+	__sx_num_int_divmod_abs_q_=
+	__sx_num_int_divmod_abs_r_=
 
 	# ステップ 2: 高速パス 1〜3（自明なケースを即座に確定する）
 	#   高速パス 1: 除数が 1 なら商 = 被除数、余り = 0
@@ -6518,6 +6536,10 @@ __sx_num_int_divmod_abs() {
 		case "${__sx_num_int_divmod_abs_r_}" in 0*)
 			__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}"
 		esac
+
+		# 小数部の導出は元の除数 v で再除算するため、末尾ゼロ分解で縮小した v を復元する
+		# （以降ここの位置引数はまだ破壊されていないため $3 から取り出せる）
+		__sx_num_int_divmod_abs_v_="${3-1}"
 	elif
 		# ステップ 6: 高速パス 5 — 除数が (WLEN-1)*9/10 桁以内なら語単位のネイティブ筆算
 		#   語幅 c = WLEN - len(v) は約 WLEN/10 + 1 以上に保たれる。c が小さいと反復回数と
@@ -6594,6 +6616,10 @@ __sx_num_int_divmod_abs() {
 			case "${__sx_num_int_divmod_abs_r_}" in 0*)
 				__sx_num_int_divmod_abs_r_="${__sx_num_int_divmod_abs_r_#"${__sx_num_int_divmod_abs_r_%%[!0]*}"}";;
 			esac
+
+			# 小数部の導出は元の除数 v で再除算するため、末尾ゼロ分解で縮小した v を復元する
+			# （この分岐内では位置引数はまだ破壊されていないため $3 から取り出せる）
+			__sx_num_int_divmod_abs_v_="${3-1}"
 	else
 		# 語サイズ c の決定
 		__sx_num_int_divmod_abs_c_=$((__sx_num_int_divmod_abs_wlen_ / 2))
@@ -6666,6 +6692,8 @@ __sx_num_int_divmod_abs() {
 
 			SX_CFG_UNSET_SOFT=2 __sx_num_int_add_abs __sx_num_int_divmod_abs_n_ "${__sx_num_int_divmod_abs_n_}" 1
 		do :; done
+
+		__sx_num_int_divmod_abs_v_="${3-1}"
 
 		# ステップ 7.2 の u 側: u' を K 語に分割する。語は変数ではなく位置パラメータ上で保持する
 		# （MS-first: $1 = u_1 = センチネル 0、$2..$# = u_2..u_K の語値。主ループの窓を
@@ -6840,7 +6868,70 @@ __sx_num_int_divmod_abs() {
 		esac
 	fi
 
-	__sx_var_bind __sx_num_int_divmod_abs_bind_ "${__sx_num_int_divmod_abs_bind_}" "${__sx_num_int_divmod_abs_r_:-0}" || :
+	__sx_var_bind __sx_num_int_divmod_abs_bind_ "${__sx_num_int_divmod_abs_bind_}" "${__sx_num_int_divmod_abs_r_:-0}" || {
+		unset CLEANUP
+		return "${SX_EX_OK}"
+	}
+
+	# 小数部の導出（ステップ9）: d = q.小数 / q（r または dp が 0 のときは整数）
+	#   $3 は小数導出をスキップする経路（r=0 や dp=0）でも最終的なバインド形式として必要なので、
+	#   先頭から3個の位置パラメータ（$1=q, $2=プレースホルダ, $3=bind）を確保しておく。
+	set -- "${__sx_num_int_divmod_abs_q_}" "" "${__sx_num_int_divmod_abs_bind_}"
+
+	case "${__sx_num_int_divmod_abs_r_:-0}:${__sx_num_int_divmod_abs_dp_}" in [!0]*:[!0]*)
+		if __sx_var_is_set "SX_ZR_${__sx_num_int_divmod_abs_dp_}"; then
+			eval "__sx_num_int_divmod_abs_zr_=\"\${SX_ZR_${__sx_num_int_divmod_abs_dp_}}\""
+		else
+			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_zr_ 0 "${__sx_num_int_divmod_abs_dp_}"
+		fi
+
+		# 被除数 uu = r × 10^dp（文字列連結で実現）を求める。
+		# uu は再帰（__sx_num_int_divmod_abs）の CLEANUP で unset されるため、
+		# 再帰前の桁数比較と再帰呼び出しの引数にのみ使用し、再帰後は $2 から再構築する。
+		__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_zr_}"
+
+		# 再帰の最後に共通変数を全 unset するため、
+		# 再帰後に必要な dp 個のゼロ文字列・バインド形式を位置パラメータ $2/$3 へ退避する
+		set -- "${1}" "${__sx_num_int_divmod_abs_zr_}" "${3}"
+
+			__sx_num_int_divmod_abs __sx_num_int_divmod_abs_dec_: "${__sx_num_int_divmod_abs_tmp_}" "${__sx_num_int_divmod_abs_v_}"
+
+		# dec_ がすでに dp 桁（len == dp）ならゼロ埋め不要でそのまま採用する。
+		# dp は再帰の CLEANUP で unset されるため、退避済みの $2（"0"×dp）の長さ（== dp）と比較する。
+		# len==dp は約9割のケースで、定数参照とパターン剥ぎ取りを丸ごとスキップできる。
+		if M_STR_EQ([|"${#__sx_num_int_divmod_abs_dec_}"|], [|"${#2}"|]); then
+			__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_dec_}"
+		else
+			# "0"×dp を前置し、そのうち dec_ の桁数ぶんを後段で剥いて末尾 dp 桁を採用する
+			# （dec_ は高々 dp 桁のため、桁不足のときのみこのパスに来る）
+			__sx_num_int_divmod_abs_tmp_="${2}${__sx_num_int_divmod_abs_dec_}"
+
+			# 前置した "0"×dp のうち dec_ の桁数ぶんを取り除く '?'×len(dec_) は、
+			# 生成済みの SX_QM 定数（1〜37 桁）から参照する（37 桁を超える場合のみ str_rep で生成）
+			if __sx_var_is_set "SX_QM_${#__sx_num_int_divmod_abs_dec_}"; then
+				eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${#__sx_num_int_divmod_abs_dec_}}\""
+			else
+				SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_qm_ '?' "${#__sx_num_int_divmod_abs_dec_}"
+			fi
+			# '?'×len(dec_) は ? がパターン一致として働く必要があるため、
+			# 内側の展開は意図的にクォートしない（クォートすると ? がリテラル化して剥ぎ取りが失敗する）
+			__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_tmp_#${__sx_num_int_divmod_abs_qm_}}"
+		fi
+
+		# 小数部の末尾 0 を除去する
+		case "${__sx_num_int_divmod_abs_tmp_}" in *0)
+			__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_tmp_%"${__sx_num_int_divmod_abs_tmp_##*[!0]}"}";;
+		esac
+
+		# 小数部が空（小数が 0）なら "." を付けず整数のまま
+		case "${__sx_num_int_divmod_abs_tmp_}" in ?*)
+			set -- "${1}.${__sx_num_int_divmod_abs_tmp_}" "${2}" "${3}";;
+		esac
+
+		unset __sx_num_int_divmod_abs_dec_ __sx_num_int_divmod_abs_tmp_
+	esac
+
+	__sx_var_bind __sx_num_int_divmod_abs_bind_ "${3}" "${1}" || :
 
 	unset CLEANUP
 }
