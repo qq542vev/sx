@@ -7007,7 +7007,7 @@ __sx_num_int_edivmod() {
 
 			__sx_num_int_sub_abs __sx_num_int_edivmod_r_ "${3#[+-]}" "${__sx_num_int_edivmod_r_}"
 			;;
-		[!0]*:0:10 | [!0]*:0:01 | [!0]*:[!0]*:01) __sx_num_int_edivmod_q_="-${__sx_num_int_edivmod_q_}";&
+		[!0]*:0:10 | [!0]*:*:01) __sx_num_int_edivmod_q_="-${__sx_num_int_edivmod_q_}";&
 		*)
 			__sx_var_bind __sx_num_int_edivmod_bind_ "${1}" "${__sx_num_int_edivmod_q_}" || {
 				unset CLEANUP
