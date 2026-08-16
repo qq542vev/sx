@@ -6874,9 +6874,9 @@ __sx_num_int_divmod_abs() {
 	}
 
 	# 小数部の導出（ステップ9）: d = q.小数 / q（r または dp が 0 のときは整数）
-	#   $3 は小数導出をスキップする経路（r=0 や dp=0）でも最終的なバインド形式として必要なので、
-	#   先頭から3個の位置パラメータ（$1=q, $2=プレースホルダ, $3=bind）を確保しておく。
-	set -- "${__sx_num_int_divmod_abs_q_}" "" "${__sx_num_int_divmod_abs_bind_}"
+	#   位置パラメータは $1=bind, $2=q, $3=dp として確保しておく。
+	#   $1=bind は小数導出をスキップする経路（r=0 や dp=0）でも最終的なバインド形式として必要。
+	set -- "${__sx_num_int_divmod_abs_bind_}" "${__sx_num_int_divmod_abs_q_}" "${__sx_num_int_divmod_abs_dp_}"
 
 	case "${__sx_num_int_divmod_abs_r_:-0}:${__sx_num_int_divmod_abs_dp_}" in [!0]*:[!0]*)
 		if __sx_var_is_set "SX_ZR_${__sx_num_int_divmod_abs_dp_}"; then
@@ -6885,55 +6885,51 @@ __sx_num_int_divmod_abs() {
 			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_zr_ 0 "${__sx_num_int_divmod_abs_dp_}"
 		fi
 
-		# 被除数 uu = r × 10^dp（文字列連結で実現）を求める。
-		# uu は再帰（__sx_num_int_divmod_abs）の CLEANUP で unset されるため、
-		# 再帰前の桁数比較と再帰呼び出しの引数にのみ使用し、再帰後は $2 から再構築する。
-		__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_r_}${__sx_num_int_divmod_abs_zr_}"
-
 		# 再帰の最後に共通変数を全 unset するため、
-		# 再帰後に必要な dp 個のゼロ文字列・バインド形式を位置パラメータ $2/$3 へ退避する
-		set -- "${1}" "${__sx_num_int_divmod_abs_zr_}" "${3}"
+		# 再帰後に必要な dp 個のゼロ文字列 "0"×dp を位置パラメータ $4 へ退避する。
+		set -- "${@}" "${__sx_num_int_divmod_abs_zr_}"
 
-			__sx_num_int_divmod_abs __sx_num_int_divmod_abs_dec_: "${__sx_num_int_divmod_abs_tmp_}" "${__sx_num_int_divmod_abs_v_}"
+		# 被除数 uu = r × 10^dp（$4 = "0"×dp の文字列連結で実現）を求める。
+		# uu は再帰（__sx_num_int_divmod_abs）の CLEANUP で変数が unset されるため、
+		# 再帰呼び出しの引数にのみ使用し、再帰後は $4 から再構築する。
+		__sx_num_int_divmod_abs __sx_num_int_divmod_abs_dec_: "${__sx_num_int_divmod_abs_r_}${4}" "${__sx_num_int_divmod_abs_v_}"
 
 		# dec_ がすでに dp 桁（len == dp）ならゼロ埋め不要でそのまま採用する。
-		# dp は再帰の CLEANUP で unset されるため、退避済みの $2（"0"×dp）の長さ（== dp）と比較する。
+		# dp は位置パラメータ $3 に退避済みなので、再帰の CLEANUP 後でも比較できる。
 		# len==dp は約9割のケースで、定数参照とパターン剥ぎ取りを丸ごとスキップできる。
-		if M_STR_EQ([|"${#__sx_num_int_divmod_abs_dec_}"|], [|"${#2}"|]); then
-			__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_dec_}"
-		else
-			# "0"×dp を前置し、そのうち dec_ の桁数ぶんを後段で剥いて末尾 dp 桁を採用する
-			# （dec_ は高々 dp 桁のため、桁不足のときのみこのパスに来る）
-			__sx_num_int_divmod_abs_tmp_="${2}${__sx_num_int_divmod_abs_dec_}"
-
-			# 前置した "0"×dp のうち dec_ の桁数ぶんを取り除く '?'×len(dec_) は、
-			# 生成済みの SX_QM 定数（1〜37 桁）から参照する（37 桁を超える場合のみ str_rep で生成）
+		if M_STR_NE([|"${#__sx_num_int_divmod_abs_dec_}"|], [|"${3}"|]); then
+			# 先頭に前置する "0"×dp から剥ぎ取る '?'×len(dec_) は、
+			# 生成済みの SX_QM 定数（1〜37 桁）から参照する（37 桁を超える場合のみ str_rep で生成）。
+			# 長さは前置き前の dec_ で測るため、この位置（前置きの前）で生成する。
 			if __sx_var_is_set "SX_QM_${#__sx_num_int_divmod_abs_dec_}"; then
 				eval "__sx_num_int_divmod_abs_qm_=\"\${SX_QM_${#__sx_num_int_divmod_abs_dec_}}\""
 			else
 				SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_int_divmod_abs_qm_ '?' "${#__sx_num_int_divmod_abs_dec_}"
 			fi
+
+			# "0"×dp（$4）を前置し、そのうち生の dec_ の桁数ぶんを剥いで末尾 dp 桁を採用する
+			# （dec_ は高々 dp 桁のため、桁不足のときのみこのパスに来る）
+			__sx_num_int_divmod_abs_dec_="${4}${__sx_num_int_divmod_abs_dec_}"
+
 			# '?'×len(dec_) は ? がパターン一致として働く必要があるため、
 			# 内側の展開は意図的にクォートしない（クォートすると ? がリテラル化して剥ぎ取りが失敗する）
-			__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_tmp_#${__sx_num_int_divmod_abs_qm_}}"
+			__sx_num_int_divmod_abs_dec_="${__sx_num_int_divmod_abs_dec_#${__sx_num_int_divmod_abs_qm_}}"
 		fi
 
-		# 小数部の末尾 0 を除去する
-		case "${__sx_num_int_divmod_abs_tmp_}" in *0)
-			__sx_num_int_divmod_abs_tmp_="${__sx_num_int_divmod_abs_tmp_%"${__sx_num_int_divmod_abs_tmp_##*[!0]}"}";;
+		# 小数部の末尾 0 を除去する（結果は dec_ に再格納し、連結に用いる）
+		case "${__sx_num_int_divmod_abs_dec_}" in *0)
+			__sx_num_int_divmod_abs_dec_="${__sx_num_int_divmod_abs_dec_%"${__sx_num_int_divmod_abs_dec_##*[!0]}"}";;
 		esac
 
 		# 小数部が空（小数が 0）なら "." を付けず整数のまま
-		case "${__sx_num_int_divmod_abs_tmp_}" in ?*)
-			set -- "${1}.${__sx_num_int_divmod_abs_tmp_}" "${2}" "${3}";;
+		case "${__sx_num_int_divmod_abs_dec_}" in ?*)
+			set -- "${1}" "${2}.${__sx_num_int_divmod_abs_dec_}"
 		esac
-
-		unset __sx_num_int_divmod_abs_dec_ __sx_num_int_divmod_abs_tmp_
 	esac
 
-	__sx_var_bind __sx_num_int_divmod_abs_bind_ "${3}" "${1}" || :
+	__sx_var_bind __sx_num_int_divmod_abs_bind_ "${1}" "${2}" || :
 
-	unset CLEANUP
+	unset CLEANUP __sx_num_int_divmod_abs_dec_
 }
 
 # ========================================
