@@ -4643,7 +4643,7 @@ sx_num_is_fixed() {
 	for __sx_num_is_fixed_arg in "${@}"; do
 		case "${__sx_num_is_fixed_arg}" in *.*)
 			sx_str_is_digit "${__sx_num_is_fixed_arg#*.}"
-		esac && sx_num_is_base_int 10 "${__sx_num_is_fixed_arg%%.*}" || {
+		esac && __sx_num_is_base_int 10 "${__sx_num_is_fixed_arg%%.*}" || {
 			unset __sx_num_is_fixed_arg
 			return 1
 		}
@@ -4721,7 +4721,7 @@ sx_num_is_int_fit_dec() {
 		*) return "${SX_EX_USAGE}";;
 	esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_base_int 10 "${@}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_base_int 10 "${@}" || return
 
 	__sx_num_is_int_fit_dec "${@}" || return
 }
@@ -5629,7 +5629,7 @@ sx_num_int_add_abs() {
 	__sx_num_int_add_abs_res="${1}"
 	shift
 
-	sx_num_is_base_nat0 10 "${@}" || {
+	__sx_num_is_base_nat0 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -5761,7 +5761,7 @@ sx_num_int_sub_abs() {
 	__sx_num_int_sub_abs_res="${1}"
 	shift
 
-	sx_num_is_base_nat0 10 "${@}" || {
+	__sx_num_is_base_nat0 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -5896,7 +5896,7 @@ sx_num_int_mul_abs() {
 	__sx_num_int_mul_abs_res="${1}"
 	shift
 
-	sx_num_is_base_nat0 10 "${@}" || {
+	__sx_num_is_base_nat0 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -6136,7 +6136,7 @@ sx_num_int_add() {
 	__sx_num_int_add_res="${1}"
 	shift
 
-	sx_num_is_base_int 10 "${@}" || {
+	__sx_num_is_base_int 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -6222,7 +6222,7 @@ sx_num_int_sub() {
 	__sx_num_int_sub_res="${1}"
 	shift
 
-	sx_num_is_base_int 10 "${@}" || {
+	__sx_num_is_base_int 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -6311,7 +6311,7 @@ sx_num_int_mul() {
 	__sx_num_int_mul_res="${1}"
 	shift
 
-	sx_num_is_base_int 10 "${@}" || {
+	__sx_num_is_base_int 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -6382,16 +6382,9 @@ sx_num_int_divmod_abs() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_int_divmod_abs_bind="${1}"
-	shift
+	__sx_num_is_base_nat0 10 ${2+"${2}"} && __sx_num_is_base_nat1 10 ${3+"${3}"} || return "${SX_EX_USAGE}"
 
-	sx_num_is_base_nat0 10 "${1-0}" && sx_num_is_base_nat1 10 "${2-1}" || {
-		unset __sx_num_int_divmod_abs_bind
-		return "${SX_EX_USAGE}"
-	}
-
-	__sx_num_int_divmod_abs "${__sx_num_int_divmod_abs_bind}" "${@}"
-	unset __sx_num_int_divmod_abs_bind
+	__sx_num_int_divmod_abs "${@}"
 }
 
 ### __sx_num_int_divmod_abs - 絶対値の除算で整数商と余剰を同時に求める（内部用）
@@ -6856,6 +6849,204 @@ __sx_num_int_divmod_abs() {
 	unset CLEANUP
 }
 
+### sx_num_int_divmod - 符号付き整数の除算で整数商と余剰を同時に求める（Truncated）
+##
+## 使い方:
+##   sx_num_int_divmod バインド形式 被除数 [除数]
+##
+## 説明:
+##   符号付き10進整数の除算（Truncated 規約: 商はゼロ方向へ丸め、
+##   余剰は被除数と同じ符号を持つ）を行い、整数商と余剰を同時に求める。
+##   第一引数は商・余剰の割り当て先を指定する分配代入バインド形式（例: "q:r:"）。
+##   被除数は任意の符号付き整数、除数は 0 以外の符号付き整数。
+##   除数に 0 を指定した場合は引数不正とみなす。
+##   被除数・除数は省略可能で、省略した場合はそれぞれ 0、1 として扱われる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+
+sx_num_int_divmod() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_divmod "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_is_base_int 10 ${2+"${2}"} ${3+"${3}"} && M_STR_NE([|"${3+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
+
+	__sx_num_int_divmod "${@}"
+}
+
+define([|V|], [|__sx_num_int_divmod_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(u) V(v) V(q) V(r) V(us) V(vs)|])dnl
+
+### __sx_num_int_divmod - 符号付き整数の除算で整数商と余剰を同時に求める（内部用）
+##
+## 使い方:
+##   __sx_num_int_divmod バインド形式 被除数 [除数]
+##
+## 説明:
+##   sx_num_int_divmod の内部実装。引数チェックは行わない。
+##   Truncated 規約: 商はゼロ方向へ丸め、余剰は被除数と同じ符号を持つ。
+##   絶対値どうしの除算（q0, r0）の後に符号のみを適用する。
+##   q = sign(u)×sign(v)×q0、r = sign(u)×r0 であり、
+##   q0 や r0 が 0 のときは "-0" を作らない。
+__sx_num_int_divmod() {
+	__sx_var_bind_init "${1}"
+	__sx_num_int_divmod_bind_="${1}"
+	__sx_num_int_divmod_u_="${2-0}"
+	__sx_num_int_divmod_v_="${3-1}"
+	__sx_num_int_divmod_us_=0
+	__sx_num_int_divmod_vs_=0
+
+	case "${__sx_num_int_divmod_u_}" in -*) __sx_num_int_divmod_us_=1;; esac
+	__sx_num_int_divmod_u_="${__sx_num_int_divmod_u_#[+-]}"
+
+	case "${__sx_num_int_divmod_v_}" in -*) __sx_num_int_divmod_vs_=1;; esac
+	__sx_num_int_divmod_v_="${__sx_num_int_divmod_v_#[+-]}"
+
+	__sx_num_int_divmod_abs "__sx_num_int_divmod_q_:__sx_num_int_divmod_r_:" "${__sx_num_int_divmod_u_}" "${__sx_num_int_divmod_v_}"
+
+	case "$((__sx_num_int_divmod_us_ ^ __sx_num_int_divmod_vs_))" in
+		1) case "${__sx_num_int_divmod_q_}" in
+			0) ;;
+			*) __sx_num_int_divmod_q_="-${__sx_num_int_divmod_q_}";;
+		esac
+	esac
+
+	case "${__sx_num_int_divmod_us_}" in
+		1) case "${__sx_num_int_divmod_r_}" in
+			0) ;;
+			*) __sx_num_int_divmod_r_="-${__sx_num_int_divmod_r_}";;
+		esac
+	esac
+
+	__sx_var_bind __sx_num_int_divmod_bind_ "${__sx_num_int_divmod_bind_}" "${__sx_num_int_divmod_q_}" || {
+		unset CLEANUP
+		return "${SX_EX_OK}"
+	}
+
+	__sx_var_bind __sx_num_int_divmod_bind_ "${__sx_num_int_divmod_bind_}" "${__sx_num_int_divmod_r_}" || {
+		unset CLEANUP
+		return "${SX_EX_OK}"
+	}
+
+	unset CLEANUP
+}
+
+### sx_num_int_edivmod - ユークリッド除算で整数商と余剰を同時に求める
+##
+## 使い方:
+##   sx_num_int_edivmod バインド形式 被除数 [除数]
+##
+## 説明:
+##   符号付き10進整数のユークリッド除算 a = b×q + r（0 ≤ r < |b|）を行い、
+##   整数商と余剰を同時に求める。除法定理により (q, r) は一意に定まり、
+##   余剰は入力の符号に依存せず常に 0 以上となる。
+##   第一引数は商・余剰の割り当て先を指定する分配代入バインド形式（例: "q:r:"）。
+##   被除数は任意の符号付き整数、除数は 0 以外の符号付き整数。
+##   除数に 0 を指定した場合は引数不正とみなす。
+##   被除数・除数は省略可能で、省略した場合はそれぞれ 0、1 として扱われる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+
+sx_num_int_edivmod() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_edivmod "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_is_base_int 10 ${2+"${2}"} ${3+"${3}"} && M_STR_NE([|"${3+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
+
+	__sx_num_int_edivmod "${@}"
+}
+
+define([|V|], [|__sx_num_int_edivmod_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(u) V(v) V(q) V(r) V(us) V(vs) V(m)|])dnl
+
+### __sx_num_int_edivmod - ユークリッド除算で整数商と余剰を同時に求める（内部用）
+##
+## 使い方:
+##   __sx_num_int_edivmod バインド形式 被除数 [除数]
+##
+## 説明:
+##   sx_num_int_edivmod の内部実装。引数チェックは行わない。
+##   絶対値どうしの除算（q0, r0: 0 ≤ r0 < |v|）の後にユークリッド規約を適用する。
+##   - r0 = 0 のとき: q = sign(u)×sign(v)×q0、r = 0
+##   - r0 ≠ 0 かつ u ≥ 0 のとき: q = ±q0（v < 0 なら負）、r = r0
+##   - r0 ≠ 0 かつ u < 0 のとき: q = ±(q0 + 1)（v < 0 なら正）、r = |v| - r0
+##   q0 + 1 は __sx_num_int_add_abs、|v| - r0 は __sx_num_int_sub_abs で算出し、
+##   ネイティブ算術幅を超えても多倍長のまま正しく補正する。
+__sx_num_int_edivmod() {
+	__sx_var_bind_init "${1}"
+	__sx_num_int_edivmod_bind_="${1}"
+	__sx_num_int_edivmod_u_="${2-0}"
+	__sx_num_int_edivmod_v_="${3-1}"
+	__sx_num_int_edivmod_us_=0
+	__sx_num_int_edivmod_vs_=0
+
+	case "${__sx_num_int_edivmod_u_}" in -*) __sx_num_int_edivmod_us_=1;; esac
+	__sx_num_int_edivmod_u_="${__sx_num_int_edivmod_u_#[+-]}"
+
+	case "${__sx_num_int_edivmod_v_}" in -*) __sx_num_int_edivmod_vs_=1;; esac
+	__sx_num_int_edivmod_v_="${__sx_num_int_edivmod_v_#[+-]}"
+
+	__sx_num_int_divmod_abs "__sx_num_int_edivmod_q_:__sx_num_int_edivmod_r_:" "${__sx_num_int_edivmod_u_}" "${__sx_num_int_edivmod_v_}"
+
+	case "${__sx_num_int_edivmod_r_}" in
+		0)
+			case "$((__sx_num_int_edivmod_us_ ^ __sx_num_int_edivmod_vs_))" in
+				1) case "${__sx_num_int_edivmod_q_}" in
+					0) ;;
+					*) __sx_num_int_edivmod_q_="-${__sx_num_int_edivmod_q_}";;
+				esac
+			esac
+			;;
+		*)
+			case "${__sx_num_int_edivmod_us_}" in
+				0)
+					case "${__sx_num_int_edivmod_vs_}" in
+						1) case "${__sx_num_int_edivmod_q_}" in
+							0) ;;
+							*) __sx_num_int_edivmod_q_="-${__sx_num_int_edivmod_q_}";;
+						esac
+					esac
+					;;
+				*)
+					__sx_num_int_add_abs __sx_num_int_edivmod_m_ "${__sx_num_int_edivmod_q_}" 1
+
+					case "${__sx_num_int_edivmod_vs_}" in
+						0) __sx_num_int_edivmod_q_="-${__sx_num_int_edivmod_m_}";;
+						*) __sx_num_int_edivmod_q_="${__sx_num_int_edivmod_m_}";;
+					esac
+
+					__sx_num_int_sub_abs __sx_num_int_edivmod_r_ "${__sx_num_int_edivmod_v_}" "${__sx_num_int_edivmod_r_}"
+					;;
+			esac
+			;;
+	esac
+
+	__sx_var_bind __sx_num_int_edivmod_bind_ "${__sx_num_int_edivmod_bind_}" "${__sx_num_int_edivmod_q_}" || {
+		unset CLEANUP
+		return "${SX_EX_OK}"
+	}
+
+	__sx_var_bind __sx_num_int_edivmod_bind_ "${__sx_num_int_edivmod_bind_}" "${__sx_num_int_edivmod_r_}" || {
+		unset CLEANUP
+		return "${SX_EX_OK}"
+	}
+
+	unset CLEANUP
+}
+
 ### sx_num_int_div_abs - 絶対値の除算で実数商（整数商 + 小数部）を求める
 ##
 ## 使い方:
@@ -6888,22 +7079,17 @@ sx_num_int_div_abs() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
+	__sx_num_is_sx_nat0 ${2+"${2}"} && __sx_num_is_base_nat0 10 ${3+"${3}"} || return "${SX_EX_USAGE}"
+
 	__sx_num_int_div_abs_res="${1}"
 	__sx_num_int_div_abs_dp="${2-0}"
 	__sx_num_int_div_abs_u="${3-0}"
 	shift "$((0${2+1} + 0${3+1} + 1))"
 
-	sx_num_is_sx_nat0 "${__sx_num_int_div_abs_dp}" && sx_num_is_base_nat0 10 "${__sx_num_int_div_abs_u}" || {
+	__sx_num_is_base_nat1 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
-
-	case "${#}" in 0) ;;
-		*) sx_num_is_base_nat1 10 "${@}" || {
-			unset CLEANUP
-			return "${SX_EX_USAGE}"
-		}
-	esac
 
 	__sx_num_int_div_abs "${__sx_num_int_div_abs_res}" "${__sx_num_int_div_abs_dp}" "${__sx_num_int_div_abs_u}" "${@}"
 	unset CLEANUP
