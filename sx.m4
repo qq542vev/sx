@@ -7099,6 +7099,12 @@ __sx_num_int_div_abs() {
 	__sx_num_int_div_abs_u_="${3:-0}"
 	shift 3
 
+	case "${__sx_num_int_div_abs_u_}" in 0 | +0 | -0)
+		__sx_var_set "${__sx_num_int_div_abs_res_}=0"
+		unset CLEANUP
+		return "${SX_EX_OK}"
+	esac
+
 	# ステップ 2: すべての除数を乗算して単一の除数にする（除数が無い場合は 1）
 	__sx_num_int_mul_abs __sx_num_int_div_abs_den_ "${@}"
 
@@ -7150,6 +7156,97 @@ __sx_num_int_div_abs() {
 	esac
 
 	__sx_var_set "${__sx_num_int_div_abs_res_}=${__sx_num_int_div_abs_q_}"
+	unset CLEANUP
+}
+
+### sx_num_int_div - 符号付き整数の除算で実数商（整数商 + 小数部）を求める
+##
+## 使い方:
+##   sx_num_int_div 結果変数名 小数桁数 被除数 [除数1 [除数2 ...]]
+##
+## 説明:
+##   符号付き10進整数の除算を行い、実数商（整数商 + 小数部）を求める。
+##   すべての除数を乗算した値を単一の除数として扱い、被除数をその除数で除算する。
+##   小数部は小数桁数（最大桁数）までを floor（切り捨て）で求め、末尾の 0 は除去される。
+##   小数部が 0 になる場合は実数商 = 整数商となる。
+##   （例: d 2 -100 3 → d=-33.33 / d 2 5 -10 → d=-0.5 / d 3 -100 -2 5 → d=10）
+##   被除数は任意の符号付き整数、各除数は 0 以外の符号付き整数、小数桁数は 0 以上の自然数。
+##   除数に 0 を指定した場合は引数不正とみなす。
+##   小数桁数・被除数・除数は省略可能で、省略した場合はそれぞれ 0、0、1 として扱われる
+##   （小数桁数省略時は実数商 = 整数商、除数省略時は被除数がそのまま実数商）。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+
+define([|V|], [|__sx_num_int_div_$1|])dnl
+define([|CLEANUP|], [|V(res) V(dp) V(u) V(v)|])dnl
+
+sx_num_int_div() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_int_div "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_is_sx_nat0 ${2:+"${2}"} && __sx_num_is_base_int 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
+
+	__sx_num_int_div_res="${1}"
+	__sx_num_int_div_dp="${2:-0}"
+	__sx_num_int_div_u="${3:-0}"
+	shift "$((0${2+1} + 0${3+1} + 1))"
+
+	__sx_num_is_base_int 10 "${@}" || {
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	}
+
+	for __sx_num_int_div_v in "${@}"; do
+		case "${__sx_num_int_div_v#[+-]}" in 0)
+			unset CLEANUP
+			return "${SX_EX_USAGE}"
+		esac
+	done
+
+	__sx_num_int_div "${__sx_num_int_div_res}" "${__sx_num_int_div_dp}" "${__sx_num_int_div_u}" "${@}"
+	unset CLEANUP
+}
+
+define([|V|], [|__sx_num_int_div_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q)|])dnl
+
+### __sx_num_int_div - 符号付き整数の除算で実数商（整数商 + 小数部）を求める（内部用）
+##
+## 使い方:
+##   __sx_num_int_div 結果変数名 小数桁数 被除数 [除数1 [除数2 ...]]
+##
+## 説明:
+##   sx_num_int_div の内部実装。引数チェックは行わない。
+##   前提: 小数桁数は 0 以上の自然数、被除数は任意の符号付き整数、
+##   すべての除数は 0 以外の符号付き整数であること。
+__sx_num_int_div() {
+	__sx_num_int_div_res_="${1}"
+	__sx_num_int_div_dp_="${2:-0}"
+	__sx_num_int_div_u_="${3:-0}"
+	shift "$((0${1+1} + 0${2+1} + 0${3+1}))"
+
+	case "${__sx_num_int_div_u_}" in 0 | +0 | -0)
+		__sx_var_set "${__sx_num_int_div_res_}=0"
+		unset CLEANUP
+		return "${SX_EX_OK}"
+	esac
+
+	__sx_num_int_mul __sx_num_int_div_den_ "${@}"
+
+	__sx_num_int_div_abs __sx_num_int_div_q_ "${__sx_num_int_div_dp_}" "${__sx_num_int_div_u_#[+-]}" "${__sx_num_int_div_den_#[+-]}"
+
+	case "${__sx_num_int_div_u_}:${__sx_num_int_div_den_}:${__sx_num_int_div_q_}" in -*:[!-]*:*[!0]* | [!-]*:-*:*[!0]*)
+		__sx_num_int_div_q_="-${__sx_num_int_div_q_}"
+	esac
+
+	__sx_var_set "${__sx_num_int_div_res_}=${__sx_num_int_div_q_}"
 	unset CLEANUP
 }
 
