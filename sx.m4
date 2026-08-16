@@ -6881,7 +6881,7 @@ sx_num_int_divmod() {
 }
 
 define([|V|], [|__sx_num_int_divmod_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(u) V(v) V(q) V(r) V(us) V(vs)|])dnl
+define([|CLEANUP|], [|V(bind) V(q) V(r) V(us) V(vs)|])dnl
 
 ### __sx_num_int_divmod - 符号付き整数の除算で整数商と余剰を同時に求める（内部用）
 ##
@@ -6896,43 +6896,34 @@ define([|CLEANUP|], [|V(bind) V(u) V(v) V(q) V(r) V(us) V(vs)|])dnl
 ##   q0 や r0 が 0 のときは "-0" を作らない。
 __sx_num_int_divmod() {
 	__sx_var_bind_init "${1}"
-	__sx_num_int_divmod_bind_="${1}"
-	__sx_num_int_divmod_u_="${2-0}"
-	__sx_num_int_divmod_v_="${3-1}"
+	set -- "${1}" "${2-0}" "${3-1}"
 	__sx_num_int_divmod_us_=0
 	__sx_num_int_divmod_vs_=0
 
-	case "${__sx_num_int_divmod_u_}" in -*) __sx_num_int_divmod_us_=1;; esac
-	__sx_num_int_divmod_u_="${__sx_num_int_divmod_u_#[+-]}"
-
-	case "${__sx_num_int_divmod_v_}" in -*) __sx_num_int_divmod_vs_=1;; esac
-	__sx_num_int_divmod_v_="${__sx_num_int_divmod_v_#[+-]}"
-
-	__sx_num_int_divmod_abs "__sx_num_int_divmod_q_:__sx_num_int_divmod_r_:" "${__sx_num_int_divmod_u_}" "${__sx_num_int_divmod_v_}"
-
-	case "$((__sx_num_int_divmod_us_ ^ __sx_num_int_divmod_vs_))" in
-		1) case "${__sx_num_int_divmod_q_}" in
-			0) ;;
-			*) __sx_num_int_divmod_q_="-${__sx_num_int_divmod_q_}";;
-		esac
+	case "${2}" in -*)
+		__sx_num_int_divmod_us_=1
 	esac
 
-	case "${__sx_num_int_divmod_us_}" in
-		1) case "${__sx_num_int_divmod_r_}" in
-			0) ;;
-			*) __sx_num_int_divmod_r_="-${__sx_num_int_divmod_r_}";;
-		esac
+	case "${3}" in -*)
+		__sx_num_int_divmod_vs_=1
 	esac
 
-	__sx_var_bind __sx_num_int_divmod_bind_ "${__sx_num_int_divmod_bind_}" "${__sx_num_int_divmod_q_}" || {
+	__sx_num_int_divmod_abs '__sx_num_int_divmod_q_:__sx_num_int_divmod_r_:' "${2#[+-]}" "${3#[+-]}"
+
+	case "$((__sx_num_int_divmod_us_ ^ __sx_num_int_divmod_vs_))${__sx_num_int_divmod_q_}" in 1[!0]*)
+		__sx_num_int_divmod_q_="-${__sx_num_int_divmod_q_}"
+	esac
+
+	__sx_var_bind __sx_num_int_divmod_bind_ "${1}" "${__sx_num_int_divmod_q_}" || {
 		unset CLEANUP
 		return "${SX_EX_OK}"
 	}
 
-	__sx_var_bind __sx_num_int_divmod_bind_ "${__sx_num_int_divmod_bind_}" "${__sx_num_int_divmod_r_}" || {
-		unset CLEANUP
-		return "${SX_EX_OK}"
-	}
+	case "${__sx_num_int_divmod_us_}${__sx_num_int_divmod_r_}" in 1[!0]*)
+		__sx_num_int_divmod_r_="-${__sx_num_int_divmod_r_}"
+	esac
+
+	__sx_var_bind __sx_num_int_divmod_bind_ "${__sx_num_int_divmod_bind_}" "${__sx_num_int_divmod_r_}" || :
 
 	unset CLEANUP
 }
@@ -6970,7 +6961,7 @@ sx_num_int_edivmod() {
 }
 
 define([|V|], [|__sx_num_int_edivmod_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(u) V(v) V(q) V(r) V(us) V(vs) V(m)|])dnl
+define([|CLEANUP|], [|V(bind) V(q) V(r) V(us) V(vs)|])dnl
 
 ### __sx_num_int_edivmod - ユークリッド除算で整数商と余剰を同時に求める（内部用）
 ##
@@ -6987,62 +6978,45 @@ define([|CLEANUP|], [|V(bind) V(u) V(v) V(q) V(r) V(us) V(vs) V(m)|])dnl
 ##   ネイティブ算術幅を超えても多倍長のまま正しく補正する。
 __sx_num_int_edivmod() {
 	__sx_var_bind_init "${1}"
-	__sx_num_int_edivmod_bind_="${1}"
-	__sx_num_int_edivmod_u_="${2-0}"
-	__sx_num_int_edivmod_v_="${3-1}"
+	set -- "${1}" "${2-0}" "${3-1}"
 	__sx_num_int_edivmod_us_=0
 	__sx_num_int_edivmod_vs_=0
 
-	case "${__sx_num_int_edivmod_u_}" in -*) __sx_num_int_edivmod_us_=1;; esac
-	__sx_num_int_edivmod_u_="${__sx_num_int_edivmod_u_#[+-]}"
+	case "${2}" in -*)
+		__sx_num_int_edivmod_us_=1
+	esac
 
-	case "${__sx_num_int_edivmod_v_}" in -*) __sx_num_int_edivmod_vs_=1;; esac
-	__sx_num_int_edivmod_v_="${__sx_num_int_edivmod_v_#[+-]}"
+	case "${3}" in -*)
+		__sx_num_int_edivmod_vs_=1
+	esac
 
-	__sx_num_int_divmod_abs "__sx_num_int_edivmod_q_:__sx_num_int_edivmod_r_:" "${__sx_num_int_edivmod_u_}" "${__sx_num_int_edivmod_v_}"
+	__sx_num_int_divmod_abs '__sx_num_int_edivmod_q_:__sx_num_int_edivmod_r_:' "${2#[+-]}" "${3#[+-]}"
 
-	case "${__sx_num_int_edivmod_r_}" in
-		0)
-			case "$((__sx_num_int_edivmod_us_ ^ __sx_num_int_edivmod_vs_))" in
-				1) case "${__sx_num_int_edivmod_q_}" in
-					0) ;;
-					*) __sx_num_int_edivmod_q_="-${__sx_num_int_edivmod_q_}";;
-				esac
+	case "${__sx_num_int_edivmod_q_}:${__sx_num_int_edivmod_r_}:${__sx_num_int_edivmod_us_}${__sx_num_int_edivmod_vs_}" in
+		*:[!0]*:1?)
+			__sx_num_int_add_abs __sx_num_int_edivmod_q_ "${__sx_num_int_edivmod_q_}" 1
+
+			case "${__sx_num_int_edivmod_vs_}" in 0)
+				__sx_num_int_edivmod_q_="-${__sx_num_int_edivmod_q_}"
 			esac
+
+			__sx_var_bind __sx_num_int_edivmod_bind_ "${1}" "${__sx_num_int_edivmod_q_}" || {
+				unset CLEANUP
+				return "${SX_EX_OK}"
+			}
+
+			__sx_num_int_sub_abs __sx_num_int_edivmod_r_ "${3#[+-]}" "${__sx_num_int_edivmod_r_}"
 			;;
+		[!0]*:0:10 | [!0]*:0:01 | [!0]*:[!0]*:01) __sx_num_int_edivmod_q_="-${__sx_num_int_edivmod_q_}";&
 		*)
-			case "${__sx_num_int_edivmod_us_}" in
-				0)
-					case "${__sx_num_int_edivmod_vs_}" in
-						1) case "${__sx_num_int_edivmod_q_}" in
-							0) ;;
-							*) __sx_num_int_edivmod_q_="-${__sx_num_int_edivmod_q_}";;
-						esac
-					esac
-					;;
-				*)
-					__sx_num_int_add_abs __sx_num_int_edivmod_m_ "${__sx_num_int_edivmod_q_}" 1
-
-					case "${__sx_num_int_edivmod_vs_}" in
-						0) __sx_num_int_edivmod_q_="-${__sx_num_int_edivmod_m_}";;
-						*) __sx_num_int_edivmod_q_="${__sx_num_int_edivmod_m_}";;
-					esac
-
-					__sx_num_int_sub_abs __sx_num_int_edivmod_r_ "${__sx_num_int_edivmod_v_}" "${__sx_num_int_edivmod_r_}"
-					;;
-			esac
+			__sx_var_bind __sx_num_int_edivmod_bind_ "${1}" "${__sx_num_int_edivmod_q_}" || {
+				unset CLEANUP
+				return "${SX_EX_OK}"
+			}
 			;;
 	esac
 
-	__sx_var_bind __sx_num_int_edivmod_bind_ "${__sx_num_int_edivmod_bind_}" "${__sx_num_int_edivmod_q_}" || {
-		unset CLEANUP
-		return "${SX_EX_OK}"
-	}
-
-	__sx_var_bind __sx_num_int_edivmod_bind_ "${__sx_num_int_edivmod_bind_}" "${__sx_num_int_edivmod_r_}" || {
-		unset CLEANUP
-		return "${SX_EX_OK}"
-	}
+	__sx_var_bind __sx_num_int_edivmod_bind_ "${__sx_num_int_edivmod_bind_}" "${__sx_num_int_edivmod_r_}" || :
 
 	unset CLEANUP
 }
