@@ -6382,7 +6382,7 @@ sx_num_int_divmod_abs() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_base_nat0 10 ${2+"${2}"} && __sx_num_is_base_nat1 10 ${3+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_base_nat0 10 ${2:+"${2}"} && __sx_num_is_base_nat1 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_num_int_divmod_abs "${@}"
 }
@@ -6440,8 +6440,8 @@ __sx_num_int_divmod_abs() {
 	#   計算前に必ずクリアする（6505 の分岐が q_ の残存値に誤導されるのを防ぐ）。
 	__sx_var_bind_init "${1}"
 	__sx_num_int_divmod_abs_bind_="${1}"
-	__sx_num_int_divmod_abs_u_="${2-0}"
-	__sx_num_int_divmod_abs_v_="${3-1}"
+	__sx_num_int_divmod_abs_u_="${2:-0}"
+	__sx_num_int_divmod_abs_v_="${3:-1}"
 	__sx_num_int_divmod_abs_q_=
 	__sx_num_int_divmod_abs_r_=
 
@@ -6875,7 +6875,7 @@ sx_num_int_divmod() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_base_int 10 ${2+"${2}"} ${3+"${3}"} && M_STR_NE([|"${3+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
+	__sx_num_is_base_int 10 ${2:+"${2}"} ${3:+"${3}"} && M_STR_NE([|"${3:+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
 
 	__sx_num_int_divmod "${@}"
 }
@@ -6896,7 +6896,7 @@ define([|CLEANUP|], [|V(bind) V(q) V(r) V(us) V(vs)|])dnl
 ##   q0 や r0 が 0 のときは "-0" を作らない。
 __sx_num_int_divmod() {
 	__sx_var_bind_init "${1}"
-	set -- "${1}" "${2-0}" "${3-1}"
+	set -- "${1}" "${2:-0}" "${3:-1}"
 	__sx_num_int_divmod_us_=0
 	__sx_num_int_divmod_vs_=0
 
@@ -6955,7 +6955,7 @@ sx_num_int_edivmod() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_base_int 10 ${2+"${2}"} ${3+"${3}"} && M_STR_NE([|"${3+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
+	__sx_num_is_base_int 10 ${2:+"${2}"} ${3:+"${3}"} && M_STR_NE([|"${3:+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
 
 	__sx_num_int_edivmod "${@}"
 }
@@ -6978,7 +6978,7 @@ define([|CLEANUP|], [|V(bind) V(q) V(r) V(us) V(vs)|])dnl
 ##   ネイティブ算術幅を超えても多倍長のまま正しく補正する。
 __sx_num_int_edivmod() {
 	__sx_var_bind_init "${1}"
-	set -- "${1}" "${2-0}" "${3-1}"
+	set -- "${1}" "${2:-0}" "${3:-1}"
 	__sx_num_int_edivmod_us_=0
 	__sx_num_int_edivmod_vs_=0
 
@@ -7053,11 +7053,11 @@ sx_num_int_div_abs() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_sx_nat0 ${2+"${2}"} && __sx_num_is_base_nat0 10 ${3+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_sx_nat0 ${2:+"${2}"} && __sx_num_is_base_nat0 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_num_int_div_abs_res="${1}"
-	__sx_num_int_div_abs_dp="${2-0}"
-	__sx_num_int_div_abs_u="${3-0}"
+	__sx_num_int_div_abs_dp="${2:-0}"
+	__sx_num_int_div_abs_u="${3:-0}"
 	shift "$((0${2+1} + 0${3+1} + 1))"
 
 	__sx_num_is_base_nat1 10 "${@}" || {
@@ -7095,8 +7095,8 @@ define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q) V(r) V(dec) V(zr) V(qm)|])dn
 __sx_num_int_div_abs() {
 	# ステップ 1: 引数の取得（結果変数名、小数桁数 dp、被除数 u、除数群）
 	__sx_num_int_div_abs_res_="${1}"
-	__sx_num_int_div_abs_dp_="${2-0}"
-	__sx_num_int_div_abs_u_="${3-0}"
+	__sx_num_int_div_abs_dp_="${2:-0}"
+	__sx_num_int_div_abs_u_="${3:-0}"
 	shift 3
 
 	# ステップ 2: すべての除数を乗算して単一の除数にする（除数が無い場合は 1）
