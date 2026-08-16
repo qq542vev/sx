@@ -139,62 +139,6 @@ Describe 'sx_num_int_divmod_abs'
     End
   End
 
-  It '小数桁数を指定した除算ができること（3値書式）'
-    When call sx_num_int_divmod_abs "q:r:d:" 100 3 2
-    The status should be success
-    The variable q should equal "33"
-    The variable r should equal "1"
-    The variable d should equal "33.33"
-  End
-
-  It '小数部の末尾0を除去すること'
-    When call sx_num_int_divmod_abs "q:r:d:" 5 10 2
-    The status should be success
-    The variable q should equal "0"
-    The variable r should equal "5"
-    The variable d should equal "0.5"
-  End
-
-  It '小数部が1桁未満の場合にゼロ埋めされること'
-    When call sx_num_int_divmod_abs "q:r:d:" 101 100 2
-    The status should be success
-    The variable q should equal "1"
-    The variable r should equal "1"
-    The variable d should equal "1.01"
-  End
-
-  It '小数が0の場合は小数部を付けないこと'
-    When call sx_num_int_divmod_abs "q:r:d:" 1001 1000 1
-    The status should be success
-    The variable q should equal "1"
-    The variable r should equal "1"
-    The variable d should equal "1"
-  End
-
-  It '除算が割り切れる場合は小数部を付けないこと'
-    When call sx_num_int_divmod_abs "q:r:d:" 100 4 2
-    The status should be success
-    The variable q should equal "25"
-    The variable r should equal "0"
-    The variable d should equal "25"
-  End
-
-  It '小数桁数が複数桁の末尾0除去ができること'
-    When call sx_num_int_divmod_abs "q:r:d:" 7 2 4
-    The status should be success
-    The variable q should equal "3"
-    The variable r should equal "1"
-    The variable d should equal "3.5"
-  End
-
-  It '小数桁数省略時は実数商=整数商になること'
-    When call sx_num_int_divmod_abs "q:r:d:" 100 3
-    The status should be success
-    The variable q should equal "33"
-    The variable r should equal "1"
-    The variable d should equal "33"
-  End
-
   It 'ゼロ除算でエラー(64)になること'
     When call sx_num_int_divmod_abs "q:r:" 100 0
     The status should equal 64

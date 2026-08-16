@@ -6,4 +6,5 @@
 !sx.m4
 !.shellcheckrc
 !.shellspec
+!spec/
 !spec/**
