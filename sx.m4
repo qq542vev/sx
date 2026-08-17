@@ -1720,7 +1720,7 @@ __sx_arg_isep_cb() {
 		# $@ 先頭から ${1} + shift で sep を消費する
 		# PRE (先頭セパレータ)
 		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_PRE && __sx_arg_isep_cb_r_ == 0))" in 1)
-			case "${1}" in :*)
+			case "${1-}" in :*)
 				__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1#:}" "${SX_VAR_BIND_QUOTE}" || {
 					set -- "${__sx_arg_isep_cb_stat_}"
 					unset CLEANUP
@@ -1746,7 +1746,7 @@ __sx_arg_isep_cb() {
 				__sx_arg_isep_cb_r_ < __sx_arg_isep_cb_i_ &&
 				(__sx_arg_isep_cb_i_ - __sx_arg_isep_cb_r_ - 1) % ${__sx_arg_isep_cb_int_#-} == 0
 			))" in 1)
-				case "${1}" in :*)
+				case "${1-}" in :*)
 					__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1#:}" "${SX_VAR_BIND_QUOTE}" || {
 						set -- "${__sx_arg_isep_cb_stat_}"
 						unset CLEANUP
@@ -1766,7 +1766,7 @@ __sx_arg_isep_cb() {
 		done
 
 		# POST (末尾セパレータ)
-		case "$((__sx_arg_isep_cb_post_))${1}" in 1:*)
+		case "$((__sx_arg_isep_cb_post_))${1-}" in 1:*)
 			__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1#:}" "${SX_VAR_BIND_QUOTE}" || :;;
 		esac
 
@@ -2944,7 +2944,7 @@ __sx_var_bind() {
 			esac
 			;;
 		*:*) eval "${2%%:*}=\${3}; ${1}=\"\${2#*:}\"";;
-		*) eval "${2}=\"\${${2}}\${${2}:+ }\${__sx_var_bind_v_}\"; ${1}=\"\${2}\"";;
+		*) eval "${2}=\"\${${2}-}\${${2}:+ }\${__sx_var_bind_v_}\"; ${1}=\"\${2}\"";;
 	esac
 
 	unset __sx_var_bind_seg_ __sx_var_bind_v_ __sx_var_bind_c_ __sx_var_bind_n_
@@ -5783,7 +5783,7 @@ sx_num_sub_nat0() {
 		return "${SX_EX_USAGE}"
 	}
 
-	__sx_num_cmp_nat0 "${1}" "${2}" || case "${?}" in 1)
+	__sx_num_cmp_nat0 "${1-0}" "${2-0}" || case "${?}" in 1)
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	esac
@@ -6858,10 +6858,7 @@ __sx_num_divmod_nat0() {
 		esac
 	fi
 
-	__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_r_:-0}" || {
-		unset CLEANUP
-		return "${SX_EX_OK}"
-	}
+	__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_r_:-0}" || :
 
 	unset CLEANUP
 }
