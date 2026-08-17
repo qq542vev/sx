@@ -3108,7 +3108,7 @@ __sx_var_is_arr() {
 	for __sx_var_is_arr_arg_ in "${@}"; do
 		if
 			! eval sx_str_sw "\"\${${__sx_var_is_arr_arg_}-}\"" '"${SX_CFG_SIG_ARR}":' ||
-			! eval __sx_num_is_base_nat0 10 "\"\${${__sx_var_is_arr_arg_}_len-}\""
+			! eval __sx_num_is_nat0_base 10 "\"\${${__sx_var_is_arr_arg_}_len-}\""
 		then
 			unset __sx_var_is_arr_arg_
 			return 1
@@ -4074,6 +4074,9 @@ __sx_var_unset() {
 ##     nint   負の整数 (negative int)
 ##     nnint  非負整数 (non-negative int)
 ##     npint  非正整数 (non-positive int)
+##
+##   型サフィックスに base を付加すると、第1引数で基数 (8, 10, 16) を
+##   指定する形式になる（例: sx_num_is_int_base）。
 
 ### sx_num_cmp_arith - 2つの数値を算術展開で比較する
 ##
@@ -4278,7 +4281,7 @@ sx_num_cmp_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_nat0 "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_base_nat0 10 "${1-}" "${2-}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0_base 10 "${1-}" "${2-}" || return
 
 	__sx_num_cmp_nat0 "${1}" "${2}" || return
 }
@@ -4326,51 +4329,51 @@ __sx_num_cmp_nat0() {
 	__sx_num_cmp_arith_digit "${1}" "${2}" || return "${?}"
 }
 
-### sx_num_is_base_int - 指定された基数で整数か確認する
+### sx_num_is_int_base - 指定された基数で整数か確認する
 ##
 ## 使い方:
-##   sx_num_is_base_int 基数 [文字列1 [文字列2 ...]]
+##   sx_num_is_int_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
 ##   第一引数で指定された基数（8, 10, 16）において、
 ##   後続のすべての引数が、任意で符号（+ または -）を持つ整数であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_base_nat0 に準ずる。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
 ##
 ## 終了ステータス:
 ##    0  すべて整数である (SX_EX_OK)
 ##    1  整数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_base_int() {
+sx_num_is_int_base() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
-	__sx_num_is_base_int "${@}"
+	__sx_num_is_int_base "${@}"
 }
 
-### __sx_num_is_base_int - 指定された基数で整数か確認する（内部用）
+### __sx_num_is_int_base - 指定された基数で整数か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_num_is_base_int 基数 [文字列1 [文字列2 ...]]
+##   __sx_num_is_int_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   sx_num_is_base_int の内部実装。基数チェックを行わない。
-__sx_num_is_base_int() {
-	__sx_num_is_base_int_base_="${1}"
+##   sx_num_is_int_base の内部実装。基数チェックを行わない。
+__sx_num_is_int_base() {
+	__sx_num_is_int_base_rad_="${1}"
 	shift
 
-	for __sx_num_is_base_int_arg_ in "${@}"; do
-		__sx_num_is_base_nat0 "${__sx_num_is_base_int_base_}" "${__sx_num_is_base_int_arg_#[+-]}" || {
-			unset __sx_num_is_base_int_base_ __sx_num_is_base_int_arg_
+	for __sx_num_is_int_base_arg_ in "${@}"; do
+		__sx_num_is_nat0_base "${__sx_num_is_int_base_rad_}" "${__sx_num_is_int_base_arg_#[+-]}" || {
+			unset __sx_num_is_int_base_rad_ __sx_num_is_int_base_arg_
 			return 1
 		}
 	done
 
-	unset __sx_num_is_base_int_base_ __sx_num_is_base_int_arg_
+	unset __sx_num_is_int_base_rad_ __sx_num_is_int_base_arg_
 }
 
-### sx_num_is_base_nat0 - 指定された基数で0以上の自然数か確認する
+### sx_num_is_nat0_base - 指定された基数で0以上の自然数か確認する
 ##
 ## 使い方:
-##   sx_num_is_base_nat0 基数 [文字列1 [文字列2 ...]]
+##   sx_num_is_nat0_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
 ##   第一引数で指定された基数（8, 10, 16）において、
@@ -4382,259 +4385,259 @@ __sx_num_is_base_int() {
 ##    0  すべて 0 以上の自然数である (SX_EX_OK)
 ##    1  自然数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_base_nat0() {
+sx_num_is_nat0_base() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
-	__sx_num_is_base_nat0 "${@}"
+	__sx_num_is_nat0_base "${@}"
 }
 
-### __sx_num_is_base_nat0 - 指定された基数で0以上の自然数か確認する（内部用）
+### __sx_num_is_nat0_base - 指定された基数で0以上の自然数か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_num_is_base_nat0 基数 [文字列1 [文字列2 ...]]
+##   __sx_num_is_nat0_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   sx_num_is_base_nat0 の内部実装。基数チェックを行わない。
-__sx_num_is_base_nat0() {
+##   sx_num_is_nat0_base の内部実装。基数チェックを行わない。
+__sx_num_is_nat0_base() {
 	eval "
-		__sx_num_is_base_nat0_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
-		__sx_num_is_base_nat0_char_=\"\${SX_NUM_BASE${1}_CHARS}\"
+		__sx_num_is_nat0_base_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
+		__sx_num_is_nat0_base_char_=\"\${SX_NUM_BASE${1}_CHARS}\"
 	"
 	shift
 
-	for __sx_num_is_base_nat0_arg_ in "${@}"; do
-		case "${__sx_num_is_base_nat0_arg_}" in
-			${__sx_num_is_base_nat0_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_base_nat0_arg_#${__sx_num_is_base_nat0_pfix_}}"|] , [|''|], [|0?*|], [|*[!"${__sx_num_is_base_nat0_char_}"]*|]);;
+	for __sx_num_is_nat0_base_arg_ in "${@}"; do
+		case "${__sx_num_is_nat0_base_arg_}" in
+			${__sx_num_is_nat0_base_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_nat0_base_arg_#${__sx_num_is_nat0_base_pfix_}}"|] , [|''|], [|0?*|], [|*[!"${__sx_num_is_nat0_base_char_}"]*|]);;
 			*) ! :;;
 		esac || {
-			unset __sx_num_is_base_nat0_pfix_ __sx_num_is_base_nat0_char_ __sx_num_is_base_nat0_arg_
+			unset __sx_num_is_nat0_base_pfix_ __sx_num_is_nat0_base_char_ __sx_num_is_nat0_base_arg_
 			return 1
 		}
 	done
 
-	unset __sx_num_is_base_nat0_arg_ __sx_num_is_base_nat0_pfix_ __sx_num_is_base_nat0_char_
+	unset __sx_num_is_nat0_base_arg_ __sx_num_is_nat0_base_pfix_ __sx_num_is_nat0_base_char_
 }
 
-### sx_num_is_base_nat1 - 指定された基数で1以上の自然数か確認する
+### sx_num_is_nat1_base - 指定された基数で1以上の自然数か確認する
 ##
 ## 使い方:
-##   sx_num_is_base_nat1 基数 [文字列1 [文字列2 ...]]
+##   sx_num_is_nat1_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
 ##   第一引数で指定された基数（8, 10, 16）において、
 ##   後続のすべての引数が 1 以上の自然数（符号なし整数）であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_base_nat0 に準ずる。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
 ##
 ## 終了ステータス:
 ##    0  すべて 1 以上の自然数である (SX_EX_OK)
 ##    1  1 以上の自然数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_base_nat1() {
+sx_num_is_nat1_base() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
-	__sx_num_is_base_nat1 "${@}"
+	__sx_num_is_nat1_base "${@}"
 }
 
-### __sx_num_is_base_nat1 - 指定された基数で1以上の自然数か確認する（内部用）
+### __sx_num_is_nat1_base - 指定された基数で1以上の自然数か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_num_is_base_nat1 基数 [文字列1 [文字列2 ...]]
+##   __sx_num_is_nat1_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   sx_num_is_base_nat1 の内部実装。基数チェックを行わない。
-__sx_num_is_base_nat1() {
+##   sx_num_is_nat1_base の内部実装。基数チェックを行わない。
+__sx_num_is_nat1_base() {
 	eval "
-		__sx_num_is_base_nat1_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
-		__sx_num_is_base_nat1_char_=\"\${SX_NUM_BASE${1}_CHARS}\"
+		__sx_num_is_nat1_base_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
+		__sx_num_is_nat1_base_char_=\"\${SX_NUM_BASE${1}_CHARS}\"
 	"
 	shift
 
-	for __sx_num_is_base_nat1_arg_ in "${@}"; do
-		case "${__sx_num_is_base_nat1_arg_}" in
-			${__sx_num_is_base_nat1_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_base_nat1_arg_#${__sx_num_is_base_nat1_pfix_}}"|], [|''|], [|0*|], [|*[!"${__sx_num_is_base_nat1_char_}"]*|]);;
+	for __sx_num_is_nat1_base_arg_ in "${@}"; do
+		case "${__sx_num_is_nat1_base_arg_}" in
+			${__sx_num_is_nat1_base_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_nat1_base_arg_#${__sx_num_is_nat1_base_pfix_}}"|], [|''|], [|0*|], [|*[!"${__sx_num_is_nat1_base_char_}"]*|]);;
 			*) ! :;;
 		esac || {
-			unset __sx_num_is_base_nat1_pfix_ __sx_num_is_base_nat1_char_ __sx_num_is_base_nat1_arg_
+			unset __sx_num_is_nat1_base_pfix_ __sx_num_is_nat1_base_char_ __sx_num_is_nat1_base_arg_
 			return 1
 		}
 	done
 
-	unset __sx_num_is_base_nat1_arg_ __sx_num_is_base_nat1_pfix_ __sx_num_is_base_nat1_char_
+	unset __sx_num_is_nat1_base_arg_ __sx_num_is_nat1_base_pfix_ __sx_num_is_nat1_base_char_
 }
 
-### sx_num_is_base_nint - 指定された基数で負の整数（-1以下）か確認する
+### sx_num_is_nint_base - 指定された基数で負の整数（-1以下）か確認する
 ##
 ## 使い方:
-##   sx_num_is_base_nint 基数 [文字列1 [文字列2 ...]]
+##   sx_num_is_nint_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
 ##   第一引数で指定された基数（8, 10, 16）において、
 ##   後続のすべての引数が、負の符号（-）を必須で持つ -1 以下の整数であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_base_nat0 に準ずる。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
 ##
 ## 終了ステータス:
 ##    0  すべて負の整数である (SX_EX_OK)
 ##    1  負の整数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_base_nint() {
+sx_num_is_nint_base() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
-	__sx_num_is_base_nint "${@}"
+	__sx_num_is_nint_base "${@}"
 }
 
-### __sx_num_is_base_nint - 指定された基数で負の整数（-1以下）か確認する（内部用）
+### __sx_num_is_nint_base - 指定された基数で負の整数（-1以下）か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_num_is_base_nint 基数 [文字列1 [文字列2 ...]]
+##   __sx_num_is_nint_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   sx_num_is_base_nint の内部実装。基数チェックを行わない。
-__sx_num_is_base_nint() {
-	__sx_num_is_base_nint_base_="${1}"
+##   sx_num_is_nint_base の内部実装。基数チェックを行わない。
+__sx_num_is_nint_base() {
+	__sx_num_is_nint_base_rad_="${1}"
 	shift
 
-	for __sx_num_is_base_nint_arg_ in "${@}"; do
-		case "${__sx_num_is_base_nint_arg_}" in
-			-*) __sx_num_is_base_nat1 "${__sx_num_is_base_nint_base_}" "${__sx_num_is_base_nint_arg_#-}";;
+	for __sx_num_is_nint_base_arg_ in "${@}"; do
+		case "${__sx_num_is_nint_base_arg_}" in
+			-*) __sx_num_is_nat1_base "${__sx_num_is_nint_base_rad_}" "${__sx_num_is_nint_base_arg_#-}";;
 			*) ! :;;
 			esac || {
-				unset __sx_num_is_base_nint_base_ __sx_num_is_base_nint_arg_
+				unset __sx_num_is_nint_base_rad_ __sx_num_is_nint_base_arg_
 				return 1
 			}
 	done
 
-	unset __sx_num_is_base_nint_base_ __sx_num_is_base_nint_arg_
+	unset __sx_num_is_nint_base_rad_ __sx_num_is_nint_base_arg_
 }
 
-### sx_num_is_base_nnint - 指定された基数で非負整数（0以上）か確認する
+### sx_num_is_nnint_base - 指定された基数で非負整数（0以上）か確認する
 ##
 ## 使い方:
-##   sx_num_is_base_nnint 基数 [文字列1 [文字列2 ...]]
+##   sx_num_is_nnint_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
 ##   第一引数で指定された基数（8, 10, 16）において、
 ##   後続のすべての引数が 0 以上の整数であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_base_nat0 に準ずる。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
 ##
 ## 終了ステータス:
 ##    0  すべて非負整数である (SX_EX_OK)
 ##    1  非負整数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_base_nnint() {
+sx_num_is_nnint_base() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
-	__sx_num_is_base_nnint "${@}"
+	__sx_num_is_nnint_base "${@}"
 }
 
-### __sx_num_is_base_nnint - 指定された基数で非負整数（0以上）か確認する（内部用）
+### __sx_num_is_nnint_base - 指定された基数で非負整数（0以上）か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_num_is_base_nnint 基数 [文字列1 [文字列2 ...]]
+##   __sx_num_is_nnint_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   sx_num_is_base_nnint の内部実装。基数チェックを行わない。
-__sx_num_is_base_nnint() {
-	__sx_num_is_base_nnint_base_="${1}"
+##   sx_num_is_nnint_base の内部実装。基数チェックを行わない。
+__sx_num_is_nnint_base() {
+	__sx_num_is_nnint_base_rad_="${1}"
 	shift
 
-	for __sx_num_is_base_nnint_arg_ in "${@}"; do
-		case "${__sx_num_is_base_nnint_base_}${__sx_num_is_base_nnint_arg_}" in
+	for __sx_num_is_nnint_base_arg_ in "${@}"; do
+		case "${__sx_num_is_nnint_base_rad_}${__sx_num_is_nnint_base_arg_}" in
 			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) continue;;
 		esac
 
-		__sx_num_is_base_pint "${__sx_num_is_base_nnint_base_}" "${__sx_num_is_base_nnint_arg_}" || {
-			unset __sx_num_is_base_nnint_base_ __sx_num_is_base_nnint_arg_
+		__sx_num_is_pint_base "${__sx_num_is_nnint_base_rad_}" "${__sx_num_is_nnint_base_arg_}" || {
+			unset __sx_num_is_nnint_base_rad_ __sx_num_is_nnint_base_arg_
 			return 1
 		}
 	done
 
-	unset __sx_num_is_base_nnint_base_ __sx_num_is_base_nnint_arg_
+	unset __sx_num_is_nnint_base_rad_ __sx_num_is_nnint_base_arg_
 }
 
-### sx_num_is_base_npint - 指定された基数で非正整数（0以下）か確認する
+### sx_num_is_npint_base - 指定された基数で非正整数（0以下）か確認する
 ##
 ## 使い方:
-##   sx_num_is_base_npint 基数 [文字列1 [文字列2 ...]]
+##   sx_num_is_npint_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
 ##   第一引数で指定された基数（8, 10, 16）において、
 ##   後続のすべての引数が 0 以下の整数であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_base_nat0 に準ずる。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
 ##
 ## 終了ステータス:
 ##    0  すべて非正整数である (SX_EX_OK)
 ##    1  非正整数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_base_npint() {
+sx_num_is_npint_base() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
-	__sx_num_is_base_npint "${@}"
+	__sx_num_is_npint_base "${@}"
 }
 
-### __sx_num_is_base_npint - 指定された基数で非正整数（0以下）か確認する（内部用）
+### __sx_num_is_npint_base - 指定された基数で非正整数（0以下）か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_num_is_base_npint 基数 [文字列1 [文字列2 ...]]
+##   __sx_num_is_npint_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   sx_num_is_base_npint の内部実装。基数チェックを行わない。
-__sx_num_is_base_npint() {
-	__sx_num_is_base_npint_base_="${1}"
+##   sx_num_is_npint_base の内部実装。基数チェックを行わない。
+__sx_num_is_npint_base() {
+	__sx_num_is_npint_base_rad_="${1}"
 	shift
 
-	for __sx_num_is_base_npint_arg_ in "${@}"; do
-		case "${__sx_num_is_base_npint_base_}${__sx_num_is_base_npint_arg_}" in
+	for __sx_num_is_npint_base_arg_ in "${@}"; do
+		case "${__sx_num_is_npint_base_rad_}${__sx_num_is_npint_base_arg_}" in
 			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) continue;;
 		esac
 
-		__sx_num_is_base_nint "${__sx_num_is_base_npint_base_}" "${__sx_num_is_base_npint_arg_}" || {
-			unset __sx_num_is_base_npint_base_ __sx_num_is_base_npint_arg_
+		__sx_num_is_nint_base "${__sx_num_is_npint_base_rad_}" "${__sx_num_is_npint_base_arg_}" || {
+			unset __sx_num_is_npint_base_rad_ __sx_num_is_npint_base_arg_
 			return 1
 		}
 	done
 
-	unset __sx_num_is_base_npint_base_ __sx_num_is_base_npint_arg_
+	unset __sx_num_is_npint_base_rad_ __sx_num_is_npint_base_arg_
 }
 
-### sx_num_is_base_pint - 指定された基数で正の整数（1以上）か確認する
+### sx_num_is_pint_base - 指定された基数で正の整数（1以上）か確認する
 ##
 ## 使い方:
-##   sx_num_is_base_pint 基数 [文字列1 [文字列2 ...]]
+##   sx_num_is_pint_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
 ##   第一引数で指定された基数（8, 10, 16）において、
 ##   後続のすべての引数が、任意で正の符号（+）を持つ 1 以上の整数であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_base_nat0 に準ずる。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
 ##
 ## 終了ステータス:
 ##    0  すべて正の整数である (SX_EX_OK)
 ##    1  正の整数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_base_pint() {
+sx_num_is_pint_base() {
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
-	__sx_num_is_base_pint "${@}"
+	__sx_num_is_pint_base "${@}"
 }
 
-### __sx_num_is_base_pint - 指定された基数で正の整数（1以上）か確認する（内部用）
+### __sx_num_is_pint_base - 指定された基数で正の整数（1以上）か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_num_is_base_pint 基数 [文字列1 [文字列2 ...]]
+##   __sx_num_is_pint_base 基数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   sx_num_is_base_pint の内部実装。基数チェックを行わない。
-__sx_num_is_base_pint() {
-	__sx_num_is_base_pint_base_="${1}"
+##   sx_num_is_pint_base の内部実装。基数チェックを行わない。
+__sx_num_is_pint_base() {
+	__sx_num_is_pint_base_rad_="${1}"
 	shift
 
-	for __sx_num_is_base_pint_arg_ in "${@}"; do
-		__sx_num_is_base_nat1 "${__sx_num_is_base_pint_base_}" "${__sx_num_is_base_pint_arg_#+}" || {
-			unset __sx_num_is_base_pint_base_ __sx_num_is_base_pint_arg_
+	for __sx_num_is_pint_base_arg_ in "${@}"; do
+		__sx_num_is_nat1_base "${__sx_num_is_pint_base_rad_}" "${__sx_num_is_pint_base_arg_#+}" || {
+			unset __sx_num_is_pint_base_rad_ __sx_num_is_pint_base_arg_
 			return 1
 		}
 	done
 
-	unset __sx_num_is_base_pint_base_ __sx_num_is_base_pint_arg_
+	unset __sx_num_is_pint_base_rad_ __sx_num_is_pint_base_arg_
 }
 
 ### sx_num_is_fixed - すべての引数が 10 進の実数表記（固定小数点形式）であるか確認する
@@ -4654,7 +4657,7 @@ sx_num_is_fixed() {
 	for __sx_num_is_fixed_arg in "${@}"; do
 		case "${__sx_num_is_fixed_arg}" in *.*)
 			sx_str_is_digit "${__sx_num_is_fixed_arg#*.}"
-		esac && __sx_num_is_base_int 10 "${__sx_num_is_fixed_arg%%.*}" || {
+		esac && __sx_num_is_int_base 10 "${__sx_num_is_fixed_arg%%.*}" || {
 			unset __sx_num_is_fixed_arg
 			return 1
 		}
@@ -4678,7 +4681,7 @@ sx_num_is_fixed() {
 sx_num_is_float() {
 	for __sx_num_is_float_arg in "${@}"; do
 		case "${__sx_num_is_float_arg}" in *[Ee]*)
-			__sx_num_is_base_int 10 "${__sx_num_is_float_arg#*[Ee]}"
+			__sx_num_is_int_base 10 "${__sx_num_is_float_arg#*[Ee]}"
 		esac && sx_num_is_fixed "${__sx_num_is_float_arg%%[Ee]*}" || {
 			unset __sx_num_is_float_arg
 			return 1
@@ -4732,7 +4735,7 @@ sx_num_is_int_fit_dec() {
 		*) return "${SX_EX_USAGE}";;
 	esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_base_int 10 "${@}" || return
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_base 10 "${@}" || return
 
 	__sx_num_is_int_fit_dec "${@}" || return
 }
@@ -4978,9 +4981,9 @@ __sx_num_is_int_fit() {
 sx_num_is_nat0() {
 	for __sx_num_is_nat0_arg in "${@}"; do
 		case "${__sx_num_is_nat0_arg}" in
-			0[Xx]*) __sx_num_is_base_nat0 16 "${__sx_num_is_nat0_arg}";;
-			0?*) __sx_num_is_base_nat0 8 "${__sx_num_is_nat0_arg}";;
-			*) __sx_num_is_base_nat0 10 "${__sx_num_is_nat0_arg}";;
+			0[Xx]*) __sx_num_is_nat0_base 16 "${__sx_num_is_nat0_arg}";;
+			0?*) __sx_num_is_nat0_base 8 "${__sx_num_is_nat0_arg}";;
+			*) __sx_num_is_nat0_base 10 "${__sx_num_is_nat0_arg}";;
 		esac || {
 			unset __sx_num_is_nat0_arg
 			return 1
@@ -5001,9 +5004,9 @@ sx_num_is_nat0() {
 sx_num_is_nat1() {
 	for __sx_num_is_nat1_arg in "${@}"; do
 		case "${__sx_num_is_nat1_arg}" in
-			0[Xx]*) __sx_num_is_base_nat1 16 "${__sx_num_is_nat1_arg}";;
-			0?*) __sx_num_is_base_nat1 8 "${__sx_num_is_nat1_arg}";;
-			*) __sx_num_is_base_nat1 10 "${__sx_num_is_nat1_arg}";;
+			0[Xx]*) __sx_num_is_nat1_base 16 "${__sx_num_is_nat1_arg}";;
+			0?*) __sx_num_is_nat1_base 8 "${__sx_num_is_nat1_arg}";;
+			*) __sx_num_is_nat1_base 10 "${__sx_num_is_nat1_arg}";;
 		esac || {
 			unset __sx_num_is_nat1_arg
 			return 1
@@ -5640,7 +5643,7 @@ sx_num_add_nat0() {
 	__sx_num_add_nat0_res="${1}"
 	shift
 
-	__sx_num_is_base_nat0 10 "${@}" || {
+	__sx_num_is_nat0_base 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -5772,7 +5775,7 @@ sx_num_sub_nat0() {
 	__sx_num_sub_nat0_res="${1}"
 	shift
 
-	__sx_num_is_base_nat0 10 "${@}" || {
+	__sx_num_is_nat0_base 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -5907,7 +5910,7 @@ sx_num_mul_nat0() {
 	__sx_num_mul_nat0_res="${1}"
 	shift
 
-	__sx_num_is_base_nat0 10 "${@}" || {
+	__sx_num_is_nat0_base 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -6147,7 +6150,7 @@ sx_num_add_int() {
 	__sx_num_add_int_res="${1}"
 	shift
 
-	__sx_num_is_base_int 10 "${@}" || {
+	__sx_num_is_int_base 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -6233,7 +6236,7 @@ sx_num_sub_int() {
 	__sx_num_sub_int_res="${1}"
 	shift
 
-	__sx_num_is_base_int 10 "${@}" || {
+	__sx_num_is_int_base 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -6322,7 +6325,7 @@ sx_num_mul_int() {
 	__sx_num_mul_int_res="${1}"
 	shift
 
-	__sx_num_is_base_int 10 "${@}" || {
+	__sx_num_is_int_base 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -6393,7 +6396,7 @@ sx_num_divmod_nat0() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_base_nat0 10 ${2:+"${2}"} && __sx_num_is_base_nat1 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_nat0_base 10 ${2:+"${2}"} && __sx_num_is_nat1_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_num_divmod_nat0 "${@}"
 }
@@ -6886,7 +6889,7 @@ sx_num_divmod_int() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_base_int 10 ${2:+"${2}"} ${3:+"${3}"} && M_STR_NE([|"${3:+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
+	__sx_num_is_int_base 10 ${2:+"${2}"} ${3:+"${3}"} && M_STR_NE([|"${3:+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
 
 	__sx_num_divmod_int "${@}"
 }
@@ -6966,7 +6969,7 @@ sx_num_edivmod_int() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_base_int 10 ${2:+"${2}"} ${3:+"${3}"} && M_STR_NE([|"${3:+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
+	__sx_num_is_int_base 10 ${2:+"${2}"} ${3:+"${3}"} && M_STR_NE([|"${3:+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
 
 	__sx_num_edivmod_int "${@}"
 }
@@ -7064,14 +7067,14 @@ sx_num_div_nat0() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_sx_nat0 ${2:+"${2}"} && __sx_num_is_base_nat0 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_sx_nat0 ${2:+"${2}"} && __sx_num_is_nat0_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_num_div_nat0_res="${1}"
 	__sx_num_div_nat0_dp="${2:-0}"
 	__sx_num_div_nat0_u="${3:-0}"
 	shift "$((0${2+1} + 0${3+1} + 1))"
 
-	__sx_num_is_base_nat1 10 "${@}" || {
+	__sx_num_is_nat1_base 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -7202,14 +7205,14 @@ sx_num_div_int() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_sx_nat0 ${2:+"${2}"} && __sx_num_is_base_int 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_sx_nat0 ${2:+"${2}"} && __sx_num_is_int_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_num_div_int_res="${1}"
 	__sx_num_div_int_dp="${2:-0}"
 	__sx_num_div_int_u="${3:-0}"
 	shift "$((0${2+1} + 0${3+1} + 1))"
 
-	__sx_num_is_base_int 10 "${@}" || {
+	__sx_num_is_int_base 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
@@ -10157,7 +10160,7 @@ sx_arr_at() {
 		__sx_arr_at_dest="${__sx_arr_at_pair%%=*}"
 		__sx_arr_at_i="${__sx_arr_at_pair#*=}"
 
-		__sx_num_is_base_nat0 10 "${__sx_arr_at_i}" || {
+		__sx_num_is_nat0_base 10 "${__sx_arr_at_i}" || {
 			unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
 			return "${SX_EX_USAGE}"
 		}
