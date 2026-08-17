@@ -19,6 +19,11 @@ spec_helper_loaded() {
 
 # This callback function will be invoked after core modules has been loaded.
 spec_helper_configure() {
+  # 全ての Example を -efu (errexit, nounset, noglob) 下で実行する。
+  # ターゲット環境 (yash -efu -o posix) での動作を検証するため。
+  # 注: shellspec_set は Set ヘルパーの内部関数。shellspec のバージョン更新時は要確認。
+  shellspec_set 'errexit:on' 'nounset:on' 'noglob:on'
+
   # 全ての Example (It ブロック) の後に自動実行
   after_each 'check_no_leak'
 
@@ -59,3 +64,17 @@ EOF
   fi
   unset __check_leak_vars_ __line_
 }
+
+# -e 検証用ヘルパー: サブシェル内で -efu を有効にして sx 関数を呼び出す。
+# When run はサブシェル実行のため、-e 下での関数動作を status で検証できる。
+efu_run() {
+  # shellcheck disable=SC3040
+  set -efu -o posix
+  "$@"
+}
+
+# efu spec 用の共通コールバック定義
+efu_cb_set3() { __sx_var_set "${1}=${3}"; }
+efu_cb_sum() { __sx_var_set "${1}=$((${2} + ${3}))"; }
+efu_cb_set2() { __sx_var_set "${1}=${2}"; }
+efu_cb_true() { return 0; }
