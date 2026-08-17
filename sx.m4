@@ -4602,6 +4602,50 @@ __sx_num_is_npint_base() {
 	unset __sx_num_is_npint_base_rad_ __sx_num_is_npint_base_arg_
 }
 
+### sx_num_is_nzint_base - 指定された基数で 0 以外の整数か確認する
+##
+## 使い方:
+##   sx_num_is_nzint_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が、任意で符号（+ または -）を持つ 0 以外の整数であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
+##
+## 終了ステータス:
+##    0  すべて 0 以外の整数である (SX_EX_OK)
+##    1  0、または整数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
+sx_num_is_nzint_base() {
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_nzint_base "${@}"
+}
+
+### __sx_num_is_nzint_base - 指定された基数で 0 以外の整数か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_nzint_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_nzint_base の内部実装。基数チェックを行わない。
+__sx_num_is_nzint_base() {
+	__sx_num_is_nzint_base_rad_="${1}"
+	shift
+
+	for __sx_num_is_nzint_base_arg_ in "${@}"; do
+		case "${__sx_num_is_nzint_base_rad_}${__sx_num_is_nzint_base_arg_}" in
+			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) ! :;;
+			*) __sx_num_is_int_base "${__sx_num_is_nzint_base_rad_}" "${__sx_num_is_nzint_base_arg_}";;
+		esac || {
+			unset __sx_num_is_nzint_base_rad_ __sx_num_is_nzint_base_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nzint_base_rad_ __sx_num_is_nzint_base_arg_
+}
+
 ### sx_num_is_pint_base - 指定された基数で正の整数（1以上）か確認する
 ##
 ## 使い方:
@@ -5094,6 +5138,31 @@ sx_num_is_npint() {
 	done
 
 	unset __sx_num_is_npint_arg
+}
+
+### sx_num_is_nzint - すべての引数が 0 以外の整数であるか確認する
+##
+## 使い方:
+##   sx_num_is_nzint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   0（+0, -0 を含む）以外の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて 0 以外の整数である (SX_EX_OK)
+##    1  0、または整数ではない値が含まれる
+sx_num_is_nzint() {
+	for __sx_num_is_nzint_arg in "${@}"; do
+		case "${__sx_num_is_nzint_arg}" in
+			0 | [+-]0 | 00 | [+-]00 | 0[Xx]0 | [+-]0[Xx]0) ! :;;
+			*) sx_num_is_int "${__sx_num_is_nzint_arg}";;
+		esac || {
+			unset __sx_num_is_nzint_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nzint_arg
 }
 
 ### sx_num_is_pint - すべての引数が正の整数であるか確認する
