@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_num_is_int_safe_inv'
   Include ./sx.sh
 

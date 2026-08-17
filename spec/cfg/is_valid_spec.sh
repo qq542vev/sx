@@ -1,4 +1,7 @@
-# shellcheck shell=sh
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 
 Describe 'sx_cfg_is_valid()'
 	Include ./sx.sh

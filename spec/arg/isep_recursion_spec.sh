@@ -1,4 +1,7 @@
-# shellcheck shell=sh
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 
 Describe 'sx_arg_isep (recursion support)'
   Include ./sx.sh

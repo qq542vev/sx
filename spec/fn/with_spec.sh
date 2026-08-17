@@ -1,3 +1,7 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_fn_with'
   Include ./sx.sh
   SX_CFG_SEP="--"

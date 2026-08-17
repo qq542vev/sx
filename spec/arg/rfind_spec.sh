@@ -1,4 +1,7 @@
-# shellcheck shell=sh
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
 
 Describe 'sx_arg_rfind'
 	Include ./sx.sh

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+eval "$(shellspec - -c) exit 1"
+
 Describe 'sx_num_is_int_width'
   Include ./sx.sh
 
