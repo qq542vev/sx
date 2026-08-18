@@ -257,11 +257,11 @@ readonly SX_NUM_RANGE_128_QM='?????????????????????????????????????'
 readonly SX_NUM_RANGE_128_ZR='0000000000000000000000000000000000000'
 
 # 最適乗算チャンク用動的定数の事前定義 (1〜37桁)
-define([|__sx_m4_gen_qm|], [|readonly SX_QM_$1='$2'
+define([|__sx_m4_gen_qm|], [|readonly SX_NUM_QM_$1='$2'
 ifelse([|$1|], [|37|], [||], [|__sx_m4_gen_qm(incr($1), $2?)|])|])dnl
 __sx_m4_gen_qm(1, ?)
 
-define([|__sx_m4_gen_zr|], [|readonly SX_ZR_$1='$2'
+define([|__sx_m4_gen_zr|], [|readonly SX_NUM_ZR_$1='$2'
 ifelse([|$1|], [|37|], [||], [|__sx_m4_gen_zr(incr($1), $2[|0|])|])|])dnl
 __sx_m4_gen_zr(1, 0)
 
@@ -4710,7 +4710,7 @@ define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q) V(r) V(dec) V(zr) V(qm)|])dn
 ##   3) 小数桁数 dp が 1 以上で余剰 r が 0 でない場合、小数部 dec を
 ##      floor(余剰 × 10^dp ÷ den) の商として dp 桁にゼロ埋めした文字列で求め、
 ##      末尾の 0 を除去する。dec が空（小数が 0）になれば整数商 q をそのまま返す。
-##      ゼロ埋めの '?'×桁数 / "0"×桁数 は SX_QM / SX_ZR 定数（1〜37 桁）から参照し、
+##      ゼロ埋めの '?'×桁数 / "0"×桁数 は SX_NUM_QM / SX_NUM_ZR 定数（1〜37 桁）から参照し、
 ##      37 桁を超える場合のみ __sx_str_rep で生成する。
 
 __sx_num_div_nat0() {
@@ -4737,9 +4737,9 @@ __sx_num_div_nat0() {
 	__sx_num_div_nat0_dec_=
 
 	case "${__sx_num_div_nat0_dp_}${__sx_num_div_nat0_r_}" in [!0]*[!0]*)
-		# "0"×dp は SX_ZR 定数（1〜37 桁）から参照し、超過時のみ str_rep で生成する
-		if __sx_var_is_set "SX_ZR_${__sx_num_div_nat0_dp_}"; then
-			eval "__sx_num_div_nat0_zr_=\"\${SX_ZR_${__sx_num_div_nat0_dp_}}\""
+		# "0"×dp は SX_NUM_ZR 定数（1〜37 桁）から参照し、超過時のみ str_rep で生成する
+		if __sx_var_is_set "SX_NUM_ZR_${__sx_num_div_nat0_dp_}"; then
+			eval "__sx_num_div_nat0_zr_=\"\${SX_NUM_ZR_${__sx_num_div_nat0_dp_}}\""
 		else
 			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_div_nat0_zr_ 0 "${__sx_num_div_nat0_dp_}"
 		fi
@@ -4749,9 +4749,9 @@ __sx_num_div_nat0() {
 
 		# dec が dp 桁未満の場合のみ先頭をゼロ埋めする（len == dp なら定数参照を丸ごとスキップ）
 		if M_STR_NE([|"${#__sx_num_div_nat0_dec_}"|], [|"${__sx_num_div_nat0_dp_}"|]); then
-			# 前置 "0"×dp から剥ぎ取る '?'×len(dec) は SX_QM 定数（1〜37 桁）から参照する
-			if __sx_var_is_set "SX_QM_${#__sx_num_div_nat0_dec_}"; then
-				eval "__sx_num_div_nat0_qm_=\"\${SX_QM_${#__sx_num_div_nat0_dec_}}\""
+			# 前置 "0"×dp から剥ぎ取る '?'×len(dec) は SX_NUM_QM 定数（1〜37 桁）から参照する
+			if __sx_var_is_set "SX_NUM_QM_${#__sx_num_div_nat0_dec_}"; then
+				eval "__sx_num_div_nat0_qm_=\"\${SX_NUM_QM_${#__sx_num_div_nat0_dec_}}\""
 			else
 				SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_div_nat0_qm_ '?' "${#__sx_num_div_nat0_dec_}"
 			fi
@@ -4990,8 +4990,8 @@ __sx_num_divmod_nat0() {
 			__sx_num_divmod_nat0_tmp_="${#__sx_num_divmod_nat0_zv_}"
 
 			if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_divmod_nat0_tmp_}"; then
-				if __sx_var_is_set "SX_QM_${__sx_num_divmod_nat0_tmp_}"; then
-					eval "__sx_num_divmod_nat0_qm_=\"\${SX_QM_${__sx_num_divmod_nat0_tmp_}}\""
+				if __sx_var_is_set "SX_NUM_QM_${__sx_num_divmod_nat0_tmp_}"; then
+					eval "__sx_num_divmod_nat0_qm_=\"\${SX_NUM_QM_${__sx_num_divmod_nat0_tmp_}}\""
 				else
 					SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_divmod_nat0_qm_ '?' "${__sx_num_divmod_nat0_tmp_}"
 				fi
@@ -5037,7 +5037,7 @@ __sx_num_divmod_nat0() {
 		__sx_num_divmod_nat0_r_=0
 		__sx_num_divmod_nat0_c_=$((__sx_num_divmod_nat0_wlen_ - ${#__sx_num_divmod_nat0_v_}))
 
-		eval "__sx_num_divmod_nat0_qm_=\"\${SX_QM_${__sx_num_divmod_nat0_c_}}\" __sx_num_divmod_nat0_b_=\"1\${SX_ZR_${__sx_num_divmod_nat0_c_}}\""
+		eval "__sx_num_divmod_nat0_qm_=\"\${SX_NUM_QM_${__sx_num_divmod_nat0_c_}}\" __sx_num_divmod_nat0_b_=\"1\${SX_NUM_ZR_${__sx_num_divmod_nat0_c_}}\""
 
 		# 筆算の1語分: 前語までの余りを基数倍して次の語を結合し、ネイティブ除算で商1語を確定する
 		while
@@ -5050,7 +5050,7 @@ __sx_num_divmod_nat0() {
 					;;
 				*)
 					__sx_num_divmod_nat0_c_="${#__sx_num_divmod_nat0_u_}"
-					eval "__sx_num_divmod_nat0_qm_=\"\${SX_QM_${__sx_num_divmod_nat0_c_}}\" __sx_num_divmod_nat0_b_=\"1\${SX_ZR_${__sx_num_divmod_nat0_c_}}\""
+					eval "__sx_num_divmod_nat0_qm_=\"\${SX_NUM_QM_${__sx_num_divmod_nat0_c_}}\" __sx_num_divmod_nat0_b_=\"1\${SX_NUM_ZR_${__sx_num_divmod_nat0_c_}}\""
 					__sx_num_divmod_nat0_chunk_="${__sx_num_divmod_nat0_u_}"
 					__sx_num_divmod_nat0_u_=
 					;;
@@ -5102,7 +5102,7 @@ __sx_num_divmod_nat0() {
 	else
 		# 語サイズ c の決定
 		__sx_num_divmod_nat0_c_=$((__sx_num_divmod_nat0_wlen_ / 2))
-		eval "__sx_num_divmod_nat0_qm_=\"\${SX_QM_${__sx_num_divmod_nat0_c_}}\" __sx_num_divmod_nat0_zr_=\"\${SX_ZR_${__sx_num_divmod_nat0_c_}}\""
+		eval "__sx_num_divmod_nat0_qm_=\"\${SX_NUM_QM_${__sx_num_divmod_nat0_c_}}\" __sx_num_divmod_nat0_zr_=\"\${SX_NUM_ZR_${__sx_num_divmod_nat0_c_}}\""
 		__sx_num_divmod_nat0_b_="1${__sx_num_divmod_nat0_zr_}"
 		# ステップ 7: 一般パス — 融合 Knuth D 法（u > v、u は 19 桁以上、v は 2 語以上）
 		# ステップ 7.1: 正規化 — u・v を 10^d 倍し、v の先頭語をちょうど c 桁に揃える
@@ -5145,7 +5145,7 @@ __sx_num_divmod_nat0() {
 					__sx_num_divmod_nat0_d_=$((__sx_num_divmod_nat0_c_ - ${#__sx_num_divmod_nat0_v_}))
 
 					case "${__sx_num_divmod_nat0_d_}" in [!0]*)
-						eval "__sx_num_divmod_nat0_tmp_=\"\${SX_ZR_${__sx_num_divmod_nat0_d_}}\" __sx_num_divmod_nat0_qmd_=\"\${SX_QM_${__sx_num_divmod_nat0_d_}}\""
+						eval "__sx_num_divmod_nat0_tmp_=\"\${SX_NUM_ZR_${__sx_num_divmod_nat0_d_}}\" __sx_num_divmod_nat0_qmd_=\"\${SX_NUM_QM_${__sx_num_divmod_nat0_d_}}\""
 						__sx_num_divmod_nat0_v_="${__sx_num_divmod_nat0_v_}${__sx_num_divmod_nat0_tmp_}"
 						__sx_num_divmod_nat0_u_="${__sx_num_divmod_nat0_u_}${__sx_num_divmod_nat0_tmp_}"
 					esac
@@ -6740,10 +6740,10 @@ __sx_num_mul_nat0() {
 		# 最適分割サイズに基づきチャンク用 QM/ZR をロード
 		__sx_num_mul_nat0_opt_y_=$((__sx_num_mul_nat0_wlen_mul_ - __sx_num_mul_nat0_opt_x_))
 
-		eval "__sx_num_mul_nat0_qchunk_a_=\"\${SX_QM_${__sx_num_mul_nat0_opt_y_}}\" \
-		      __sx_num_mul_nat0_zchunk_a_=\"\${SX_ZR_${__sx_num_mul_nat0_opt_y_}}\" \
-		      __sx_num_mul_nat0_qchunk_b_=\"\${SX_QM_${__sx_num_mul_nat0_opt_x_}}\" \
-		      __sx_num_mul_nat0_zchunk_b_=\"\${SX_ZR_${__sx_num_mul_nat0_opt_x_}}\""
+		eval "__sx_num_mul_nat0_qchunk_a_=\"\${SX_NUM_QM_${__sx_num_mul_nat0_opt_y_}}\" \
+		      __sx_num_mul_nat0_zchunk_a_=\"\${SX_NUM_ZR_${__sx_num_mul_nat0_opt_y_}}\" \
+		      __sx_num_mul_nat0_qchunk_b_=\"\${SX_NUM_QM_${__sx_num_mul_nat0_opt_x_}}\" \
+		      __sx_num_mul_nat0_zchunk_b_=\"\${SX_NUM_ZR_${__sx_num_mul_nat0_opt_x_}}\""
 
 		__sx_num_mul_nat0_shift_=
 
