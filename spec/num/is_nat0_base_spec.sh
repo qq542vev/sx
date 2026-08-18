@@ -100,4 +100,13 @@ Describe 'sx_num_is_nat0_base'
       The status should be failure
     End
   End
+
+
+  Context 'SKIP_CHK フラグ'
+    Before 'SX_CFG_SKIP_CHK=1'
+    It '引数の検証自体は行われること'
+      When call sx_num_is_nat0_base 10 "abc"
+      The status should be failure
+    End
+  End
 End

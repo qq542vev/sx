@@ -4347,6 +4347,8 @@ __sx_num_cmp_nat0() {
 ##    1  整数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_int_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_base "${@}" || return; return 0;; esac
+
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_int_base "${@}"
@@ -4389,6 +4391,8 @@ __sx_num_is_int_base() {
 ##    1  自然数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_nat0_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat0_base "${@}" || return; return 0;; esac
+
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_nat0_base "${@}"
@@ -4436,6 +4440,8 @@ __sx_num_is_nat0_base() {
 ##    1  1 以上の自然数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_nat1_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat1_base "${@}" || return; return 0;; esac
+
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_nat1_base "${@}"
@@ -4483,6 +4489,8 @@ __sx_num_is_nat1_base() {
 ##    1  負の整数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_nint_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nint_base "${@}" || return; return 0;; esac
+
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_nint_base "${@}"
@@ -4527,6 +4535,8 @@ __sx_num_is_nint_base() {
 ##    1  非負整数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_nnint_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nnint_base "${@}" || return; return 0;; esac
+
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_nnint_base "${@}"
@@ -4572,6 +4582,8 @@ __sx_num_is_nnint_base() {
 ##    1  非正整数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_npint_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_npint_base "${@}" || return; return 0;; esac
+
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_npint_base "${@}"
@@ -4617,6 +4629,8 @@ __sx_num_is_npint_base() {
 ##    1  0、または整数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_nzint_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nzint_base "${@}" || return; return 0;; esac
+
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_nzint_base "${@}"
@@ -4661,6 +4675,8 @@ __sx_num_is_nzint_base() {
 ##    1  正の整数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_pint_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_pint_base "${@}" || return; return 0;; esac
+
 	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
 
 	__sx_num_is_pint_base "${@}"

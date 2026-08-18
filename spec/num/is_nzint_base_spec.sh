@@ -44,4 +44,13 @@ Describe 'sx_num_is_nzint_base'
     When call sx_num_is_nzint_base 7 "1" "2"
     The status should be failure
   End
+
+
+  Context 'SKIP_CHK フラグ'
+    Before 'SX_CFG_SKIP_CHK=1'
+    It '引数の検証自体は行われること'
+      When call sx_num_is_nzint_base 10 "abc"
+      The status should be failure
+    End
+  End
 End
