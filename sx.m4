@@ -9661,42 +9661,42 @@ define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(total) V(drop) V(qm)|]
 ##   sx_str_substr の内部実装。
 ##   引数チェックは行わない。
 __sx_str_substr() {
-	V(res)="${1}"
-	V(str)="${2-}"
-	V(off)="$((${3-0}))"
-	V(len)="$((${4-${SX_NUM_I32_MAX}}))"
-	V(total)="${#V(str)}"
+	__sx_str_substr_res_="${1}"
+	__sx_str_substr_str_="${2-}"
+	__sx_str_substr_off_="$((${3-0}))"
+	__sx_str_substr_len_="$((${4-${SX_NUM_I32_MAX}}))"
+	__sx_str_substr_total_="${#__sx_str_substr_str_}"
 
 	# オフセットの正規化 (負数は末尾から)
-	case "$((V(off) < 0))" in 1)
-		V(off)=$(((V(off) * -1) < V(total) ? V(total) + V(off) : 0))
+	case "$((__sx_str_substr_off_ < 0))" in 1)
+		__sx_str_substr_off_=$(((__sx_str_substr_off_ * -1) < __sx_str_substr_total_ ? __sx_str_substr_total_ + __sx_str_substr_off_ : 0))
 	esac
 
 	# 1. オフセット分をスキップ
-	if M_NUM_LE([|V(total)|], [|V(off)|]); then
-		V(str)=
+	if M_NUM_LE([|__sx_str_substr_total_|], [|__sx_str_substr_off_|]); then
+		__sx_str_substr_str_=
 	else
-		__sx_str_rep V(qm) '?' "${V(off)}"
-		V(str)="${V(str)#${V(qm)}}"
+		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_off_}"
+		__sx_str_substr_str_="${__sx_str_substr_str_#${__sx_str_substr_qm_}}"
 	fi
 
 	# 長さの正規化 (負数は末尾から削る)
-	V(total)="${#V(str)}"
-	if M_NUM_LE([|0|], [|V(len)|]); then
-		V(drop)=$((V(len) < V(total) ? V(total) - V(len) : 0))
+	__sx_str_substr_total_="${#__sx_str_substr_str_}"
+	if M_NUM_LE([|0|], [|__sx_str_substr_len_|]); then
+		__sx_str_substr_drop_=$((__sx_str_substr_len_ < __sx_str_substr_total_ ? __sx_str_substr_total_ - __sx_str_substr_len_ : 0))
 	else
-		V(drop)=$((V(len) * -1))
+		__sx_str_substr_drop_=$((__sx_str_substr_len_ * -1))
 	fi
 
 	# 2. 指定長に切り詰め
-	if M_NUM_LT([|V(drop)|], [|V(total)|]); then
-		__sx_str_rep V(qm) '?' "${V(drop)}"
-		V(str)="${V(str)%${V(qm)}}"
+	if M_NUM_LT([|__sx_str_substr_drop_|], [|__sx_str_substr_total_|]); then
+		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_drop_}"
+		__sx_str_substr_str_="${__sx_str_substr_str_%${__sx_str_substr_qm_}}"
 	else
-		V(str)=
+		__sx_str_substr_str_=
 	fi
 
-	__sx_var_set "${V(res)}=${V(str)}"
+	__sx_var_set "${__sx_str_substr_res_}=${__sx_str_substr_str_}"
 	CLEANUP
 }
 
