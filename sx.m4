@@ -7460,6 +7460,61 @@ __sx_str_camel() {
 	unset __sx_str_camel_tmp_
 }
 
+### sx_str_capital - 文頭または最初のアルファベットを大文字化し、他を小文字化する
+##
+## 使い方:
+##   sx_str_capital 結果変数名 [元文字列 [フラグ]]
+##
+## 説明:
+##   指定された文字列のアルファベットを大文字化・小文字化する。
+##   デフォルトでは、文字列の先頭（インデックス0）がアルファベットの場合のみ
+##   それを大文字にし、以降のアルファベットをすべて小文字にする。
+##
+## フラグ:
+##   1 (SX_STR_CAPITAL_KEEP):
+##     大文字化（または維持）のみを行い、他の文字のケースを維持する。
+##   2 (SX_STR_CAPITAL_SENT):
+##     文字列の先頭に限らず、最初に出現したアルファベットを大文字化の対象とする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_capital() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_capital "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0_safe ${3:+"${3}"} || return
+
+	__sx_str_capital "${@}"
+}
+
+### __sx_str_capital - sx_str_capital の内部実装（内部用）
+##
+## 使い方:
+##   __sx_str_capital 結果変数名 [元文字列 [フラグ]]
+##
+## 説明:
+##   sx_str_capital の内部実装。引数チェックは行わない。
+__sx_str_capital() {
+	set -- "${1}" "${2-}" "${3:-0}"
+	__sx_str_capital_str_="${2}"
+	__sx_str_capital_out_=
+
+	case "$(((${3} & SX_STR_CAPITAL_SENT) != 0))${2}" in 0["${SX_STR_ALPHA}"]* | 1*["${SX_STR_ALPHA}"]*)
+		__sx_str_capital_out_="${2%%["${SX_STR_ALPHA}"]*}"
+		__sx_str_capital_str_="${2#"${__sx_str_capital_out_}"}"
+		__sx_str_upper_cb __sx_str_capital_tmp_ "${__sx_str_capital_str_%"${__sx_str_capital_str_#?}"}"
+		__sx_str_capital_out_="${__sx_str_capital_out_}${__sx_str_capital_tmp_}"
+		__sx_str_capital_str_="${__sx_str_capital_str_#?}"
+	esac
+
+	case "$((${3} & SX_STR_CAPITAL_KEEP))" in 0)
+		SX_CFG_UNSET_SOFT=2 __sx_str_lower __sx_str_capital_str_ "${__sx_str_capital_str_}"
+	esac
+
+	__sx_var_set "${1}=${__sx_str_capital_out_}${__sx_str_capital_str_}"
+	unset __sx_str_capital_str_ __sx_str_capital_out_ __sx_str_capital_tmp_
+}
+
 ### sx_str_center - 文字列を指定された幅で中央寄せする
 ##
 ## 使い方:
@@ -7711,6 +7766,52 @@ __sx_str_count() {
 	unset __sx_str_count_tmp_
 }
 
+### sx_str_cycle - 文字列を指定された位置だけ循環させる
+##
+## 使い方:
+##   sx_str_cycle 結果変数名 [元文字列 [シフト量]]
+##
+## 説明:
+##   元文字列を指定されたシフト量だけ左方向に循環シフトする。
+##   シフト量が負の場合は右方向に循環シフトする。
+##   例えば "ABCDE" を 2 シフトすると "CDEAB"、-1 シフトすると "EABCD" となる。
+##   シフト量が文字列長を超える場合は、文字列長で割った余りを使用する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_str_cycle() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_cycle "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
+
+	__sx_str_cycle "${@}"
+}
+
+### __sx_str_cycle - sx_str_cycle の内部実装（内部用）
+##
+## 使い方:
+##   __sx_str_cycle 結果変数名 [元文字列 [シフト量]]
+##
+## 説明:
+##   sx_str_cycle の内部実装。引数チェックは行わない。
+__sx_str_cycle() {
+	set -- "${1}" "${2-}" "${3:-1}"
+	set -- "${@}" "${#2}"
+	set -- "${1}" "${2}" "$((${3} % (${4} ? ${4} : 1)))" "${4}"
+
+	case ${3} in 0)
+		__sx_var_set "${1}=${2}"
+		return "${SX_EX_OK}"
+	esac
+
+	SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_cycle_head_:__sx_str_cycle_tail_: "${2}" "$((0 < ${3} ? ${3} : ${3} + ${4}))" 1
+	__sx_var_set "${1}=${__sx_str_cycle_tail_}${__sx_str_cycle_head_}"
+
+	unset __sx_str_cycle_head_ __sx_str_cycle_tail_
+}
+
 ### sx_str_eq - すべての引数が文字列として一致するか確認する
 ##
 ## 使い方:
@@ -7864,36 +7965,6 @@ sx_str_ew() {
 	return 1
 }
 
-### sx_str_has - 第一引数に、第二引数以降のいずれかの文字列が含まれているか確認する
-##
-## 使い方:
-##   sx_str_has [検索対象文字列 [含まれるべき文字列1 [含まれるべき文字列2 ...]]]
-##
-## 挙動:
-## - 検索対象文字列が省略された場合は空文字列とみなす
-## - 含まれるべき文字列は 0 個以上指定できる
-## - 第二引数以降のいずれかが検索対象文字列に含まれていれば成功する
-## - 含まれるべき文字列が 1 つも指定されなかった場合は失敗する
-## - 含まれるべき文字列に空文字列が含まれる場合は常に成功する
-##
-## 終了ステータス:
-##    0  いずれかが含まれている (SX_EX_OK)
-##    1  一致する文字列がない
-sx_str_has() {
-	__sx_str_has_tgt="${1-}"
-	shift "$((0 < ${#}))"
-
-	for __sx_str_has_arg in "${@}"; do
-		case "${__sx_str_has_tgt}" in *"${__sx_str_has_arg}"*)
-			unset __sx_str_has_tgt __sx_str_has_arg
-			return "${SX_EX_OK}"
-		esac
-	done
-
-	unset __sx_str_has_tgt __sx_str_has_arg
-	return 1
-}
-
 ### sx_str_find - 文字列から指定された文字列を前方一致で探し、位置を取得する
 ##
 ## 使い方:
@@ -8031,6 +8102,36 @@ __sx_str_find() {
 	return "${1}"
 }
 
+### sx_str_has - 第一引数に、第二引数以降のいずれかの文字列が含まれているか確認する
+##
+## 使い方:
+##   sx_str_has [検索対象文字列 [含まれるべき文字列1 [含まれるべき文字列2 ...]]]
+##
+## 挙動:
+## - 検索対象文字列が省略された場合は空文字列とみなす
+## - 含まれるべき文字列は 0 個以上指定できる
+## - 第二引数以降のいずれかが検索対象文字列に含まれていれば成功する
+## - 含まれるべき文字列が 1 つも指定されなかった場合は失敗する
+## - 含まれるべき文字列に空文字列が含まれる場合は常に成功する
+##
+## 終了ステータス:
+##    0  いずれかが含まれている (SX_EX_OK)
+##    1  一致する文字列がない
+sx_str_has() {
+	__sx_str_has_tgt="${1-}"
+	shift "$((0 < ${#}))"
+
+	for __sx_str_has_arg in "${@}"; do
+		case "${__sx_str_has_tgt}" in *"${__sx_str_has_arg}"*)
+			unset __sx_str_has_tgt __sx_str_has_arg
+			return "${SX_EX_OK}"
+		esac
+	done
+
+	unset __sx_str_has_tgt __sx_str_has_arg
+	return 1
+}
+
 ### sx_str_is_alnum - すべての引数が英数字（A-Z, a-z, 0-9）のみで構成されているか確認する
 ##
 ## 使い方:
@@ -8103,18 +8204,6 @@ sx_str_is_digit() {
 	sx_str_is_of "${SX_STR_DIGIT}" "${@}" || return
 }
 
-### sx_str_is_hex - すべての引数が16進数文字（0-9, a-f, A-F）のみで構成されているか確認する
-##
-## 使い方:
-##   sx_str_is_hex [文字列1 [文字列2 ...]]
-##
-## 終了ステータス:
-##    0  すべて16進数文字のみで構成されている (SX_EX_OK)
-##    1  16進数文字以外が含まれる、または空文字列が含まれる
-sx_str_is_hex() {
-	sx_str_is_of "${SX_STR_XDIGIT}" "${@}" || return
-}
-
 ### sx_str_is_graph - すべての引数が図形文字（英数字 + 区切り記号）のみで構成されているか確認する
 ##
 ## 使い方:
@@ -8125,6 +8214,18 @@ sx_str_is_hex() {
 ##    1  図形文字以外が含まれる、または空文字列が含まれる
 sx_str_is_graph() {
 	sx_str_is_of "${SX_STR_GRAPH}" "${@}" || return
+}
+
+### sx_str_is_hex - すべての引数が16進数文字（0-9, a-f, A-F）のみで構成されているか確認する
+##
+## 使い方:
+##   sx_str_is_hex [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて16進数文字のみで構成されている (SX_EX_OK)
+##    1  16進数文字以外が含まれる、または空文字列が含まれる
+sx_str_is_hex() {
+	sx_str_is_of "${SX_STR_XDIGIT}" "${@}" || return
 }
 
 ### sx_str_is_lower - すべての引数が小文字英字（a-z）のみで構成されているか確認する
@@ -9629,6 +9730,98 @@ sx_str_sw() {
 	return 1
 }
 
+### sx_str_swapcase - ラテン文字の大文字と小文字を反転する
+##
+## 使い方:
+##   sx_str_swapcase 結果変数名 [元文字列 [回数制限]]
+##
+## 説明:
+##   指定された文字列内のラテン大文字 (A-Z) を小文字 (a-z) に、
+##   ラテン小文字 (a-z) を大文字 (A-Z) に変換し、
+##   結果を結果変数に格納する。アルファベット以外の文字はそのまま保持される。
+##   回数制限が正の値の場合は前方から、負の値の場合は後方から
+##   指定された回数分だけ変換を行う。省略時は無制限。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  設定値不正 (SX_EX_CONFIG)
+sx_str_swapcase() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_swapcase "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
+
+	__sx_str_swapcase "${@}"
+}
+
+### __sx_str_swapcase - ラテン文字の大文字と小文字を反転する（内部用）
+##
+## 使い方:
+##   __sx_str_swapcase 結果変数名 [元文字列 [回数制限]]
+##
+## 説明:
+##   sx_str_swapcase の内部実装。引数チェックは行わない。
+__sx_str_swapcase() {
+	__sx_str_tr "${1}:" "${2-}" "${SX_STR_UPPER}${SX_STR_LOWER}" "${SX_STR_LOWER}${SX_STR_UPPER}" "${3:-${SX_NUM_I32_MAX}}"
+}
+
+### sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する
+##
+## 使い方:
+##   sx_str_title 結果変数名 [元文字列 [単語区切り文字セット]]
+
+## 説明:
+##   指定された文字列内の各単語の先頭文字を大文字に、残りの文字を小文字に変換する。
+##   単語の区切りは単語区切り文字セットで判断する。デフォルトは ${SX_STR_SPACE}
+##   （空白文字すべて）。文字セット内の各文字が単語区切りとして扱われる。
+##   文字列先頭も単語の先頭として扱う。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  設定値不正 (SX_EX_CONFIG)
+sx_str_title() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_title "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	__sx_str_title "${@}"
+}
+
+### __sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する（内部用）
+##
+## 使い方:
+##   __sx_str_title 結果変数名 [元文字列 [単語区切り文字セット]]
+##
+## 説明:
+##   sx_str_title の内部実装。sx_str_tr で一括小文字化した後、
+##   セパレータ+小文字のペアを sx_str_sub のコールバックモードで検出して大文字化する。
+__sx_str_title() {
+	set -- "${1}" "${2-}" "${3:-${SX_STR_SPACE}}"
+
+	SX_CFG_UNSET_SOFT=2 __sx_glob_bracket __sx_str_title_gs_ "${3}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_tr __sx_str_title_tmp_: "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${SX_NUM_I32_MAX}"
+	SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_str_title_tmp_ "${3%"${3#?}"}${__sx_str_title_tmp_}" "${__sx_str_title_gs_}[${SX_STR_LOWER}]" __sx_str_title_cb "${SX_NUM_I32_MAX}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+
+	__sx_var_set "${1}=${__sx_str_title_tmp_#?}"
+	unset __sx_str_title_tmp_ __sx_str_title_gs_
+}
+
+### __sx_str_title_cb - sx_str_title 用コールバック（内部用）
+##
+## 使い方:
+##   __sx_str_title_cb 結果変数名 マッチ文字列 left right count
+##
+## 説明:
+##   sx_str_sub のコールバックモードから呼び出される。
+##   マッチ文字列（セパレータ文字+小文字）の小文字部分を大文字に変換する。
+__sx_str_title_cb() {
+	__sx_str_upper_cb "${1}" "${2#?}"
+	eval "${1}=\"\${2%?}\${${1}}\""
+}
+
 ### sx_str_tr - 文字列内の文字を対応する文字で変換する
 ##
 ## 使い方:
@@ -9825,200 +10018,6 @@ __sx_str_upper_cb() {
 		y) eval "${1}=Y";; z) eval "${1}=Z";;
 		*) eval "${1}=\"\${2}\"";;
 	esac
-}
-
-### sx_str_swapcase - ラテン文字の大文字と小文字を反転する
-##
-## 使い方:
-##   sx_str_swapcase 結果変数名 [元文字列 [回数制限]]
-##
-## 説明:
-##   指定された文字列内のラテン大文字 (A-Z) を小文字 (a-z) に、
-##   ラテン小文字 (a-z) を大文字 (A-Z) に変換し、
-##   結果を結果変数に格納する。アルファベット以外の文字はそのまま保持される。
-##   回数制限が正の値の場合は前方から、負の値の場合は後方から
-##   指定された回数分だけ変換を行う。省略時は無制限。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-##   78  設定値不正 (SX_EX_CONFIG)
-sx_str_swapcase() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_swapcase "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
-
-	__sx_str_swapcase "${@}"
-}
-
-### __sx_str_swapcase - ラテン文字の大文字と小文字を反転する（内部用）
-##
-## 使い方:
-##   __sx_str_swapcase 結果変数名 [元文字列 [回数制限]]
-##
-## 説明:
-##   sx_str_swapcase の内部実装。引数チェックは行わない。
-__sx_str_swapcase() {
-	__sx_str_tr "${1}:" "${2-}" "${SX_STR_UPPER}${SX_STR_LOWER}" "${SX_STR_LOWER}${SX_STR_UPPER}" "${3:-${SX_NUM_I32_MAX}}"
-}
-
-
-### sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する
-##
-## 使い方:
-##   sx_str_title 結果変数名 [元文字列 [単語区切り文字セット]]
-
-## 説明:
-##   指定された文字列内の各単語の先頭文字を大文字に、残りの文字を小文字に変換する。
-##   単語の区切りは単語区切り文字セットで判断する。デフォルトは ${SX_STR_SPACE}
-##   （空白文字すべて）。文字セット内の各文字が単語区切りとして扱われる。
-##   文字列先頭も単語の先頭として扱う。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-##   78  設定値不正 (SX_EX_CONFIG)
-sx_str_title() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_title "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
-
-	__sx_str_title "${@}"
-}
-
-### __sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する（内部用）
-##
-## 使い方:
-##   __sx_str_title 結果変数名 [元文字列 [単語区切り文字セット]]
-##
-## 説明:
-##   sx_str_title の内部実装。sx_str_tr で一括小文字化した後、
-##   セパレータ+小文字のペアを sx_str_sub のコールバックモードで検出して大文字化する。
-__sx_str_title() {
-	set -- "${1}" "${2-}" "${3:-${SX_STR_SPACE}}"
-
-	SX_CFG_UNSET_SOFT=2 __sx_glob_bracket __sx_str_title_gs_ "${3}"
-	SX_CFG_UNSET_SOFT=2 __sx_str_tr __sx_str_title_tmp_: "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${SX_NUM_I32_MAX}"
-	SX_CFG_UNSET_SOFT=2 __sx_str_sub __sx_str_title_tmp_ "${3%"${3#?}"}${__sx_str_title_tmp_}" "${__sx_str_title_gs_}[${SX_STR_LOWER}]" __sx_str_title_cb "${SX_NUM_I32_MAX}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
-
-	__sx_var_set "${1}=${__sx_str_title_tmp_#?}"
-	unset __sx_str_title_tmp_ __sx_str_title_gs_
-}
-
-### __sx_str_title_cb - sx_str_title 用コールバック（内部用）
-##
-## 使い方:
-##   __sx_str_title_cb 結果変数名 マッチ文字列 left right count
-##
-## 説明:
-##   sx_str_sub のコールバックモードから呼び出される。
-##   マッチ文字列（セパレータ文字+小文字）の小文字部分を大文字に変換する。
-__sx_str_title_cb() {
-	__sx_str_upper_cb "${1}" "${2#?}"
-	eval "${1}=\"\${2%?}\${${1}}\""
-}
-
-### sx_str_capital - 文頭または最初のアルファベットを大文字化し、他を小文字化する
-##
-## 使い方:
-##   sx_str_capital 結果変数名 [元文字列 [フラグ]]
-##
-## 説明:
-##   指定された文字列のアルファベットを大文字化・小文字化する。
-##   デフォルトでは、文字列の先頭（インデックス0）がアルファベットの場合のみ
-##   それを大文字にし、以降のアルファベットをすべて小文字にする。
-##
-## フラグ:
-##   1 (SX_STR_CAPITAL_KEEP):
-##     大文字化（または維持）のみを行い、他の文字のケースを維持する。
-##   2 (SX_STR_CAPITAL_SENT):
-##     文字列の先頭に限らず、最初に出現したアルファベットを大文字化の対象とする。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_capital() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_capital "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0_safe ${3:+"${3}"} || return
-
-	__sx_str_capital "${@}"
-}
-
-### __sx_str_capital - sx_str_capital の内部実装（内部用）
-##
-## 使い方:
-##   __sx_str_capital 結果変数名 [元文字列 [フラグ]]
-##
-## 説明:
-##   sx_str_capital の内部実装。引数チェックは行わない。
-__sx_str_capital() {
-	set -- "${1}" "${2-}" "${3:-0}"
-	__sx_str_capital_str_="${2}"
-	__sx_str_capital_out_=
-
-	case "$(((${3} & SX_STR_CAPITAL_SENT) != 0))${2}" in 0["${SX_STR_ALPHA}"]* | 1*["${SX_STR_ALPHA}"]*)
-		__sx_str_capital_out_="${2%%["${SX_STR_ALPHA}"]*}"
-		__sx_str_capital_str_="${2#"${__sx_str_capital_out_}"}"
-		__sx_str_upper_cb __sx_str_capital_tmp_ "${__sx_str_capital_str_%"${__sx_str_capital_str_#?}"}"
-		__sx_str_capital_out_="${__sx_str_capital_out_}${__sx_str_capital_tmp_}"
-		__sx_str_capital_str_="${__sx_str_capital_str_#?}"
-	esac
-
-	case "$((${3} & SX_STR_CAPITAL_KEEP))" in 0)
-		SX_CFG_UNSET_SOFT=2 __sx_str_lower __sx_str_capital_str_ "${__sx_str_capital_str_}"
-	esac
-
-	__sx_var_set "${1}=${__sx_str_capital_out_}${__sx_str_capital_str_}"
-	unset __sx_str_capital_str_ __sx_str_capital_out_ __sx_str_capital_tmp_
-}
-
-### sx_str_cycle - 文字列を指定された位置だけ循環させる
-##
-## 使い方:
-##   sx_str_cycle 結果変数名 [元文字列 [シフト量]]
-##
-## 説明:
-##   元文字列を指定されたシフト量だけ左方向に循環シフトする。
-##   シフト量が負の場合は右方向に循環シフトする。
-##   例えば "ABCDE" を 2 シフトすると "CDEAB"、-1 シフトすると "EABCD" となる。
-##   シフト量が文字列長を超える場合は、文字列長で割った余りを使用する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_str_cycle() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_cycle "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
-
-	__sx_str_cycle "${@}"
-}
-
-### __sx_str_cycle - sx_str_cycle の内部実装（内部用）
-##
-## 使い方:
-##   __sx_str_cycle 結果変数名 [元文字列 [シフト量]]
-##
-## 説明:
-##   sx_str_cycle の内部実装。引数チェックは行わない。
-__sx_str_cycle() {
-	set -- "${1}" "${2-}" "${3:-1}"
-	set -- "${@}" "${#2}"
-	set -- "${1}" "${2}" "$((${3} % (${4} ? ${4} : 1)))" "${4}"
-
-	case ${3} in 0)
-		__sx_var_set "${1}=${2}"
-		return "${SX_EX_OK}"
-	esac
-
-	SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_cycle_head_:__sx_str_cycle_tail_: "${2}" "$((0 < ${3} ? ${3} : ${3} + ${4}))" 1
-	__sx_var_set "${1}=${__sx_str_cycle_tail_}${__sx_str_cycle_head_}"
-
-	unset __sx_str_cycle_head_ __sx_str_cycle_tail_
 }
 
 ### sx_str_words - 命名規則を自動検出して単語に分割する
@@ -10751,3 +10750,4 @@ __sx_arr_rquote() {
 
 	unset __sx_arr_rquote_res_ __sx_arr_rquote_out_ __sx_arr_rquote_arr_ __sx_arr_rquote_esc_
 }
+
