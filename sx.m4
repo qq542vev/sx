@@ -4081,1625 +4081,90 @@ __sx_var_unset() {
 ##   標準的な数値範囲、または安全上の制限（DoS 対策）に基づく検証を行う
 ##   形式になる（例: sx_num_is_int_safe）。
 
-### sx_num_cmp_arith - 2つの数値を算術展開で比較する
+### sx_num_add_int - 複数の符号付き整数を加算する
 ##
 ## 使い方:
-##   sx_num_cmp_arith 数値1 数値2
-##
-## 終了ステータス:
-##   1  数値1 < 数値2
-##   2  数値1 = 数値2
-##   3  数値1 > 数値2
-##  64  引数不正 (SX_EX_USAGE)
-sx_num_cmp_arith() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_arith "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_int_safe "${1-}" "${2-}" || return
-
-	__sx_num_cmp_arith "${1}" "${2}" || return
-}
-
-### __sx_num_cmp_arith - 整数を算術展開で比較する（内部用）
-##
-## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_cmp_arith() {
-	return "$((${1} < ${2} ? 1 : (${1} > ${2} ? 3 : 2)))"
-}
-
-### sx_num_cmp_float - 2つの数値を比較する
-##
-## 使い方:
-##   sx_num_cmp_float 左辺 右辺
+##   sx_num_add_int 結果変数名 [数値1 [数値2 ...]]
 ##
 ## 説明:
-##   指定された2つの数値を比較する。
+##   符号付き10進整数を加算する。正数群と負数群に分けて絶対値加算を行い、
+##   最後に絶対値を比較して符号を決定する。
 ##
 ## 終了ステータス:
-##    1  左辺 < 右辺
-##    2  左辺 = 右辺
-##    3  左辺 > 右辺
-##   64  引数が数値ではない (SX_EX_USAGE)
-sx_num_cmp_float() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_float "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_float "${1-}" "${2-}" || return
-
-	__sx_num_cmp_float "${@}"
-}
-
-### __sx_num_cmp_float - 2つの数値を比較する（検証なし）
-##
-## 使い方:
-##   __sx_num_cmp_float 左辺 右辺
-##
-## 説明:
-##   指定された2つの数値を比較する。
-##   引数が数値であることの検証は行わない。
-##
-## 終了ステータス:
-##    1  左辺 < 右辺
-##    2  左辺 = 右辺
-##    3  左辺 > 右辺
-__sx_num_cmp_float() {
-	SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_cmp_float_a_:__sx_num_cmp_float_b_ "${1}" "${2}"
-	set -- "${__sx_num_cmp_float_a_}" "${__sx_num_cmp_float_b_}"
-	unset __sx_num_cmp_float_a_ __sx_num_cmp_float_b_
-
-	__sx_num_cmp_fixed "${@}" || return
-}
-
-### __sx_num_cmp_fixed_abs - 正規化済み絶対値同士を比較する（内部用）
-##
-## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_cmp_fixed_abs() {
-	case "${1}" in
-		*.*) set -- "${1%%.*}" "${2}" "${1#*.}";;
-		*) set -- "${1}" "${2}" '';;
-	esac
-
-	case "${2}" in
-		*.*) set -- "${1}" "${2%%.*}" "${3}" "${2#*.}";;
-		*) set -- "${1}" "${2}" "${3}" '';;
-	esac
-
-	__sx_num_cmp_nat0 "${1}" "${2}" || case "${?}" in 1 | 3)
-		return "${?}"
-	esac
-
-	__sx_num_cmp_fixed_frac "${3}" "${4}" || return "${?}"
-}
-
-### sx_num_cmp_fixed - 2つの固定小数点数を比較する
-##
-## 使い方:
-##   sx_num_cmp_fixed 左辺 右辺
-##
-## 説明:
-##   指定された2つの固定小数点数を比較する。
-##   引数は sx_num_norm 等で正規化された10進固定小数点形式である必要がある。
-##
-## 終了ステータス:
-##    1  左辺 < 右辺
-##    2  左辺 = 右辺
-##    3  左辺 > 右辺
-##   64  引数が正規化済み数値ではない (SX_EX_USAGE)
-sx_num_cmp_fixed() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_fixed "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_fixed "${1-}" "${2-}" || return
-
-	__sx_num_cmp_fixed "${1}" "${2}" || return
-}
-
-### __sx_num_cmp_fixed - 正規化済み数値を比較する（内部用）
-##
-## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_cmp_fixed() {
-	set -- "${1#[+-]}" "${2#[+-]}" "${1%%[!-]*}" "${2%%[!-]*}"
-
-	case "${3:-+}${4:-+}" in
-		-+) return 1;;
-		+-) return 3;;
-	esac
-
-	case "${3}" in
-		-*) __sx_num_cmp_fixed_abs "${2}" "${1}";;
-		*)  __sx_num_cmp_fixed_abs "${1}" "${2}";;
-	esac || return "${?}"
-}
-
-### __sx_num_cmp_arith_digit - 10進整数文字列を算術展開で比較する（内部用）
-##
-## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_cmp_arith_digit() {
-	set -- "${1#${1%%[!0]*}}" "${2#${2%%[!0]*}}"
-	__sx_num_cmp_arith "${1:-0}" "${2:-0}"
-}
-
-### __sx_num_cmp_fixed_frac - 小数部を左から比較する（内部用）
-##
-## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_cmp_fixed_frac() {
-	# 完全に一致する場合は即座に終了 (EQ)
-	case "${1}" in "${2}") return 2;; esac
-
-	# 接頭辞チェック（正規化により、長い方が必ず大きい）
-	# 冒頭で行うことで、長い小数部の延長比較をループなしで高速に処理する
-	case "${1}" in "${2}"*) return 3;; esac
-	case "${2}" in "${1}"*) return 1;; esac
-
-	# 窓幅パターン（?????????）を準備
-	eval "__sx_num_cmp_fixed_frac_q_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
-	# $1: qm, $2: lhs, $3: rhs
-	set -- "${__sx_num_cmp_fixed_frac_q_}" "${1}" "${2}"
-	unset __sx_num_cmp_fixed_frac_q_
-
-	# 両方の文字列が窓幅以上の間、チャンクごとに比較
-	while M_STR_MATCH([|"${2}"|], [|${1}?*|]) && M_STR_MATCH([|"${3}"|], [|${1}?*|]); do
-		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_cmp_arith_digit "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
-			1 | 3) return "${?}";;
-		esac
-	done
-
-	# 接頭辞の関係にない（＝どこかの桁で異なる）残りの部分をパディングして最後の比較
-	eval "__sx_num_cmp_fixed_frac_z_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
-	set -- "${1}" "${2}${__sx_num_cmp_fixed_frac_z_}" "${3}${__sx_num_cmp_fixed_frac_z_}"
-	unset __sx_num_cmp_fixed_frac_z_
-
-	__sx_num_cmp_arith_digit "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
-}
-
-### sx_num_cmp_nat0 - 2つの符号なし10進整数を比較する
-##
-## 使い方:
-##   sx_num_cmp_nat0 数値1 数値2
-##
-## 説明:
-##   指定された2つの符号なし10進整数を比較する。
-##   引数はすべて 0 以上の整数である必要がある。
-##
-## 終了ステータス:
-##   1  数値1 < 数値2
-##   2  数値1 = 数値2
-##   3  数値1 > 数値2
-##  64  引数不正 (SX_EX_USAGE)
+##   0  成功 (SX_EX_OK)
+##  64  引数不正 (SX_EX_USAGE) — 整数として不正な値が含まれる
+##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_num_cmp_nat0() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_nat0 "${@}" || return; return 0;; esac
+
+define([|V|], [|__sx_num_add_int_$1|])dnl
+define([|CLEANUP|], [|V(res)|])dnl
+
+sx_num_add_int() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add_int "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0_base 10 "${1-}" "${2-}" || return
 
-	__sx_num_cmp_nat0 "${1}" "${2}" || return
-}
+	__sx_num_add_int_res="${1}"
+	shift
 
-define([|V|], [|__sx_num_cmp_nat0_$1_|])dnl
-define([|CLEANUP|], [|V(l) V(r) V(qm)|])dnl
-
-### __sx_num_cmp_nat0 - 符号なし10進整数文字列を比較する（内部用）
-##
-## 終了ステータス:
-##   1  左辺 < 右辺
-##   2  左辺 = 右辺
-##   3  左辺 > 右辺
-__sx_num_cmp_nat0() {
-	case "${1}" in "${2}")
-		return 2
-	esac
-
-	__sx_num_cmp_nat0_l_="${#1}"
-	__sx_num_cmp_nat0_r_="${#2}"
-
-	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_cmp_nat0_l_}" "${__sx_num_cmp_nat0_r_}"; then
-		__sx_num_cmp_arith "${__sx_num_cmp_nat0_l_}" "${__sx_num_cmp_nat0_r_}"
-	else
-		__sx_num_cmp_nat0 "${__sx_num_cmp_nat0_l_}" "${__sx_num_cmp_nat0_r_}"
-	fi || case "${?}" in 1 | 3)
-		set -- "${?}"
+	__sx_num_is_int_base 10 "${@}" || {
 		unset CLEANUP
-		return "${1}"
-	esac
-
-	eval "__sx_num_cmp_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
-
-	while M_STR_MATCH([|"${1}"|], [|${__sx_num_cmp_nat0_qm_}?*|]); do
-		set -- "${1#${__sx_num_cmp_nat0_qm_}}" "${2#${__sx_num_cmp_nat0_qm_}}" "${1}" "${2}"
-		__sx_num_cmp_arith_digit "${3%"${1}"}" "${4%"${2}"}" || case "${?}" in 1 | 3)
-			set -- "${?}"
-			unset CLEANUP
-			return "${1}"
-		esac
-	done
-
-	unset CLEANUP
-
-	__sx_num_cmp_arith_digit "${1}" "${2}" || return "${?}"
-}
-
-### sx_num_is_int_base - 指定された基数で整数か確認する
-##
-## 使い方:
-##   sx_num_is_int_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   第一引数で指定された基数（8, 10, 16）において、
-##   後続のすべての引数が、任意で符号（+ または -）を持つ整数であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
-##
-## 終了ステータス:
-##    0  すべて整数である (SX_EX_OK)
-##    1  整数ではない値が含まれる
-##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_int_base() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_base "${@}" || return; return 0;; esac
-
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
-
-	__sx_num_is_int_base "${@}"
-}
-
-### __sx_num_is_int_base - 指定された基数で整数か確認する（内部用）
-##
-## 使い方:
-##   __sx_num_is_int_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_int_base の内部実装。基数チェックを行わない。
-__sx_num_is_int_base() {
-	__sx_num_is_int_base_rad_="${1}"
-	shift
-
-	for __sx_num_is_int_base_arg_ in "${@}"; do
-		__sx_num_is_nat0_base "${__sx_num_is_int_base_rad_}" "${__sx_num_is_int_base_arg_#[+-]}" || {
-			unset __sx_num_is_int_base_rad_ __sx_num_is_int_base_arg_
-			return 1
-		}
-	done
-
-	unset __sx_num_is_int_base_rad_ __sx_num_is_int_base_arg_
-}
-
-### sx_num_is_nat0_base - 指定された基数で0以上の自然数か確認する
-##
-## 使い方:
-##   sx_num_is_nat0_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   第一引数で指定された基数（8, 10, 16）において、
-##   後続のすべての引数が 0 以上の自然数（符号なし整数）であるか確認する。
-##   基数 8 および 16 では各々のプレフィックス（8: '0', 16: '0x'/'0X'）を必須とする。
-##   基数 10 ではプレフィックスを認めず、また 0 以外の数値における先行する 0 も認めない。
-##
-## 終了ステータス:
-##    0  すべて 0 以上の自然数である (SX_EX_OK)
-##    1  自然数ではない値が含まれる
-##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_nat0_base() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat0_base "${@}" || return; return 0;; esac
-
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
-
-	__sx_num_is_nat0_base "${@}"
-}
-
-### __sx_num_is_nat0_base - 指定された基数で0以上の自然数か確認する（内部用）
-##
-## 使い方:
-##   __sx_num_is_nat0_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_nat0_base の内部実装。基数チェックを行わない。
-__sx_num_is_nat0_base() {
-	eval "
-		__sx_num_is_nat0_base_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
-		__sx_num_is_nat0_base_char_=\"\${SX_NUM_BASE${1}_CHARS}\"
-	"
-	shift
-
-	for __sx_num_is_nat0_base_arg_ in "${@}"; do
-		case "${__sx_num_is_nat0_base_arg_}" in
-			${__sx_num_is_nat0_base_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_nat0_base_arg_#${__sx_num_is_nat0_base_pfix_}}"|] , [|''|], [|0?*|], [|*[!"${__sx_num_is_nat0_base_char_}"]*|]);;
-			*) ! :;;
-		esac || {
-			unset __sx_num_is_nat0_base_pfix_ __sx_num_is_nat0_base_char_ __sx_num_is_nat0_base_arg_
-			return 1
-		}
-	done
-
-	unset __sx_num_is_nat0_base_arg_ __sx_num_is_nat0_base_pfix_ __sx_num_is_nat0_base_char_
-}
-
-### sx_num_is_nat1_base - 指定された基数で1以上の自然数か確認する
-##
-## 使い方:
-##   sx_num_is_nat1_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   第一引数で指定された基数（8, 10, 16）において、
-##   後続のすべての引数が 1 以上の自然数（符号なし整数）であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
-##
-## 終了ステータス:
-##    0  すべて 1 以上の自然数である (SX_EX_OK)
-##    1  1 以上の自然数ではない値が含まれる
-##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_nat1_base() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat1_base "${@}" || return; return 0;; esac
-
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
-
-	__sx_num_is_nat1_base "${@}"
-}
-
-### __sx_num_is_nat1_base - 指定された基数で1以上の自然数か確認する（内部用）
-##
-## 使い方:
-##   __sx_num_is_nat1_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_nat1_base の内部実装。基数チェックを行わない。
-__sx_num_is_nat1_base() {
-	eval "
-		__sx_num_is_nat1_base_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
-		__sx_num_is_nat1_base_char_=\"\${SX_NUM_BASE${1}_CHARS}\"
-	"
-	shift
-
-	for __sx_num_is_nat1_base_arg_ in "${@}"; do
-		case "${__sx_num_is_nat1_base_arg_}" in
-			${__sx_num_is_nat1_base_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_nat1_base_arg_#${__sx_num_is_nat1_base_pfix_}}"|], [|''|], [|0*|], [|*[!"${__sx_num_is_nat1_base_char_}"]*|]);;
-			*) ! :;;
-		esac || {
-			unset __sx_num_is_nat1_base_pfix_ __sx_num_is_nat1_base_char_ __sx_num_is_nat1_base_arg_
-			return 1
-		}
-	done
-
-	unset __sx_num_is_nat1_base_arg_ __sx_num_is_nat1_base_pfix_ __sx_num_is_nat1_base_char_
-}
-
-### sx_num_is_nint_base - 指定された基数で負の整数（-1以下）か確認する
-##
-## 使い方:
-##   sx_num_is_nint_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   第一引数で指定された基数（8, 10, 16）において、
-##   後続のすべての引数が、負の符号（-）を必須で持つ -1 以下の整数であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
-##
-## 終了ステータス:
-##    0  すべて負の整数である (SX_EX_OK)
-##    1  負の整数ではない値が含まれる
-##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_nint_base() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nint_base "${@}" || return; return 0;; esac
-
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
-
-	__sx_num_is_nint_base "${@}"
-}
-
-### __sx_num_is_nint_base - 指定された基数で負の整数（-1以下）か確認する（内部用）
-##
-## 使い方:
-##   __sx_num_is_nint_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_nint_base の内部実装。基数チェックを行わない。
-__sx_num_is_nint_base() {
-	__sx_num_is_nint_base_rad_="${1}"
-	shift
-
-	for __sx_num_is_nint_base_arg_ in "${@}"; do
-		case "${__sx_num_is_nint_base_arg_}" in
-			-*) __sx_num_is_nat1_base "${__sx_num_is_nint_base_rad_}" "${__sx_num_is_nint_base_arg_#-}";;
-			*) ! :;;
-			esac || {
-				unset __sx_num_is_nint_base_rad_ __sx_num_is_nint_base_arg_
-				return 1
-			}
-	done
-
-	unset __sx_num_is_nint_base_rad_ __sx_num_is_nint_base_arg_
-}
-
-### sx_num_is_nnint_base - 指定された基数で非負整数（0以上）か確認する
-##
-## 使い方:
-##   sx_num_is_nnint_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   第一引数で指定された基数（8, 10, 16）において、
-##   後続のすべての引数が 0 以上の整数であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
-##
-## 終了ステータス:
-##    0  すべて非負整数である (SX_EX_OK)
-##    1  非負整数ではない値が含まれる
-##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_nnint_base() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nnint_base "${@}" || return; return 0;; esac
-
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
-
-	__sx_num_is_nnint_base "${@}"
-}
-
-### __sx_num_is_nnint_base - 指定された基数で非負整数（0以上）か確認する（内部用）
-##
-## 使い方:
-##   __sx_num_is_nnint_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_nnint_base の内部実装。基数チェックを行わない。
-__sx_num_is_nnint_base() {
-	__sx_num_is_nnint_base_rad_="${1}"
-	shift
-
-	for __sx_num_is_nnint_base_arg_ in "${@}"; do
-		case "${__sx_num_is_nnint_base_rad_}${__sx_num_is_nnint_base_arg_}" in
-			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) continue;;
-		esac
-
-		__sx_num_is_pint_base "${__sx_num_is_nnint_base_rad_}" "${__sx_num_is_nnint_base_arg_}" || {
-			unset __sx_num_is_nnint_base_rad_ __sx_num_is_nnint_base_arg_
-			return 1
-		}
-	done
-
-	unset __sx_num_is_nnint_base_rad_ __sx_num_is_nnint_base_arg_
-}
-
-### sx_num_is_npint_base - 指定された基数で非正整数（0以下）か確認する
-##
-## 使い方:
-##   sx_num_is_npint_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   第一引数で指定された基数（8, 10, 16）において、
-##   後続のすべての引数が 0 以下の整数であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
-##
-## 終了ステータス:
-##    0  すべて非正整数である (SX_EX_OK)
-##    1  非正整数ではない値が含まれる
-##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_npint_base() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_npint_base "${@}" || return; return 0;; esac
-
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
-
-	__sx_num_is_npint_base "${@}"
-}
-
-### __sx_num_is_npint_base - 指定された基数で非正整数（0以下）か確認する（内部用）
-##
-## 使い方:
-##   __sx_num_is_npint_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_npint_base の内部実装。基数チェックを行わない。
-__sx_num_is_npint_base() {
-	__sx_num_is_npint_base_rad_="${1}"
-	shift
-
-	for __sx_num_is_npint_base_arg_ in "${@}"; do
-		case "${__sx_num_is_npint_base_rad_}${__sx_num_is_npint_base_arg_}" in
-			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) continue;;
-		esac
-
-		__sx_num_is_nint_base "${__sx_num_is_npint_base_rad_}" "${__sx_num_is_npint_base_arg_}" || {
-			unset __sx_num_is_npint_base_rad_ __sx_num_is_npint_base_arg_
-			return 1
-		}
-	done
-
-	unset __sx_num_is_npint_base_rad_ __sx_num_is_npint_base_arg_
-}
-
-### sx_num_is_nzint_base - 指定された基数で 0 以外の整数か確認する
-##
-## 使い方:
-##   sx_num_is_nzint_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   第一引数で指定された基数（8, 10, 16）において、
-##   後続のすべての引数が、任意で符号（+ または -）を持つ 0 以外の整数であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
-##
-## 終了ステータス:
-##    0  すべて 0 以外の整数である (SX_EX_OK)
-##    1  0、または整数ではない値が含まれる
-##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_nzint_base() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nzint_base "${@}" || return; return 0;; esac
-
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
-
-	__sx_num_is_nzint_base "${@}"
-}
-
-### __sx_num_is_nzint_base - 指定された基数で 0 以外の整数か確認する（内部用）
-##
-## 使い方:
-##   __sx_num_is_nzint_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_nzint_base の内部実装。基数チェックを行わない。
-__sx_num_is_nzint_base() {
-	__sx_num_is_nzint_base_rad_="${1}"
-	shift
-
-	for __sx_num_is_nzint_base_arg_ in "${@}"; do
-		case "${__sx_num_is_nzint_base_rad_}${__sx_num_is_nzint_base_arg_}" in
-			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) ! :;;
-			*) __sx_num_is_int_base "${__sx_num_is_nzint_base_rad_}" "${__sx_num_is_nzint_base_arg_}";;
-		esac || {
-			unset __sx_num_is_nzint_base_rad_ __sx_num_is_nzint_base_arg_
-			return 1
-		}
-	done
-
-	unset __sx_num_is_nzint_base_rad_ __sx_num_is_nzint_base_arg_
-}
-
-### sx_num_is_pint_base - 指定された基数で正の整数（1以上）か確認する
-##
-## 使い方:
-##   sx_num_is_pint_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   第一引数で指定された基数（8, 10, 16）において、
-##   後続のすべての引数が、任意で正の符号（+）を持つ 1 以上の整数であるか確認する。
-##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
-##
-## 終了ステータス:
-##    0  すべて正の整数である (SX_EX_OK)
-##    1  正の整数ではない値が含まれる
-##   64  基数指定が不正 (SX_EX_USAGE)
-sx_num_is_pint_base() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_pint_base "${@}" || return; return 0;; esac
-
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
-
-	__sx_num_is_pint_base "${@}"
-}
-
-### __sx_num_is_pint_base - 指定された基数で正の整数（1以上）か確認する（内部用）
-##
-## 使い方:
-##   __sx_num_is_pint_base 基数 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_pint_base の内部実装。基数チェックを行わない。
-__sx_num_is_pint_base() {
-	__sx_num_is_pint_base_rad_="${1}"
-	shift
-
-	for __sx_num_is_pint_base_arg_ in "${@}"; do
-		__sx_num_is_nat1_base "${__sx_num_is_pint_base_rad_}" "${__sx_num_is_pint_base_arg_#+}" || {
-			unset __sx_num_is_pint_base_rad_ __sx_num_is_pint_base_arg_
-			return 1
-		}
-	done
-
-	unset __sx_num_is_pint_base_rad_ __sx_num_is_pint_base_arg_
-}
-
-### sx_num_is_fixed - すべての引数が 10 進の実数表記（固定小数点形式）であるか確認する
-##
-## 使い方:
-##   sx_num_is_fixed [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   任意で符号（+ または -）を持つ 10 進の実数表記（固定小数点形式）であるかを確認する。
-##   整数部は 10 進整数として検査し、小数点を含む場合は小数部に 1 文字以上の数字を要求する。
-##   したがって、"1.0" は許可されるが "1." や ".1" は許可されない。
-##
-## 終了ステータス:
-##    0  すべて 10 進の実数表記である (SX_EX_OK)
-##    1  10 進の実数表記ではない値が含まれる
-sx_num_is_fixed() {
-	for __sx_num_is_fixed_arg in "${@}"; do
-		case "${__sx_num_is_fixed_arg}" in *.*)
-			sx_str_is_digit "${__sx_num_is_fixed_arg#*.}"
-		esac && __sx_num_is_int_base 10 "${__sx_num_is_fixed_arg%%.*}" || {
-			unset __sx_num_is_fixed_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_fixed_arg
-}
-
-### sx_num_is_float - すべての引数が 10 進の実数表記（浮動小数点形式）であるか確認する
-##
-## 使い方:
-##   sx_num_is_float [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_fixed に加えて、指数表記（e または E による表記）を許可する。
-##   指数部は 10 進整数として検査する。
-##
-## 終了ステータス:
-##    0  すべて 10 進の実数表記である (SX_EX_OK)
-##    1  10 進の実数表記ではない値が含まれる
-sx_num_is_float() {
-	for __sx_num_is_float_arg in "${@}"; do
-		case "${__sx_num_is_float_arg}" in *[Ee]*)
-			__sx_num_is_int_base 10 "${__sx_num_is_float_arg#*[Ee]}"
-		esac && sx_num_is_fixed "${__sx_num_is_float_arg%%[Ee]*}" || {
-			unset __sx_num_is_float_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_float_arg
-}
-
-### sx_num_is_int - すべての引数が整数であるか確認する
-##
-## 使い方:
-##   sx_num_is_int [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   任意で符号（+ または -）を持つ整数であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて整数である (SX_EX_OK)
-##    1  整数ではない値が含まれる
-sx_num_is_int() {
-	for __sx_num_is_int_arg in "${@}"; do
-		sx_num_is_nat0 "${__sx_num_is_int_arg#[+-]}" || {
-			unset __sx_num_is_int_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_int_arg
-}
-
-### sx_num_is_int_fit_dec - すべての引数が指定されたビット幅の符号付き10進整数の範囲内か確認する
-##
-## 使い方:
-##   sx_num_is_int_fit_dec ビット幅 [整数1 [整数2 ...]]
-##
-## 説明:
-##   第1引数で指定されたビット幅の符号付き整数として、
-##   後続のすべての引数が、その範囲内の10進整数であるか確認する。
-##   8進数 (0...) や 16進数 (0x...) 形式はサポートしない。
-##
-## 終了ステータス:
-##    0  すべて範囲内である (SX_EX_OK)
-##    1  範囲内に収まらない値が含まれる（ビット幅は正しい）
-##   64  ビット幅指定が不正、または整数として不正な値が含まれる (SX_EX_USAGE)
-sx_num_is_int_fit_dec() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_fit_dec "${@}" || return; return 0;; esac
-
-	case "${1-}" in
-		8 | 16 | 32 | 64 | 128) ;;
-		*) return "${SX_EX_USAGE}";;
-	esac
-
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_base 10 "${@}" || return
-
-	__sx_num_is_int_fit_dec "${@}" || return
-}
-
-__sx_num_is_int_fit_dec() {
-	__sx_num_is_int_fit_dec_bit_="${1}"
-	shift
-
-	for __sx_num_is_int_fit_dec_arg_ in "${@}"; do
-		case "${__sx_num_is_int_fit_dec_arg_}" in
-			-*) __sx_num_is_int_fit_dec_e_=8;;
-			*) __sx_num_is_int_fit_dec_e_=7;;
-		esac
-
-		__sx_num_is_int_fit_dec_arg_=${__sx_num_is_int_fit_dec_arg_#[+-]}
-
-		case "${__sx_num_is_int_fit_dec_bit_}" in
-			8)
-				case "${#__sx_num_is_int_fit_dec_arg_}" in
-					[12]) continue;;
-					3)
-						case "${__sx_num_is_int_fit_dec_arg_}" in
-							1[01]* | 12[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
-						esac
-						;;
-				esac
-				;;
-			16)
-				case "${#__sx_num_is_int_fit_dec_arg_}" in
-					[1-4]) continue;;
-					5)
-						case "${__sx_num_is_int_fit_dec_arg_}" in
-							[12]* | 3[01]* | 32[0-6]* | 327[0-5]* | \
-							3276[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
-						esac
-						;;
-				esac
-				;;
-			32)
-				case "${#__sx_num_is_int_fit_dec_arg_}" in
-					[1-9]) continue;;
-					10)
-						case "${__sx_num_is_int_fit_dec_arg_}" in
-							1* | 20* | 21[0-3]* | 214[0-6]* | 2147[0-3]* | 21474[0-7]* | \
-							214748[0-2]* | 2147483[0-5]* | 21474836[0-3]* | \
-							214748364[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
-						esac
-						;;
-				esac
-				;;
-			64)
-				case "${#__sx_num_is_int_fit_dec_arg_}" in
-					[1-9] | 1[0-8]) continue;;
-					19)
-						case "${__sx_num_is_int_fit_dec_arg_}" in
-							[1-8]* | 9[01]* | 92[01]* | 922[0-2]* | 9223[0-2]* | \
-							92233[0-6]* | 922337[01]* | 92233720[0-2]* | 922337203[0-5]* |\
-							9223372036[0-7]* | 92233720368[0-4]* | 922337203685[0-3]* | \
-							9223372036854[0-6]* | 92233720368547[0-6]* | \
-							922337203685477[0-4]* | 9223372036854775[0-7]* | \
-							922337203685477580[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
-						esac
-						;;
-				esac
-				;;
-			128)
-				case "${#__sx_num_is_int_fit_dec_arg_}" in
-					[1-9] | [12][0-9] | 3[0-8]) continue;;
-					39)
-						case "${__sx_num_is_int_fit_dec_arg_}" in
-							1[0-6]* | 1700* | 1701[0-3]* | 170140* | 1701410* | \
-							1701411[0-7]* | 17014118[0-2]* | 170141183[0-3]* | \
-							1701411834[0-5]* | 170141183460[0-3]* | 1701411834604[0-5]* | \
-							17014118346046[0-8]* | 170141183460469[01]* | \
-							1701411834604692[0-2]* | 170141183460469230* | \
-							170141183460469231[0-6]* | 1701411834604692317[0-2]* | \
-							170141183460469231730* | 170141183460469231731[0-5]* | \
-							1701411834604692317316[0-7]* | 17014118346046923173168[0-6]* | \
-							170141183460469231731687[0-2]* | \
-							17014118346046923173168730[0-2]* | \
-							170141183460469231731687303[0-6]* | \
-							17014118346046923173168730370* | \
-							17014118346046923173168730371[0-4]* | \
-							170141183460469231731687303715[0-7]* | \
-							1701411834604692317316873037158[0-7]* | \
-							17014118346046923173168730371588[0-3]* | \
-							1701411834604692317316873037158840* | \
-							17014118346046923173168730371588410[0-4]* | \
-							170141183460469231731687303715884105[0-6]* | \
-							1701411834604692317316873037158841057[01]* | \
-							17014118346046923173168730371588410572[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
-						esac
-						;;
-				esac
-				;;
-		esac
-
-		unset __sx_num_is_int_fit_dec_bit_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
-		return 1
-	done
-
-	unset __sx_num_is_int_fit_dec_bit_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
-}
-
-### sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
-##
-## 使い方:
-##   sx_num_is_int_width ビット幅 [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   第一引数で指定されたビット幅 (8, 16, 32, 64, 128) において、
-##   後続のすべての引数が、その範囲内の符号付き整数であるか確認する。
-##   8進数 (0...)、16進数 (0x...) 形式もサポートする。
-##
-## 終了ステータス:
-##    0  すべて範囲内である (SX_EX_OK)
-##    1  範囲外、または整数ではない値が含まれる
-##   64  ビット幅指定が不正 (SX_EX_USAGE)
-sx_num_is_int_width() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_width "${@}" || return; return 0;; esac
-
-	case "${1-}" in
-		8 | 16 | 32 | 64 | 128) ;;
-		*) return "${SX_EX_USAGE}";;
-	esac
-
-	__sx_num_is_int_width "${@}" || return
-}
-
-### __sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する（内部用）
-__sx_num_is_int_width() {
-	__sx_num_is_int_width_bits_="${1}"
-	shift
-
-	sx_num_is_int "${@}" || {
-		unset __sx_num_is_int_width_bits_
-		return 1
-	}
-
-	set -- "${__sx_num_is_int_width_bits_}" "${@}"
-	unset __sx_num_is_int_width_bits_
-
-	__sx_num_is_int_fit "${@}" || return
-}
-
-### sx_num_is_int_fit - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
-##
-## 使い方:
-##   sx_num_is_int_fit ビット幅 [整数1 [整数2 ...]]
-##
-## 説明:
-##   第1引数で指定されたビット幅の符号付き整数として、
-##   後続のすべての引数が、その範囲内の符号付き整数であるか確認する。
-##   8進数 (0...)、16進数 (0x...) 形式もサポートする。
-##
-## 終了ステータス:
-##    0  すべて範囲内である (SX_EX_OK)
-##    1  範囲内に収まらない値が含まれる（ビット幅は正しい）
-##   64  ビット幅指定が不正、または整数として不正な値が含まれる (SX_EX_USAGE)
-sx_num_is_int_fit() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_fit "${@}" || return; return 0;; esac
-
-	case "${1-}" in
-		8 | 16 | 32 | 64 | 128) ;;
-		*) return "${SX_EX_USAGE}";;
-	esac
-
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_int "${@}" || return
-
-	__sx_num_is_int_fit "${@}" || return
-}
-
-### __sx_num_is_int_fit - 指定されたビット幅の符号付き整数の範囲内か確認する（内部ロジック）
-__sx_num_is_int_fit() {
-	__sx_num_is_int_fit_bit_="${1}"
-	shift
-
-	for __sx_num_is_int_fit_arg_ in "${@}"; do
-		# $1: 値（符号正規化）, $2: 数値部分の長さ
-		set -- "${__sx_num_is_int_fit_arg_#+}" "${#__sx_num_is_int_fit_arg_}"
-		case "${1}" in +* | -*)
-			set -- "${1}" "$((${2} - 1))"
-		esac
-
-		case "${1}" in
-			0[Xx]* | -0[Xx]*)
-			# 基数16のパラメータ計算
-			: ${__sx_num_is_int_fit_xlen_=$((__sx_num_is_int_fit_bit_ / 4 + 2))}
-
-				if
-					M_NUM_LT([|__sx_num_is_int_fit_xlen_|], [|${2}|]) || {
-						M_STR_EQ([|"${__sx_num_is_int_fit_xlen_}"|], [|"${2}"|]) &&
-						M_STR_MATCH([|"${1}"|], [|-0[Xx][9ABCDEFabcdef]*|], [|-0[Xx]8*[!0]*|], [|0[Xx][89ABCDEFabcdef]*|])
-					}
-				then
-					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
-					return 1
-				fi
-				;;
-			0?* | -0?*)
-				# 基数8のパラメータ計算
-				: ${__sx_num_is_int_fit_olenn_=$(((__sx_num_is_int_fit_bit_ - 1) / 3 + 2))}
-				: ${__sx_num_is_int_fit_oleadn_=$((1 << ((__sx_num_is_int_fit_bit_ - 1) % 3)))}
-				: ${__sx_num_is_int_fit_olenp_=$((__sx_num_is_int_fit_olenn_ - (__sx_num_is_int_fit_oleadn_ == 1)))}
-				: ${__sx_num_is_int_fit_oleadp_=$((__sx_num_is_int_fit_oleadn_ == 1 ? 7 : __sx_num_is_int_fit_oleadn_ - 1))}
-
-				# $3: 制限長さ, $4: 制限先頭文字
-				case "${1}" in
-					-*) set -- "${1}" "${2}" "${__sx_num_is_int_fit_olenn_}" "${__sx_num_is_int_fit_oleadn_}";;
-					*)  set -- "${1}" "${2}" "${__sx_num_is_int_fit_olenp_}" "${__sx_num_is_int_fit_oleadp_}";;
-				esac
-
-				if
-					M_NUM_LT([|${3}|], [|${2}|]) || {
-						M_STR_EQ([|"${3}"|], [|"${2}"|]) &&
-						M_STR_MATCH([|"${1}"|], [|-0[!1-${4}]*|], [|-0${4}*[!0]*|], [|0[!1-${4}-]*|])
-					}
-				then
-					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
-					return 1
-				fi
-				;;
-			*)
-				__sx_num_is_int_fit_dec "${__sx_num_is_int_fit_bit_}" "${__sx_num_is_int_fit_arg_}" || {
-					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
-					return 1
-				}
-				;;
-			esac
-	done
-
-	unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
-}
-
-### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
-##
-## 使い方:
-##   sx_num_is_nat0 [文字列1 [文字列2 ...]]
-##
-## 終了ステータス:
-##    0  すべて 0 以上の自然数である (SX_EX_OK)
-##    1  自然数ではない値が含まれる
-sx_num_is_nat0() {
-	for __sx_num_is_nat0_arg in "${@}"; do
-		case "${__sx_num_is_nat0_arg}" in
-			0[Xx]*) __sx_num_is_nat0_base 16 "${__sx_num_is_nat0_arg}";;
-			0?*) __sx_num_is_nat0_base 8 "${__sx_num_is_nat0_arg}";;
-			*) __sx_num_is_nat0_base 10 "${__sx_num_is_nat0_arg}";;
-		esac || {
-			unset __sx_num_is_nat0_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_nat0_arg
-}
-
-### sx_num_is_nat1 - すべての引数が 1 以上の自然数（符号なし整数） であるか確認する
-##
-## 使い方:
-##   sx_num_is_nat1 [文字列1 [文字列2 ...]]
-##
-## 終了ステータス:
-##    0  すべて 1 以上の自然数である (SX_EX_OK)
-##    1  1 以上の自然数ではない値が含まれる
-sx_num_is_nat1() {
-	for __sx_num_is_nat1_arg in "${@}"; do
-		case "${__sx_num_is_nat1_arg}" in
-			0[Xx]*) __sx_num_is_nat1_base 16 "${__sx_num_is_nat1_arg}";;
-			0?*) __sx_num_is_nat1_base 8 "${__sx_num_is_nat1_arg}";;
-			*) __sx_num_is_nat1_base 10 "${__sx_num_is_nat1_arg}";;
-		esac || {
-			unset __sx_num_is_nat1_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_nat1_arg
-}
-
-### sx_num_is_nint - すべての引数が負の整数であるか確認する
-##
-## 使い方:
-##   sx_num_is_nint [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   負の符号（-）を必須で持ち、-1 以下の整数であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて負の整数である (SX_EX_OK)
-##    1  負の整数ではない値が含まれる
-sx_num_is_nint() {
-	for __sx_num_is_nint_arg in "${@}"; do
-		case "${__sx_num_is_nint_arg}" in
-			-*) sx_num_is_nat1 "${__sx_num_is_nint_arg#-}";;
-			*) ! :;;
-		esac || {
-			unset __sx_num_is_nint_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_nint_arg
-}
-
-### sx_num_is_nnint - すべての引数が非負整数（0以上の整数）であるか確認する
-##
-## 使い方:
-##   sx_num_is_nnint [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   0（+0, -0 を含む）または正の整数であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて非負整数である (SX_EX_OK)
-##    1  非負整数ではない値が含まれる
-sx_num_is_nnint() {
-	for __sx_num_is_nnint_arg in "${@}"; do
-		case "${__sx_num_is_nnint_arg}" in
-			00 | [+-]00 | 0 | [+-]0 | 0[Xx]0 | [+-]0[Xx]0) continue;;
-		esac
-
-		sx_num_is_pint "${__sx_num_is_nnint_arg}" || {
-			unset __sx_num_is_nnint_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_nnint_arg
-}
-
-### sx_num_is_npint - すべての引数が非正整数（0以下の整数）であるか確認する
-##
-## 使い方:
-##   sx_num_is_npint [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   0（+0, -0 を含む）または負の整数であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて非正整数である (SX_EX_OK)
-##    1  非正整数ではない値が含まれる
-sx_num_is_npint() {
-	for __sx_num_is_npint_arg in "${@}"; do
-		case "${__sx_num_is_npint_arg}" in
-			00 | [+-]00 | 0 | [+-]0 | 0[Xx]0 | [+-]0[Xx]0) continue;;
-		esac
-
-		sx_num_is_nint "${__sx_num_is_npint_arg}" || {
-			unset __sx_num_is_npint_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_npint_arg
-}
-
-### sx_num_is_nzint - すべての引数が 0 以外の整数であるか確認する
-##
-## 使い方:
-##   sx_num_is_nzint [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   0（+0, -0 を含む）以外の整数であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて 0 以外の整数である (SX_EX_OK)
-##    1  0、または整数ではない値が含まれる
-sx_num_is_nzint() {
-	for __sx_num_is_nzint_arg in "${@}"; do
-		case "${__sx_num_is_nzint_arg}" in
-			0 | [+-]0 | 00 | [+-]00 | 0[Xx]0 | [+-]0[Xx]0) ! :;;
-			*) sx_num_is_int "${__sx_num_is_nzint_arg}";;
-		esac || {
-			unset __sx_num_is_nzint_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_nzint_arg
-}
-
-### sx_num_is_pint - すべての引数が正の整数であるか確認する
-##
-## 使い方:
-##   sx_num_is_pint [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   任意で正の符号（+）を持つ、1 以上の整数であるかを確認する。
-##
-## 終了ステータス:
-##    0  すべて正の整数である (SX_EX_OK)
-##    1  正の整数ではない値が含まれる
-sx_num_is_pint() {
-	for __sx_num_is_pint_arg in "${@}"; do
-		sx_num_is_nat1 "${__sx_num_is_pint_arg#+}" || {
-			unset __sx_num_is_pint_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_pint_arg
-}
-
-### sx_num_is_float_safe - すべての引数が安全な範囲の 10 進の実数表記であるか確認する
-##
-## 使い方:
-##   sx_num_is_float_safe [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_float による検証に加えて、セキュリティ上の理由（DoS 対策）から、
-##   指数の絶対値を 4 桁（9999）までに制限する。
-##
-## 終了ステータス:
-##    0  すべて安全な 10 進の実数表記である (SX_EX_OK)
-##    1  安全ではない、または 10 進の実数表記ではない値が含まれる
-sx_num_is_float_safe() {
-	for __sx_num_is_float_safe_arg in "${@}"; do
-		case "${__sx_num_is_float_safe_arg}" in
-			# DoS 対策: 指数の絶対値は 4 桁まで
-			*[Ee][+-]?????* | *[Ee][!+-]????*) ! :;;
-			*) sx_num_is_float "${__sx_num_is_float_safe_arg}";;
-		esac || {
-			unset __sx_num_is_float_safe_arg
-			return 1
-		}
-	done
-
-	unset __sx_num_is_float_safe_arg
-}
-
-### sx_num_is_int_safe - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
-##
-## 使い方:
-##   sx_num_is_int_safe [文字列1 [文字列2 ...]]
-##
-## 終了ステータス:
-##    0  すべて標準範囲内の整数である (SX_EX_OK)
-##    1  範囲外、または整数でない値が含まれる
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_num_is_int_safe() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_safe "${@}" || return; return 0;; esac
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-
-	__sx_num_is_int_safe "${@}" || return
-}
-
-### __sx_num_is_int_safe - 設定された数値範囲に基づいて検証を行う（内部用）
-##
-## 使い方:
-##   __sx_num_is_int_safe [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_int_safe の内部実装。引数チェックは行わない。
-__sx_num_is_int_safe() {
-	__sx_num_is_int_width "${SX_CFG_NUM_RANGE}" "${@}" || return
-}
-
-### sx_num_is_int_safe_inv - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）で符号反転可能な整数か確認する
-##
-## 使い方:
-##   sx_num_is_int_safe_inv [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_int_safe と同様に SX_CFG_NUM_RANGE に基づいて整数を検証するが、
-##   INT_MIN（符号反転が不可能な最小値）を許可しない。
-##   すなわち -(2^(n-1)-1) ～ 2^(n-1)-1 の範囲の整数のみを受理する。
-##
-## 終了ステータス:
-##    0  すべて範囲内の符号反転可能な整数である (SX_EX_OK)
-##    1  範囲外、または整数でない値が含まれる
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_num_is_int_safe_inv() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_safe_inv "${@}" || return; return 0;; esac
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-
-	__sx_num_is_int_safe_inv "${@}" || return
-}
-
-### __sx_num_is_int_safe_inv - 符号反転可能な整数の検証を行う（内部用）
-##
-## 使い方:
-##   __sx_num_is_int_safe_inv [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_int_safe_inv の内部実装。引数チェックは行わない。
-__sx_num_is_int_safe_inv() {
-	__sx_num_is_int_safe "${@}" || return
-
-	eval "__sx_num_is_int_safe_inv_min_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MIN}\""
-
-	for __sx_num_is_int_safe_inv_arg_ in "${@}"; do
-		case "${__sx_num_is_int_safe_inv_arg_}" in "${__sx_num_is_int_safe_inv_min_}")
-			unset __sx_num_is_int_safe_inv_min_ __sx_num_is_int_safe_inv_arg_
-			return 1
-		esac
-	done
-
-	unset __sx_num_is_int_safe_inv_min_ __sx_num_is_int_safe_inv_arg_
-}
-
-### sx_num_is_nat0_safe - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）の自然数（0以上）か確認する
-##
-## 使い方:
-##   sx_num_is_nat0_safe [文字列1 [文字列2 ...]]
-##
-## 終了ステータス:
-##    0  すべて標準範囲内の自然数である (SX_EX_OK)
-##    1  範囲外、または自然数でない値が含まれる
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_num_is_nat0_safe() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat0_safe "${@}" || return; return 0;; esac
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-
-	__sx_num_is_nat0_safe "${@}" || return
-}
-
-### __sx_num_is_nat0_safe - 設定された数値範囲に基づいて自然数の検証を行う（内部用）
-##
-## 使い方:
-##   __sx_num_is_nat0_safe [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_nat0_safe の内部実装。引数チェックは行わない。
-__sx_num_is_nat0_safe() {
-	sx_num_is_nat0 "${@}" || return
-	__sx_num_is_int_fit "${SX_CFG_NUM_RANGE}" "${@}" || return
-}
-
-### sx_num_is_nat1_safe - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）の自然数（1以上）か確認する
-##
-## 使い方:
-##   sx_num_is_nat1_safe [文字列1 [文字列2 ...]]
-##
-## 終了ステータス:
-##    0  すべて標準範囲内の 1 以上の自然数である (SX_EX_OK)
-##    1  範囲外、または 1 以上の自然数でない値が含まれる
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_num_is_nat1_safe() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat1_safe "${@}" || return; return 0;; esac
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-
-	__sx_num_is_nat1_safe "${@}" || return
-}
-
-### __sx_num_is_nat1_safe - 設定された数値範囲に基づいて 1 以上の自然数の検証を行う（内部用）
-##
-## 使い方:
-##   __sx_num_is_nat1_safe [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   sx_num_is_nat1_safe の内部実装。引数チェックは行わない。
-__sx_num_is_nat1_safe() {
-	sx_num_is_nat1 "${@}" || return
-	__sx_num_is_int_fit "${SX_CFG_NUM_RANGE}" "${@}" || return
-}
-
-### sx_num_is_num_safe - すべての引数が有効な数値（整数または実数）であるか確認する
-##
-## 使い方:
-##   sx_num_is_num_safe [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   引数が 16進数または 8進数の形式（0x または 0[0-9] で始まる）である場合は
-##   sx_num_is_int_safe で、それ以外の場合は sx_num_is_float_safe で検証を行う。
-##
-## 終了ステータス:
-##    0  すべて有効な数値である (SX_EX_OK)
-##    1  有効な数値ではない値が含まれる
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_num_is_num_safe() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_num_safe "${@}" || return; return 0;; esac
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-
-	__sx_num_is_num_safe "${@}" || return
-}
-
-### __sx_num_is_num_safe - すべての引数が有効な数値形式であるか検証する（内部用）
-##
-## 使い方:
-##   __sx_num_is_num_safe [文字列1 [文字列2 ...]]
-##
-## 説明:
-##   引数が 16進数または 8進数の形式である場合は __sx_num_is_int_safe で、
-##   それ以外の場合は sx_num_is_float_safe で検証を行う。
-##
-## 終了ステータス:
-##    0  すべて有効な数値である (SX_EX_OK)
-##    1  有効な数値ではない値が含まれる
-__sx_num_is_num_safe() {
-	for __sx_num_is_num_safe_arg_ in "${@}"; do
-		case "${__sx_num_is_num_safe_arg_}" in
-			*[Xx]* | [+-]0[0-9]* | 0[0-9]*) __sx_num_is_int_safe "${__sx_num_is_num_safe_arg_}";;
-			*) sx_num_is_float_safe "${__sx_num_is_num_safe_arg_}";;
-		esac || {
-			unset __sx_num_is_num_safe_arg_
-			return 1
-		}
-	done
-
-	unset __sx_num_is_num_safe_arg_
-}
-
-### sx_num_norm - 数値を10進固定小数点形式に正規化する
-##
-## 使い方:
-##   sx_num_norm バインド形式 [数値1 [数値2 ...]]
-##
-## 説明:
-##   引数で指定された各数値を、10進固定小数点形式に正規化し、バインド形式に従って
-##   変数に代入する。
-##   正規化の内容：
-##   - 16進数（0x...）や8進数（0...）を10進整数に変換。
-##   - 指数表記（1.2e+3）を固定小数点形式（1200）に展開。
-##   - 小数点以下の不要な '0' を削除（6.0 -> 6, 1.20 -> 1.2）。
-##   - 符号（+ / -）は維持される。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正: 無効なバインド形式、または数値形式が正しくない (SX_EX_USAGE)
-##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
-sx_num_norm() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_norm "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
-
-	__sx_num_norm_bind="${1}"
-	shift
-
-	sx_num_is_num_safe "${@}" || {
-		unset __sx_num_norm_bind
 		return "${SX_EX_USAGE}"
 	}
 
-	__sx_num_norm "${__sx_num_norm_bind}" "${@}"
-	unset __sx_num_norm_bind
-}
-
-define([|V|], [|__sx_num_norm_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(arg) V(in) V(mnt) V(dig) V(flen) V(shift) V(dlen) __M_BIND_USEVAR|])dnl
-
-### __sx_num_norm - 数値を10進固定小数点形式に正規化する（内部用）
-##
-## 使い方:
-##   __sx_num_norm バインド形式 [数値1 [数値2 ...]]
-##
-## 説明:
-##   sx_num_norm の内部実装。引数の検証は行わない。
-__sx_num_norm() {
-	__sx_var_bind_init "${1}"
-	__sx_num_norm_bind_="${1}"
-	__sx_num_norm_out_=
-
-	shift
-
-	for __sx_num_norm_arg_ in "${@}"; do
-		__sx_num_norm_in_="${__sx_num_norm_arg_#[+-]}"
-
-		case "${__sx_num_norm_in_}" in
-			*[Ee]*)
-				# 指数表記の展開
-				__sx_num_norm_mnt_="${__sx_num_norm_in_%%[Ee]*}"
-				__sx_num_norm_dig_="${__sx_num_norm_mnt_%%.*}"
-
-				case "${__sx_num_norm_mnt_}" in
-					*.*)
-						__sx_num_norm_flen_=$((${#__sx_num_norm_mnt_} - ${#__sx_num_norm_dig_} - 1))
-						__sx_num_norm_dig_="${__sx_num_norm_dig_}${__sx_num_norm_mnt_#*.}"
-						;;
-					*) __sx_num_norm_flen_=0;;
-				esac
-
-				__sx_num_norm_shift_=$((${__sx_num_norm_in_#*[Ee]} - __sx_num_norm_flen_))
-					__sx_num_norm_dlen_="${#__sx_num_norm_dig_}"
-
-				if M_NUM_LE([|0|], [|__sx_num_norm_shift_|]); then
-					SX_CFG_UNSET_SOFT=2 __sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "-$((__sx_num_norm_dlen_ + __sx_num_norm_shift_))" 0
-				else
-					: $((__sx_num_norm_shift_ *= -1))
-
-					if M_NUM_LT([|__sx_num_norm_shift_|], [|__sx_num_norm_dlen_|]); then
-						SX_CFG_UNSET_SOFT=2 __sx_str_splice __sx_num_norm_in_ "${__sx_num_norm_dig_}" "$((__sx_num_norm_dlen_ - __sx_num_norm_shift_))" 0 .
-					else
-						SX_CFG_UNSET_SOFT=2 __sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "${__sx_num_norm_shift_}" 0
-						__sx_num_norm_in_=".${__sx_num_norm_in_}"
-					fi
-				fi
-
-				__sx_num_norm_in_="${__sx_num_norm_in_#"${__sx_num_norm_in_%%[!0]*}"}"
-
-				case "${__sx_num_norm_in_}" in .*)
-					__sx_num_norm_in_="0${__sx_num_norm_in_}"
-				esac
-				;;
-			*[Xx]* | 0[0-9]*) : "$((__sx_num_norm_in_ += 0))";;
-		esac
-
-		# 小数点以下のクリーンアップ
-		case "${__sx_num_norm_in_}" in *.*)
-			__sx_num_norm_in_="${__sx_num_norm_in_%"${__sx_num_norm_in_##*[!0]}"}"
-			__sx_num_norm_in_="${__sx_num_norm_in_%.}"
-		esac
-
-		case "${__sx_num_norm_in_}" in '' | 0)
-			__sx_num_norm_arg_=
-		esac
-
-		__M_BIND_UNQUOTE([|__sx_num_norm|], [|"${__sx_num_norm_arg_%%[!-]*}${__sx_num_norm_in_:-0}"|], CLEANUP)
-	done
-
-	eval ${__sx_num_norm_out_:+"${__sx_num_norm_bind_}=\"\${__sx_num_norm_out_}\""}
-
+	__sx_num_add_int "${__sx_num_add_int_res}" "${@}"
 	unset CLEANUP
 }
 
-### sx_num_range - 数値の範囲を生成する (Python range 互換)
+### __sx_num_add_int - 複数の符号付き整数を加算する（内部用）
 ##
 ## 使い方:
-##   sx_num_range 結果変数名（またはバインド形式） 終了
-##   sx_num_range 結果変数名（またはバインド形式） 開始 終了
-##   sx_num_range 結果変数名（またはバインド形式） 開始 終了 増分
+##   __sx_num_add_int 結果変数名 [数値1 [数値2 ...]]
 ##
 ## 説明:
-##   指定された範囲の数値をスペース区切りで生成し、結果変数に格納する。
-##   第一引数にはバインド形式を指定して分配代入を行うことも可能。
-##   Python の range() と同様に、終了値は含まない (exclusive)。
-##   引数が1つの場合は、0 から 終了 - 1 まで増分 1。
-##   引数が2つの場合は、開始 から 終了 - 1 まで増分 1。
-##   引数が3つの場合は、開始 から 終了 (exclusive) まで指定された 増分 で生成する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  書き込み不可 (SX_EX_NOPERM)
-sx_num_range() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_range "${@}" || return; return 0;; esac
+##   符号付き10進整数を加算する。まず正数と負数に分けてそれぞれ
+##   __sx_num_add_nat0 で絶対値加算を行い、最後に絶対値を比較し
+##   減算して符号を決定する。
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_int_safe "${2-}" ${3+"${3}"} ${4+"${4}"} || return
+define([|V|], [|__sx_num_add_int_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(pos) V(neg) V(pos_sum) V(neg_sum) V(arg) V(acc)|])dnl
 
-	case "$((${4-1}))" in 0)
-		return "${SX_EX_USAGE}"
-	esac
-
-	__sx_num_range "${@}"
-}
-
-define([|V|], [|__sx_num_range_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(cur) __M_BIND_USEVAR|])dnl
-
-### __sx_num_range - 数値の範囲を生成する（内部用）
-##
-## 使い方:
-##   __sx_num_range 宛先 [引数...]
-##
-## 説明:
-##   sx_num_range の内部実装。引数チェックを行わない。
-__sx_num_range() {
-	__sx_var_bind_init "${1}"
-	__sx_num_range_bind_="${1}"
-	__sx_num_range_out_=
+__sx_num_add_int() {
+	__sx_num_add_int_res_="${1}"
 	shift
 
-	case "${#}" in
-		1) set -- 0 "${1}" 1;;
-		2) set -- "${1}" "${2}" 1;;
-		*) set -- "${1}" "${2}" "${3-1}";;
+	# Step 1: 正数と負数に分離
+	__sx_num_add_int_pos_=
+	__sx_num_add_int_neg_=
+
+	for __sx_num_add_int_arg_ in "${@}"; do
+		case "${__sx_num_add_int_arg_}" in
+			-*) __sx_num_add_int_neg_="${__sx_num_add_int_neg_} ${__sx_num_add_int_arg_#-}";;
+			*)  __sx_num_add_int_pos_="${__sx_num_add_int_pos_} ${__sx_num_add_int_arg_#+}";;
+		esac
+	done
+
+	# Step 2: 正数の合計
+	eval __sx_num_add_nat0 __sx_num_add_int_pos_sum_ "${__sx_num_add_int_pos_}"
+
+	# Step 3: 負数（絶対値）の合計
+	eval __sx_num_add_nat0 __sx_num_add_int_neg_sum_ "${__sx_num_add_int_neg_}"
+
+	# Step 4: 絶対値を比較して最終結果を決定
+	__sx_num_cmp_nat0 "${__sx_num_add_int_pos_sum_}" "${__sx_num_add_int_neg_sum_}" || case "${?}" in
+		1)
+			SX_CFG_UNSET_SOFT=2 __sx_num_sub_nat0 __sx_num_add_int_acc_ "${__sx_num_add_int_neg_sum_}" "${__sx_num_add_int_pos_sum_}"
+			__sx_num_add_int_acc_="-${__sx_num_add_int_acc_}"
+			;;
+		2) __sx_num_add_int_acc_=0;;
+		3) SX_CFG_UNSET_SOFT=2 __sx_num_sub_nat0 __sx_num_add_int_acc_ "${__sx_num_add_int_pos_sum_}" "${__sx_num_add_int_neg_sum_}";;
 	esac
 
-	__sx_num_range_cur_="${1}"
-
-	if M_NUM_LT([|0|], [|${3}|]); then
-		while M_NUM_LT([|__sx_num_range_cur_|], [|${2}|]); do
-			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
-			: $((__sx_num_range_cur_ += ${3}))
-		done
-	else
-		while M_NUM_LT([|${2}|], [|${__sx_num_range_cur_}|]); do
-			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
-			: $((__sx_num_range_cur_ += ${3}))
-		done
-	fi
-
-	eval ${__sx_num_range_out_:+"${__sx_num_range_bind_}=\"\${__sx_num_range_out_}\""}
+	__sx_var_set "${__sx_num_add_int_res_}=${__sx_num_add_int_acc_}"
 
 	unset CLEANUP
-}
-
-### sx_num_rel - 数値間の関係を確認する
-##
-## 使い方:
-##   sx_num_rel [数値1 [演算子1 数値2 ...]]
-##
-## 説明:
-##   数値と演算子を交互に指定し、すべての関係が満たされるかを確認する。
-##   演算子には以下が使用可能：
-##     eq, ==   : 等しい
-##     ne, !=  : 等しくない
-##     lt, <   : 未満
-##     le, <=  : 以下
-##     gt, >   : より大きい
-##     ge, >=  : 以上
-##
-## 終了ステータス:
-##    0  すべての条件を満たす (SX_EX_OK)
-##    1  条件を満たさない引数が含まれる
-##   64  引数不正 (SX_EX_USAGE)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_num_rel() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_rel "${@}" || return; return 0;; esac
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-
-	for __sx_num_rel_arg in "${@}"; do
-		case "${__sx_num_rel_arg}" in
-			eq | '==' | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') continue;;
-		esac
-
-		__sx_num_is_num_safe "${__sx_num_rel_arg}" || {
-			unset __sx_num_rel_arg
-			return "${SX_EX_USAGE}"
-		}
-	done
-
-	unset __sx_num_rel_arg
-
-	__sx_num_rel "${@}" || return
-}
-
-### __sx_num_rel - 数値間の関係を確認する（内部用）
-##
-## 使い方:
-##   __sx_num_rel [数値 | 演算子 ...]
-##
-## 説明:
-##   sx_num_rel の内部実装。
-##   引数チェックを行わずに数値と演算子の関係を順次評価する。
-__sx_num_rel() {
-	__sx_num_rel_op_='eq'
-
-	for __sx_num_rel_arg_ in "${@}"; do
-		case "${__sx_num_rel_arg_}" in
-			eq | '==') __sx_num_rel_op_=eq;;
-			ne | '!=') __sx_num_rel_op_=ne;;
-			lt | '<')  __sx_num_rel_op_=lt;;
-			le | '<=') __sx_num_rel_op_=le;;
-			gt | '>')  __sx_num_rel_op_=gt;;
-			ge | '>=') __sx_num_rel_op_=ge;;
-			*) ! :;;
-		esac && continue
-
-		__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
-
-		case "${__sx_num_rel_rcls_}" in
-			1) : $((__sx_num_rel_arg_ += 0));;
-			2) __sx_num_rel_arg_="${__sx_num_rel_arg_#+}";;
-			*)
-				SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_rel_arg_ "${__sx_num_rel_arg_}"
-				__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
-				;;
-		esac
-
-		case "${__sx_num_rel_lhs_+X}" in X)
-			case "${__sx_num_rel_lcls_}:${__sx_num_rel_rcls_}" in
-				1:1) __sx_num_cmp_arith "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
-				*) __sx_num_cmp_fixed "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
-			esac || case "${__sx_num_rel_op_}:${?}" in
-				eq:2 | ne:1 | ne:3 | lt:1 | le:1 | le:2 | gt:3 | ge:2 | ge:3) ;;
-				*)
-					unset __sx_num_rel_op_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
-					return 1
-					;;
-			esac
-		esac
-
-		__sx_num_rel_lcls_="${__sx_num_rel_rcls_}"
-		__sx_num_rel_lhs_="${__sx_num_rel_arg_}"
-	done
-
-	unset __sx_num_rel_op_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
-}
-
-### __sx_num_rel_classify - 比較方式を分類する（内部用）
-##
-## 終了ステータス:
-##   1  arith (算術展開比較)
-##   2  dec   (10進整数文字列比較)
-##   3  norm  (正規化数値比較)
-__sx_num_rel_classify() {
-	case "${1}" in
-		*.* | *[Ee]*) return 3;;
-		*0[Xx]* | 0[0-9]* | [+-]0[0-9]*) return 1;;
-	esac
-
-	__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${1}" || return 2
-
-	return 1
 }
 
 ### sx_num_add_nat0 - 複数の絶対値をチャンク加算する
@@ -5835,624 +4300,561 @@ __sx_num_add_nat0() {
 	unset CLEANUP
 }
 
-### sx_num_sub_nat0 - 2つの絶対値の差（被減数 - 減数）を計算する
+### sx_num_cmp_arith - 2つの数値を算術展開で比較する
 ##
 ## 使い方:
-##   sx_num_sub_nat0 結果変数名 被減数 減数
-##
-## 説明:
-##   符号なし10進整数の減算（被減数 - 減数）を行う。
-##   引数の検証を行い、すべて符号なし整数（nat0）であることを確認する。
+##   sx_num_cmp_arith 数値1 数値2
 ##
 ## 終了ステータス:
-##   0  成功 (SX_EX_OK)
-##  64  引数不正 (SX_EX_USAGE) — 数値以外、符号付き整数、または被減数 &lt; 減数
-##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   1  数値1 < 数値2
+##   2  数値1 = 数値2
+##   3  数値1 > 数値2
+##  64  引数不正 (SX_EX_USAGE)
+sx_num_cmp_arith() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_arith "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_int_safe "${1-}" "${2-}" || return
+
+	__sx_num_cmp_arith "${1}" "${2}" || return
+}
+
+### __sx_num_cmp_arith - 整数を算術展開で比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_cmp_arith() {
+	return "$((${1} < ${2} ? 1 : (${1} > ${2} ? 3 : 2)))"
+}
+
+### __sx_num_cmp_arith_digit - 10進整数文字列を算術展開で比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_cmp_arith_digit() {
+	set -- "${1#${1%%[!0]*}}" "${2#${2%%[!0]*}}"
+	__sx_num_cmp_arith "${1:-0}" "${2:-0}"
+}
+
+### sx_num_cmp_fixed - 2つの固定小数点数を比較する
+##
+## 使い方:
+##   sx_num_cmp_fixed 左辺 右辺
+##
+## 説明:
+##   指定された2つの固定小数点数を比較する。
+##   引数は sx_num_norm 等で正規化された10進固定小数点形式である必要がある。
+##
+## 終了ステータス:
+##    1  左辺 < 右辺
+##    2  左辺 = 右辺
+##    3  左辺 > 右辺
+##   64  引数が正規化済み数値ではない (SX_EX_USAGE)
+sx_num_cmp_fixed() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_fixed "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_fixed "${1-}" "${2-}" || return
+
+	__sx_num_cmp_fixed "${1}" "${2}" || return
+}
+
+### __sx_num_cmp_fixed - 正規化済み数値を比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_cmp_fixed() {
+	set -- "${1#[+-]}" "${2#[+-]}" "${1%%[!-]*}" "${2%%[!-]*}"
+
+	case "${3:-+}${4:-+}" in
+		-+) return 1;;
+		+-) return 3;;
+	esac
+
+	case "${3}" in
+		-*) __sx_num_cmp_fixed_abs "${2}" "${1}";;
+		*)  __sx_num_cmp_fixed_abs "${1}" "${2}";;
+	esac || return "${?}"
+}
+
+### __sx_num_cmp_fixed_abs - 正規化済み絶対値同士を比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_cmp_fixed_abs() {
+	case "${1}" in
+		*.*) set -- "${1%%.*}" "${2}" "${1#*.}";;
+		*) set -- "${1}" "${2}" '';;
+	esac
+
+	case "${2}" in
+		*.*) set -- "${1}" "${2%%.*}" "${3}" "${2#*.}";;
+		*) set -- "${1}" "${2}" "${3}" '';;
+	esac
+
+	__sx_num_cmp_nat0 "${1}" "${2}" || case "${?}" in 1 | 3)
+		return "${?}"
+	esac
+
+	__sx_num_cmp_fixed_frac "${3}" "${4}" || return "${?}"
+}
+
+### __sx_num_cmp_fixed_frac - 小数部を左から比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_cmp_fixed_frac() {
+	# 完全に一致する場合は即座に終了 (EQ)
+	case "${1}" in "${2}") return 2;; esac
+
+	# 接頭辞チェック（正規化により、長い方が必ず大きい）
+	# 冒頭で行うことで、長い小数部の延長比較をループなしで高速に処理する
+	case "${1}" in "${2}"*) return 3;; esac
+	case "${2}" in "${1}"*) return 1;; esac
+
+	# 窓幅パターン（?????????）を準備
+	eval "__sx_num_cmp_fixed_frac_q_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
+	# $1: qm, $2: lhs, $3: rhs
+	set -- "${__sx_num_cmp_fixed_frac_q_}" "${1}" "${2}"
+	unset __sx_num_cmp_fixed_frac_q_
+
+	# 両方の文字列が窓幅以上の間、チャンクごとに比較
+	while M_STR_MATCH([|"${2}"|], [|${1}?*|]) && M_STR_MATCH([|"${3}"|], [|${1}?*|]); do
+		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
+		__sx_num_cmp_arith_digit "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
+			1 | 3) return "${?}";;
+		esac
+	done
+
+	# 接頭辞の関係にない（＝どこかの桁で異なる）残りの部分をパディングして最後の比較
+	eval "__sx_num_cmp_fixed_frac_z_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
+	set -- "${1}" "${2}${__sx_num_cmp_fixed_frac_z_}" "${3}${__sx_num_cmp_fixed_frac_z_}"
+	unset __sx_num_cmp_fixed_frac_z_
+
+	__sx_num_cmp_arith_digit "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
+}
+
+### sx_num_cmp_float - 2つの数値を比較する
+##
+## 使い方:
+##   sx_num_cmp_float 左辺 右辺
+##
+## 説明:
+##   指定された2つの数値を比較する。
+##
+## 終了ステータス:
+##    1  左辺 < 右辺
+##    2  左辺 = 右辺
+##    3  左辺 > 右辺
+##   64  引数が数値ではない (SX_EX_USAGE)
+sx_num_cmp_float() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_float "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_float "${1-}" "${2-}" || return
+
+	__sx_num_cmp_float "${@}"
+}
+
+### __sx_num_cmp_float - 2つの数値を比較する（検証なし）
+##
+## 使い方:
+##   __sx_num_cmp_float 左辺 右辺
+##
+## 説明:
+##   指定された2つの数値を比較する。
+##   引数が数値であることの検証は行わない。
+##
+## 終了ステータス:
+##    1  左辺 < 右辺
+##    2  左辺 = 右辺
+##    3  左辺 > 右辺
+__sx_num_cmp_float() {
+	SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_cmp_float_a_:__sx_num_cmp_float_b_ "${1}" "${2}"
+	set -- "${__sx_num_cmp_float_a_}" "${__sx_num_cmp_float_b_}"
+	unset __sx_num_cmp_float_a_ __sx_num_cmp_float_b_
+
+	__sx_num_cmp_fixed "${@}" || return
+}
+
+### sx_num_cmp_nat0 - 2つの符号なし10進整数を比較する
+##
+## 使い方:
+##   sx_num_cmp_nat0 数値1 数値2
+##
+## 説明:
+##   指定された2つの符号なし10進整数を比較する。
+##   引数はすべて 0 以上の整数である必要がある。
+##
+## 終了ステータス:
+##   1  数値1 < 数値2
+##   2  数値1 = 数値2
+##   3  数値1 > 数値2
+##  64  引数不正 (SX_EX_USAGE)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_cmp_nat0() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_nat0 "${@}" || return; return 0;; esac
 
-define([|V|], [|__sx_num_sub_nat0_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0_base 10 "${1-}" "${2-}" || return
 
-sx_num_sub_nat0() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub_nat0 "${@}" || return; return 0;; esac
+	__sx_num_cmp_nat0 "${1}" "${2}" || return
+}
+
+define([|V|], [|__sx_num_cmp_nat0_$1_|])dnl
+define([|CLEANUP|], [|V(l) V(r) V(qm)|])dnl
+
+### __sx_num_cmp_nat0 - 符号なし10進整数文字列を比較する（内部用）
+##
+## 終了ステータス:
+##   1  左辺 < 右辺
+##   2  左辺 = 右辺
+##   3  左辺 > 右辺
+__sx_num_cmp_nat0() {
+	case "${1}" in "${2}")
+		return 2
+	esac
+
+	__sx_num_cmp_nat0_l_="${#1}"
+	__sx_num_cmp_nat0_r_="${#2}"
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_cmp_nat0_l_}" "${__sx_num_cmp_nat0_r_}"; then
+		__sx_num_cmp_arith "${__sx_num_cmp_nat0_l_}" "${__sx_num_cmp_nat0_r_}"
+	else
+		__sx_num_cmp_nat0 "${__sx_num_cmp_nat0_l_}" "${__sx_num_cmp_nat0_r_}"
+	fi || case "${?}" in 1 | 3)
+		set -- "${?}"
+		unset CLEANUP
+		return "${1}"
+	esac
+
+	eval "__sx_num_cmp_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
+
+	while M_STR_MATCH([|"${1}"|], [|${__sx_num_cmp_nat0_qm_}?*|]); do
+		set -- "${1#${__sx_num_cmp_nat0_qm_}}" "${2#${__sx_num_cmp_nat0_qm_}}" "${1}" "${2}"
+		__sx_num_cmp_arith_digit "${3%"${1}"}" "${4%"${2}"}" || case "${?}" in 1 | 3)
+			set -- "${?}"
+			unset CLEANUP
+			return "${1}"
+		esac
+	done
+
+	unset CLEANUP
+
+	__sx_num_cmp_arith_digit "${1}" "${2}" || return "${?}"
+}
+
+### sx_num_div_int - 符号付き整数の除算で実数商（整数商 + 小数部）を求める
+##
+## 使い方:
+##   sx_num_div_int 結果変数名 小数桁数 被除数 [除数1 [除数2 ...]]
+##
+## 説明:
+##   符号付き10進整数の除算を行い、実数商（整数商 + 小数部）を求める。
+##   すべての除数を乗算した値を単一の除数として扱い、被除数をその除数で除算する。
+##   小数部は小数桁数（最大桁数）までを floor（切り捨て）で求め、末尾の 0 は除去される。
+##   小数部が 0 になる場合は実数商 = 整数商となる。
+##   （例: d 2 -100 3 → d=-33.33 / d 2 5 -10 → d=-0.5 / d 3 -100 -2 5 → d=10）
+##   被除数は任意の符号付き整数、各除数は 0 以外の符号付き整数、小数桁数は 0 以上の自然数。
+##   除数に 0 を指定した場合は引数不正とみなす。
+##   小数桁数・被除数・除数は省略可能で、省略した場合はそれぞれ 0、0、1 として扱われる
+##   （小数桁数省略時は実数商 = 整数商、除数省略時は被除数がそのまま実数商）。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+
+define([|V|], [|__sx_num_div_int_$1|])dnl
+define([|CLEANUP|], [|V(res) V(dp) V(u) V(v)|])dnl
+
+sx_num_div_int() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_int "${@}" || return; return 0;; esac
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_sub_nat0_res="${1}"
-	shift
+	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_int_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
-	__sx_num_is_nat0_base 10 "${@}" || {
+	__sx_num_div_int_res="${1}"
+	__sx_num_div_int_dp="${2:-0}"
+	__sx_num_div_int_u="${3:-0}"
+	shift "$((0${2+1} + 0${3+1} + 1))"
+
+	__sx_num_is_int_base 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
 
-	__sx_num_cmp_nat0 "${1-0}" "${2-0}" || case "${?}" in 1)
+	for __sx_num_div_int_v in "${@}"; do
+		case "${__sx_num_div_int_v#[+-]}" in 0)
+			unset CLEANUP
+			return "${SX_EX_USAGE}"
+		esac
+	done
+
+	__sx_num_div_int "${__sx_num_div_int_res}" "${__sx_num_div_int_dp}" "${__sx_num_div_int_u}" "${@}"
+	unset CLEANUP
+}
+
+define([|V|], [|__sx_num_div_int_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q)|])dnl
+
+### __sx_num_div_int - 符号付き整数の除算で実数商（整数商 + 小数部）を求める（内部用）
+##
+## 使い方:
+##   __sx_num_div_int 結果変数名 小数桁数 被除数 [除数1 [除数2 ...]]
+##
+## 説明:
+##   sx_num_div_int の内部実装。引数チェックは行わない。
+##   前提: 小数桁数は 0 以上の自然数、被除数は任意の符号付き整数、
+##   すべての除数は 0 以外の符号付き整数であること。
+__sx_num_div_int() {
+	__sx_num_div_int_res_="${1}"
+	__sx_num_div_int_dp_="${2:-0}"
+	__sx_num_div_int_u_="${3:-0}"
+	shift "$((0${1+1} + 0${2+1} + 0${3+1}))"
+
+	case "${__sx_num_div_int_u_}" in 0 | +0 | -0)
+		__sx_var_set "${__sx_num_div_int_res_}=0"
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "${SX_EX_OK}"
 	esac
 
-	__sx_num_sub_nat0 "${__sx_num_sub_nat0_res}" "${@}"
+	__sx_num_mul_int __sx_num_div_int_den_ "${@}"
+
+	__sx_num_div_nat0 __sx_num_div_int_q_ "${__sx_num_div_int_dp_}" "${__sx_num_div_int_u_#[+-]}" "${__sx_num_div_int_den_#[+-]}"
+
+	case "${__sx_num_div_int_u_}:${__sx_num_div_int_den_}:${__sx_num_div_int_q_}" in -*:[!-]*:*[!0]* | [!-]*:-*:*[!0]*)
+		__sx_num_div_int_q_="-${__sx_num_div_int_q_}"
+	esac
+
+	__sx_var_set "${__sx_num_div_int_res_}=${__sx_num_div_int_q_}"
 	unset CLEANUP
 }
 
-### __sx_num_sub_nat0 - 絶対値のチャンク減算を行う（内部用）
+### sx_num_div_nat0 - 絶対値の除算で実数商（整数商 + 小数部）を求める
 ##
 ## 使い方:
-##   __sx_num_sub_nat0 結果変数名 被減数 減数
+##   sx_num_div_nat0 結果変数名 小数桁数 被除数 [除数1 [除数2 ...]]
 ##
 ## 説明:
-##   符号なし10進整数の絶対値（被減数 - 減数）を減算する。
-##   引数はすべて検証済みの正しい10進整数であることを前提とする。
-##   被減数 >= 減数 が保証されていること。
-
-define([|V|], [|__sx_num_sub_nat0_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(qm) V(borrow) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(b)|])dnl
-
-__sx_num_sub_nat0() {
-	__sx_num_sub_nat0_res_="${1}"
-	__sx_num_sub_nat0_rem1_="${2-0}"
-	__sx_num_sub_nat0_rem2_="${3-0}"
-	__sx_num_sub_nat0_borrow_=0
-	__sx_num_sub_nat0_out_=
-
-	eval "__sx_num_sub_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_sub_nat0_b_=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
-
-	while
-		case "${__sx_num_sub_nat0_rem1_}" in
-			${__sx_num_sub_nat0_qm_}?*)
-				__sx_num_sub_nat0_tmp_="${__sx_num_sub_nat0_rem1_%${__sx_num_sub_nat0_qm_}}"
-				__sx_num_sub_nat0_ch1_="${__sx_num_sub_nat0_rem1_#"${__sx_num_sub_nat0_tmp_}"}"
-				__sx_num_sub_nat0_rem1_="${__sx_num_sub_nat0_tmp_}"
-				case "${__sx_num_sub_nat0_ch1_}" in 0*)
-					__sx_num_sub_nat0_ch1_="${__sx_num_sub_nat0_ch1_#"${__sx_num_sub_nat0_ch1_%%[!0]*}"}"
-				esac
-				;;
-			*)
-				__sx_num_sub_nat0_ch1_="${__sx_num_sub_nat0_rem1_}"
-				__sx_num_sub_nat0_rem1_=
-				;;
-		esac
-
-		case "${__sx_num_sub_nat0_rem2_}" in
-			${__sx_num_sub_nat0_qm_}?*)
-				__sx_num_sub_nat0_tmp_="${__sx_num_sub_nat0_rem2_%${__sx_num_sub_nat0_qm_}}"
-				__sx_num_sub_nat0_ch2_="${__sx_num_sub_nat0_rem2_#"${__sx_num_sub_nat0_tmp_}"}"
-				__sx_num_sub_nat0_rem2_="${__sx_num_sub_nat0_tmp_}"
-				case "${__sx_num_sub_nat0_ch2_}" in 0*)
-					__sx_num_sub_nat0_ch2_="${__sx_num_sub_nat0_ch2_#"${__sx_num_sub_nat0_ch2_%%[!0]*}"}"
-				esac
-				;;
-			*)
-				__sx_num_sub_nat0_ch2_="${__sx_num_sub_nat0_rem2_}"
-				__sx_num_sub_nat0_rem2_=
-				;;
-		esac
-
-		__sx_num_sub_nat0_tmp_=$((${__sx_num_sub_nat0_ch1_:-0} - ${__sx_num_sub_nat0_ch2_:-0} - __sx_num_sub_nat0_borrow_))
-		__sx_num_sub_nat0_borrow_=$((__sx_num_sub_nat0_tmp_ < 0))
-
-		case "${#__sx_num_sub_nat0_rem1_}:${#__sx_num_sub_nat0_rem2_}:${__sx_num_sub_nat0_borrow_}" in
-			0:0:0)
-				# 両方の剰余が枯渇 → tmp_ が最上位桁、先頭ゼロ除去のみでゼロ埋め不要
-				case "${__sx_num_sub_nat0_tmp_}" in [!0]*)
-					__sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}"
-				esac && ! :
-				;;
-			*:0:0)
-				case "${__sx_num_sub_nat0_tmp_}" in
-					${__sx_num_sub_nat0_qm_}*) __sx_num_sub_nat0_out_="${__sx_num_sub_nat0_rem1_}${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}";;
-					*)
-						# rem2 のみ枯渇、rem1 に未処理チャンクあり → ゼロ埋めして桁揃え
-						: "$((__sx_num_sub_nat0_tmp_ += __sx_num_sub_nat0_b_))"
-						__sx_num_sub_nat0_out_="${__sx_num_sub_nat0_rem1_}${__sx_num_sub_nat0_tmp_#1}${__sx_num_sub_nat0_out_}"
-						;;
-				esac && ! :
-				;;
-			*:*:1) : "$((__sx_num_sub_nat0_tmp_ += ${__sx_num_sub_nat0_b_}))";&
-			*)
-				case "${__sx_num_sub_nat0_tmp_}" in
-					${__sx_num_sub_nat0_qm_}*)  __sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}";;
-					*)
-						: "$((__sx_num_sub_nat0_tmp_ += __sx_num_sub_nat0_b_))"
-						__sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_#1}${__sx_num_sub_nat0_out_}"
-						;;
-				esac
-				;;
-		esac
-	do :; done
-
-	__sx_var_set "${__sx_num_sub_nat0_res_}=${__sx_num_sub_nat0_out_:-0}"
-
-	unset CLEANUP
-}
-
-
-### sx_num_mul_nat0 - 複数の絶対値を乗算する
-##
-## 使い方:
-##   sx_num_mul_nat0 結果変数名 [数値1 [数値2 ...]]
-##
-## 説明:
-##   符号なし10進整数の絶対値を乗算する。
-##   引数の検証を行い、符号なし整数でない場合はエラーとする。
-##   逐次方式でアキュムレータに各数値を順次乗算する。
+##   符号なし10進整数の絶対値の除算を行い、実数商（整数商 + 小数部）を求める。
+##   すべての除数を乗算した値を単一の除数として扱い、被除数をその除数で除算する。
+##   小数部は小数桁数（最大桁数）までを floor（切り捨て）で求め、末尾の 0 は除去される。
+##   小数部が 0 になる場合は実数商 = 整数商となる。
+##   （例: d 2 100 3 → d=33.33 / d 2 5 10 → d=0.5 / d 3 100 2 5 → d=10）
+##   被除数は 0 以上の自然数、各除数は 1 以上の自然数、小数桁数は 0 以上の自然数。
+##   除数に 0 を指定した場合は引数不正とみなす。
+##   小数桁数・被除数・除数は省略可能で、省略した場合はそれぞれ 0、0、1 として扱われる
+##   （小数桁数省略時は実数商 = 整数商、除数省略時は被除数がそのまま実数商）。
 ##
 ## 終了ステータス:
-##   0  成功 (SX_EX_OK)
-##  64  引数不正 (SX_EX_USAGE) — 数値以外、または符号付き整数が含まれる
-##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
 
-define([|V|], [|__sx_num_mul_nat0_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
+define([|V|], [|__sx_num_div_nat0_$1|])dnl
+define([|CLEANUP|], [|V(res) V(dp) V(u)|])dnl
 
-sx_num_mul_nat0() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_nat0 "${@}" || return; return 0;; esac
+sx_num_div_nat0() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_nat0 "${@}" || return; return 0;; esac
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_mul_nat0_res="${1}"
-	shift
+	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_nat0_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
-	__sx_num_is_nat0_base 10 "${@}" || {
+	__sx_num_div_nat0_res="${1}"
+	__sx_num_div_nat0_dp="${2:-0}"
+	__sx_num_div_nat0_u="${3:-0}"
+	shift "$((0${2+1} + 0${3+1} + 1))"
+
+	__sx_num_is_nat1_base 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
 
-	__sx_num_mul_nat0 "${__sx_num_mul_nat0_res}" "${@}"
+	__sx_num_div_nat0 "${__sx_num_div_nat0_res}" "${__sx_num_div_nat0_dp}" "${__sx_num_div_nat0_u}" "${@}"
 	unset CLEANUP
 }
 
-### __sx_num_mul_nat0 - 複数の絶対値を乗算する（内部用）
+define([|V|], [|__sx_num_div_nat0_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q) V(r) V(dec) V(zr) V(qm)|])dnl
+
+### __sx_num_div_nat0 - 絶対値の除算で実数商（整数商 + 小数部）を求める（内部用）
 ##
 ## 使い方:
-##   __sx_num_mul_nat0 結果変数名 [数値1 [数値2 ...]]
+##   __sx_num_div_nat0 結果変数名 小数桁数 被除数 [除数1 [除数2 ...]]
 ##
 ## 説明:
-##   符号なし10進整数の絶対値を乗算する。
-##   引数はすべて検証済みの正しい10進整数であることを前提とする。
-##   逐次方式でアキュムレータに各数値を順次乗算する。
+##   sx_num_div_nat0 の内部実装。引数チェックは行わない。
+##   前提: 小数桁数は 0 以上の自然数、被除数は 0 以上の自然数、
+##   すべての除数は 1 以上の自然数であること。
+##
+##   実行フロー（ステップ 1〜3）:
+##   1) すべての除数を __sx_num_mul_nat0 で乗算して単一の除数 den を求める
+##      （除数が無い場合は 1）。
+##   2) __sx_num_divmod_nat0 で整数商 q と余剰 r を求める。
+##   3) 小数桁数 dp が 1 以上で余剰 r が 0 でない場合、小数部 dec を
+##      floor(余剰 × 10^dp ÷ den) の商として dp 桁にゼロ埋めした文字列で求め、
+##      末尾の 0 を除去する。dec が空（小数が 0）になれば整数商 q をそのまま返す。
+##      ゼロ埋めの '?'×桁数 / "0"×桁数 は SX_QM / SX_ZR 定数（1〜37 桁）から参照し、
+##      37 桁を超える場合のみ __sx_str_rep で生成する。
 
-define([|V|], [|__sx_num_mul_nat0_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(a) V(b) V(endz) V(qm) V(shift) V(tmp) V(ch_a) V(ch_b) V(wlen_mul) V(max_ops) V(a_len) V(b_len) V(max_x) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(carry) V(g) V(fit) V(safe)|])dnl
+__sx_num_div_nat0() {
+	# ステップ 1: 引数の取得（結果変数名、小数桁数 dp、被除数 u、除数群）
+	__sx_num_div_nat0_res_="${1}"
+	__sx_num_div_nat0_dp_="${2:-0}"
+	__sx_num_div_nat0_u_="${3:-0}"
+	shift 3
 
-__sx_num_mul_nat0() {
-	__sx_num_mul_nat0_res_="${1}"
-	__sx_num_mul_nat0_a_="${2-1}"
-	__sx_num_mul_nat0_endz_=
-	__sx_num_mul_nat0_fit_=1
-	shift "$((1 + 0${2+1}))"
-
-	case "${__sx_num_mul_nat0_a_}" in 0)
-		set --
+	case "${__sx_num_div_nat0_u_}" in 0 | +0 | -0)
+		__sx_var_set "${__sx_num_div_nat0_res_}=0"
+		unset CLEANUP
+		return "${SX_EX_OK}"
 	esac
 
-	eval "__sx_num_mul_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" \
-	      __sx_num_mul_nat0_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" \
-	      __sx_num_mul_nat0_max_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
+	# ステップ 2: すべての除数を乗算して単一の除数にする（除数が無い場合は 1）
+	__sx_num_mul_nat0 __sx_num_div_nat0_den_ "${@}"
 
-	# safe_: 分割探索式の (len + (x - 1)) が INT_MAX を超えないための上限
-	__sx_num_mul_nat0_safe_="$((__sx_num_mul_nat0_max_ops_ - __sx_num_mul_nat0_wlen_mul_ + 2))"
+	# ステップ 3: 整数商と余剰を求める
+	__sx_num_divmod_nat0 "__sx_num_div_nat0_q_:__sx_num_div_nat0_r_:" "${__sx_num_div_nat0_u_}" "${__sx_num_div_nat0_den_}"
 
-	for __sx_num_mul_nat0_b_ in "${@}"; do
-		case "${__sx_num_mul_nat0_b_}" in 0)
-			__sx_num_mul_nat0_a_=0
-			__sx_num_mul_nat0_endz_=
-			break
-		esac
+	# ステップ 4: 小数部の導出（dp が 1 以上かつ余剰が 0 でない場合のみ）
+	#   dec = floor(余剰 × 10^dp ÷ den) を dp 桁にゼロ埋めした文字列（末尾 0 は除去）
+	__sx_num_div_nat0_dec_=
 
-		# 高速パス: 両因数が1語に収まればシェル算術で直接乗算
-		case "${__sx_num_mul_nat0_a_}${__sx_num_mul_nat0_b_}" in
-			${__sx_num_mul_nat0_qm_}?*) ;;
-			*)
-				: "$((__sx_num_mul_nat0_a_ *= __sx_num_mul_nat0_b_))"
-				continue
-				;;
-		esac
-
-		# 末尾のゼロを一時分離し、後で結合する
-		case "${__sx_num_mul_nat0_a_}" in *0)
-			__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_a_##*[!0]}"
-			__sx_num_mul_nat0_a_="${__sx_num_mul_nat0_a_%${__sx_num_mul_nat0_tmp_}}"
-			__sx_num_mul_nat0_endz_="${__sx_num_mul_nat0_endz_}${__sx_num_mul_nat0_tmp_}"
-		esac
-
-		case "${__sx_num_mul_nat0_b_}" in *0)
-			__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_##*[!0]}"
-			__sx_num_mul_nat0_b_="${__sx_num_mul_nat0_b_%${__sx_num_mul_nat0_tmp_}}"
-			__sx_num_mul_nat0_endz_="${__sx_num_mul_nat0_endz_}${__sx_num_mul_nat0_tmp_}"
-		esac
-
-		# 1の乗算をスキップ / 1語に収まらなければ多倍長処理へ
-		case "${__sx_num_mul_nat0_a_}:${__sx_num_mul_nat0_b_}" in
-			1:*) __sx_num_mul_nat0_a_="${__sx_num_mul_nat0_b_}";&
-			*:1) ! :;;
-			${__sx_num_mul_nat0_qm_}??*) ;;
-			*) ! : "$((__sx_num_mul_nat0_a_ *= __sx_num_mul_nat0_b_))"
-		esac || continue
-
-		# fit_: 桁数そのものが INT_MAX を超えると算術展開できないため、
-		#       範囲内に収まる桁数かどうかを確認する
-		__sx_num_mul_nat0_a_len_="${#__sx_num_mul_nat0_a_}"
-		__sx_num_mul_nat0_b_len_="${#__sx_num_mul_nat0_b_}"
-
-		case "${__sx_num_mul_nat0_fit_}" in 1)
-			__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_mul_nat0_a_len_}" "${__sx_num_mul_nat0_b_len_}" || __sx_num_mul_nat0_fit_=0
-		esac
-
-		# 長い方を a に統一し、分割最適化の効果を最大化
-		case "$((__sx_num_mul_nat0_fit_ && __sx_num_mul_nat0_a_len_ < __sx_num_mul_nat0_b_len_))" in 1)
-			__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_}"
-			__sx_num_mul_nat0_b_="${__sx_num_mul_nat0_a_}"
-			__sx_num_mul_nat0_a_="${__sx_num_mul_nat0_tmp_}"
-			__sx_num_mul_nat0_a_len_="${#__sx_num_mul_nat0_a_}"
-			__sx_num_mul_nat0_b_len_="${#__sx_num_mul_nat0_b_}"
-		esac
-
-		# 安全: 桁数が算術展開可能な範囲内 → 全分割点を探索
-		# 危険: 桁数が算術展開不能 or 範囲超過 → 均等分割にフォールバック
-		if M_NUM_BOOL([|__sx_num_mul_nat0_fit_ && __sx_num_mul_nat0_a_len_ <= __sx_num_mul_nat0_safe_ && __sx_num_mul_nat0_b_len_ <= __sx_num_mul_nat0_safe_|]); then
-			__sx_num_mul_nat0_max_x_="$((__sx_num_mul_nat0_b_len_ < __sx_num_mul_nat0_wlen_mul_ ? __sx_num_mul_nat0_b_len_ : __sx_num_mul_nat0_wlen_mul_ - 1))"
-			__sx_num_mul_nat0_min_ops_="${__sx_num_mul_nat0_max_ops_}"
-			__sx_num_mul_nat0_opt_x_=1
-			__sx_num_mul_nat0_x_=1
-
-			while M_NUM_LE([|__sx_num_mul_nat0_x_|], [|__sx_num_mul_nat0_max_x_|]); do
-				__sx_num_mul_nat0_y_=$((__sx_num_mul_nat0_wlen_mul_ - __sx_num_mul_nat0_x_))
-				__sx_num_mul_nat0_ops_=$((((__sx_num_mul_nat0_b_len_ + (__sx_num_mul_nat0_x_ - 1)) / __sx_num_mul_nat0_x_) * ((__sx_num_mul_nat0_a_len_ + (__sx_num_mul_nat0_y_ - 1)) / __sx_num_mul_nat0_y_)))
-
-				case "$((__sx_num_mul_nat0_ops_ < __sx_num_mul_nat0_min_ops_))" in 1)
-					__sx_num_mul_nat0_min_ops_="${__sx_num_mul_nat0_ops_}"
-					__sx_num_mul_nat0_opt_x_="${__sx_num_mul_nat0_x_}"
-				esac
-
-				: "$((__sx_num_mul_nat0_x_ += 1))"
-			done
+	case "${__sx_num_div_nat0_dp_}${__sx_num_div_nat0_r_}" in [!0]*[!0]*)
+		# "0"×dp は SX_ZR 定数（1〜37 桁）から参照し、超過時のみ str_rep で生成する
+		if __sx_var_is_set "SX_ZR_${__sx_num_div_nat0_dp_}"; then
+			eval "__sx_num_div_nat0_zr_=\"\${SX_ZR_${__sx_num_div_nat0_dp_}}\""
 		else
-			__sx_num_mul_nat0_opt_x_=$(((__sx_num_mul_nat0_wlen_mul_ + 1) / 2))
+			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_div_nat0_zr_ 0 "${__sx_num_div_nat0_dp_}"
 		fi
 
-		# 最適分割サイズに基づきチャンク用 QM/ZR をロード
-		__sx_num_mul_nat0_opt_y_=$((__sx_num_mul_nat0_wlen_mul_ - __sx_num_mul_nat0_opt_x_))
+		# 小数部 = 余剰 × 10^dp ÷ den の整数商（この除算の余りは不要）
+		__sx_num_divmod_nat0 "__sx_num_div_nat0_dec_:" "${__sx_num_div_nat0_r_}${__sx_num_div_nat0_zr_}" "${__sx_num_div_nat0_den_}"
 
-		eval "__sx_num_mul_nat0_qchunk_a_=\"\${SX_QM_${__sx_num_mul_nat0_opt_y_}}\" \
-		      __sx_num_mul_nat0_zchunk_a_=\"\${SX_ZR_${__sx_num_mul_nat0_opt_y_}}\" \
-		      __sx_num_mul_nat0_qchunk_b_=\"\${SX_QM_${__sx_num_mul_nat0_opt_x_}}\" \
-		      __sx_num_mul_nat0_zchunk_b_=\"\${SX_ZR_${__sx_num_mul_nat0_opt_x_}}\""
+		# dec が dp 桁未満の場合のみ先頭をゼロ埋めする（len == dp なら定数参照を丸ごとスキップ）
+		if M_STR_NE([|"${#__sx_num_div_nat0_dec_}"|], [|"${__sx_num_div_nat0_dp_}"|]); then
+			# 前置 "0"×dp から剥ぎ取る '?'×len(dec) は SX_QM 定数（1〜37 桁）から参照する
+			if __sx_var_is_set "SX_QM_${#__sx_num_div_nat0_dec_}"; then
+				eval "__sx_num_div_nat0_qm_=\"\${SX_QM_${#__sx_num_div_nat0_dec_}}\""
+			else
+				SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_div_nat0_qm_ '?' "${#__sx_num_div_nat0_dec_}"
+			fi
 
-		__sx_num_mul_nat0_shift_=
+			# "0"×dp を前置して '?'×len(dec) を剥ぎ、末尾 dp 桁だけを採用する
+			# （dec は高々 dp 桁のため、桁不足のときのみこのパスに来る）
+			__sx_num_div_nat0_dec_="${__sx_num_div_nat0_zr_}${__sx_num_div_nat0_dec_}"
 
-		set --
+			# '?'×len(dec) は ? がパターン一致として働く必要があるため、
+			# 内側の展開は意図的にクォートしない（クォートすると ? がリテラル化して剥ぎ取りが失敗する）
+			__sx_num_div_nat0_dec_="${__sx_num_div_nat0_dec_#${__sx_num_div_nat0_qm_}}"
+		fi
 
-		# a を opt_y 桁ずつ下位からチャンク分割し位置パラメータに格納
-		while
-			case "${__sx_num_mul_nat0_a_}" in
-				${__sx_num_mul_nat0_qchunk_a_}?*)
-					__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_a_%${__sx_num_mul_nat0_qchunk_a_}}"
-					__sx_num_mul_nat0_ch_a_="${__sx_num_mul_nat0_a_#"${__sx_num_mul_nat0_tmp_}"}"
-					__sx_num_mul_nat0_a_="${__sx_num_mul_nat0_tmp_}"
-					case "${__sx_num_mul_nat0_ch_a_}" in
-						0*[1-9]*) set -- "${@}" "${__sx_num_mul_nat0_ch_a_#"${__sx_num_mul_nat0_ch_a_%%[!0]*}"}";;
-						0*) set -- "${@}" 0;;
-						*) set -- "${@}" "${__sx_num_mul_nat0_ch_a_}";;
-					esac
-					;;
-				*) set -- "${@}" "${__sx_num_mul_nat0_a_}" && ! :;;
-			esac
-		do :; done
-
-		__sx_num_mul_nat0_a_=0
-
-		# b を opt_x 桁ずつ分割しながら a の全チャンクと乗算
-		while
-			case "${__sx_num_mul_nat0_b_}" in
-				${__sx_num_mul_nat0_qchunk_b_}?*)
-					__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_%${__sx_num_mul_nat0_qchunk_b_}}"
-					__sx_num_mul_nat0_ch_b_="${__sx_num_mul_nat0_b_#"${__sx_num_mul_nat0_tmp_}"}"
-					__sx_num_mul_nat0_b_="${__sx_num_mul_nat0_tmp_}"
-
-					case "${__sx_num_mul_nat0_ch_b_}" in
-						0*[1-9]*) __sx_num_mul_nat0_ch_b_="${__sx_num_mul_nat0_ch_b_#"${__sx_num_mul_nat0_ch_b_%%[!0]*}"}";;
-						0*)
-							__sx_num_mul_nat0_shift_="${__sx_num_mul_nat0_zchunk_b_}${__sx_num_mul_nat0_shift_}"
-							continue
-							;;
-					esac
-					;;
-				*)
-					__sx_num_mul_nat0_ch_b_="${__sx_num_mul_nat0_b_}"
-					__sx_num_mul_nat0_b_=
-					;;
-			esac
-
-			__sx_num_mul_nat0_g_=
-			__sx_num_mul_nat0_carry_=
-
-			# チャンク同士の乗算と桁上げ処理
-			for __sx_num_mul_nat0_ch_a_ in "${@}"; do
-				__sx_num_mul_nat0_tmp_=$((__sx_num_mul_nat0_ch_b_ * __sx_num_mul_nat0_ch_a_ + ${__sx_num_mul_nat0_carry_:-0}))
-
-				case "$((__sx_num_mul_nat0_opt_y_ < ${#__sx_num_mul_nat0_tmp_}))" in
-					1)
-						__sx_num_mul_nat0_carry_="${__sx_num_mul_nat0_tmp_%${__sx_num_mul_nat0_qchunk_a_}}"
-						__sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_#"${__sx_num_mul_nat0_carry_}"}${__sx_num_mul_nat0_g_}"
-						;;
-					*)
-						__sx_num_mul_nat0_carry_=
-						case "${__sx_num_mul_nat0_tmp_}" in
-							${__sx_num_mul_nat0_qchunk_a_}) __sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_}${__sx_num_mul_nat0_g_}";;
-							*)
-								: "$((__sx_num_mul_nat0_tmp_ += 1${__sx_num_mul_nat0_zchunk_a_}))"
-								__sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_#1}${__sx_num_mul_nat0_g_}"
-								;;
-						esac
-						;;
-				esac
-			done
-
-			case "${__sx_num_mul_nat0_carry_}" in '')
-				__sx_num_mul_nat0_g_="${__sx_num_mul_nat0_g_#"${__sx_num_mul_nat0_g_%%[!0]*}"}"
-			esac
-
-			# 部分積を結果リストに追加
-			SX_CFG_UNSET_SOFT=2 __sx_num_add_nat0 __sx_num_mul_nat0_a_ "${__sx_num_mul_nat0_a_}" "${__sx_num_mul_nat0_carry_}${__sx_num_mul_nat0_g_}${__sx_num_mul_nat0_shift_}"
-
-			__sx_num_mul_nat0_shift_="${__sx_num_mul_nat0_zchunk_b_}${__sx_num_mul_nat0_shift_}"
-			M_STR_NE([|"${__sx_num_mul_nat0_b_}"|], [|''|])
-		do :; done
-	done
-
-	__sx_var_set "${__sx_num_mul_nat0_res_}=${__sx_num_mul_nat0_a_}${__sx_num_mul_nat0_endz_}"
-	unset CLEANUP
-}
-
-### sx_num_add_int - 複数の符号付き整数を加算する
-##
-## 使い方:
-##   sx_num_add_int 結果変数名 [数値1 [数値2 ...]]
-##
-## 説明:
-##   符号付き10進整数を加算する。正数群と負数群に分けて絶対値加算を行い、
-##   最後に絶対値を比較して符号を決定する。
-##
-## 終了ステータス:
-##   0  成功 (SX_EX_OK)
-##  64  引数不正 (SX_EX_USAGE) — 整数として不正な値が含まれる
-##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-
-define([|V|], [|__sx_num_add_int_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
-
-sx_num_add_int() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add_int "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-
-	__sx_num_add_int_res="${1}"
-	shift
-
-	__sx_num_is_int_base 10 "${@}" || {
-		unset CLEANUP
-		return "${SX_EX_USAGE}"
-	}
-
-	__sx_num_add_int "${__sx_num_add_int_res}" "${@}"
-	unset CLEANUP
-}
-
-### __sx_num_add_int - 複数の符号付き整数を加算する（内部用）
-##
-## 使い方:
-##   __sx_num_add_int 結果変数名 [数値1 [数値2 ...]]
-##
-## 説明:
-##   符号付き10進整数を加算する。まず正数と負数に分けてそれぞれ
-##   __sx_num_add_nat0 で絶対値加算を行い、最後に絶対値を比較し
-##   減算して符号を決定する。
-
-define([|V|], [|__sx_num_add_int_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(pos) V(neg) V(pos_sum) V(neg_sum) V(arg) V(acc)|])dnl
-
-__sx_num_add_int() {
-	__sx_num_add_int_res_="${1}"
-	shift
-
-	# Step 1: 正数と負数に分離
-	__sx_num_add_int_pos_=
-	__sx_num_add_int_neg_=
-
-	for __sx_num_add_int_arg_ in "${@}"; do
-		case "${__sx_num_add_int_arg_}" in
-			-*) __sx_num_add_int_neg_="${__sx_num_add_int_neg_} ${__sx_num_add_int_arg_#-}";;
-			*)  __sx_num_add_int_pos_="${__sx_num_add_int_pos_} ${__sx_num_add_int_arg_#+}";;
+		# 小数部の末尾 0 を除去する
+		case "${__sx_num_div_nat0_dec_}" in *0)
+			__sx_num_div_nat0_dec_="${__sx_num_div_nat0_dec_%"${__sx_num_div_nat0_dec_##*[!0]}"}";;
 		esac
-	done
-
-	# Step 2: 正数の合計
-	eval __sx_num_add_nat0 __sx_num_add_int_pos_sum_ "${__sx_num_add_int_pos_}"
-
-	# Step 3: 負数（絶対値）の合計
-	eval __sx_num_add_nat0 __sx_num_add_int_neg_sum_ "${__sx_num_add_int_neg_}"
-
-	# Step 4: 絶対値を比較して最終結果を決定
-	__sx_num_cmp_nat0 "${__sx_num_add_int_pos_sum_}" "${__sx_num_add_int_neg_sum_}" || case "${?}" in
-		1)
-			SX_CFG_UNSET_SOFT=2 __sx_num_sub_nat0 __sx_num_add_int_acc_ "${__sx_num_add_int_neg_sum_}" "${__sx_num_add_int_pos_sum_}"
-			__sx_num_add_int_acc_="-${__sx_num_add_int_acc_}"
-			;;
-		2) __sx_num_add_int_acc_=0;;
-		3) SX_CFG_UNSET_SOFT=2 __sx_num_sub_nat0 __sx_num_add_int_acc_ "${__sx_num_add_int_pos_sum_}" "${__sx_num_add_int_neg_sum_}";;
 	esac
 
-	__sx_var_set "${__sx_num_add_int_res_}=${__sx_num_add_int_acc_}"
+	# 小数部が空（小数が 0）なら "." を付けず整数商のまま
+	case "${__sx_num_div_nat0_dec_}" in ?*)
+		__sx_num_div_nat0_q_="${__sx_num_div_nat0_q_}.${__sx_num_div_nat0_dec_}"
+	esac
 
+	__sx_var_set "${__sx_num_div_nat0_res_}=${__sx_num_div_nat0_q_}"
 	unset CLEANUP
 }
 
-### sx_num_sub_int - 複数の符号付き整数を減算する
+### sx_num_divmod_int - 符号付き整数の除算で整数商と余剰を同時に求める（Truncated）
 ##
 ## 使い方:
-##   sx_num_sub_int 結果変数名 [数値1 [数値2 ...]]
+##   sx_num_divmod_int バインド形式 被除数 [除数]
 ##
 ## 説明:
-##   符号付き10進整数を減算する（第1引数から残りの引数を順次減算）。
-##   内部で第2引数以降を __sx_num_add_int で合計し、第1引数と符号付き減算する。
+##   符号付き10進整数の除算（Truncated 規約: 商はゼロ方向へ丸め、
+##   余剰は被除数と同じ符号を持つ）を行い、整数商と余剰を同時に求める。
+##   第一引数は商・余剰の割り当て先を指定する分配代入バインド形式（例: "q:r:"）。
+##   被除数は任意の符号付き整数、除数は 0 以外の符号付き整数。
+##   除数に 0 を指定した場合は引数不正とみなす。
+##   被除数・除数は省略可能で、省略した場合はそれぞれ 0、1 として扱われる。
 ##
 ## 終了ステータス:
-##   0  成功 (SX_EX_OK)
-##  64  引数不正 (SX_EX_USAGE) — 整数として不正な値が含まれる
-##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
 
-define([|V|], [|__sx_num_sub_int_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
+sx_num_divmod_int() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_divmod_int "${@}" || return; return 0;; esac
 
-sx_num_sub_int() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub_int "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_sub_int_res="${1}"
-	shift
+	__sx_num_is_int_base 10 ${2:+"${2}"} ${3:+"${3}"} && M_STR_NE([|"${3:+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
 
-	__sx_num_is_int_base 10 "${@}" || {
-		unset CLEANUP
-		return "${SX_EX_USAGE}"
-	}
-
-	__sx_num_sub_int "${__sx_num_sub_int_res}" "${@}"
-	unset CLEANUP
+	__sx_num_divmod_int "${@}"
 }
 
-define([|V|], [|__sx_num_sub_int_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(first) V(sign) V(sum) V(tmp)|])dnl
+define([|V|], [|__sx_num_divmod_int_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(q) V(r) V(us) V(vs)|])dnl
 
-__sx_num_sub_int() {
-	__sx_num_sub_int_res_="${1}"
-	__sx_num_sub_int_first_="${2-0}"
-	__sx_num_sub_int_sign_=
-
-	shift "$((1 + 0${2+1}))"
-
-	# $2...$n の合計（符号付き加算）
-	SX_CFG_UNSET_SOFT=2 __sx_num_add_int __sx_num_sub_int_sum_ "${@}"
-
-	# 合計が 0 なら第1引数がそのまま結果
-	case "${__sx_num_sub_int_sum_}" in 0)
-		__sx_var_set "${__sx_num_sub_int_res_}=${__sx_num_sub_int_first_#+}"
-		unset CLEANUP
-		return
-	esac
-
-	# a - sum を符号の組み合わせ4ケースに分けて直接演算
-	case "${__sx_num_sub_int_first_}${__sx_num_sub_int_sum_}" in
-		# ケース4: (-a) - (-s) = |s| - |a|
-		-*-*)
-			__sx_num_cmp_nat0 "${__sx_num_sub_int_first_#-}" "${__sx_num_sub_int_sum_#-}" || case "${?}" in
-				1) SX_CFG_UNSET_SOFT=2 __sx_num_sub_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_sum_#-}" "${__sx_num_sub_int_first_#-}";;
-				3)
-					__sx_num_sub_int_sign_='-'
-					SX_CFG_UNSET_SOFT=2 __sx_num_sub_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_first_#-}" "${__sx_num_sub_int_sum_#-}"
-					;;
-			esac
-			;;
-		# ケース3: (-a) - s = -(a + s)
-		-*) __sx_num_sub_int_sign_='-';&
-		# ケース2: a - (-s) = a + s
-		*-*) SX_CFG_UNSET_SOFT=2 __sx_num_add_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_first_#[+-]}" "${__sx_num_sub_int_sum_#-}";;
-		# ケース1: a - s
-		*)
-			__sx_num_cmp_nat0 "${__sx_num_sub_int_first_#+}" "${__sx_num_sub_int_sum_}" || case "${?}" in
-				1)
-					__sx_num_sub_int_sign_='-'
-					SX_CFG_UNSET_SOFT=2 __sx_num_sub_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_sum_}" "${__sx_num_sub_int_first_#+}"
-					;;
-				3) SX_CFG_UNSET_SOFT=2 __sx_num_sub_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_first_#+}" "${__sx_num_sub_int_sum_#+}";;
-			esac
-			;;
-	esac
-
-	__sx_var_set "${__sx_num_sub_int_res_}=${__sx_num_sub_int_sign_}${__sx_num_sub_int_tmp_-0}"
-	unset CLEANUP
-}
-
-### sx_num_mul_int - 複数の符号付き整数を乗算する
+### __sx_num_divmod_int - 符号付き整数の除算で整数商と余剰を同時に求める（内部用）
 ##
 ## 使い方:
-##   sx_num_mul_int 結果変数名 [数値1 [数値2 ...]]
+##   __sx_num_divmod_int バインド形式 被除数 [除数]
 ##
 ## 説明:
-##   符号付き10進整数を乗算する。負号の個数で符号を決定し、
-##   __sx_num_mul_nat0 で絶対値乗算を行う。
-##
-## 終了ステータス:
-##   0  成功 (SX_EX_OK)
-##  64  引数不正 (SX_EX_USAGE) — 整数として不正な値が含まれる
-##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   sx_num_divmod_int の内部実装。引数チェックは行わない。
+##   Truncated 規約: 商はゼロ方向へ丸め、余剰は被除数と同じ符号を持つ。
+##   絶対値どうしの除算（q0, r0）の後に符号のみを適用する。
+##   q = sign(u)×sign(v)×q0、r = sign(u)×r0 であり、
+##   q0 や r0 が 0 のときは "-0" を作らない。
+__sx_num_divmod_int() {
+	__sx_var_bind_init "${1}"
+	set -- "${1}" "${2:-0}" "${3:-1}"
+	__sx_num_divmod_int_us_=0
+	__sx_num_divmod_int_vs_=0
 
-define([|V|], [|__sx_num_mul_int_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
-
-sx_num_mul_int() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_int "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-
-	__sx_num_mul_int_res="${1}"
-	shift
-
-	__sx_num_is_int_base 10 "${@}" || {
-		unset CLEANUP
-		return "${SX_EX_USAGE}"
-	}
-
-	__sx_num_mul_int "${__sx_num_mul_int_res}" "${@}"
-	unset CLEANUP
-}
-
-define([|V|], [|__sx_num_mul_int_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(qty) V(arg) V(abs_args) V(sign) V(acc)|])dnl
-
-__sx_num_mul_int() {
-	__sx_num_mul_int_res_="${1}"
-	shift
-
-	__sx_num_mul_int_qty_=0
-	__sx_num_mul_int_abs_args_=
-
-	for __sx_num_mul_int_arg_ in "${@}"; do
-		case "${__sx_num_mul_int_arg_}" in
-			0 | +0 | -0)
-				__sx_var_set "${__sx_num_mul_int_res_}=0"
-				unset CLEANUP
-				return
-				;;
-			-*) __sx_num_mul_int_qty_="$((~__sx_num_mul_int_qty_))";;
-		esac
-
-		__sx_num_mul_int_abs_args_="${__sx_num_mul_int_abs_args_} ${__sx_num_mul_int_arg_#[+-]}"
-	done
-
-	case "$((__sx_num_mul_int_qty_ & 1))" in
-		1) __sx_num_mul_int_sign_=-;;
-		*) __sx_num_mul_int_sign_=;;
+	case "${2}" in -*)
+		__sx_num_divmod_int_us_=1
 	esac
 
-	eval SX_CFG_UNSET_SOFT=2 __sx_num_mul_nat0 __sx_num_mul_int_acc_ "${__sx_num_mul_int_abs_args_}"
+	case "${3}" in -*)
+		__sx_num_divmod_int_vs_=1
+	esac
 
-	__sx_var_set "${__sx_num_mul_int_res_}=${__sx_num_mul_int_sign_}${__sx_num_mul_int_acc_}"
+	__sx_num_divmod_nat0 '__sx_num_divmod_int_q_:__sx_num_divmod_int_r_:' "${2#[+-]}" "${3#[+-]}"
+
+	case "$((__sx_num_divmod_int_us_ ^ __sx_num_divmod_int_vs_))${__sx_num_divmod_int_q_}" in 1[!0]*)
+		__sx_num_divmod_int_q_="-${__sx_num_divmod_int_q_}"
+	esac
+
+	__sx_var_bind __sx_num_divmod_int_bind_ "${1}" "${__sx_num_divmod_int_q_}" || {
+		unset CLEANUP
+		return "${SX_EX_OK}"
+	}
+
+	case "${__sx_num_divmod_int_us_}${__sx_num_divmod_int_r_}" in 1[!0]*)
+		__sx_num_divmod_int_r_="-${__sx_num_divmod_int_r_}"
+	esac
+
+	__sx_var_bind __sx_num_divmod_int_bind_ "${__sx_num_divmod_int_bind_}" "${__sx_num_divmod_int_r_}" || :
 
 	unset CLEANUP
 }
@@ -6948,85 +5350,6 @@ __sx_num_divmod_nat0() {
 	unset CLEANUP
 }
 
-### sx_num_divmod_int - 符号付き整数の除算で整数商と余剰を同時に求める（Truncated）
-##
-## 使い方:
-##   sx_num_divmod_int バインド形式 被除数 [除数]
-##
-## 説明:
-##   符号付き10進整数の除算（Truncated 規約: 商はゼロ方向へ丸め、
-##   余剰は被除数と同じ符号を持つ）を行い、整数商と余剰を同時に求める。
-##   第一引数は商・余剰の割り当て先を指定する分配代入バインド形式（例: "q:r:"）。
-##   被除数は任意の符号付き整数、除数は 0 以外の符号付き整数。
-##   除数に 0 を指定した場合は引数不正とみなす。
-##   被除数・除数は省略可能で、省略した場合はそれぞれ 0、1 として扱われる。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
-
-sx_num_divmod_int() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_divmod_int "${@}" || return; return 0;; esac
-
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-
-	__sx_num_is_int_base 10 ${2:+"${2}"} ${3:+"${3}"} && M_STR_NE([|"${3:+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
-
-	__sx_num_divmod_int "${@}"
-}
-
-define([|V|], [|__sx_num_divmod_int_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(q) V(r) V(us) V(vs)|])dnl
-
-### __sx_num_divmod_int - 符号付き整数の除算で整数商と余剰を同時に求める（内部用）
-##
-## 使い方:
-##   __sx_num_divmod_int バインド形式 被除数 [除数]
-##
-## 説明:
-##   sx_num_divmod_int の内部実装。引数チェックは行わない。
-##   Truncated 規約: 商はゼロ方向へ丸め、余剰は被除数と同じ符号を持つ。
-##   絶対値どうしの除算（q0, r0）の後に符号のみを適用する。
-##   q = sign(u)×sign(v)×q0、r = sign(u)×r0 であり、
-##   q0 や r0 が 0 のときは "-0" を作らない。
-__sx_num_divmod_int() {
-	__sx_var_bind_init "${1}"
-	set -- "${1}" "${2:-0}" "${3:-1}"
-	__sx_num_divmod_int_us_=0
-	__sx_num_divmod_int_vs_=0
-
-	case "${2}" in -*)
-		__sx_num_divmod_int_us_=1
-	esac
-
-	case "${3}" in -*)
-		__sx_num_divmod_int_vs_=1
-	esac
-
-	__sx_num_divmod_nat0 '__sx_num_divmod_int_q_:__sx_num_divmod_int_r_:' "${2#[+-]}" "${3#[+-]}"
-
-	case "$((__sx_num_divmod_int_us_ ^ __sx_num_divmod_int_vs_))${__sx_num_divmod_int_q_}" in 1[!0]*)
-		__sx_num_divmod_int_q_="-${__sx_num_divmod_int_q_}"
-	esac
-
-	__sx_var_bind __sx_num_divmod_int_bind_ "${1}" "${__sx_num_divmod_int_q_}" || {
-		unset CLEANUP
-		return "${SX_EX_OK}"
-	}
-
-	case "${__sx_num_divmod_int_us_}${__sx_num_divmod_int_r_}" in 1[!0]*)
-		__sx_num_divmod_int_r_="-${__sx_num_divmod_int_r_}"
-	esac
-
-	__sx_var_bind __sx_num_divmod_int_bind_ "${__sx_num_divmod_int_bind_}" "${__sx_num_divmod_int_r_}" || :
-
-	unset CLEANUP
-}
-
 ### sx_num_edivmod_int - ユークリッド除算で整数商と余剰を同時に求める
 ##
 ## 使い方:
@@ -7120,232 +5443,1908 @@ __sx_num_edivmod_int() {
 	unset CLEANUP
 }
 
-### sx_num_div_nat0 - 絶対値の除算で実数商（整数商 + 小数部）を求める
+### sx_num_is_fixed - すべての引数が 10 進の実数表記（固定小数点形式）であるか確認する
 ##
 ## 使い方:
-##   sx_num_div_nat0 結果変数名 小数桁数 被除数 [除数1 [除数2 ...]]
+##   sx_num_is_fixed [文字列1 [文字列2 ...]]
 ##
 ## 説明:
-##   符号なし10進整数の絶対値の除算を行い、実数商（整数商 + 小数部）を求める。
-##   すべての除数を乗算した値を単一の除数として扱い、被除数をその除数で除算する。
-##   小数部は小数桁数（最大桁数）までを floor（切り捨て）で求め、末尾の 0 は除去される。
-##   小数部が 0 になる場合は実数商 = 整数商となる。
-##   （例: d 2 100 3 → d=33.33 / d 2 5 10 → d=0.5 / d 3 100 2 5 → d=10）
-##   被除数は 0 以上の自然数、各除数は 1 以上の自然数、小数桁数は 0 以上の自然数。
-##   除数に 0 を指定した場合は引数不正とみなす。
-##   小数桁数・被除数・除数は省略可能で、省略した場合はそれぞれ 0、0、1 として扱われる
-##   （小数桁数省略時は実数商 = 整数商、除数省略時は被除数がそのまま実数商）。
+##   任意で符号（+ または -）を持つ 10 進の実数表記（固定小数点形式）であるかを確認する。
+##   整数部は 10 進整数として検査し、小数点を含む場合は小数部に 1 文字以上の数字を要求する。
+##   したがって、"1.0" は許可されるが "1." や ".1" は許可されない。
 ##
 ## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+##    0  すべて 10 進の実数表記である (SX_EX_OK)
+##    1  10 進の実数表記ではない値が含まれる
+sx_num_is_fixed() {
+	for __sx_num_is_fixed_arg in "${@}"; do
+		case "${__sx_num_is_fixed_arg}" in *.*)
+			sx_str_is_digit "${__sx_num_is_fixed_arg#*.}"
+		esac && __sx_num_is_int_base 10 "${__sx_num_is_fixed_arg%%.*}" || {
+			unset __sx_num_is_fixed_arg
+			return 1
+		}
+	done
 
-define([|V|], [|__sx_num_div_nat0_$1|])dnl
-define([|CLEANUP|], [|V(res) V(dp) V(u)|])dnl
+	unset __sx_num_is_fixed_arg
+}
 
-sx_num_div_nat0() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_nat0 "${@}" || return; return 0;; esac
+### sx_num_is_float - すべての引数が 10 進の実数表記（浮動小数点形式）であるか確認する
+##
+## 使い方:
+##   sx_num_is_float [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_fixed に加えて、指数表記（e または E による表記）を許可する。
+##   指数部は 10 進整数として検査する。
+##
+## 終了ステータス:
+##    0  すべて 10 進の実数表記である (SX_EX_OK)
+##    1  10 進の実数表記ではない値が含まれる
+sx_num_is_float() {
+	for __sx_num_is_float_arg in "${@}"; do
+		case "${__sx_num_is_float_arg}" in *[Ee]*)
+			__sx_num_is_int_base 10 "${__sx_num_is_float_arg#*[Ee]}"
+		esac && sx_num_is_fixed "${__sx_num_is_float_arg%%[Ee]*}" || {
+			unset __sx_num_is_float_arg
+			return 1
+		}
+	done
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+	unset __sx_num_is_float_arg
+}
+
+### sx_num_is_float_safe - すべての引数が安全な範囲の 10 進の実数表記であるか確認する
+##
+## 使い方:
+##   sx_num_is_float_safe [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_float による検証に加えて、セキュリティ上の理由（DoS 対策）から、
+##   指数の絶対値を 4 桁（9999）までに制限する。
+##
+## 終了ステータス:
+##    0  すべて安全な 10 進の実数表記である (SX_EX_OK)
+##    1  安全ではない、または 10 進の実数表記ではない値が含まれる
+sx_num_is_float_safe() {
+	for __sx_num_is_float_safe_arg in "${@}"; do
+		case "${__sx_num_is_float_safe_arg}" in
+			# DoS 対策: 指数の絶対値は 4 桁まで
+			*[Ee][+-]?????* | *[Ee][!+-]????*) ! :;;
+			*) sx_num_is_float "${__sx_num_is_float_safe_arg}";;
+		esac || {
+			unset __sx_num_is_float_safe_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_float_safe_arg
+}
+
+### sx_num_is_int - すべての引数が整数であるか確認する
+##
+## 使い方:
+##   sx_num_is_int [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   任意で符号（+ または -）を持つ整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて整数である (SX_EX_OK)
+##    1  整数ではない値が含まれる
+sx_num_is_int() {
+	for __sx_num_is_int_arg in "${@}"; do
+		sx_num_is_nat0 "${__sx_num_is_int_arg#[+-]}" || {
+			unset __sx_num_is_int_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_int_arg
+}
+
+### sx_num_is_int_base - 指定された基数で整数か確認する
+##
+## 使い方:
+##   sx_num_is_int_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が、任意で符号（+ または -）を持つ整数であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
+##
+## 終了ステータス:
+##    0  すべて整数である (SX_EX_OK)
+##    1  整数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
+sx_num_is_int_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_base "${@}" || return; return 0;; esac
+
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_int_base "${@}"
+}
+
+### __sx_num_is_int_base - 指定された基数で整数か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_int_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_int_base の内部実装。基数チェックを行わない。
+__sx_num_is_int_base() {
+	__sx_num_is_int_base_rad_="${1}"
+	shift
+
+	for __sx_num_is_int_base_arg_ in "${@}"; do
+		__sx_num_is_nat0_base "${__sx_num_is_int_base_rad_}" "${__sx_num_is_int_base_arg_#[+-]}" || {
+			unset __sx_num_is_int_base_rad_ __sx_num_is_int_base_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_int_base_rad_ __sx_num_is_int_base_arg_
+}
+
+### sx_num_is_int_fit - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
+##
+## 使い方:
+##   sx_num_is_int_fit ビット幅 [整数1 [整数2 ...]]
+##
+## 説明:
+##   第1引数で指定されたビット幅の符号付き整数として、
+##   後続のすべての引数が、その範囲内の符号付き整数であるか確認する。
+##   8進数 (0...)、16進数 (0x...) 形式もサポートする。
+##
+## 終了ステータス:
+##    0  すべて範囲内である (SX_EX_OK)
+##    1  範囲内に収まらない値が含まれる（ビット幅は正しい）
+##   64  ビット幅指定が不正、または整数として不正な値が含まれる (SX_EX_USAGE)
+sx_num_is_int_fit() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_fit "${@}" || return; return 0;; esac
+
+	case "${1-}" in
+		8 | 16 | 32 | 64 | 128) ;;
+		*) return "${SX_EX_USAGE}";;
+	esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_int "${@}" || return
+
+	__sx_num_is_int_fit "${@}" || return
+}
+
+### __sx_num_is_int_fit - 指定されたビット幅の符号付き整数の範囲内か確認する（内部ロジック）
+__sx_num_is_int_fit() {
+	__sx_num_is_int_fit_bit_="${1}"
+	shift
+
+	for __sx_num_is_int_fit_arg_ in "${@}"; do
+		# $1: 値（符号正規化）, $2: 数値部分の長さ
+		set -- "${__sx_num_is_int_fit_arg_#+}" "${#__sx_num_is_int_fit_arg_}"
+		case "${1}" in +* | -*)
+			set -- "${1}" "$((${2} - 1))"
+		esac
+
+		case "${1}" in
+			0[Xx]* | -0[Xx]*)
+			# 基数16のパラメータ計算
+			: ${__sx_num_is_int_fit_xlen_=$((__sx_num_is_int_fit_bit_ / 4 + 2))}
+
+				if
+					M_NUM_LT([|__sx_num_is_int_fit_xlen_|], [|${2}|]) || {
+						M_STR_EQ([|"${__sx_num_is_int_fit_xlen_}"|], [|"${2}"|]) &&
+						M_STR_MATCH([|"${1}"|], [|-0[Xx][9ABCDEFabcdef]*|], [|-0[Xx]8*[!0]*|], [|0[Xx][89ABCDEFabcdef]*|])
+					}
+				then
+					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+					return 1
+				fi
+				;;
+			0?* | -0?*)
+				# 基数8のパラメータ計算
+				: ${__sx_num_is_int_fit_olenn_=$(((__sx_num_is_int_fit_bit_ - 1) / 3 + 2))}
+				: ${__sx_num_is_int_fit_oleadn_=$((1 << ((__sx_num_is_int_fit_bit_ - 1) % 3)))}
+				: ${__sx_num_is_int_fit_olenp_=$((__sx_num_is_int_fit_olenn_ - (__sx_num_is_int_fit_oleadn_ == 1)))}
+				: ${__sx_num_is_int_fit_oleadp_=$((__sx_num_is_int_fit_oleadn_ == 1 ? 7 : __sx_num_is_int_fit_oleadn_ - 1))}
+
+				# $3: 制限長さ, $4: 制限先頭文字
+				case "${1}" in
+					-*) set -- "${1}" "${2}" "${__sx_num_is_int_fit_olenn_}" "${__sx_num_is_int_fit_oleadn_}";;
+					*)  set -- "${1}" "${2}" "${__sx_num_is_int_fit_olenp_}" "${__sx_num_is_int_fit_oleadp_}";;
+				esac
+
+				if
+					M_NUM_LT([|${3}|], [|${2}|]) || {
+						M_STR_EQ([|"${3}"|], [|"${2}"|]) &&
+						M_STR_MATCH([|"${1}"|], [|-0[!1-${4}]*|], [|-0${4}*[!0]*|], [|0[!1-${4}-]*|])
+					}
+				then
+					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+					return 1
+				fi
+				;;
+			*)
+				__sx_num_is_int_fit_dec "${__sx_num_is_int_fit_bit_}" "${__sx_num_is_int_fit_arg_}" || {
+					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+					return 1
+				}
+				;;
+			esac
+	done
+
+	unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+}
+
+### sx_num_is_int_fit_dec - すべての引数が指定されたビット幅の符号付き10進整数の範囲内か確認する
+##
+## 使い方:
+##   sx_num_is_int_fit_dec ビット幅 [整数1 [整数2 ...]]
+##
+## 説明:
+##   第1引数で指定されたビット幅の符号付き整数として、
+##   後続のすべての引数が、その範囲内の10進整数であるか確認する。
+##   8進数 (0...) や 16進数 (0x...) 形式はサポートしない。
+##
+## 終了ステータス:
+##    0  すべて範囲内である (SX_EX_OK)
+##    1  範囲内に収まらない値が含まれる（ビット幅は正しい）
+##   64  ビット幅指定が不正、または整数として不正な値が含まれる (SX_EX_USAGE)
+sx_num_is_int_fit_dec() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_fit_dec "${@}" || return; return 0;; esac
+
+	case "${1-}" in
+		8 | 16 | 32 | 64 | 128) ;;
+		*) return "${SX_EX_USAGE}";;
+	esac
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_base 10 "${@}" || return
+
+	__sx_num_is_int_fit_dec "${@}" || return
+}
+
+__sx_num_is_int_fit_dec() {
+	__sx_num_is_int_fit_dec_bit_="${1}"
+	shift
+
+	for __sx_num_is_int_fit_dec_arg_ in "${@}"; do
+		case "${__sx_num_is_int_fit_dec_arg_}" in
+			-*) __sx_num_is_int_fit_dec_e_=8;;
+			*) __sx_num_is_int_fit_dec_e_=7;;
+		esac
+
+		__sx_num_is_int_fit_dec_arg_=${__sx_num_is_int_fit_dec_arg_#[+-]}
+
+		case "${__sx_num_is_int_fit_dec_bit_}" in
+			8)
+				case "${#__sx_num_is_int_fit_dec_arg_}" in
+					[12]) continue;;
+					3)
+						case "${__sx_num_is_int_fit_dec_arg_}" in
+							1[01]* | 12[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+						esac
+						;;
+				esac
+				;;
+			16)
+				case "${#__sx_num_is_int_fit_dec_arg_}" in
+					[1-4]) continue;;
+					5)
+						case "${__sx_num_is_int_fit_dec_arg_}" in
+							[12]* | 3[01]* | 32[0-6]* | 327[0-5]* | \
+							3276[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+						esac
+						;;
+				esac
+				;;
+			32)
+				case "${#__sx_num_is_int_fit_dec_arg_}" in
+					[1-9]) continue;;
+					10)
+						case "${__sx_num_is_int_fit_dec_arg_}" in
+							1* | 20* | 21[0-3]* | 214[0-6]* | 2147[0-3]* | 21474[0-7]* | \
+							214748[0-2]* | 2147483[0-5]* | 21474836[0-3]* | \
+							214748364[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+						esac
+						;;
+				esac
+				;;
+			64)
+				case "${#__sx_num_is_int_fit_dec_arg_}" in
+					[1-9] | 1[0-8]) continue;;
+					19)
+						case "${__sx_num_is_int_fit_dec_arg_}" in
+							[1-8]* | 9[01]* | 92[01]* | 922[0-2]* | 9223[0-2]* | \
+							92233[0-6]* | 922337[01]* | 92233720[0-2]* | 922337203[0-5]* |\
+							9223372036[0-7]* | 92233720368[0-4]* | 922337203685[0-3]* | \
+							9223372036854[0-6]* | 92233720368547[0-6]* | \
+							922337203685477[0-4]* | 9223372036854775[0-7]* | \
+							922337203685477580[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+						esac
+						;;
+				esac
+				;;
+			128)
+				case "${#__sx_num_is_int_fit_dec_arg_}" in
+					[1-9] | [12][0-9] | 3[0-8]) continue;;
+					39)
+						case "${__sx_num_is_int_fit_dec_arg_}" in
+							1[0-6]* | 1700* | 1701[0-3]* | 170140* | 1701410* | \
+							1701411[0-7]* | 17014118[0-2]* | 170141183[0-3]* | \
+							1701411834[0-5]* | 170141183460[0-3]* | 1701411834604[0-5]* | \
+							17014118346046[0-8]* | 170141183460469[01]* | \
+							1701411834604692[0-2]* | 170141183460469230* | \
+							170141183460469231[0-6]* | 1701411834604692317[0-2]* | \
+							170141183460469231730* | 170141183460469231731[0-5]* | \
+							1701411834604692317316[0-7]* | 17014118346046923173168[0-6]* | \
+							170141183460469231731687[0-2]* | \
+							17014118346046923173168730[0-2]* | \
+							170141183460469231731687303[0-6]* | \
+							17014118346046923173168730370* | \
+							17014118346046923173168730371[0-4]* | \
+							170141183460469231731687303715[0-7]* | \
+							1701411834604692317316873037158[0-7]* | \
+							17014118346046923173168730371588[0-3]* | \
+							1701411834604692317316873037158840* | \
+							17014118346046923173168730371588410[0-4]* | \
+							170141183460469231731687303715884105[0-6]* | \
+							1701411834604692317316873037158841057[01]* | \
+							17014118346046923173168730371588410572[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+						esac
+						;;
+				esac
+				;;
+		esac
+
+		unset __sx_num_is_int_fit_dec_bit_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
+		return 1
+	done
+
+	unset __sx_num_is_int_fit_dec_bit_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
+}
+
+### sx_num_is_int_safe - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
+##
+## 使い方:
+##   sx_num_is_int_safe [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて標準範囲内の整数である (SX_EX_OK)
+##    1  範囲外、または整数でない値が含まれる
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_is_int_safe() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_safe "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_nat0_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe "${@}" || return
+}
 
-	__sx_num_div_nat0_res="${1}"
-	__sx_num_div_nat0_dp="${2:-0}"
-	__sx_num_div_nat0_u="${3:-0}"
-	shift "$((0${2+1} + 0${3+1} + 1))"
+### __sx_num_is_int_safe - 設定された数値範囲に基づいて検証を行う（内部用）
+##
+## 使い方:
+##   __sx_num_is_int_safe [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_int_safe の内部実装。引数チェックは行わない。
+__sx_num_is_int_safe() {
+	__sx_num_is_int_width "${SX_CFG_NUM_RANGE}" "${@}" || return
+}
 
-	__sx_num_is_nat1_base 10 "${@}" || {
-		unset CLEANUP
-		return "${SX_EX_USAGE}"
+### sx_num_is_int_safe_inv - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）で符号反転可能な整数か確認する
+##
+## 使い方:
+##   sx_num_is_int_safe_inv [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_int_safe と同様に SX_CFG_NUM_RANGE に基づいて整数を検証するが、
+##   INT_MIN（符号反転が不可能な最小値）を許可しない。
+##   すなわち -(2^(n-1)-1) ～ 2^(n-1)-1 の範囲の整数のみを受理する。
+##
+## 終了ステータス:
+##    0  すべて範囲内の符号反転可能な整数である (SX_EX_OK)
+##    1  範囲外、または整数でない値が含まれる
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_is_int_safe_inv() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_safe_inv "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_is_int_safe_inv "${@}" || return
+}
+
+### __sx_num_is_int_safe_inv - 符号反転可能な整数の検証を行う（内部用）
+##
+## 使い方:
+##   __sx_num_is_int_safe_inv [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_int_safe_inv の内部実装。引数チェックは行わない。
+__sx_num_is_int_safe_inv() {
+	__sx_num_is_int_safe "${@}" || return
+
+	eval "__sx_num_is_int_safe_inv_min_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MIN}\""
+
+	for __sx_num_is_int_safe_inv_arg_ in "${@}"; do
+		case "${__sx_num_is_int_safe_inv_arg_}" in "${__sx_num_is_int_safe_inv_min_}")
+			unset __sx_num_is_int_safe_inv_min_ __sx_num_is_int_safe_inv_arg_
+			return 1
+		esac
+	done
+
+	unset __sx_num_is_int_safe_inv_min_ __sx_num_is_int_safe_inv_arg_
+}
+
+### sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
+##
+## 使い方:
+##   sx_num_is_int_width ビット幅 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定されたビット幅 (8, 16, 32, 64, 128) において、
+##   後続のすべての引数が、その範囲内の符号付き整数であるか確認する。
+##   8進数 (0...)、16進数 (0x...) 形式もサポートする。
+##
+## 終了ステータス:
+##    0  すべて範囲内である (SX_EX_OK)
+##    1  範囲外、または整数ではない値が含まれる
+##   64  ビット幅指定が不正 (SX_EX_USAGE)
+sx_num_is_int_width() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_width "${@}" || return; return 0;; esac
+
+	case "${1-}" in
+		8 | 16 | 32 | 64 | 128) ;;
+		*) return "${SX_EX_USAGE}";;
+	esac
+
+	__sx_num_is_int_width "${@}" || return
+}
+
+### __sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する（内部用）
+__sx_num_is_int_width() {
+	__sx_num_is_int_width_bits_="${1}"
+	shift
+
+	sx_num_is_int "${@}" || {
+		unset __sx_num_is_int_width_bits_
+		return 1
 	}
 
-	__sx_num_div_nat0 "${__sx_num_div_nat0_res}" "${__sx_num_div_nat0_dp}" "${__sx_num_div_nat0_u}" "${@}"
-	unset CLEANUP
+	set -- "${__sx_num_is_int_width_bits_}" "${@}"
+	unset __sx_num_is_int_width_bits_
+
+	__sx_num_is_int_fit "${@}" || return
 }
 
-define([|V|], [|__sx_num_div_nat0_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q) V(r) V(dec) V(zr) V(qm)|])dnl
-
-### __sx_num_div_nat0 - 絶対値の除算で実数商（整数商 + 小数部）を求める（内部用）
+### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
 ##
 ## 使い方:
-##   __sx_num_div_nat0 結果変数名 小数桁数 被除数 [除数1 [除数2 ...]]
-##
-## 説明:
-##   sx_num_div_nat0 の内部実装。引数チェックは行わない。
-##   前提: 小数桁数は 0 以上の自然数、被除数は 0 以上の自然数、
-##   すべての除数は 1 以上の自然数であること。
-##
-##   実行フロー（ステップ 1〜3）:
-##   1) すべての除数を __sx_num_mul_nat0 で乗算して単一の除数 den を求める
-##      （除数が無い場合は 1）。
-##   2) __sx_num_divmod_nat0 で整数商 q と余剰 r を求める。
-##   3) 小数桁数 dp が 1 以上で余剰 r が 0 でない場合、小数部 dec を
-##      floor(余剰 × 10^dp ÷ den) の商として dp 桁にゼロ埋めした文字列で求め、
-##      末尾の 0 を除去する。dec が空（小数が 0）になれば整数商 q をそのまま返す。
-##      ゼロ埋めの '?'×桁数 / "0"×桁数 は SX_QM / SX_ZR 定数（1〜37 桁）から参照し、
-##      37 桁を超える場合のみ __sx_str_rep で生成する。
-
-__sx_num_div_nat0() {
-	# ステップ 1: 引数の取得（結果変数名、小数桁数 dp、被除数 u、除数群）
-	__sx_num_div_nat0_res_="${1}"
-	__sx_num_div_nat0_dp_="${2:-0}"
-	__sx_num_div_nat0_u_="${3:-0}"
-	shift 3
-
-	case "${__sx_num_div_nat0_u_}" in 0 | +0 | -0)
-		__sx_var_set "${__sx_num_div_nat0_res_}=0"
-		unset CLEANUP
-		return "${SX_EX_OK}"
-	esac
-
-	# ステップ 2: すべての除数を乗算して単一の除数にする（除数が無い場合は 1）
-	__sx_num_mul_nat0 __sx_num_div_nat0_den_ "${@}"
-
-	# ステップ 3: 整数商と余剰を求める
-	__sx_num_divmod_nat0 "__sx_num_div_nat0_q_:__sx_num_div_nat0_r_:" "${__sx_num_div_nat0_u_}" "${__sx_num_div_nat0_den_}"
-
-	# ステップ 4: 小数部の導出（dp が 1 以上かつ余剰が 0 でない場合のみ）
-	#   dec = floor(余剰 × 10^dp ÷ den) を dp 桁にゼロ埋めした文字列（末尾 0 は除去）
-	__sx_num_div_nat0_dec_=
-
-	case "${__sx_num_div_nat0_dp_}${__sx_num_div_nat0_r_}" in [!0]*[!0]*)
-		# "0"×dp は SX_ZR 定数（1〜37 桁）から参照し、超過時のみ str_rep で生成する
-		if __sx_var_is_set "SX_ZR_${__sx_num_div_nat0_dp_}"; then
-			eval "__sx_num_div_nat0_zr_=\"\${SX_ZR_${__sx_num_div_nat0_dp_}}\""
-		else
-			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_div_nat0_zr_ 0 "${__sx_num_div_nat0_dp_}"
-		fi
-
-		# 小数部 = 余剰 × 10^dp ÷ den の整数商（この除算の余りは不要）
-		__sx_num_divmod_nat0 "__sx_num_div_nat0_dec_:" "${__sx_num_div_nat0_r_}${__sx_num_div_nat0_zr_}" "${__sx_num_div_nat0_den_}"
-
-		# dec が dp 桁未満の場合のみ先頭をゼロ埋めする（len == dp なら定数参照を丸ごとスキップ）
-		if M_STR_NE([|"${#__sx_num_div_nat0_dec_}"|], [|"${__sx_num_div_nat0_dp_}"|]); then
-			# 前置 "0"×dp から剥ぎ取る '?'×len(dec) は SX_QM 定数（1〜37 桁）から参照する
-			if __sx_var_is_set "SX_QM_${#__sx_num_div_nat0_dec_}"; then
-				eval "__sx_num_div_nat0_qm_=\"\${SX_QM_${#__sx_num_div_nat0_dec_}}\""
-			else
-				SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_div_nat0_qm_ '?' "${#__sx_num_div_nat0_dec_}"
-			fi
-
-			# "0"×dp を前置して '?'×len(dec) を剥ぎ、末尾 dp 桁だけを採用する
-			# （dec は高々 dp 桁のため、桁不足のときのみこのパスに来る）
-			__sx_num_div_nat0_dec_="${__sx_num_div_nat0_zr_}${__sx_num_div_nat0_dec_}"
-
-			# '?'×len(dec) は ? がパターン一致として働く必要があるため、
-			# 内側の展開は意図的にクォートしない（クォートすると ? がリテラル化して剥ぎ取りが失敗する）
-			__sx_num_div_nat0_dec_="${__sx_num_div_nat0_dec_#${__sx_num_div_nat0_qm_}}"
-		fi
-
-		# 小数部の末尾 0 を除去する
-		case "${__sx_num_div_nat0_dec_}" in *0)
-			__sx_num_div_nat0_dec_="${__sx_num_div_nat0_dec_%"${__sx_num_div_nat0_dec_##*[!0]}"}";;
-		esac
-	esac
-
-	# 小数部が空（小数が 0）なら "." を付けず整数商のまま
-	case "${__sx_num_div_nat0_dec_}" in ?*)
-		__sx_num_div_nat0_q_="${__sx_num_div_nat0_q_}.${__sx_num_div_nat0_dec_}"
-	esac
-
-	__sx_var_set "${__sx_num_div_nat0_res_}=${__sx_num_div_nat0_q_}"
-	unset CLEANUP
-}
-
-### sx_num_div_int - 符号付き整数の除算で実数商（整数商 + 小数部）を求める
-##
-## 使い方:
-##   sx_num_div_int 結果変数名 小数桁数 被除数 [除数1 [除数2 ...]]
-##
-## 説明:
-##   符号付き10進整数の除算を行い、実数商（整数商 + 小数部）を求める。
-##   すべての除数を乗算した値を単一の除数として扱い、被除数をその除数で除算する。
-##   小数部は小数桁数（最大桁数）までを floor（切り捨て）で求め、末尾の 0 は除去される。
-##   小数部が 0 になる場合は実数商 = 整数商となる。
-##   （例: d 2 -100 3 → d=-33.33 / d 2 5 -10 → d=-0.5 / d 3 -100 -2 5 → d=10）
-##   被除数は任意の符号付き整数、各除数は 0 以外の符号付き整数、小数桁数は 0 以上の自然数。
-##   除数に 0 を指定した場合は引数不正とみなす。
-##   小数桁数・被除数・除数は省略可能で、省略した場合はそれぞれ 0、0、1 として扱われる
-##   （小数桁数省略時は実数商 = 整数商、除数省略時は被除数がそのまま実数商）。
+##   sx_num_is_nat0 [文字列1 [文字列2 ...]]
 ##
 ## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+##    0  すべて 0 以上の自然数である (SX_EX_OK)
+##    1  自然数ではない値が含まれる
+sx_num_is_nat0() {
+	for __sx_num_is_nat0_arg in "${@}"; do
+		case "${__sx_num_is_nat0_arg}" in
+			0[Xx]*) __sx_num_is_nat0_base 16 "${__sx_num_is_nat0_arg}";;
+			0?*) __sx_num_is_nat0_base 8 "${__sx_num_is_nat0_arg}";;
+			*) __sx_num_is_nat0_base 10 "${__sx_num_is_nat0_arg}";;
+		esac || {
+			unset __sx_num_is_nat0_arg
+			return 1
+		}
+	done
 
-define([|V|], [|__sx_num_div_int_$1|])dnl
-define([|CLEANUP|], [|V(res) V(dp) V(u) V(v)|])dnl
+	unset __sx_num_is_nat0_arg
+}
 
-sx_num_div_int() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_int "${@}" || return; return 0;; esac
+### sx_num_is_nat0_base - 指定された基数で0以上の自然数か確認する
+##
+## 使い方:
+##   sx_num_is_nat0_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が 0 以上の自然数（符号なし整数）であるか確認する。
+##   基数 8 および 16 では各々のプレフィックス（8: '0', 16: '0x'/'0X'）を必須とする。
+##   基数 10 ではプレフィックスを認めず、また 0 以外の数値における先行する 0 も認めない。
+##
+## 終了ステータス:
+##    0  すべて 0 以上の自然数である (SX_EX_OK)
+##    1  自然数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
+sx_num_is_nat0_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat0_base "${@}" || return; return 0;; esac
+
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_nat0_base "${@}"
+}
+
+### __sx_num_is_nat0_base - 指定された基数で0以上の自然数か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_nat0_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_nat0_base の内部実装。基数チェックを行わない。
+__sx_num_is_nat0_base() {
+	eval "
+		__sx_num_is_nat0_base_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
+		__sx_num_is_nat0_base_char_=\"\${SX_NUM_BASE${1}_CHARS}\"
+	"
+	shift
+
+	for __sx_num_is_nat0_base_arg_ in "${@}"; do
+		case "${__sx_num_is_nat0_base_arg_}" in
+			${__sx_num_is_nat0_base_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_nat0_base_arg_#${__sx_num_is_nat0_base_pfix_}}"|] , [|''|], [|0?*|], [|*[!"${__sx_num_is_nat0_base_char_}"]*|]);;
+			*) ! :;;
+		esac || {
+			unset __sx_num_is_nat0_base_pfix_ __sx_num_is_nat0_base_char_ __sx_num_is_nat0_base_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nat0_base_arg_ __sx_num_is_nat0_base_pfix_ __sx_num_is_nat0_base_char_
+}
+
+### sx_num_is_nat0_safe - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）の自然数（0以上）か確認する
+##
+## 使い方:
+##   sx_num_is_nat0_safe [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて標準範囲内の自然数である (SX_EX_OK)
+##    1  範囲外、または自然数でない値が含まれる
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_is_nat0_safe() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat0_safe "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_is_nat0_safe "${@}" || return
+}
+
+### __sx_num_is_nat0_safe - 設定された数値範囲に基づいて自然数の検証を行う（内部用）
+##
+## 使い方:
+##   __sx_num_is_nat0_safe [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_nat0_safe の内部実装。引数チェックは行わない。
+__sx_num_is_nat0_safe() {
+	sx_num_is_nat0 "${@}" || return
+	__sx_num_is_int_fit "${SX_CFG_NUM_RANGE}" "${@}" || return
+}
+
+### sx_num_is_nat1 - すべての引数が 1 以上の自然数（符号なし整数） であるか確認する
+##
+## 使い方:
+##   sx_num_is_nat1 [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて 1 以上の自然数である (SX_EX_OK)
+##    1  1 以上の自然数ではない値が含まれる
+sx_num_is_nat1() {
+	for __sx_num_is_nat1_arg in "${@}"; do
+		case "${__sx_num_is_nat1_arg}" in
+			0[Xx]*) __sx_num_is_nat1_base 16 "${__sx_num_is_nat1_arg}";;
+			0?*) __sx_num_is_nat1_base 8 "${__sx_num_is_nat1_arg}";;
+			*) __sx_num_is_nat1_base 10 "${__sx_num_is_nat1_arg}";;
+		esac || {
+			unset __sx_num_is_nat1_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nat1_arg
+}
+
+### sx_num_is_nat1_base - 指定された基数で1以上の自然数か確認する
+##
+## 使い方:
+##   sx_num_is_nat1_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が 1 以上の自然数（符号なし整数）であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
+##
+## 終了ステータス:
+##    0  すべて 1 以上の自然数である (SX_EX_OK)
+##    1  1 以上の自然数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
+sx_num_is_nat1_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat1_base "${@}" || return; return 0;; esac
+
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_nat1_base "${@}"
+}
+
+### __sx_num_is_nat1_base - 指定された基数で1以上の自然数か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_nat1_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_nat1_base の内部実装。基数チェックを行わない。
+__sx_num_is_nat1_base() {
+	eval "
+		__sx_num_is_nat1_base_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
+		__sx_num_is_nat1_base_char_=\"\${SX_NUM_BASE${1}_CHARS}\"
+	"
+	shift
+
+	for __sx_num_is_nat1_base_arg_ in "${@}"; do
+		case "${__sx_num_is_nat1_base_arg_}" in
+			${__sx_num_is_nat1_base_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_nat1_base_arg_#${__sx_num_is_nat1_base_pfix_}}"|], [|''|], [|0*|], [|*[!"${__sx_num_is_nat1_base_char_}"]*|]);;
+			*) ! :;;
+		esac || {
+			unset __sx_num_is_nat1_base_pfix_ __sx_num_is_nat1_base_char_ __sx_num_is_nat1_base_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nat1_base_arg_ __sx_num_is_nat1_base_pfix_ __sx_num_is_nat1_base_char_
+}
+
+### sx_num_is_nat1_safe - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）の自然数（1以上）か確認する
+##
+## 使い方:
+##   sx_num_is_nat1_safe [文字列1 [文字列2 ...]]
+##
+## 終了ステータス:
+##    0  すべて標準範囲内の 1 以上の自然数である (SX_EX_OK)
+##    1  範囲外、または 1 以上の自然数でない値が含まれる
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_is_nat1_safe() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat1_safe "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_is_nat1_safe "${@}" || return
+}
+
+### __sx_num_is_nat1_safe - 設定された数値範囲に基づいて 1 以上の自然数の検証を行う（内部用）
+##
+## 使い方:
+##   __sx_num_is_nat1_safe [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_nat1_safe の内部実装。引数チェックは行わない。
+__sx_num_is_nat1_safe() {
+	sx_num_is_nat1 "${@}" || return
+	__sx_num_is_int_fit "${SX_CFG_NUM_RANGE}" "${@}" || return
+}
+
+### sx_num_is_nint - すべての引数が負の整数であるか確認する
+##
+## 使い方:
+##   sx_num_is_nint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   負の符号（-）を必須で持ち、-1 以下の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて負の整数である (SX_EX_OK)
+##    1  負の整数ではない値が含まれる
+sx_num_is_nint() {
+	for __sx_num_is_nint_arg in "${@}"; do
+		case "${__sx_num_is_nint_arg}" in
+			-*) sx_num_is_nat1 "${__sx_num_is_nint_arg#-}";;
+			*) ! :;;
+		esac || {
+			unset __sx_num_is_nint_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nint_arg
+}
+
+### sx_num_is_nint_base - 指定された基数で負の整数（-1以下）か確認する
+##
+## 使い方:
+##   sx_num_is_nint_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が、負の符号（-）を必須で持つ -1 以下の整数であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
+##
+## 終了ステータス:
+##    0  すべて負の整数である (SX_EX_OK)
+##    1  負の整数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
+sx_num_is_nint_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nint_base "${@}" || return; return 0;; esac
+
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_nint_base "${@}"
+}
+
+### __sx_num_is_nint_base - 指定された基数で負の整数（-1以下）か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_nint_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_nint_base の内部実装。基数チェックを行わない。
+__sx_num_is_nint_base() {
+	__sx_num_is_nint_base_rad_="${1}"
+	shift
+
+	for __sx_num_is_nint_base_arg_ in "${@}"; do
+		case "${__sx_num_is_nint_base_arg_}" in
+			-*) __sx_num_is_nat1_base "${__sx_num_is_nint_base_rad_}" "${__sx_num_is_nint_base_arg_#-}";;
+			*) ! :;;
+			esac || {
+				unset __sx_num_is_nint_base_rad_ __sx_num_is_nint_base_arg_
+				return 1
+			}
+	done
+
+	unset __sx_num_is_nint_base_rad_ __sx_num_is_nint_base_arg_
+}
+
+### sx_num_is_nnint - すべての引数が非負整数（0以上の整数）であるか確認する
+##
+## 使い方:
+##   sx_num_is_nnint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   0（+0, -0 を含む）または正の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて非負整数である (SX_EX_OK)
+##    1  非負整数ではない値が含まれる
+sx_num_is_nnint() {
+	for __sx_num_is_nnint_arg in "${@}"; do
+		case "${__sx_num_is_nnint_arg}" in
+			00 | [+-]00 | 0 | [+-]0 | 0[Xx]0 | [+-]0[Xx]0) continue;;
+		esac
+
+		sx_num_is_pint "${__sx_num_is_nnint_arg}" || {
+			unset __sx_num_is_nnint_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nnint_arg
+}
+
+### sx_num_is_nnint_base - 指定された基数で非負整数（0以上）か確認する
+##
+## 使い方:
+##   sx_num_is_nnint_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が 0 以上の整数であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
+##
+## 終了ステータス:
+##    0  すべて非負整数である (SX_EX_OK)
+##    1  非負整数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
+sx_num_is_nnint_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nnint_base "${@}" || return; return 0;; esac
+
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_nnint_base "${@}"
+}
+
+### __sx_num_is_nnint_base - 指定された基数で非負整数（0以上）か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_nnint_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_nnint_base の内部実装。基数チェックを行わない。
+__sx_num_is_nnint_base() {
+	__sx_num_is_nnint_base_rad_="${1}"
+	shift
+
+	for __sx_num_is_nnint_base_arg_ in "${@}"; do
+		case "${__sx_num_is_nnint_base_rad_}${__sx_num_is_nnint_base_arg_}" in
+			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) continue;;
+		esac
+
+		__sx_num_is_pint_base "${__sx_num_is_nnint_base_rad_}" "${__sx_num_is_nnint_base_arg_}" || {
+			unset __sx_num_is_nnint_base_rad_ __sx_num_is_nnint_base_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nnint_base_rad_ __sx_num_is_nnint_base_arg_
+}
+
+### sx_num_is_npint - すべての引数が非正整数（0以下の整数）であるか確認する
+##
+## 使い方:
+##   sx_num_is_npint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   0（+0, -0 を含む）または負の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて非正整数である (SX_EX_OK)
+##    1  非正整数ではない値が含まれる
+sx_num_is_npint() {
+	for __sx_num_is_npint_arg in "${@}"; do
+		case "${__sx_num_is_npint_arg}" in
+			00 | [+-]00 | 0 | [+-]0 | 0[Xx]0 | [+-]0[Xx]0) continue;;
+		esac
+
+		sx_num_is_nint "${__sx_num_is_npint_arg}" || {
+			unset __sx_num_is_npint_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_npint_arg
+}
+
+### sx_num_is_npint_base - 指定された基数で非正整数（0以下）か確認する
+##
+## 使い方:
+##   sx_num_is_npint_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が 0 以下の整数であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
+##
+## 終了ステータス:
+##    0  すべて非正整数である (SX_EX_OK)
+##    1  非正整数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
+sx_num_is_npint_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_npint_base "${@}" || return; return 0;; esac
+
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_npint_base "${@}"
+}
+
+### __sx_num_is_npint_base - 指定された基数で非正整数（0以下）か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_npint_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_npint_base の内部実装。基数チェックを行わない。
+__sx_num_is_npint_base() {
+	__sx_num_is_npint_base_rad_="${1}"
+	shift
+
+	for __sx_num_is_npint_base_arg_ in "${@}"; do
+		case "${__sx_num_is_npint_base_rad_}${__sx_num_is_npint_base_arg_}" in
+			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) continue;;
+		esac
+
+		__sx_num_is_nint_base "${__sx_num_is_npint_base_rad_}" "${__sx_num_is_npint_base_arg_}" || {
+			unset __sx_num_is_npint_base_rad_ __sx_num_is_npint_base_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_npint_base_rad_ __sx_num_is_npint_base_arg_
+}
+
+### sx_num_is_num_safe - すべての引数が有効な数値（整数または実数）であるか確認する
+##
+## 使い方:
+##   sx_num_is_num_safe [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   引数が 16進数または 8進数の形式（0x または 0[0-9] で始まる）である場合は
+##   sx_num_is_int_safe で、それ以外の場合は sx_num_is_float_safe で検証を行う。
+##
+## 終了ステータス:
+##    0  すべて有効な数値である (SX_EX_OK)
+##    1  有効な数値ではない値が含まれる
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_is_num_safe() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_num_safe "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_is_num_safe "${@}" || return
+}
+
+### __sx_num_is_num_safe - すべての引数が有効な数値形式であるか検証する（内部用）
+##
+## 使い方:
+##   __sx_num_is_num_safe [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   引数が 16進数または 8進数の形式である場合は __sx_num_is_int_safe で、
+##   それ以外の場合は sx_num_is_float_safe で検証を行う。
+##
+## 終了ステータス:
+##    0  すべて有効な数値である (SX_EX_OK)
+##    1  有効な数値ではない値が含まれる
+__sx_num_is_num_safe() {
+	for __sx_num_is_num_safe_arg_ in "${@}"; do
+		case "${__sx_num_is_num_safe_arg_}" in
+			*[Xx]* | [+-]0[0-9]* | 0[0-9]*) __sx_num_is_int_safe "${__sx_num_is_num_safe_arg_}";;
+			*) sx_num_is_float_safe "${__sx_num_is_num_safe_arg_}";;
+		esac || {
+			unset __sx_num_is_num_safe_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_num_safe_arg_
+}
+
+### sx_num_is_nzint - すべての引数が 0 以外の整数であるか確認する
+##
+## 使い方:
+##   sx_num_is_nzint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   0（+0, -0 を含む）以外の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて 0 以外の整数である (SX_EX_OK)
+##    1  0、または整数ではない値が含まれる
+sx_num_is_nzint() {
+	for __sx_num_is_nzint_arg in "${@}"; do
+		case "${__sx_num_is_nzint_arg}" in
+			0 | [+-]0 | 00 | [+-]00 | 0[Xx]0 | [+-]0[Xx]0) ! :;;
+			*) sx_num_is_int "${__sx_num_is_nzint_arg}";;
+		esac || {
+			unset __sx_num_is_nzint_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nzint_arg
+}
+
+### sx_num_is_nzint_base - 指定された基数で 0 以外の整数か確認する
+##
+## 使い方:
+##   sx_num_is_nzint_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が、任意で符号（+ または -）を持つ 0 以外の整数であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
+##
+## 終了ステータス:
+##    0  すべて 0 以外の整数である (SX_EX_OK)
+##    1  0、または整数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
+sx_num_is_nzint_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nzint_base "${@}" || return; return 0;; esac
+
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_nzint_base "${@}"
+}
+
+### __sx_num_is_nzint_base - 指定された基数で 0 以外の整数か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_nzint_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_nzint_base の内部実装。基数チェックを行わない。
+__sx_num_is_nzint_base() {
+	__sx_num_is_nzint_base_rad_="${1}"
+	shift
+
+	for __sx_num_is_nzint_base_arg_ in "${@}"; do
+		case "${__sx_num_is_nzint_base_rad_}${__sx_num_is_nzint_base_arg_}" in
+			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) ! :;;
+			*) __sx_num_is_int_base "${__sx_num_is_nzint_base_rad_}" "${__sx_num_is_nzint_base_arg_}";;
+		esac || {
+			unset __sx_num_is_nzint_base_rad_ __sx_num_is_nzint_base_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_nzint_base_rad_ __sx_num_is_nzint_base_arg_
+}
+
+### sx_num_is_pint - すべての引数が正の整数であるか確認する
+##
+## 使い方:
+##   sx_num_is_pint [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   任意で正の符号（+）を持つ、1 以上の整数であるかを確認する。
+##
+## 終了ステータス:
+##    0  すべて正の整数である (SX_EX_OK)
+##    1  正の整数ではない値が含まれる
+sx_num_is_pint() {
+	for __sx_num_is_pint_arg in "${@}"; do
+		sx_num_is_nat1 "${__sx_num_is_pint_arg#+}" || {
+			unset __sx_num_is_pint_arg
+			return 1
+		}
+	done
+
+	unset __sx_num_is_pint_arg
+}
+
+### sx_num_is_pint_base - 指定された基数で正の整数（1以上）か確認する
+##
+## 使い方:
+##   sx_num_is_pint_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   第一引数で指定された基数（8, 10, 16）において、
+##   後続のすべての引数が、任意で正の符号（+）を持つ 1 以上の整数であるか確認する。
+##   プレフィックスおよび先行する 0 に関する制約は sx_num_is_nat0_base に準ずる。
+##
+## 終了ステータス:
+##    0  すべて正の整数である (SX_EX_OK)
+##    1  正の整数ではない値が含まれる
+##   64  基数指定が不正 (SX_EX_USAGE)
+sx_num_is_pint_base() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_pint_base "${@}" || return; return 0;; esac
+
+	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+
+	__sx_num_is_pint_base "${@}"
+}
+
+### __sx_num_is_pint_base - 指定された基数で正の整数（1以上）か確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_pint_base 基数 [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_num_is_pint_base の内部実装。基数チェックを行わない。
+__sx_num_is_pint_base() {
+	__sx_num_is_pint_base_rad_="${1}"
+	shift
+
+	for __sx_num_is_pint_base_arg_ in "${@}"; do
+		__sx_num_is_nat1_base "${__sx_num_is_pint_base_rad_}" "${__sx_num_is_pint_base_arg_#+}" || {
+			unset __sx_num_is_pint_base_rad_ __sx_num_is_pint_base_arg_
+			return 1
+		}
+	done
+
+	unset __sx_num_is_pint_base_rad_ __sx_num_is_pint_base_arg_
+}
+
+### sx_num_mul_int - 複数の符号付き整数を乗算する
+##
+## 使い方:
+##   sx_num_mul_int 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   符号付き10進整数を乗算する。負号の個数で符号を決定し、
+##   __sx_num_mul_nat0 で絶対値乗算を行う。
+##
+## 終了ステータス:
+##   0  成功 (SX_EX_OK)
+##  64  引数不正 (SX_EX_USAGE) — 整数として不正な値が含まれる
+##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|V|], [|__sx_num_mul_int_$1|])dnl
+define([|CLEANUP|], [|V(res)|])dnl
+
+sx_num_mul_int() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_int "${@}" || return; return 0;; esac
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_int_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
-
-	__sx_num_div_int_res="${1}"
-	__sx_num_div_int_dp="${2:-0}"
-	__sx_num_div_int_u="${3:-0}"
-	shift "$((0${2+1} + 0${3+1} + 1))"
+	__sx_num_mul_int_res="${1}"
+	shift
 
 	__sx_num_is_int_base 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
 
-	for __sx_num_div_int_v in "${@}"; do
-		case "${__sx_num_div_int_v#[+-]}" in 0)
-			unset CLEANUP
-			return "${SX_EX_USAGE}"
-		esac
-	done
-
-	__sx_num_div_int "${__sx_num_div_int_res}" "${__sx_num_div_int_dp}" "${__sx_num_div_int_u}" "${@}"
+	__sx_num_mul_int "${__sx_num_mul_int_res}" "${@}"
 	unset CLEANUP
 }
 
-define([|V|], [|__sx_num_div_int_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q)|])dnl
+define([|V|], [|__sx_num_mul_int_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(qty) V(arg) V(abs_args) V(sign) V(acc)|])dnl
 
-### __sx_num_div_int - 符号付き整数の除算で実数商（整数商 + 小数部）を求める（内部用）
+__sx_num_mul_int() {
+	__sx_num_mul_int_res_="${1}"
+	shift
+
+	__sx_num_mul_int_qty_=0
+	__sx_num_mul_int_abs_args_=
+
+	for __sx_num_mul_int_arg_ in "${@}"; do
+		case "${__sx_num_mul_int_arg_}" in
+			0 | +0 | -0)
+				__sx_var_set "${__sx_num_mul_int_res_}=0"
+				unset CLEANUP
+				return
+				;;
+			-*) __sx_num_mul_int_qty_="$((~__sx_num_mul_int_qty_))";;
+		esac
+
+		__sx_num_mul_int_abs_args_="${__sx_num_mul_int_abs_args_} ${__sx_num_mul_int_arg_#[+-]}"
+	done
+
+	case "$((__sx_num_mul_int_qty_ & 1))" in
+		1) __sx_num_mul_int_sign_=-;;
+		*) __sx_num_mul_int_sign_=;;
+	esac
+
+	eval SX_CFG_UNSET_SOFT=2 __sx_num_mul_nat0 __sx_num_mul_int_acc_ "${__sx_num_mul_int_abs_args_}"
+
+	__sx_var_set "${__sx_num_mul_int_res_}=${__sx_num_mul_int_sign_}${__sx_num_mul_int_acc_}"
+
+	unset CLEANUP
+}
+
+### sx_num_mul_nat0 - 複数の絶対値を乗算する
 ##
 ## 使い方:
-##   __sx_num_div_int 結果変数名 小数桁数 被除数 [除数1 [除数2 ...]]
+##   sx_num_mul_nat0 結果変数名 [数値1 [数値2 ...]]
 ##
 ## 説明:
-##   sx_num_div_int の内部実装。引数チェックは行わない。
-##   前提: 小数桁数は 0 以上の自然数、被除数は任意の符号付き整数、
-##   すべての除数は 0 以外の符号付き整数であること。
-__sx_num_div_int() {
-	__sx_num_div_int_res_="${1}"
-	__sx_num_div_int_dp_="${2:-0}"
-	__sx_num_div_int_u_="${3:-0}"
-	shift "$((0${1+1} + 0${2+1} + 0${3+1}))"
+##   符号なし10進整数の絶対値を乗算する。
+##   引数の検証を行い、符号なし整数でない場合はエラーとする。
+##   逐次方式でアキュムレータに各数値を順次乗算する。
+##
+## 終了ステータス:
+##   0  成功 (SX_EX_OK)
+##  64  引数不正 (SX_EX_USAGE) — 数値以外、または符号付き整数が含まれる
+##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-	case "${__sx_num_div_int_u_}" in 0 | +0 | -0)
-		__sx_var_set "${__sx_num_div_int_res_}=0"
+define([|V|], [|__sx_num_mul_nat0_$1|])dnl
+define([|CLEANUP|], [|V(res)|])dnl
+
+sx_num_mul_nat0() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_nat0 "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_mul_nat0_res="${1}"
+	shift
+
+	__sx_num_is_nat0_base 10 "${@}" || {
 		unset CLEANUP
-		return "${SX_EX_OK}"
+		return "${SX_EX_USAGE}"
+	}
+
+	__sx_num_mul_nat0 "${__sx_num_mul_nat0_res}" "${@}"
+	unset CLEANUP
+}
+
+### __sx_num_mul_nat0 - 複数の絶対値を乗算する（内部用）
+##
+## 使い方:
+##   __sx_num_mul_nat0 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   符号なし10進整数の絶対値を乗算する。
+##   引数はすべて検証済みの正しい10進整数であることを前提とする。
+##   逐次方式でアキュムレータに各数値を順次乗算する。
+
+define([|V|], [|__sx_num_mul_nat0_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(a) V(b) V(endz) V(qm) V(shift) V(tmp) V(ch_a) V(ch_b) V(wlen_mul) V(max_ops) V(a_len) V(b_len) V(max_x) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(carry) V(g) V(fit) V(safe)|])dnl
+
+__sx_num_mul_nat0() {
+	__sx_num_mul_nat0_res_="${1}"
+	__sx_num_mul_nat0_a_="${2-1}"
+	__sx_num_mul_nat0_endz_=
+	__sx_num_mul_nat0_fit_=1
+	shift "$((1 + 0${2+1}))"
+
+	case "${__sx_num_mul_nat0_a_}" in 0)
+		set --
 	esac
 
-	__sx_num_mul_int __sx_num_div_int_den_ "${@}"
+	eval "__sx_num_mul_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" \
+	      __sx_num_mul_nat0_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" \
+	      __sx_num_mul_nat0_max_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
 
-	__sx_num_div_nat0 __sx_num_div_int_q_ "${__sx_num_div_int_dp_}" "${__sx_num_div_int_u_#[+-]}" "${__sx_num_div_int_den_#[+-]}"
+	# safe_: 分割探索式の (len + (x - 1)) が INT_MAX を超えないための上限
+	__sx_num_mul_nat0_safe_="$((__sx_num_mul_nat0_max_ops_ - __sx_num_mul_nat0_wlen_mul_ + 2))"
 
-	case "${__sx_num_div_int_u_}:${__sx_num_div_int_den_}:${__sx_num_div_int_q_}" in -*:[!-]*:*[!0]* | [!-]*:-*:*[!0]*)
-		__sx_num_div_int_q_="-${__sx_num_div_int_q_}"
+	for __sx_num_mul_nat0_b_ in "${@}"; do
+		case "${__sx_num_mul_nat0_b_}" in 0)
+			__sx_num_mul_nat0_a_=0
+			__sx_num_mul_nat0_endz_=
+			break
+		esac
+
+		# 高速パス: 両因数が1語に収まればシェル算術で直接乗算
+		case "${__sx_num_mul_nat0_a_}${__sx_num_mul_nat0_b_}" in
+			${__sx_num_mul_nat0_qm_}?*) ;;
+			*)
+				: "$((__sx_num_mul_nat0_a_ *= __sx_num_mul_nat0_b_))"
+				continue
+				;;
+		esac
+
+		# 末尾のゼロを一時分離し、後で結合する
+		case "${__sx_num_mul_nat0_a_}" in *0)
+			__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_a_##*[!0]}"
+			__sx_num_mul_nat0_a_="${__sx_num_mul_nat0_a_%${__sx_num_mul_nat0_tmp_}}"
+			__sx_num_mul_nat0_endz_="${__sx_num_mul_nat0_endz_}${__sx_num_mul_nat0_tmp_}"
+		esac
+
+		case "${__sx_num_mul_nat0_b_}" in *0)
+			__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_##*[!0]}"
+			__sx_num_mul_nat0_b_="${__sx_num_mul_nat0_b_%${__sx_num_mul_nat0_tmp_}}"
+			__sx_num_mul_nat0_endz_="${__sx_num_mul_nat0_endz_}${__sx_num_mul_nat0_tmp_}"
+		esac
+
+		# 1の乗算をスキップ / 1語に収まらなければ多倍長処理へ
+		case "${__sx_num_mul_nat0_a_}:${__sx_num_mul_nat0_b_}" in
+			1:*) __sx_num_mul_nat0_a_="${__sx_num_mul_nat0_b_}";&
+			*:1) ! :;;
+			${__sx_num_mul_nat0_qm_}??*) ;;
+			*) ! : "$((__sx_num_mul_nat0_a_ *= __sx_num_mul_nat0_b_))"
+		esac || continue
+
+		# fit_: 桁数そのものが INT_MAX を超えると算術展開できないため、
+		#       範囲内に収まる桁数かどうかを確認する
+		__sx_num_mul_nat0_a_len_="${#__sx_num_mul_nat0_a_}"
+		__sx_num_mul_nat0_b_len_="${#__sx_num_mul_nat0_b_}"
+
+		case "${__sx_num_mul_nat0_fit_}" in 1)
+			__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_mul_nat0_a_len_}" "${__sx_num_mul_nat0_b_len_}" || __sx_num_mul_nat0_fit_=0
+		esac
+
+		# 長い方を a に統一し、分割最適化の効果を最大化
+		case "$((__sx_num_mul_nat0_fit_ && __sx_num_mul_nat0_a_len_ < __sx_num_mul_nat0_b_len_))" in 1)
+			__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_}"
+			__sx_num_mul_nat0_b_="${__sx_num_mul_nat0_a_}"
+			__sx_num_mul_nat0_a_="${__sx_num_mul_nat0_tmp_}"
+			__sx_num_mul_nat0_a_len_="${#__sx_num_mul_nat0_a_}"
+			__sx_num_mul_nat0_b_len_="${#__sx_num_mul_nat0_b_}"
+		esac
+
+		# 安全: 桁数が算術展開可能な範囲内 → 全分割点を探索
+		# 危険: 桁数が算術展開不能 or 範囲超過 → 均等分割にフォールバック
+		if M_NUM_BOOL([|__sx_num_mul_nat0_fit_ && __sx_num_mul_nat0_a_len_ <= __sx_num_mul_nat0_safe_ && __sx_num_mul_nat0_b_len_ <= __sx_num_mul_nat0_safe_|]); then
+			__sx_num_mul_nat0_max_x_="$((__sx_num_mul_nat0_b_len_ < __sx_num_mul_nat0_wlen_mul_ ? __sx_num_mul_nat0_b_len_ : __sx_num_mul_nat0_wlen_mul_ - 1))"
+			__sx_num_mul_nat0_min_ops_="${__sx_num_mul_nat0_max_ops_}"
+			__sx_num_mul_nat0_opt_x_=1
+			__sx_num_mul_nat0_x_=1
+
+			while M_NUM_LE([|__sx_num_mul_nat0_x_|], [|__sx_num_mul_nat0_max_x_|]); do
+				__sx_num_mul_nat0_y_=$((__sx_num_mul_nat0_wlen_mul_ - __sx_num_mul_nat0_x_))
+				__sx_num_mul_nat0_ops_=$((((__sx_num_mul_nat0_b_len_ + (__sx_num_mul_nat0_x_ - 1)) / __sx_num_mul_nat0_x_) * ((__sx_num_mul_nat0_a_len_ + (__sx_num_mul_nat0_y_ - 1)) / __sx_num_mul_nat0_y_)))
+
+				case "$((__sx_num_mul_nat0_ops_ < __sx_num_mul_nat0_min_ops_))" in 1)
+					__sx_num_mul_nat0_min_ops_="${__sx_num_mul_nat0_ops_}"
+					__sx_num_mul_nat0_opt_x_="${__sx_num_mul_nat0_x_}"
+				esac
+
+				: "$((__sx_num_mul_nat0_x_ += 1))"
+			done
+		else
+			__sx_num_mul_nat0_opt_x_=$(((__sx_num_mul_nat0_wlen_mul_ + 1) / 2))
+		fi
+
+		# 最適分割サイズに基づきチャンク用 QM/ZR をロード
+		__sx_num_mul_nat0_opt_y_=$((__sx_num_mul_nat0_wlen_mul_ - __sx_num_mul_nat0_opt_x_))
+
+		eval "__sx_num_mul_nat0_qchunk_a_=\"\${SX_QM_${__sx_num_mul_nat0_opt_y_}}\" \
+		      __sx_num_mul_nat0_zchunk_a_=\"\${SX_ZR_${__sx_num_mul_nat0_opt_y_}}\" \
+		      __sx_num_mul_nat0_qchunk_b_=\"\${SX_QM_${__sx_num_mul_nat0_opt_x_}}\" \
+		      __sx_num_mul_nat0_zchunk_b_=\"\${SX_ZR_${__sx_num_mul_nat0_opt_x_}}\""
+
+		__sx_num_mul_nat0_shift_=
+
+		set --
+
+		# a を opt_y 桁ずつ下位からチャンク分割し位置パラメータに格納
+		while
+			case "${__sx_num_mul_nat0_a_}" in
+				${__sx_num_mul_nat0_qchunk_a_}?*)
+					__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_a_%${__sx_num_mul_nat0_qchunk_a_}}"
+					__sx_num_mul_nat0_ch_a_="${__sx_num_mul_nat0_a_#"${__sx_num_mul_nat0_tmp_}"}"
+					__sx_num_mul_nat0_a_="${__sx_num_mul_nat0_tmp_}"
+					case "${__sx_num_mul_nat0_ch_a_}" in
+						0*[1-9]*) set -- "${@}" "${__sx_num_mul_nat0_ch_a_#"${__sx_num_mul_nat0_ch_a_%%[!0]*}"}";;
+						0*) set -- "${@}" 0;;
+						*) set -- "${@}" "${__sx_num_mul_nat0_ch_a_}";;
+					esac
+					;;
+				*) set -- "${@}" "${__sx_num_mul_nat0_a_}" && ! :;;
+			esac
+		do :; done
+
+		__sx_num_mul_nat0_a_=0
+
+		# b を opt_x 桁ずつ分割しながら a の全チャンクと乗算
+		while
+			case "${__sx_num_mul_nat0_b_}" in
+				${__sx_num_mul_nat0_qchunk_b_}?*)
+					__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_%${__sx_num_mul_nat0_qchunk_b_}}"
+					__sx_num_mul_nat0_ch_b_="${__sx_num_mul_nat0_b_#"${__sx_num_mul_nat0_tmp_}"}"
+					__sx_num_mul_nat0_b_="${__sx_num_mul_nat0_tmp_}"
+
+					case "${__sx_num_mul_nat0_ch_b_}" in
+						0*[1-9]*) __sx_num_mul_nat0_ch_b_="${__sx_num_mul_nat0_ch_b_#"${__sx_num_mul_nat0_ch_b_%%[!0]*}"}";;
+						0*)
+							__sx_num_mul_nat0_shift_="${__sx_num_mul_nat0_zchunk_b_}${__sx_num_mul_nat0_shift_}"
+							continue
+							;;
+					esac
+					;;
+				*)
+					__sx_num_mul_nat0_ch_b_="${__sx_num_mul_nat0_b_}"
+					__sx_num_mul_nat0_b_=
+					;;
+			esac
+
+			__sx_num_mul_nat0_g_=
+			__sx_num_mul_nat0_carry_=
+
+			# チャンク同士の乗算と桁上げ処理
+			for __sx_num_mul_nat0_ch_a_ in "${@}"; do
+				__sx_num_mul_nat0_tmp_=$((__sx_num_mul_nat0_ch_b_ * __sx_num_mul_nat0_ch_a_ + ${__sx_num_mul_nat0_carry_:-0}))
+
+				case "$((__sx_num_mul_nat0_opt_y_ < ${#__sx_num_mul_nat0_tmp_}))" in
+					1)
+						__sx_num_mul_nat0_carry_="${__sx_num_mul_nat0_tmp_%${__sx_num_mul_nat0_qchunk_a_}}"
+						__sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_#"${__sx_num_mul_nat0_carry_}"}${__sx_num_mul_nat0_g_}"
+						;;
+					*)
+						__sx_num_mul_nat0_carry_=
+						case "${__sx_num_mul_nat0_tmp_}" in
+							${__sx_num_mul_nat0_qchunk_a_}) __sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_}${__sx_num_mul_nat0_g_}";;
+							*)
+								: "$((__sx_num_mul_nat0_tmp_ += 1${__sx_num_mul_nat0_zchunk_a_}))"
+								__sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_#1}${__sx_num_mul_nat0_g_}"
+								;;
+						esac
+						;;
+				esac
+			done
+
+			case "${__sx_num_mul_nat0_carry_}" in '')
+				__sx_num_mul_nat0_g_="${__sx_num_mul_nat0_g_#"${__sx_num_mul_nat0_g_%%[!0]*}"}"
+			esac
+
+			# 部分積を結果リストに追加
+			SX_CFG_UNSET_SOFT=2 __sx_num_add_nat0 __sx_num_mul_nat0_a_ "${__sx_num_mul_nat0_a_}" "${__sx_num_mul_nat0_carry_}${__sx_num_mul_nat0_g_}${__sx_num_mul_nat0_shift_}"
+
+			__sx_num_mul_nat0_shift_="${__sx_num_mul_nat0_zchunk_b_}${__sx_num_mul_nat0_shift_}"
+			M_STR_NE([|"${__sx_num_mul_nat0_b_}"|], [|''|])
+		do :; done
+	done
+
+	__sx_var_set "${__sx_num_mul_nat0_res_}=${__sx_num_mul_nat0_a_}${__sx_num_mul_nat0_endz_}"
+	unset CLEANUP
+}
+
+### sx_num_norm - 数値を10進固定小数点形式に正規化する
+##
+## 使い方:
+##   sx_num_norm バインド形式 [数値1 [数値2 ...]]
+##
+## 説明:
+##   引数で指定された各数値を、10進固定小数点形式に正規化し、バインド形式に従って
+##   変数に代入する。
+##   正規化の内容：
+##   - 16進数（0x...）や8進数（0...）を10進整数に変換。
+##   - 指数表記（1.2e+3）を固定小数点形式（1200）に展開。
+##   - 小数点以下の不要な '0' を削除（6.0 -> 6, 1.20 -> 1.2）。
+##   - 符号（+ / -）は維持される。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正: 無効なバインド形式、または数値形式が正しくない (SX_EX_USAGE)
+##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
+sx_num_norm() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_norm "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
+
+	__sx_num_norm_bind="${1}"
+	shift
+
+	sx_num_is_num_safe "${@}" || {
+		unset __sx_num_norm_bind
+		return "${SX_EX_USAGE}"
+	}
+
+	__sx_num_norm "${__sx_num_norm_bind}" "${@}"
+	unset __sx_num_norm_bind
+}
+
+define([|V|], [|__sx_num_norm_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(arg) V(in) V(mnt) V(dig) V(flen) V(shift) V(dlen) __M_BIND_USEVAR|])dnl
+
+### __sx_num_norm - 数値を10進固定小数点形式に正規化する（内部用）
+##
+## 使い方:
+##   __sx_num_norm バインド形式 [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_norm の内部実装。引数の検証は行わない。
+__sx_num_norm() {
+	__sx_var_bind_init "${1}"
+	__sx_num_norm_bind_="${1}"
+	__sx_num_norm_out_=
+
+	shift
+
+	for __sx_num_norm_arg_ in "${@}"; do
+		__sx_num_norm_in_="${__sx_num_norm_arg_#[+-]}"
+
+		case "${__sx_num_norm_in_}" in
+			*[Ee]*)
+				# 指数表記の展開
+				__sx_num_norm_mnt_="${__sx_num_norm_in_%%[Ee]*}"
+				__sx_num_norm_dig_="${__sx_num_norm_mnt_%%.*}"
+
+				case "${__sx_num_norm_mnt_}" in
+					*.*)
+						__sx_num_norm_flen_=$((${#__sx_num_norm_mnt_} - ${#__sx_num_norm_dig_} - 1))
+						__sx_num_norm_dig_="${__sx_num_norm_dig_}${__sx_num_norm_mnt_#*.}"
+						;;
+					*) __sx_num_norm_flen_=0;;
+				esac
+
+				__sx_num_norm_shift_=$((${__sx_num_norm_in_#*[Ee]} - __sx_num_norm_flen_))
+					__sx_num_norm_dlen_="${#__sx_num_norm_dig_}"
+
+				if M_NUM_LE([|0|], [|__sx_num_norm_shift_|]); then
+					SX_CFG_UNSET_SOFT=2 __sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "-$((__sx_num_norm_dlen_ + __sx_num_norm_shift_))" 0
+				else
+					: $((__sx_num_norm_shift_ *= -1))
+
+					if M_NUM_LT([|__sx_num_norm_shift_|], [|__sx_num_norm_dlen_|]); then
+						SX_CFG_UNSET_SOFT=2 __sx_str_splice __sx_num_norm_in_ "${__sx_num_norm_dig_}" "$((__sx_num_norm_dlen_ - __sx_num_norm_shift_))" 0 .
+					else
+						SX_CFG_UNSET_SOFT=2 __sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "${__sx_num_norm_shift_}" 0
+						__sx_num_norm_in_=".${__sx_num_norm_in_}"
+					fi
+				fi
+
+				__sx_num_norm_in_="${__sx_num_norm_in_#"${__sx_num_norm_in_%%[!0]*}"}"
+
+				case "${__sx_num_norm_in_}" in .*)
+					__sx_num_norm_in_="0${__sx_num_norm_in_}"
+				esac
+				;;
+			*[Xx]* | 0[0-9]*) : "$((__sx_num_norm_in_ += 0))";;
+		esac
+
+		# 小数点以下のクリーンアップ
+		case "${__sx_num_norm_in_}" in *.*)
+			__sx_num_norm_in_="${__sx_num_norm_in_%"${__sx_num_norm_in_##*[!0]}"}"
+			__sx_num_norm_in_="${__sx_num_norm_in_%.}"
+		esac
+
+		case "${__sx_num_norm_in_}" in '' | 0)
+			__sx_num_norm_arg_=
+		esac
+
+		__M_BIND_UNQUOTE([|__sx_num_norm|], [|"${__sx_num_norm_arg_%%[!-]*}${__sx_num_norm_in_:-0}"|], CLEANUP)
+	done
+
+	eval ${__sx_num_norm_out_:+"${__sx_num_norm_bind_}=\"\${__sx_num_norm_out_}\""}
+
+	unset CLEANUP
+}
+
+### sx_num_range - 数値の範囲を生成する (Python range 互換)
+##
+## 使い方:
+##   sx_num_range 結果変数名（またはバインド形式） 終了
+##   sx_num_range 結果変数名（またはバインド形式） 開始 終了
+##   sx_num_range 結果変数名（またはバインド形式） 開始 終了 増分
+##
+## 説明:
+##   指定された範囲の数値をスペース区切りで生成し、結果変数に格納する。
+##   第一引数にはバインド形式を指定して分配代入を行うことも可能。
+##   Python の range() と同様に、終了値は含まない (exclusive)。
+##   引数が1つの場合は、0 から 終了 - 1 まで増分 1。
+##   引数が2つの場合は、開始 から 終了 - 1 まで増分 1。
+##   引数が3つの場合は、開始 から 終了 (exclusive) まで指定された 増分 で生成する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  書き込み不可 (SX_EX_NOPERM)
+sx_num_range() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_range "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_int_safe "${2-}" ${3+"${3}"} ${4+"${4}"} || return
+
+	case "$((${4-1}))" in 0)
+		return "${SX_EX_USAGE}"
 	esac
 
-	__sx_var_set "${__sx_num_div_int_res_}=${__sx_num_div_int_q_}"
+	__sx_num_range "${@}"
+}
+
+define([|V|], [|__sx_num_range_$1_|])dnl
+define([|CLEANUP|], [|V(bind) V(out) V(cur) __M_BIND_USEVAR|])dnl
+
+### __sx_num_range - 数値の範囲を生成する（内部用）
+##
+## 使い方:
+##   __sx_num_range 宛先 [引数...]
+##
+## 説明:
+##   sx_num_range の内部実装。引数チェックを行わない。
+__sx_num_range() {
+	__sx_var_bind_init "${1}"
+	__sx_num_range_bind_="${1}"
+	__sx_num_range_out_=
+	shift
+
+	case "${#}" in
+		1) set -- 0 "${1}" 1;;
+		2) set -- "${1}" "${2}" 1;;
+		*) set -- "${1}" "${2}" "${3-1}";;
+	esac
+
+	__sx_num_range_cur_="${1}"
+
+	if M_NUM_LT([|0|], [|${3}|]); then
+		while M_NUM_LT([|__sx_num_range_cur_|], [|${2}|]); do
+			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
+			: $((__sx_num_range_cur_ += ${3}))
+		done
+	else
+		while M_NUM_LT([|${2}|], [|${__sx_num_range_cur_}|]); do
+			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
+			: $((__sx_num_range_cur_ += ${3}))
+		done
+	fi
+
+	eval ${__sx_num_range_out_:+"${__sx_num_range_bind_}=\"\${__sx_num_range_out_}\""}
+
+	unset CLEANUP
+}
+
+### sx_num_rel - 数値間の関係を確認する
+##
+## 使い方:
+##   sx_num_rel [数値1 [演算子1 数値2 ...]]
+##
+## 説明:
+##   数値と演算子を交互に指定し、すべての関係が満たされるかを確認する。
+##   演算子には以下が使用可能：
+##     eq, ==   : 等しい
+##     ne, !=  : 等しくない
+##     lt, <   : 未満
+##     le, <=  : 以下
+##     gt, >   : より大きい
+##     ge, >=  : 以上
+##
+## 終了ステータス:
+##    0  すべての条件を満たす (SX_EX_OK)
+##    1  条件を満たさない引数が含まれる
+##   64  引数不正 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_rel() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_rel "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	for __sx_num_rel_arg in "${@}"; do
+		case "${__sx_num_rel_arg}" in
+			eq | '==' | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') continue;;
+		esac
+
+		__sx_num_is_num_safe "${__sx_num_rel_arg}" || {
+			unset __sx_num_rel_arg
+			return "${SX_EX_USAGE}"
+		}
+	done
+
+	unset __sx_num_rel_arg
+
+	__sx_num_rel "${@}" || return
+}
+
+### __sx_num_rel - 数値間の関係を確認する（内部用）
+##
+## 使い方:
+##   __sx_num_rel [数値 | 演算子 ...]
+##
+## 説明:
+##   sx_num_rel の内部実装。
+##   引数チェックを行わずに数値と演算子の関係を順次評価する。
+__sx_num_rel() {
+	__sx_num_rel_op_='eq'
+
+	for __sx_num_rel_arg_ in "${@}"; do
+		case "${__sx_num_rel_arg_}" in
+			eq | '==') __sx_num_rel_op_=eq;;
+			ne | '!=') __sx_num_rel_op_=ne;;
+			lt | '<')  __sx_num_rel_op_=lt;;
+			le | '<=') __sx_num_rel_op_=le;;
+			gt | '>')  __sx_num_rel_op_=gt;;
+			ge | '>=') __sx_num_rel_op_=ge;;
+			*) ! :;;
+		esac && continue
+
+		__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
+
+		case "${__sx_num_rel_rcls_}" in
+			1) : $((__sx_num_rel_arg_ += 0));;
+			2) __sx_num_rel_arg_="${__sx_num_rel_arg_#+}";;
+			*)
+				SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_rel_arg_ "${__sx_num_rel_arg_}"
+				__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
+				;;
+		esac
+
+		case "${__sx_num_rel_lhs_+X}" in X)
+			case "${__sx_num_rel_lcls_}:${__sx_num_rel_rcls_}" in
+				1:1) __sx_num_cmp_arith "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
+				*) __sx_num_cmp_fixed "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
+			esac || case "${__sx_num_rel_op_}:${?}" in
+				eq:2 | ne:1 | ne:3 | lt:1 | le:1 | le:2 | gt:3 | ge:2 | ge:3) ;;
+				*)
+					unset __sx_num_rel_op_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
+					return 1
+					;;
+			esac
+		esac
+
+		__sx_num_rel_lcls_="${__sx_num_rel_rcls_}"
+		__sx_num_rel_lhs_="${__sx_num_rel_arg_}"
+	done
+
+	unset __sx_num_rel_op_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
+}
+
+### __sx_num_rel_classify - 比較方式を分類する（内部用）
+##
+## 終了ステータス:
+##   1  arith (算術展開比較)
+##   2  dec   (10進整数文字列比較)
+##   3  norm  (正規化数値比較)
+__sx_num_rel_classify() {
+	case "${1}" in
+		*.* | *[Ee]*) return 3;;
+		*0[Xx]* | 0[0-9]* | [+-]0[0-9]*) return 1;;
+	esac
+
+	__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${1}" || return 2
+
+	return 1
+}
+
+### sx_num_sub_int - 複数の符号付き整数を減算する
+##
+## 使い方:
+##   sx_num_sub_int 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   符号付き10進整数を減算する（第1引数から残りの引数を順次減算）。
+##   内部で第2引数以降を __sx_num_add_int で合計し、第1引数と符号付き減算する。
+##
+## 終了ステータス:
+##   0  成功 (SX_EX_OK)
+##  64  引数不正 (SX_EX_USAGE) — 整数として不正な値が含まれる
+##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|V|], [|__sx_num_sub_int_$1|])dnl
+define([|CLEANUP|], [|V(res)|])dnl
+
+sx_num_sub_int() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub_int "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_sub_int_res="${1}"
+	shift
+
+	__sx_num_is_int_base 10 "${@}" || {
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	}
+
+	__sx_num_sub_int "${__sx_num_sub_int_res}" "${@}"
+	unset CLEANUP
+}
+
+define([|V|], [|__sx_num_sub_int_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(first) V(sign) V(sum) V(tmp)|])dnl
+
+__sx_num_sub_int() {
+	__sx_num_sub_int_res_="${1}"
+	__sx_num_sub_int_first_="${2-0}"
+	__sx_num_sub_int_sign_=
+
+	shift "$((1 + 0${2+1}))"
+
+	# $2...$n の合計（符号付き加算）
+	SX_CFG_UNSET_SOFT=2 __sx_num_add_int __sx_num_sub_int_sum_ "${@}"
+
+	# 合計が 0 なら第1引数がそのまま結果
+	case "${__sx_num_sub_int_sum_}" in 0)
+		__sx_var_set "${__sx_num_sub_int_res_}=${__sx_num_sub_int_first_#+}"
+		unset CLEANUP
+		return
+	esac
+
+	# a - sum を符号の組み合わせ4ケースに分けて直接演算
+	case "${__sx_num_sub_int_first_}${__sx_num_sub_int_sum_}" in
+		# ケース4: (-a) - (-s) = |s| - |a|
+		-*-*)
+			__sx_num_cmp_nat0 "${__sx_num_sub_int_first_#-}" "${__sx_num_sub_int_sum_#-}" || case "${?}" in
+				1) SX_CFG_UNSET_SOFT=2 __sx_num_sub_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_sum_#-}" "${__sx_num_sub_int_first_#-}";;
+				3)
+					__sx_num_sub_int_sign_='-'
+					SX_CFG_UNSET_SOFT=2 __sx_num_sub_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_first_#-}" "${__sx_num_sub_int_sum_#-}"
+					;;
+			esac
+			;;
+		# ケース3: (-a) - s = -(a + s)
+		-*) __sx_num_sub_int_sign_='-';&
+		# ケース2: a - (-s) = a + s
+		*-*) SX_CFG_UNSET_SOFT=2 __sx_num_add_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_first_#[+-]}" "${__sx_num_sub_int_sum_#-}";;
+		# ケース1: a - s
+		*)
+			__sx_num_cmp_nat0 "${__sx_num_sub_int_first_#+}" "${__sx_num_sub_int_sum_}" || case "${?}" in
+				1)
+					__sx_num_sub_int_sign_='-'
+					SX_CFG_UNSET_SOFT=2 __sx_num_sub_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_sum_}" "${__sx_num_sub_int_first_#+}"
+					;;
+				3) SX_CFG_UNSET_SOFT=2 __sx_num_sub_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_first_#+}" "${__sx_num_sub_int_sum_#+}";;
+			esac
+			;;
+	esac
+
+	__sx_var_set "${__sx_num_sub_int_res_}=${__sx_num_sub_int_sign_}${__sx_num_sub_int_tmp_-0}"
+	unset CLEANUP
+}
+
+### sx_num_sub_nat0 - 2つの絶対値の差（被減数 - 減数）を計算する
+##
+## 使い方:
+##   sx_num_sub_nat0 結果変数名 被減数 減数
+##
+## 説明:
+##   符号なし10進整数の減算（被減数 - 減数）を行う。
+##   引数の検証を行い、すべて符号なし整数（nat0）であることを確認する。
+##
+## 終了ステータス:
+##   0  成功 (SX_EX_OK)
+##  64  引数不正 (SX_EX_USAGE) — 数値以外、符号付き整数、または被減数 &lt; 減数
+##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|V|], [|__sx_num_sub_nat0_$1|])dnl
+define([|CLEANUP|], [|V(res)|])dnl
+
+sx_num_sub_nat0() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub_nat0 "${@}" || return; return 0;; esac
+
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_sub_nat0_res="${1}"
+	shift
+
+	__sx_num_is_nat0_base 10 "${@}" || {
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	}
+
+	__sx_num_cmp_nat0 "${1-0}" "${2-0}" || case "${?}" in 1)
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	esac
+
+	__sx_num_sub_nat0 "${__sx_num_sub_nat0_res}" "${@}"
+	unset CLEANUP
+}
+
+### __sx_num_sub_nat0 - 絶対値のチャンク減算を行う（内部用）
+##
+## 使い方:
+##   __sx_num_sub_nat0 結果変数名 被減数 減数
+##
+## 説明:
+##   符号なし10進整数の絶対値（被減数 - 減数）を減算する。
+##   引数はすべて検証済みの正しい10進整数であることを前提とする。
+##   被減数 >= 減数 が保証されていること。
+
+define([|V|], [|__sx_num_sub_nat0_$1_|])dnl
+define([|CLEANUP|], [|V(res) V(qm) V(borrow) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(b)|])dnl
+
+__sx_num_sub_nat0() {
+	__sx_num_sub_nat0_res_="${1}"
+	__sx_num_sub_nat0_rem1_="${2-0}"
+	__sx_num_sub_nat0_rem2_="${3-0}"
+	__sx_num_sub_nat0_borrow_=0
+	__sx_num_sub_nat0_out_=
+
+	eval "__sx_num_sub_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_sub_nat0_b_=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
+
+	while
+		case "${__sx_num_sub_nat0_rem1_}" in
+			${__sx_num_sub_nat0_qm_}?*)
+				__sx_num_sub_nat0_tmp_="${__sx_num_sub_nat0_rem1_%${__sx_num_sub_nat0_qm_}}"
+				__sx_num_sub_nat0_ch1_="${__sx_num_sub_nat0_rem1_#"${__sx_num_sub_nat0_tmp_}"}"
+				__sx_num_sub_nat0_rem1_="${__sx_num_sub_nat0_tmp_}"
+				case "${__sx_num_sub_nat0_ch1_}" in 0*)
+					__sx_num_sub_nat0_ch1_="${__sx_num_sub_nat0_ch1_#"${__sx_num_sub_nat0_ch1_%%[!0]*}"}"
+				esac
+				;;
+			*)
+				__sx_num_sub_nat0_ch1_="${__sx_num_sub_nat0_rem1_}"
+				__sx_num_sub_nat0_rem1_=
+				;;
+		esac
+
+		case "${__sx_num_sub_nat0_rem2_}" in
+			${__sx_num_sub_nat0_qm_}?*)
+				__sx_num_sub_nat0_tmp_="${__sx_num_sub_nat0_rem2_%${__sx_num_sub_nat0_qm_}}"
+				__sx_num_sub_nat0_ch2_="${__sx_num_sub_nat0_rem2_#"${__sx_num_sub_nat0_tmp_}"}"
+				__sx_num_sub_nat0_rem2_="${__sx_num_sub_nat0_tmp_}"
+				case "${__sx_num_sub_nat0_ch2_}" in 0*)
+					__sx_num_sub_nat0_ch2_="${__sx_num_sub_nat0_ch2_#"${__sx_num_sub_nat0_ch2_%%[!0]*}"}"
+				esac
+				;;
+			*)
+				__sx_num_sub_nat0_ch2_="${__sx_num_sub_nat0_rem2_}"
+				__sx_num_sub_nat0_rem2_=
+				;;
+		esac
+
+		__sx_num_sub_nat0_tmp_=$((${__sx_num_sub_nat0_ch1_:-0} - ${__sx_num_sub_nat0_ch2_:-0} - __sx_num_sub_nat0_borrow_))
+		__sx_num_sub_nat0_borrow_=$((__sx_num_sub_nat0_tmp_ < 0))
+
+		case "${#__sx_num_sub_nat0_rem1_}:${#__sx_num_sub_nat0_rem2_}:${__sx_num_sub_nat0_borrow_}" in
+			0:0:0)
+				# 両方の剰余が枯渇 → tmp_ が最上位桁、先頭ゼロ除去のみでゼロ埋め不要
+				case "${__sx_num_sub_nat0_tmp_}" in [!0]*)
+					__sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}"
+				esac && ! :
+				;;
+			*:0:0)
+				case "${__sx_num_sub_nat0_tmp_}" in
+					${__sx_num_sub_nat0_qm_}*) __sx_num_sub_nat0_out_="${__sx_num_sub_nat0_rem1_}${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}";;
+					*)
+						# rem2 のみ枯渇、rem1 に未処理チャンクあり → ゼロ埋めして桁揃え
+						: "$((__sx_num_sub_nat0_tmp_ += __sx_num_sub_nat0_b_))"
+						__sx_num_sub_nat0_out_="${__sx_num_sub_nat0_rem1_}${__sx_num_sub_nat0_tmp_#1}${__sx_num_sub_nat0_out_}"
+						;;
+				esac && ! :
+				;;
+			*:*:1) : "$((__sx_num_sub_nat0_tmp_ += ${__sx_num_sub_nat0_b_}))";&
+			*)
+				case "${__sx_num_sub_nat0_tmp_}" in
+					${__sx_num_sub_nat0_qm_}*)  __sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}";;
+					*)
+						: "$((__sx_num_sub_nat0_tmp_ += __sx_num_sub_nat0_b_))"
+						__sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_#1}${__sx_num_sub_nat0_out_}"
+						;;
+				esac
+				;;
+		esac
+	do :; done
+
+	__sx_var_set "${__sx_num_sub_nat0_res_}=${__sx_num_sub_nat0_out_:-0}"
+
 	unset CLEANUP
 }
 
