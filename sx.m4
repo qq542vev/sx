@@ -265,6 +265,12 @@ define([|__sx_m4_gen_zr|], [|readonly SX_NUM_ZR_$1='$2'
 ifelse([|$1|], [|37|], [||], [|__sx_m4_gen_zr(incr($1), $2[|0|])|])|])dnl
 __sx_m4_gen_zr(1, 0)
 
+# __sx_str_qm / __sx_str_zr 用の 37 分岐 case を生成する（定数生成と同一の 37 境界）
+define([|__sx_m4_gen_qm_case|], [|	$1) __sx_str_qm_out_="${SX_NUM_QM_$1}";;
+ifelse([|$1|], [|37|], [||], [|__sx_m4_gen_qm_case(incr($1))|])|])dnl
+define([|__sx_m4_gen_zr_case|], [|	$1) __sx_str_zr_out_="${SX_NUM_ZR_$1}";;
+ifelse([|$1|], [|37|], [||], [|__sx_m4_gen_zr_case(incr($1))|])|])dnl
+
 # 浮動小数点数限界 (IEEE 754 準拠)
 readonly SX_NUM_DBL_MAX='1.7976931348623157e+308'
 readonly SX_NUM_DBL_MIN='2.2250738585072014e-308'
@@ -4731,11 +4737,7 @@ __sx_num_div_nat0() {
 
 	case "${__sx_num_div_nat0_dp_}${__sx_num_div_nat0_r_}" in [!0]*[!0]*)
 		# "0"×dp は SX_NUM_ZR 定数（1〜37 桁）から参照し、超過時のみ str_rep で生成する
-		if __sx_var_is_set "SX_NUM_ZR_${__sx_num_div_nat0_dp_}"; then
-			eval "__sx_num_div_nat0_zr_=\"\${SX_NUM_ZR_${__sx_num_div_nat0_dp_}}\""
-		else
-			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_div_nat0_zr_ 0 "${__sx_num_div_nat0_dp_}"
-		fi
+		SX_CFG_UNSET_SOFT=2 __sx_str_zr __sx_num_div_nat0_zr_ "${__sx_num_div_nat0_dp_}"
 
 		# 小数部 = 余剰 × 10^dp ÷ den の整数商（この除算の余りは不要）
 		__sx_num_divmod_nat0 "__sx_num_div_nat0_dec_:" "${__sx_num_div_nat0_r_}${__sx_num_div_nat0_zr_}" "${__sx_num_div_nat0_den_}"
@@ -4743,11 +4745,7 @@ __sx_num_div_nat0() {
 		# dec が dp 桁未満の場合のみ先頭をゼロ埋めする（len == dp なら定数参照を丸ごとスキップ）
 		if M_STR_NE([|"${#__sx_num_div_nat0_dec_}"|], [|"${__sx_num_div_nat0_dp_}"|]); then
 			# 前置 "0"×dp から剥ぎ取る '?'×len(dec) は SX_NUM_QM 定数（1〜37 桁）から参照する
-			if __sx_var_is_set "SX_NUM_QM_${#__sx_num_div_nat0_dec_}"; then
-				eval "__sx_num_div_nat0_qm_=\"\${SX_NUM_QM_${#__sx_num_div_nat0_dec_}}\""
-			else
-				SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_div_nat0_qm_ '?' "${#__sx_num_div_nat0_dec_}"
-			fi
+			SX_CFG_UNSET_SOFT=2 __sx_str_qm __sx_num_div_nat0_qm_ "${#__sx_num_div_nat0_dec_}"
 
 			# "0"×dp を前置して '?'×len(dec) を剥ぎ、末尾 dp 桁だけを採用する
 			# （dec は高々 dp 桁のため、桁不足のときのみこのパスに来る）
@@ -4983,11 +4981,7 @@ __sx_num_divmod_nat0() {
 			__sx_num_divmod_nat0_tmp_="${#__sx_num_divmod_nat0_zv_}"
 
 			if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_divmod_nat0_tmp_}"; then
-				if __sx_var_is_set "SX_NUM_QM_${__sx_num_divmod_nat0_tmp_}"; then
-					eval "__sx_num_divmod_nat0_qm_=\"\${SX_NUM_QM_${__sx_num_divmod_nat0_tmp_}}\""
-				else
-					SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_num_divmod_nat0_qm_ '?' "${__sx_num_divmod_nat0_tmp_}"
-				fi
+				SX_CFG_UNSET_SOFT=2 __sx_str_qm __sx_num_divmod_nat0_qm_ "${__sx_num_divmod_nat0_tmp_}"
 
 				__sx_num_divmod_nat0_tmp_="${__sx_num_divmod_nat0_u_%${__sx_num_divmod_nat0_qm_}}"
 				__sx_num_divmod_nat0_btail_="${__sx_num_divmod_nat0_u_#"${__sx_num_divmod_nat0_tmp_}"}"
@@ -7660,7 +7654,7 @@ __sx_str_chunk() {
 		__sx_str_chunk_cur_="${__sx_str_chunk_cycle_%%:*}"
 		__sx_str_chunk_cycle_="${__sx_str_chunk_cycle_#*:}"
 
-		SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_cur_#-}"
+		__sx_str_qm __sx_str_chunk_qm_ "${__sx_str_chunk_cur_#-}"
 		__sx_str_chunk_newcycle_="${__sx_str_chunk_newcycle_}$((0 <= __sx_str_chunk_cur_))${__sx_str_chunk_qm_}:"
 	done
 
@@ -7691,7 +7685,7 @@ __sx_str_chunk() {
 
 	# 余り処理: limit 到達 or 文字列不足
 	if M_NUM_LT([|0|], [|__sx_str_chunk_len_|]); then
-		SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_chunk_qm_ '?' "${__sx_str_chunk_len_}"
+		__sx_str_qm __sx_str_chunk_qm_ "${__sx_str_chunk_len_}"
 
 		case "$((
 			(__sx_str_chunk_len_ < __sx_str_chunk_abs_ && ${5} & SX_STR_CHUNK_SKIP_SHORT) ||
@@ -8425,7 +8419,7 @@ __sx_str_isep_cb() {
 
 		# ループ要なら QM を生成してループ実行
 		if M_NUM_BOOL([|${4} < ${#2} && ${9} < ${5}|]); then
-			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${4}"
+			__sx_str_qm __sx_str_isep_qm_ "${4}"
 			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${__sx_str_isep_qm_}" "${9}" "${10}" ${11+"${11}"}
 			unset __sx_str_isep_qm_
 
@@ -8471,7 +8465,7 @@ __sx_str_isep_cb() {
 
 		# ループ要なら QM を生成してループ実行
 		if M_NUM_BOOL([|(0 - ${#2}) < ${4} && ${5} != 0|]); then
-			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${4#-}"
+			__sx_str_qm __sx_str_isep_qm_ "${4#-}"
 			set -- "${1}" "${2}" "${3}" "${4#-}" "${5}" "${6}" "${7}" "${__sx_str_isep_qm_}" "${9}" "${10}" ${11+"${11}"}
 			unset __sx_str_isep_qm_
 
@@ -8529,7 +8523,7 @@ __sx_str_isep_lit() {
 
 		# ループ要なら QM を生成してループ実行
 		if M_NUM_BOOL([|${4} < ${#2} && ${5} != 0|]); then
-			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${4}"
+			__sx_str_qm __sx_str_isep_qm_ "${4}"
 			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${__sx_str_isep_qm_}"
 			unset __sx_str_isep_qm_
 
@@ -8554,7 +8548,7 @@ __sx_str_isep_lit() {
 
 		# ループ要なら QM を生成してループ実行
 		if M_NUM_BOOL([|(0 - ${#2}) < ${4} && ${5} != 0|]); then
-			SX_CFG_UNSET_SOFT=2 __sx_str_rep __sx_str_isep_qm_ '?' "${4#-}"
+			__sx_str_qm __sx_str_isep_qm_ "${4#-}"
 			set -- "${1}" "${2}" "${3}" "${4#-}" "${5}" "${6}" "${7}" "${__sx_str_isep_qm_}"
 			unset __sx_str_isep_qm_
 
@@ -8823,6 +8817,50 @@ __sx_str_rep() {
 	unset __sx_str_rep_out_
 }
 
+### __sx_str_qm - '?'×n を高速生成する（内部用）
+##
+## 使い方:
+##   __sx_str_qm 結果変数名 [繰り返し回数]
+##
+## 説明:
+##   '?' を指定された回数だけ繰り返して、結果変数に格納する。
+##   SX_NUM_QM 定数（1〜37 桁）から case で直接参照し、37 桁を超える場合のみ
+##   __sx_str_rep で生成する。引数チェックは行わない。
+__sx_str_qm() {
+	case "${2:-1}" in
+__sx_m4_gen_qm_case(1)
+		*)
+			SX_CFG_UNSET_SOFT=2 __sx_str_rep "${1}" '?' "${2:-1}"
+			return
+			;;
+	esac
+
+	eval "${1}=\"\${__sx_str_qm_out_}\""
+	unset __sx_str_qm_out_
+}
+
+### __sx_str_zr - "0"×n を高速生成する（内部用）
+##
+## 使い方:
+##   __sx_str_zr 結果変数名 [繰り返し回数]
+##
+## 説明:
+##   "0" を指定された回数だけ繰り返して、結果変数に格納する。
+##   SX_NUM_ZR 定数（1〜37 桁）から case で直接参照し、37 桁を超える場合のみ
+##   __sx_str_rep で生成する。引数チェックは行わない。
+__sx_str_zr() {
+	case "${2:-1}" in
+__sx_m4_gen_zr_case(1)
+		*)
+			SX_CFG_UNSET_SOFT=2 __sx_str_rep "${1}" 0 "${2:-1}"
+			return
+			;;
+	esac
+
+	eval "${1}=\"\${__sx_str_zr_out_}\""
+	unset __sx_str_zr_out_
+}
+
 ### sx_str_rev - 文字列を反転する
 ##
 ## 使い方:
@@ -8864,7 +8902,7 @@ __sx_str_rev() {
 
 	__sx_str_rev_src_="${2-}"
 	__sx_str_rev_out_=
-	__sx_str_rep __sx_str_rev_pat_ '?' "${3#-}"
+	__sx_str_qm __sx_str_rev_pat_ "${3#-}"
 
 	if M_NUM_LT([|${3}|], [|0|]); then
 		set -- "${1}" "${2}" "${3#-}"
@@ -9669,7 +9707,7 @@ __sx_str_substr() {
 	if M_NUM_LE([|__sx_str_substr_total_|], [|__sx_str_substr_off_|]); then
 		__sx_str_substr_str_=
 	else
-		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_off_}"
+		__sx_str_qm __sx_str_substr_qm_ "${__sx_str_substr_off_}"
 		__sx_str_substr_str_="${__sx_str_substr_str_#${__sx_str_substr_qm_}}"
 	fi
 
@@ -9683,7 +9721,7 @@ __sx_str_substr() {
 
 	# 2. 指定長に切り詰め
 	if M_NUM_LT([|__sx_str_substr_drop_|], [|__sx_str_substr_total_|]); then
-		__sx_str_rep __sx_str_substr_qm_ '?' "${__sx_str_substr_drop_}"
+		__sx_str_qm __sx_str_substr_qm_ "${__sx_str_substr_drop_}"
 		__sx_str_substr_str_="${__sx_str_substr_str_%${__sx_str_substr_qm_}}"
 	else
 		__sx_str_substr_str_=
