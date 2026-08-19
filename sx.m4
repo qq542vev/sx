@@ -4574,7 +4574,7 @@ __sx_num_cmp_nat0() {
 ##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
 
 define([|V|], [|__sx_num_div_int_$1|])dnl
-define([|CLEANUP|], [|V(res) V(dp) V(u) V(v)|])dnl
+define([|CLEANUP|], [|V(res) V(dp) V(u)|])dnl
 
 sx_num_div_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_int "${@}" || return; return 0;; esac
@@ -4590,17 +4590,10 @@ sx_num_div_int() {
 	__sx_num_div_int_u="${3:-0}"
 	shift "$((0${2+1} + 0${3+1} + 1))"
 
-	__sx_num_is_int_base 10 "${@}" || {
+	__sx_num_is_nzint_base 10 "${@}" || {
 		unset CLEANUP
 		return "${SX_EX_USAGE}"
 	}
-
-	for __sx_num_div_int_v in "${@}"; do
-		case "${__sx_num_div_int_v#[+-]}" in 0)
-			unset CLEANUP
-			return "${SX_EX_USAGE}"
-		esac
-	done
 
 	__sx_num_div_int "${__sx_num_div_int_res}" "${__sx_num_div_int_dp}" "${__sx_num_div_int_u}" "${@}"
 	unset CLEANUP
@@ -4806,7 +4799,7 @@ sx_num_divmod_int() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_int_base 10 ${2:+"${2}"} ${3:+"${3}"} && M_STR_NE([|"${3:+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
+	__sx_num_is_int_base 10 ${2:+"${2}"} && __sx_num_is_nzint_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_num_divmod_int "${@}"
 }
@@ -5377,7 +5370,7 @@ sx_num_edivmod_int() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_num_is_int_base 10 ${2:+"${2}"} ${3:+"${3}"} && M_STR_NE([|"${3:+${3#[+-]}}"|], [|0|]) || return "${SX_EX_USAGE}"
+	__sx_num_is_int_base 10 ${2:+"${2}"} && __sx_num_is_nzint_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_num_edivmod_int "${@}"
 }
