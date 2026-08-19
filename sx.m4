@@ -9087,26 +9087,26 @@ define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(add) V(left) V(right) 
 ## 説明:
 ##   sx_str_splice の内部実装。引数チェックは行わない。
 __sx_str_splice() {
-	V(res)="${1}"
-	V(str)="${2-}"
-	V(off)="${3-0}"
-	V(len)="${4-${SX_NUM_I32_MAX}}"
-	V(add)="${5-}"
+	__sx_str_splice_res_="${1}"
+	__sx_str_splice_str_="${2-}"
+	__sx_str_splice_off_="${3-0}"
+	__sx_str_splice_len_="${4-${SX_NUM_I32_MAX}}"
+	__sx_str_splice_add_="${5-}"
 
 	# 1. 前半部分を取得 (sx_str_substr は負数 off をサポート済み)
-	__sx_str_substr V(left) "${V(str)}" 0 "${V(off)}"
+	__sx_str_substr __sx_str_splice_left_ "${__sx_str_splice_str_}" 0 "${__sx_str_splice_off_}"
 
 	# 2. 残りの部分（suffix）を抽出
-	V(suffix)="${V(str)#"${V(left)}"}"
+	__sx_str_splice_suffix_="${__sx_str_splice_str_#"${__sx_str_splice_left_}"}"
 
 	# 3. 削除される部分を取得（sx_str_substr の負数 len を利用）
-	__sx_str_substr V(del) "${V(suffix)}" 0 "${V(len)}"
+	__sx_str_substr __sx_str_splice_del_ "${__sx_str_splice_suffix_}" 0 "${__sx_str_splice_len_}"
 
 	# 4. 後半部分（削除範囲より後ろ）を抽出
-	V(right)="${V(suffix)#"${V(del)}"}"
+	__sx_str_splice_right_="${__sx_str_splice_suffix_#"${__sx_str_splice_del_}"}"
 
 	# 5. 結合して格納
-	__sx_var_set "${V(res)}=${V(left)}${V(add)}${V(right)}"
+	__sx_var_set "${__sx_str_splice_res_}=${__sx_str_splice_left_}${__sx_str_splice_add_}${__sx_str_splice_right_}"
 
 	CLEANUP
 }
