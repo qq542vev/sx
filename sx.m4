@@ -4365,10 +4365,13 @@ __sx_num_add_nat0() {
 ##   2  数値1 = 数値2
 ##   3  数値1 > 数値2
 ##  64  引数不正 (SX_EX_USAGE)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_num_cmp_arith() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_arith "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_int_safe "${1-}" "${2-}" || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_num_is_int_safe "${1-}" "${2-}" || return "${SX_EX_USAGE}"
 
 	__sx_num_cmp_arith "${1}" "${2}" || return
 }
@@ -4411,7 +4414,7 @@ __sx_num_cmp_arith_digit() {
 sx_num_cmp_fixed() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_fixed "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_fixed "${1-}" "${2-}" || return
+	sx_num_is_fixed "${1-}" "${2-}" || return "${SX_EX_USAGE}"
 
 	__sx_num_cmp_fixed "${1}" "${2}" || return
 }
@@ -4513,7 +4516,7 @@ __sx_num_cmp_fixed_frac() {
 sx_num_cmp_float() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_float "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_float "${1-}" "${2-}" || return
+	sx_num_is_float "${1-}" "${2-}" || return "${SX_EX_USAGE}"
 
 	__sx_num_cmp_float "${@}"
 }
@@ -4558,7 +4561,7 @@ sx_num_cmp_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_nat0 "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0_base 10 "${1-}" "${2-}" || return
+	__sx_num_is_nat0_base 10 "${1-}" "${2-}" || return "${SX_EX_USAGE}"
 
 	__sx_num_cmp_nat0 "${1}" "${2}" || return
 }
@@ -5644,7 +5647,7 @@ sx_num_is_int_fit() {
 		*) return "${SX_EX_USAGE}";;
 	esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_int "${@}" || return
+	sx_num_is_int "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_num_is_int_fit "${@}" || return
 }
@@ -5733,7 +5736,7 @@ sx_num_is_int_fit_dec() {
 		*) return "${SX_EX_USAGE}";;
 	esac
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_base 10 "${@}" || return
+	__sx_num_is_int_base 10 "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_num_is_int_fit_dec "${@}" || return
 }
