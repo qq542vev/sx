@@ -7618,7 +7618,13 @@ sx_str_any() {
 sx_str_camel() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_camel "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_str_camel "${@}"
 }
@@ -7667,9 +7673,15 @@ __sx_str_camel() {
 sx_str_capital() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_capital "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0_safe ${3:+"${3}"} || return
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+
+	__sx_num_is_nat0_safe ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_capital "${@}"
 }
@@ -7727,7 +7739,13 @@ __sx_str_capital() {
 sx_str_center() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_center "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${#4}"} ${5+"${#5}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${#4}"} ${5+"${#5}"} || return "${SX_EX_DATAERR}"
 
 	__sx_num_is_int_safe_inv ${3+"${3}"} || return "${SX_EX_USAGE}"
 
@@ -7809,7 +7827,13 @@ __sx_str_center() {
 sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_num_is_nat0_safe ${4:+"${4}"} ${5:+"${5}"} || return "${SX_EX_USAGE}"
 
@@ -7940,7 +7964,15 @@ __sx_str_chunk() {
 sx_str_count() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_count "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${4}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+
+	__sx_num_is_nat0_safe ${4:+"${4}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_count "${@}" || return
 }
@@ -7978,9 +8010,15 @@ __sx_str_count() {
 sx_str_cycle() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_cycle "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+
+	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_cycle "${@}"
 }
@@ -8055,7 +8093,13 @@ sx_str_eq() {
 sx_str_escape() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_escape "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_str_escape "${@}"
 }
@@ -8111,7 +8155,13 @@ __sx_str_escape_cb() {
 sx_str_etrim() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_etrim "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_str_etrim "${@}"
 }
@@ -8207,7 +8257,15 @@ sx_str_ew() {
 sx_str_find() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_find "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${4}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+
+	__sx_num_is_nat0_safe ${4:+"${4}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_find "${@}" || return
 }
@@ -8572,7 +8630,13 @@ sx_str_is_word() {
 sx_str_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_isep "${@}" || return; return; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_num_is_int_safe_inv ${4:+"${4}"} && __sx_num_is_nat0_safe ${5:+"${5}"} ${6:+"${6}"} || return "${SX_EX_USAGE}"
 
@@ -8807,9 +8871,15 @@ __sx_str_isep_lit() {
 sx_str_lower() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_lower "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+
+	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_lower "${@}"
 }
@@ -8904,7 +8974,13 @@ sx_str_match() {
 sx_str_pad() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_pad "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${#4}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${#4}"} || return "${SX_EX_DATAERR}"
 
 	__sx_num_is_int_safe_inv ${3+"${3}"} || return "${SX_EX_USAGE}"
 
@@ -8968,7 +9044,13 @@ __sx_str_pad() {
 sx_str_pascal() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_pascal "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_str_pascal "${@}"
 }
@@ -9010,9 +9092,15 @@ __sx_str_pascal() {
 sx_str_rep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0_safe ${3+"${3}"} || return
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+
+	__sx_num_is_nat0_safe ${3+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_rep "${@}"
 }
@@ -9108,7 +9196,13 @@ __sx_m4_gen_zr_case(1)
 sx_str_rev() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rev "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "${SX_EX_USAGE}"
 	case "$((${3:-1}))" in 0)
@@ -9182,7 +9276,15 @@ __sx_str_rev() {
 sx_str_rfind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rfind "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${4}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+
+	__sx_num_is_nat0_safe ${4:+"${4}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_rfind "${@}" || return
 }
@@ -9291,9 +9393,15 @@ __sx_str_rfind() {
 sx_str_rot() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rot "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${4:+"${4}"} || return
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+
+	__sx_num_is_int_safe_inv ${4:+"${4}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_rot "${@}"
 }
@@ -9337,7 +9445,13 @@ __sx_str_rot() {
 sx_str_splice() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_splice "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_num_is_int_safe_inv ${3+"${3}"} ${4+"${4}"} || return "${SX_EX_USAGE}"
 
@@ -9404,7 +9518,13 @@ __sx_str_splice() {
 sx_str_split() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_num_is_int_safe_inv ${4+"${4}"} ${5+"${5}"} || return "${SX_EX_USAGE}"
 
@@ -9575,7 +9695,13 @@ __sx_str_split() {
 sx_str_split_ifs() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split_ifs "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_str_split_ifs "${@}" || return
 }
@@ -9625,7 +9751,13 @@ __sx_str_split_ifs() {
 sx_str_squish() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_squish "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_str_squish "${@}"
 }
@@ -9677,7 +9809,13 @@ __sx_str_squish() {
 sx_str_strim() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_strim "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_str_strim "${@}"
 }
@@ -9730,7 +9868,13 @@ __sx_str_strim() {
 sx_str_sub() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_num_is_int_safe_inv ${5:+"${5}"} && __sx_num_is_nat0_safe ${6:+"${6}"} || return "${SX_EX_USAGE}"
 
@@ -9919,7 +10063,13 @@ __sx_str_sub_lit() {
 sx_str_substr() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_substr "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_num_is_int_safe_inv ${3+"${3}"} ${4+"${4}"} || return "${SX_EX_USAGE}"
 
@@ -10028,9 +10178,15 @@ sx_str_sw() {
 sx_str_swapcase() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_swapcase "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+
+	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_swapcase "${@}"
 }
@@ -10066,7 +10222,13 @@ __sx_str_swapcase() {
 sx_str_title() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_title "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_str_title "${@}"
 }
@@ -10127,9 +10289,15 @@ __sx_str_title_cb() {
 sx_str_tr() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_tr "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${5:+"${5}"} || return
+	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+
+	__sx_num_is_int_safe_inv ${5:+"${5}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_tr "${@}"
 }
@@ -10223,7 +10391,13 @@ __sx_str_tr() {
 sx_str_trim() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_trim "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_str_trim "${@}"
 }
@@ -10266,9 +10440,15 @@ __sx_str_trim() {
 sx_str_upper() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_upper "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
 
-	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+
+	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "${SX_EX_USAGE}"
 
 	__sx_str_upper "${@}"
 }
@@ -10334,7 +10514,13 @@ __sx_str_upper_cb() {
 sx_str_words() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_words "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
 
 	__sx_str_words "${@}"
 }
