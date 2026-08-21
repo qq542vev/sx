@@ -3133,27 +3133,62 @@ __sx_var_is_arr() {
 ## 説明:
 ##   引数で指定されたすべての文字列が、分配代入バインド形式（var1:var2::var3 等）
 ##   として有効な形式であるかを確認する。
-##   各要素は有効な変数名、またはスキップを意味する空文字列である必要がある。
+##   各要素は以下のいずれかである必要がある。
+##     - 有効な変数名
+##     - スキップを意味する空文字列
+##     - 数値プレフィックス付きの要素（N名前 / N）
+##       N は SX_CFG_NUM_RANGE の範囲内で安全に処理できる 1 以上の自然数。
+##       先頭に 0 を置くことはできない（10進のみ解釈）。
+##   最後の要素は残り蓄積先として変数名で直接使用されるため、
+##   数字で始めることはできない。
 ##
 ## 終了ステータス:
 ##    0  すべて有効な形式である (SX_EX_OK)
 ##    1  無効な形式が含まれる
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_var_is_bind() {
-	for __sx_var_is_bind_arg in "${@}"; do
-		case "${__sx_var_is_bind_arg}" in
-			*[!"${SX_STR_WORD}":]* | 0* | *:0*)
-				unset __sx_var_is_bind_arg
-				return 1
-				;;
-		esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_bind "${@}" || return; return 0;; esac
 
-		case "${__sx_var_is_bind_arg##*:}" in [0-9]*)
-			unset __sx_var_is_bind_arg
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_var_is_bind "${@}"
+}
+
+define([|V|], [|__sx_var_is_bind_$1_|])dnl
+define([|CLEANUP|], [|V(arg) V(bind)|])dnl
+
+### __sx_var_is_bind - 文字列が分配代入バインド形式として有効か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_bind [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_var_is_bind の内部実装。SX_CFG_NUM_RANGE の妥当性チェックは行わない。
+__sx_var_is_bind() {
+	for __sx_var_is_bind_arg_ in "${@}"; do
+		case "${__sx_var_is_bind_arg_}" in *[!"${SX_STR_WORD}":]* | 0* | *:0*)
+			unset CLEANUP
 			return 1
 		esac
+
+		case "${__sx_var_is_bind_arg_##*:}" in [0-9]*)
+			unset CLEANUP
+			return 1
+		esac
+
+		__sx_var_is_bind_bind_=":${__sx_var_is_bind_arg_}"
+
+		while M_STR_MATCH([|"${__sx_var_is_bind_bind_}"|], [|*:[1-9]*|]); do
+			__sx_var_is_bind_bind_="${__sx_var_is_bind_bind_#"${__sx_var_is_bind_bind_%%:[1-9]*}:"}"
+
+			__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_var_is_bind_bind_%%[!0-9]*}" || {
+				unset CLEANUP
+				return 1
+			}
+		done
 	done
 
-	unset __sx_var_is_bind_arg
+	unset CLEANUP
 }
 
 ### sx_var_is_bindable - バインド形式が有効であり、かつ全変数が書き込み可能か確認する
@@ -3169,10 +3204,11 @@ sx_var_is_bind() {
 ##    0  成功 (SX_EX_OK)
 ##    1  書き込み不可な変数が含まれる (SX_EX_NOPERM)
 ##   64  バインド形式が不正 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_var_is_bindable() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_bindable "${@}" || return; return 0;; esac
 
-	sx_var_is_bind "${@}" || return "${SX_EX_USAGE}"
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_var_is_bind "${@}" || return
 
 	__sx_var_is_bindable "${@}"
 }
