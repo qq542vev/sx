@@ -7576,7 +7576,9 @@ sx_str_any() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_camel() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_camel "${@}" || return; return 0;; esac
 
@@ -7622,11 +7624,16 @@ __sx_str_camel() {
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_capital() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_capital "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0_safe ${3:+"${3}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0_safe ${3:+"${3}"} || return
 
 	__sx_str_capital "${@}"
 }
@@ -7678,7 +7685,9 @@ __sx_str_capital() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_center() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_center "${@}" || return; return 0;; esac
 
@@ -7758,6 +7767,7 @@ __sx_str_center() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  スキーマに含まれる変数が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_chunk() {
@@ -7888,7 +7898,9 @@ __sx_str_chunk() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_count() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_count "${@}" || return; return 0;; esac
 
@@ -7924,11 +7936,15 @@ __sx_str_count() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_cycle() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_cycle "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
 
 	__sx_str_cycle "${@}"
 }
@@ -7997,11 +8013,13 @@ sx_str_eq() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_escape() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_escape "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
 
 	__sx_str_escape "${@}"
 }
@@ -8051,11 +8069,13 @@ __sx_str_escape_cb() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_etrim() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_etrim "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
 
 	__sx_str_etrim "${@}"
 }
@@ -8145,7 +8165,9 @@ sx_str_ew() {
 ##    0  1件以上一致 (SX_EX_OK)
 ##    1  不一致
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_find() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_find "${@}" || return; return 0;; esac
 
@@ -8508,7 +8530,9 @@ sx_str_is_word() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_isep "${@}" || return; return; esac
 
@@ -8741,12 +8765,15 @@ __sx_str_isep_lit() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  設定値不正 (SX_EX_CONFIG)
 sx_str_lower() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_lower "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
 
 	__sx_str_lower "${@}"
 }
@@ -8835,7 +8862,9 @@ sx_str_match() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_pad() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_pad "${@}" || return; return 0;; esac
 
@@ -8897,7 +8926,9 @@ __sx_str_pad() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_pascal() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_pascal "${@}" || return; return 0;; esac
 
@@ -8937,12 +8968,15 @@ __sx_str_pascal() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_rep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0_safe ${3+"${3}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" sx_num_is_nat0_safe ${3+"${3}"} || return
 
 	__sx_str_rep "${@}"
 }
@@ -9032,11 +9066,13 @@ __sx_m4_gen_zr_case(1)
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_rev() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rev "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
 
 	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "${SX_EX_USAGE}"
 	case "$((${3:-1}))" in 0)
@@ -9104,6 +9140,9 @@ __sx_str_rev() {
 ##    0  1件以上一致 (SX_EX_OK)
 ##    1  不一致
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_rfind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rfind "${@}" || return; return 0;; esac
 
@@ -9210,11 +9249,15 @@ __sx_str_rfind() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_rot() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rot "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${4:+"${4}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${4:+"${4}"} || return
 
 	__sx_str_rot "${@}"
 }
@@ -9252,6 +9295,7 @@ __sx_str_rot() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_splice() {
@@ -9318,6 +9362,7 @@ __sx_str_splice() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_split() {
@@ -9488,11 +9533,13 @@ __sx_str_split() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_split_ifs() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split_ifs "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
 
 	__sx_str_split_ifs "${@}" || return
 }
@@ -9536,11 +9583,13 @@ __sx_str_split_ifs() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_squish() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_squish "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
 
 	__sx_str_squish "${@}"
 }
@@ -9586,11 +9635,13 @@ __sx_str_squish() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_strim() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_strim "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
 
 	__sx_str_strim "${@}"
 }
@@ -9637,6 +9688,7 @@ __sx_str_strim() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_sub() {
@@ -9825,6 +9877,7 @@ __sx_str_sub_lit() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_substr() {
@@ -9933,12 +9986,15 @@ sx_str_sw() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  設定値不正 (SX_EX_CONFIG)
 sx_str_swapcase() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_swapcase "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
 
 	__sx_str_swapcase "${@}"
 }
@@ -9968,12 +10024,13 @@ __sx_str_swapcase() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  設定値不正 (SX_EX_CONFIG)
 sx_str_title() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_title "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
 
 	__sx_str_title "${@}"
 }
@@ -10027,11 +10084,16 @@ __sx_str_title_cb() {
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_tr() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_tr "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${5:+"${5}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${5:+"${5}"} || return
 
 	__sx_str_tr "${@}"
 }
@@ -10119,11 +10181,13 @@ __sx_str_tr() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_trim() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_trim "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
 
 	__sx_str_trim "${@}"
 }
@@ -10160,12 +10224,15 @@ __sx_str_trim() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  設定値不正 (SX_EX_CONFIG)
 sx_str_upper() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_upper "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
+	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" && __sx_ex_remap "1:${SX_EX_DATAERR}" sx_num_is_nat0_safe ${2+"${#2}"} || return
+
+	__sx_ex_remap "1:${SX_EX_USAGE}" __sx_num_is_int_safe_inv ${3:+"${3}"} || return
 
 	__sx_str_upper "${@}"
 }
@@ -10225,7 +10292,9 @@ __sx_str_upper_cb() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_words() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_words "${@}" || return; return 0;; esac
 
