@@ -63,7 +63,7 @@ define([|__M_BIND_QUOTE|], [|dnl
 
 			case "${$1_bind_name_}" in ?*)
 				M_STR_QUOTE([|$1_bind_esc_|], [|$2|])
-				eval "${$1_bind_name_}=\"\${${$1_bind_name_}-}\${${$1_bind_name_}+ }\${$1_bind_esc_}\""
+				eval "${$1_bind_name_}=\"\${${$1_bind_name_}-}\${${$1_bind_name_}:+ }\${$1_bind_esc_}\""
 			esac
 
 			case "${$1_bind_cnt_}" in
@@ -88,7 +88,7 @@ define([|__M_BIND_UNQUOTE|], [|dnl
 			$1_bind_name_="${$1_bind_name_#"${$1_bind_cnt_}"}"
 
 			case "${$1_bind_name_}" in ?*)
-				eval "${$1_bind_name_}=\"\${${$1_bind_name_}-}\${${$1_bind_name_}+ }\"patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
+				eval "${$1_bind_name_}=\"\${${$1_bind_name_}-}\${${$1_bind_name_}:+ }\"patsubst([|$2|], [|[\\"`$]|], [|\\\&|])"
 			esac
 
 			case "${$1_bind_cnt_}" in
@@ -2831,18 +2831,26 @@ __sx_arg_rquote() {
 ##
 ## 説明:
 ##   指定されたバインド形式に従って、変数を初期化する。
-##   最後のコロン（:）より前の変数は関連要素を含めて削除（unset）され、
-##   最後の変数は空文字列（""）で初期化される。
-##   これにより、前の変数が「省略された」ことを sx_var_is_set で判定できる。
+##   通常の変数は削除（unset）され、数値プレフィックス（N名前）付きの変数は
+##   空文字列（""）で初期化される。最後の変数も空文字列（""）で初期化される。
+##   これにより、通常の変数が「省略された」ことを sx_var_is_set で判定でき、
+##   蓄積スロット（数値プレフィックス付き・最後の変数）は bind が到達しなかった
+##   場合でも「0 個のリスト」として常に参照可能（eval set -- "${v}" 等が安全）である。
+##   対象が sx 配列である場合は、その関連要素（_len, _n 等）も含めて削除される。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  バインド形式が不正 (SX_EX_USAGE)
 ##   77  書き込み不可な変数が含まれる (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_var_bind_init() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind_init "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "64:${SX_EX_USAGE}" "1:${SX_EX_NOPERM}" sx_var_is_bindable "${@}" || return
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_var_is_bind "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_bindable "${@}" || return "${SX_EX_NOPERM}"
 
 	__sx_var_bind_init "${@}"
 }
@@ -2855,26 +2863,40 @@ sx_var_bind_init() {
 ## 説明:
 ##   sx_var_bind_init の内部実装。
 ##   引数チェックは行わない。
+##   通常の変数は削除（unset）され、数値プレフィックス（N名前）付きの変数と
+##   最後の変数は空文字列（""）で初期化される。
+##   対象が sx 配列である場合は、その関連要素（_len, _n 等）も含めて削除する。
 __sx_var_bind_init() {
 	for __sx_var_bind_init_arg_ in "${@}"; do
-		__sx_var_bind_init_ls_=
-
 		while
 			__sx_var_bind_init_seg_="${__sx_var_bind_init_arg_%%:*}"
-			__sx_var_bind_init_ls_="${__sx_var_bind_init_ls_} ${__sx_var_bind_init_seg_#"${__sx_var_bind_init_seg_%%[!0-9]*}"}"
-			M_STR_HAS([|"${__sx_var_bind_init_arg_}"|], [|:|])
-		do
-			__sx_var_bind_init_arg_="${__sx_var_bind_init_arg_#*:}"
-		done
+			__sx_var_bind_init_set_=
 
-		eval __sx_var_unset "${__sx_var_bind_init_ls_}"
+			case "${__sx_var_bind_init_seg_}" in
+				[1-9]*)
+					__sx_var_bind_init_seg_="${__sx_var_bind_init_seg_#"${__sx_var_bind_init_seg_%%[!0-9]*}"}"
+					__sx_var_bind_init_set_=1
+					;;
+				*) __sx_var_bind_init_set_=0;;
+			esac
 
-		case "${__sx_var_bind_init_arg_}" in ?*)
-			eval "${__sx_var_bind_init_arg_}="
+			case "${__sx_var_bind_init_set_}${__sx_var_bind_init_seg_}" in
+				0?*) unset "${__sx_var_bind_init_seg_}";;
+				1?*) eval "${__sx_var_bind_init_seg_}=";;
+			esac
+
+			case "${__sx_var_bind_init_arg_}" in
+				*:*) __sx_var_bind_init_arg_="${__sx_var_bind_init_arg_#*:}";;
+				*) break;;
+			esac
+		do :; done
+
+		case "${__sx_var_bind_init_seg_}" in ?*)
+			eval "${__sx_var_bind_init_seg_}="
 		esac
 	done
 
-	unset __sx_var_bind_init_arg_ __sx_var_bind_init_ls_ __sx_var_bind_init_seg_
+	unset __sx_var_bind_init_arg_ __sx_var_bind_init_seg_ __sx_var_bind_init_set_
 }
 
 ### sx_var_bind - バインド状態に従って値を割り当てる
@@ -2886,6 +2908,8 @@ __sx_var_bind_init() {
 ##   バインド形式（a:b:c 等）を解析し、値を適切な変数に割り当てる。
 ##   割り当て後、残りのバインド形式が結果変数に格納される。
 ##   フラグに SX_VAR_BIND_QUOTE (1) を指定すると、リスト蓄積時に値をクオートする。
+##   蓄積スロット（数値プレフィックス付き・最後の変数）は、既存値が空文字列の
+##   場合（bind 未到達を含む）はセパレータを付加せず蓄積する。
 ##
 ## 終了ステータス:
 ##    0  割り当て成功 (SX_EX_OK)
@@ -2942,7 +2966,7 @@ __sx_var_bind() {
 			__sx_var_bind_n_="${__sx_var_bind_seg_#${__sx_var_bind_c_}}"
 
 			case "${__sx_var_bind_n_}" in ?*)
-				eval "${__sx_var_bind_n_}=\"\${${__sx_var_bind_n_}-}\${${__sx_var_bind_n_}+ }\${__sx_var_bind_v_}\""
+				eval "${__sx_var_bind_n_}=\"\${${__sx_var_bind_n_}-}\${${__sx_var_bind_n_}:+ }\${__sx_var_bind_v_}\""
 			esac
 
 			case "${__sx_var_bind_c_}" in

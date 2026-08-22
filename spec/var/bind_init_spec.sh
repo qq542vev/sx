@@ -34,25 +34,6 @@ Describe 'sx_var_bind_init'
         The variable v2 should equal ""
     End
 
-    It 'SX 配列を適切に unset すること'
-        sx_arr_gen arr a b
-        When call sx_var_bind_init "arr:rest"
-        The status should be success
-        The variable arr should be undefined
-        The variable arr_len should be undefined
-        The variable arr_0 should be undefined
-        The variable rest should equal ""
-    End
-
-    It '最後の変数が SX 配列だった場合に適切に初期化すること'
-        sx_arr_gen arr a b
-        When call sx_var_bind_init "arr"
-        The status should be success
-        The variable arr should equal ""
-        The variable arr_len should be undefined
-        The variable arr_0 should be undefined
-    End
-
     It '無効なバインディングスキーマに対して EX_USAGE を返すこと'
         When call sx_var_bind_init "invalid-name!"
         The status should equal 64 # SX_EX_USAGE
@@ -72,5 +53,41 @@ Describe 'sx_var_bind_init'
         The variable v2 should equal ""
         The variable v3 should be undefined
         The variable v4 should equal ""
+    End
+
+    It '数値プレフィックス付き変数を空文字列で初期化すること'
+        a="olda"
+        b="oldb"
+        c="oldc"
+        When call sx_var_bind_init "a:2b:c"
+        The status should be success
+        The variable a should be undefined
+        The variable b should equal ""
+        The variable c should equal ""
+    End
+
+    It '純数字のスキップスロットは何もしないこと'
+        v1="old1"
+        v2="old2"
+        When call sx_var_bind_init "3:v1"
+        The status should be success
+        The variable v1 should equal ""
+    End
+
+    It '到達しない蓄積スロットが空文字列のため eval set -- が 0 引数で成功すること'
+        When call sx_var_bind_init "2b:c"
+        The status should be success
+        eval set -- "${b}"
+        The value "$#" should equal 0
+        eval set -- "${c}"
+        The value "$#" should equal 0
+    End
+
+    It '数値プレフィックス付き SX 配列を空文字列で初期化できること'
+        sx_arr_gen arr x y
+        When call sx_var_bind_init "2arr:rest"
+        The status should be success
+        The variable arr should equal ""
+        The variable rest should equal ""
     End
 End

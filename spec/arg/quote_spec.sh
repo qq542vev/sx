@@ -79,10 +79,12 @@ Describe 'sx_arg_quote'
       The variable b should equal "val2"
     End
 
-    It '再利用時に既存の配列変数をクリーンアップすること'
+    It '再利用時に既存の配列変数を呼び出し側がクリーンアップすること'
       # Correctly initialize an SX array
       sx_arr_gen myarr
       sx_arr_push myarr "old"
+      # 配列のクリーンアップは呼び出し側の責務
+      sx_var_unset myarr
       When call sx_arg_quote 'myarr' newval
       The status should be success
       The variable myarr should equal "'newval'"

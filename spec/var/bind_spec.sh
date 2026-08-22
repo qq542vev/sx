@@ -36,6 +36,24 @@ Describe 'sx_var_bind'
             The variable arr should equal "a1 a2"
         End
 
+        It 'カウントスロットが bind 未到達でも空文字列として参照できること'
+            unset b c
+            sx_var_bind_init "a:2b:c"
+            When call sx_var_bind res "a:2b:c" "val1"
+            The status should be success
+            eval set -- "${b}"
+            The value "$#" should equal 0
+        End
+
+        It '先頭の蓄積値が空文字列の場合もセパレータを付加しないこと'
+            unset b rest res
+            sx_var_bind_init "2b:rest"
+            sx_var_bind res "2b:rest" ""
+            When call sx_var_bind res "$res" "x"
+            The status should be success
+            The variable b should equal "x"
+        End
+
         It '残り（rest）スロットに累積すること'
             unset out res
             sx_var_bind res "out" "a1"
