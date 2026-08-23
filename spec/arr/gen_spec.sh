@@ -21,16 +21,6 @@ Describe 'sx_arr_gen'
     The variable empty_arr should start with "array-sx-sig-"
   End
 
-  It '既存の配列を再初期化し、古い要素が削除されること'
-    sx_arr_gen myarr a b c
-    When call sx_arr_gen myarr x
-    The status should be success
-    The variable myarr_len should equal 1
-    The variable myarr_0 should equal "x"
-    The variable myarr_1 should be undefined
-    The variable myarr_2 should be undefined
-  End
-
   It '無効な配列名に対して EX_USAGE を返すこと'
     When call sx_arr_gen "1invalid" "val"
     The status should equal 64
@@ -55,14 +45,6 @@ Describe 'sx_arr_gen'
     When call sx_arr_gen myarr_q "it's" "test"
     The variable myarr_q_0 should equal "it's"
     The variable myarr_q_1 should equal "test"
-  End
-
-  It '再初期化時に古い要素（範囲外）が削除されていること'
-    sx_arr_gen myarr_re a b c d
-    When call sx_arr_gen myarr_re x y
-    The variable myarr_re_0 should equal "x"
-    The variable myarr_re_1 should equal "y"
-    The variable myarr_re_2 should be undefined
   End
 
   It '連続してgenを呼び出しても毎回正しく初期化されること'

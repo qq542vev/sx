@@ -662,7 +662,7 @@ __sx_ex_remap() {
 		esac
 	done
 
-	SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_ex_remap_cmd_ "${@}"
+	__sx_arg_quote __sx_ex_remap_cmd_ "${@}"
 	set -- "${__sx_ex_remap_map_}" "${__sx_ex_remap_cmd_}"
 	unset __sx_ex_remap_map_ __sx_ex_remap_cmd_
 
@@ -683,7 +683,7 @@ __sx_ex_remap() {
 				;;
 			!*)
 				case "${1}" in ![!0-9]*)
-					SX_CFG_UNSET_SOFT=2 __sx_ex_map __sx_ex_remap_n_ "${1#!}"
+					__sx_ex_map __sx_ex_remap_n_ "${1#!}"
 					set -- "!${__sx_ex_remap_n_}" "${2}"
 				esac
 
@@ -692,7 +692,7 @@ __sx_ex_remap() {
 				fi
 				;;
 			[!0-9]*)
-				SX_CFG_UNSET_SOFT=2 __sx_ex_map __sx_ex_remap_n_ "${1}"
+				__sx_ex_map __sx_ex_remap_n_ "${1}"
 
 				case "${__sx_ex_remap_n_}" in "${__sx_ex_remap_sts_}")
 					__sx_ex_remap_sts_="${2}"; break
@@ -702,7 +702,7 @@ __sx_ex_remap() {
 	done
 
 	case "${__sx_ex_remap_sts_}" in [!0-9]*)
-		SX_CFG_UNSET_SOFT=2 __sx_ex_map __sx_ex_remap_sts_ "${__sx_ex_remap_sts_}"
+		__sx_ex_map __sx_ex_remap_sts_ "${__sx_ex_remap_sts_}"
 	esac
 
 	set -- "${__sx_ex_remap_sts_}"
@@ -744,7 +744,7 @@ sx_ex_yield() {
 ##   - 指定されたステータスを返す。
 __sx_ex_yield() {
 	case "${1-0}" in [!0-9]*)
-		SX_CFG_UNSET_SOFT=2 __sx_ex_map __sx_ex_yield_s_ "${1}"
+		__sx_ex_map __sx_ex_yield_s_ "${1}"
 		set -- "${__sx_ex_yield_s_}"
 		unset __sx_ex_yield_s_
 	esac
@@ -849,7 +849,7 @@ sx_fn_with() {
 	done
 
 	case "${__sx_fn_with_i}" in [!0]*)
-		SX_CFG_UNSET_SOFT=2 __sx_arg_quote "${__sx_fn_with_i}__sx_fn_with_fn:" "${@}"
+		__sx_arg_quote "${__sx_fn_with_i}__sx_fn_with_fn:" "${@}"
 		eval sx_fn_is_valid "${__sx_fn_with_fn}" || {
 			unset __sx_fn_with_i __sx_fn_with_arg __sx_fn_with_fn
 			return "${SX_EX_USAGE}"
@@ -888,7 +888,7 @@ __sx_fn_with() {
 			__sx_fn_with_arg_="${__sx_fn_with_m_%% *}"
 		esac
 
-		SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_fn_with_qa_ "${__sx_fn_with_arg_}"
+		__sx_arg_quote __sx_fn_with_qa_ "${__sx_fn_with_arg_}"
 		__sx_fn_with_q_="${__sx_fn_with_q_}${__sx_fn_with_q_:+ }${__sx_fn_with_qa_}"
 	done
 
@@ -927,7 +927,7 @@ sx_fn_anon() {
 	shift
 
 	for __sx_fn_anon_arg in "${@}"; do
-		SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_fn_anon_arg "f=${__sx_fn_anon_arg}"
+		__sx_arg_quote __sx_fn_anon_arg "f=${__sx_fn_anon_arg}"
 		__sx_fn_anon_chk="${__sx_fn_anon_chk} ${__sx_fn_anon_arg}"
 	done
 
@@ -1041,7 +1041,7 @@ __sx_arg_count() {
 	__sx_arg_count_res_="${1}"
 	shift
 
-	SX_CFG_UNSET_SOFT=2 __sx_arg_find __sx_arg_count_tmp_ "${@}" || :
+	__sx_arg_find __sx_arg_count_tmp_ "${@}" || :
 
 	eval __sx_arg_len "${__sx_arg_count_res_}" "${__sx_arg_count_tmp_}"
 
@@ -2417,7 +2417,7 @@ __sx_arg_resize() {
 		__sx_str_sub __sx_arg_resize_shape_ "${__sx_arg_resize_shape_}" -1 "${__sx_arg_resize_inferred_}"
 	esac
 
-	SX_CFG_UNSET_SOFT=2 __sx_arg_pad __sx_arg_resize_padded_ "$((__sx_arg_resize_total_ * (${__sx_arg_resize_flg_} & SX_ARG_RESIZE_PAD_LEFT ? -1 : 1)))" "${__sx_arg_resize_val_}" ::: "${@}"
+	__sx_arg_pad __sx_arg_resize_padded_ "$((__sx_arg_resize_total_ * (${__sx_arg_resize_flg_} & SX_ARG_RESIZE_PAD_LEFT ? -1 : 1)))" "${__sx_arg_resize_val_}" ::: "${@}"
 
 	eval set -- "${__sx_arg_resize_padded_}"
 
@@ -2497,7 +2497,7 @@ sx_arg_range() {
 __sx_arg_range() {
 	__sx_arg_range_res_="${1}"
 	shift
-	SX_CFG_UNSET_SOFT=2 __sx_num_range __sx_arg_range_idxs_ "${@}"
+	__sx_num_range __sx_arg_range_idxs_ "${@}"
 
 	case "${__sx_arg_range_idxs_}" in
 		'') M_SET([|${__sx_arg_range_res_}|], [||]);;
@@ -3015,8 +3015,8 @@ sx_var_copy() {
 ##   sx_var_copy の内部実装。
 ##   引数チェックは行わない。
 __sx_var_copy() {
-	SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_var_copy_esc_ "${@}"
-	SX_CFG_UNSET_SOFT=2 __sx_var_list_copy __sx_var_copy_ls_ "${@}"
+	__sx_arg_quote __sx_var_copy_esc_ "${@}"
+	__sx_var_list_copy __sx_var_copy_ls_ "${@}"
 	eval set -- "${__sx_var_copy_ls_}"
 
 	# 1. 値のキャプチャと代入式の生成
@@ -3027,7 +3027,7 @@ __sx_var_copy() {
 		__sx_var_copy_src_="${__sx_var_copy_pair_#*=}"
 
 		if sx_var_is_set "${__sx_var_copy_src_}"; then
-			eval SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_var_copy_val_ "\"\${${__sx_var_copy_src_}}\""
+			eval __sx_arg_quote __sx_var_copy_val_ "\"\${${__sx_var_copy_src_}}\""
 			__sx_var_copy_asg_="${__sx_var_copy_asg_} ${__sx_var_copy_dst_}=${__sx_var_copy_val_};"
 		else
 			__sx_var_copy_asg_="${__sx_var_copy_asg_} unset ${__sx_var_copy_dst_};"
@@ -3984,11 +3984,11 @@ sx_var_swap() {
 
 		case "${__sx_var_swap_arg}" in
 			*=*)
-				SX_CFG_UNSET_SOFT=2 __sx_var_copy "${__sx_var_swap_arg%%=*}-${__sx_var_swap_tmp}"
+				__sx_var_copy "${__sx_var_swap_arg%%=*}-${__sx_var_swap_tmp}"
 				__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_arg}=${__sx_var_swap_tmp}"
 				;;
 			*-*)
-				SX_CFG_UNSET_SOFT=2 __sx_var_copy "${__sx_var_swap_arg##*-}-${__sx_var_swap_tmp}"
+				__sx_var_copy "${__sx_var_swap_arg##*-}-${__sx_var_swap_tmp}"
 				__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_tmp}-${__sx_var_swap_arg}"
 				;;
 		esac
@@ -4024,11 +4024,11 @@ __sx_var_swap() {
 
 		case "${__sx_var_swap_arg_}" in
 			*=*)
-				SX_CFG_UNSET_SOFT=2 __sx_var_copy "${__sx_var_swap_arg_%%=*}-${__sx_var_swap_tmp_}"
+				__sx_var_copy "${__sx_var_swap_arg_%%=*}-${__sx_var_swap_tmp_}"
 				__sx_var_swap_out_="${__sx_var_swap_out_} ${__sx_var_swap_arg_}=${__sx_var_swap_tmp_}"
 				;;
 			*-*)
-				SX_CFG_UNSET_SOFT=2 __sx_var_copy "${__sx_var_swap_arg_##*-}-${__sx_var_swap_tmp_}"
+				__sx_var_copy "${__sx_var_swap_arg_##*-}-${__sx_var_swap_tmp_}"
 				__sx_var_swap_out_="${__sx_var_swap_out_} ${__sx_var_swap_tmp_}-${__sx_var_swap_arg_}"
 				;;
 		esac
@@ -4562,7 +4562,7 @@ sx_num_cmp_float() {
 ##    2  左辺 = 右辺
 ##    3  左辺 > 右辺
 __sx_num_cmp_float() {
-	SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_cmp_float_a_:__sx_num_cmp_float_b_ "${1}" "${2}"
+	__sx_num_norm __sx_num_cmp_float_a_:__sx_num_cmp_float_b_ "${1}" "${2}"
 	set -- "${__sx_num_cmp_float_a_}" "${__sx_num_cmp_float_b_}"
 	unset __sx_num_cmp_float_a_ __sx_num_cmp_float_b_
 
@@ -6954,10 +6954,10 @@ __sx_num_max() {
 	__sx_num_max_win_="${2}"
 	shift 2
 
-	SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_max_wnorm_ "${__sx_num_max_win_}"
+	__sx_num_norm __sx_num_max_wnorm_ "${__sx_num_max_win_}"
 
 	for __sx_num_max_arg_ in "${@}"; do
-		SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_max_anorm_ "${__sx_num_max_arg_}"
+		__sx_num_norm __sx_num_max_anorm_ "${__sx_num_max_arg_}"
 
 		__sx_num_cmp_fixed "${__sx_num_max_wnorm_}" "${__sx_num_max_anorm_}" || case "${?}" in 1)
 			__sx_num_max_win_="${__sx_num_max_arg_}"
@@ -7026,10 +7026,10 @@ __sx_num_min() {
 	__sx_num_min_win_="${2}"
 	shift 2
 
-	SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_min_wnorm_ "${__sx_num_min_win_}"
+	__sx_num_norm __sx_num_min_wnorm_ "${__sx_num_min_win_}"
 
 	for __sx_num_min_arg_ in "${@}"; do
-		SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_min_anorm_ "${__sx_num_min_arg_}"
+		__sx_num_norm __sx_num_min_anorm_ "${__sx_num_min_arg_}"
 
 		__sx_num_cmp_fixed "${__sx_num_min_wnorm_}" "${__sx_num_min_anorm_}" || case "${?}" in 3)
 			__sx_num_min_win_="${__sx_num_min_arg_}"
@@ -7294,7 +7294,7 @@ __sx_num_rel() {
 			1) : $((__sx_num_rel_arg_ += 0));;
 			2) __sx_num_rel_arg_="${__sx_num_rel_arg_#+}";;
 			*)
-				SX_CFG_UNSET_SOFT=2 __sx_num_norm __sx_num_rel_arg_ "${__sx_num_rel_arg_}"
+				__sx_num_norm __sx_num_rel_arg_ "${__sx_num_rel_arg_}"
 				__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
 				;;
 		esac
@@ -7872,7 +7872,7 @@ sx_str_chunk() {
 		*) return "${SX_EX_USAGE}";;
 	esac
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_split __sx_str_chunk_ints "${3:-1}" :
+	__sx_str_split __sx_str_chunk_ints "${3:-1}" :
 	if ! eval __sx_num_is_int_safe_inv "${__sx_str_chunk_ints}"; then
 		unset __sx_str_chunk_ints
 		return "${SX_EX_USAGE}"
@@ -8015,7 +8015,7 @@ sx_str_count() {
 ## 説明:
 ##   sx_str_count の内部実装。引数チェックは行わない。
 __sx_str_count() {
-	SX_CFG_UNSET_SOFT=2 __sx_str_find __sx_str_count_tmp_ "${2-}" "${3-}" "${4:-0}" || :
+	__sx_str_find __sx_str_count_tmp_ "${2-}" "${3-}" "${4:-0}" || :
 	eval __sx_arg_len '"${1}"' "${__sx_str_count_tmp_}"
 	unset __sx_str_count_tmp_
 }
@@ -8070,7 +8070,7 @@ __sx_str_cycle() {
 		return "${SX_EX_OK}"
 	esac
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_cycle_head_:__sx_str_cycle_tail_: "${2}" "$((0 < ${3} ? ${3} : ${3} + ${4}))" 1
+	__sx_str_chunk __sx_str_cycle_head_:__sx_str_cycle_tail_: "${2}" "$((0 < ${3} ? ${3} : ${3} + ${4}))" 1
 	M_SET([|${1}|], [|${__sx_str_cycle_tail_}${__sx_str_cycle_head_}|])
 
 	unset __sx_str_cycle_head_ __sx_str_cycle_tail_
@@ -9451,7 +9451,7 @@ __sx_str_rot() {
 		return "${SX_EX_OK}"
 	esac
 
-	SX_CFG_UNSET_SOFT=2 __sx_str_cycle __sx_str_rot_rotated_ "${3}" "${4}"
+	__sx_str_cycle __sx_str_rot_rotated_ "${3}" "${4}"
 	__sx_str_tr "${1}:" "${2}" "${3}" "${__sx_str_rot_rotated_}"
 
 	unset __sx_str_rot_rotated_
@@ -9593,7 +9593,7 @@ __sx_str_split() {
 	then
 		if M_NUM_LT([|0|], [|__sx_str_split_lim_|]); then
 			# 前方から制限数分だけ分割
-			SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
+			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
 
 			case "$((${#__sx_str_split_str_} < __sx_str_split_lim_))" in 1)
 				__sx_str_split_out_="${__sx_str_split_out_}${__sx_str_split_out_:+ }''"
@@ -9603,7 +9603,7 @@ __sx_str_split() {
 		elif M_NUM_LT([|__sx_str_split_lim_|], [|0|]); then
 			# 後方から制限数分だけ分割
 			: $((__sx_str_split_lim_ *= -1))
-			SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
+			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
 
 			case "$((${#__sx_str_split_str_} < __sx_str_split_lim_))" in 1)
 				__sx_str_split_out_="''${__sx_str_split_out_:+ }${__sx_str_split_out_}"
@@ -9612,11 +9612,11 @@ __sx_str_split() {
 			__sx_str_split_out_="${__sx_str_split_out_}${__sx_str_split_out_:+ }''"
 		else
 			# 制限なし：文字列全体をクォートして格納
-			SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_str_split_out_ "${__sx_str_split_str_}"
+			__sx_arg_quote __sx_str_split_out_ "${__sx_str_split_str_}"
 		fi
 
 		case "${__sx_str_split_inc_}" in 1)
-			eval SX_CFG_UNSET_SOFT=2 __sx_arg_isep __sx_str_split_out_ '"${SX_CFG_SEP}"' "${__sx_str_split_out_}"
+			eval __sx_arg_isep __sx_str_split_out_ '"${SX_CFG_SEP}"' "${__sx_str_split_out_}"
 		esac
 
 		eval __sx_arg_quote '"${__sx_str_split_bind_}"' "${__sx_str_split_out_}"
@@ -10275,7 +10275,7 @@ __sx_str_title() {
 	set -- "${1}" "${2-}" "${3:-${SX_STR_SPACE}}"
 
 	__sx_glob_bracket __sx_str_title_gs_ "${3}"
-	SX_CFG_UNSET_SOFT=2 __sx_str_tr __sx_str_title_tmp_: "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${SX_NUM_I32_MAX}"
+	__sx_str_tr __sx_str_title_tmp_: "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${SX_NUM_I32_MAX}"
 	__sx_str_sub __sx_str_title_tmp_ "${3%"${3#?}"}${__sx_str_title_tmp_}" "${__sx_str_title_gs_}[${SX_STR_LOWER}]" __sx_str_title_cb "${SX_NUM_I32_MAX}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
 
 	M_SET([|${1}|], [|${__sx_str_title_tmp_#?}|])
@@ -10355,7 +10355,7 @@ __sx_str_tr() {
 	case "${3}" in
 		'') __sx_var_bind __sx_str_tr_bind_ "${__sx_str_tr_bind_}" "${__sx_str_tr_str_}";;
 		*)
-			SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_tr_to_ "${4}" 1
+			__sx_str_chunk __sx_str_tr_to_ "${4}" 1
 			eval set -- "${__sx_str_tr_to_}"
 
 			if M_NUM_LT([|${__sx_str_tr_lim_}|], [|0|]); then
@@ -10665,7 +10665,7 @@ __sx_glob_bracket() {
 		esac
 	done
 
-	SX_CFG_UNSET_SOFT=2  __sx_str_tr __sx_glob_bracket_rest_: "${2}" ']\.:=!^-'
+	 __sx_str_tr __sx_glob_bracket_rest_: "${2}" ']\.:=!^-'
 
 	__sx_glob_bracket_rest_="${__sx_glob_bracket_pre_-}${__sx_glob_bracket_rest_}${__sx_glob_bracket_suf_-}"
 
@@ -10866,7 +10866,8 @@ sx_arr_gen() {
 ##   指定された配列を新規に作成し、引数で指定された値を要素として追加する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_arr_gen() {
-	__sx_var_set "${1}=${SX_CFG_SIG_ARR}:" "${1}_len=0"
+	M_SET([|${1}|], [|${SX_CFG_SIG_ARR}:|])
+	M_SET([|${1}_len|], [|0|])
 	__sx_arr_push "${@}"
 }
 
@@ -11188,14 +11189,14 @@ __sx_arr_quote() {
 		eval set -- 0 "\"\${${__sx_arr_quote_arr_}_len}\""
 
 		while M_NUM_LT([|${1}|], [|${2}|]); do
-			eval SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_arr_quote_esc_ "\"\${${__sx_arr_quote_arr_}_${1}}\""
+			eval __sx_arg_quote __sx_arr_quote_esc_ "\"\${${__sx_arr_quote_arr_}_${1}}\""
 			__sx_arr_quote_out_="${__sx_arr_quote_out_}${__sx_arr_quote_out_:+ }${__sx_arr_quote_esc_}"
 
 			set -- "$((${1} + 1))" "${2}"
 		done
 	done
 
-	__sx_var_set "${__sx_arr_quote_res_}=${__sx_arr_quote_out_}"
+	M_SET([|${__sx_arr_quote_res_}|], [|${__sx_arr_quote_out_}|])
 
 	unset __sx_arr_quote_res_ __sx_arr_quote_out_ __sx_arr_quote_arr_ __sx_arr_quote_esc_
 }
@@ -11248,14 +11249,14 @@ __sx_arr_rquote() {
 		eval set -- 0 "\"\${${__sx_arr_rquote_arr_}_len}\""
 
 		while M_NUM_LT([|${1}|], [|${2}|]); do
-			eval SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_arr_rquote_esc_ "\"\${${__sx_arr_rquote_arr_}_${1}}\""
+			eval __sx_arg_quote __sx_arr_rquote_esc_ "\"\${${__sx_arr_rquote_arr_}_${1}}\""
 			__sx_arr_rquote_out_="${__sx_arr_rquote_esc_}${__sx_arr_rquote_out_:+ }${__sx_arr_rquote_out_}"
 
 			set -- "$((${1} + 1))" "${2}"
 		done
 	done
 
-	__sx_var_set "${__sx_arr_rquote_res_}=${__sx_arr_rquote_out_}"
+	M_SET([|${__sx_arr_rquote_res_}|], [|${__sx_arr_rquote_out_}|])
 
 	unset __sx_arr_rquote_res_ __sx_arr_rquote_out_ __sx_arr_rquote_arr_ __sx_arr_rquote_esc_
 }
