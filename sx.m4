@@ -3976,10 +3976,10 @@ sx_var_swap() {
 	sx_var_is_chain "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_var_swap_out=
-	SX_CFG_UNSET_SOFT=2 __sx_arr_gen __sx_var_swap_arr
+	__sx_arr_gen __sx_var_swap_arr
 
 	for __sx_var_swap_arg in "${@}"; do
-		SX_CFG_UNSET_SOFT=2 __sx_arr_push __sx_var_swap_arr ''
+		__sx_arr_push __sx_var_swap_arr ''
 		__sx_var_swap_tmp="__sx_var_swap_arr_$((__sx_var_swap_arr_len - 1))"
 
 		case "${__sx_var_swap_arg}" in
@@ -4016,10 +4016,10 @@ sx_var_swap() {
 ##   引数チェックは行わない。
 __sx_var_swap() {
 	__sx_var_swap_out_=
-	SX_CFG_UNSET_SOFT=2 __sx_arr_gen __sx_var_swap_arr_
+	__sx_arr_gen __sx_var_swap_arr_
 
 	for __sx_var_swap_arg_ in "${@}"; do
-		SX_CFG_UNSET_SOFT=2 __sx_arr_push __sx_var_swap_arr_ ''
+		__sx_arr_push __sx_var_swap_arr_ ''
 		__sx_var_swap_tmp_="__sx_var_swap_arr__$((__sx_var_swap_arr__len - 1))"
 
 		case "${__sx_var_swap_arg_}" in
