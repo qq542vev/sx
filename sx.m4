@@ -883,12 +883,11 @@ __sx_fn_with() {
 	# 2. コマンド引数の置換とクォート処理
 	__sx_fn_with_q_=
 	for __sx_fn_with_arg_ in "${@}"; do
-		case "${__sx_fn_with_map_}" in
-			*" ${__sx_fn_with_arg_}:"*)
-				__sx_fn_with_m_="${__sx_fn_with_map_#*" ${__sx_fn_with_arg_}:"}"
-				__sx_fn_with_arg_="${__sx_fn_with_m_%% *}"
-				;;
+		case "${__sx_fn_with_map_}" in *" ${__sx_fn_with_arg_}:"*)
+			__sx_fn_with_m_="${__sx_fn_with_map_#*" ${__sx_fn_with_arg_}:"}"
+			__sx_fn_with_arg_="${__sx_fn_with_m_%% *}"
 		esac
+
 		SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_fn_with_qa_ "${__sx_fn_with_arg_}"
 		__sx_fn_with_q_="${__sx_fn_with_q_}${__sx_fn_with_q_:+ }${__sx_fn_with_qa_}"
 	done
@@ -1381,7 +1380,7 @@ __sx_arg_find_lit() {
 		: $((__sx_arg_find_lit_i_ += 1))
 	done
 
-	eval ${__sx_arg_find_lit_out_:+"${__sx_arg_find_lit_bind_}=\"\${__sx_arg_find_lit_out_# }\""}
+	eval ${__sx_arg_find_lit_out_:+"${__sx_arg_find_lit_bind_}=\"\${__sx_arg_find_lit_out_}\""}
 
 	set -- "${__sx_arg_find_lit_sts_-1}"
 
@@ -2668,7 +2667,7 @@ __sx_arg_rfind_lit() {
 		: $((__sx_arg_rfind_lit_i_ -= 1))
 	done
 
-	eval ${__sx_arg_rfind_lit_out_:+"${__sx_arg_rfind_lit_bind_}=\"\${__sx_arg_rfind_lit_out_# }\""}
+	eval ${__sx_arg_rfind_lit_out_:+"${__sx_arg_rfind_lit_bind_}=\"\${__sx_arg_rfind_lit_out_}\""}
 
 	set -- "${__sx_arg_rfind_lit_sts_-1}"
 
@@ -3626,7 +3625,7 @@ __sx_var_list_copy() {
 				eval set -- "${__sx_var_list_copy_ls_}"
 
 				for __sx_var_list_copy_name_ in "${@}"; do
-					__sx_var_list_copy_out_="${__sx_var_list_copy_out_} ${__sx_var_list_copy_dest_}${__sx_var_list_copy_name_#"${__sx_var_list_copy_src_}"}=${__sx_var_list_copy_name_}"
+					__sx_var_list_copy_out_="${__sx_var_list_copy_out_}${__sx_var_list_copy_out_:+ }${__sx_var_list_copy_dest_}${__sx_var_list_copy_name_#"${__sx_var_list_copy_src_}"}=${__sx_var_list_copy_name_}"
 				done
 			fi
 
@@ -3637,6 +3636,7 @@ __sx_var_list_copy() {
 	done
 
 	M_SET([|${__sx_var_list_copy_res_}|], [|${__sx_var_list_copy_out_}|])
+
 	unset __sx_var_list_copy_res_ __sx_var_list_copy_out_ __sx_var_list_copy_chain_ __sx_var_list_copy_args_ __sx_var_list_copy_ls_ __sx_var_list_copy_dest_ __sx_var_list_copy_name_
 }
 
@@ -3674,15 +3674,15 @@ __sx_var_list_dep() {
 	__sx_var_list_dep_res_="${1}"
 	shift
 
-	__sx_var_list_dep_out_=' '
+	__sx_var_list_dep_out_=
 
 	while M_STR_NE([|"${#}"|], [|0|]); do
-		case "${__sx_var_list_dep_out_}" in *" ${1} "*)
+		case " ${__sx_var_list_dep_out_} " in *" ${1} "*)
 			shift
 			continue
 		esac
 
-		__sx_var_list_dep_out_="${__sx_var_list_dep_out_}${1} "
+		__sx_var_list_dep_out_="${__sx_var_list_dep_out_}${__sx_var_list_dep_out_:+ }${1}"
 
 		if __sx_var_is_arr "${1}"; then
 			eval "__sx_var_list_dep_len_=\"\${${1}_len}\""
@@ -3698,8 +3698,7 @@ __sx_var_list_dep() {
 		shift
 	done
 
-	__sx_var_list_dep_out_="${__sx_var_list_dep_out_# }"
-	M_SET([|${__sx_var_list_dep_res_}|], [|${__sx_var_list_dep_out_% }|]);
+	M_SET([|${__sx_var_list_dep_res_}|], [|${__sx_var_list_dep_out_}|])
 
 	unset __sx_var_list_dep_res_ __sx_var_list_dep_out_ __sx_var_list_dep_len_ __sx_var_list_dep_i_
 }
@@ -3738,7 +3737,7 @@ sx_var_list_ro() {
 ##   引数チェックは行わない。
 __sx_var_list_ro() {
 	__sx_var_list_ro_res_="${1}"
-	__sx_var_list_ro_out_=' '
+	__sx_var_list_ro_out_=
 
 	IFS="${SX_STR_LF}" __sx_str_split_ifs __sx_var_list_ro_args_ "$(readonly -p)"
 	eval set -- "${__sx_var_list_ro_args_}"
@@ -3750,16 +3749,15 @@ __sx_var_list_ro() {
 
 			if
 				sx_var_is_name "${__sx_var_list_ro_vn_}" &&
-				! M_STR_HAS([|"${__sx_var_list_ro_out_}"|], [|" ${__sx_var_list_ro_vn_} "|]) &&
+				! M_STR_HAS([|" ${__sx_var_list_ro_out_} "|], [|" ${__sx_var_list_ro_vn_} "|]) &&
 				__sx_var_is_ro "${__sx_var_list_ro_vn_}"
 			then
-				__sx_var_list_ro_out_="${__sx_var_list_ro_out_}${__sx_var_list_ro_vn_} "
+				__sx_var_list_ro_out_="${__sx_var_list_ro_out_}${__sx_var_list_ro_out_:+ }${__sx_var_list_ro_vn_}"
 			fi
 		esac
 	done
 
-	__sx_var_list_ro_out_="${__sx_var_list_ro_out_# }"
-	M_SET([|${__sx_var_list_ro_res_}|], [|${__sx_var_list_ro_out_% }|])
+	M_SET([|${__sx_var_list_ro_res_}|], [|${__sx_var_list_ro_out_}|])
 
 	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_args_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
 }
@@ -3798,7 +3796,7 @@ sx_var_list_set() {
 __sx_var_list_set() {
 	IFS="${SX_STR_LF}" __sx_str_split_ifs __sx_var_list_set_args_ "$(set)"
 	__sx_var_list_set_res_="${1}"
-	__sx_var_list_set_out_=' '
+	__sx_var_list_set_out_=
 
 	eval set -- "${__sx_var_list_set_args_}"
 
@@ -3808,16 +3806,15 @@ __sx_var_list_set() {
 
 			if
 				sx_var_is_name "${__sx_var_list_set_vn_}" &&
-				! M_STR_HAS([|"${__sx_var_list_set_out_}"|], [|" ${__sx_var_list_set_vn_} "|]) &&
+				! M_STR_HAS([|" ${__sx_var_list_set_out_} "|], [|" ${__sx_var_list_set_vn_} "|]) &&
 				__sx_var_is_set "${__sx_var_list_set_vn_}"
 			then
-				__sx_var_list_set_out_="${__sx_var_list_set_out_}${__sx_var_list_set_vn_} "
+				__sx_var_list_set_out_="${__sx_var_list_set_out_}${__sx_var_list_set_out_:+ }${__sx_var_list_set_vn_}"
 			fi
 		esac
 	done
 
-	__sx_var_list_set_out_="${__sx_var_list_set_out_# }"
-	M_SET([|${__sx_var_list_set_res_}|], [|${__sx_var_list_set_out_% }|])
+	M_SET([|${__sx_var_list_set_res_}|], [|${__sx_var_list_set_out_}|])
 
 	unset __sx_var_list_set_args_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
 }
@@ -8388,7 +8385,7 @@ __sx_str_find() {
 		done
 	fi
 
-	eval ${__sx_str_find_out_:+"${__sx_str_find_bind_}=\"\${__sx_str_find_out_# }\""}
+	eval ${__sx_str_find_out_:+"${__sx_str_find_bind_}=\"\${__sx_str_find_out_}\""}
 
 	set -- "${__sx_str_find_sts_-1}"
 	unset CLEANUP
@@ -9394,7 +9391,7 @@ __sx_str_rfind() {
 		done
 	fi
 
-	eval ${__sx_str_rfind_out_:+"${__sx_str_rfind_bind_}=\"\${__sx_str_rfind_out_# }\""}
+	eval ${__sx_str_rfind_out_:+"${__sx_str_rfind_bind_}=\"\${__sx_str_rfind_out_}\""}
 
 	set -- "${__sx_str_rfind_sts_-1}"
 	unset CLEANUP
@@ -9599,20 +9596,20 @@ __sx_str_split() {
 			SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
 
 			case "$((${#__sx_str_split_str_} < __sx_str_split_lim_))" in 1)
-				__sx_str_split_out_="${__sx_str_split_out_} ''"
+				__sx_str_split_out_="${__sx_str_split_out_}${__sx_str_split_out_:+ }''"
 			esac
 
-			__sx_str_split_out_="'' ${__sx_str_split_out_# }"
+			__sx_str_split_out_="''${__sx_str_split_out_:+ }${__sx_str_split_out_}"
 		elif M_NUM_LT([|__sx_str_split_lim_|], [|0|]); then
 			# 後方から制限数分だけ分割
 			: $((__sx_str_split_lim_ *= -1))
 			SX_CFG_UNSET_SOFT=2 __sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
 
 			case "$((${#__sx_str_split_str_} < __sx_str_split_lim_))" in 1)
-				__sx_str_split_out_="'' ${__sx_str_split_out_}"
+				__sx_str_split_out_="''${__sx_str_split_out_:+ }${__sx_str_split_out_}"
 			esac
 
-			__sx_str_split_out_="${__sx_str_split_out_% } ''"
+			__sx_str_split_out_="${__sx_str_split_out_}${__sx_str_split_out_:+ }''"
 		else
 			# 制限なし：文字列全体をクォートして格納
 			SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_str_split_out_ "${__sx_str_split_str_}"
@@ -11192,13 +11189,13 @@ __sx_arr_quote() {
 
 		while M_NUM_LT([|${1}|], [|${2}|]); do
 			eval SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_arr_quote_esc_ "\"\${${__sx_arr_quote_arr_}_${1}}\""
-			__sx_arr_quote_out_="${__sx_arr_quote_out_} ${__sx_arr_quote_esc_}"
+			__sx_arr_quote_out_="${__sx_arr_quote_out_}${__sx_arr_quote_out_:+ }${__sx_arr_quote_esc_}"
 
 			set -- "$((${1} + 1))" "${2}"
 		done
 	done
 
-	__sx_var_set "${__sx_arr_quote_res_}=${__sx_arr_quote_out_# }"
+	__sx_var_set "${__sx_arr_quote_res_}=${__sx_arr_quote_out_}"
 
 	unset __sx_arr_quote_res_ __sx_arr_quote_out_ __sx_arr_quote_arr_ __sx_arr_quote_esc_
 }
@@ -11252,13 +11249,13 @@ __sx_arr_rquote() {
 
 		while M_NUM_LT([|${1}|], [|${2}|]); do
 			eval SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_arr_rquote_esc_ "\"\${${__sx_arr_rquote_arr_}_${1}}\""
-			__sx_arr_rquote_out_=" ${__sx_arr_rquote_esc_}${__sx_arr_rquote_out_}"
+			__sx_arr_rquote_out_="${__sx_arr_rquote_esc_}${__sx_arr_rquote_out_:+ }${__sx_arr_rquote_out_}"
 
 			set -- "$((${1} + 1))" "${2}"
 		done
 	done
 
-	__sx_var_set "${__sx_arr_rquote_res_}=${__sx_arr_rquote_out_# }"
+	__sx_var_set "${__sx_arr_rquote_res_}=${__sx_arr_rquote_out_}"
 
 	unset __sx_arr_rquote_res_ __sx_arr_rquote_out_ __sx_arr_rquote_arr_ __sx_arr_rquote_esc_
 }
