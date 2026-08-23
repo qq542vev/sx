@@ -1009,10 +1009,14 @@ sx_util_eval() {
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
+##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_count() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_count "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
 
@@ -1067,8 +1071,13 @@ __sx_arg_count() {
 ## 終了ステータス:
 ##   すべてのコールバックが成功 => 0 (SX_EX_OK)
 ##   コールバックが失敗 => 最初の失敗のステータス
+##   64 => 引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   78 => SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_each() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_each "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	__sx_arg_each "${@}" || return
 }
@@ -1136,9 +1145,13 @@ __sx_arg_each() {
 ## 終了ステータス:
 ##    0  条件を満たす要素が必要数以上存在する (SX_EX_OK)
 ##    1  条件を満たす要素が必要数未満
-##   64  引数不正 (SX_EX_USAGE)
+##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_enough() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_enough "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}" | "${2+X${2}}") ;;
@@ -1239,10 +1252,14 @@ __sx_arg_enough() {
 ## 終了ステータス:
 ##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
 ##    1  一致項目が見つからなかった (不一致)
-##   64  引数不正 (SX_EX_USAGE)
+##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_find() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_find "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
@@ -1408,10 +1425,14 @@ __sx_arg_find_lit() {
 ## 終了ステータス:
 ##   すべてのコールバックが成功 => 0 (SX_EX_OK)
 ##   コールバックが失敗 => 最初のエラーのステータス
-##   64 => 引数不正 (SX_EX_USAGE)
+##   64 => 引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78 => SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_fold() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_fold "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
 
@@ -1483,10 +1504,14 @@ define([|CLEANUP|], [|V(int) V(lim) V(flg)|])dnl
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
+##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_isep "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
@@ -1897,10 +1922,14 @@ __sx_arg_isep_lit() {
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
+##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_join() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_join "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
 
@@ -1939,10 +1968,14 @@ __sx_arg_join() {
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
+##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_len() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_len "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
 
@@ -1981,10 +2014,14 @@ __sx_arg_len() {
 ## 終了ステータス:
 ##   すべてのコールバックが成功 => 0 (SX_EX_OK)
 ##   一部のコールバックが失敗 => 最初の失敗のステータス
-##   64 => 引数不正 (SX_EX_USAGE)
+##   64 => 引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78 => SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_map() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_map "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
@@ -2056,10 +2093,14 @@ __sx_arg_map() {
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
+##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
@@ -2125,10 +2166,14 @@ __sx_arg_quote() {
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
+##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_pad() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_pad "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
@@ -2338,10 +2383,14 @@ __sx_arg_pad_lit() {
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE) - shape の形式が不正
+##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE) - shape の形式が不正
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_resize() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_resize "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
@@ -2529,10 +2578,14 @@ __sx_arg_range() {
 ## 終了ステータス:
 ##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
 ##    1  一致項目が見つからなかった (不一致)
-##   64  引数不正 (SX_EX_USAGE)
+##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_rfind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfind "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
@@ -2694,10 +2747,14 @@ __sx_arg_rfind_lit() {
 ## 終了ステータス:
 ##   すべてのコールバックが成功 => 0 (SX_EX_OK)
 ##   コールバックが失敗 => 最初のエラーのステータス
-##   64 => 引数不正 (SX_EX_USAGE)
+##   64 => 引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78 => SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_rfold() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfold "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw "${1-}" || return
 
@@ -2780,10 +2837,14 @@ __sx_arg_norm() {
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
+##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_rquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
 
 	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_bindable "${1-}" || return
 
@@ -3612,7 +3673,7 @@ __sx_var_list_copy() {
 		case "${__sx_var_list_copy_chain_}" in
 			*=*)
 				sx_str_sub __sx_var_list_copy_args_ "${__sx_var_list_copy_chain_}" = ' '
-				eval sx_arg_rquote __sx_var_list_copy_args_ "${__sx_var_list_copy_args_}"
+				eval __sx_arg_rquote __sx_var_list_copy_args_ "${__sx_var_list_copy_args_}"
 				;;
 			*) sx_str_sub __sx_var_list_copy_args_ "${__sx_var_list_copy_chain_}" - ' ';;
 		esac
