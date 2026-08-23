@@ -3075,7 +3075,8 @@ sx_var_dump() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_dump "${@}" || return; return 0;; esac
 
 	sx_var_is_name "${1-}" "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_rw_all "${1}" || return "${SX_EX_NOPERM}"
+
+	__sx_var_is_rw "${1}" || return "${SX_EX_NOPERM}"
 
 	__sx_var_dump "${@}"
 }
@@ -3093,19 +3094,19 @@ __sx_var_dump() {
 	__sx_var_dump_out_=
 	shift
 
-	SX_CFG_UNSET_SOFT=2 __sx_var_list_dep __sx_var_dump_ls_ "${@}"
+	__sx_var_list_dep __sx_var_dump_ls_ "${@}"
 	eval set -- "${__sx_var_dump_ls_}"
 
 	for __sx_var_dump_vn_ in "${@}"; do
 		if sx_var_is_set "${__sx_var_dump_vn_}"; then
-			eval SX_CFG_UNSET_SOFT=2 __sx_arg_quote __sx_var_dump_val_ "\"\${${__sx_var_dump_vn_}}\""
+			eval __sx_arg_quote __sx_var_dump_val_ "\"\${${__sx_var_dump_vn_}}\""
 			__sx_var_dump_out_="${__sx_var_dump_out_}${__sx_var_dump_vn_}=${__sx_var_dump_val_}${SX_STR_LF}"
 		else
 			__sx_var_dump_out_="${__sx_var_dump_out_}unset ${__sx_var_dump_vn_}${SX_STR_LF}"
 		fi
 	done
 
-	__sx_var_set "${__sx_var_dump_res_}=${__sx_var_dump_out_}"
+	M_SET([|${__sx_var_dump_res_}|], [|${__sx_var_dump_out_}|])
 
 	unset __sx_var_dump_res_ __sx_var_dump_out_ __sx_var_dump_ls_ __sx_var_dump_vn_ __sx_var_dump_val_
 }
@@ -3326,7 +3327,7 @@ sx_var_is_copyable() {
 ##   sx_var_is_copyable の内部実装。
 ##   引数チェックは行わない。
 __sx_var_is_copyable() {
-	SX_CFG_UNSET_SOFT=2 __sx_var_list_copy __sx_var_is_copyable_ls_ "${@}"
+	__sx_var_list_copy __sx_var_is_copyable_ls_ "${@}"
 	eval set -- "${__sx_var_is_copyable_ls_}"
 
 	__sx_var_is_copyable_out_=
@@ -3487,7 +3488,7 @@ sx_var_is_rw_all() {
 ##   sx_var_is_rw_all の内部実装。
 ##   引数チェックは行わない。
 __sx_var_is_rw_all() {
-	SX_CFG_UNSET_SOFT=2 __sx_var_list_dep __sx_var_is_rw_all_ls_ "${@}"
+	__sx_var_list_dep __sx_var_is_rw_all_ls_ "${@}"
 	eval set -- "${__sx_var_is_rw_all_ls_}"
 	unset __sx_var_is_rw_all_ls_
 
@@ -3587,7 +3588,8 @@ __sx_var_is_val() {
 sx_var_list_copy() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_copy "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" || return
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_rw "${1}" || return "${SX_EX_NOPERM}"
 	sx_var_is_chain "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_var_list_copy "${@}"
@@ -3620,7 +3622,7 @@ __sx_var_list_copy() {
 
 		for __sx_var_list_copy_dest_ in "${@}"; do
 			if sx_var_is_set __sx_var_list_copy_src_; then
-				SX_CFG_UNSET_SOFT=2 __sx_var_list_dep __sx_var_list_copy_ls_ "${__sx_var_list_copy_src_}"
+				__sx_var_list_dep __sx_var_list_copy_ls_ "${__sx_var_list_copy_src_}"
 				eval set -- "${__sx_var_list_copy_ls_}"
 
 				for __sx_var_list_copy_name_ in "${@}"; do
@@ -3634,7 +3636,7 @@ __sx_var_list_copy() {
 		unset __sx_var_list_copy_src_
 	done
 
-	__sx_var_set "${__sx_var_list_copy_res_}=${__sx_var_list_copy_out_}"
+	M_SET([|${__sx_var_list_copy_res_}|], [|${__sx_var_list_copy_out_}|])
 	unset __sx_var_list_copy_res_ __sx_var_list_copy_out_ __sx_var_list_copy_chain_ __sx_var_list_copy_args_ __sx_var_list_copy_ls_ __sx_var_list_copy_dest_ __sx_var_list_copy_name_
 }
 
@@ -3656,7 +3658,7 @@ sx_var_list_dep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_dep "${@}" || return; return 0;; esac
 
 	sx_var_is_name "${1-}" "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_rw_all "${1}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1}" || return "${SX_EX_NOPERM}"
 
 	__sx_var_list_dep "${@}"
 }
@@ -3697,7 +3699,7 @@ __sx_var_list_dep() {
 	done
 
 	__sx_var_list_dep_out_="${__sx_var_list_dep_out_# }"
-	__sx_var_set "${__sx_var_list_dep_res_}=${__sx_var_list_dep_out_% }"
+	M_SET([|${__sx_var_list_dep_res_}|], [|${__sx_var_list_dep_out_% }|]);
 
 	unset __sx_var_list_dep_res_ __sx_var_list_dep_out_ __sx_var_list_dep_len_ __sx_var_list_dep_i_
 }
@@ -3719,7 +3721,9 @@ __sx_var_list_dep() {
 sx_var_list_ro() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_ro "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" IFS || return
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1}" IFS || return "${SX_EX_NOPERM}"
 
 	__sx_var_list_ro "${@}"
 }
@@ -3755,7 +3759,7 @@ __sx_var_list_ro() {
 	done
 
 	__sx_var_list_ro_out_="${__sx_var_list_ro_out_# }"
-	__sx_var_set "${__sx_var_list_ro_res_}=${__sx_var_list_ro_out_% }"
+	M_SET([|${__sx_var_list_ro_res_}|], [|${__sx_var_list_ro_out_% }|])
 
 	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_args_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
 }
@@ -3776,7 +3780,9 @@ __sx_var_list_ro() {
 sx_var_list_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_set "${@}" || return; return 0;; esac
 
-	__sx_ex_remap "1:${SX_EX_NOPERM}" sx_var_is_rw_all "${1-}" IFS || return
+	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${1}" IFS || return "${SX_EX_NOPERM}"
 
 	__sx_var_list_set "${@}"
 }
@@ -3811,7 +3817,7 @@ __sx_var_list_set() {
 	done
 
 	__sx_var_list_set_out_="${__sx_var_list_set_out_# }"
-	__sx_var_set "${__sx_var_list_set_res_}=${__sx_var_list_set_out_% }"
+	M_SET([|${__sx_var_list_set_res_}|], [|${__sx_var_list_set_out_% }|])
 
 	unset __sx_var_list_set_args_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
 }
