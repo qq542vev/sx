@@ -2212,10 +2212,7 @@ sx_arg_pad() {
 		"${1+X${1}}" | "${2+X${2}}") ;;
 		"${3+X${3}}" | "${4+X${4}}") __sx_num_is_int_safe_inv "${2}" || return "${SX_EX_USAGE}";;
 		"${5+X${5}}")
-			__sx_num_is_int_safe_inv "${2}" || return "${SX_EX_USAGE}"
-
-			__sx_num_is_int_safe_inv "${4}" || return "${SX_EX_USAGE}"
-			;;
+			__sx_num_is_int_safe_inv "${2}" && __sx_num_is_int_safe_inv "${4}" || return "${SX_EX_USAGE}";;
 	esac
 
 	__sx_arg_pad "${@}" || return
