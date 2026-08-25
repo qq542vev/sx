@@ -59,4 +59,15 @@ Describe 'sx_var_unset'
     The variable v_u1 should be undefined
     The variable v_u10 should be undefined
   End
+
+  It '環境変数でソフト削除が preset されていても構造全体を削除すること'
+    SX_CFG_UNSET_SOFT=1
+    sx_arr_gen soft_arr a b c
+    When call sx_var_unset soft_arr
+    The status should be success
+    The variable soft_arr should be undefined
+    The variable soft_arr_len should be undefined
+    The variable soft_arr_0 should be undefined
+    The variable soft_arr_2 should be undefined
+  End
 End

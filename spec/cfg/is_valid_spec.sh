@@ -67,4 +67,16 @@ Describe 'sx_cfg_is_valid()'
 		The status should be failure
 		The status should equal 1
 	End
+
+	It '廃止された項目を拒否すること (UNSET_SOFT)'
+		When call sx_cfg_is_valid "UNSET_SOFT"
+		The status should be failure
+		The status should equal 1
+	End
+
+	It '廃止された項目への値指定を拒否すること (UNSET_SOFT=0)'
+		When call sx_cfg_is_valid "UNSET_SOFT=0"
+		The status should be failure
+		The status should equal 1
+	End
 End

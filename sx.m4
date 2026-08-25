@@ -304,14 +304,12 @@ readonly SX_CFG_DEF_SIG_ARR="array-${SX_CFG_DEF_SIG_BASE}"
 readonly SX_CFG_DEF_SKIP_CHK=0
 readonly SX_CFG_DEF_NUM_RANGE=32
 readonly SX_CFG_DEF_SEP=':::'
-readonly SX_CFG_DEF_UNSET_SOFT=0
 
 : "${SX_CFG_SIG_BASE:=${SX_CFG_DEF_SIG_BASE}}"
 : "${SX_CFG_SIG_ARR:=${SX_CFG_DEF_SIG_ARR}}"
 : "${SX_CFG_SKIP_CHK:=${SX_CFG_DEF_SKIP_CHK}}"
 : "${SX_CFG_NUM_RANGE:=${SX_CFG_DEF_NUM_RANGE}}"
 : "${SX_CFG_SEP:=${SX_CFG_DEF_SEP}}"
-: "${SX_CFG_UNSET_SOFT:=${SX_CFG_DEF_UNSET_SOFT}}"
 SX_SYS_REV=0
 
 # ========================================
@@ -335,7 +333,7 @@ sx_cfg_is_valid() {
 	case "${#}" in 0)
 		__sx_cfg_is_valid_out=
 
-		for __sx_cfg_is_valid_vn in NUM_RANGE SKIP_CHK SIG_BASE SIG_ARR SEP UNSET_SOFT; do
+		for __sx_cfg_is_valid_vn in NUM_RANGE SKIP_CHK SIG_BASE SIG_ARR SEP; do
 			__sx_cfg_is_valid_out="${__sx_cfg_is_valid_out} ${__sx_cfg_is_valid_vn}=\"\${SX_CFG_${__sx_cfg_is_valid_vn}-}\""
 		done
 
@@ -349,9 +347,9 @@ sx_cfg_is_valid() {
 
 	for __sx_cfg_is_valid_arg in "${@}"; do
 		case "${__sx_cfg_is_valid_arg}" in
-			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP | UNSET_SOFT) ;;
+			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP) ;;
 			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128) ;;
-			SKIP_CHK=[01] | UNSET_SOFT=[012] | SEP=?* | SIG_BASE=?* | SIG_ARR=?*) ;;
+			SKIP_CHK=[01] | SEP=?* | SIG_BASE=?* | SIG_ARR=?*) ;;
 			*)
 				unset __sx_cfg_is_valid_arg
 				return 1
@@ -3033,7 +3031,7 @@ sx_var_bind() {
 
 	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
 
-	__sx_var_is_rw_all "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
 
 	__sx_var_is_bind "${2-}" || return "${SX_EX_USAGE}"
 
@@ -3388,7 +3386,7 @@ __sx_var_is_bindable() {
 	eval "set -- ${__sx_var_is_bindable_chk_}"
 	unset __sx_var_is_bindable_chk_ __sx_var_is_bindable_arg_ __sx_var_is_bindable_seg_
 
-	__sx_var_is_rw_all "${@}" || return
+	__sx_var_is_rw "${@}" || return
 }
 
 ### sx_var_is_chain - 文字列が有効な連鎖式であるか確認する
@@ -4220,20 +4218,9 @@ __sx_var_touch() {
 sx_var_unset() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unset "${@}" || return; return 0;; esac
 
-	# リストの内容（変数名）がすべて書き込み可能か一括チェック
-	case "${SX_CFG_UNSET_SOFT-}" in
-		1)
-			sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 
-			__sx_var_is_rw "${@}" || return "${SX_EX_NOPERM}"
-			;;
-		2) ;;
-		*)
-			sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-
-			__sx_var_is_rw_all "${@}" || return "${SX_EX_NOPERM}"
-			;;
-	esac
+	__sx_var_is_rw_all "${@}" || return "${SX_EX_NOPERM}"
 
 	__sx_var_unset "${@}"
 }
@@ -4247,17 +4234,6 @@ sx_var_unset() {
 ##   sx_var_unset の内部実装。
 ##   引数チェックは行わない。
 __sx_var_unset() {
-	case "${SX_CFG_UNSET_SOFT-}" in
-		1)
-			case "${#}" in [!0]*)
-				unset -v "${@}"
-			esac
-
-			return "${SX_EX_OK}"
-			;;
-		2) return "${SX_EX_OK}";;
-	esac
-
 	while M_STR_NE([|"${#}"|], [|0|]); do
 		if __sx_var_is_arr "${1}"; then
 			eval "__sx_var_unset_len_=\"\${${1}_len}\""
@@ -11126,7 +11102,7 @@ __sx_arr_is_rw() {
 	eval set -- "${__sx_arr_is_rw_chk_}"
 	unset __sx_arr_is_rw_name_ __sx_arr_is_rw_chk_
 
-	sx_var_is_rw_all "${@}" || return
+	sx_var_is_rw "${@}" || return
 }
 
 ### sx_arr_pop - 配列の末尾から要素を取り出す
@@ -11339,7 +11315,7 @@ sx_arr_quote() {
 
 	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
 
-	__sx_var_is_rw_all "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
 
 	__sx_arr_quote_res="${1}"
 	shift
@@ -11401,7 +11377,7 @@ sx_arr_rquote() {
 
 	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
 
-	__sx_var_is_rw_all "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
 
 	__sx_arr_rquote_res="${1}"
 	shift
