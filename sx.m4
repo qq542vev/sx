@@ -11105,6 +11105,77 @@ __sx_arr_is_rw() {
 	sx_var_is_rw "${@}" || return
 }
 
+### sx_arr_is_bindable - バインド形式が有効であり、かつ配列を含む全変数が書き込み可能か確認する
+##
+## 使い方:
+##   sx_arr_is_bindable [バインド形式1 [バインド形式2 ...]]
+##
+## 説明:
+##   指定されたバインド形式が妥当な名前で構成されており、かつ含まれるすべての変数
+##   （配列の _len を含む）が書き込み可能（読み取り専用でない）であることを確認する。
+##   数値プレフィックス（N名前）を含むセグメントは配列とみなし、
+##   name_len の書き込み可否も検査する。
+##   最終セグメントは「残り全て」として配列扱いし、name_len の検査を行う。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##    1  書き込み不可な変数が含まれる (SX_EX_NOPERM)
+##   64  バインド形式が不正 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_arr_is_bindable() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_bindable "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_var_is_bind "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_arr_is_bindable "${@}"
+}
+
+### __sx_arr_is_bindable - バインド形式に含まれる変数が書き込み可能か確認する（内部用）
+##
+## 使い方:
+##   __sx_arr_is_bindable バインド形式
+##
+## 説明:
+##   sx_arr_is_bindable の内部実装。
+##   コロン区切りのバインド形式を解析し、配列セグメントの _len を含む
+##   すべての変数名に対して一括で書き込み権限を確認する。
+##   引数チェック（構文検査）は行わない。
+##
+## 終了ステータス:
+##    0  すべて書き込み可能 (SX_EX_OK)
+##    1  書き込み不可な変数が含まれる
+__sx_arr_is_bindable() {
+	__sx_arr_is_bindable_chk_=
+
+	for __sx_arr_is_bindable_arg_ in "${@}"; do
+		while
+			case "${__sx_arr_is_bindable_arg_}" in
+				[1-9]*)
+					__sx_arr_is_bindable_name_="${__sx_arr_is_bindable_arg_%%:*}"
+
+					case "${__sx_arr_is_bindable_name_}" in *["_${SX_STR_ALPHA}"]*)
+						__sx_arr_is_bindable_name_="${__sx_arr_is_bindable_name_#"${__sx_arr_is_bindable_name_%%[!0-9]*}"}"
+						__sx_arr_is_bindable_chk_="${__sx_arr_is_bindable_chk_} ${__sx_arr_is_bindable_name_} ${__sx_arr_is_bindable_name_}_len"
+					esac
+					;;
+				:*) ;;
+				*:*) __sx_arr_is_bindable_chk_="${__sx_arr_is_bindable_chk_} ${__sx_arr_is_bindable_arg_%%:*}";;
+				?*) __sx_arr_is_bindable_chk_="${__sx_arr_is_bindable_chk_} ${__sx_arr_is_bindable_arg_} ${__sx_arr_is_bindable_arg_}_len";&
+				*) ! :;;
+			esac
+		do
+			__sx_arr_is_bindable_arg_="${__sx_arr_is_bindable_arg_#*:}"
+		done
+	done
+
+	eval set -- "${__sx_arr_is_bindable_chk_}"
+	unset __sx_arr_is_bindable_chk_ __sx_arr_is_bindable_arg_ __sx_arr_is_bindable_name_
+
+	__sx_var_is_rw "${@}" || return
+}
+
 ### sx_arr_pop - 配列の末尾から要素を取り出す
 ##
 ## 使い方:
