@@ -3461,6 +3461,86 @@ __sx_var_is_copyable() {
 	__sx_var_is_rw_all "${@}" || return
 }
 
+### sx_var_is_ebind - 文字列が拡張バインド形式として有効か確認する
+##
+## 使い方:
+##   sx_var_is_ebind [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   引数で指定されたすべての文字列が、拡張バインド形式として有効であるかを確認する。
+##   基本的な構造は sx_var_is_bind と同様だが、数値プレフィックスに
+##   M/N 形式の範囲指定（M は 0以上の自然数、N は M より大きい自然数）が追加される。
+##   最後のセグメントは数字で始めることはできない。
+##
+## 終了ステータス:
+##    0  すべて有効な形式である (SX_EX_OK)
+##    1  無効な形式が含まれる
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_var_is_ebind() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_ebind "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	__sx_var_is_ebind "${@}"
+}
+
+define([|V|], [|__sx_var_is_ebind_$1_|])dnl
+define([|CLEANUP|], [|V(arg) V(seg) V(m) V(n)|])dnl
+
+### __sx_var_is_ebind - 文字列が拡張バインド形式として有効か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_ebind [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_var_is_ebind の内部実装。SX_CFG_NUM_RANGE の妥当性チェックは行わない。
+__sx_var_is_ebind() {
+	for __sx_var_is_ebind_arg_ in "${@}"; do
+		case "${__sx_var_is_ebind_arg_}" in *[!"${SX_STR_WORD}":/]* | 0[!/]* | *:0[!/]* | /* | */ | *:/* | */[!1-9]*)
+			unset CLEANUP
+			return 1
+		esac
+
+		case "${__sx_var_is_ebind_arg_##*:}" in
+			'' | *[!0-9/]*) ;;
+			*)
+				unset CLEANUP
+				return 1
+				;;
+		esac
+
+		__sx_var_is_ebind_arg_="${__sx_var_is_ebind_arg_}:"
+
+		while M_STR_MATCH([|"${__sx_var_is_ebind_arg_}"|], [|*:*|]); do
+			__sx_var_is_ebind_seg_="${__sx_var_is_ebind_arg_%%:*}"
+			__sx_var_is_ebind_arg_="${__sx_var_is_ebind_arg_#*:}"
+			__sx_var_is_ebind_m_=
+
+			case "${__sx_var_is_ebind_seg_}" in
+				*/*/* | *[!0-9]*/*)
+					unset CLEANUP
+					return 1
+					;;
+				*/*)
+					__sx_var_is_ebind_m_="${__sx_var_is_ebind_seg_%%/*}"
+					__sx_var_is_ebind_seg_="${__sx_var_is_ebind_seg_#*/}"
+					;;
+			esac
+
+			case "${__sx_var_is_ebind_seg_}" in [1-9]*)
+				__sx_var_is_ebind_n_="${__sx_var_is_ebind_seg_%%[!0-9]*}"
+
+				__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" ${__sx_var_is_ebind_m_:+"${__sx_var_is_ebind_m_}"} "${__sx_var_is_ebind_n_}" && M_NUM_LT([|${__sx_var_is_ebind_m_:-0}|], [|__sx_var_is_ebind_n_|]) || {
+					unset CLEANUP
+					return 1
+				}
+			esac
+		done
+	done
+
+	unset CLEANUP
+}
+
 ### sx_var_is_empty - 変数が設定されており、かつ空か確認する
 ##
 ## 使い方:
@@ -11174,6 +11254,139 @@ __sx_arr_is_bindable() {
 	unset __sx_arr_is_bindable_chk_ __sx_arr_is_bindable_arg_ __sx_arr_is_bindable_name_
 
 	__sx_var_is_rw "${@}" || return
+}
+
+define([|V|], [|__sx_arr_bind_$1|])dnl
+define([|CLEANUP|], [|V(br) V(cr) V(bind)|])dnl
+
+### sx_arr_bind - 配列対応バインドで変数を順次割り当てる
+##
+## 使い方:
+##   sx_arr_bind bind_res chain_res bind varname1 [varname2 ...]
+##
+## 説明:
+##   拡張バインド形式（sx_var_is_ebind 参照）を解析し、chain（src-dst ペア）
+##   と残り bind を生成して __sx_arr_bind に委譲する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  書き込み権限なし (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_arr_bind() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_bind "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+	sx_var_is_name "${1-}" "${2-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_rw "${1}" "${2}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_ebind ${3+"${3}"} || return "${SX_EX_USAGE}"
+
+	__sx_arr_bind_br="${1}"
+	__sx_arr_bind_cr="${2}"
+	__sx_arr_bind_bind="${3-}"
+
+	shift "$((2 + 0${3+1}))"
+
+	sx_var_is_name "${@}" || {
+		unset CLEANUP
+		return "${SX_EX_USAGE}"
+	}
+
+	set -- "${__sx_arr_bind_br}" "${__sx_arr_bind_cr}" "${__sx_arr_bind_bind}" "${@}"
+
+	unset CLEANUP
+
+	__sx_arr_bind "${@}" || return
+}
+
+define([|V|], [|__sx_arr_bind_$1_|])dnl
+define([|CLEANUP|], [|V(br) V(cr) V(bind) V(chain) V(seg) V(rest) V(m) V(n) V(vn) V(sts)|])dnl
+
+### __sx_arr_bind - 配列対応バインドで変数を順次割り当てる（内部用）
+##
+## 使い方:
+##   __sx_arr_bind bind_res chain_res bind varname1 [varname2 ...]
+##
+## 説明:
+##   bind文字列を逐次解析し、chain (src-dst) と残りbindを生成する。
+__sx_arr_bind() {
+	__sx_arr_bind_br_="${1-}"
+	__sx_arr_bind_cr_="${2-}"
+	__sx_arr_bind_bind_="${3-}"
+	__sx_arr_bind_chain_=
+	__sx_arr_bind_sts_=0
+	shift 3
+
+	for __sx_arr_bind_vn_ in "${@}"; do
+		case "${__sx_arr_bind_bind_}" in
+			[0-9]*:*)
+				__sx_arr_bind_seg_="${__sx_arr_bind_bind_%%:*}"
+				__sx_arr_bind_rest_="${__sx_arr_bind_bind_#*:}"
+
+				case "${__sx_arr_bind_seg_}" in
+					*/*)
+						__sx_arr_bind_m_="${__sx_arr_bind_seg_%%/*}"
+						__sx_arr_bind_seg_="${__sx_arr_bind_seg_#*/}"
+						;;
+					*) __sx_arr_bind_m_=0;;
+				esac
+
+				__sx_arr_bind_n_="${__sx_arr_bind_seg_%%[!0-9]*}"
+				__sx_arr_bind_seg_="${__sx_arr_bind_seg_#"${__sx_arr_bind_n_}"}"
+
+				case "${__sx_arr_bind_seg_}" in ["_${SX_STR_ALPHA}"]*)
+					__sx_arr_bind_chain_="${__sx_arr_bind_chain_}${__sx_arr_bind_chain_:+ }${__sx_arr_bind_vn_}-${__sx_arr_bind_seg_}_${__sx_arr_bind_m_}"
+				esac
+
+				: "$((__sx_arr_bind_m_ += 1))"
+
+				case "${__sx_arr_bind_m_}" in
+					"${__sx_arr_bind_n_}") __sx_arr_bind_bind_="${__sx_arr_bind_rest_}";;
+					*) __sx_arr_bind_bind_="${__sx_arr_bind_m_}/${__sx_arr_bind_n_}${__sx_arr_bind_seg_}:${__sx_arr_bind_rest_}";;
+				esac
+				;;
+			:*) __sx_arr_bind_bind_="${__sx_arr_bind_bind_#*:}";;
+			*:*)
+				__sx_arr_bind_chain_="${__sx_arr_bind_chain_}${__sx_arr_bind_chain_:+ }${__sx_arr_bind_vn_}-${__sx_arr_bind_bind_%%:*}"
+				__sx_arr_bind_bind_="${__sx_arr_bind_bind_#*:}"
+				;;
+			?*)
+				__sx_arr_bind_seg_="${__sx_arr_bind_bind_}"
+				__sx_arr_bind_m_=0
+				__sx_arr_bind_n_="${SX_NUM_I32_MAX}"
+
+				case "${__sx_arr_bind_seg_}" in */*)
+					__sx_arr_bind_m_="${__sx_arr_bind_seg_%%/*}"
+					__sx_arr_bind_seg_="${__sx_arr_bind_seg_#*/}"
+				esac
+
+				case "${__sx_arr_bind_seg_}" in [1-9]*)
+					__sx_arr_bind_n_="${__sx_arr_bind_seg_%%[!0-9]*}"
+					__sx_arr_bind_seg_="${__sx_arr_bind_seg_#"${__sx_arr_bind_n_}"}"
+				esac
+
+				__sx_arr_bind_chain_="${__sx_arr_bind_chain_}${__sx_arr_bind_chain_:+ }${__sx_arr_bind_vn_}-${__sx_arr_bind_seg_}_${__sx_arr_bind_m_}"
+				: "$((__sx_arr_bind_m_ += 1))"
+
+				case "${__sx_arr_bind_m_}" in
+					"${__sx_arr_bind_n_}") __sx_arr_bind_bind_=;;
+					*) __sx_arr_bind_bind_="${__sx_arr_bind_m_}/${__sx_arr_bind_n_}${__sx_arr_bind_seg_}";;
+				esac
+				;;
+			*)
+				__sx_arr_bind_sts_=1
+				break
+				;;
+		esac
+	done
+
+	M_SET([|${__sx_arr_bind_br_}|], [|${__sx_arr_bind_bind_}|])
+	M_SET([|${__sx_arr_bind_cr_}|], [|${__sx_arr_bind_chain_}|])
+	set -- "${__sx_arr_bind_sts_}"
+
+	unset CLEANUP
+	return "${1}"
 }
 
 ### sx_arr_pop - 配列の末尾から要素を取り出す
