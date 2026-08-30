@@ -11354,7 +11354,7 @@ __sx_arr_bind() {
 			?*)
 				__sx_arr_bind_seg_="${__sx_arr_bind_bind_}"
 				__sx_arr_bind_m_=0
-				__sx_arr_bind_n_="${SX_NUM_I32_MAX}"
+				eval "__sx_arr_bind_n_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
 
 				case "${__sx_arr_bind_seg_}" in */*)
 					__sx_arr_bind_m_="${__sx_arr_bind_seg_%%/*}"
@@ -11454,13 +11454,14 @@ sx_arr_cat() {
 
 	# 1) 要素ストリームを1つずつ __sx_arr_bind で処理し、chain を構築する（読み取りのみ）
 	__sx_arr_cat_chain=
+
 	for __sx_arr_cat_arr in "${@}"; do
 		eval "__sx_arr_cat_len=\"\${${__sx_arr_cat_arr}_len}\""
 		__sx_arr_cat_i=0
-		while M_NUM_LT([|${__sx_arr_cat_i}|], [|${__sx_arr_cat_len}|]); do
-			__sx_arr_cat_blk=
+
+		while M_NUM_LT([|__sx_arr_cat_i|], [|__sx_arr_cat_len|]); do
 			__sx_arr_bind __sx_arr_cat_bind __sx_arr_cat_blk "${__sx_arr_cat_bind}" "${__sx_arr_cat_arr}_${__sx_arr_cat_i}" || break 2
-			__sx_arr_cat_chain="${__sx_arr_cat_chain}${__sx_arr_cat_chain:+ }${__sx_arr_cat_blk}"
+			__sx_arr_cat_chain="${__sx_arr_cat_chain} ${__sx_arr_cat_blk}"
 			: "$((__sx_arr_cat_i += 1))"
 		done
 	done

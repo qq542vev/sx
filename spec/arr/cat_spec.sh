@@ -152,6 +152,42 @@ Describe 'sx_arr_cat'
     End
   End
 
+  Describe '64ビット設定'
+    It '複数の配列を1つの末尾配列へ順に連結すること'
+      sx_arr_gen a1 a b c
+      sx_arr_gen a2 d e
+      SX_CFG_NUM_RANGE=64
+
+      When call sx_arr_cat x a1 a2
+      The status should be success
+      The variable x_len should equal 5
+      The variable x_0 should equal "a"
+      The variable x_4 should equal "e"
+    End
+
+    It '数値先行セグメントと末尾セグメントへ分配すること'
+      sx_arr_gen a1 a b c
+      sx_arr_gen a2 d e
+      SX_CFG_NUM_RANGE=64
+
+      When call sx_arr_cat 2a:x a1 a2
+      The status should be success
+      The variable a_len should equal 2
+      The variable a_0 should equal "a"
+      The variable x_len should equal 3
+      The variable x_0 should equal "c"
+    End
+
+    It '源配列が空の場合は空配列を生成すること'
+      sx_arr_gen a1
+      SX_CFG_NUM_RANGE=64
+
+      When call sx_arr_cat x a1
+      The status should be success
+      The variable x_len should equal 0
+    End
+  End
+
   Describe 'バリデーション'
     It 'バインド形式が不正な場合に 64 を返すこと'
       sx_arr_gen a1 a b

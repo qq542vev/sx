@@ -72,6 +72,20 @@ Describe 'sx_arr_cat -efu 環境検証'
     End
   End
 
+  Describe '64ビット設定'
+    It '64ビットレンジで連結と分配が成功する'
+      SX_CFG_NUM_RANGE=64
+      sx_arr_gen a1 a b c
+      sx_arr_gen a2 d e
+
+      sx_arr_cat 2a:x a1 a2
+      The variable "a_len" should equal 2
+      The variable "a_0" should equal a
+      The variable "x_len" should equal 3
+      The variable "x_0" should equal c
+    End
+  End
+
   Describe '引数バリデーション'
     It 'バインド形式が不正な場合は 64 を返す'
       sx_arr_gen a1 a b

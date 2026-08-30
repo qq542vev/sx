@@ -125,6 +125,26 @@ Describe 'sx_arr_bind'
         End
     End
 
+    Context 'SX_CFG_NUM_RANGE が 64 のとき'
+        It '裸セグメントの累積上限が 64bit 相当になること'
+            unset br cr
+            SX_CFG_NUM_RANGE=64
+            When call sx_arr_bind br cr "a" p1 p2
+            The status should be success
+            The variable br should equal "2/9223372036854775807a"
+            The variable cr should equal "p1-a_0 p2-a_1"
+        End
+
+        It '通常のバインドで chain と残り bind を生成すること'
+            unset br cr
+            SX_CFG_NUM_RANGE=64
+            When call sx_arr_bind br cr "a:b:c" v1 v2
+            The status should be success
+            The variable br should equal "c"
+            The variable cr should equal "v1-a v2-b"
+        End
+    End
+
     Context 'SX_CFG_SKIP_CHK が 1 のとき'
         BeforeRun 'SX_CFG_SKIP_CHK=1'
 
