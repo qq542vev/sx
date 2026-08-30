@@ -11389,6 +11389,214 @@ __sx_arr_bind() {
 	return "${1}"
 }
 
+define([|V|], [|__sx_arr_merge_$1|])dnl
+define([|CLEANUP|], [|V(bind) V(bind_org) V(chain) V(bo) V(fb) V(first) V(arr) V(len) V(i) V(blk) V(oseg) V(kind) V(name) V(fseg) V(fname) V(size) V(sname) V(ftmp)|])dnl
+
+### sx_arr_merge - 複数の配列を連結し、バインドテンプレに従って分配する
+##
+## 使い方:
+##   sx_arr_merge bind arr1 [arr2 ...]
+##
+## 説明:
+##   指定された sx 配列（arr1, arr2, ...）の全要素を順方向に連結した要素ストリームを生成し、
+##   バインド形式（sx_var_is_bind 参照。例: x, 2a:x, a:10b:3c:1d:e）に従って各分配先へ割り当てる。
+##
+##   例:
+##     sx_arr_merge x      a1 a2   # a1=[a,b,c], a2=[d,e] なら x=[a,b,c,d,e]
+##     sx_arr_merge 2a:x   a1 a2   # 上記ストリームなら a=[a,b], x=[c,d,e]
+##
+##   分配先の扱い（sx_arr_is_bindable と同じ分類）:
+##     - 数値先行セグメント（2b 等）と末尾セグメント（x 等）は配列として生成する。
+##       割当日が無ければ空配列、一部のみならその要素数で生成する（切り詰め成功）。
+##     - 先頭・中間の素セグメント（a:10b... の a 等）はスカラーとして扱い配列化しない。
+##
+##   トランザクション: まず全書き込み先の書き込み可否を一括検査し、一部でも不可なら
+##   一切書き込まず SX_EX_NOPERM を返す（中途半端な書き込みを行わない）。
+##
+## 注意:
+##   分配先に既存配列を使う場合は、事前に sx_var_unset を明示的に呼び出してから呼び出すこと。
+##   源配列と分配先の名前が重複する場合は未定義。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   65  対象が sx 配列ではない (SX_EX_DATAERR)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_arr_merge() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) ;; *)
+		sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+
+		__sx_var_is_bind ${1+"${1}"} || return "${SX_EX_USAGE}"
+
+		__sx_arr_is_bindable ${1+"${1}"} || return "${SX_EX_NOPERM}"
+	esac
+
+	__sx_arr_merge_bind="${1-}"
+	__sx_arr_merge_bind_org="${1-}"
+	shift "$((0${1+1}))"
+
+	case "${SX_CFG_SKIP_CHK-}" in 1) ;; *)
+		sx_var_is_name "${@}" || {
+			unset CLEANUP
+			return "${SX_EX_USAGE}"
+		}
+
+		__sx_var_is_arr "${@}" || {
+			unset CLEANUP
+			return "${SX_EX_DATAERR}"
+		}
+	esac
+
+	# 1) 要素ストリームを1つずつ __sx_arr_bind で処理し、chain を構築する（読み取りのみ）
+	__sx_arr_merge_chain=
+	for __sx_arr_merge_arr in "${@}"; do
+		eval "__sx_arr_merge_len=\"\${${__sx_arr_merge_arr}_len}\""
+		__sx_arr_merge_i=0
+		while M_NUM_LT([|${__sx_arr_merge_i}|], [|${__sx_arr_merge_len}|]); do
+			__sx_arr_merge_blk=
+			__sx_arr_bind __sx_arr_merge_bind __sx_arr_merge_blk "${__sx_arr_merge_bind}" "${__sx_arr_merge_arr}_${__sx_arr_merge_i}" || break 2
+			__sx_arr_merge_chain="${__sx_arr_merge_chain}${__sx_arr_merge_chain:+ }${__sx_arr_merge_blk}"
+			: "$((__sx_arr_merge_i += 1))"
+		done
+	done
+
+	eval set -- "${__sx_arr_merge_chain}"
+
+	# 2) トランザクション: 全書き込み先（分配先の個々の変数）の書き込み可否を一括検査
+
+	case "${SX_CFG_SKIP_CHK-}" in 1) ;; *)
+		__sx_var_is_copyable "${@}" || {
+			unset CLEANUP
+			return "${SX_EX_NOPERM}"
+		}
+	esac
+
+	# 3) コミット: bind_org と残り bind を後方比較し、各配列セグメントを生成する
+	__sx_arr_merge_bo="${__sx_arr_merge_bind_org}"
+	__sx_arr_merge_fb="${__sx_arr_merge_bind}"
+	__sx_arr_merge_first=1   # 1 回目の走査＝末尾セグメント
+	while M_STR_NE([|"${__sx_arr_merge_bo}"|], [|''|]); do
+		# bind_org の末尾セグメントを pop
+		case "${__sx_arr_merge_bo}" in
+			*:*) __sx_arr_merge_oseg="${__sx_arr_merge_bo##*:}"; __sx_arr_merge_bo="${__sx_arr_merge_bo%:*}";;
+			*)   __sx_arr_merge_oseg="${__sx_arr_merge_bo}"; __sx_arr_merge_bo=;;
+		esac
+
+		# 空セグメント（スキップ）は配列化も size 比較も行わない
+		case "${__sx_arr_merge_oseg}" in '')
+			__sx_arr_merge_first=
+			continue
+		esac
+
+		# 末尾セグメント（最初の pop）または数値接頭辞を持つ → 配列。それ以外はスカラー。
+		# 数値のみのセグメント（2:x 等の読み飛ばし）は配列化しない。
+		__sx_arr_merge_kind=scalar
+		case "${__sx_arr_merge_oseg}" in
+			[0-9]*)
+				__sx_arr_merge_name="${__sx_arr_merge_oseg#"${__sx_arr_merge_oseg%%[!0-9]*}"}"
+
+				case "${__sx_arr_merge_name}" in ?*)
+					__sx_arr_merge_kind=arr
+				esac
+				;;
+			*)
+				case "${__sx_arr_merge_first}" in 1)
+					__sx_arr_merge_kind=arr
+					__sx_arr_merge_name="${__sx_arr_merge_oseg}"
+				esac
+				;;
+		esac
+		__sx_arr_merge_first=
+
+		# スカラーは配列化しないが、fb 側に未消費のまま同じセグメントが
+		# 残っている場合は、そのぶんだけ fb を進めておかないと、以降の
+		# 配列セグメントの比較がずれてしまう（消費済みなら fb からは既に
+		# 消えているので、その場合は何もしない）。
+		case "${__sx_arr_merge_kind}" in scalar)
+			case "${__sx_arr_merge_oseg}" in
+				[0-9]*) __sx_arr_merge_sname="";;
+				*)      __sx_arr_merge_sname="${__sx_arr_merge_oseg}";;
+			esac
+
+			case "${__sx_arr_merge_fb}" in ?*)
+				# 空セグメントを挟む場合は非空の fseg が出るまで pop する
+				while M_STR_NE([|"${__sx_arr_merge_fb}"|], [|''|]); do
+					case "${__sx_arr_merge_fb}" in
+						*:*) __sx_arr_merge_fseg="${__sx_arr_merge_fb##*:}"; __sx_arr_merge_ftmp="${__sx_arr_merge_fb%:*}";;
+						*)   __sx_arr_merge_fseg="${__sx_arr_merge_fb}"; __sx_arr_merge_ftmp=;;
+					esac
+					case "${__sx_arr_merge_fseg}" in ?*) break;; esac
+					__sx_arr_merge_fb="${__sx_arr_merge_ftmp}"
+				done
+
+				__sx_arr_merge_fname="${__sx_arr_merge_fseg#*/}"
+				__sx_arr_merge_fname="${__sx_arr_merge_fname#"${__sx_arr_merge_fname%%[!0-9]*}"}"
+
+				# 名前が一致する＝この scalar 自身がまだ未消費のまま fb に
+				# 残っている、ということなのでここで消費（pop）する。
+				# 不一致＝既に消費されて fb から消えているので、次の
+				# （より手前の）比較のために fb はそのまま残す。
+				case "${__sx_arr_merge_fname}" in
+					"${__sx_arr_merge_sname}") __sx_arr_merge_fb="${__sx_arr_merge_ftmp}";;
+				esac
+				;;
+			esac
+
+			continue
+			;;
+		esac
+
+		# 対応する残り bind の末尾と比較してサイズを決定（一致時のみ残り bind を進める）
+		__sx_arr_merge_size=0
+		case "${__sx_arr_merge_fb}" in ?*)
+			# 空セグメントを挟む場合は非空の fseg が出るまで pop する
+			while M_STR_NE([|"${__sx_arr_merge_fb}"|], [|''|]); do
+				case "${__sx_arr_merge_fb}" in
+					*:*) __sx_arr_merge_fseg="${__sx_arr_merge_fb##*:}"; __sx_arr_merge_fb="${__sx_arr_merge_fb%:*}";;
+					*)   __sx_arr_merge_fseg="${__sx_arr_merge_fb}"; __sx_arr_merge_fb=;;
+				esac
+				case "${__sx_arr_merge_fseg}" in ?*) break;; esac
+			done
+			__sx_arr_merge_fname="${__sx_arr_merge_fseg#*/}"
+			__sx_arr_merge_fname="${__sx_arr_merge_fname#"${__sx_arr_merge_fname%%[!0-9]*}"}"
+
+			case "${__sx_arr_merge_fname}" in
+				"${__sx_arr_merge_name}")
+					case "${__sx_arr_merge_fseg}" in
+						*/*) __sx_arr_merge_size="${__sx_arr_merge_fseg%%/*}";;
+						*)   __sx_arr_merge_size=0;;
+					esac
+					;;
+				*)
+					# 完全消費（残り bind には現れない）：容量ぶん（末尾なら 0）
+					__sx_arr_merge_size="${__sx_arr_merge_oseg%%[!0-9]*}"
+					case "${__sx_arr_merge_size}" in '') __sx_arr_merge_size=0;; esac
+					;;
+			esac
+			;;
+		*)
+			# 残り bind が空（全て消費）：容量ぶん（末尾なら 0）
+			__sx_arr_merge_size="${__sx_arr_merge_oseg%%[!0-9]*}"
+			case "${__sx_arr_merge_size}" in '') __sx_arr_merge_size=0;; esac
+			;;
+		esac
+
+		# 配列セグメントを生成
+		M_SET([|${__sx_arr_merge_name}|], [|${SX_CFG_SIG_ARR}:|])
+		M_SET([|${__sx_arr_merge_name}_len|], [|${__sx_arr_merge_size}|])
+	done
+
+	# 4) chain 適用（一括書き込み）
+	__sx_var_copy "${@}"
+
+	unset CLEANUP
+}
+
+__sx_arr_merge() {
+	SX_CFG_SKIP_CHK=1 sx_arr_merge "${@}"
+}
+
 ### sx_arr_pop - 配列の末尾から要素を取り出す
 ##
 ## 使い方:
