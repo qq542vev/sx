@@ -4551,9 +4551,9 @@ __sx_num_add_nat0() {
 			__sx_num_add_nat0_tmp_=$((${__sx_num_add_nat0_ch1_:-0} + ${__sx_num_add_nat0_ch2_:-0} + __sx_num_add_nat0_carry_))
 			__sx_num_add_nat0_carry_=$((__sx_num_add_nat0_wlen_ < ${#__sx_num_add_nat0_tmp_}))
 
-			case "${#__sx_num_add_nat0_rem1_}:${#__sx_num_add_nat0_rem2_}:${__sx_num_add_nat0_carry_}" in
-				0:0:[01]) __sx_num_add_nat0_rem1_="${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}" && ! :;;
-				[1-9]*:0:0 | 0:[1-9]*:0)
+			case "${__sx_num_add_nat0_carry_}:${__sx_num_add_nat0_rem1_}:${__sx_num_add_nat0_rem2_}" in
+				?::) __sx_num_add_nat0_rem1_="${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}" && ! :;;
+				0:?*: | 0::?*)
 					case "${__sx_num_add_nat0_tmp_}" in
 						${__sx_num_add_nat0_qm_}) __sx_num_add_nat0_rem1_="${__sx_num_add_nat0_rem1_}${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}";;
 						*)
@@ -4562,7 +4562,7 @@ __sx_num_add_nat0() {
 							__sx_num_add_nat0_rem1_="${__sx_num_add_nat0_rem1_}${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_#1}${__sx_num_add_nat0_out_}"
 							;;
 						esac && ! :;;
-				*:0)
+				0:*)
 					case "${__sx_num_add_nat0_tmp_}" in
 						${__sx_num_add_nat0_qm_}) __sx_num_add_nat0_out_="${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}";;
 						*)
