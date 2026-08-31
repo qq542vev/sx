@@ -11103,6 +11103,7 @@ sx_arr_gen() {
 __sx_arr_gen() {
 	M_SET([|${1}|], [|${SX_CFG_SIG_ARR}:|])
 	M_SET([|${1}_len|], [|0|])
+
 	__sx_arr_push "${@}"
 }
 
@@ -11390,7 +11391,7 @@ __sx_arr_bind() {
 }
 
 define([|V|], [|__sx_arr_cat_$1|])dnl
-define([|CLEANUP|], [|V(bind) V(bind_org) V(chain) V(bo) V(fb) V(first) V(arr) V(len) V(i) V(blk) V(oseg) V(name) V(fseg) V(lim)|])dnl
+define([|CLEANUP|], [|V(bind) V(chain) V(borg) V(first) V(arr) V(len) V(i) V(blk) V(oseg) V(name) V(fseg) V(lim)|])dnl
 
 ### sx_arr_cat - 複数の配列を連結する
 ##
@@ -11437,7 +11438,7 @@ sx_arr_cat() {
 	esac
 
 	__sx_arr_cat_bind="${1-}"
-	__sx_arr_cat_bind_org="${1-}"
+	__sx_arr_cat_borg=":${1-}"
 	shift "$((0${1+1}))"
 
 	case "${SX_CFG_SKIP_CHK-}" in 1) ;; *)
@@ -11477,23 +11478,25 @@ sx_arr_cat() {
 		}
 	esac
 
-	# 3) コミット: bind_org と残り bind を後方比較し、各配列セグメントを生成する
-	__sx_arr_cat_bo=":${__sx_arr_cat_bind_org}"
-	__sx_arr_cat_fb="${__sx_arr_cat_bind}"
-	__sx_arr_cat_first=1   # 1 回目の走査＝末尾セグメント
-	while M_STR_HAS([|"${__sx_arr_cat_bo}"|], [|':'|]); do
-		# bind_org の末尾セグメントを pop
-		__sx_arr_cat_oseg="${__sx_arr_cat_bo##*:}"
-		__sx_arr_cat_bo="${__sx_arr_cat_bo%:*}"
+	# 3) chain 適用（一括書き込み）
+	__sx_var_copy "${@}"
 
-		case "${__sx_arr_cat_fb}" in
+	# 4) コミット: bind_org と残り bind を後方比較し、各配列セグメントを生成する
+	__sx_arr_cat_first=1   # 1 回目の走査＝末尾セグメント
+
+	while M_STR_HAS([|"${__sx_arr_cat_borg}"|], [|':'|]); do
+		# bind_org の末尾セグメントを pop
+		__sx_arr_cat_oseg="${__sx_arr_cat_borg##*:}"
+		__sx_arr_cat_borg="${__sx_arr_cat_borg%:*}"
+
+		case "${__sx_arr_cat_bind}" in
 			*:*)
-				__sx_arr_cat_fseg="${__sx_arr_cat_fb##*:}"
-				__sx_arr_cat_fb="${__sx_arr_cat_fb%:*}"
+				__sx_arr_cat_fseg="${__sx_arr_cat_bind##*:}"
+				__sx_arr_cat_bind="${__sx_arr_cat_bind%:*}"
 				;;
 			*)
-				__sx_arr_cat_fseg="${__sx_arr_cat_fb}"
-				__sx_arr_cat_fb=
+				__sx_arr_cat_fseg="${__sx_arr_cat_bind}"
+				__sx_arr_cat_bind=
 				;;
 		esac
 
@@ -11516,17 +11519,18 @@ sx_arr_cat() {
 					*) __sx_arr_cat_len="${__sx_arr_cat_lim}";;
 				esac
 
-				M_SET([|${__sx_arr_cat_name}|], [|${SX_CFG_SIG_ARR}:|])
+				__sx_arr_gen "${__sx_arr_cat_name}"
 				M_SET([|${__sx_arr_cat_name}_len|], [|${__sx_arr_cat_len}|])
 				;;
-			[01]["_${SX_STR_ALPHA}"]*) unset "${__sx_arr_cat_oseg}";;
+			0["_${SX_STR_ALPHA}"]*)
+				case "${__sx_arr_cat_fseg}" in ?*)
+					unset "${__sx_arr_cat_oseg}"
+				esac
+				;;
 		esac
 
 		__sx_arr_cat_first=0
 	done
-
-	# 4) chain 適用（一括書き込み）
-	__sx_var_copy "${@}"
 
 	unset CLEANUP
 }
