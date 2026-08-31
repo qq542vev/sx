@@ -4549,7 +4549,7 @@ __sx_num_add_nat0() {
 			esac
 
 			__sx_num_add_nat0_tmp_=$((${__sx_num_add_nat0_ch1_:-0} + ${__sx_num_add_nat0_ch2_:-0} + __sx_num_add_nat0_carry_))
-			__sx_num_add_nat0_carry_=$((__sx_num_add_nat0_wlen_ < ${#__sx_num_add_nat0_tmp_}))
+			__sx_num_add_nat0_carry_=$((__sx_num_add_nat0_b_ <= ${__sx_num_add_nat0_tmp_}))
 
 			case "${__sx_num_add_nat0_carry_}:${__sx_num_add_nat0_rem1_}:${__sx_num_add_nat0_rem2_}" in
 				?::) __sx_num_add_nat0_rem1_="${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}" && ! :;;
