@@ -11390,7 +11390,7 @@ __sx_arr_bind() {
 }
 
 define([|V|], [|__sx_arr_cat_$1|])dnl
-define([|CLEANUP|], [|V(bind) V(bind_org) V(chain) V(bo) V(fb) V(first) V(arr) V(len) V(i) V(blk) V(oseg) V(kind) V(name) V(fseg) V(fname) V(size) V(sname) V(ftmp)|])dnl
+define([|CLEANUP|], [|V(bind) V(bind_org) V(chain) V(bo) V(fb) V(first) V(arr) V(len) V(i) V(blk) V(oseg) V(name) V(fseg) V(lim)|])dnl
 
 ### sx_arr_cat - 複数の配列を連結する
 ##
@@ -11478,118 +11478,51 @@ sx_arr_cat() {
 	esac
 
 	# 3) コミット: bind_org と残り bind を後方比較し、各配列セグメントを生成する
-	__sx_arr_cat_bo="${__sx_arr_cat_bind_org}"
+	__sx_arr_cat_bo=":${__sx_arr_cat_bind_org}"
 	__sx_arr_cat_fb="${__sx_arr_cat_bind}"
 	__sx_arr_cat_first=1   # 1 回目の走査＝末尾セグメント
-	while M_STR_NE([|"${__sx_arr_cat_bo}"|], [|''|]); do
+	while M_STR_HAS([|"${__sx_arr_cat_bo}"|], [|':'|]); do
 		# bind_org の末尾セグメントを pop
-		case "${__sx_arr_cat_bo}" in
-			*:*) __sx_arr_cat_oseg="${__sx_arr_cat_bo##*:}"; __sx_arr_cat_bo="${__sx_arr_cat_bo%:*}";;
-			*)   __sx_arr_cat_oseg="${__sx_arr_cat_bo}"; __sx_arr_cat_bo=;;
-		esac
+		__sx_arr_cat_oseg="${__sx_arr_cat_bo##*:}"
+		__sx_arr_cat_bo="${__sx_arr_cat_bo%:*}"
 
-		# 空セグメント（スキップ）は配列化も size 比較も行わない
-		case "${__sx_arr_cat_oseg}" in '')
-			__sx_arr_cat_first=
-			continue
-		esac
-
-		# 末尾セグメント（最初の pop）または数値接頭辞を持つ → 配列。それ以外はスカラー。
-		# 数値のみのセグメント（2:x 等の読み飛ばし）は配列化しない。
-		__sx_arr_cat_kind=scalar
-		case "${__sx_arr_cat_oseg}" in
-			[0-9]*)
-				__sx_arr_cat_name="${__sx_arr_cat_oseg#"${__sx_arr_cat_oseg%%[!0-9]*}"}"
-
-				case "${__sx_arr_cat_name}" in ?*)
-					__sx_arr_cat_kind=arr
-				esac
+		case "${__sx_arr_cat_fb}" in
+			*:*)
+				__sx_arr_cat_fseg="${__sx_arr_cat_fb##*:}"
+				__sx_arr_cat_fb="${__sx_arr_cat_fb%:*}"
 				;;
 			*)
-				case "${__sx_arr_cat_first}" in 1)
-					__sx_arr_cat_kind=arr
-					__sx_arr_cat_name="${__sx_arr_cat_oseg}"
-				esac
+				__sx_arr_cat_fseg="${__sx_arr_cat_fb}"
+				__sx_arr_cat_fb=
 				;;
 		esac
-		__sx_arr_cat_first=
 
-		# スカラーは配列化しないが、fb 側に未消費のまま同じセグメントが
-		# 残っている場合は、そのぶんだけ fb を進めておかないと、以降の
-		# 配列セグメントの比較がずれてしまう（消費済みなら fb からは既に
-		# 消えているので、その場合は何もしない）。
-		case "${__sx_arr_cat_kind}" in scalar)
-			case "${__sx_arr_cat_oseg}" in
-				[0-9]*) __sx_arr_cat_sname="";;
-				*)      __sx_arr_cat_sname="${__sx_arr_cat_oseg}";;
-			esac
-
-			case "${__sx_arr_cat_fb}" in ?*)
-				# 空セグメントを挟む場合は非空の fseg が出るまで pop する
-				while M_STR_NE([|"${__sx_arr_cat_fb}"|], [|''|]); do
-					case "${__sx_arr_cat_fb}" in
-						*:*) __sx_arr_cat_fseg="${__sx_arr_cat_fb##*:}"; __sx_arr_cat_ftmp="${__sx_arr_cat_fb%:*}";;
-						*)   __sx_arr_cat_fseg="${__sx_arr_cat_fb}"; __sx_arr_cat_ftmp=;;
-					esac
-					case "${__sx_arr_cat_fseg}" in ?*) break;; esac
-					__sx_arr_cat_fb="${__sx_arr_cat_ftmp}"
-				done
-
-				__sx_arr_cat_fname="${__sx_arr_cat_fseg#*/}"
-				__sx_arr_cat_fname="${__sx_arr_cat_fname#"${__sx_arr_cat_fname%%[!0-9]*}"}"
-
-				# 名前が一致する＝この scalar 自身がまだ未消費のまま fb に
-				# 残っている、ということなのでここで消費（pop）する。
-				# 不一致＝既に消費されて fb から消えているので、次の
-				# （より手前の）比較のために fb はそのまま残す。
-				case "${__sx_arr_cat_fname}" in
-					"${__sx_arr_cat_sname}") __sx_arr_cat_fb="${__sx_arr_cat_ftmp}";;
+		case "${__sx_arr_cat_first}${__sx_arr_cat_oseg}" in
+			0[1-9]*[_"${SX_STR_ALPHA}"]* | 1[_"${SX_STR_ALPHA}"]*)
+				case "${__sx_arr_cat_oseg}" in
+					[1-9]*)
+						__sx_arr_cat_lim="${__sx_arr_cat_oseg%%[!0-9]*}"
+						__sx_arr_cat_name="${__sx_arr_cat_oseg#"${__sx_arr_cat_lim}"}"
+						;;
+					*)
+						eval "__sx_arr_cat_lim=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
+						__sx_arr_cat_name="${__sx_arr_cat_oseg}"
+						;;
 				esac
+
+				case "${__sx_arr_cat_fseg}" in
+					*/*) __sx_arr_cat_len="${__sx_arr_cat_fseg%%/*}";;
+					?*) __sx_arr_cat_len=0;;
+					*) __sx_arr_cat_len="${__sx_arr_cat_lim}";;
+				esac
+
+				M_SET([|${__sx_arr_cat_name}|], [|${SX_CFG_SIG_ARR}:|])
+				M_SET([|${__sx_arr_cat_name}_len|], [|${__sx_arr_cat_len}|])
 				;;
-			esac
-
-			continue
-			;;
+			[01]["_${SX_STR_ALPHA}"]*) unset "${__sx_arr_cat_oseg}";;
 		esac
 
-		# 対応する残り bind の末尾と比較してサイズを決定（一致時のみ残り bind を進める）
-		__sx_arr_cat_size=0
-		case "${__sx_arr_cat_fb}" in ?*)
-			# 空セグメントを挟む場合は非空の fseg が出るまで pop する
-			while M_STR_NE([|"${__sx_arr_cat_fb}"|], [|''|]); do
-				case "${__sx_arr_cat_fb}" in
-					*:*) __sx_arr_cat_fseg="${__sx_arr_cat_fb##*:}"; __sx_arr_cat_fb="${__sx_arr_cat_fb%:*}";;
-					*)   __sx_arr_cat_fseg="${__sx_arr_cat_fb}"; __sx_arr_cat_fb=;;
-				esac
-				case "${__sx_arr_cat_fseg}" in ?*) break;; esac
-			done
-			__sx_arr_cat_fname="${__sx_arr_cat_fseg#*/}"
-			__sx_arr_cat_fname="${__sx_arr_cat_fname#"${__sx_arr_cat_fname%%[!0-9]*}"}"
-
-			case "${__sx_arr_cat_fname}" in
-				"${__sx_arr_cat_name}")
-					case "${__sx_arr_cat_fseg}" in
-						*/*) __sx_arr_cat_size="${__sx_arr_cat_fseg%%/*}";;
-						*)   __sx_arr_cat_size=0;;
-					esac
-					;;
-				*)
-					# 完全消費（残り bind には現れない）：容量ぶん（末尾なら 0）
-					__sx_arr_cat_size="${__sx_arr_cat_oseg%%[!0-9]*}"
-					case "${__sx_arr_cat_size}" in '') __sx_arr_cat_size=0;; esac
-					;;
-			esac
-			;;
-		*)
-			# 残り bind が空（全て消費）：容量ぶん（末尾なら 0）
-			__sx_arr_cat_size="${__sx_arr_cat_oseg%%[!0-9]*}"
-			case "${__sx_arr_cat_size}" in '') __sx_arr_cat_size=0;; esac
-			;;
-		esac
-
-		# 配列セグメントを生成
-		M_SET([|${__sx_arr_cat_name}|], [|${SX_CFG_SIG_ARR}:|])
-		M_SET([|${__sx_arr_cat_name}_len|], [|${__sx_arr_cat_size}|])
+		__sx_arr_cat_first=0
 	done
 
 	# 4) chain 適用（一括書き込み）
