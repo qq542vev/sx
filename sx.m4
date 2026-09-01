@@ -4827,7 +4827,7 @@ __sx_num_cmp_nat0() {
 
 	while M_STR_MATCH([|"${1}"|], [|${__sx_num_cmp_nat0_qm_}?*|]); do
 		set -- "${1#${__sx_num_cmp_nat0_qm_}}" "${2#${__sx_num_cmp_nat0_qm_}}" "${1}" "${2}"
-		__sx_num_cmp_arith_digit "${3%"${1}"}" "${4%"${2}"}" || case "${?}" in 1 | 3)
+		__sx_num_cmp_arith "1${3%"${1}"}" "1${4%"${2}"}" || case "${?}" in 1 | 3)
 			set -- "${?}"
 			unset CLEANUP
 			return "${1}"
@@ -4836,7 +4836,7 @@ __sx_num_cmp_nat0() {
 
 	unset CLEANUP
 
-	__sx_num_cmp_arith_digit "${1}" "${2}" || return "${?}"
+	__sx_num_cmp_arith "1${1}" "1${2}" || return "${?}"
 }
 
 ### sx_num_div_int - 符号付き整数の除算で実数商（整数商 + 小数部）を求める
@@ -6938,9 +6938,7 @@ __sx_num_mul_nat0() {
 		set --
 	esac
 
-	eval "__sx_num_mul_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" \
-	      __sx_num_mul_nat0_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" \
-	      __sx_num_mul_nat0_max_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
+	eval "__sx_num_mul_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_mul_nat0_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" __sx_num_mul_nat0_max_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
 
 	# safe_: 分割探索式の (len + (x - 1)) が INT_MAX を超えないための上限
 	__sx_num_mul_nat0_safe_=$((__sx_num_mul_nat0_max_ops_ - __sx_num_mul_nat0_wlen_mul_ + 2))
