@@ -8,6 +8,7 @@ define([|M_STR_NE|], [|case $1 in $2) ! :;; esac|]) dnl
 define([|M_SET|], [|eval "$1="'"$2"'|]) dnl
 define([|M_NUM_INCR|], [|ifelse($#, 1, [|$1=$(($1 + 1))|], [|$1=$(($1 + $2))|])|]) dnl
 define([|M_NUM_DECR|], [|ifelse($#, 1, [|$1=$(($1 - 1))|], [|$1=$(($1 - $2))|])|]) dnl
+define([|M_NUM_AMP|], [|ifelse($#, 1, [|$1=$(($1 * 2))|], [|$1=$(($1 * $2))|])|]) dnl
 
 define([|M_STR_EQ|], [|dnl
 { case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, [|&& __M_STR_EQ_REST(shift($@))|]); }dnl
@@ -6955,7 +6956,7 @@ __sx_num_mul_nat0() {
 		case "${__sx_num_mul_nat0_a_}${__sx_num_mul_nat0_b_}" in
 			${__sx_num_mul_nat0_qm_}?*) ;;
 			*)
-				: "$((__sx_num_mul_nat0_a_ *= __sx_num_mul_nat0_b_))"
+				M_NUM_AMP([|__sx_num_mul_nat0_a_|], [|__sx_num_mul_nat0_b_|])
 				continue
 				;;
 		esac
