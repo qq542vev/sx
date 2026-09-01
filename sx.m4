@@ -7084,13 +7084,14 @@ __sx_num_mul_nat0() {
 			for __sx_num_mul_nat0_ch_a_ in "${@}"; do
 				__sx_num_mul_nat0_tmp_=$((__sx_num_mul_nat0_ch_b_ * __sx_num_mul_nat0_ch_a_ + ${__sx_num_mul_nat0_carry_:-0}))
 
-				case "$((__sx_num_mul_nat0_opt_y_ < ${#__sx_num_mul_nat0_tmp_}))" in
+				case "$((1${__sx_num_mul_nat0_zchunk_a_} <= __sx_num_mul_nat0_tmp_))" in
 					1)
 						__sx_num_mul_nat0_carry_="${__sx_num_mul_nat0_tmp_%${__sx_num_mul_nat0_qchunk_a_}}"
 						__sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_#"${__sx_num_mul_nat0_carry_}"}${__sx_num_mul_nat0_g_}"
 						;;
 					*)
 						__sx_num_mul_nat0_carry_=
+
 						case "${__sx_num_mul_nat0_tmp_}" in
 							${__sx_num_mul_nat0_qchunk_a_}) __sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_}${__sx_num_mul_nat0_g_}";;
 							*)
@@ -7102,7 +7103,7 @@ __sx_num_mul_nat0() {
 				esac
 			done
 
-			case "${__sx_num_mul_nat0_carry_}" in '')
+			case "${__sx_num_mul_nat0_carry_}:${__sx_num_mul_nat0_g_}" in :0*)
 				__sx_num_mul_nat0_g_="${__sx_num_mul_nat0_g_#"${__sx_num_mul_nat0_g_%%[!0]*}"}"
 			esac
 
