@@ -7757,14 +7757,14 @@ __sx_num_sub_nat0() {
 		__sx_num_sub_nat0_tmp_=$((${__sx_num_sub_nat0_ch1_:-0} - ${__sx_num_sub_nat0_ch2_:-0} - __sx_num_sub_nat0_borrow_))
 		__sx_num_sub_nat0_borrow_=$((__sx_num_sub_nat0_tmp_ < 0))
 
-		case "${#__sx_num_sub_nat0_rem1_}:${#__sx_num_sub_nat0_rem2_}:${__sx_num_sub_nat0_borrow_}" in
-			0:0:0)
+		case "${__sx_num_sub_nat0_borrow_}:${__sx_num_sub_nat0_rem1_}:${__sx_num_sub_nat0_rem2_}" in
+			0::)
 				# 両方の剰余が枯渇 → tmp_ が最上位桁、先頭ゼロ除去のみでゼロ埋め不要
 				case "${__sx_num_sub_nat0_tmp_}" in [!0]*)
 					__sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}"
 				esac && ! :
 				;;
-			*:0:0)
+			0:*:)
 				case "${__sx_num_sub_nat0_tmp_}" in
 					${__sx_num_sub_nat0_qm_}*) __sx_num_sub_nat0_out_="${__sx_num_sub_nat0_rem1_}${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}";;
 					*)
@@ -7774,7 +7774,7 @@ __sx_num_sub_nat0() {
 						;;
 				esac && ! :
 				;;
-			*:*:1) : "$((__sx_num_sub_nat0_tmp_ += ${__sx_num_sub_nat0_b_}))";&
+			1:*) : "$((__sx_num_sub_nat0_tmp_ += ${__sx_num_sub_nat0_b_}))";&
 			*)
 				case "${__sx_num_sub_nat0_tmp_}" in
 					${__sx_num_sub_nat0_qm_}*)  __sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}";;
