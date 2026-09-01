@@ -4560,7 +4560,7 @@ __sx_num_add_nat0() {
 						${__sx_num_add_nat0_qm_}) __sx_num_add_nat0_rem1_="${__sx_num_add_nat0_rem1_}${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}";;
 						*)
 							# ゼロ埋めして前置（片方のチャンクが先頭ゼロ除去で短くなった場合の桁揃え）
-							: "$(( __sx_num_add_nat0_tmp_ += __sx_num_add_nat0_b_))"
+							M_NUM_INCR([|__sx_num_add_nat0_tmp_|], [|__sx_num_add_nat0_b_|])
 							__sx_num_add_nat0_rem1_="${__sx_num_add_nat0_rem1_}${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_#1}${__sx_num_add_nat0_out_}"
 							;;
 						esac && ! :;;
@@ -4569,7 +4569,7 @@ __sx_num_add_nat0() {
 						${__sx_num_add_nat0_qm_}) __sx_num_add_nat0_out_="${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}";;
 						*)
 							# ゼロ埋めして前置
-							: "$((__sx_num_add_nat0_tmp_ += __sx_num_add_nat0_b_))"
+							M_NUM_INCR([|__sx_num_add_nat0_tmp_|], [|__sx_num_add_nat0_b_|])
 							__sx_num_add_nat0_out_="${__sx_num_add_nat0_tmp_#1}${__sx_num_add_nat0_out_}"
 							;;
 					esac
@@ -5353,7 +5353,7 @@ __sx_num_divmod_nat0() {
 			case "${__sx_num_divmod_nat0_tmp_}" in
 				${__sx_num_divmod_nat0_qm_}) __sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_}${__sx_num_divmod_nat0_tmp_}";;
 				*)
-					: "$((__sx_num_divmod_nat0_tmp_ += __sx_num_divmod_nat0_b_))"
+					M_NUM_INCR([|__sx_num_divmod_nat0_tmp_|], [|__sx_num_divmod_nat0_b_|])
 					__sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_}${__sx_num_divmod_nat0_tmp_#1}"
 					;;
 			esac
@@ -5509,7 +5509,8 @@ __sx_num_divmod_nat0() {
 			# D3: 精緻化 — qhat×v2 が b×rhat + u_{W-n+2}（= $3）を超える間 qhat を 1 ずつ減らす
 			#   （qhat の過大見積りを補正する。rhat が b 未満である限り繰り返す）
 			while M_NUM_BOOL([|__sx_num_divmod_nat0_rhat_ < __sx_num_divmod_nat0_b_ && (__sx_num_divmod_nat0_b_ * __sx_num_divmod_nat0_rhat_ + ${3-0}) < (__sx_num_divmod_nat0_qhat_ * __sx_num_divmod_nat0_v2_)|]); do
-				: "$((__sx_num_divmod_nat0_qhat_ -= 1))" "$((__sx_num_divmod_nat0_rhat_ += __sx_num_divmod_nat0_v1_))"
+				M_NUM_DECR([|__sx_num_divmod_nat0_qhat_|])
+				M_NUM_INCR([|__sx_num_divmod_nat0_rhat_|], [|__sx_num_divmod_nat0_v1_|])
 			done
 
 			# D4: 融合 multiply-subtract — 窓の語 u_{W-n+1}..u_W（= $2..$(n+1)）から qhat×v を一括減算する
@@ -5528,7 +5529,8 @@ __sx_num_divmod_nat0() {
 				__sx_num_divmod_nat0_carry_=$((__sx_num_divmod_nat0_p_ / __sx_num_divmod_nat0_b_))
 
 				case "${__sx_num_divmod_nat0_t_}" in -*)
-					: "$((__sx_num_divmod_nat0_t_ += __sx_num_divmod_nat0_b_))" "$((__sx_num_divmod_nat0_carry_ += 1))"
+					M_NUM_INCR([|__sx_num_divmod_nat0_t_|], [|__sx_num_divmod_nat0_b_|])
+					M_NUM_INCR([|__sx_num_divmod_nat0_carry_|])
 				esac
 
 				__sx_num_divmod_nat0_new_="${__sx_num_divmod_nat0_t_} ${__sx_num_divmod_nat0_new_}"
@@ -5540,7 +5542,7 @@ __sx_num_divmod_nat0() {
 				esac
 			do :; done
 
-			: "$((__sx_num_divmod_nat0_ut_ -= __sx_num_divmod_nat0_carry_))"
+			M_NUM_DECR([|__sx_num_divmod_nat0_ut_|], [|__sx_num_divmod_nat0_carry_|])
 			shift "${__sx_num_divmod_nat0_n_}"
 			eval set -- "${__sx_num_divmod_nat0_new_}" '"${@}"'
 
@@ -5556,7 +5558,7 @@ __sx_num_divmod_nat0() {
 					__sx_num_divmod_nat0_t_=$((${2} + ${1} + __sx_num_divmod_nat0_ck_))
 					case "$((__sx_num_divmod_nat0_b_ <= __sx_num_divmod_nat0_t_))" in
 						1)
-							: "$((__sx_num_divmod_nat0_t_ -= __sx_num_divmod_nat0_b_))"
+							M_NUM_DECR([|__sx_num_divmod_nat0_t_|], [|__sx_num_divmod_nat0_b_|])
 							__sx_num_divmod_nat0_ck_=1
 							;;
 						*) __sx_num_divmod_nat0_ck_=0;;
@@ -5574,7 +5576,8 @@ __sx_num_divmod_nat0() {
 				shift "${__sx_num_divmod_nat0_n_}"
 				eval set -- "${__sx_num_divmod_nat0_new_}" '"${@}"'
 
-				: "$((__sx_num_divmod_nat0_qhat_ -= 1))" "$((__sx_num_divmod_nat0_ut_ += __sx_num_divmod_nat0_ck_))"
+				M_NUM_DECR([|__sx_num_divmod_nat0_qhat_|])
+				M_NUM_INCR([|__sx_num_divmod_nat0_ut_|], [|__sx_num_divmod_nat0_ck_|])
 			done
 
 			case "${__sx_num_divmod_nat0_qhat_}" in
@@ -7089,7 +7092,7 @@ __sx_num_mul_nat0() {
 						case "${__sx_num_mul_nat0_tmp_}" in
 							${__sx_num_mul_nat0_qchunk_a_}) __sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_}${__sx_num_mul_nat0_g_}";;
 							*)
-								: "$((__sx_num_mul_nat0_tmp_ += 1${__sx_num_mul_nat0_zchunk_a_}))"
+								M_NUM_INCR([|__sx_num_mul_nat0_tmp_|], [|1${__sx_num_mul_nat0_zchunk_a_}|])
 								__sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_#1}${__sx_num_mul_nat0_g_}"
 								;;
 						esac
@@ -7771,17 +7774,17 @@ __sx_num_sub_nat0() {
 					${__sx_num_sub_nat0_qm_}*) __sx_num_sub_nat0_out_="${__sx_num_sub_nat0_rem1_}${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}";;
 					*)
 						# rem2 のみ枯渇、rem1 に未処理チャンクあり → ゼロ埋めして桁揃え
-						: "$((__sx_num_sub_nat0_tmp_ += __sx_num_sub_nat0_b_))"
+						M_NUM_INCR([|__sx_num_sub_nat0_tmp_|], [|__sx_num_sub_nat0_b_|])
 						__sx_num_sub_nat0_out_="${__sx_num_sub_nat0_rem1_}${__sx_num_sub_nat0_tmp_#1}${__sx_num_sub_nat0_out_}"
 						;;
 				esac && ! :
 				;;
-			1:*) : "$((__sx_num_sub_nat0_tmp_ += ${__sx_num_sub_nat0_b_}))";&
+			1:*) M_NUM_INCR([|__sx_num_sub_nat0_tmp_|], [|__sx_num_sub_nat0_b_|]);&
 			*)
 				case "${__sx_num_sub_nat0_tmp_}" in
 					${__sx_num_sub_nat0_qm_}*)  __sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}";;
 					*)
-						: "$((__sx_num_sub_nat0_tmp_ += __sx_num_sub_nat0_b_))"
+						M_NUM_INCR([|__sx_num_sub_nat0_tmp_|], [|__sx_num_sub_nat0_b_|])
 						__sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_#1}${__sx_num_sub_nat0_out_}"
 						;;
 				esac
@@ -8579,7 +8582,8 @@ __sx_str_find() {
 			__sx_str_find_after_="${__sx_str_find_tgt_#*${3}}"
 			__sx_str_find_match_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"}"
 			__sx_str_find_match_="${__sx_str_find_match_%"${__sx_str_find_after_}"}"
-			: "$((__sx_str_find_off_ += ${#__sx_str_find_pre_}))" "${__sx_str_find_sts_=${SX_EX_OK}}"
+			M_NUM_INCR([|__sx_str_find_off_|], [|${#__sx_str_find_pre_}|])
+			: "${__sx_str_find_sts_=${SX_EX_OK}}"
 
 			case "${__sx_str_find_text_}" in
 				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:${#__sx_str_find_match_}"|], CLEANUP);;
@@ -8601,7 +8605,8 @@ __sx_str_find() {
 		# ==== リテラルモード ====
 		while M_STR_HAS([|"${__sx_str_find_tgt_}"|], [|"${3}"|]); do
 			__sx_str_find_pre_="${__sx_str_find_tgt_%%"${3}"*}"
-			: "$((__sx_str_find_off_ += ${#__sx_str_find_pre_}))" "${__sx_str_find_sts_=${SX_EX_OK}}"
+			M_NUM_INCR([|__sx_str_find_off_|], [|${#__sx_str_find_pre_}|])
+			: "${__sx_str_find_sts_=${SX_EX_OK}}"
 
 			case "${__sx_str_find_text_}" in
 				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:${#3}"|], CLEANUP);;
