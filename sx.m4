@@ -6979,7 +6979,7 @@ __sx_num_mul_nat0() {
 			1:*) __sx_num_mul_nat0_a_="${__sx_num_mul_nat0_b_}";&
 			*:1) ! :;;
 			${__sx_num_mul_nat0_qm_}??*) ;;
-			*) ! : "$((__sx_num_mul_nat0_a_ *= __sx_num_mul_nat0_b_))"
+			*) ! M_NUM_AMP([|__sx_num_mul_nat0_a_|], [|__sx_num_mul_nat0_b_|])
 		esac || continue
 
 		# fit_: 桁数そのものが INT_MAX を超えると算術展開できないため、
