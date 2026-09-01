@@ -7360,7 +7360,7 @@ __sx_num_norm() {
 					__sx_num_norm_in_="0${__sx_num_norm_in_}"
 				esac
 				;;
-			*[Xx]* | 0[0-9]*) : "$((__sx_num_norm_in_ += 0))";;
+			*[Xx]* | 0[0-9]*) __sx_num_norm_in_="$((__sx_num_norm_in_))";;
 		esac
 
 		# 小数点以下のクリーンアップ
