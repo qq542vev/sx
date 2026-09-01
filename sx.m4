@@ -5345,7 +5345,7 @@ __sx_num_divmod_nat0() {
 			esac
 
 			# chunk を nv（r * 10^c + chunk）として再利用する
-			: "$((__sx_num_divmod_nat0_chunk_ += __sx_num_divmod_nat0_r_ * __sx_num_divmod_nat0_b_))"
+			M_NUM_INCR([|__sx_num_divmod_nat0_chunk_|], [|__sx_num_divmod_nat0_r_ * __sx_num_divmod_nat0_b_|])
 			__sx_num_divmod_nat0_r_=$((__sx_num_divmod_nat0_chunk_ % __sx_num_divmod_nat0_v_))
 				# 商1語がちょうど c 桁ならゼロ埋め・切り出しを省略し、それ以外は c 桁に整形する
 			__sx_num_divmod_nat0_tmp_=$((__sx_num_divmod_nat0_chunk_ / __sx_num_divmod_nat0_v_))
