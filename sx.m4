@@ -6996,8 +6996,9 @@ __sx_num_mul_nat0() {
 			__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_}"
 			__sx_num_mul_nat0_b_="${__sx_num_mul_nat0_a_}"
 			__sx_num_mul_nat0_a_="${__sx_num_mul_nat0_tmp_}"
-			__sx_num_mul_nat0_a_len_="${#__sx_num_mul_nat0_a_}"
-			__sx_num_mul_nat0_b_len_="${#__sx_num_mul_nat0_b_}"
+			__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_len_}"
+			__sx_num_mul_nat0_b_len_="${__sx_num_mul_nat0_a_len_}"
+			__sx_num_mul_nat0_a_len_="${__sx_num_mul_nat0_tmp_}"
 		esac
 
 		# 安全: 桁数が算術展開可能な範囲内 → 全分割点を探索
