@@ -4496,7 +4496,7 @@ sx_num_add_nat0() {
 ##   逐次方式でアキュムレータに各数値を順次加算する。
 
 define([|V|], [|__sx_num_add_nat0_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(wlen) V(b)|])dnl
+define([|CLEANUP|], [|V(res) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(b)|])dnl
 
 __sx_num_add_nat0() {
 	__sx_num_add_nat0_res_="${1}"
@@ -4504,7 +4504,7 @@ __sx_num_add_nat0() {
 	shift "$((1 + 0${2+1}))"
 
 	# チャンク処理定数（事前定義値から選択）
-	eval "__sx_num_add_nat0_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" __sx_num_add_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_add_nat0_b_=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
+	eval "__sx_num_add_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_add_nat0_b_=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
 
 	for __sx_num_add_nat0_rem2_ in "${@}"; do
 		# (2) 右端→左端 チャンク処理
@@ -7042,6 +7042,7 @@ __sx_num_mul_nat0() {
 					__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_a_%${__sx_num_mul_nat0_qchunk_a_}}"
 					__sx_num_mul_nat0_ch_a_="${__sx_num_mul_nat0_a_#"${__sx_num_mul_nat0_tmp_}"}"
 					__sx_num_mul_nat0_a_="${__sx_num_mul_nat0_tmp_}"
+
 					case "${__sx_num_mul_nat0_ch_a_}" in
 						0*[1-9]*) set -- "${@}" "${__sx_num_mul_nat0_ch_a_#"${__sx_num_mul_nat0_ch_a_%%[!0]*}"}";;
 						0*) set -- "${@}" 0;;
