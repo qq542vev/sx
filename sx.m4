@@ -6856,7 +6856,7 @@ __sx_num_mul_int() {
 				unset CLEANUP
 				return
 				;;
-			-*) __sx_num_mul_int_qty_="$((~__sx_num_mul_int_qty_))";;
+			-*) __sx_num_mul_int_qty_=$((~__sx_num_mul_int_qty_));;
 		esac
 
 		__sx_num_mul_int_abs_args_="${__sx_num_mul_int_abs_args_} ${__sx_num_mul_int_arg_#[+-]}"
@@ -6943,7 +6943,7 @@ __sx_num_mul_nat0() {
 	      __sx_num_mul_nat0_max_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
 
 	# safe_: 分割探索式の (len + (x - 1)) が INT_MAX を超えないための上限
-	__sx_num_mul_nat0_safe_="$((__sx_num_mul_nat0_max_ops_ - __sx_num_mul_nat0_wlen_mul_ + 2))"
+	__sx_num_mul_nat0_safe_=$((__sx_num_mul_nat0_max_ops_ - __sx_num_mul_nat0_wlen_mul_ + 2))
 
 	for __sx_num_mul_nat0_b_ in "${@}"; do
 		case "${__sx_num_mul_nat0_b_}" in 0)
@@ -7003,7 +7003,7 @@ __sx_num_mul_nat0() {
 		# 安全: 桁数が算術展開可能な範囲内 → 全分割点を探索
 		# 危険: 桁数が算術展開不能 or 範囲超過 → 均等分割にフォールバック
 		if M_NUM_BOOL([|__sx_num_mul_nat0_fit_ && __sx_num_mul_nat0_a_len_ <= __sx_num_mul_nat0_safe_ && __sx_num_mul_nat0_b_len_ <= __sx_num_mul_nat0_safe_|]); then
-			__sx_num_mul_nat0_max_x_="$((__sx_num_mul_nat0_b_len_ < __sx_num_mul_nat0_wlen_mul_ ? __sx_num_mul_nat0_b_len_ : __sx_num_mul_nat0_wlen_mul_ - 1))"
+			__sx_num_mul_nat0_max_x_=$((__sx_num_mul_nat0_b_len_ < __sx_num_mul_nat0_wlen_mul_ ? __sx_num_mul_nat0_b_len_ : __sx_num_mul_nat0_wlen_mul_ - 1))
 			__sx_num_mul_nat0_min_ops_="${__sx_num_mul_nat0_max_ops_}"
 			__sx_num_mul_nat0_opt_x_=1
 			__sx_num_mul_nat0_x_=1
@@ -7361,7 +7361,7 @@ __sx_num_norm() {
 					__sx_num_norm_in_="0${__sx_num_norm_in_}"
 				esac
 				;;
-			*[Xx]* | 0[0-9]*) __sx_num_norm_in_="$((__sx_num_norm_in_))";;
+			*[Xx]* | 0[0-9]*) __sx_num_norm_in_=$((__sx_num_norm_in_));;
 		esac
 
 		# 小数点以下のクリーンアップ
@@ -9821,8 +9821,8 @@ __sx_str_split() {
 	__sx_str_split_bind_="${1}"
 	__sx_str_split_str_="${2-}"
 	__sx_str_split_sep_="${3-}"
-	__sx_str_split_lim_="$((${4-${SX_NUM_I32_MAX}}))"
-	__sx_str_split_flg_="$((${5-0}))"
+	__sx_str_split_lim_=$((${4-${SX_NUM_I32_MAX}}))
+	__sx_str_split_flg_=$((${5-0}))
 	__sx_str_split_inc_=$(((__sx_str_split_flg_ & SX_STR_SPLIT_INC) != 0))
 	__sx_str_split_out_=
 
@@ -10362,8 +10362,8 @@ define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(total) V(drop) V(qm)|]
 __sx_str_substr() {
 	__sx_str_substr_res_="${1}"
 	__sx_str_substr_str_="${2-}"
-	__sx_str_substr_off_="$((${3-0}))"
-	__sx_str_substr_len_="$((${4-${SX_NUM_I32_MAX}}))"
+	__sx_str_substr_off_=$((${3-0}))
+	__sx_str_substr_len_=$((${4-${SX_NUM_I32_MAX}}))
 	__sx_str_substr_total_="${#__sx_str_substr_str_}"
 
 	# オフセットの正規化 (負数は末尾から)
@@ -11733,7 +11733,7 @@ __sx_arr_push() {
 	# 値の追加
 	for __sx_arr_push_arg_ in "${@}"; do
 		eval "${__sx_arr_push_arr_}_${__sx_arr_push_i_}=\"\${__sx_arr_push_arg_}\""
-		__sx_arr_push_i_="$((__sx_arr_push_i_ + 1))"
+		__sx_arr_push_i_=$((__sx_arr_push_i_ + 1))
 	done
 
 	# 長さを更新
