@@ -5437,10 +5437,10 @@ __sx_num_divmod_nat0() {
 				__sx_num_divmod_nat0_chunk_=$((1${__sx_num_divmod_nat0_chunk_} - __sx_num_divmod_nat0_b_))
 			esac
 
-			__sx_num_divmod_nat0_vstr_="${__sx_num_divmod_nat0_chunk_:-0} \"\${${__sx_num_divmod_nat0_n_}}\" ${__sx_num_divmod_nat0_vstr_}"
+			__sx_num_divmod_nat0_vstr_="${__sx_num_divmod_nat0_chunk_} \"\${${__sx_num_divmod_nat0_n_}}\" ${__sx_num_divmod_nat0_vstr_}"
 
 			case "${__sx_num_divmod_nat0_n_}" in [12])
-				eval "__sx_num_divmod_nat0_v${__sx_num_divmod_nat0_n_}_=\${__sx_num_divmod_nat0_chunk_:-0}"
+				eval "__sx_num_divmod_nat0_v${__sx_num_divmod_nat0_n_}_=\${__sx_num_divmod_nat0_chunk_}"
 			esac
 
 			case "${__sx_num_divmod_nat0_v_}" in '')
@@ -5482,7 +5482,7 @@ __sx_num_divmod_nat0() {
 					;;
 			esac
 
-			set -- "${__sx_num_divmod_nat0_chunk_:-0}" "${@}"
+			set -- "${__sx_num_divmod_nat0_chunk_}" "${@}"
 		do :; done
 
 		set -- 0 "${@}"
