@@ -3942,6 +3942,7 @@ sx_var_list_ro() {
 __sx_var_list_ro() {
 	__sx_var_list_ro_res_="${1}"
 	__sx_var_list_ro_out_=
+	__sx_var_list_ro_pfx_=__sx_var_list_ro_v_
 
 	IFS="${SX_STR_LF}" __sx_str_split_ifs __sx_var_list_ro_args_ "$(readonly -p)"
 	eval set -- "${__sx_var_list_ro_args_}"
@@ -3953,17 +3954,24 @@ __sx_var_list_ro() {
 
 			if
 				sx_var_is_name "${__sx_var_list_ro_vn_}" &&
-				! M_STR_HAS([|" ${__sx_var_list_ro_out_} "|], [|" ${__sx_var_list_ro_vn_} "|]) &&
+				! __sx_var_is_set "${__sx_var_list_ro_pfx_}${__sx_var_list_ro_vn_}_" &&
 				__sx_var_is_ro "${__sx_var_list_ro_vn_}"
 			then
 				__sx_var_list_ro_out_="${__sx_var_list_ro_out_}${__sx_var_list_ro_out_:+ }${__sx_var_list_ro_vn_}"
+				eval "${__sx_var_list_ro_pfx_}${__sx_var_list_ro_vn_}_="
 			fi
 		esac
 	done
 
+	eval set -- "${__sx_var_list_ro_out_}"
+
+	for __sx_var_list_ro_vn_ in "${@}"; do
+		unset "${__sx_var_list_ro_pfx_}${__sx_var_list_ro_vn_}_"
+	done
+
 	M_SET([|${__sx_var_list_ro_res_}|], [|${__sx_var_list_ro_out_}|])
 
-	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_args_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
+	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_pfx_ __sx_var_list_ro_args_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
 }
 
 ### sx_var_list_set - 設定されている変数の一覧を取得する
@@ -4001,6 +4009,7 @@ __sx_var_list_set() {
 	IFS="${SX_STR_LF}" __sx_str_split_ifs __sx_var_list_set_args_ "$(set)"
 	__sx_var_list_set_res_="${1}"
 	__sx_var_list_set_out_=
+	__sx_var_list_set_pfx_=__sx_var_list_set_v_
 
 	eval set -- "${__sx_var_list_set_args_}"
 
@@ -4010,17 +4019,24 @@ __sx_var_list_set() {
 
 			if
 				sx_var_is_name "${__sx_var_list_set_vn_}" &&
-				! M_STR_HAS([|" ${__sx_var_list_set_out_} "|], [|" ${__sx_var_list_set_vn_} "|]) &&
+				! __sx_var_is_set "${__sx_var_list_set_pfx_}${__sx_var_list_set_vn_}_" &&
 				__sx_var_is_set "${__sx_var_list_set_vn_}"
 			then
 				__sx_var_list_set_out_="${__sx_var_list_set_out_}${__sx_var_list_set_out_:+ }${__sx_var_list_set_vn_}"
+				eval "${__sx_var_list_set_pfx_}${__sx_var_list_set_vn_}_="
 			fi
 		esac
 	done
 
+	eval set -- "${__sx_var_list_set_out_}"
+
+	for __sx_var_list_set_vn_ in "${@}"; do
+		unset "${__sx_var_list_set_pfx_}${__sx_var_list_set_vn_}_"
+	done
+
 	M_SET([|${__sx_var_list_set_res_}|], [|${__sx_var_list_set_out_}|])
 
-	unset __sx_var_list_set_args_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
+	unset __sx_var_list_set_args_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_pfx_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
 }
 
 ### sx_var_move - 変数を連鎖移動する
