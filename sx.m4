@@ -4528,7 +4528,7 @@ __sx_num_add_nat0() {
 					__sx_num_add_nat0_rem1_="${__sx_num_add_nat0_tmp_}"
 
 					case "${__sx_num_add_nat0_ch1_}" in 0*)
-						__sx_num_add_nat0_ch1_="${__sx_num_add_nat0_ch1_#"${__sx_num_add_nat0_ch1_%%[!0]*}"}"
+						__sx_num_add_nat0_ch1_=$((1${__sx_num_add_nat0_ch1_} - __sx_num_add_nat0_b_))
 					esac
 					;;
 				*)
@@ -4545,7 +4545,7 @@ __sx_num_add_nat0() {
 					__sx_num_add_nat0_rem2_="${__sx_num_add_nat0_tmp_}"
 
 					case "${__sx_num_add_nat0_ch2_}" in 0*)
-						__sx_num_add_nat0_ch2_="${__sx_num_add_nat0_ch2_#"${__sx_num_add_nat0_ch2_%%[!0]*}"}"
+						__sx_num_add_nat0_ch2_=$((1${__sx_num_add_nat0_ch2_} - __sx_num_add_nat0_b_))
 					esac
 					;;
 				*)
@@ -4554,7 +4554,7 @@ __sx_num_add_nat0() {
 					;;
 			esac
 
-			__sx_num_add_nat0_tmp_=$((${__sx_num_add_nat0_ch1_:-0} + ${__sx_num_add_nat0_ch2_:-0} + __sx_num_add_nat0_carry_))
+			__sx_num_add_nat0_tmp_=$((${__sx_num_add_nat0_ch1_} + ${__sx_num_add_nat0_ch2_} + __sx_num_add_nat0_carry_))
 			__sx_num_add_nat0_carry_=$((__sx_num_add_nat0_b_ <= ${__sx_num_add_nat0_tmp_}))
 
 			case "${__sx_num_add_nat0_carry_}:${__sx_num_add_nat0_rem1_}:${__sx_num_add_nat0_rem2_}" in
