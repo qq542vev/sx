@@ -4507,6 +4507,14 @@ __sx_num_add_nat0() {
 	eval "__sx_num_add_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_add_nat0_b_=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
 
 	for __sx_num_add_nat0_rem2_ in "${@}"; do
+		case "${__sx_num_add_nat0_rem1_}:${__sx_num_add_nat0_rem2_}" in
+			${__sx_num_add_nat0_qm_}?*:* | *:${__sx_num_add_nat0_qm_}?*) ;;
+			*)
+				M_NUM_INCR([|__sx_num_add_nat0_rem1_|], [|__sx_num_add_nat0_rem2_|])
+				continue
+				;;
+		esac
+
 		# (2) 右端→左端 チャンク処理
 		__sx_num_add_nat0_carry_=0
 		__sx_num_add_nat0_out_=
