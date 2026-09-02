@@ -5434,7 +5434,7 @@ __sx_num_divmod_nat0() {
 			esac
 
 			case "${__sx_num_divmod_nat0_chunk_}" in 0*)
-				__sx_num_divmod_nat0_chunk_="${__sx_num_divmod_nat0_chunk_#"${__sx_num_divmod_nat0_chunk_%%[!0]*}"}"
+				__sx_num_divmod_nat0_chunk_=$((1${__sx_num_divmod_nat0_chunk_} - __sx_num_divmod_nat0_b_))
 			esac
 
 			__sx_num_divmod_nat0_vstr_="${__sx_num_divmod_nat0_chunk_:-0} \"\${${__sx_num_divmod_nat0_n_}}\" ${__sx_num_divmod_nat0_vstr_}"
@@ -5473,7 +5473,7 @@ __sx_num_divmod_nat0() {
 					__sx_num_divmod_nat0_u_="${__sx_num_divmod_nat0_tmp_}"
 
 					case "${__sx_num_divmod_nat0_chunk_}" in 0*)
-						__sx_num_divmod_nat0_chunk_="${__sx_num_divmod_nat0_chunk_#"${__sx_num_divmod_nat0_chunk_%%[!0]*}"}"
+						__sx_num_divmod_nat0_chunk_=$((1${__sx_num_divmod_nat0_chunk_} - __sx_num_divmod_nat0_b_))
 					esac
 					;;
 				*)
