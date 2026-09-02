@@ -5301,7 +5301,6 @@ __sx_num_divmod_nat0() {
 		case "${__sx_num_divmod_nat0_r_}" in 0*)
 			__sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_#"${__sx_num_divmod_nat0_r_%%[!0]*}"}"
 		esac
-
 	elif
 		# ステップ 6: 高速パス 5 — 除数が (WLEN-1)*9/10 桁以内なら語単位のネイティブ筆算
 		#   語幅 c = WLEN - len(v) は約 WLEN/10 + 1 以上に保たれる。c が小さいと反復回数と
@@ -5337,7 +5336,7 @@ __sx_num_divmod_nat0() {
 			esac
 
 			case "${__sx_num_divmod_nat0_chunk_}" in
-				0*[1-9]*) __sx_num_divmod_nat0_chunk_="${__sx_num_divmod_nat0_chunk_#"${__sx_num_divmod_nat0_chunk_%%[!0]*}"}";;
+				0*[1-9]*) __sx_num_divmod_nat0_chunk_=$((1${__sx_num_divmod_nat0_chunk_} - __sx_num_divmod_nat0_b_));;
 				0*)
 					case "${__sx_num_divmod_nat0_r_}" in 0)
 						__sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_}${__sx_num_divmod_nat0_b_#1}"
@@ -5363,9 +5362,9 @@ __sx_num_divmod_nat0() {
 			esac
 		do :; done
 
-			case "${__sx_num_divmod_nat0_q_}" in 0*)
-				__sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_#"${__sx_num_divmod_nat0_q_%%[!0]*}"}"
-			esac
+		case "${__sx_num_divmod_nat0_q_}" in 0*)
+			__sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_#"${__sx_num_divmod_nat0_q_%%[!0]*}"}"
+		esac
 
 		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
 			unset CLEANUP
@@ -5378,7 +5377,6 @@ __sx_num_divmod_nat0() {
 			case "${__sx_num_divmod_nat0_r_}" in 0*)
 				__sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_#"${__sx_num_divmod_nat0_r_%%[!0]*}"}";;
 			esac
-
 	else
 		# 語サイズ c の決定
 		__sx_num_divmod_nat0_c_=$((__sx_num_divmod_nat0_wlen_ / 2))
@@ -7046,8 +7044,7 @@ __sx_num_mul_nat0() {
 					__sx_num_mul_nat0_a_="${__sx_num_mul_nat0_tmp_}"
 
 					case "${__sx_num_mul_nat0_ch_a_}" in
-						0*[1-9]*) set -- "${@}" "${__sx_num_mul_nat0_ch_a_#"${__sx_num_mul_nat0_ch_a_%%[!0]*}"}";;
-						0*) set -- "${@}" 0;;
+						0*) set -- "${@}" "$((1${__sx_num_mul_nat0_ch_a_} - 1${__sx_num_mul_nat0_zchunk_a_}))";;
 						*) set -- "${@}" "${__sx_num_mul_nat0_ch_a_}";;
 					esac
 					;;
@@ -7066,7 +7063,7 @@ __sx_num_mul_nat0() {
 					__sx_num_mul_nat0_b_="${__sx_num_mul_nat0_tmp_}"
 
 					case "${__sx_num_mul_nat0_ch_b_}" in
-						0*[1-9]*) __sx_num_mul_nat0_ch_b_="${__sx_num_mul_nat0_ch_b_#"${__sx_num_mul_nat0_ch_b_%%[!0]*}"}";;
+						0*[1-9]*) __sx_num_mul_nat0_ch_b_=$((1${__sx_num_mul_nat0_ch_b_} - 1${__sx_num_mul_nat0_zchunk_b_}));;
 						0*)
 							__sx_num_mul_nat0_shift_="${__sx_num_mul_nat0_zchunk_b_}${__sx_num_mul_nat0_shift_}"
 							continue
@@ -7739,8 +7736,9 @@ __sx_num_sub_nat0() {
 				__sx_num_sub_nat0_tmp_="${__sx_num_sub_nat0_rem1_%${__sx_num_sub_nat0_qm_}}"
 				__sx_num_sub_nat0_ch1_="${__sx_num_sub_nat0_rem1_#"${__sx_num_sub_nat0_tmp_}"}"
 				__sx_num_sub_nat0_rem1_="${__sx_num_sub_nat0_tmp_}"
+
 				case "${__sx_num_sub_nat0_ch1_}" in 0*)
-					__sx_num_sub_nat0_ch1_="${__sx_num_sub_nat0_ch1_#"${__sx_num_sub_nat0_ch1_%%[!0]*}"}"
+					__sx_num_sub_nat0_ch1_=$((1${__sx_num_sub_nat0_ch1_} - ${__sx_num_sub_nat0_b_}))
 				esac
 				;;
 			*)
@@ -7754,8 +7752,9 @@ __sx_num_sub_nat0() {
 				__sx_num_sub_nat0_tmp_="${__sx_num_sub_nat0_rem2_%${__sx_num_sub_nat0_qm_}}"
 				__sx_num_sub_nat0_ch2_="${__sx_num_sub_nat0_rem2_#"${__sx_num_sub_nat0_tmp_}"}"
 				__sx_num_sub_nat0_rem2_="${__sx_num_sub_nat0_tmp_}"
+
 				case "${__sx_num_sub_nat0_ch2_}" in 0*)
-					__sx_num_sub_nat0_ch2_="${__sx_num_sub_nat0_ch2_#"${__sx_num_sub_nat0_ch2_%%[!0]*}"}"
+					__sx_num_sub_nat0_ch2_=$((1${__sx_num_sub_nat0_ch2_} - ${__sx_num_sub_nat0_b_}))
 				esac
 				;;
 			*)
