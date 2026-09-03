@@ -4569,36 +4569,25 @@ define([|V|], [|__sx_num_add_nat0_$1_|])dnl
 define([|CLEANUP|], [|V(res) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(b)|])dnl
 
 __sx_num_add_nat0() {
-	case "${#}" in 1)
-		M_SET([|${1}|], [|0|])
-		return
-	esac
-
 	__sx_num_add_nat0_res_="${1}"
-	shift
+	__sx_num_add_nat0_rem1_="${2-0}"
+	shift "$((1 + 0${2+1}))"
 
 	# チャンク処理定数（事前定義値から選択）
 	eval "__sx_num_add_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_add_nat0_b_=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
 
-	while M_STR_NE([|${#}|], [|1|]); do
-		case "${1}:${2}" in
-			0:*) shift; continue;;
+	for __sx_num_add_nat0_rem2_ in "${@}"; do
+		case "${__sx_num_add_nat0_rem1_}:${__sx_num_add_nat0_rem2_}" in
 			${__sx_num_add_nat0_qm_}?*:* | *:${__sx_num_add_nat0_qm_}?*) ;;
 			*)
-				__sx_num_add_nat0_tmp_=$((${1} + ${2}))
-				shift 2
-				set -- "${@}" "${__sx_num_add_nat0_tmp_}"
+				M_NUM_INCR([|__sx_num_add_nat0_rem1_|], [|__sx_num_add_nat0_rem2_|])
 				continue
 				;;
 		esac
 
 		# (2) 右端→左端 チャンク処理
-		__sx_num_add_nat0_rem1_="${1}"
-		__sx_num_add_nat0_rem2_="${2}"
 		__sx_num_add_nat0_carry_=0
 		__sx_num_add_nat0_out_=
-
-		shift 2
 
 		while
 			# rem1 からチャンク抽出
@@ -4639,14 +4628,14 @@ __sx_num_add_nat0() {
 			__sx_num_add_nat0_carry_=$((__sx_num_add_nat0_b_ <= ${__sx_num_add_nat0_tmp_}))
 
 			case "${__sx_num_add_nat0_carry_}:${__sx_num_add_nat0_rem1_}:${__sx_num_add_nat0_rem2_}" in
-				?::) set -- "${@}" "${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}" && ! :;;
+				?::) __sx_num_add_nat0_rem1_="${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}" && ! :;;
 				0:?*: | 0::?*)
 					case "${__sx_num_add_nat0_tmp_}" in
-						${__sx_num_add_nat0_qm_}) set -- "${@}" "${__sx_num_add_nat0_rem1_}${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}";;
+						${__sx_num_add_nat0_qm_}) __sx_num_add_nat0_rem1_="${__sx_num_add_nat0_rem1_}${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}";;
 						*)
 							# ゼロ埋めして前置（片方のチャンクが先頭ゼロ除去で短くなった場合の桁揃え）
 							M_NUM_INCR([|__sx_num_add_nat0_tmp_|], [|__sx_num_add_nat0_b_|])
-							set -- "${@}" "${__sx_num_add_nat0_rem1_}${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_#1}${__sx_num_add_nat0_out_}"
+							__sx_num_add_nat0_rem1_="${__sx_num_add_nat0_rem1_}${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_#1}${__sx_num_add_nat0_out_}"
 							;;
 						esac && ! :;;
 				0:*)
@@ -4664,7 +4653,7 @@ __sx_num_add_nat0() {
 		do :; done
 	done
 
-	M_SET([|${__sx_num_add_nat0_res_}|], [|${1}|])
+	M_SET([|${__sx_num_add_nat0_res_}|], [|${__sx_num_add_nat0_rem1_}|])
 
 	unset CLEANUP
 }
