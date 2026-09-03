@@ -4306,6 +4306,53 @@ __sx_var_touch() {
 	unset __sx_var_touch_arg_
 }
 
+### sx_var_unexport - 変数のエクスポート属性を解除する
+##
+## 使い方:
+##   sx_var_unexport 名前1 [名前2 ...]
+##
+## 説明:
+##   指定された変数のエクスポート（export）属性を解除する。変数の値は保持される。
+##   POSIX sh には export -n が存在しないため、値を一時保存した上で unset し、
+##   再代入することで export 属性を除去する。
+##   対象は通常の変数を想定する（sx 配列は対象外。配列要素の一括解除は行わない）。
+##   すでに export されていない変数を指定しても成功する（何もしない）。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  読み取り専用などの理由で解除できない変数が含まれる (SX_EX_NOPERM)
+sx_var_unexport() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unexport "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+
+	__sx_var_is_rw "${@}" || return "${SX_EX_NOPERM}"
+
+	__sx_var_unexport "${@}"
+}
+
+### __sx_var_unexport - 変数のエクスポート属性を解除する（内部用）
+##
+## 使い方:
+##   __sx_var_unexport 名前1 [名前2 ...]
+##
+## 説明:
+##   sx_var_unexport の内部実装。
+##   引数チェックは行わない。値を保持したまま export 属性のみを除去する。
+__sx_var_unexport() {
+	for __sx_var_unexport_arg_ in "${@}"; do
+		eval "__sx_var_unexport_tmp_=\"\${${__sx_var_unexport_arg_}-}\" __sx_var_unexport_set_=\"\${${__sx_var_unexport_arg_}+1}\""
+		unset -v "${__sx_var_unexport_arg_}"
+
+		case "${__sx_var_unexport_set_}" in 1)
+			M_SET([|${__sx_var_unexport_arg_}|], [|${__sx_var_unexport_tmp_}|])
+		esac
+	done
+
+	unset __sx_var_unexport_arg_ __sx_var_unexport_tmp_ __sx_var_unexport_set_
+}
+
 ### sx_var_unset - 変数または配列を関連要素を含めて削除する
 ##
 ## 使い方:
