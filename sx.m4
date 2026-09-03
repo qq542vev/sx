@@ -11305,8 +11305,6 @@ __sx_arr_is_rw_new() {
 					fi
 					;;
 			esac
-
-			__sx_arr_is_rw_new_rest_="${__sx_arr_is_rw_new_rest_#*[${SX_STR_LF}=]}"
 		done
 	done
 
