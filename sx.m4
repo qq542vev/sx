@@ -11173,7 +11173,7 @@ sx_arr_gen() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_gen "${@}" || return; return 0;; esac
 
 	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
-	sx_arr_is_rw "${1}" 0 "$((${#} - 1))" || return "${SX_EX_NOPERM}"
+	sx_arr_is_rw "${1}" || return "${SX_EX_NOPERM}"
 
 	__sx_arr_gen "${@}"
 }
@@ -11193,19 +11193,16 @@ __sx_arr_gen() {
 	__sx_arr_push "${@}"
 }
 
-### sx_arr_is_rw - 配列の指定範囲が書き込み可能か確認する
+### sx_arr_is_rw - 配列が書き込み可能か確認する
 ##
 ## 使い方:
-##   sx_arr_is_rw 配列名 [[開始インデックス [個数]] ...]
+##   sx_arr_is_rw 配列名 [配列名 ...]
 ##
 ## 説明:
-##   指定された名前に対応する配列要素範囲および長さ保持変数 (${配列名}_len) が
-##   書き込み可能か確認する。
-##   実体が sx 配列でない場合でも確認自体は可能で、その場合は指定された範囲の変数名と
-##   ${配列名}_len の書き込み可否を検査する。
-##   引数なしの場合: 配列名と ${配列名}_len に加え、sx 配列であれば 0 から末尾までの全要素を確認する。
-##   個数が省略された場合: sx 配列であれば開始インデックスから末尾までを確認し、
-##   sx 配列でなければその開始インデックス単体を確認する。
+##   指定された名前に対応する配列（シグネチャ変数・${配列名}_len・全要素）および
+##   長さ保持変数 (${配列名}_len) が書き込み可能か確認する。
+##   実体が sx 配列でない場合でも確認自体は可能で、その場合は名前と ${配列名}_len の
+##   書き込み可否を検査する。
 ##
 ## 終了ステータス:
 ##    0  すべて書き込み可能 (SX_EX_OK)
@@ -11214,93 +11211,40 @@ __sx_arr_gen() {
 sx_arr_is_rw() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_rw "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
-
-	__sx_arr_is_rw_name="${1}"
-	shift
-
-	sx_num_is_nat0_safe "${@}" || {
-		unset __sx_arr_is_rw_name
-		return "${SX_EX_USAGE}"
-	}
-
-	set -- "${__sx_arr_is_rw_name}" "${@}"
-	unset __sx_arr_is_rw_name
+	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
 
 	__sx_arr_is_rw "${@}" || return
 }
 
-### __sx_arr_is_rw - 配列の指定範囲が書き込み可能か確認する（内部用）
+### __sx_arr_is_rw - 配列が書き込み可能か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_arr_is_rw 配列名 [開始インデックス [個数]]
+##   __sx_arr_is_rw 配列名 [配列名 ...]
 ##
 ## 説明:
 ##   sx_arr_is_rw の内部実装。
 ##   引数チェックは行わない。
 __sx_arr_is_rw() {
-	__sx_var_is_rw "${1}" "${1}_len" || return 1
-	__sx_arr_is_rw_name_="${1}"
-	__sx_arr_is_rw_chk_=
-	shift
+	__sx_arr_is_rw_ro_="${SX_STR_LF}$(readonly -p)${SX_STR_LF}"
+	__sx_arr_is_rw_out_=
 
-	M_STR_NE([|"${#}"|], [|0|]) || set -- 0
+	for __sx_arr_is_rw_arg_ in "${@}"; do
+		__sx_arr_is_rw_rest_="${__sx_arr_is_rw_ro_}"
 
-	if M_STR_EQ([|"$((${#} % 2))"|], [|0|]); then
-		:
-	elif sx_var_is_arr "${__sx_arr_is_rw_name_}"; then
-		# 個数が省略された場合は末尾まで
-		eval set -- '"${@}"' "\$((${__sx_arr_is_rw_name_}_len - \${${#}}))"
-	else
-		set -- "${@}" 0
-	fi
+		while M_STR_HAS([|"${__sx_arr_is_rw_rest_}"|], [|"${SX_STR_LF}readonly ${__sx_arr_is_rw_arg_}"|]); do
+			__sx_arr_is_rw_rest_="${__sx_arr_is_rw_rest_#*"${SX_STR_LF}readonly ${__sx_arr_is_rw_arg_}"}"
 
-	while M_STR_NE([|"${#}"|], [|0|]); do
-		eval 'shift 2;' set -- "${1}" "$((${1} + ${2}))" '"${@}"'
-
-		while M_NUM_LT([|${1}|], [|${2}|]); do
-			__sx_arr_is_rw_chk_="${__sx_arr_is_rw_chk_}${__sx_arr_is_rw_name_}_${1} "
-			eval 'shift 2;' set -- "$((${1} + 1))" "${2}" '"${@}"'
-		done
-
-		shift 2
-	done
-
-	eval set -- "${__sx_arr_is_rw_chk_}"
-	unset __sx_arr_is_rw_name_ __sx_arr_is_rw_chk_
-
-	sx_var_is_rw "${@}" || return
-}
-
-sx_arr_is_rw_new() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_rw_new "${@}" || return; return 0;; esac
-
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
-
-	__sx_arr_is_rw_new "${@}" || return
-}
-
-__sx_arr_is_rw_new() {
-	__sx_arr_is_rw_new_ro_="${SX_STR_LF}$(readonly -p)${SX_STR_LF}"
-	__sx_arr_is_rw_new_out_=
-
-	for __sx_arr_is_rw_new_arg_ in "${@}"; do
-		__sx_arr_is_rw_new_rest_="${__sx_arr_is_rw_new_ro_}"
-
-		while M_STR_HAS([|"${__sx_arr_is_rw_new_rest_}"|], [|"${SX_STR_LF}readonly ${__sx_arr_is_rw_new_arg_}"|]); do
-			__sx_arr_is_rw_new_rest_="${__sx_arr_is_rw_new_rest_#*"${SX_STR_LF}readonly ${__sx_arr_is_rw_new_arg_}"}"
-
-			case "${__sx_arr_is_rw_new_rest_}" in
-				[${SX_STR_LF}=]*) __sx_arr_is_rw_new_out_="${__sx_arr_is_rw_new_out_} ${__sx_arr_is_rw_new_arg_}";;
-				_len[${SX_STR_LF}=]*) __sx_arr_is_rw_new_out_="${__sx_arr_is_rw_new_out_} ${__sx_arr_is_rw_new_arg_}_len";;
+			case "${__sx_arr_is_rw_rest_}" in
+				[${SX_STR_LF}=]*) __sx_arr_is_rw_out_="${__sx_arr_is_rw_out_} ${__sx_arr_is_rw_arg_}";;
+				_len[${SX_STR_LF}=]*) __sx_arr_is_rw_out_="${__sx_arr_is_rw_out_} ${__sx_arr_is_rw_arg_}_len";;
 				_[0-9]*)
-					__sx_arr_is_rw_new_tmp_="${__sx_arr_is_rw_new_rest_%%[${SX_STR_LF}=]*}"
+					__sx_arr_is_rw_tmp_="${__sx_arr_is_rw_rest_%%[${SX_STR_LF}=]*}"
 
-					if sx_str_is_word "${__sx_arr_is_rw_new_tmp_}"; then
-						__sx_arr_is_rw_new_tmp_="${__sx_arr_is_rw_new_tmp_#_}"
+					if sx_str_is_word "${__sx_arr_is_rw_tmp_}"; then
+						__sx_arr_is_rw_tmp_="${__sx_arr_is_rw_tmp_#_}"
 
-						if __sx_num_is_nat0_base 10 "${__sx_arr_is_rw_new_tmp_%%_*}"; then
-							__sx_arr_is_rw_new_out_="${__sx_arr_is_rw_new_out_} ${__sx_arr_is_rw_new_arg_}_${__sx_arr_is_rw_new_tmp_}"
+						if __sx_num_is_nat0_base 10 "${__sx_arr_is_rw_tmp_%%_*}"; then
+							__sx_arr_is_rw_out_="${__sx_arr_is_rw_out_} ${__sx_arr_is_rw_arg_}_${__sx_arr_is_rw_tmp_}"
 						fi
 					fi
 					;;
@@ -11308,8 +11252,8 @@ __sx_arr_is_rw_new() {
 		done
 	done
 
-	eval set -- "${__sx_arr_is_rw_new_out_}"
-	unset __sx_arr_is_rw_new_ro_ __sx_arr_is_rw_new_out_ __sx_arr_is_rw_new_arg_ __sx_arr_is_rw_new_rest_ __sx_arr_is_rw_new_tmp_
+	eval set -- "${__sx_arr_is_rw_out_}"
+	unset __sx_arr_is_rw_ro_ __sx_arr_is_rw_out_ __sx_arr_is_rw_arg_ __sx_arr_is_rw_rest_ __sx_arr_is_rw_tmp_
 
 	__sx_var_is_rw "${@}" || return
 }
@@ -11710,7 +11654,7 @@ sx_arr_pop() {
 	esac
 
 	# 配列の書き込み権限チェック
-	sx_arr_is_rw "${__sx_arr_pop_arr}" "$((__sx_arr_pop_len - ${#}))" "${#}" || {
+	sx_arr_is_rw "${__sx_arr_pop_arr}" || {
 		case "${?}" in
 			1) set -- "${SX_EX_NOPERM}";;
 			*) set -- "${?}";;
@@ -11825,7 +11769,7 @@ sx_arr_push() {
 
 	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
 	__sx_var_is_arr "${1}" || return "${SX_EX_DATAERR}"
-	eval sx_arr_is_rw "${1}" "\"\${${1}_len}\"" "$((${#} - 1))" || return "${SX_EX_NOPERM}"
+	sx_arr_is_rw "${1}" || return "${SX_EX_NOPERM}"
 
 	__sx_arr_push "${@}"
 }
