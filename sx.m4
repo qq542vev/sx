@@ -3879,14 +3879,16 @@ __sx_var_list_dep() {
 	shift
 
 	__sx_var_list_dep_out_=
+	__sx_var_list_dep_pfx_=__sx_var_list_dep_v_
 
 	while M_STR_NE([|"${#}"|], [|0|]); do
-		case " ${__sx_var_list_dep_out_} " in *" ${1} "*)
+		if __sx_var_is_set "${__sx_var_list_dep_pfx_}${1}_"; then
 			shift
 			continue
-		esac
+		fi
 
 		__sx_var_list_dep_out_="${__sx_var_list_dep_out_}${__sx_var_list_dep_out_:+ }${1}"
+		eval "${__sx_var_list_dep_pfx_}${1}_="
 
 		if __sx_var_is_arr "${1}"; then
 			eval "__sx_var_list_dep_len_=\"\${${1}_len}\""
@@ -3902,11 +3904,16 @@ __sx_var_list_dep() {
 		shift
 	done
 
+	eval set -- "${__sx_var_list_dep_out_}"
+
+	for __sx_var_list_dep_vn_ in "${@}"; do
+		unset "${__sx_var_list_dep_pfx_}${__sx_var_list_dep_vn_}_"
+	done
+
 	M_SET([|${__sx_var_list_dep_res_}|], [|${__sx_var_list_dep_out_}|])
 
-	unset __sx_var_list_dep_res_ __sx_var_list_dep_out_ __sx_var_list_dep_len_ __sx_var_list_dep_i_
+	unset __sx_var_list_dep_res_ __sx_var_list_dep_out_ __sx_var_list_dep_pfx_ __sx_var_list_dep_len_ __sx_var_list_dep_i_ __sx_var_list_dep_vn_
 }
-
 
 ### sx_var_list_ro - 読み取り専用変数の一覧を取得する
 ##

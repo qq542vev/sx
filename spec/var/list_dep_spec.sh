@@ -34,6 +34,21 @@ Describe 'sx_var_list_dep'
     # Unless outer_0 itself is an array.
   End
 
+  It '重複する変数名が指定されても一意に収集すること'
+    sx_arr_gen dup_arr x y z
+    v1=x
+    When call sx_var_list_dep result dup_arr v1 dup_arr v1 v1 dup_arr
+    The status should be success
+    The variable result should include "dup_arr"
+    The variable result should include "dup_arr_len"
+    The variable result should include "dup_arr_0"
+    The variable result should include "dup_arr_1"
+    The variable result should include "dup_arr_2"
+    The variable result should include "v1"
+    # 重複を除去した結果、6つの変数名だけが収集されていること
+    The variable result should equal "dup_arr v1 dup_arr_len dup_arr_0 dup_arr_1 dup_arr_2"
+  End
+
   It '結果変数が読み取り専用の場合に EX_NOPERM を返すこと'
     readonly ro_res_list_dep="fixed"
     When call sx_var_list_dep ro_res_list_dep v1
