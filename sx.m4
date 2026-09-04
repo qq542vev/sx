@@ -11,6 +11,7 @@ define([|M_NUM_DECR|], [|ifelse($#, 1, [|$1=$(($1 - 1))|], [|$1=$(($1 - $2))|])|
 define([|M_NUM_AMP|], [|ifelse($#, 1, [|$1=$(($1 * 2))|], [|$1=$(($1 * $2))|])|]) dnl
 define([|M_STR_APPEND|], [|ifelse($#, 2, [|$1="${$1}"$2|], [|$1="${$1}${$1:+$3}"$2|])|]) dnl
 define([|M_STR_PREPEND|], [|ifelse($#, 2, [|$1=$2"${$1}"|], [|$1=$2"${$1:+$3}${$1}"|])|]) dnl
+define([|M_STR_WRAP|], [|$1=$2"${$1}"$3|]) dnl
 
 define([|M_STR_EQ|], [|dnl
 { case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, [|&& __M_STR_EQ_REST(shift($@))|]); }dnl
@@ -3076,7 +3077,7 @@ __sx_var_bind() {
 				*) __sx_var_bind_v_="${3}";;
 			esac
 
-			__sx_var_bind_v_="'${__sx_var_bind_v_}'"
+			M_STR_WRAP([|__sx_var_bind_v_|], [|"'"|], [|"'"|])
 		esac
 	esac
 
@@ -10987,7 +10988,7 @@ __sx_glob_bracket() {
 
 	 __sx_str_tr __sx_glob_bracket_rest_: "${2}" ']\.:=!^-'
 
-	__sx_glob_bracket_rest_="${__sx_glob_bracket_pre_-}${__sx_glob_bracket_rest_}${__sx_glob_bracket_suf_-}"
+	M_STR_WRAP([|__sx_glob_bracket_rest_|], [|"${__sx_glob_bracket_pre_-}"|], [|"${__sx_glob_bracket_suf_-}"|])
 
 	case "${__sx_glob_bracket_rest_}" in '!-' | '^-' | '!^-')
 		__sx_glob_bracket_rest_="-${__sx_glob_bracket_rest_%-}"
