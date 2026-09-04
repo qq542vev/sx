@@ -9913,20 +9913,20 @@ __sx_str_split() {
 			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
 
 			case "$((${#__sx_str_split_str_} < __sx_str_split_lim_))" in 1)
-				__sx_str_split_out_="${__sx_str_split_out_}${__sx_str_split_out_:+ }''"
+				M_STR_APPEND([|__sx_str_split_out_|], [|"''"|], [| |])
 			esac
 
-			__sx_str_split_out_="''${__sx_str_split_out_:+ }${__sx_str_split_out_}"
+			M_STR_PREPEND([|__sx_str_split_out_|], [|"''"|], [| |])
 		elif M_NUM_LT([|__sx_str_split_lim_|], [|0|]); then
 			# 後方から制限数分だけ分割
 			: $((__sx_str_split_lim_ *= -1))
 			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
 
 			case "$((${#__sx_str_split_str_} < __sx_str_split_lim_))" in 1)
-				__sx_str_split_out_="''${__sx_str_split_out_:+ }${__sx_str_split_out_}"
+				M_STR_PREPEND([|__sx_str_split_out_|], [|"''"|], [| |])
 			esac
 
-			__sx_str_split_out_="${__sx_str_split_out_}${__sx_str_split_out_:+ }''"
+			M_STR_APPEND([|__sx_str_split_out_|], [|"''"|], [| |])
 		else
 			# 制限なし：文字列全体をクォートして格納
 			__sx_arg_quote __sx_str_split_out_ "${__sx_str_split_str_}"
