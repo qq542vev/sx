@@ -4646,7 +4646,7 @@ __sx_num_add_nat0() {
 						*)
 							# ゼロ埋めして前置
 							M_NUM_INCR([|__sx_num_add_nat0_tmp_|], [|__sx_num_add_nat0_b_|])
-							__sx_num_add_nat0_out_="${__sx_num_add_nat0_tmp_#1}${__sx_num_add_nat0_out_}"
+							M_STR_PREPEND([|__sx_num_add_nat0_out_|], [|"${__sx_num_add_nat0_tmp_#1}"|])
 							;;
 					esac
 					;;
@@ -5411,7 +5411,7 @@ __sx_num_divmod_nat0() {
 				0*[1-9]*) __sx_num_divmod_nat0_chunk_=$((1${__sx_num_divmod_nat0_chunk_} - __sx_num_divmod_nat0_b_));;
 				0*)
 					case "${__sx_num_divmod_nat0_r_}" in 0)
-						__sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_}${__sx_num_divmod_nat0_b_#1}"
+						M_STR_APPEND([|__sx_num_divmod_nat0_q_|], [|"${__sx_num_divmod_nat0_b_#1}"|])
 						continue
 					esac
 
@@ -5429,7 +5429,7 @@ __sx_num_divmod_nat0() {
 				${__sx_num_divmod_nat0_qm_}) __sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_}${__sx_num_divmod_nat0_tmp_}";;
 				*)
 					M_NUM_INCR([|__sx_num_divmod_nat0_tmp_|], [|__sx_num_divmod_nat0_b_|])
-					__sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_}${__sx_num_divmod_nat0_tmp_#1}"
+					M_STR_APPEND([|__sx_num_divmod_nat0_q_|], [|"${__sx_num_divmod_nat0_tmp_#1}"|])
 					;;
 			esac
 		do :; done
@@ -7167,7 +7167,7 @@ __sx_num_mul_nat0() {
 							${__sx_num_mul_nat0_qchunk_a_}) __sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_}${__sx_num_mul_nat0_g_}";;
 							*)
 								M_NUM_INCR([|__sx_num_mul_nat0_tmp_|], [|1${__sx_num_mul_nat0_zchunk_a_}|])
-								__sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_#1}${__sx_num_mul_nat0_g_}"
+								M_STR_PREPEND([|__sx_num_mul_nat0_g_|], [|"${__sx_num_mul_nat0_tmp_#1}"|])
 								;;
 						esac
 						;;
@@ -7861,7 +7861,7 @@ __sx_num_sub_nat0() {
 					${__sx_num_sub_nat0_qm_}*)  __sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}";;
 					*)
 						M_NUM_INCR([|__sx_num_sub_nat0_tmp_|], [|__sx_num_sub_nat0_b_|])
-						__sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_#1}${__sx_num_sub_nat0_out_}"
+						M_STR_PREPEND([|__sx_num_sub_nat0_out_|], [|"${__sx_num_sub_nat0_tmp_#1}"|])
 						;;
 				esac
 				;;
@@ -9579,7 +9579,7 @@ __sx_str_rev() {
 
 		while M_NUM_BOOL([|${3} < ${#__sx_str_rev_src_}|]); do
 			__sx_str_rev_tmp_="${__sx_str_rev_src_%${__sx_str_rev_pat_}}"
-			__sx_str_rev_out_="${__sx_str_rev_out_}${__sx_str_rev_src_#${__sx_str_rev_tmp_}}"
+			M_STR_APPEND([|__sx_str_rev_out_|], [|"${__sx_str_rev_src_#${__sx_str_rev_tmp_}}"|])
 			__sx_str_rev_src_="${__sx_str_rev_tmp_}"
 		done
 
