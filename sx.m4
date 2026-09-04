@@ -880,7 +880,7 @@ __sx_fn_with() {
 			"${SX_CFG_SEP-}") shift; break;;
 			*=*)
 				__sx_fn_anon __sx_fn_with_u_ "${1#*=}"
-				M_STR_APPEND([|__sx_fn_with_fns_|], [|"${__sx_fn_with_u_}"|], " ")
+				M_STR_APPEND([|__sx_fn_with_fns_|], [|"${__sx_fn_with_u_}"|], [| |])
 				M_STR_APPEND([|__sx_fn_with_map_|], [|"${1%%=*}:${__sx_fn_with_u_} "|])
 				shift
 				;;
@@ -897,7 +897,7 @@ __sx_fn_with() {
 		esac
 
 		__sx_arg_quote __sx_fn_with_qa_ "${__sx_fn_with_arg_}"
-		M_STR_APPEND([|__sx_fn_with_q_|], [|"${__sx_fn_with_qa_}"|], " ")
+		M_STR_APPEND([|__sx_fn_with_q_|], [|"${__sx_fn_with_qa_}"|], [| |])
 	done
 
 	# 3. 実行準備とクリーンアップ
@@ -3831,7 +3831,7 @@ __sx_var_list_copy() {
 				eval set -- "${__sx_var_list_copy_ls_}"
 
 				for __sx_var_list_copy_name_ in "${@}"; do
-					M_STR_APPEND([|__sx_var_list_copy_out_|], [|"${__sx_var_list_copy_dest_}${__sx_var_list_copy_name_#"${__sx_var_list_copy_src_}"}=${__sx_var_list_copy_name_}"|], " ")
+					M_STR_APPEND([|__sx_var_list_copy_out_|], [|"${__sx_var_list_copy_dest_}${__sx_var_list_copy_name_#"${__sx_var_list_copy_src_}"}=${__sx_var_list_copy_name_}"|], [| |])
 				done
 			fi
 
@@ -3889,7 +3889,7 @@ __sx_var_list_dep() {
 			continue
 		fi
 
-		M_STR_APPEND([|__sx_var_list_dep_out_|], [|"${1}"|], " ")
+		M_STR_APPEND([|__sx_var_list_dep_out_|], [|"${1}"|], [| |])
 		eval "${__sx_var_list_dep_pfx_}${1}_="
 
 		if __sx_var_is_arr "${1}"; then
@@ -3966,7 +3966,7 @@ __sx_var_list_ro() {
 				! __sx_var_is_set "${__sx_var_list_ro_pfx_}${__sx_var_list_ro_vn_}_" &&
 				__sx_var_is_ro "${__sx_var_list_ro_vn_}"
 			then
-				M_STR_APPEND([|__sx_var_list_ro_out_|], [|"${__sx_var_list_ro_vn_}"|], " ")
+				M_STR_APPEND([|__sx_var_list_ro_out_|], [|"${__sx_var_list_ro_vn_}"|], [| |])
 				eval "${__sx_var_list_ro_pfx_}${__sx_var_list_ro_vn_}_="
 			fi
 		esac
@@ -4031,7 +4031,7 @@ __sx_var_list_set() {
 				! __sx_var_is_set "${__sx_var_list_set_pfx_}${__sx_var_list_set_vn_}_" &&
 				__sx_var_is_set "${__sx_var_list_set_vn_}"
 			then
-				M_STR_APPEND([|__sx_var_list_set_out_|], [|"${__sx_var_list_set_vn_}"|], " ")
+				M_STR_APPEND([|__sx_var_list_set_out_|], [|"${__sx_var_list_set_vn_}"|], [| |])
 				eval "${__sx_var_list_set_pfx_}${__sx_var_list_set_vn_}_="
 			fi
 		esac
@@ -11410,7 +11410,7 @@ __sx_arr_bind() {
 				__sx_arr_bind_seg_="${__sx_arr_bind_seg_#"${__sx_arr_bind_n_}"}"
 
 				case "${__sx_arr_bind_seg_}" in ["_${SX_STR_ALPHA}"]*)
-					M_STR_APPEND([|__sx_arr_bind_chain_|], [|"${__sx_arr_bind_vn_}-${__sx_arr_bind_seg_}_${__sx_arr_bind_m_}"|], " ")
+					M_STR_APPEND([|__sx_arr_bind_chain_|], [|"${__sx_arr_bind_vn_}-${__sx_arr_bind_seg_}_${__sx_arr_bind_m_}"|], [| |])
 				esac
 
 				M_NUM_INCR([|__sx_arr_bind_m_|])
@@ -11422,7 +11422,7 @@ __sx_arr_bind() {
 				;;
 			:*) __sx_arr_bind_bind_="${__sx_arr_bind_bind_#*:}";;
 			*:*)
-				M_STR_APPEND([|__sx_arr_bind_chain_|], [|"${__sx_arr_bind_vn_}-${__sx_arr_bind_bind_%%:*}"|], " ")
+				M_STR_APPEND([|__sx_arr_bind_chain_|], [|"${__sx_arr_bind_vn_}-${__sx_arr_bind_bind_%%:*}"|], [| |])
 				__sx_arr_bind_bind_="${__sx_arr_bind_bind_#*:}"
 				;;
 			?*)
@@ -11440,7 +11440,7 @@ __sx_arr_bind() {
 					__sx_arr_bind_seg_="${__sx_arr_bind_seg_#"${__sx_arr_bind_n_}"}"
 				esac
 
-				M_STR_APPEND([|__sx_arr_bind_chain_|], [|"${__sx_arr_bind_vn_}-${__sx_arr_bind_seg_}_${__sx_arr_bind_m_}"|], " ")
+				M_STR_APPEND([|__sx_arr_bind_chain_|], [|"${__sx_arr_bind_vn_}-${__sx_arr_bind_seg_}_${__sx_arr_bind_m_}"|], [| |])
 				M_NUM_INCR([|__sx_arr_bind_m_|])
 
 				case "${__sx_arr_bind_m_}" in
@@ -11854,7 +11854,7 @@ __sx_arr_quote() {
 
 		while M_NUM_LT([|${1}|], [|${2}|]); do
 			eval __sx_arg_quote __sx_arr_quote_esc_ "\"\${${__sx_arr_quote_arr_}_${1}}\""
-			M_STR_APPEND([|__sx_arr_quote_out_|], [|"${__sx_arr_quote_esc_}"|], " ")
+			M_STR_APPEND([|__sx_arr_quote_out_|], [|"${__sx_arr_quote_esc_}"|], [| |])
 
 			set -- "$((${1} + 1))" "${2}"
 		done
