@@ -5,7 +5,8 @@ changequote([|, |]) dnl
 changecom() dnl
 
 define([|M_STR_NE|], [|case $1 in $2) ! :;; esac|]) dnl
-define([|M_SET|], [|eval "$1="'"$2"'|]) dnl
+define([|M_VAR_SET|], [|ifelse($#, 1, [|ifelse($1, , [|eval|], [|eval "$1="|])|], [|eval "$1="'"$2"'__M_VAR_SET_REST(shift(shift($@)))|])|]) dnl
+define([|__M_VAR_SET_REST|], [|ifelse(eval($# > 1), 1, [| "$1="'"$2"'ifelse($#, 2, , [|__M_VAR_SET_REST(shift(shift($@)))|])|], [|ifelse($1, , , [| "$1="|])|])|]) dnl
 define([|M_NUM_INCR|], [|ifelse($#, 1, [|$1=$(($1 + 1))|], [|$1=$(($1 + $2))|])|]) dnl
 define([|M_NUM_DECR|], [|ifelse($#, 1, [|$1=$(($1 - 1))|], [|$1=$(($1 - $2))|])|]) dnl
 define([|M_NUM_AMP|], [|ifelse($#, 1, [|$1=$(($1 * 2))|], [|$1=$(($1 * $2))|])|]) dnl
@@ -1499,7 +1500,7 @@ __sx_arg_fold() {
 
 		"${3}" __sx_arg_fold_ret_ "${4}" "${5}" "${1}" || {
 			set -- "${@}" "${?}"
-			M_SET([|${2}|], [|${4}|])
+			M_VAR_SET([|${2}|], [|${4}|])
 			unset __sx_arg_fold_ret_
 			return "${6}"
 		}
@@ -1508,7 +1509,7 @@ __sx_arg_fold() {
 		unset __sx_arg_fold_ret_
 	done
 
-	M_SET([|${2}|], [|${4}|])
+	M_VAR_SET([|${2}|], [|${4}|])
 	unset __sx_arg_fold_arg_
 }
 
@@ -1992,7 +1993,7 @@ __sx_arg_join() {
 		M_STR_APPEND([|__sx_arg_join_out_|], [|"${__sx_arg_join_sep_}${__sx_arg_join_arg_}"|])
 	done
 
-	M_SET([|${__sx_arg_join_res_}|], [|${__sx_arg_join_out_#"${__sx_arg_join_sep_}"}|])
+	M_VAR_SET([|${__sx_arg_join_res_}|], [|${__sx_arg_join_out_#"${__sx_arg_join_sep_}"}|])
 
 	unset __sx_arg_join_res_ __sx_arg_join_sep_ __sx_arg_join_out_ __sx_arg_join_arg_
 }
@@ -2031,7 +2032,7 @@ sx_arg_len() {
 ## 説明:
 ##   引数チェックを行わずに個数の取得を行う。
 __sx_arg_len() {
-	M_SET([|${1}|], [|$((${#} - 1))|])
+	M_VAR_SET([|${1}|], [|$((${#} - 1))|])
 }
 
 ### sx_arg_map - 引数リストの各要素にコールバック関数を適用する
@@ -2610,10 +2611,10 @@ __sx_arg_range() {
 	__sx_num_range __sx_arg_range_idxs_ "${@}"
 
 	case "${__sx_arg_range_idxs_}" in
-		'') M_SET([|${__sx_arg_range_res_}|], [||]);;
+		'') M_VAR_SET([|${__sx_arg_range_res_}|], [||]);;
 		*)
 			__sx_str_sub __sx_arg_range_tmp_ "${__sx_arg_range_idxs_}" ' ' '}" "${'
-			M_SET([|${__sx_arg_range_res_}|], [|\"\${${__sx_arg_range_tmp_}}\"|])
+			M_VAR_SET([|${__sx_arg_range_res_}|], [|\"\${${__sx_arg_range_tmp_}}\"|])
 			;;
 	esac
 
@@ -2845,7 +2846,7 @@ __sx_arg_rfold() {
 	while M_NUM_LT([|0|], [|${1}|]); do
 		eval '"${3}"' __sx_arg_rfold_ret_ '"${4}"' "\"\${$((${1} + 4))}\"" "${1}" || {
 			set -- "${?}" "${@}"
-			M_SET([|${3}|], [|${5}|])
+			M_VAR_SET([|${3}|], [|${5}|])
 			unset __sx_arg_rfold_ret_
 			return "${1}"
 		}
@@ -2858,7 +2859,7 @@ __sx_arg_rfold() {
 		unset __sx_arg_rfold_ret_ __sx_arg_rfold_cb_
 	done
 
-	M_SET([|${2}|], [|${4}|])
+	M_VAR_SET([|${2}|], [|${4}|])
 }
 
 ### __sx_arg_norm - 引数リスト内の数値をプレースホルダに展開して正規化する（内部用）
@@ -2887,7 +2888,7 @@ __sx_arg_norm() {
 	done
 
 	# 先頭の余計なスペースを削って結果変数に格納
-	M_SET([|${__sx_arg_norm_res_}|], [|${__sx_arg_norm_out_# }|])
+	M_VAR_SET([|${__sx_arg_norm_res_}|], [|${__sx_arg_norm_out_# }|])
 
 	unset __sx_arg_norm_res_ __sx_arg_norm_pl_ __sx_arg_norm_out_ __sx_arg_norm_arg_ __sx_arg_norm_tmp_
 }
@@ -3247,7 +3248,7 @@ __sx_var_dump() {
 		fi
 	done
 
-	M_SET([|${__sx_var_dump_res_}|], [|${__sx_var_dump_out_}|])
+	M_VAR_SET([|${__sx_var_dump_res_}|], [|${__sx_var_dump_out_}|])
 
 	unset __sx_var_dump_res_ __sx_var_dump_out_ __sx_var_dump_ls_ __sx_var_dump_vn_ __sx_var_dump_val_
 }
@@ -3859,7 +3860,7 @@ __sx_var_list_copy() {
 		unset __sx_var_list_copy_src_
 	done
 
-	M_SET([|${__sx_var_list_copy_res_}|], [|${__sx_var_list_copy_out_}|])
+	M_VAR_SET([|${__sx_var_list_copy_res_}|], [|${__sx_var_list_copy_out_}|])
 
 	unset __sx_var_list_copy_res_ __sx_var_list_copy_out_ __sx_var_list_copy_chain_ __sx_var_list_copy_args_ __sx_var_list_copy_ls_ __sx_var_list_copy_dest_ __sx_var_list_copy_name_
 }
@@ -3930,7 +3931,7 @@ __sx_var_list_dep() {
 		unset "${__sx_var_list_dep_pfx_}${__sx_var_list_dep_vn_}_"
 	done
 
-	M_SET([|${__sx_var_list_dep_res_}|], [|${__sx_var_list_dep_out_}|])
+	M_VAR_SET([|${__sx_var_list_dep_res_}|], [|${__sx_var_list_dep_out_}|])
 
 	unset __sx_var_list_dep_res_ __sx_var_list_dep_out_ __sx_var_list_dep_pfx_ __sx_var_list_dep_len_ __sx_var_list_dep_i_ __sx_var_list_dep_vn_
 }
@@ -3996,7 +3997,7 @@ __sx_var_list_ro() {
 		unset "${__sx_var_list_ro_pfx_}${__sx_var_list_ro_vn_}_"
 	done
 
-	M_SET([|${__sx_var_list_ro_res_}|], [|${__sx_var_list_ro_out_}|])
+	M_VAR_SET([|${__sx_var_list_ro_res_}|], [|${__sx_var_list_ro_out_}|])
 
 	unset __sx_var_list_ro_res_ __sx_var_list_ro_out_ __sx_var_list_ro_pfx_ __sx_var_list_ro_args_ __sx_var_list_ro_ln_ __sx_var_list_ro_vn_
 }
@@ -4061,7 +4062,7 @@ __sx_var_list_set() {
 		unset "${__sx_var_list_set_pfx_}${__sx_var_list_set_vn_}_"
 	done
 
-	M_SET([|${__sx_var_list_set_res_}|], [|${__sx_var_list_set_out_}|])
+	M_VAR_SET([|${__sx_var_list_set_res_}|], [|${__sx_var_list_set_out_}|])
 
 	unset __sx_var_list_set_args_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_pfx_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
 }
@@ -4185,7 +4186,7 @@ sx_var_set() {
 ##   引数チェックは行わない。
 ##
 ## 注意:
-##   内部関数は結果変数への代入にこの関数を使わず、M_SET マクロ
+##   内部関数は結果変数への代入にこの関数を使わず、M_VAR_SET マクロ
 ##   （事前 unset を行わない eval による直接代入）を使用する。
 ##   そのため、sx 配列が格納された変数を結果変数として使う場合は、
 ##   事前に sx_var_unset を明示的に呼び出すこと。
@@ -4366,7 +4367,7 @@ __sx_var_unexport() {
 		unset -v "${__sx_var_unexport_arg_}"
 
 		case "${__sx_var_unexport_set_}" in 1)
-			M_SET([|${__sx_var_unexport_arg_}|], [|${__sx_var_unexport_tmp_}|])
+			M_VAR_SET([|${__sx_var_unexport_arg_}|], [|${__sx_var_unexport_tmp_}|])
 		esac
 	done
 
@@ -4530,7 +4531,7 @@ __sx_num_add_int() {
 		3) __sx_num_sub_nat0 __sx_num_add_int_acc_ "${__sx_num_add_int_pos_sum_}" "${__sx_num_add_int_neg_sum_}";;
 	esac
 
-	M_SET([|${__sx_num_add_int_res_}|], [|${__sx_num_add_int_acc_}|])
+	M_VAR_SET([|${__sx_num_add_int_res_}|], [|${__sx_num_add_int_acc_}|])
 
 	unset CLEANUP
 }
@@ -4673,7 +4674,7 @@ __sx_num_add_nat0() {
 		do :; done
 	done
 
-	M_SET([|${__sx_num_add_nat0_res_}|], [|${__sx_num_add_nat0_rem1_}|])
+	M_VAR_SET([|${__sx_num_add_nat0_res_}|], [|${__sx_num_add_nat0_rem1_}|])
 
 	unset CLEANUP
 }
@@ -5001,7 +5002,7 @@ __sx_num_div_int() {
 	shift "$((0${1+1} + 0${2+1} + 0${3+1}))"
 
 	case "${__sx_num_div_int_u_}" in 0 | +0 | -0)
-		M_SET([|${__sx_num_div_int_res_}|], [|0|])
+		M_VAR_SET([|${__sx_num_div_int_res_}|], [|0|])
 		unset CLEANUP
 		return M_EX_OK
 	esac
@@ -5014,7 +5015,7 @@ __sx_num_div_int() {
 		M_STR_PREPEND([|__sx_num_div_int_q_|], [|-|])
 	esac
 
-	M_SET([|${__sx_num_div_int_res_}|], [|${__sx_num_div_int_q_}|])
+	M_VAR_SET([|${__sx_num_div_int_res_}|], [|${__sx_num_div_int_q_}|])
 	unset CLEANUP
 }
 
@@ -5099,7 +5100,7 @@ __sx_num_div_nat0() {
 	shift 3
 
 	case "${__sx_num_div_nat0_u_}" in 0 | +0 | -0)
-		M_SET([|${__sx_num_div_nat0_res_}|], [|0|])
+		M_VAR_SET([|${__sx_num_div_nat0_res_}|], [|0|])
 		unset CLEANUP
 		return M_EX_OK
 	esac
@@ -5146,7 +5147,7 @@ __sx_num_div_nat0() {
 		M_STR_APPEND([|__sx_num_div_nat0_q_|], [|".${__sx_num_div_nat0_dec_}"|])
 	esac
 
-	M_SET([|${__sx_num_div_nat0_res_}|], [|${__sx_num_div_nat0_q_}|])
+	M_VAR_SET([|${__sx_num_div_nat0_res_}|], [|${__sx_num_div_nat0_q_}|])
 	unset CLEANUP
 }
 
@@ -6943,7 +6944,7 @@ __sx_num_mul_int() {
 	for __sx_num_mul_int_arg_ in "${@}"; do
 		case "${__sx_num_mul_int_arg_}" in
 			0 | +0 | -0)
-				M_SET([|${__sx_num_mul_int_res_}|], [|0|])
+				M_VAR_SET([|${__sx_num_mul_int_res_}|], [|0|])
 				unset CLEANUP
 				return
 				;;
@@ -6960,7 +6961,7 @@ __sx_num_mul_int() {
 
 	eval __sx_num_mul_nat0 __sx_num_mul_int_acc_ "${__sx_num_mul_int_abs_args_}"
 
-	M_SET([|${__sx_num_mul_int_res_}|], [|${__sx_num_mul_int_sign_}${__sx_num_mul_int_acc_}|])
+	M_VAR_SET([|${__sx_num_mul_int_res_}|], [|${__sx_num_mul_int_sign_}${__sx_num_mul_int_acc_}|])
 
 	unset CLEANUP
 }
@@ -7204,7 +7205,7 @@ __sx_num_mul_nat0() {
 		do :; done
 	done
 
-	M_SET([|${__sx_num_mul_nat0_res_}|], [|${__sx_num_mul_nat0_a_}${__sx_num_mul_nat0_endz_}|])
+	M_VAR_SET([|${__sx_num_mul_nat0_res_}|], [|${__sx_num_mul_nat0_a_}${__sx_num_mul_nat0_endz_}|])
 	unset CLEANUP
 }
 
@@ -7278,7 +7279,7 @@ __sx_num_max() {
 		esac
 	done
 
-	M_SET([|${__sx_num_max_res_}|], [|${__sx_num_max_win_}|])
+	M_VAR_SET([|${__sx_num_max_res_}|], [|${__sx_num_max_win_}|])
 	unset CLEANUP
 }
 
@@ -7352,7 +7353,7 @@ __sx_num_min() {
 		esac
 	done
 
-	M_SET([|${__sx_num_min_res_}|], [|${__sx_num_min_win_}|])
+	M_VAR_SET([|${__sx_num_min_res_}|], [|${__sx_num_min_win_}|])
 	unset CLEANUP
 }
 
@@ -7717,7 +7718,7 @@ __sx_num_sub_int() {
 
 	# 合計が 0 なら第1引数がそのまま結果
 	case "${__sx_num_sub_int_sum_}" in 0)
-		M_SET([|${__sx_num_sub_int_res_}|], [|${__sx_num_sub_int_first_#+}|])
+		M_VAR_SET([|${__sx_num_sub_int_res_}|], [|${__sx_num_sub_int_first_#+}|])
 		unset CLEANUP
 		return
 	esac
@@ -7750,7 +7751,7 @@ __sx_num_sub_int() {
 			;;
 	esac
 
-	M_SET([|${__sx_num_sub_int_res_}|], [|${__sx_num_sub_int_sign_}${__sx_num_sub_int_tmp_-0}|])
+	M_VAR_SET([|${__sx_num_sub_int_res_}|], [|${__sx_num_sub_int_sign_}${__sx_num_sub_int_tmp_-0}|])
 	unset CLEANUP
 }
 
@@ -7886,7 +7887,7 @@ __sx_num_sub_nat0() {
 		esac
 	do :; done
 
-	M_SET([|${__sx_num_sub_nat0_res_}|], [|${__sx_num_sub_nat0_out_:-0}|])
+	M_VAR_SET([|${__sx_num_sub_nat0_res_}|], [|${__sx_num_sub_nat0_out_:-0}|])
 
 	unset CLEANUP
 }
@@ -8073,7 +8074,7 @@ __sx_str_capital() {
 		__sx_str_lower __sx_str_capital_str_ "${__sx_str_capital_str_}"
 	esac
 
-	M_SET([|${1}|], [|${__sx_str_capital_out_}${__sx_str_capital_str_}|])
+	M_VAR_SET([|${1}|], [|${__sx_str_capital_out_}${__sx_str_capital_str_}|])
 	unset __sx_str_capital_str_ __sx_str_capital_out_ __sx_str_capital_tmp_
 }
 
@@ -8130,7 +8131,7 @@ __sx_str_center() {
 	__sx_str_center_needed_=$((${3#-} - ${#2}))
 
 	case "$((0 < __sx_str_center_needed_))${4}${5}" in 0* | 1)
-		M_SET([|${1}|], [|${2}|])
+		M_VAR_SET([|${1}|], [|${2}|])
 		unset __sx_str_center_needed_
 		return M_EX_OK
 	esac
@@ -8150,7 +8151,7 @@ __sx_str_center() {
 	__sx_str_substr __sx_str_center_spad_ "${__sx_str_center_lrep_-}" 0 "${__sx_str_center_lpad_}"
 	__sx_str_substr __sx_str_center_epad_ "${__sx_str_center_rrep_-}" 0 "${__sx_str_center_rpad_}"
 
-	M_SET([|${1}|], [|${__sx_str_center_spad_}${2}${__sx_str_center_epad_}|])
+	M_VAR_SET([|${1}|], [|${__sx_str_center_spad_}${2}${__sx_str_center_epad_}|])
 
 	unset __sx_str_center_needed_ __sx_str_center_lpad_ __sx_str_center_rpad_ __sx_str_center_lrep_ __sx_str_center_rrep_ __sx_str_center_spad_ __sx_str_center_epad_
 }
@@ -8399,12 +8400,12 @@ __sx_str_cycle() {
 	set -- "${1}" "${2}" "$((${3} % (${4} ? ${4} : 1)))" "${4}"
 
 	case ${3} in 0)
-		M_SET([|${1}|], [|${2}|])
+		M_VAR_SET([|${1}|], [|${2}|])
 		return M_EX_OK
 	esac
 
 	__sx_str_chunk __sx_str_cycle_head_:__sx_str_cycle_tail_: "${2}" "$((0 < ${3} ? ${3} : ${3} + ${4}))" 1
-	M_SET([|${1}|], [|${__sx_str_cycle_tail_}${__sx_str_cycle_head_}|])
+	M_VAR_SET([|${1}|], [|${__sx_str_cycle_tail_}${__sx_str_cycle_head_}|])
 
 	unset __sx_str_cycle_head_ __sx_str_cycle_tail_
 }
@@ -8478,7 +8479,7 @@ __sx_str_escape() {
 	set -- "${1}" "${2-}" "${3-}" "${4:-\\}" "${5:-}"
 
 	case "${3}" in '')
-		M_SET([|${1}|], [|${2}|])
+		M_VAR_SET([|${1}|], [|${2}|])
 		return M_EX_OK
 	esac
 
@@ -8541,11 +8542,11 @@ __sx_str_etrim() {
 	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
 
 	case "${3}" in '')
-		M_SET([|${1}|], [|${2}|])
+		M_VAR_SET([|${1}|], [|${2}|])
 		return M_EX_OK
 	esac
 
-	M_SET([|${1}|], [|${2%"${2##*[!"${3}"]}"}|])
+	M_VAR_SET([|${1}|], [|${2%"${2##*[!"${3}"]}"}|])
 }
 
 ### sx_str_ew - 第一引数が、第二引数以降のいずれかの文字列で終わっているか確認する
@@ -9144,7 +9145,7 @@ __sx_str_isep_cb() {
 		fi
 	fi
 
-	M_SET([|${1}|], [|${7}|])
+	M_VAR_SET([|${1}|], [|${7}|])
 	return "${11-0}"
 }
 
@@ -9212,7 +9213,7 @@ __sx_str_isep_lit() {
 		fi
 	fi
 
-	M_SET([|${1}|], [|${7}|])
+	M_VAR_SET([|${1}|], [|${7}|])
 }
 
 ### sx_str_lower - 文字列内のラテン大文字を小文字に変換する
@@ -9366,7 +9367,7 @@ __sx_str_pad() {
 	__sx_str_pad_needed_=$((${3#-} - ${#2}))
 
 	M_NUM_LT([|0|], [|__sx_str_pad_needed_|]) && M_STR_NE([|"${4}"|], [|''|]) || {
-		M_SET([|${1}|], [|${2}|])
+		M_VAR_SET([|${1}|], [|${2}|])
 		unset __sx_str_pad_needed_
 		return M_EX_OK
 	}
@@ -9375,8 +9376,8 @@ __sx_str_pad() {
 	__sx_str_substr __sx_str_pad_fill_ "${__sx_str_pad_rep_}" 0 "${__sx_str_pad_needed_}"
 
 	case "${3}" in
-		-*) M_SET([|${1}|], [|${2}${__sx_str_pad_fill_}|]);;
-		*) M_SET([|${1}|], [|${__sx_str_pad_fill_}${2}|]);;
+		-*) M_VAR_SET([|${1}|], [|${2}${__sx_str_pad_fill_}|]);;
+		*) M_VAR_SET([|${1}|], [|${__sx_str_pad_fill_}${2}|]);;
 	esac
 
 	unset __sx_str_pad_needed_ __sx_str_pad_rep_ __sx_str_pad_fill_
@@ -9493,7 +9494,7 @@ __sx_str_rep() {
 		set -- "${1}" "${2}${2}" "${3}"
 	done
 
-	M_SET([|${1}|], [|${__sx_str_rep_out_}|])
+	M_VAR_SET([|${1}|], [|${__sx_str_rep_out_}|])
 	unset __sx_str_rep_out_
 }
 
@@ -9601,7 +9602,7 @@ __sx_str_rev() {
 			__sx_str_rev_src_="${__sx_str_rev_tmp_}"
 		done
 
-		M_SET([|${1}|], [|${__sx_str_rev_out_}${__sx_str_rev_src_}|])
+		M_VAR_SET([|${1}|], [|${__sx_str_rev_out_}${__sx_str_rev_src_}|])
 	else
 		while M_NUM_BOOL([|${3} < ${#__sx_str_rev_src_}|]); do
 			__sx_str_rev_tmp_="${__sx_str_rev_src_#${__sx_str_rev_pat_}}"
@@ -9609,7 +9610,7 @@ __sx_str_rev() {
 			__sx_str_rev_src_="${__sx_str_rev_tmp_}"
 		done
 
-		M_SET([|${1}|], [|${__sx_str_rev_src_}${__sx_str_rev_out_}|])
+		M_VAR_SET([|${1}|], [|${__sx_str_rev_src_}${__sx_str_rev_out_}|])
 	fi
 
 	unset __sx_str_rev_src_ __sx_str_rev_out_ __sx_str_rev_pat_ __sx_str_rev_tmp_
@@ -9782,7 +9783,7 @@ __sx_str_rot() {
 	set -- "${1}" "${2-}" "${3-${SX_STR_ALPHA}}" "${4:-13}"
 
 	case '' in "${2}" | "${3}")
-		M_SET([|${1}|], [|${2}|])
+		M_VAR_SET([|${1}|], [|${2}|])
 		return M_EX_OK
 	esac
 
@@ -9853,7 +9854,7 @@ __sx_str_splice() {
 	__sx_str_splice_right_="${__sx_str_splice_suffix_#"${__sx_str_splice_del_}"}"
 
 	# 5. 結合して格納
-	M_SET([|${__sx_str_splice_res_}|], [|${__sx_str_splice_left_}${__sx_str_splice_add_}${__sx_str_splice_right_}|])
+	M_VAR_SET([|${__sx_str_splice_res_}|], [|${__sx_str_splice_left_}${__sx_str_splice_add_}${__sx_str_splice_right_}|])
 
 	CLEANUP
 }
@@ -10139,7 +10140,7 @@ __sx_str_squish() {
 	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}" "${4- }"
 
 	case "${3}" in '')
-		M_SET([|${1}|], [|${2}|])
+		M_VAR_SET([|${1}|], [|${2}|])
 		return
 	esac
 
@@ -10152,7 +10153,7 @@ __sx_str_squish() {
 		__sx_str_squish_str_="${__sx_str_squish_str_#"${__sx_str_squish_str_%%[!"${3}"]*}"}"
 	done
 
-	M_SET([|${1}|], [|${__sx_str_squish_out_}${__sx_str_squish_str_}|])
+	M_VAR_SET([|${1}|], [|${__sx_str_squish_out_}${__sx_str_squish_str_}|])
 	unset __sx_str_squish_str_ __sx_str_squish_out_
 }
 
@@ -10197,11 +10198,11 @@ __sx_str_strim() {
 	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
 
 	case "${3}" in '')
-		M_SET([|${1}|], [|${2}|])
+		M_VAR_SET([|${1}|], [|${2}|])
 		return M_EX_OK
 	esac
 
-	M_SET([|${1}|], [|${2#"${2%%[!"${3}"]*}"}|])
+	M_VAR_SET([|${1}|], [|${2#"${2%%[!"${3}"]*}"}|])
 }
 
 ### sx_str_sub - 文字列内のパターンを置換する
@@ -10324,7 +10325,7 @@ __sx_str_sub_cb() {
 			done
 		fi
 
-		M_SET([|${1}|], [|${7}${2}|])
+		M_VAR_SET([|${1}|], [|${7}${2}|])
 	else
 		set -- "${1}" "${2}" "${3}" "${4}" "${5#-}" "${6}" "${7}" "${8}" "${9}"
 
@@ -10357,7 +10358,7 @@ __sx_str_sub_cb() {
 			done
 		fi
 
-		M_SET([|${1}|], [|${2}${7}|])
+		M_VAR_SET([|${1}|], [|${2}${7}|])
 	fi
 
 	return "${10-0}"
@@ -10390,7 +10391,7 @@ __sx_str_sub_lit() {
 			done
 		fi
 
-		M_SET([|${1}|], [|${7}${2}|])
+		M_VAR_SET([|${1}|], [|${7}${2}|])
 	elif M_NUM_LT([|${5}|], [|0|]); then
 		if M_STR_EQ([|"${6}"|], [|0|]); then
 			while M_STR_HAS([|"${2}"|], [|"${3}"|]) && M_NUM_NE([|${5}|], [|0|]); do
@@ -10402,7 +10403,7 @@ __sx_str_sub_lit() {
 			done
 		fi
 
-		M_SET([|${1}|], [|${2}${7}|])
+		M_VAR_SET([|${1}|], [|${2}${7}|])
 	fi
 }
 
@@ -10488,7 +10489,7 @@ __sx_str_substr() {
 		__sx_str_substr_str_=
 	fi
 
-	M_SET([|${__sx_str_substr_res_}|], [|${__sx_str_substr_str_}|])
+	M_VAR_SET([|${__sx_str_substr_res_}|], [|${__sx_str_substr_str_}|])
 	CLEANUP
 }
 
@@ -10613,7 +10614,7 @@ __sx_str_title() {
 	__sx_str_tr __sx_str_title_tmp_: "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${SX_NUM_I32_MAX}"
 	__sx_str_sub __sx_str_title_tmp_ "${3%"${3#?}"}${__sx_str_title_tmp_}" "${__sx_str_title_gs_}[${SX_STR_LOWER}]" __sx_str_title_cb "${SX_NUM_I32_MAX}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
 
-	M_SET([|${1}|], [|${__sx_str_title_tmp_#?}|])
+	M_VAR_SET([|${1}|], [|${__sx_str_title_tmp_#?}|])
 	unset __sx_str_title_tmp_ __sx_str_title_gs_
 }
 
@@ -10981,11 +10982,11 @@ __sx_glob_bracket() {
 	case "${2}" in
 		*[!^!]*) ;;
 		!*^* | ^*!*)
-			M_SET([|${1}|], [|[[.!.]^]|])
+			M_VAR_SET([|${1}|], [|[[.!.]^]|])
 			return M_EX_OK
 			;;
 		*)
-			M_SET([|${1}|], [|${2%"${2#?}"}|])
+			M_VAR_SET([|${1}|], [|${2%"${2#?}"}|])
 			return M_EX_OK
 	esac
 
@@ -11011,7 +11012,7 @@ __sx_glob_bracket() {
 		__sx_glob_bracket_rest_="-${__sx_glob_bracket_rest_%-}"
 	esac
 
-	M_SET([|${1}|], [|[${__sx_glob_bracket_rest_}]|])
+	M_VAR_SET([|${1}|], [|[${__sx_glob_bracket_rest_}]|])
 
 	unset __sx_glob_bracket_pre_ __sx_glob_bracket_suf_ __sx_glob_bracket_c_ __sx_glob_bracket_rest_
 }
@@ -11207,8 +11208,8 @@ sx_arr_gen() {
 ##   指定された配列を新規に作成し、引数で指定された値を要素として追加する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_arr_gen() {
-	M_SET([|${1}|], [|${SX_CFG_SIG_ARR}:|])
-	M_SET([|${1}_len|], [|0|])
+	M_VAR_SET([|${1}|], [|${SX_CFG_SIG_ARR}:|])
+	M_VAR_SET([|${1}_len|], [|0|])
 
 	__sx_arr_push "${@}"
 }
@@ -11473,8 +11474,8 @@ __sx_arr_bind() {
 		esac
 	done
 
-	M_SET([|${__sx_arr_bind_br_}|], [|${__sx_arr_bind_bind_}|])
-	M_SET([|${__sx_arr_bind_cr_}|], [|${__sx_arr_bind_chain_}|])
+	M_VAR_SET([|${__sx_arr_bind_br_}|], [|${__sx_arr_bind_bind_}|])
+	M_VAR_SET([|${__sx_arr_bind_cr_}|], [|${__sx_arr_bind_chain_}|])
 	set -- "${__sx_arr_bind_sts_}"
 
 	unset CLEANUP
@@ -11611,7 +11612,7 @@ sx_arr_cat() {
 				esac
 
 				__sx_arr_gen "${__sx_arr_cat_name}"
-				M_SET([|${__sx_arr_cat_name}_len|], [|${__sx_arr_cat_len}|])
+				M_VAR_SET([|${__sx_arr_cat_name}_len|], [|${__sx_arr_cat_len}|])
 				;;
 			0["_${SX_STR_ALPHA}"]*)
 				case "${__sx_arr_cat_fseg}" in ?*)
@@ -11878,7 +11879,7 @@ __sx_arr_quote() {
 		done
 	done
 
-	M_SET([|${__sx_arr_quote_res_}|], [|${__sx_arr_quote_out_}|])
+	M_VAR_SET([|${__sx_arr_quote_res_}|], [|${__sx_arr_quote_out_}|])
 
 	unset __sx_arr_quote_res_ __sx_arr_quote_out_ __sx_arr_quote_arr_ __sx_arr_quote_esc_
 }
@@ -11940,7 +11941,7 @@ __sx_arr_rquote() {
 		done
 	done
 
-	M_SET([|${__sx_arr_rquote_res_}|], [|${__sx_arr_rquote_out_}|])
+	M_VAR_SET([|${__sx_arr_rquote_res_}|], [|${__sx_arr_rquote_out_}|])
 
 	unset __sx_arr_rquote_res_ __sx_arr_rquote_out_ __sx_arr_rquote_arr_ __sx_arr_rquote_esc_
 }
