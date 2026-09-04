@@ -5659,7 +5659,7 @@ __sx_num_divmod_nat0() {
 				*)
 					# 商に qhat を c 桁ゼロ埋めで連結
 					M_STR_PREPEND([|__sx_num_divmod_nat0_qhat_|], [|"${__sx_num_divmod_nat0_zr_}"|])
-					__sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_}${__sx_num_divmod_nat0_qhat_#"${__sx_num_divmod_nat0_qhat_%${__sx_num_divmod_nat0_qm_}}"}"
+					M_STR_APPEND([|__sx_num_divmod_nat0_q_|], [|"${__sx_num_divmod_nat0_qhat_#"${__sx_num_divmod_nat0_qhat_%${__sx_num_divmod_nat0_qm_}}"}"|])
 					;;
 			esac
 		done
@@ -5681,7 +5681,7 @@ __sx_num_divmod_nat0() {
 				${__sx_num_divmod_nat0_qm_}) __sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_}${__sx_num_divmod_nat0_uw_}";;
 				*)
 					M_STR_PREPEND([|__sx_num_divmod_nat0_uw_|], [|"${__sx_num_divmod_nat0_zr_}"|])
-					__sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_}${__sx_num_divmod_nat0_uw_#"${__sx_num_divmod_nat0_uw_%${__sx_num_divmod_nat0_qm_}}"}"
+					M_STR_APPEND([|__sx_num_divmod_nat0_r_|], [|"${__sx_num_divmod_nat0_uw_#"${__sx_num_divmod_nat0_uw_%${__sx_num_divmod_nat0_qm_}}"}"|])
 					;;
 			esac
 		done
@@ -7158,7 +7158,7 @@ __sx_num_mul_nat0() {
 				case "$((1${__sx_num_mul_nat0_zchunk_a_} <= __sx_num_mul_nat0_tmp_))" in
 					1)
 						__sx_num_mul_nat0_carry_="${__sx_num_mul_nat0_tmp_%${__sx_num_mul_nat0_qchunk_a_}}"
-						__sx_num_mul_nat0_g_="${__sx_num_mul_nat0_tmp_#"${__sx_num_mul_nat0_carry_}"}${__sx_num_mul_nat0_g_}"
+						M_STR_PREPEND([|__sx_num_mul_nat0_g_|], [|"${__sx_num_mul_nat0_tmp_#"${__sx_num_mul_nat0_carry_}"}"|])
 						;;
 					*)
 						__sx_num_mul_nat0_carry_=
@@ -9587,7 +9587,7 @@ __sx_str_rev() {
 	else
 		while M_NUM_BOOL([|${3} < ${#__sx_str_rev_src_}|]); do
 			__sx_str_rev_tmp_="${__sx_str_rev_src_#${__sx_str_rev_pat_}}"
-			__sx_str_rev_out_="${__sx_str_rev_src_%"${__sx_str_rev_tmp_}"}${__sx_str_rev_out_}"
+			M_STR_PREPEND([|__sx_str_rev_out_|], [|"${__sx_str_rev_src_%"${__sx_str_rev_tmp_}"}"|])
 			__sx_str_rev_src_="${__sx_str_rev_tmp_}"
 		done
 
