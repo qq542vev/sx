@@ -11208,8 +11208,7 @@ sx_arr_gen() {
 ##   指定された配列を新規に作成し、引数で指定された値を要素として追加する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
 __sx_arr_gen() {
-	M_VAR_SET([|${1}|], [|${SX_CFG_SIG_ARR}:|])
-	M_VAR_SET([|${1}_len|], [|0|])
+	M_VAR_SET([|${1}|], [|${SX_CFG_SIG_ARR}:|], [|${1}_len|], [|0|])
 
 	__sx_arr_push "${@}"
 }
@@ -11474,8 +11473,8 @@ __sx_arr_bind() {
 		esac
 	done
 
-	M_VAR_SET([|${__sx_arr_bind_br_}|], [|${__sx_arr_bind_bind_}|])
-	M_VAR_SET([|${__sx_arr_bind_cr_}|], [|${__sx_arr_bind_chain_}|])
+	M_VAR_SET([|${__sx_arr_bind_br_}|], [|${__sx_arr_bind_bind_}|], [|${__sx_arr_bind_cr_}|], [|${__sx_arr_bind_chain_}|])
+
 	set -- "${__sx_arr_bind_sts_}"
 
 	unset CLEANUP
