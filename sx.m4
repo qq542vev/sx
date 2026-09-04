@@ -99,7 +99,7 @@ define([|__M_BIND_QUOTE|], [|dnl
 			$1_bind_="${$1_bind_#*:}"
 			;;
 		?*) __M_QUOTE_APPEND([|$1|], [|$1_out_|], [|$2|]);;
-		*) unset $3; return "${SX_EX_OK}";;
+		*) unset $3; return "M_EX_OK";;
 	esac|])
 
 define([|__M_BIND_UNQUOTE|], [|dnl
@@ -124,7 +124,7 @@ define([|__M_BIND_UNQUOTE|], [|dnl
 			$1_bind_="${$1_bind_#*:}"
 			;;
 		?*) $1_out_="${$1_out_}${$1_out_:+ }"$2;;
-		*) unset $3; return "${SX_EX_OK}";;
+		*) unset $3; return "M_EX_OK";;
 	esac|])
 define([|__M_BIND_USEVAR|], [|V(bind_cnt) V(bind_name) V(bind_esc)|])dnl
 
@@ -365,7 +365,7 @@ sx_cfg_is_valid() {
 
 		sx_cfg_is_valid "${@}" || return 1
 
-		return "${SX_EX_OK}"
+		return "M_EX_OK"
 	esac
 
 	for __sx_cfg_is_valid_arg in "${@}"; do
@@ -403,9 +403,9 @@ define([|CLEANUP|], [|V(arg) V(chk)|])dnl
 sx_cfg_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_cfg_set "${@}" || return; return 0;; esac
 
-	case "${#}" in 0) return "${SX_EX_OK}"; esac
+	case "${#}" in 0) return "M_EX_OK"; esac
 
-	sx_cfg_is_valid "${@}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "${@}" || return "M_EX_USAGE"
 
 	__sx_cfg_set_chk=
 
@@ -415,7 +415,7 @@ sx_cfg_set() {
 
 	eval sx_var_is_rw "${__sx_cfg_set_chk}" || {
 		unset CLEANUP
-		return "${SX_EX_NOPERM}"
+		return "M_EX_NOPERM"
 	}
 
 	unset CLEANUP
@@ -550,11 +550,11 @@ sx_ex_is_valid() {
 sx_ex_map() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_map "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
 	__sx_ex_map_bind="${1}"
 	shift
@@ -564,7 +564,7 @@ sx_ex_map() {
 			*" ${__sx_ex_map_arg}:"* | *":${__sx_ex_map_arg} "*) ;;
 			*)
 				unset __sx_ex_map_bind __sx_ex_map_arg
-				return "${SX_EX_USAGE}"
+				return "M_EX_USAGE"
 				;;
 		esac
 	done
@@ -651,12 +651,12 @@ sx_ex_remap() {
 			*) sx_ex_is_valid "${__sx_ex_remap_src#!}";;
 		esac || {
 			unset __sx_ex_remap_arg __sx_ex_remap_src
-			return "${SX_EX_USAGE}"
+			return "M_EX_USAGE"
 		}
 
 		sx_ex_is_valid "${__sx_ex_remap_arg#*:}" || {
 			unset __sx_ex_remap_arg __sx_ex_remap_src
-			return "${SX_EX_USAGE}"
+			return "M_EX_USAGE"
 		}
 	done
 
@@ -752,7 +752,7 @@ __sx_ex_remap() {
 sx_ex_yield() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_yield "${@}" || return; return 0;; esac
 
-	sx_ex_is_valid "${1-0}" || return "${SX_EX_USAGE}"
+	sx_ex_is_valid "${1-0}" || return "M_EX_USAGE"
 
 	__sx_ex_yield "${@}" || return
 }
@@ -833,7 +833,7 @@ sx_fn_is_valid() {
 sx_fn_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_set "${@}" || return; return 0;; esac
 
-	sx_fn_is_valid "${@}" || return "${SX_EX_USAGE}"
+	sx_fn_is_valid "${@}" || return "M_EX_USAGE"
 
 	__sx_fn_set "${@}"
 }
@@ -878,7 +878,7 @@ sx_fn_with() {
 		__sx_arg_quote "${__sx_fn_with_i}__sx_fn_with_fn:" "${@}"
 		eval sx_fn_is_valid "${__sx_fn_with_fn}" || {
 			unset __sx_fn_with_i __sx_fn_with_arg __sx_fn_with_fn
-			return "${SX_EX_USAGE}"
+			return "M_EX_USAGE"
 		}
 	esac
 
@@ -959,7 +959,7 @@ sx_fn_anon() {
 
 	eval sx_fn_is_valid "${__sx_fn_anon_chk}" || {
 		unset __sx_fn_anon_bind __sx_fn_anon_chk __sx_fn_anon_arg
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_fn_anon "${__sx_fn_anon_bind}" "${@}"
@@ -1041,20 +1041,20 @@ sx_util_eval() {
 sx_arg_count() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_count "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}" | "${3+X${3}}") ;;
 		"${4+X${4}}")
-			__sx_num_is_nat0_safe "${3}" || return "${SX_EX_USAGE}"
+			__sx_num_is_nat0_safe "${3}" || return "M_EX_USAGE"
 
 			case "$(((${3} & SX_ARG_COUNT_GLOB) * (${3} & SX_ARG_COUNT_CB)))" in [!0])
-				return "${SX_EX_USAGE}"
+				return "M_EX_USAGE"
 			esac
 			;;
 	esac
@@ -1104,8 +1104,8 @@ __sx_arg_count() {
 sx_arg_each() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_each "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
 	__sx_arg_each "${@}" || return
 }
@@ -1178,12 +1178,12 @@ __sx_arg_each() {
 sx_arg_enough() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_enough "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}" | "${2+X${2}}") ;;
-		"${3+X${3}}") __sx_num_is_nat0_safe "${2}" || return "${SX_EX_USAGE}";;
+		"${3+X${3}}") __sx_num_is_nat0_safe "${2}" || return "M_EX_USAGE";;
 	esac
 
 	__sx_arg_enough "${@}" || return
@@ -1222,7 +1222,7 @@ __sx_arg_enough() {
 	unset __sx_arg_enough_cb_ __sx_arg_enough_need_
 
 	case "${4}" in 0)
-		return "${SX_EX_OK}"
+		return "M_EX_OK"
 	esac
 
 	for __sx_arg_enough_arg_ in "${@}"; do
@@ -1243,7 +1243,7 @@ __sx_arg_enough() {
 
 		# 短絡評価: 必要数に達した
 		case "${4}" in 0)
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 		esac
 	done
 
@@ -1286,25 +1286,25 @@ __sx_arg_enough() {
 sx_arg_find() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_find "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
 		*)
-			__sx_var_is_bind ${1+"${1}"} || return "${SX_EX_USAGE}"
+			__sx_var_is_bind ${1+"${1}"} || return "M_EX_USAGE"
 
-			__sx_var_is_bindable ${1+"${1}"} || return "${SX_EX_NOPERM}"
+			__sx_var_is_bindable ${1+"${1}"} || return "M_EX_NOPERM"
 			;;
 	esac
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}" | "${2+X${2}}" | "${3+X${3}}") ;;
 		"${4+X${4}}")
-			__sx_num_is_nat0_safe "${3}" || return "${SX_EX_USAGE}"
+			__sx_num_is_nat0_safe "${3}" || return "M_EX_USAGE"
 
 			case "$(((${3} & SX_ARG_FIND_GLOB) * (${3} & SX_ARG_FIND_CB)))" in [!0])
-				return "${SX_EX_USAGE}"
+				return "M_EX_USAGE"
 			esac
 			;;
 	esac
@@ -1423,7 +1423,7 @@ __sx_arg_find_lit() {
 				*) __M_BIND_QUOTE([|__sx_arg_find_lit|], [|"${__sx_arg_find_lit_arg_}"|], CLEANUP);;
 			esac
 
-			__sx_arg_find_lit_sts_="${SX_EX_OK}"
+			__sx_arg_find_lit_sts_="M_EX_OK"
 		esac
 
 		M_NUM_INCR([|__sx_arg_find_lit_i_|])
@@ -1463,12 +1463,12 @@ __sx_arg_find_lit() {
 sx_arg_fold() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_fold "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
 	__sx_arg_fold "${@}" || return
 }
@@ -1544,15 +1544,15 @@ define([|CLEANUP|], [|V(int) V(lim) V(flg)|])dnl
 sx_arg_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_isep "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
 		*)
-			__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+			__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-			__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+			__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 			;;
 	esac
 
@@ -1565,12 +1565,12 @@ sx_arg_isep() {
 
 	__sx_num_is_int_safe_inv ${__sx_arg_isep_int:+"${__sx_arg_isep_int}"} && __sx_num_is_nat0_safe ${__sx_arg_isep_lim:+"${__sx_arg_isep_lim}"} ${__sx_arg_isep_flg:+"${__sx_arg_isep_flg}"} || {
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	case ${__sx_arg_isep_int:+"${__sx_arg_isep_int#[+-]}"} in 0)
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	esac
 
 	unset CLEANUP
@@ -1965,12 +1965,12 @@ __sx_arg_isep_lit() {
 sx_arg_join() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_join "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
 	__sx_arg_join "${@}"
 }
@@ -2013,12 +2013,12 @@ __sx_arg_join() {
 sx_arg_len() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_len "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
 	__sx_arg_len "${@}"
 }
@@ -2061,12 +2061,12 @@ __sx_arg_len() {
 sx_arg_map() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_map "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
 	__sx_arg_map "${@}" || return
 }
@@ -2142,12 +2142,12 @@ __sx_arg_map() {
 sx_arg_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
 	__sx_arg_quote "${@}"
 }
@@ -2217,23 +2217,23 @@ __sx_arg_quote() {
 sx_arg_pad() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_pad "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
 		*)
-			__sx_var_is_bind ${1+"${1}"} || return "${SX_EX_USAGE}"
+			__sx_var_is_bind ${1+"${1}"} || return "M_EX_USAGE"
 
-			__sx_var_is_bindable ${1+"${1}"} || return "${SX_EX_NOPERM}"
+			__sx_var_is_bindable ${1+"${1}"} || return "M_EX_NOPERM"
 			;;
 	esac
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}" | "${2+X${2}}") ;;
-		"${3+X${3}}" | "${4+X${4}}") __sx_num_is_int_safe_inv "${2}" || return "${SX_EX_USAGE}";;
+		"${3+X${3}}" | "${4+X${4}}") __sx_num_is_int_safe_inv "${2}" || return "M_EX_USAGE";;
 		"${5+X${5}}")
-			__sx_num_is_int_safe_inv "${2}" && __sx_num_is_int_safe_inv "${4}" || return "${SX_EX_USAGE}";;
+			__sx_num_is_int_safe_inv "${2}" && __sx_num_is_int_safe_inv "${4}" || return "M_EX_USAGE";;
 	esac
 
 	__sx_arg_pad "${@}" || return
@@ -2439,15 +2439,15 @@ __sx_arg_pad_lit() {
 sx_arg_resize() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_resize "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
 		*)
-			__sx_var_is_bind ${1+"${1}"} || return "${SX_EX_USAGE}"
+			__sx_var_is_bind ${1+"${1}"} || return "M_EX_USAGE"
 
-			__sx_var_is_bindable ${1+"${1}"} || return "${SX_EX_NOPERM}"
+			__sx_var_is_bindable ${1+"${1}"} || return "M_EX_NOPERM"
 			;;
 	esac
 
@@ -2455,14 +2455,14 @@ sx_arg_resize() {
 	case "X${SX_CFG_SEP}" in
 		"${3+X${3}}" | "${4+X${4}}") __sx_arg_resize_shape="${2}";;
 		"${5+X${5}}")
-			__sx_num_is_nat0_safe "${4:-}" || return "${SX_EX_USAGE}"
+			__sx_num_is_nat0_safe "${4:-}" || return "M_EX_USAGE"
 			__sx_arg_resize_shape="${2}"
 			;;
 	esac
 
 	case "${__sx_arg_resize_shape}" in *::* | *-[02-9]* | *[!:0-9-]* | *-1*-1* | :* | *: | *-1[!:]*)
 		unset __sx_arg_resize_shape
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	esac
 
 	unset __sx_arg_resize_shape
@@ -2581,16 +2581,16 @@ __sx_arg_resize() {
 sx_arg_range() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_range "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe "${2-}" ${3+"${3}"} ${4+"${4}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_nat0_safe "${2-}" ${3+"${3}"} ${4+"${4}"} || return "M_EX_USAGE"
 
 	case "${4-1}" in 0)
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	esac
 
 	__sx_arg_range "${@}"
@@ -2645,25 +2645,25 @@ __sx_arg_range() {
 sx_arg_rfind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfind "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
 		*)
-			__sx_var_is_bind ${1+"${1}"} || return "${SX_EX_USAGE}"
+			__sx_var_is_bind ${1+"${1}"} || return "M_EX_USAGE"
 
-			__sx_var_is_bindable ${1+"${1}"} || return "${SX_EX_NOPERM}"
+			__sx_var_is_bindable ${1+"${1}"} || return "M_EX_NOPERM"
 			;;
 	esac
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}" | "${2+X${2}}" | "${3+X${3}}") ;;
 		"${4+X${4}}")
-			__sx_num_is_nat0_safe "${3}" || return "${SX_EX_USAGE}"
+			__sx_num_is_nat0_safe "${3}" || return "M_EX_USAGE"
 
 			case "$(((${3} & SX_ARG_RFIND_GLOB) * (${3} & SX_ARG_RFIND_CB)))" in [!0])
-				return "${SX_EX_USAGE}"
+				return "M_EX_USAGE"
 			esac
 			;;
 	esac
@@ -2779,7 +2779,7 @@ __sx_arg_rfind_lit() {
 				*) __M_BIND_QUOTE([|__sx_arg_rfind_lit|], [|"${__sx_arg_rfind_lit_arg_}"|], CLEANUP);;
 			esac
 
-			__sx_arg_rfind_lit_sts_="${SX_EX_OK}"
+			__sx_arg_rfind_lit_sts_="M_EX_OK"
 		esac
 
 		M_NUM_DECR([|__sx_arg_rfind_lit_i_|])
@@ -2818,12 +2818,12 @@ __sx_arg_rfind_lit() {
 sx_arg_rfold() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfold "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
 	__sx_arg_rfold "${@}" || return
 }
@@ -2910,12 +2910,12 @@ __sx_arg_norm() {
 sx_arg_rquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_safe "${#}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_safe "${#}" || return "M_EX_USAGE"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
 	__sx_arg_rquote "${@}"
 }
@@ -2975,11 +2975,11 @@ __sx_arg_rquote() {
 sx_var_bind_init() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind_init "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${@}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${@}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${@}" || return "M_EX_NOPERM"
 
 	__sx_var_bind_init "${@}"
 }
@@ -3050,17 +3050,17 @@ sx_var_bind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind "${@}" || return; return 0;; esac
 
 	# 結果変数名自体の妥当性と書き込み権限をチェック
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_var_is_bind "${2-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${2-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${2-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${2-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${4+"${4}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_nat0_safe ${4+"${4}"} || return "M_EX_USAGE"
 
 	__sx_var_bind "${@}"
 }
@@ -3141,9 +3141,9 @@ __sx_var_bind() {
 sx_var_copy() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_copy "${@}" || return; return 0;; esac
 
-	sx_var_is_chain "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_chain "${@}" || return "M_EX_USAGE"
 
-	__sx_var_is_copyable "${@}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_copyable "${@}" || return "M_EX_NOPERM"
 
 	__sx_var_copy "${@}"
 }
@@ -3215,9 +3215,9 @@ __sx_var_copy() {
 sx_var_dump() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_dump "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" "${@}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1}" || return "M_EX_NOPERM"
 
 	__sx_var_dump "${@}"
 }
@@ -3264,7 +3264,7 @@ __sx_var_dump() {
 sx_var_is_arr() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_arr "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "M_EX_USAGE"
 
 	__sx_var_is_arr "${@}" || return
 }
@@ -3315,7 +3315,7 @@ __sx_var_is_arr() {
 sx_var_is_bind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_bind "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_var_is_bind "${@}"
 }
@@ -3374,9 +3374,9 @@ __sx_var_is_bind() {
 sx_var_is_bindable() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_bindable "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${@}" || return "M_EX_USAGE"
 
 	__sx_var_is_bindable "${@}"
 }
@@ -3456,7 +3456,7 @@ sx_var_is_chain() {
 sx_var_is_copyable() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_copyable "${@}" || return; return 0;; esac
 
-	sx_var_is_chain "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_chain "${@}" || return "M_EX_USAGE"
 
 	__sx_var_is_copyable "${@}" || return
 }
@@ -3502,7 +3502,7 @@ __sx_var_is_copyable() {
 sx_var_is_ebind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_ebind "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_var_is_ebind "${@}"
 }
@@ -3576,7 +3576,7 @@ __sx_var_is_ebind() {
 sx_var_is_empty() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_empty "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "M_EX_USAGE"
 	__sx_var_is_empty "${@}" || return
 }
 
@@ -3632,7 +3632,7 @@ sx_var_is_name() {
 sx_var_is_ro() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_ro "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "M_EX_USAGE"
 	__sx_var_is_ro "${@}" || return
 }
 
@@ -3667,7 +3667,7 @@ __sx_var_is_ro() {
 sx_var_is_rw() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "M_EX_USAGE"
 	__sx_var_is_rw "${@}" || return
 }
 
@@ -3697,7 +3697,7 @@ __sx_var_is_rw() {
 sx_var_is_rw_all() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw_all "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "M_EX_USAGE"
 
 	__sx_var_is_rw_all "${@}" || return
 }
@@ -3730,7 +3730,7 @@ __sx_var_is_rw_all() {
 sx_var_is_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_set "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "M_EX_USAGE"
 	__sx_var_is_set "${@}" || return
 }
 
@@ -3767,7 +3767,7 @@ __sx_var_is_set() {
 sx_var_is_val() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_val "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "M_EX_USAGE"
 	__sx_var_is_val "${@}" || return
 }
 
@@ -3811,9 +3811,9 @@ __sx_var_is_val() {
 sx_var_list_copy() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_copy "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
-	__sx_var_is_rw "${1}" || return "${SX_EX_NOPERM}"
-	sx_var_is_chain "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
+	__sx_var_is_rw "${1}" || return "M_EX_NOPERM"
+	sx_var_is_chain "${@}" || return "M_EX_USAGE"
 
 	__sx_var_list_copy "${@}"
 }
@@ -3881,8 +3881,8 @@ __sx_var_list_copy() {
 sx_var_list_dep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_dep "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" "${@}" || return "${SX_EX_USAGE}"
-	__sx_var_is_rw "${1}" || return "${SX_EX_NOPERM}"
+	sx_var_is_name "${1-}" "${@}" || return "M_EX_USAGE"
+	__sx_var_is_rw "${1}" || return "M_EX_NOPERM"
 
 	__sx_var_list_dep "${@}"
 }
@@ -3951,9 +3951,9 @@ __sx_var_list_dep() {
 sx_var_list_ro() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_ro "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1}" IFS || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1}" IFS || return "M_EX_NOPERM"
 
 	__sx_var_list_ro "${@}"
 }
@@ -4017,9 +4017,9 @@ __sx_var_list_ro() {
 sx_var_list_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_set "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1}" IFS || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1}" IFS || return "M_EX_NOPERM"
 
 	__sx_var_list_set "${@}"
 }
@@ -4088,9 +4088,9 @@ __sx_var_list_set() {
 sx_var_move() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_move "${@}" || return; return 0;; esac
 
-	sx_var_is_chain "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_chain "${@}" || return "M_EX_USAGE"
 
-	__sx_var_is_copyable "${@}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_copyable "${@}" || return "M_EX_NOPERM"
 
 	__sx_var_move_chk=
 	for __sx_var_move_arg in "${@}"; do
@@ -4102,7 +4102,7 @@ sx_var_move() {
 
 	eval __sx_var_is_rw_all "${__sx_var_move_chk}" || {
 		unset __sx_var_move_chk __sx_var_move_arg
-		return "${SX_EX_NOPERM}"
+		return "M_EX_NOPERM"
 	}
 
 	__sx_var_copy "${@}"
@@ -4160,7 +4160,7 @@ sx_var_set() {
 	for __sx_var_set_arg in "${@}"; do
 		sx_var_is_name "${__sx_var_set_arg%%=*}" || {
 			unset __sx_var_set_arg __sx_var_set_chk
-			return "${SX_EX_USAGE}"
+			return "M_EX_USAGE"
 		}
 
 		M_STR_APPEND([|__sx_var_set_chk|], [|" ${__sx_var_set_arg%%=*}"|])
@@ -4168,7 +4168,7 @@ sx_var_set() {
 
 	eval sx_var_is_rw_all "${__sx_var_set_chk}" || {
 		unset  __sx_var_set_chk __sx_var_set_arg
-		return "${SX_EX_NOPERM}"
+		return "M_EX_NOPERM"
 	}
 
 	unset  __sx_var_set_chk __sx_var_set_arg
@@ -4222,7 +4222,7 @@ __sx_var_set() {
 sx_var_swap() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_swap "${@}" || return; return 0;; esac
 
-	sx_var_is_chain "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_chain "${@}" || return "M_EX_USAGE"
 
 	__sx_var_swap_out=
 	__sx_arr_gen __sx_var_swap_arr
@@ -4248,7 +4248,7 @@ sx_var_swap() {
 
 	__sx_var_is_copyable "${@}" || {
 		__sx_var_unset __sx_var_swap_arr
-		return "${SX_EX_NOPERM}"
+		return "M_EX_NOPERM"
 	}
 
 	__sx_var_copy "${@}"
@@ -4301,9 +4301,9 @@ __sx_var_swap() {
 sx_var_touch() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_touch "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${@}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${@}" || return "M_EX_NOPERM"
 
 	__sx_var_touch "${@}"
 }
@@ -4345,9 +4345,9 @@ __sx_var_touch() {
 sx_var_unexport() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unexport "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${@}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${@}" || return "M_EX_NOPERM"
 
 	__sx_var_unexport "${@}"
 }
@@ -4391,9 +4391,9 @@ __sx_var_unexport() {
 sx_var_unset() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unset "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw_all "${@}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw_all "${@}" || return "M_EX_NOPERM"
 
 	__sx_var_unset "${@}"
 }
@@ -4468,18 +4468,18 @@ define([|CLEANUP|], [|V(res)|])dnl
 sx_num_add_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add_int "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_num_add_int_res="${1}"
 	shift
 
 	__sx_num_is_int_base 10 "${@}" || {
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_num_add_int "${__sx_num_add_int_res}" "${@}"
@@ -4557,18 +4557,18 @@ define([|CLEANUP|], [|V(res)|])dnl
 sx_num_add_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add_nat0 "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_num_add_nat0_res="${1}"
 	shift
 
 	__sx_num_is_nat0_base 10 "${@}" || {
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_num_add_nat0 "${__sx_num_add_nat0_res}" "${@}"
@@ -4692,9 +4692,9 @@ __sx_num_add_nat0() {
 sx_num_cmp_arith() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_arith "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_num_is_int_safe "${1-}" "${2-}" || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe "${1-}" "${2-}" || return "M_EX_USAGE"
 
 	__sx_num_cmp_arith "${1}" "${2}" || return
 }
@@ -4737,7 +4737,7 @@ __sx_num_cmp_arith_digit() {
 sx_num_cmp_fixed() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_fixed "${@}" || return; return 0;; esac
 
-	sx_num_is_fixed "${1-}" "${2-}" || return "${SX_EX_USAGE}"
+	sx_num_is_fixed "${1-}" "${2-}" || return "M_EX_USAGE"
 
 	__sx_num_cmp_fixed "${1}" "${2}" || return
 }
@@ -4839,7 +4839,7 @@ __sx_num_cmp_fixed_frac() {
 sx_num_cmp_float() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_float "${@}" || return; return 0;; esac
 
-	sx_num_is_float "${1-}" "${2-}" || return "${SX_EX_USAGE}"
+	sx_num_is_float "${1-}" "${2-}" || return "M_EX_USAGE"
 
 	__sx_num_cmp_float "${@}"
 }
@@ -4883,8 +4883,8 @@ __sx_num_cmp_float() {
 sx_num_cmp_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_nat0 "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
-	__sx_num_is_nat0_base 10 "${1-}" "${2-}" || return "${SX_EX_USAGE}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
+	__sx_num_is_nat0_base 10 "${1-}" "${2-}" || return "M_EX_USAGE"
 
 	__sx_num_cmp_nat0 "${1}" "${2}" || return
 }
@@ -4960,13 +4960,13 @@ define([|CLEANUP|], [|V(res) V(dp) V(u)|])dnl
 sx_num_div_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_int "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_int_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_int_base 10 ${3:+"${3}"} || return "M_EX_USAGE"
 
 	__sx_num_div_int_res="${1}"
 	__sx_num_div_int_dp="${2:-0}"
@@ -4975,7 +4975,7 @@ sx_num_div_int() {
 
 	__sx_num_is_nzint_base 10 "${@}" || {
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_num_div_int "${__sx_num_div_int_res}" "${__sx_num_div_int_dp}" "${__sx_num_div_int_u}" "${@}"
@@ -5003,7 +5003,7 @@ __sx_num_div_int() {
 	case "${__sx_num_div_int_u_}" in 0 | +0 | -0)
 		M_SET([|${__sx_num_div_int_res_}|], [|0|])
 		unset CLEANUP
-		return "${SX_EX_OK}"
+		return "M_EX_OK"
 	esac
 
 	__sx_num_mul_int __sx_num_div_int_den_ "${@}"
@@ -5046,13 +5046,13 @@ define([|CLEANUP|], [|V(res) V(dp) V(u)|])dnl
 sx_num_div_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_nat0 "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_nat0_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_nat0_base 10 ${3:+"${3}"} || return "M_EX_USAGE"
 
 	__sx_num_div_nat0_res="${1}"
 	__sx_num_div_nat0_dp="${2:-0}"
@@ -5061,7 +5061,7 @@ sx_num_div_nat0() {
 
 	__sx_num_is_nat1_base 10 "${@}" || {
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_num_div_nat0 "${__sx_num_div_nat0_res}" "${__sx_num_div_nat0_dp}" "${__sx_num_div_nat0_u}" "${@}"
@@ -5101,7 +5101,7 @@ __sx_num_div_nat0() {
 	case "${__sx_num_div_nat0_u_}" in 0 | +0 | -0)
 		M_SET([|${__sx_num_div_nat0_res_}|], [|0|])
 		unset CLEANUP
-		return "${SX_EX_OK}"
+		return "M_EX_OK"
 	esac
 
 	# ステップ 2: すべての除数を乗算して単一の除数にする（除数が無い場合は 1）
@@ -5172,13 +5172,13 @@ __sx_num_div_nat0() {
 sx_num_divmod_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_divmod_int "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_int_base 10 ${2:+"${2}"} && __sx_num_is_nzint_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_base 10 ${2:+"${2}"} && __sx_num_is_nzint_base 10 ${3:+"${3}"} || return "M_EX_USAGE"
 
 	__sx_num_divmod_int "${@}"
 }
@@ -5219,7 +5219,7 @@ __sx_num_divmod_int() {
 
 	__sx_var_bind __sx_num_divmod_int_bind_ "${1}" "${__sx_num_divmod_int_q_}" || {
 		unset CLEANUP
-		return "${SX_EX_OK}"
+		return "M_EX_OK"
 	}
 
 	case "${__sx_num_divmod_int_us_}${__sx_num_divmod_int_r_}" in 1[!0]*)
@@ -5254,13 +5254,13 @@ __sx_num_divmod_int() {
 sx_num_divmod_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_divmod_nat0 "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_base 10 ${2:+"${2}"} && __sx_num_is_nat1_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_nat0_base 10 ${2:+"${2}"} && __sx_num_is_nat1_base 10 ${3:+"${3}"} || return "M_EX_USAGE"
 
 	__sx_num_divmod_nat0 "${@}"
 }
@@ -5332,7 +5332,7 @@ __sx_num_divmod_nat0() {
 
 		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
 			unset CLEANUP
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 		}
 	elif
 		# 高速パス 3: 被除数 < 除数なら商 = 0、余り = 被除数
@@ -5344,7 +5344,7 @@ __sx_num_divmod_nat0() {
 	then
 		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
 			unset CLEANUP
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 		}
 	else
 		eval "__sx_num_divmod_nat0_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" __sx_num_divmod_nat0_zr_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
@@ -5382,7 +5382,7 @@ __sx_num_divmod_nat0() {
 
 		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
 			unset CLEANUP
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 		}
 
 		__sx_num_divmod_nat0_r_="$((__sx_num_divmod_nat0_u_ % __sx_num_divmod_nat0_v_))${__sx_num_divmod_nat0_btail_}"
@@ -5458,7 +5458,7 @@ __sx_num_divmod_nat0() {
 
 		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
 			unset CLEANUP
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 		}
 
 			# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
@@ -5688,7 +5688,7 @@ __sx_num_divmod_nat0() {
 
 		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
 			unset CLEANUP
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 		}
 
 		# ステップ 7.4: 余り抽出 — 位置パラメータに残る末尾 n 語（u_{K-n+1}..u_K）を c 桁ゼロ埋めで連結する
@@ -5744,13 +5744,13 @@ __sx_num_divmod_nat0() {
 sx_num_edivmod_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_edivmod_int "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_int_base 10 ${2:+"${2}"} && __sx_num_is_nzint_base 10 ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_base 10 ${2:+"${2}"} && __sx_num_is_nzint_base 10 ${3:+"${3}"} || return "M_EX_USAGE"
 
 	__sx_num_edivmod_int "${@}"
 }
@@ -5797,7 +5797,7 @@ __sx_num_edivmod_int() {
 
 			__sx_var_bind __sx_num_edivmod_int_bind_ "${1}" "${__sx_num_edivmod_int_q_}" || {
 				unset CLEANUP
-				return "${SX_EX_OK}"
+				return "M_EX_OK"
 			}
 
 			__sx_num_sub_nat0 __sx_num_edivmod_int_r_ "${3#[+-]}" "${__sx_num_edivmod_int_r_}"
@@ -5806,7 +5806,7 @@ __sx_num_edivmod_int() {
 		*)
 			__sx_var_bind __sx_num_edivmod_int_bind_ "${1}" "${__sx_num_edivmod_int_q_}" || {
 				unset CLEANUP
-				return "${SX_EX_OK}"
+				return "M_EX_OK"
 			}
 			;;
 	esac
@@ -5933,7 +5933,7 @@ sx_num_is_int() {
 sx_num_is_int_base() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_base "${@}" || return; return 0;; esac
 
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+	case "${1-}" in 8 | 10 | 16) ;; *) return "M_EX_USAGE";; esac
 
 	__sx_num_is_int_base "${@}"
 }
@@ -5978,10 +5978,10 @@ sx_num_is_int_fit() {
 
 	case "${1-}" in
 		8 | 16 | 32 | 64 | 128) ;;
-		*) return "${SX_EX_USAGE}";;
+		*) return "M_EX_USAGE";;
 	esac
 
-	sx_num_is_int "${@}" || return "${SX_EX_USAGE}"
+	sx_num_is_int "${@}" || return "M_EX_USAGE"
 
 	__sx_num_is_int_fit "${@}" || return
 }
@@ -6067,10 +6067,10 @@ sx_num_is_int_fit_dec() {
 
 	case "${1-}" in
 		8 | 16 | 32 | 64 | 128) ;;
-		*) return "${SX_EX_USAGE}";;
+		*) return "M_EX_USAGE";;
 	esac
 
-	__sx_num_is_int_base 10 "${@}" || return "${SX_EX_USAGE}"
+	__sx_num_is_int_base 10 "${@}" || return "M_EX_USAGE"
 
 	__sx_num_is_int_fit_dec "${@}" || return
 }
@@ -6187,7 +6187,7 @@ __sx_num_is_int_fit_dec() {
 sx_num_is_int_safe() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_safe "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_num_is_int_safe "${@}" || return
 }
@@ -6220,7 +6220,7 @@ __sx_num_is_int_safe() {
 sx_num_is_int_safe_inv() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_safe_inv "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_num_is_int_safe_inv "${@}" || return
 }
@@ -6266,7 +6266,7 @@ sx_num_is_int_width() {
 
 	case "${1-}" in
 		8 | 16 | 32 | 64 | 128) ;;
-		*) return "${SX_EX_USAGE}";;
+		*) return "M_EX_USAGE";;
 	esac
 
 	__sx_num_is_int_width "${@}" || return
@@ -6329,7 +6329,7 @@ sx_num_is_nat0() {
 sx_num_is_nat0_base() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat0_base "${@}" || return; return 0;; esac
 
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+	case "${1-}" in 8 | 10 | 16) ;; *) return "M_EX_USAGE";; esac
 
 	__sx_num_is_nat0_base "${@}"
 }
@@ -6373,7 +6373,7 @@ __sx_num_is_nat0_base() {
 sx_num_is_nat0_safe() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat0_safe "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_num_is_nat0_safe "${@}" || return
 }
@@ -6430,7 +6430,7 @@ sx_num_is_nat1() {
 sx_num_is_nat1_base() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat1_base "${@}" || return; return 0;; esac
 
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+	case "${1-}" in 8 | 10 | 16) ;; *) return "M_EX_USAGE";; esac
 
 	__sx_num_is_nat1_base "${@}"
 }
@@ -6474,7 +6474,7 @@ __sx_num_is_nat1_base() {
 sx_num_is_nat1_safe() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat1_safe "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_num_is_nat1_safe "${@}" || return
 }
@@ -6533,7 +6533,7 @@ sx_num_is_nint() {
 sx_num_is_nint_base() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nint_base "${@}" || return; return 0;; esac
 
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+	case "${1-}" in 8 | 10 | 16) ;; *) return "M_EX_USAGE";; esac
 
 	__sx_num_is_nint_base "${@}"
 }
@@ -6605,7 +6605,7 @@ sx_num_is_nnint() {
 sx_num_is_nnint_base() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nnint_base "${@}" || return; return 0;; esac
 
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+	case "${1-}" in 8 | 10 | 16) ;; *) return "M_EX_USAGE";; esac
 
 	__sx_num_is_nnint_base "${@}"
 }
@@ -6678,7 +6678,7 @@ sx_num_is_npint() {
 sx_num_is_npint_base() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_npint_base "${@}" || return; return 0;; esac
 
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+	case "${1-}" in 8 | 10 | 16) ;; *) return "M_EX_USAGE";; esac
 
 	__sx_num_is_npint_base "${@}"
 }
@@ -6724,7 +6724,7 @@ __sx_num_is_npint_base() {
 sx_num_is_num_safe() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_num_safe "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_num_is_num_safe "${@}" || return
 }
@@ -6797,7 +6797,7 @@ sx_num_is_nzint() {
 sx_num_is_nzint_base() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nzint_base "${@}" || return; return 0;; esac
 
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+	case "${1-}" in 8 | 10 | 16) ;; *) return "M_EX_USAGE";; esac
 
 	__sx_num_is_nzint_base "${@}"
 }
@@ -6865,7 +6865,7 @@ sx_num_is_pint() {
 sx_num_is_pint_base() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_pint_base "${@}" || return; return 0;; esac
 
-	case "${1-}" in 8 | 10 | 16) ;; *) return "${SX_EX_USAGE}";; esac
+	case "${1-}" in 8 | 10 | 16) ;; *) return "M_EX_USAGE";; esac
 
 	__sx_num_is_pint_base "${@}"
 }
@@ -6912,18 +6912,18 @@ define([|CLEANUP|], [|V(res)|])dnl
 sx_num_mul_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_int "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_num_mul_int_res="${1}"
 	shift
 
 	__sx_num_is_int_base 10 "${@}" || {
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_num_mul_int "${__sx_num_mul_int_res}" "${@}"
@@ -6987,18 +6987,18 @@ define([|CLEANUP|], [|V(res)|])dnl
 sx_num_mul_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_nat0 "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_num_mul_nat0_res="${1}"
 	shift
 
 	__sx_num_is_nat0_base 10 "${@}" || {
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_num_mul_nat0 "${__sx_num_mul_nat0_res}" "${@}"
@@ -7230,14 +7230,14 @@ define([|CLEANUP|], [|V(res)|])dnl
 sx_num_max() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_max "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	case "${#}" in 1)
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	esac
 
 	__sx_num_max_res="${1}"
@@ -7245,7 +7245,7 @@ sx_num_max() {
 
 	__sx_num_is_num_safe "${@}" || {
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_num_max "${__sx_num_max_res}" "${@}"
@@ -7304,14 +7304,14 @@ define([|CLEANUP|], [|V(res)|])dnl
 sx_num_min() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_min "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	case "${#}" in 1)
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	esac
 
 	__sx_num_min_res="${1}"
@@ -7319,7 +7319,7 @@ sx_num_min() {
 
 	__sx_num_is_num_safe "${@}" || {
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_num_min "${__sx_num_min_res}" "${@}"
@@ -7378,18 +7378,18 @@ __sx_num_min() {
 sx_num_norm() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_norm "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
 	__sx_num_norm_bind="${1}"
 	shift
 
 	sx_num_is_num_safe "${@}" || {
 		unset __sx_num_norm_bind
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_num_norm "${__sx_num_norm_bind}" "${@}"
@@ -7496,16 +7496,16 @@ __sx_num_norm() {
 sx_num_range() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_range "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_int_safe "${2-}" ${3+"${3}"} ${4+"${4}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe "${2-}" ${3+"${3}"} ${4+"${4}"} || return "M_EX_USAGE"
 
 	case "$((${4-1}))" in 0)
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	esac
 
 	__sx_num_range "${@}"
@@ -7575,7 +7575,7 @@ __sx_num_range() {
 sx_num_rel() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_rel "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	for __sx_num_rel_arg in "${@}"; do
 		case "${__sx_num_rel_arg}" in
@@ -7584,7 +7584,7 @@ sx_num_rel() {
 
 		__sx_num_is_num_safe "${__sx_num_rel_arg}" || {
 			unset __sx_num_rel_arg
-			return "${SX_EX_USAGE}"
+			return "M_EX_USAGE"
 		}
 	done
 
@@ -7684,18 +7684,18 @@ define([|CLEANUP|], [|V(res)|])dnl
 sx_num_sub_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub_int "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_num_sub_int_res="${1}"
 	shift
 
 	__sx_num_is_int_base 10 "${@}" || {
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_num_sub_int "${__sx_num_sub_int_res}" "${@}"
@@ -7775,23 +7775,23 @@ define([|CLEANUP|], [|V(res)|])dnl
 sx_num_sub_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub_nat0 "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
 	__sx_num_sub_nat0_res="${1}"
 	shift
 
 	__sx_num_is_nat0_base 10 "${@}" || {
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_num_cmp_nat0 "${1-0}" "${2-0}" || case "${?}" in 1)
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	esac
 
 	__sx_num_sub_nat0 "${__sx_num_sub_nat0_res}" "${@}"
@@ -7946,7 +7946,7 @@ sx_str_any() {
 	for __sx_str_any_arg in "${@}"; do
 		case "${__sx_str_any_tgt}" in "${__sx_str_any_arg}")
 			unset __sx_str_any_tgt __sx_str_any_arg
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 		esac
 	done
 
@@ -7981,13 +7981,13 @@ sx_str_any() {
 sx_str_camel() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_camel "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
 	__sx_str_camel "${@}"
 }
@@ -8036,15 +8036,15 @@ __sx_str_camel() {
 sx_str_capital() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_capital "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_nat0_safe ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_nat0_safe ${3:+"${3}"} || return "M_EX_USAGE"
 
 	__sx_str_capital "${@}"
 }
@@ -8102,15 +8102,15 @@ __sx_str_capital() {
 sx_str_center() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_center "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${#4}"} ${5+"${#5}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${#4}"} ${5+"${#5}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${3+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${3+"${3}"} || return "M_EX_USAGE"
 
 	__sx_str_center "${@}"
 }
@@ -8132,7 +8132,7 @@ __sx_str_center() {
 	case "$((0 < __sx_str_center_needed_))${4}${5}" in 0* | 1)
 		M_SET([|${1}|], [|${2}|])
 		unset __sx_str_center_needed_
-		return "${SX_EX_OK}"
+		return "M_EX_OK"
 	esac
 
 	__sx_str_center_lpad_=$(( (__sx_str_center_needed_ + (${3} < 0)) / 2 ))
@@ -8190,25 +8190,25 @@ __sx_str_center() {
 sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_nat0_safe ${4:+"${4}"} ${5:+"${5}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_nat0_safe ${4:+"${4}"} ${5:+"${5}"} || return "M_EX_USAGE"
 
 	case "${3:-1}" in
 		*[1-9ABCDEFabcdef]*) ;;
-		*) return "${SX_EX_USAGE}";;
+		*) return "M_EX_USAGE";;
 	esac
 
 	__sx_str_split __sx_str_chunk_ints "${3:-1}" :
 	if ! eval __sx_num_is_int_safe_inv "${__sx_str_chunk_ints}"; then
 		unset __sx_str_chunk_ints
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	fi
 
 	unset __sx_str_chunk_ints
@@ -8327,15 +8327,15 @@ __sx_str_chunk() {
 sx_str_count() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_count "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_nat0_safe ${4:+"${4}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_nat0_safe ${4:+"${4}"} || return "M_EX_USAGE"
 
 	__sx_str_count "${@}" || return
 }
@@ -8373,15 +8373,15 @@ __sx_str_count() {
 sx_str_cycle() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_cycle "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "M_EX_USAGE"
 
 	__sx_str_cycle "${@}"
 }
@@ -8400,7 +8400,7 @@ __sx_str_cycle() {
 
 	case ${3} in 0)
 		M_SET([|${1}|], [|${2}|])
-		return "${SX_EX_OK}"
+		return "M_EX_OK"
 	esac
 
 	__sx_str_chunk __sx_str_cycle_head_:__sx_str_cycle_tail_: "${2}" "$((0 < ${3} ? ${3} : ${3} + ${4}))" 1
@@ -8456,13 +8456,13 @@ sx_str_eq() {
 sx_str_escape() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_escape "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
 	__sx_str_escape "${@}"
 }
@@ -8479,7 +8479,7 @@ __sx_str_escape() {
 
 	case "${3}" in '')
 		M_SET([|${1}|], [|${2}|])
-		return "${SX_EX_OK}"
+		return "M_EX_OK"
 	esac
 
 	__sx_glob_bracket __sx_str_escape_gs_ "${3}"
@@ -8518,13 +8518,13 @@ __sx_str_escape_cb() {
 sx_str_etrim() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_etrim "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
 	__sx_str_etrim "${@}"
 }
@@ -8542,7 +8542,7 @@ __sx_str_etrim() {
 
 	case "${3}" in '')
 		M_SET([|${1}|], [|${2}|])
-		return "${SX_EX_OK}"
+		return "M_EX_OK"
 	esac
 
 	M_SET([|${1}|], [|${2%"${2##*[!"${3}"]}"}|])
@@ -8570,7 +8570,7 @@ sx_str_ew() {
 	for __sx_str_ew_arg in "${@}"; do
 		case "${__sx_str_ew_tgt}" in *"${__sx_str_ew_arg}")
 			unset __sx_str_ew_tgt __sx_str_ew_arg
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 		esac
 	done
 
@@ -8620,15 +8620,15 @@ sx_str_ew() {
 sx_str_find() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_find "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_nat0_safe ${4:+"${4}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_nat0_safe ${4:+"${4}"} || return "M_EX_USAGE"
 
 	__sx_str_find "${@}" || return
 }
@@ -8657,7 +8657,7 @@ __sx_str_find() {
 		M_STR_EQ([|"${3}"|], [|''|]) ||
 		{ M_NUM_BOOL([|${4} & SX_STR_FIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
 	then
-		__sx_str_find_sts_="${SX_EX_OK}"
+		__sx_str_find_sts_="M_EX_OK"
 
 		# 空 needle: 全境界位置（0 〜 len）に長さ0で出力
 		while M_NUM_LE([|${__sx_str_find_off_}|], [|${#__sx_str_find_tgt_}|]); do
@@ -8677,7 +8677,7 @@ __sx_str_find() {
 			__sx_str_find_match_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"}"
 			__sx_str_find_match_="${__sx_str_find_match_%"${__sx_str_find_after_}"}"
 			M_NUM_INCR([|__sx_str_find_off_|], [|${#__sx_str_find_pre_}|])
-			: "${__sx_str_find_sts_=${SX_EX_OK}}"
+			: "${__sx_str_find_sts_=M_EX_OK}"
 
 			case "${__sx_str_find_text_}" in
 				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:${#__sx_str_find_match_}"|], CLEANUP);;
@@ -8700,7 +8700,7 @@ __sx_str_find() {
 		while M_STR_HAS([|"${__sx_str_find_tgt_}"|], [|"${3}"|]); do
 			__sx_str_find_pre_="${__sx_str_find_tgt_%%"${3}"*}"
 			M_NUM_INCR([|__sx_str_find_off_|], [|${#__sx_str_find_pre_}|])
-			: "${__sx_str_find_sts_=${SX_EX_OK}}"
+			: "${__sx_str_find_sts_=M_EX_OK}"
 
 			case "${__sx_str_find_text_}" in
 				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:${#3}"|], CLEANUP);;
@@ -8749,7 +8749,7 @@ sx_str_has() {
 	for __sx_str_has_arg in "${@}"; do
 		case "${__sx_str_has_tgt}" in *"${__sx_str_has_arg}"*)
 			unset __sx_str_has_tgt __sx_str_has_arg
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 		esac
 	done
 
@@ -8995,18 +8995,18 @@ sx_str_is_word() {
 sx_str_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_isep "${@}" || return; return; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${4:+"${4}"} && __sx_num_is_nat0_safe ${5:+"${5}"} ${6:+"${6}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${4:+"${4}"} && __sx_num_is_nat0_safe ${5:+"${5}"} ${6:+"${6}"} || return "M_EX_USAGE"
 
 	case "$((${4:-1}))" in 0)
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	esac
 
 	__sx_str_isep "${@}" || return
@@ -9236,15 +9236,15 @@ __sx_str_isep_lit() {
 sx_str_lower() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_lower "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "M_EX_USAGE"
 
 	__sx_str_lower "${@}"
 }
@@ -9308,7 +9308,7 @@ sx_str_match() {
 	for __sx_str_match_arg in "${@}"; do
 		case "${__sx_str_match_tgt}" in ${__sx_str_match_arg})
 			unset __sx_str_match_tgt __sx_str_match_arg
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 		esac
 	done
 
@@ -9339,15 +9339,15 @@ sx_str_match() {
 sx_str_pad() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_pad "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${#4}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${#4}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${3+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${3+"${3}"} || return "M_EX_USAGE"
 
 	__sx_str_pad "${@}"
 }
@@ -9368,7 +9368,7 @@ __sx_str_pad() {
 	M_NUM_LT([|0|], [|__sx_str_pad_needed_|]) && M_STR_NE([|"${4}"|], [|''|]) || {
 		M_SET([|${1}|], [|${2}|])
 		unset __sx_str_pad_needed_
-		return "${SX_EX_OK}"
+		return "M_EX_OK"
 	}
 
 	__sx_str_rep __sx_str_pad_rep_ "${4}" "$(((__sx_str_pad_needed_ - 1) / ${#4} + 1))"
@@ -9409,13 +9409,13 @@ __sx_str_pad() {
 sx_str_pascal() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_pascal "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
 	__sx_str_pascal "${@}"
 }
@@ -9457,15 +9457,15 @@ __sx_str_pascal() {
 sx_str_rep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rep "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_nat0_safe ${3+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_nat0_safe ${3+"${3}"} || return "M_EX_USAGE"
 
 	__sx_str_rep "${@}"
 }
@@ -9561,17 +9561,17 @@ __sx_m4_gen_zr_case(1)
 sx_str_rev() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rev "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "M_EX_USAGE"
 	case "$((${3:-1}))" in 0)
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	esac
 
 	__sx_str_rev "${@}"
@@ -9641,15 +9641,15 @@ __sx_str_rev() {
 sx_str_rfind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rfind "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_nat0_safe ${4:+"${4}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_nat0_safe ${4:+"${4}"} || return "M_EX_USAGE"
 
 	__sx_str_rfind "${@}" || return
 }
@@ -9678,7 +9678,7 @@ __sx_str_rfind() {
 		{ M_NUM_BOOL([|${4} & SX_STR_RFIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
 	then
 		__sx_str_rfind_off_="${#__sx_str_rfind_tgt_}"
-		__sx_str_rfind_sts_="${SX_EX_OK}"
+		__sx_str_rfind_sts_="M_EX_OK"
 
 		# 空 needle: len から 0 へ
 		while M_NUM_GE([|${__sx_str_rfind_off_}|], [|0|]); do
@@ -9696,7 +9696,7 @@ __sx_str_rfind() {
 			__sx_str_rfind_match_="${__sx_str_rfind_tgt_#${__sx_str_rfind_pre_}}"
 			__sx_str_rfind_after_="${__sx_str_rfind_match_#${3}}"
 			__sx_str_rfind_match_="${__sx_str_rfind_match_%${__sx_str_rfind_after_}}"
-			__sx_str_rfind_sts_="${SX_EX_OK}"
+			__sx_str_rfind_sts_="M_EX_OK"
 
 			case "${__sx_str_rfind_text_}" in
 				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${#__sx_str_rfind_pre_}:${#__sx_str_rfind_match_}"|], CLEANUP);;
@@ -9712,7 +9712,7 @@ __sx_str_rfind() {
 		# ==== リテラルモード ====
 		while M_STR_HAS([|"${__sx_str_rfind_tgt_}"|], [|"${3}"|]); do
 			__sx_str_rfind_pre_="${__sx_str_rfind_tgt_%"${3}"*}"
-			__sx_str_rfind_sts_="${SX_EX_OK}"
+			__sx_str_rfind_sts_="M_EX_OK"
 
 			case "${__sx_str_rfind_text_}" in
 				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${#__sx_str_rfind_pre_}:${#3}"|], CLEANUP);;
@@ -9758,15 +9758,15 @@ __sx_str_rfind() {
 sx_str_rot() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rot "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${4:+"${4}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${4:+"${4}"} || return "M_EX_USAGE"
 
 	__sx_str_rot "${@}"
 }
@@ -9783,7 +9783,7 @@ __sx_str_rot() {
 
 	case '' in "${2}" | "${3}")
 		M_SET([|${1}|], [|${2}|])
-		return "${SX_EX_OK}"
+		return "M_EX_OK"
 	esac
 
 	__sx_str_cycle __sx_str_rot_rotated_ "${3}" "${4}"
@@ -9810,15 +9810,15 @@ __sx_str_rot() {
 sx_str_splice() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_splice "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${3+"${3}"} ${4+"${4}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${3+"${3}"} ${4+"${4}"} || return "M_EX_USAGE"
 
 	__sx_str_splice "${@}"
 }
@@ -9883,15 +9883,15 @@ __sx_str_splice() {
 sx_str_split() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${4+"${4}"} ${5+"${5}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${4+"${4}"} ${5+"${5}"} || return "M_EX_USAGE"
 
 	__sx_str_split "${@}"
 }
@@ -10060,13 +10060,13 @@ __sx_str_split() {
 sx_str_split_ifs() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_split_ifs "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
 	__sx_str_split_ifs "${@}" || return
 }
@@ -10116,13 +10116,13 @@ __sx_str_split_ifs() {
 sx_str_squish() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_squish "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
 	__sx_str_squish "${@}"
 }
@@ -10174,13 +10174,13 @@ __sx_str_squish() {
 sx_str_strim() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_strim "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
 	__sx_str_strim "${@}"
 }
@@ -10198,7 +10198,7 @@ __sx_str_strim() {
 
 	case "${3}" in '')
 		M_SET([|${1}|], [|${2}|])
-		return "${SX_EX_OK}"
+		return "M_EX_OK"
 	esac
 
 	M_SET([|${1}|], [|${2#"${2%%[!"${3}"]*}"}|])
@@ -10233,15 +10233,15 @@ __sx_str_strim() {
 sx_str_sub() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_sub "${@}" || return; return; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${5:+"${5}"} && __sx_num_is_nat0_safe ${6:+"${6}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${5:+"${5}"} && __sx_num_is_nat0_safe ${6:+"${6}"} || return "M_EX_USAGE"
 
 	__sx_str_sub "${@}" || return
 }
@@ -10428,15 +10428,15 @@ __sx_str_sub_lit() {
 sx_str_substr() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_substr "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${3+"${3}"} ${4+"${4}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${3+"${3}"} ${4+"${4}"} || return "M_EX_USAGE"
 
 	__sx_str_substr "${@}"
 }
@@ -10514,7 +10514,7 @@ sx_str_sw() {
 	for __sx_str_sw_arg in "${@}"; do
 		case "${__sx_str_sw_tgt}" in "${__sx_str_sw_arg}"*)
 			unset __sx_str_sw_tgt __sx_str_sw_arg
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 		esac
 	done
 
@@ -10543,15 +10543,15 @@ sx_str_sw() {
 sx_str_swapcase() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_swapcase "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "M_EX_USAGE"
 
 	__sx_str_swapcase "${@}"
 }
@@ -10587,13 +10587,13 @@ __sx_str_swapcase() {
 sx_str_title() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_title "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
 	__sx_str_title "${@}"
 }
@@ -10654,15 +10654,15 @@ __sx_str_title_cb() {
 sx_str_tr() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_tr "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${1-}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_bindable "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_bindable "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${5:+"${5}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${5:+"${5}"} || return "M_EX_USAGE"
 
 	__sx_str_tr "${@}"
 }
@@ -10756,13 +10756,13 @@ __sx_str_tr() {
 sx_str_trim() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_trim "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
 	__sx_str_trim "${@}"
 }
@@ -10805,15 +10805,15 @@ __sx_str_trim() {
 sx_str_upper() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_upper "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
-	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "${SX_EX_USAGE}"
+	__sx_num_is_int_safe_inv ${3:+"${3}"} || return "M_EX_USAGE"
 
 	__sx_str_upper "${@}"
 }
@@ -10879,13 +10879,13 @@ __sx_str_upper_cb() {
 sx_str_words() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_words "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return "${SX_EX_DATAERR}"
+	__sx_num_is_nat0_safe ${2+"${#2}"} || return "M_EX_DATAERR"
 
 	__sx_str_words "${@}"
 }
@@ -10957,11 +10957,11 @@ __sx_str_words_cb() {
 sx_glob_bracket() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_glob_bracket "${@}"; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 	case "${2-}" in '')
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	esac
 
 	__sx_glob_bracket "${@}"
@@ -10982,11 +10982,11 @@ __sx_glob_bracket() {
 		*[!^!]*) ;;
 		!*^* | ^*!*)
 			M_SET([|${1}|], [|[[.!.]^]|])
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 			;;
 		*)
 			M_SET([|${1}|], [|${2%"${2#?}"}|])
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 	esac
 
 	case "${2}" in *']'*)
@@ -11034,9 +11034,9 @@ __sx_glob_bracket() {
 sx_glob_escape() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_glob_escape "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
 	__sx_glob_escape "${@}" || return
 }
@@ -11080,7 +11080,7 @@ sx_arr_at() {
 
 	# 1. 配列の妥当性チェック
 	sx_var_is_arr "${1-}" || case "${?}" in
-		1) return "${SX_EX_DATAERR}";;
+		1) return "M_EX_DATAERR";;
 		*) return "${?}";;
 	esac
 
@@ -11095,7 +11095,7 @@ sx_arr_at() {
 
 		__sx_num_is_nat0_base 10 "${__sx_arr_at_i}" || {
 			unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
-			return "${SX_EX_USAGE}"
+			return "M_EX_USAGE"
 		}
 
 		# 範囲チェック
@@ -11110,7 +11110,7 @@ sx_arr_at() {
 				M_STR_MATCH([|"${__sx_arr_at_dest}"|], [|"${__sx_arr_at_arr}"|], [|"${__sx_arr_at_arr}"_*|])
 			then
 				unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
-				return "${SX_EX_USAGE}"
+				return "M_EX_USAGE"
 			fi
 
 			# コピー連鎖式の構築 (src-dest)
@@ -11127,12 +11127,12 @@ sx_arr_at() {
 	unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
 
 	case "${#}" in
-		0) return "${SX_EX_OK}";;
+		0) return "M_EX_OK";;
 	esac
 
 	# 2. 書き込み可能性（構造を含む）の一括チェック
 	eval __sx_var_is_copyable "${@}" || {
-		return "${SX_EX_NOPERM}"
+		return "M_EX_NOPERM"
 	}
 
 	__sx_var_copy "${@}"
@@ -11169,7 +11169,7 @@ __sx_arr_at() {
 	case "${__sx_arr_at_chk_}" in
 		'')
 			unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
-			return "${SX_EX_OK}"
+			return "M_EX_OK"
 		;;
 	esac
 
@@ -11192,8 +11192,8 @@ __sx_arr_at() {
 sx_arr_gen() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_gen "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
-	__sx_arr_is_rw "${1}" || return "${SX_EX_NOPERM}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
+	__sx_arr_is_rw "${1}" || return "M_EX_NOPERM"
 
 	__sx_arr_gen "${@}"
 }
@@ -11231,7 +11231,7 @@ __sx_arr_gen() {
 sx_arr_is_rw() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_rw "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${@}" || return "M_EX_USAGE"
 
 	__sx_arr_is_rw "${@}" || return
 }
@@ -11297,9 +11297,9 @@ __sx_arr_is_rw() {
 sx_arr_is_bindable() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_bindable "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	__sx_var_is_bind "${@}" || return "${SX_EX_USAGE}"
+	__sx_var_is_bind "${@}" || return "M_EX_USAGE"
 
 	__sx_arr_is_bindable "${@}"
 }
@@ -11368,11 +11368,11 @@ define([|CLEANUP|], [|V(br) V(cr) V(bind)|])dnl
 sx_arr_bind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_bind "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-	sx_var_is_name "${1-}" "${2-}" || return "${SX_EX_USAGE}"
-	__sx_var_is_rw "${1}" "${2}" || return "${SX_EX_NOPERM}"
-	__sx_var_is_ebind ${3+"${3}"} || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" "${2-}" || return "M_EX_USAGE"
+	__sx_var_is_rw "${1}" "${2}" || return "M_EX_NOPERM"
+	__sx_var_is_ebind ${3+"${3}"} || return "M_EX_USAGE"
 
 	__sx_arr_bind_br="${1}"
 	__sx_arr_bind_cr="${2}"
@@ -11382,7 +11382,7 @@ sx_arr_bind() {
 
 	sx_var_is_name "${@}" || {
 		unset CLEANUP
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	set -- "${__sx_arr_bind_br}" "${__sx_arr_bind_cr}" "${__sx_arr_bind_bind}" "${@}"
@@ -11521,11 +11521,11 @@ define([|CLEANUP|], [|V(bind) V(chain) V(borg) V(first) V(arr) V(len) V(i) V(blk
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arr_cat() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) ;; *)
-		sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "${SX_EX_CONFIG}"
+		sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return "M_EX_CONFIG"
 
-		__sx_var_is_bind ${1+"${1}"} || return "${SX_EX_USAGE}"
+		__sx_var_is_bind ${1+"${1}"} || return "M_EX_USAGE"
 
-		__sx_arr_is_bindable ${1+"${1}"} || return "${SX_EX_NOPERM}"
+		__sx_arr_is_bindable ${1+"${1}"} || return "M_EX_NOPERM"
 	esac
 
 	__sx_arr_cat_bind="${1-}"
@@ -11535,12 +11535,12 @@ sx_arr_cat() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) ;; *)
 		sx_var_is_name "${@}" || {
 			unset CLEANUP
-			return "${SX_EX_USAGE}"
+			return "M_EX_USAGE"
 		}
 
 		__sx_var_is_arr "${@}" || {
 			unset CLEANUP
-			return "${SX_EX_DATAERR}"
+			return "M_EX_DATAERR"
 		}
 	esac
 
@@ -11565,7 +11565,7 @@ sx_arr_cat() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) ;; *)
 		__sx_var_is_copyable "${@}" || {
 			unset CLEANUP
-			return "${SX_EX_NOPERM}"
+			return "M_EX_NOPERM"
 		}
 	esac
 
@@ -11654,7 +11654,7 @@ sx_arr_pop() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_pop "${@}" || return; return 0;; esac
 
 	sx_var_is_arr "${1-}" || case "${?}" in
-		1) return "${SX_EX_DATAERR}";;
+		1) return "M_EX_DATAERR";;
 		*) return;;
 	esac
 
@@ -11676,7 +11676,7 @@ sx_arr_pop() {
 	# 配列の書き込み権限チェック
 	sx_arr_is_rw "${__sx_arr_pop_arr}" || {
 		case "${?}" in
-			1) set -- "${SX_EX_NOPERM}";;
+			1) set -- "M_EX_NOPERM";;
 			*) set -- "${?}";;
 		esac
 
@@ -11697,7 +11697,7 @@ sx_arr_pop() {
 			M_STR_MATCH([|"${__sx_arr_pop_dest}"|], [|"${__sx_arr_pop_arr}"|], [|"${__sx_arr_pop_arr}"_*|])
 		then
 			unset __sx_arr_pop_arr __sx_arr_pop_len __sx_arr_pop_chk __sx_arr_pop_i __sx_arr_pop_dest
-			return "${SX_EX_USAGE}"
+			return "M_EX_USAGE"
 		fi
 
 		M_STR_APPEND([|__sx_arr_pop_chk|], [|" ${__sx_arr_pop_arr}_${__sx_arr_pop_i}-${__sx_arr_pop_dest}"|])
@@ -11705,7 +11705,7 @@ sx_arr_pop() {
 
 	eval __sx_var_is_copyable "${__sx_arr_pop_chk}" || {
 		case "${?}" in
-			1) set -- "${SX_EX_NOPERM}";;
+			1) set -- "M_EX_NOPERM";;
 			*) set -- "${?}";;
 		esac
 
@@ -11787,9 +11787,9 @@ __sx_arr_pop0() {
 sx_arr_push() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_push "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
-	__sx_var_is_arr "${1}" || return "${SX_EX_DATAERR}"
-	__sx_arr_is_rw "${1}" || return "${SX_EX_NOPERM}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
+	__sx_var_is_arr "${1}" || return "M_EX_DATAERR"
+	__sx_arr_is_rw "${1}" || return "M_EX_NOPERM"
 
 	__sx_arr_push "${@}"
 }
@@ -11838,16 +11838,16 @@ __sx_arr_push() {
 sx_arr_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_quote "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
 	__sx_arr_quote_res="${1}"
 	shift
 
 	sx_var_is_arr "${@}" || {
 		unset __sx_arr_quote_res
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	__sx_arr_quote "${__sx_arr_quote_res}" "${@}"
@@ -11900,15 +11900,15 @@ __sx_arr_quote() {
 sx_arr_rquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_rquote "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return "${SX_EX_USAGE}"
+	sx_var_is_name "${1-}" || return "M_EX_USAGE"
 
-	__sx_var_is_rw "${1-}" || return "${SX_EX_NOPERM}"
+	__sx_var_is_rw "${1-}" || return "M_EX_NOPERM"
 
 	__sx_arr_rquote_res="${1}"
 	shift
 	sx_var_is_arr "${@}" || {
 		unset __sx_arr_rquote_res
-		return "${SX_EX_USAGE}"
+		return "M_EX_USAGE"
 	}
 
 	set -- "${__sx_arr_rquote_res}" "${@}"
