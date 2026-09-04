@@ -3514,7 +3514,7 @@ __sx_var_is_ebind() {
 				;;
 		esac
 
-		__sx_var_is_ebind_arg_="${__sx_var_is_ebind_arg_}:"
+		M_STR_APPEND([|__sx_var_is_ebind_arg_|], [|:|])
 
 		while M_STR_MATCH([|"${__sx_var_is_ebind_arg_}"|], [|*:*|]); do
 			__sx_var_is_ebind_seg_="${__sx_var_is_ebind_arg_%%:*}"
@@ -5691,7 +5691,7 @@ __sx_num_divmod_nat0() {
 			__sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_%${__sx_num_divmod_nat0_qmd_}}"
 		esac
 
-		__sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_}${__sx_num_divmod_nat0_btail_}"
+		M_STR_APPEND([|__sx_num_divmod_nat0_r_|], [|"${__sx_num_divmod_nat0_btail_}"|])
 
 		case "${__sx_num_divmod_nat0_r_}" in 0*)
 			__sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_#"${__sx_num_divmod_nat0_r_%%[!0]*}"}";;
@@ -7407,7 +7407,7 @@ __sx_num_norm() {
 				case "${__sx_num_norm_mnt_}" in
 					*.*)
 						__sx_num_norm_flen_=$((${#__sx_num_norm_mnt_} - ${#__sx_num_norm_dig_} - 1))
-						__sx_num_norm_dig_="${__sx_num_norm_dig_}${__sx_num_norm_mnt_#*.}"
+						M_STR_APPEND([|__sx_num_norm_dig_|], [|"${__sx_num_norm_mnt_#*.}"|])
 						;;
 					*) __sx_num_norm_flen_=0;;
 				esac
@@ -11682,7 +11682,7 @@ sx_arr_pop() {
 			return "${SX_EX_USAGE}"
 		fi
 
-		__sx_arr_pop_chk="${__sx_arr_pop_chk} ${__sx_arr_pop_arr}_${__sx_arr_pop_i}-${__sx_arr_pop_dest}"
+		M_STR_APPEND([|__sx_arr_pop_chk|], [|" ${__sx_arr_pop_arr}_${__sx_arr_pop_i}-${__sx_arr_pop_dest}"|])
 	done
 
 	eval __sx_var_is_copyable "${__sx_arr_pop_chk}" || {
@@ -11916,7 +11916,7 @@ __sx_arr_rquote() {
 
 		while M_NUM_LT([|${1}|], [|${2}|]); do
 			eval __sx_arg_quote __sx_arr_rquote_esc_ "\"\${${__sx_arr_rquote_arr_}_${1}}\""
-			__sx_arr_rquote_out_="${__sx_arr_rquote_esc_}${__sx_arr_rquote_out_:+ }${__sx_arr_rquote_out_}"
+			M_STR_PREPEND([|__sx_arr_rquote_out_|], [|"${__sx_arr_rquote_esc_}"|], [| |])
 
 			set -- "$((${1} + 1))" "${2}"
 		done
