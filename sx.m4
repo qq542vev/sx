@@ -339,7 +339,7 @@ sx_cfg_is_valid() {
 		__sx_cfg_is_valid_out=
 
 		for __sx_cfg_is_valid_vn in NUM_RANGE SKIP_CHK SIG_BASE SIG_ARR SEP; do
-			__sx_cfg_is_valid_out="${__sx_cfg_is_valid_out} ${__sx_cfg_is_valid_vn}=\"\${SX_CFG_${__sx_cfg_is_valid_vn}-}\""
+			M_STR_APPEND([|__sx_cfg_is_valid_out|], [|" ${__sx_cfg_is_valid_vn}=\"\${SX_CFG_${__sx_cfg_is_valid_vn}-}\""|])
 		done
 
 		eval set -- "${__sx_cfg_is_valid_out}"
@@ -392,7 +392,7 @@ sx_cfg_set() {
 	__sx_cfg_set_chk=
 
 	for __sx_cfg_set_arg in "${@}"; do
-		__sx_cfg_set_chk="${__sx_cfg_set_chk} SX_CFG_${__sx_cfg_set_arg%%=*}"
+		M_STR_APPEND([|__sx_cfg_set_chk|], [|" SX_CFG_${__sx_cfg_set_arg%%=*}"|])
 	done
 
 	eval sx_var_is_rw "${__sx_cfg_set_chk}" || {
@@ -663,7 +663,7 @@ __sx_ex_remap() {
 		case "${1}" in
 			"${SX_CFG_SEP}") shift; break;;
 			*:*)
-				__sx_ex_remap_map_="${__sx_ex_remap_map_} '${1}'"
+				M_STR_APPEND([|__sx_ex_remap_map_|], [|" '${1}'"|])
 				shift
 				;;
 			*) break;;
@@ -936,7 +936,7 @@ sx_fn_anon() {
 
 	for __sx_fn_anon_arg in "${@}"; do
 		__sx_arg_quote __sx_fn_anon_arg "f=${__sx_fn_anon_arg}"
-		__sx_fn_anon_chk="${__sx_fn_anon_chk} ${__sx_fn_anon_arg}"
+		M_STR_APPEND([|__sx_fn_anon_chk|], [|" ${__sx_fn_anon_arg}"|])
 	done
 
 	eval sx_fn_is_valid "${__sx_fn_anon_chk}" || {
@@ -2520,7 +2520,7 @@ __sx_arg_resize() {
 			esac
 
 			__sx_arg_quote __sx_arg_resize_group_ "${__sx_arg_resize_group_}"
-			__sx_arg_resize_out_="${__sx_arg_resize_out_} ${__sx_arg_resize_group_}"
+			M_STR_APPEND([|__sx_arg_resize_out_|], [|" ${__sx_arg_resize_group_}"|])
 
 			shift "${__sx_arg_resize_dim_}"
 			M_NUM_DECR([|__sx_arg_resize_cnt_|])
@@ -3152,9 +3152,9 @@ __sx_var_copy() {
 
 		if sx_var_is_set "${__sx_var_copy_src_}"; then
 			eval __sx_arg_quote __sx_var_copy_val_ "\"\${${__sx_var_copy_src_}}\""
-			__sx_var_copy_asg_="${__sx_var_copy_asg_} ${__sx_var_copy_dst_}=${__sx_var_copy_val_};"
+			M_STR_APPEND([|__sx_var_copy_asg_|], [|" ${__sx_var_copy_dst_}=${__sx_var_copy_val_};"|])
 		else
-			__sx_var_copy_asg_="${__sx_var_copy_asg_} unset ${__sx_var_copy_dst_};"
+			M_STR_APPEND([|__sx_var_copy_asg_|], [|" unset ${__sx_var_copy_dst_};"|])
 		fi
 	done
 
@@ -3223,9 +3223,9 @@ __sx_var_dump() {
 	for __sx_var_dump_vn_ in "${@}"; do
 		if sx_var_is_set "${__sx_var_dump_vn_}"; then
 			eval __sx_arg_quote __sx_var_dump_val_ "\"\${${__sx_var_dump_vn_}}\""
-			__sx_var_dump_out_="${__sx_var_dump_out_}${__sx_var_dump_vn_}=${__sx_var_dump_val_}${SX_STR_LF}"
+			M_STR_APPEND([|__sx_var_dump_out_|], [|"${__sx_var_dump_vn_}=${__sx_var_dump_val_}${SX_STR_LF}"|])
 		else
-			__sx_var_dump_out_="${__sx_var_dump_out_}unset ${__sx_var_dump_vn_}${SX_STR_LF}"
+			M_STR_APPEND([|__sx_var_dump_out_|], [|"unset ${__sx_var_dump_vn_}${SX_STR_LF}"|])
 		fi
 	done
 
@@ -3381,7 +3381,7 @@ __sx_var_is_bindable() {
 	for __sx_var_is_bindable_arg_ in "${@}"; do
 		while
 			__sx_var_is_bindable_seg_="${__sx_var_is_bindable_arg_%%:*}"
-			__sx_var_is_bindable_chk_="${__sx_var_is_bindable_chk_} ${__sx_var_is_bindable_seg_#"${__sx_var_is_bindable_seg_%%[!0-9]*}"}"
+			M_STR_APPEND([|__sx_var_is_bindable_chk_|], [|" ${__sx_var_is_bindable_seg_#"${__sx_var_is_bindable_seg_%%[!0-9]*}"}"|])
 			M_STR_HAS([|"${__sx_var_is_bindable_arg_}"|], [|:|])
 		do
 			__sx_var_is_bindable_arg_="${__sx_var_is_bindable_arg_#*:}"
@@ -3457,7 +3457,7 @@ __sx_var_is_copyable() {
 
 	__sx_var_is_copyable_out_=
 	for __sx_var_is_copyable_arg_ in "${@}"; do
-		__sx_var_is_copyable_out_="${__sx_var_is_copyable_out_} ${__sx_var_is_copyable_arg_%%=*}"
+		M_STR_APPEND([|__sx_var_is_copyable_out_|], [|" ${__sx_var_is_copyable_arg_%%=*}"|])
 	done
 
 	eval set -- "${__sx_var_is_copyable_out_}"
@@ -4145,7 +4145,7 @@ sx_var_set() {
 			return "${SX_EX_USAGE}"
 		}
 
-		__sx_var_set_chk="${__sx_var_set_chk} ${__sx_var_set_arg%%=*}"
+		M_STR_APPEND([|__sx_var_set_chk|], [|" ${__sx_var_set_arg%%=*}"|])
 	done
 
 	eval sx_var_is_rw_all "${__sx_var_set_chk}" || {
@@ -4216,11 +4216,11 @@ sx_var_swap() {
 		case "${__sx_var_swap_arg}" in
 			*=*)
 				__sx_var_copy "${__sx_var_swap_arg%%=*}-${__sx_var_swap_tmp}"
-				__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_arg}=${__sx_var_swap_tmp}"
+				M_STR_APPEND([|__sx_var_swap_out|], [|" ${__sx_var_swap_arg}=${__sx_var_swap_tmp}"|])
 				;;
 			*-*)
 				__sx_var_copy "${__sx_var_swap_arg##*-}-${__sx_var_swap_tmp}"
-				__sx_var_swap_out="${__sx_var_swap_out} ${__sx_var_swap_tmp}-${__sx_var_swap_arg}"
+				M_STR_APPEND([|__sx_var_swap_out|], [|" ${__sx_var_swap_tmp}-${__sx_var_swap_arg}"|])
 				;;
 		esac
 	done
@@ -4256,11 +4256,11 @@ __sx_var_swap() {
 		case "${__sx_var_swap_arg_}" in
 			*=*)
 				__sx_var_copy "${__sx_var_swap_arg_%%=*}-${__sx_var_swap_tmp_}"
-				__sx_var_swap_out_="${__sx_var_swap_out_} ${__sx_var_swap_arg_}=${__sx_var_swap_tmp_}"
+				M_STR_APPEND([|__sx_var_swap_out_|], [|" ${__sx_var_swap_arg_}=${__sx_var_swap_tmp_}"|])
 				;;
 			*-*)
 				__sx_var_copy "${__sx_var_swap_arg_##*-}-${__sx_var_swap_tmp_}"
-				__sx_var_swap_out_="${__sx_var_swap_out_} ${__sx_var_swap_tmp_}-${__sx_var_swap_arg_}"
+				M_STR_APPEND([|__sx_var_swap_out_|], [|" ${__sx_var_swap_tmp_}-${__sx_var_swap_arg_}"|])
 				;;
 		esac
 	done
@@ -5110,7 +5110,7 @@ __sx_num_div_nat0() {
 
 			# "0"×dp を前置して '?'×len(dec) を剥ぎ、末尾 dp 桁だけを採用する
 			# （dec は高々 dp 桁のため、桁不足のときのみこのパスに来る）
-			__sx_num_div_nat0_dec_="${__sx_num_div_nat0_zr_}${__sx_num_div_nat0_dec_}"
+			M_STR_PREPEND([|__sx_num_div_nat0_dec_|], [|"${__sx_num_div_nat0_zr_}"|])
 
 			# '?'×len(dec) は ? がパターン一致として働く必要があるため、
 			# 内側の展開は意図的にクォートしない（クォートすると ? がリテラル化して剥ぎ取りが失敗する）
@@ -5125,7 +5125,7 @@ __sx_num_div_nat0() {
 
 	# 小数部が空（小数が 0）なら "." を付けず整数商のまま
 	case "${__sx_num_div_nat0_dec_}" in ?*)
-		__sx_num_div_nat0_q_="${__sx_num_div_nat0_q_}.${__sx_num_div_nat0_dec_}"
+		M_STR_APPEND([|__sx_num_div_nat0_q_|], [|".${__sx_num_div_nat0_dec_}"|])
 	esac
 
 	M_SET([|${__sx_num_div_nat0_res_}|], [|${__sx_num_div_nat0_q_}|])
@@ -5607,7 +5607,7 @@ __sx_num_divmod_nat0() {
 					M_NUM_INCR([|__sx_num_divmod_nat0_carry_|])
 				esac
 
-				__sx_num_divmod_nat0_new_="${__sx_num_divmod_nat0_t_} ${__sx_num_divmod_nat0_new_}"
+				M_STR_PREPEND([|__sx_num_divmod_nat0_new_|], [|"${__sx_num_divmod_nat0_t_} "|])
 				shift 2
 
 				case "${1}" in -)
@@ -5638,7 +5638,7 @@ __sx_num_divmod_nat0() {
 						*) __sx_num_divmod_nat0_ck_=0;;
 					esac
 
-					__sx_num_divmod_nat0_new_="${__sx_num_divmod_nat0_t_} ${__sx_num_divmod_nat0_new_}"
+					M_STR_PREPEND([|__sx_num_divmod_nat0_new_|], [|"${__sx_num_divmod_nat0_t_} "|])
 					shift 2
 
 					case "${1}" in -)
@@ -5658,7 +5658,7 @@ __sx_num_divmod_nat0() {
 				${__sx_num_divmod_nat0_qm_}) __sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_}${__sx_num_divmod_nat0_qhat_}";;
 				*)
 					# 商に qhat を c 桁ゼロ埋めで連結
-					__sx_num_divmod_nat0_qhat_="${__sx_num_divmod_nat0_zr_}${__sx_num_divmod_nat0_qhat_}"
+					M_STR_PREPEND([|__sx_num_divmod_nat0_qhat_|], [|"${__sx_num_divmod_nat0_zr_}"|])
 					__sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_}${__sx_num_divmod_nat0_qhat_#"${__sx_num_divmod_nat0_qhat_%${__sx_num_divmod_nat0_qm_}}"}"
 					;;
 			esac
@@ -5680,7 +5680,7 @@ __sx_num_divmod_nat0() {
 			case "${__sx_num_divmod_nat0_uw_}" in
 				${__sx_num_divmod_nat0_qm_}) __sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_}${__sx_num_divmod_nat0_uw_}";;
 				*)
-					__sx_num_divmod_nat0_uw_="${__sx_num_divmod_nat0_zr_}${__sx_num_divmod_nat0_uw_}"
+					M_STR_PREPEND([|__sx_num_divmod_nat0_uw_|], [|"${__sx_num_divmod_nat0_zr_}"|])
 					__sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_}${__sx_num_divmod_nat0_uw_#"${__sx_num_divmod_nat0_uw_%${__sx_num_divmod_nat0_qm_}}"}"
 					;;
 			esac
@@ -6932,7 +6932,7 @@ __sx_num_mul_int() {
 			-*) __sx_num_mul_int_qty_=$((~__sx_num_mul_int_qty_));;
 		esac
 
-		__sx_num_mul_int_abs_args_="${__sx_num_mul_int_abs_args_} ${__sx_num_mul_int_arg_#[+-]}"
+		M_STR_APPEND([|__sx_num_mul_int_abs_args_|], [|" ${__sx_num_mul_int_arg_#[+-]}"|])
 	done
 
 	case "$((__sx_num_mul_int_qty_ & 1))" in
@@ -7137,7 +7137,7 @@ __sx_num_mul_nat0() {
 					case "${__sx_num_mul_nat0_ch_b_}" in
 						0*[1-9]*) __sx_num_mul_nat0_ch_b_=$((1${__sx_num_mul_nat0_ch_b_} - 1${__sx_num_mul_nat0_zchunk_b_}));;
 						0*)
-							__sx_num_mul_nat0_shift_="${__sx_num_mul_nat0_zchunk_b_}${__sx_num_mul_nat0_shift_}"
+							M_STR_PREPEND([|__sx_num_mul_nat0_shift_|], [|"${__sx_num_mul_nat0_zchunk_b_}"|])
 							continue
 							;;
 					esac
@@ -7181,7 +7181,7 @@ __sx_num_mul_nat0() {
 			# 部分積を結果リストに追加
 			__sx_num_add_nat0 __sx_num_mul_nat0_a_ "${__sx_num_mul_nat0_a_}" "${__sx_num_mul_nat0_carry_}${__sx_num_mul_nat0_g_}${__sx_num_mul_nat0_shift_}"
 
-			__sx_num_mul_nat0_shift_="${__sx_num_mul_nat0_zchunk_b_}${__sx_num_mul_nat0_shift_}"
+			M_STR_PREPEND([|__sx_num_mul_nat0_shift_|], [|"${__sx_num_mul_nat0_zchunk_b_}"|])
 			M_STR_NE([|"${__sx_num_mul_nat0_b_}"|], [|''|])
 		do :; done
 	done
@@ -7842,7 +7842,7 @@ __sx_num_sub_nat0() {
 			0::)
 				# 両方の剰余が枯渇 → tmp_ が最上位桁、先頭ゼロ除去のみでゼロ埋め不要
 				case "${__sx_num_sub_nat0_tmp_}" in [!0]*)
-					__sx_num_sub_nat0_out_="${__sx_num_sub_nat0_tmp_}${__sx_num_sub_nat0_out_}"
+					M_STR_PREPEND([|__sx_num_sub_nat0_out_|], [|"${__sx_num_sub_nat0_tmp_}"|])
 				esac && ! :
 				;;
 			0:*:)
@@ -11096,7 +11096,7 @@ sx_arr_at() {
 			fi
 
 			# コピー連鎖式の構築 (src-dest)
-			__sx_arr_at_chk="${__sx_arr_at_chk} ${__sx_arr_at_arr}_${__sx_arr_at_i}-${__sx_arr_at_dest}"
+			M_STR_APPEND([|__sx_arr_at_chk|], [|" ${__sx_arr_at_arr}_${__sx_arr_at_i}-${__sx_arr_at_dest}"|])
 		esac
 	done
 
@@ -11144,7 +11144,7 @@ __sx_arr_at() {
 		esac
 
 		case "${__sx_arr_at_pair_}" in *?=*)
-			__sx_arr_at_chk_="${__sx_arr_at_chk_} ${__sx_arr_at_arr_}_${__sx_arr_at_i_}-${__sx_arr_at_pair_%%=*}"
+			M_STR_APPEND([|__sx_arr_at_chk_|], [|" ${__sx_arr_at_arr_}_${__sx_arr_at_i_}-${__sx_arr_at_pair_%%=*}"|])
 		esac
 	done
 
@@ -11237,8 +11237,8 @@ __sx_arr_is_rw() {
 			__sx_arr_is_rw_rest_="${__sx_arr_is_rw_rest_#*"${SX_STR_LF}readonly ${__sx_arr_is_rw_arg_}"}"
 
 			case "${__sx_arr_is_rw_rest_}" in
-				[${SX_STR_LF}=]*) __sx_arr_is_rw_out_="${__sx_arr_is_rw_out_} ${__sx_arr_is_rw_arg_}";;
-				_len[${SX_STR_LF}=]*) __sx_arr_is_rw_out_="${__sx_arr_is_rw_out_} ${__sx_arr_is_rw_arg_}_len";;
+				[${SX_STR_LF}=]*) M_STR_APPEND([|__sx_arr_is_rw_out_|], [|" ${__sx_arr_is_rw_arg_}"|]);;
+				_len[${SX_STR_LF}=]*) M_STR_APPEND([|__sx_arr_is_rw_out_|], [|" ${__sx_arr_is_rw_arg_}_len"|]);;
 				_[0-9]*)
 					__sx_arr_is_rw_tmp_="${__sx_arr_is_rw_rest_%%[${SX_STR_LF}=]*}"
 
@@ -11246,7 +11246,7 @@ __sx_arr_is_rw() {
 						__sx_arr_is_rw_tmp_="${__sx_arr_is_rw_tmp_#_}"
 
 						if __sx_num_is_nat0_base 10 "${__sx_arr_is_rw_tmp_%%_*}"; then
-							__sx_arr_is_rw_out_="${__sx_arr_is_rw_out_} ${__sx_arr_is_rw_arg_}_${__sx_arr_is_rw_tmp_}"
+							M_STR_APPEND([|__sx_arr_is_rw_out_|], [|" ${__sx_arr_is_rw_arg_}_${__sx_arr_is_rw_tmp_}"|])
 						fi
 					fi
 					;;
@@ -11311,12 +11311,12 @@ __sx_arr_is_bindable() {
 
 					case "${__sx_arr_is_bindable_name_}" in *["_${SX_STR_ALPHA}"]*)
 						__sx_arr_is_bindable_name_="${__sx_arr_is_bindable_name_#"${__sx_arr_is_bindable_name_%%[!0-9]*}"}"
-						__sx_arr_is_bindable_chk_="${__sx_arr_is_bindable_chk_} ${__sx_arr_is_bindable_name_} ${__sx_arr_is_bindable_name_}_len"
+						M_STR_APPEND([|__sx_arr_is_bindable_chk_|], [|" ${__sx_arr_is_bindable_name_} ${__sx_arr_is_bindable_name_}_len"|])
 					esac
 					;;
 				:*) ;;
-				*:*) __sx_arr_is_bindable_chk_="${__sx_arr_is_bindable_chk_} ${__sx_arr_is_bindable_arg_%%:*}";;
-				?*) __sx_arr_is_bindable_chk_="${__sx_arr_is_bindable_chk_} ${__sx_arr_is_bindable_arg_} ${__sx_arr_is_bindable_arg_}_len";&
+				*:*) M_STR_APPEND([|__sx_arr_is_bindable_chk_|], [|" ${__sx_arr_is_bindable_arg_%%:*}"|]);;
+				?*) M_STR_APPEND([|__sx_arr_is_bindable_chk_|], [|" ${__sx_arr_is_bindable_arg_} ${__sx_arr_is_bindable_arg_}_len"|]);&
 				*) ! :;;
 			esac
 		do
@@ -11535,7 +11535,7 @@ sx_arr_cat() {
 
 		while M_NUM_LT([|__sx_arr_cat_i|], [|__sx_arr_cat_len|]); do
 			__sx_arr_bind __sx_arr_cat_bind __sx_arr_cat_blk "${__sx_arr_cat_bind}" "${__sx_arr_cat_arr}_${__sx_arr_cat_i}" || break 2
-			__sx_arr_cat_chain="${__sx_arr_cat_chain} ${__sx_arr_cat_blk}"
+			M_STR_APPEND([|__sx_arr_cat_chain|], [|" ${__sx_arr_cat_blk}"|])
 			M_NUM_INCR([|__sx_arr_cat_i|])
 		done
 	done
