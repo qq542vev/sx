@@ -8227,7 +8227,7 @@ __sx_str_chunk() {
 		__sx_str_chunk_cycle_="${__sx_str_chunk_cycle_#*:}"
 
 		__sx_str_qm __sx_str_chunk_qm_ "${__sx_str_chunk_cur_#-}"
-		__sx_str_chunk_newcycle_="${__sx_str_chunk_newcycle_}$((0 <= __sx_str_chunk_cur_))${__sx_str_chunk_qm_}:"
+		M_STR_APPEND([|__sx_str_chunk_newcycle_|], [|"$((0 <= __sx_str_chunk_cur_))${__sx_str_chunk_qm_}:"|])
 	done
 
 	__sx_str_chunk_cycle_="${__sx_str_chunk_newcycle_}"
