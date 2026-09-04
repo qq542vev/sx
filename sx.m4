@@ -13,6 +13,8 @@ define([|M_NUM_AMP|], [|ifelse($#, 1, [|$1=$(($1 * 2))|], [|$1=$(($1 * $2))|])|]
 define([|M_STR_APPEND|], [|ifelse($#, 2, [|$1="${$1}"$2|], [|$1="${$1}${$1:+$3}"$2|])|]) dnl
 define([|M_STR_PREPEND|], [|ifelse($#, 2, [|$1=$2"${$1}"|], [|$1=$2"${$1:+$3}${$1}"|])|]) dnl
 define([|M_STR_WRAP|], [|$1=$2"${$1}"$3|]) dnl
+define([|M_STR_LTRIM|], [|${$1#"${$1%%$2*}"}|]) dnl
+define([|M_STR_RTRIM|], [|${$1%"${$1##*$2}"}|]) dnl
 
 define([|M_EX_OK|], [|0|]) dnl
 define([|M_EX_USAGE|], [|64|]) dnl
@@ -3004,7 +3006,7 @@ __sx_var_bind_init() {
 
 			case "${__sx_var_bind_init_seg_}" in
 				[1-9]*)
-					__sx_var_bind_init_seg_="${__sx_var_bind_init_seg_#"${__sx_var_bind_init_seg_%%[!0-9]*}"}"
+					__sx_var_bind_init_seg_="M_STR_LTRIM([|__sx_var_bind_init_seg_|], [|[!0-9]|])"
 					__sx_var_bind_init_set_=1
 					;;
 				*) __sx_var_bind_init_set_=0;;
@@ -3400,7 +3402,7 @@ __sx_var_is_bindable() {
 	for __sx_var_is_bindable_arg_ in "${@}"; do
 		while
 			__sx_var_is_bindable_seg_="${__sx_var_is_bindable_arg_%%:*}"
-			M_STR_APPEND([|__sx_var_is_bindable_chk_|], [|" ${__sx_var_is_bindable_seg_#"${__sx_var_is_bindable_seg_%%[!0-9]*}"}"|])
+			M_STR_APPEND([|__sx_var_is_bindable_chk_|], [|" M_STR_LTRIM([|__sx_var_is_bindable_seg_|], [|[!0-9]|])"|])
 			M_STR_HAS([|"${__sx_var_is_bindable_arg_}"|], [|:|])
 		do
 			__sx_var_is_bindable_arg_="${__sx_var_is_bindable_arg_#*:}"
@@ -5138,7 +5140,7 @@ __sx_num_div_nat0() {
 
 		# 小数部の末尾 0 を除去する
 		case "${__sx_num_div_nat0_dec_}" in *0)
-			__sx_num_div_nat0_dec_="${__sx_num_div_nat0_dec_%"${__sx_num_div_nat0_dec_##*[!0]}"}";;
+			__sx_num_div_nat0_dec_="M_STR_RTRIM([|__sx_num_div_nat0_dec_|], [|[!0]|])";;
 		esac
 	esac
 
@@ -5390,7 +5392,7 @@ __sx_num_divmod_nat0() {
 
 		# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
 		case "${__sx_num_divmod_nat0_r_}" in 0*)
-			__sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_#"${__sx_num_divmod_nat0_r_%%[!0]*}"}"
+			__sx_num_divmod_nat0_r_="M_STR_LTRIM([|__sx_num_divmod_nat0_r_|], [|[!0]|])"
 		esac
 	elif
 		# ステップ 6: 高速パス 5 — 除数が (WLEN-1)*9/10 桁以内なら語単位のネイティブ筆算
@@ -5454,7 +5456,7 @@ __sx_num_divmod_nat0() {
 		do :; done
 
 		case "${__sx_num_divmod_nat0_q_}" in 0*)
-			__sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_#"${__sx_num_divmod_nat0_q_%%[!0]*}"}"
+			__sx_num_divmod_nat0_q_="M_STR_LTRIM([|__sx_num_divmod_nat0_q_|], [|[!0]|])"
 		esac
 
 		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
@@ -5466,7 +5468,7 @@ __sx_num_divmod_nat0() {
 			M_STR_APPEND([|__sx_num_divmod_nat0_r_|], [|"${__sx_num_divmod_nat0_btail_}"|])
 
 			case "${__sx_num_divmod_nat0_r_}" in 0*)
-				__sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_#"${__sx_num_divmod_nat0_r_%%[!0]*}"}";;
+				__sx_num_divmod_nat0_r_="M_STR_LTRIM([|__sx_num_divmod_nat0_r_|], [|[!0]|])";;
 			esac
 	else
 		# 語サイズ c の決定
@@ -5684,7 +5686,7 @@ __sx_num_divmod_nat0() {
 		done
 
 		case "${__sx_num_divmod_nat0_q_}" in 0*)
-			__sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_q_#"${__sx_num_divmod_nat0_q_%%[!0]*}"}"
+			__sx_num_divmod_nat0_q_="M_STR_LTRIM([|__sx_num_divmod_nat0_q_|], [|[!0]|])"
 		esac
 
 		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
@@ -5713,7 +5715,7 @@ __sx_num_divmod_nat0() {
 		M_STR_APPEND([|__sx_num_divmod_nat0_r_|], [|"${__sx_num_divmod_nat0_btail_}"|])
 
 		case "${__sx_num_divmod_nat0_r_}" in 0*)
-			__sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_#"${__sx_num_divmod_nat0_r_%%[!0]*}"}";;
+			__sx_num_divmod_nat0_r_="M_STR_LTRIM([|__sx_num_divmod_nat0_r_|], [|[!0]|])";;
 		esac
 	fi
 
@@ -7194,7 +7196,7 @@ __sx_num_mul_nat0() {
 			done
 
 			case "${__sx_num_mul_nat0_carry_}:${__sx_num_mul_nat0_g_}" in :0*)
-				__sx_num_mul_nat0_g_="${__sx_num_mul_nat0_g_#"${__sx_num_mul_nat0_g_%%[!0]*}"}"
+				__sx_num_mul_nat0_g_="M_STR_LTRIM([|__sx_num_mul_nat0_g_|], [|[!0]|])"
 			esac
 
 			# 部分積を結果リストに追加
@@ -7447,7 +7449,7 @@ __sx_num_norm() {
 					fi
 				fi
 
-				__sx_num_norm_in_="${__sx_num_norm_in_#"${__sx_num_norm_in_%%[!0]*}"}"
+				__sx_num_norm_in_="M_STR_LTRIM([|__sx_num_norm_in_|], [|[!0]|])"
 
 				case "${__sx_num_norm_in_}" in .*)
 					M_STR_PREPEND([|__sx_num_norm_in_|], [|0|])
@@ -7458,7 +7460,7 @@ __sx_num_norm() {
 
 		# 小数点以下のクリーンアップ
 		case "${__sx_num_norm_in_}" in *.*)
-			__sx_num_norm_in_="${__sx_num_norm_in_%"${__sx_num_norm_in_##*[!0]}"}"
+			__sx_num_norm_in_="M_STR_RTRIM([|__sx_num_norm_in_|], [|[!0]|])"
 			__sx_num_norm_in_="${__sx_num_norm_in_%.}"
 		esac
 
@@ -8546,7 +8548,7 @@ __sx_str_etrim() {
 		return M_EX_OK
 	esac
 
-	M_VAR_SET([|${1}|], [|${2%"${2##*[!"${3}"]}"}|])
+	M_VAR_SET([|${1}|], [|M_STR_RTRIM([|2|], [|[!"${3}"]|])|])
 }
 
 ### sx_str_ew - 第一引数が、第二引数以降のいずれかの文字列で終わっているか確認する
@@ -10150,7 +10152,7 @@ __sx_str_squish() {
 	while M_STR_HAS([|"${__sx_str_squish_str_}"|], [|["${3}"]|]); do
 		M_STR_APPEND([|__sx_str_squish_out_|], [|"${__sx_str_squish_str_%%["${3}"]*}${4}"|])
 		__sx_str_squish_str_="${__sx_str_squish_str_#*["${3}"]}"
-		__sx_str_squish_str_="${__sx_str_squish_str_#"${__sx_str_squish_str_%%[!"${3}"]*}"}"
+		__sx_str_squish_str_="M_STR_LTRIM([|__sx_str_squish_str_|], [|[!"${3}"]|])"
 	done
 
 	M_VAR_SET([|${1}|], [|${__sx_str_squish_out_}${__sx_str_squish_str_}|])
@@ -10202,7 +10204,7 @@ __sx_str_strim() {
 		return M_EX_OK
 	esac
 
-	M_VAR_SET([|${1}|], [|${2#"${2%%[!"${3}"]*}"}|])
+	M_VAR_SET([|${1}|], [|M_STR_LTRIM([|2|], [|[!"${3}"]|])|])
 }
 
 ### sx_str_sub - 文字列内のパターンを置換する
@@ -11277,6 +11279,7 @@ __sx_arr_is_rw() {
 
 	__sx_var_is_rw "${@}" || return
 }
+
 ### sx_arr_is_bindable - バインド形式が有効であり、かつ配列を含む全変数が書き込み可能か確認する
 ##
 ## 使い方:
@@ -11328,7 +11331,7 @@ __sx_arr_is_bindable() {
 					__sx_arr_is_bindable_name_="${__sx_arr_is_bindable_arg_%%:*}"
 
 					case "${__sx_arr_is_bindable_name_}" in *["_${SX_STR_ALPHA}"]*)
-						__sx_arr_is_bindable_name_="${__sx_arr_is_bindable_name_#"${__sx_arr_is_bindable_name_%%[!0-9]*}"}"
+						__sx_arr_is_bindable_name_="M_STR_LTRIM([|__sx_arr_is_bindable_name_|], [|[!0-9]|])"
 						M_STR_APPEND([|__sx_arr_is_bindable_chk_|], [|" ${__sx_arr_is_bindable_name_} ${__sx_arr_is_bindable_name_}_len"|])
 					esac
 					;;
