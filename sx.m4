@@ -13,6 +13,23 @@ define([|M_STR_APPEND|], [|ifelse($#, 2, [|$1="${$1}"$2|], [|$1="${$1}${$1:+$3}"
 define([|M_STR_PREPEND|], [|ifelse($#, 2, [|$1=$2"${$1}"|], [|$1=$2"${$1:+$3}${$1}"|])|]) dnl
 define([|M_STR_WRAP|], [|$1=$2"${$1}"$3|]) dnl
 
+define([|M_EX_OK|], [|0|]) dnl
+define([|M_EX_USAGE|], [|64|]) dnl
+define([|M_EX_DATAERR|], [|65|]) dnl
+define([|M_EX_NOINPUT|], [|66|]) dnl
+define([|M_EX_NOUSER|], [|67|]) dnl
+define([|M_EX_NOHOST|], [|68|]) dnl
+define([|M_EX_UNAVAILABLE|], [|69|]) dnl
+define([|M_EX_SOFTWARE|], [|70|]) dnl
+define([|M_EX_OSERR|], [|71|]) dnl
+define([|M_EX_OSFILE|], [|72|]) dnl
+define([|M_EX_CANTCREAT|], [|73|]) dnl
+define([|M_EX_IOERR|], [|74|]) dnl
+define([|M_EX_TEMPFAIL|], [|75|]) dnl
+define([|M_EX_PROTOCOL|], [|76|]) dnl
+define([|M_EX_NOPERM|], [|77|]) dnl
+define([|M_EX_CONFIG|], [|78|]) dnl
+
 define([|M_STR_EQ|], [|dnl
 { case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, [|&& __M_STR_EQ_REST(shift($@))|]); }dnl
 |]) dnl
