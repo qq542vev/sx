@@ -4637,7 +4637,7 @@ __sx_num_add_nat0() {
 						*)
 							# ゼロ埋めして前置（片方のチャンクが先頭ゼロ除去で短くなった場合の桁揃え）
 							M_NUM_INCR([|__sx_num_add_nat0_tmp_|], [|__sx_num_add_nat0_b_|])
-							__sx_num_add_nat0_rem1_="${__sx_num_add_nat0_rem1_}${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_#1}${__sx_num_add_nat0_out_}"
+							M_STR_APPEND([|__sx_num_add_nat0_rem1_|], [|"${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_#1}${__sx_num_add_nat0_out_}"|])
 							;;
 						esac && ! :;;
 				0:*)
@@ -5509,7 +5509,7 @@ __sx_num_divmod_nat0() {
 				__sx_num_divmod_nat0_chunk_=$((1${__sx_num_divmod_nat0_chunk_} - __sx_num_divmod_nat0_b_))
 			esac
 
-			__sx_num_divmod_nat0_vstr_="${__sx_num_divmod_nat0_chunk_} \"\${${__sx_num_divmod_nat0_n_}}\" ${__sx_num_divmod_nat0_vstr_}"
+			M_STR_PREPEND([|__sx_num_divmod_nat0_vstr_|], [|"${__sx_num_divmod_nat0_chunk_} \"\${${__sx_num_divmod_nat0_n_}}\" "|])
 
 			case "${__sx_num_divmod_nat0_n_}" in [12])
 				eval "__sx_num_divmod_nat0_v${__sx_num_divmod_nat0_n_}_=\${__sx_num_divmod_nat0_chunk_}"
@@ -7851,7 +7851,7 @@ __sx_num_sub_nat0() {
 					*)
 						# rem2 のみ枯渇、rem1 に未処理チャンクあり → ゼロ埋めして桁揃え
 						M_NUM_INCR([|__sx_num_sub_nat0_tmp_|], [|__sx_num_sub_nat0_b_|])
-						__sx_num_sub_nat0_out_="${__sx_num_sub_nat0_rem1_}${__sx_num_sub_nat0_tmp_#1}${__sx_num_sub_nat0_out_}"
+						M_STR_PREPEND([|__sx_num_sub_nat0_out_|], [|"${__sx_num_sub_nat0_rem1_}${__sx_num_sub_nat0_tmp_#1}"|])
 						;;
 				esac && ! :
 				;;
@@ -10129,7 +10129,7 @@ __sx_str_squish() {
 
 	__sx_str_squish_out_=
 	while M_STR_HAS([|"${__sx_str_squish_str_}"|], [|["${3}"]|]); do
-		__sx_str_squish_out_="${__sx_str_squish_out_}${__sx_str_squish_str_%%["${3}"]*}${4}"
+		M_STR_APPEND([|__sx_str_squish_out_|], [|"${__sx_str_squish_str_%%["${3}"]*}${4}"|])
 		__sx_str_squish_str_="${__sx_str_squish_str_#*["${3}"]}"
 		__sx_str_squish_str_="${__sx_str_squish_str_#"${__sx_str_squish_str_%%[!"${3}"]*}"}"
 	done
