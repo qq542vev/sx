@@ -56,6 +56,8 @@ define([|M_NUM_LE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<=, $@)))|], 0)|]) dnl
 define([|M_NUM_LT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<, $@)))|], 0)|]) dnl
 define([|M_NUM_NE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(!=, $@)))|], 0)|]) dnl
 define([|M_NUM_BOOL|], [|M_STR_NE([|$(($1))|], 0)|]) dnl
+define([|M_RENAME_Q|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Za-z]*\)|], [|\1__sx_$2_\2|])|]) dnl
+define([|M_RENAME_QI|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Za-z]*\)|], [|\1__sx_$2_\2_|])|]) dnl
 
 define([|__M_QUOTE_PREPEND|], [|dnl
 	case $3 in
@@ -4467,8 +4469,8 @@ __sx_var_unset() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|V|], [|__sx_num_add_int_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
+M_RENAME_Q([|
+define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_add_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add_int "${@}" || return; return 0;; esac
@@ -4479,7 +4481,7 @@ sx_num_add_int() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_num_add_int_res="${1}"
+	Q_res="${1}"
 	shift
 
 	__sx_num_is_int_base 10 "${@}" || {
@@ -4487,9 +4489,10 @@ sx_num_add_int() {
 		return M_EX_USAGE
 	}
 
-	__sx_num_add_int "${__sx_num_add_int_res}" "${@}"
+	__sx_num_add_int "${Q_res}" "${@}"
 	unset CLEANUP
 }
+|], [|num_add_int|])dnl
 
 ### __sx_num_add_int - 複数の符号付き整数を加算する（内部用）
 ##
