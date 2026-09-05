@@ -4671,7 +4671,7 @@ __sx_num_add_nat0() {
 							;;
 					esac
 					;;
-				*) __sx_num_add_nat0_out_="${__sx_num_add_nat0_tmp_#?}${__sx_num_add_nat0_out_}";;
+				*) M_STR_PREPEND([|__sx_num_add_nat0_out_|], [|"${__sx_num_add_nat0_tmp_#1}"|]);;
 			esac
 		do :; done
 	done
