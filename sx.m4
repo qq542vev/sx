@@ -3021,6 +3021,8 @@ __sx_var_bind_init() {
 				*:*) __sx_var_bind_init_arg_="${__sx_var_bind_init_arg_#*:}";;
 				*) break;;
 			esac
+
+			continue
 		do :; done
 
 		case "${__sx_var_bind_init_seg_}" in ?*)
@@ -5458,6 +5460,8 @@ __sx_num_divmod_nat0() {
 					M_STR_APPEND([|__sx_num_divmod_nat0_q_|], [|"${__sx_num_divmod_nat0_tmp_#1}"|])
 					;;
 			esac
+
+			continue
 		do :; done
 
 		case "${__sx_num_divmod_nat0_q_}" in 0*)
@@ -5546,6 +5550,8 @@ __sx_num_divmod_nat0() {
 			esac
 
 			__sx_num_add_nat0 __sx_num_divmod_nat0_n_ "${__sx_num_divmod_nat0_n_}" 1
+
+			continue
 		do :; done
 
 		# ステップ 7.2 の u 側: u' を K 語に分割する。語は変数ではなく位置パラメータ上で保持する
@@ -5581,6 +5587,8 @@ __sx_num_divmod_nat0() {
 			esac
 
 			set -- "${__sx_num_divmod_nat0_chunk_}" "${@}"
+
+			continue
 		do :; done
 
 		set -- 0 "${@}"
@@ -5640,6 +5648,8 @@ __sx_num_divmod_nat0() {
 					shift
 					break
 				esac
+
+				continue
 			do :; done
 
 			M_NUM_DECR([|__sx_num_divmod_nat0_ut_|], [|__sx_num_divmod_nat0_carry_|])
@@ -5671,6 +5681,8 @@ __sx_num_divmod_nat0() {
 						shift
 						break
 					esac
+
+					continue
 				do :; done
 
 				shift "${__sx_num_divmod_nat0_n_}"
