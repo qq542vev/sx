@@ -4651,7 +4651,7 @@ __sx_num_add_nat0() {
 			__sx_num_add_nat0_carry_=$((__sx_num_add_nat0_b_ <= ${__sx_num_add_nat0_tmp_}))
 
 			case "${__sx_num_add_nat0_carry_}:${__sx_num_add_nat0_rem1_}:${__sx_num_add_nat0_rem2_}" in
-				?::) __sx_num_add_nat0_rem1_="${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}" && ! :;;
+				?::) __sx_num_add_nat0_rem1_="${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}" && break;;
 				0:?*: | 0::?*)
 					case "${__sx_num_add_nat0_tmp_}" in
 						${__sx_num_add_nat0_qm_}) M_STR_APPEND([|__sx_num_add_nat0_rem1_|], [|"${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}"|]);;
@@ -4660,7 +4660,10 @@ __sx_num_add_nat0() {
 							M_NUM_INCR([|__sx_num_add_nat0_tmp_|], [|__sx_num_add_nat0_b_|])
 							M_STR_APPEND([|__sx_num_add_nat0_rem1_|], [|"${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_#1}${__sx_num_add_nat0_out_}"|])
 							;;
-						esac && ! :;;
+						esac
+
+						break
+						;;
 				0:*)
 					case "${__sx_num_add_nat0_tmp_}" in
 						${__sx_num_add_nat0_qm_}) M_STR_PREPEND([|__sx_num_add_nat0_out_|], [|"${__sx_num_add_nat0_tmp_}"|]);;
@@ -4673,6 +4676,8 @@ __sx_num_add_nat0() {
 					;;
 				*) M_STR_PREPEND([|__sx_num_add_nat0_out_|], [|"${__sx_num_add_nat0_tmp_#1}"|]);;
 			esac
+
+			continue
 		do :; done
 	done
 
