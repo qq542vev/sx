@@ -7158,8 +7158,10 @@ __sx_num_mul_nat0() {
 						*) set -- "${@}" "${__sx_num_mul_nat0_ch_a_}";;
 					esac
 					;;
-				*) set -- "${@}" "${__sx_num_mul_nat0_a_}" && ! :;;
+				*) set -- "${@}" "${__sx_num_mul_nat0_a_}" && break;;
 			esac
+
+			continue
 		do :; done
 
 		__sx_num_mul_nat0_a_=0
@@ -7167,6 +7169,7 @@ __sx_num_mul_nat0() {
 		# b を opt_x 桁ずつ分割しながら a の全チャンクと乗算
 		while
 			case "${__sx_num_mul_nat0_b_}" in
+				'') break;;
 				${__sx_num_mul_nat0_qchunk_b_}?*)
 					__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_%${__sx_num_mul_nat0_qchunk_b_}}"
 					__sx_num_mul_nat0_ch_b_="${__sx_num_mul_nat0_b_#"${__sx_num_mul_nat0_tmp_}"}"
@@ -7220,7 +7223,7 @@ __sx_num_mul_nat0() {
 			__sx_num_add_nat0 __sx_num_mul_nat0_a_ "${__sx_num_mul_nat0_a_}" "${__sx_num_mul_nat0_carry_}${__sx_num_mul_nat0_g_}${__sx_num_mul_nat0_shift_}"
 
 			M_STR_PREPEND([|__sx_num_mul_nat0_shift_|], [|"${__sx_num_mul_nat0_zchunk_b_}"|])
-			M_STR_NE([|"${__sx_num_mul_nat0_b_}"|], [|''|])
+			continue
 		do :; done
 	done
 
@@ -7881,7 +7884,9 @@ __sx_num_sub_nat0() {
 				# 両方の剰余が枯渇 → tmp_ が最上位桁、先頭ゼロ除去のみでゼロ埋め不要
 				case "${__sx_num_sub_nat0_tmp_}" in [!0]*)
 					M_STR_PREPEND([|__sx_num_sub_nat0_out_|], [|"${__sx_num_sub_nat0_tmp_}"|])
-				esac && ! :
+				esac
+
+				break
 				;;
 			0:*:)
 				case "${__sx_num_sub_nat0_tmp_}" in
@@ -7891,7 +7896,9 @@ __sx_num_sub_nat0() {
 						M_NUM_INCR([|__sx_num_sub_nat0_tmp_|], [|__sx_num_sub_nat0_b_|])
 						M_STR_PREPEND([|__sx_num_sub_nat0_out_|], [|"${__sx_num_sub_nat0_rem1_}${__sx_num_sub_nat0_tmp_#1}"|])
 						;;
-				esac && ! :
+				esac
+
+				break
 				;;
 			1:*) M_NUM_INCR([|__sx_num_sub_nat0_tmp_|], [|__sx_num_sub_nat0_b_|]);&
 			*)
@@ -7904,6 +7911,8 @@ __sx_num_sub_nat0() {
 				esac
 				;;
 		esac
+
+		continue
 	do :; done
 
 	M_VAR_SET([|${__sx_num_sub_nat0_res_}|], [|${__sx_num_sub_nat0_out_:-0}|])
