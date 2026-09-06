@@ -3330,8 +3330,8 @@ sx_var_is_bind() {
 	__sx_var_is_bind "${@}"
 }
 
-define([|V|], [|__sx_var_is_bind_$1_|])dnl
-define([|CLEANUP|], [|V(arg) V(bind)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_arg Q_bind|])dnl
 
 ### __sx_var_is_bind - 文字列が分配代入バインド形式として有効か確認する（内部用）
 ##
@@ -3341,23 +3341,23 @@ define([|CLEANUP|], [|V(arg) V(bind)|])dnl
 ## 説明:
 ##   sx_var_is_bind の内部実装。SX_CFG_NUM_RANGE の妥当性チェックは行わない。
 __sx_var_is_bind() {
-	for __sx_var_is_bind_arg_ in "${@}"; do
-		case "${__sx_var_is_bind_arg_}" in *[!"${SX_STR_WORD}":]* | 0* | *:0*)
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in *[!"${SX_STR_WORD}":]* | 0* | *:0*)
 			unset CLEANUP
 			return 1
 		esac
 
-		case "${__sx_var_is_bind_arg_##*:}" in [0-9]*)
+		case "${Q_arg##*:}" in [0-9]*)
 			unset CLEANUP
 			return 1
 		esac
 
-		__sx_var_is_bind_bind_=":${__sx_var_is_bind_arg_}"
+		Q_bind=":${Q_arg}"
 
-		while M_STR_MATCH([|"${__sx_var_is_bind_bind_}"|], [|*:[1-9]*|]); do
-			__sx_var_is_bind_bind_="${__sx_var_is_bind_bind_#"${__sx_var_is_bind_bind_%%:[1-9]*}:"}"
+		while M_STR_MATCH([|"${Q_bind}"|], [|*:[1-9]*|]); do
+			Q_bind="${Q_bind#"${Q_bind%%:[1-9]*}:"}"
 
-			__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_var_is_bind_bind_%%[!0-9]*}" || {
+			__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_bind%%[!0-9]*}" || {
 				unset CLEANUP
 				return 1
 			}
@@ -3366,6 +3366,7 @@ __sx_var_is_bind() {
 
 	unset CLEANUP
 }
+|], [|var_is_bind|])dnl
 
 ### sx_var_is_bindable - バインド形式が有効であり、かつ全変数が書き込み可能か確認する
 ##
@@ -3517,8 +3518,8 @@ sx_var_is_ebind() {
 	__sx_var_is_ebind "${@}"
 }
 
-define([|V|], [|__sx_var_is_ebind_$1_|])dnl
-define([|CLEANUP|], [|V(arg) V(seg) V(m) V(n)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_arg Q_seg Q_m Q_n|])dnl
 
 ### __sx_var_is_ebind - 文字列が拡張バインド形式として有効か確認する（内部用）
 ##
@@ -3528,13 +3529,13 @@ define([|CLEANUP|], [|V(arg) V(seg) V(m) V(n)|])dnl
 ## 説明:
 ##   sx_var_is_ebind の内部実装。SX_CFG_NUM_RANGE の妥当性チェックは行わない。
 __sx_var_is_ebind() {
-	for __sx_var_is_ebind_arg_ in "${@}"; do
-		case "${__sx_var_is_ebind_arg_}" in *[!"${SX_STR_WORD}":/]* | 0[!/]* | *:0[!/]* | /* | */ | *:/* | */[!1-9]*)
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in *[!"${SX_STR_WORD}":/]* | 0[!/]* | *:0[!/]* | /* | */ | *:/* | */[!1-9]*)
 			unset CLEANUP
 			return 1
 		esac
 
-		case "${__sx_var_is_ebind_arg_##*:}" in
+		case "${Q_arg##*:}" in
 			'' | *[!0-9/]*) ;;
 			*)
 				unset CLEANUP
@@ -3542,28 +3543,28 @@ __sx_var_is_ebind() {
 				;;
 		esac
 
-		M_STR_APPEND([|__sx_var_is_ebind_arg_|], [|:|])
+		M_STR_APPEND([|Q_arg|], [|:|])
 
-		while M_STR_MATCH([|"${__sx_var_is_ebind_arg_}"|], [|*:*|]); do
-			__sx_var_is_ebind_seg_="${__sx_var_is_ebind_arg_%%:*}"
-			__sx_var_is_ebind_arg_="${__sx_var_is_ebind_arg_#*:}"
-			__sx_var_is_ebind_m_=
+		while M_STR_MATCH([|"${Q_arg}"|], [|*:*|]); do
+			Q_seg="${Q_arg%%:*}"
+			Q_arg="${Q_arg#*:}"
+			Q_m=
 
-			case "${__sx_var_is_ebind_seg_}" in
+			case "${Q_seg}" in
 				*/*/* | *[!0-9]*/*)
 					unset CLEANUP
 					return 1
 					;;
 				*/*)
-					__sx_var_is_ebind_m_="${__sx_var_is_ebind_seg_%%/*}"
-					__sx_var_is_ebind_seg_="${__sx_var_is_ebind_seg_#*/}"
+					Q_m="${Q_seg%%/*}"
+					Q_seg="${Q_seg#*/}"
 					;;
 			esac
 
-			case "${__sx_var_is_ebind_seg_}" in [1-9]*)
-				__sx_var_is_ebind_n_="${__sx_var_is_ebind_seg_%%[!0-9]*}"
+			case "${Q_seg}" in [1-9]*)
+				Q_n="${Q_seg%%[!0-9]*}"
 
-				__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" ${__sx_var_is_ebind_m_:+"${__sx_var_is_ebind_m_}"} "${__sx_var_is_ebind_n_}" && M_NUM_LT([|${__sx_var_is_ebind_m_:-0}|], [|__sx_var_is_ebind_n_|]) || {
+				__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" ${Q_m:+"${Q_m}"} "${Q_n}" && M_NUM_LT([|${Q_m:-0}|], [|Q_n|]) || {
 					unset CLEANUP
 					return 1
 				}
@@ -3573,6 +3574,7 @@ __sx_var_is_ebind() {
 
 	unset CLEANUP
 }
+|], [|var_is_ebind|])dnl
 
 ### sx_var_is_empty - 変数が設定されており、かつ空か確認する
 ##
@@ -7287,8 +7289,8 @@ sx_num_max() {
 }
 |], [|num_max|])dnl
 
-define([|V|], [|__sx_num_max_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(win) V(wnorm) V(arg) V(anorm)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_res Q_win Q_wnorm Q_arg Q_anorm|])dnl
 
 ### __sx_num_max - 与えられた数値の最大値を取得する（内部用）
 ##
@@ -7298,24 +7300,25 @@ define([|CLEANUP|], [|V(res) V(win) V(wnorm) V(arg) V(anorm)|])dnl
 ## 説明:
 ##   sx_num_max の内部実装。引数チェックは行わない。
 __sx_num_max() {
-	__sx_num_max_res_="${1}"
-	__sx_num_max_win_="${2}"
+	Q_res="${1}"
+	Q_win="${2}"
 	shift 2
 
-	__sx_num_norm __sx_num_max_wnorm_ "${__sx_num_max_win_}"
+	__sx_num_norm Q_wnorm "${Q_win}"
 
-	for __sx_num_max_arg_ in "${@}"; do
-		__sx_num_norm __sx_num_max_anorm_ "${__sx_num_max_arg_}"
+	for Q_arg in "${@}"; do
+		__sx_num_norm Q_anorm "${Q_arg}"
 
-		__sx_num_cmp_fixed "${__sx_num_max_wnorm_}" "${__sx_num_max_anorm_}" || case "${?}" in 1)
-			__sx_num_max_win_="${__sx_num_max_arg_}"
-			__sx_num_max_wnorm_="${__sx_num_max_anorm_}"
+		__sx_num_cmp_fixed "${Q_wnorm}" "${Q_anorm}" || case "${?}" in 1)
+			Q_win="${Q_arg}"
+			Q_wnorm="${Q_anorm}"
 		esac
 	done
 
-	M_VAR_SET([|${__sx_num_max_res_}|], [|${__sx_num_max_win_}|])
+	M_VAR_SET([|${Q_res}|], [|${Q_win}|])
 	unset CLEANUP
 }
+|], [|num_max|])dnl
 
 ### sx_num_min - 与えられた数値の最小値を取得する
 ##
@@ -7362,8 +7365,8 @@ sx_num_min() {
 }
 |], [|num_min|])dnl
 
-define([|V|], [|__sx_num_min_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(win) V(wnorm) V(arg) V(anorm)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_res Q_win Q_wnorm Q_arg Q_anorm|])dnl
 
 ### __sx_num_min - 与えられた数値の最小値を取得する（内部用）
 ##
@@ -7373,24 +7376,25 @@ define([|CLEANUP|], [|V(res) V(win) V(wnorm) V(arg) V(anorm)|])dnl
 ## 説明:
 ##   sx_num_min の内部実装。引数チェックは行わない。
 __sx_num_min() {
-	__sx_num_min_res_="${1}"
-	__sx_num_min_win_="${2}"
+	Q_res="${1}"
+	Q_win="${2}"
 	shift 2
 
-	__sx_num_norm __sx_num_min_wnorm_ "${__sx_num_min_win_}"
+	__sx_num_norm Q_wnorm "${Q_win}"
 
-	for __sx_num_min_arg_ in "${@}"; do
-		__sx_num_norm __sx_num_min_anorm_ "${__sx_num_min_arg_}"
+	for Q_arg in "${@}"; do
+		__sx_num_norm Q_anorm "${Q_arg}"
 
-		__sx_num_cmp_fixed "${__sx_num_min_wnorm_}" "${__sx_num_min_anorm_}" || case "${?}" in 3)
-			__sx_num_min_win_="${__sx_num_min_arg_}"
-			__sx_num_min_wnorm_="${__sx_num_min_anorm_}"
+		__sx_num_cmp_fixed "${Q_wnorm}" "${Q_anorm}" || case "${?}" in 3)
+			Q_win="${Q_arg}"
+			Q_wnorm="${Q_anorm}"
 		esac
 	done
 
-	M_VAR_SET([|${__sx_num_min_res_}|], [|${__sx_num_min_win_}|])
+	M_VAR_SET([|${Q_res}|], [|${Q_win}|])
 	unset CLEANUP
 }
+|], [|num_min|])dnl
 
 ### sx_num_norm - 数値を10進固定小数点形式に正規化する
 ##
@@ -9867,8 +9871,8 @@ sx_str_splice() {
 	__sx_str_splice "${@}"
 }
 
-define([|V|], [|__sx_str_splice_$1_|]) dnl
-define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(add) V(left) V(right) V(suffix) V(del)|]) dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|unset Q_res Q_str Q_off Q_len Q_add Q_left Q_right Q_suffix Q_del|])dnl
 
 ### __sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する（内部用）
 ##
@@ -9878,29 +9882,30 @@ define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(add) V(left) V(right) 
 ## 説明:
 ##   sx_str_splice の内部実装。引数チェックは行わない。
 __sx_str_splice() {
-	__sx_str_splice_res_="${1}"
-	__sx_str_splice_str_="${2-}"
-	__sx_str_splice_off_="${3-0}"
-	__sx_str_splice_len_="${4-${SX_NUM_I32_MAX}}"
-	__sx_str_splice_add_="${5-}"
+	Q_res="${1}"
+	Q_str="${2-}"
+	Q_off="${3-0}"
+	Q_len="${4-${SX_NUM_I32_MAX}}"
+	Q_add="${5-}"
 
 	# 1. 前半部分を取得 (sx_str_substr は負数 off をサポート済み)
-	__sx_str_substr __sx_str_splice_left_ "${__sx_str_splice_str_}" 0 "${__sx_str_splice_off_}"
+	__sx_str_substr Q_left "${Q_str}" 0 "${Q_off}"
 
 	# 2. 残りの部分（suffix）を抽出
-	__sx_str_splice_suffix_="${__sx_str_splice_str_#"${__sx_str_splice_left_}"}"
+	Q_suffix="${Q_str#"${Q_left}"}"
 
 	# 3. 削除される部分を取得（sx_str_substr の負数 len を利用）
-	__sx_str_substr __sx_str_splice_del_ "${__sx_str_splice_suffix_}" 0 "${__sx_str_splice_len_}"
+	__sx_str_substr Q_del "${Q_suffix}" 0 "${Q_len}"
 
 	# 4. 後半部分（削除範囲より後ろ）を抽出
-	__sx_str_splice_right_="${__sx_str_splice_suffix_#"${__sx_str_splice_del_}"}"
+	Q_right="${Q_suffix#"${Q_del}"}"
 
 	# 5. 結合して格納
-	M_VAR_SET([|${__sx_str_splice_res_}|], [|${__sx_str_splice_left_}${__sx_str_splice_add_}${__sx_str_splice_right_}|])
+	M_VAR_SET([|${Q_res}|], [|${Q_left}${Q_add}${Q_right}|])
 
 	CLEANUP
 }
+|], [|str_splice|])dnl
 
 ### sx_str_split - 文字列を分割して結果変数に格納する
 ##
@@ -10485,8 +10490,8 @@ sx_str_substr() {
 	__sx_str_substr "${@}"
 }
 
-define([|V|], [|__sx_str_substr_$1_|]) dnl
-define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(total) V(drop) V(qm)|]) dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|unset Q_res Q_str Q_off Q_len Q_total Q_drop Q_qm|])dnl
 
 ### __sx_str_substr - 文字列の部分文字列を取得する（内部用）
 ##
@@ -10497,44 +10502,45 @@ define([|CLEANUP|], [|unset V(res) V(str) V(off) V(len) V(total) V(drop) V(qm)|]
 ##   sx_str_substr の内部実装。
 ##   引数チェックは行わない。
 __sx_str_substr() {
-	__sx_str_substr_res_="${1}"
-	__sx_str_substr_str_="${2-}"
-	__sx_str_substr_off_=$((${3-0}))
-	__sx_str_substr_len_=$((${4-${SX_NUM_I32_MAX}}))
-	__sx_str_substr_total_="${#__sx_str_substr_str_}"
+	Q_res="${1}"
+	Q_str="${2-}"
+	Q_off=$((${3-0}))
+	Q_len=$((${4-${SX_NUM_I32_MAX}}))
+	Q_total="${#Q_str}"
 
 	# オフセットの正規化 (負数は末尾から)
-	case "$((__sx_str_substr_off_ < 0))" in 1)
-		__sx_str_substr_off_=$(((__sx_str_substr_off_ * -1) < __sx_str_substr_total_ ? __sx_str_substr_total_ + __sx_str_substr_off_ : 0))
+	case "$((Q_off < 0))" in 1)
+		Q_off=$(((Q_off * -1) < Q_total ? Q_total + Q_off : 0))
 	esac
 
 	# 1. オフセット分をスキップ
-	if M_NUM_LE([|__sx_str_substr_total_|], [|__sx_str_substr_off_|]); then
-		__sx_str_substr_str_=
+	if M_NUM_LE([|Q_total|], [|Q_off|]); then
+		Q_str=
 	else
-		__sx_str_qm __sx_str_substr_qm_ "${__sx_str_substr_off_}"
-		__sx_str_substr_str_="${__sx_str_substr_str_#${__sx_str_substr_qm_}}"
+		__sx_str_qm Q_qm "${Q_off}"
+		Q_str="${Q_str#${Q_qm}}"
 	fi
 
 	# 長さの正規化 (負数は末尾から削る)
-	__sx_str_substr_total_="${#__sx_str_substr_str_}"
-	if M_NUM_LE([|0|], [|__sx_str_substr_len_|]); then
-		__sx_str_substr_drop_=$((__sx_str_substr_len_ < __sx_str_substr_total_ ? __sx_str_substr_total_ - __sx_str_substr_len_ : 0))
+	Q_total="${#Q_str}"
+	if M_NUM_LE([|0|], [|Q_len|]); then
+		Q_drop=$((Q_len < Q_total ? Q_total - Q_len : 0))
 	else
-		__sx_str_substr_drop_=$((__sx_str_substr_len_ * -1))
+		Q_drop=$((Q_len * -1))
 	fi
 
 	# 2. 指定長に切り詰め
-	if M_NUM_LT([|__sx_str_substr_drop_|], [|__sx_str_substr_total_|]); then
-		__sx_str_qm __sx_str_substr_qm_ "${__sx_str_substr_drop_}"
-		__sx_str_substr_str_="${__sx_str_substr_str_%${__sx_str_substr_qm_}}"
+	if M_NUM_LT([|Q_drop|], [|Q_total|]); then
+		__sx_str_qm Q_qm "${Q_drop}"
+		Q_str="${Q_str%${Q_qm}}"
 	else
-		__sx_str_substr_str_=
+		Q_str=
 	fi
 
-	M_VAR_SET([|${__sx_str_substr_res_}|], [|${__sx_str_substr_str_}|])
+	M_VAR_SET([|${Q_res}|], [|${Q_str}|])
 	CLEANUP
 }
+|], [|str_substr|])dnl
 
 ### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
 ##
