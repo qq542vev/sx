@@ -7058,201 +7058,202 @@ sx_num_mul_nat0() {
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 ##   逐次方式でアキュムレータに各数値を順次乗算する。
 
-define([|V|], [|__sx_num_mul_nat0_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(a) V(b) V(endz) V(qm) V(shift) V(tmp) V(ch_a) V(ch_b) V(wlen_mul) V(max_ops) V(a_len) V(b_len) V(max_x) V(min_ops) V(opt_x) V(opt_y) V(x) V(y) V(ops) V(qchunk_a) V(qchunk_b) V(zchunk_a) V(zchunk_b) V(carry) V(g) V(fit) V(safe)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_res Q_a Q_b Q_endz Q_qm Q_shift Q_tmp Q_ch_a Q_ch_b Q_wlen_mul Q_max_ops Q_a_len Q_b_len Q_max_x Q_min_ops Q_opt_x Q_opt_y Q_x Q_y Q_ops Q_qchunk_a Q_qchunk_b Q_zchunk_a Q_zchunk_b Q_carry Q_g Q_fit Q_safe|])dnl
 
 __sx_num_mul_nat0() {
-	__sx_num_mul_nat0_res_="${1}"
-	__sx_num_mul_nat0_a_="${2-1}"
-	__sx_num_mul_nat0_endz_=
-	__sx_num_mul_nat0_fit_=1
+	Q_res="${1}"
+	Q_a="${2-1}"
+	Q_endz=
+	Q_fit=1
 	shift "$((1 + 0${2+1}))"
 
-	case "${__sx_num_mul_nat0_a_}" in 0)
+	case "${Q_a}" in 0)
 		set --
 	esac
 
-	eval "__sx_num_mul_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_mul_nat0_wlen_mul_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" __sx_num_mul_nat0_max_ops_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
+	eval "Q_qm=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" Q_wlen_mul=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" Q_max_ops=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
 
 	# safe_: 分割探索式の (len + (x - 1)) が INT_MAX を超えないための上限
-	__sx_num_mul_nat0_safe_=$((__sx_num_mul_nat0_max_ops_ - __sx_num_mul_nat0_wlen_mul_ + 2))
+	Q_safe=$((Q_max_ops - Q_wlen_mul + 2))
 
-	for __sx_num_mul_nat0_b_ in "${@}"; do
-		case "${__sx_num_mul_nat0_b_}" in 0)
-			__sx_num_mul_nat0_a_=0
-			__sx_num_mul_nat0_endz_=
+	for Q_b in "${@}"; do
+		case "${Q_b}" in 0)
+			Q_a=0
+			Q_endz=
 			break
 		esac
 
 		# 高速パス: 両因数が1語に収まればシェル算術で直接乗算
-		case "${__sx_num_mul_nat0_a_}${__sx_num_mul_nat0_b_}" in
-			${__sx_num_mul_nat0_qm_}?*) ;;
+		case "${Q_a}${Q_b}" in
+			${Q_qm}?*) ;;
 			*)
-				M_NUM_AMP([|__sx_num_mul_nat0_a_|], [|__sx_num_mul_nat0_b_|])
+				M_NUM_AMP([|Q_a|], [|Q_b|])
 				continue
 				;;
 		esac
 
 		# 末尾のゼロを一時分離し、後で結合する
-		case "${__sx_num_mul_nat0_a_}" in *0)
-			__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_a_##*[!0]}"
-			__sx_num_mul_nat0_a_="${__sx_num_mul_nat0_a_%${__sx_num_mul_nat0_tmp_}}"
-			M_STR_APPEND([|__sx_num_mul_nat0_endz_|], [|"${__sx_num_mul_nat0_tmp_}"|])
+		case "${Q_a}" in *0)
+			Q_tmp="${Q_a##*[!0]}"
+			Q_a="${Q_a%${Q_tmp}}"
+			M_STR_APPEND([|Q_endz|], [|"${Q_tmp}"|])
 		esac
 
-		case "${__sx_num_mul_nat0_b_}" in *0)
-			__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_##*[!0]}"
-			__sx_num_mul_nat0_b_="${__sx_num_mul_nat0_b_%${__sx_num_mul_nat0_tmp_}}"
-			M_STR_APPEND([|__sx_num_mul_nat0_endz_|], [|"${__sx_num_mul_nat0_tmp_}"|])
+		case "${Q_b}" in *0)
+			Q_tmp="${Q_b##*[!0]}"
+			Q_b="${Q_b%${Q_tmp}}"
+			M_STR_APPEND([|Q_endz|], [|"${Q_tmp}"|])
 		esac
 
 		# 1の乗算をスキップ / 1語に収まらなければ多倍長処理へ
-		case "${__sx_num_mul_nat0_a_}:${__sx_num_mul_nat0_b_}" in
-			1:*) __sx_num_mul_nat0_a_="${__sx_num_mul_nat0_b_}";&
+		case "${Q_a}:${Q_b}" in
+			1:*) Q_a="${Q_b}";&
 			*:1) ! :;;
-			${__sx_num_mul_nat0_qm_}??*) ;;
-			*) ! M_NUM_AMP([|__sx_num_mul_nat0_a_|], [|__sx_num_mul_nat0_b_|])
+			${Q_qm}??*) ;;
+			*) ! M_NUM_AMP([|Q_a|], [|Q_b|])
 		esac || continue
 
 		# fit_: 桁数そのものが INT_MAX を超えると算術展開できないため、
 		#       範囲内に収まる桁数かどうかを確認する
-		__sx_num_mul_nat0_a_len_="${#__sx_num_mul_nat0_a_}"
-		__sx_num_mul_nat0_b_len_="${#__sx_num_mul_nat0_b_}"
+		Q_a_len="${#Q_a}"
+		Q_b_len="${#Q_b}"
 
-		case "${__sx_num_mul_nat0_fit_}" in 1)
-			__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_mul_nat0_a_len_}" "${__sx_num_mul_nat0_b_len_}" || __sx_num_mul_nat0_fit_=0
+		case "${Q_fit}" in 1)
+			__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_a_len}" "${Q_b_len}" || Q_fit=0
 		esac
 
 		# 長い方を a に統一し、分割最適化の効果を最大化
-		case "$((__sx_num_mul_nat0_fit_ && __sx_num_mul_nat0_a_len_ < __sx_num_mul_nat0_b_len_))" in 1)
-			__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_}"
-			__sx_num_mul_nat0_b_="${__sx_num_mul_nat0_a_}"
-			__sx_num_mul_nat0_a_="${__sx_num_mul_nat0_tmp_}"
-			__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_len_}"
-			__sx_num_mul_nat0_b_len_="${__sx_num_mul_nat0_a_len_}"
-			__sx_num_mul_nat0_a_len_="${__sx_num_mul_nat0_tmp_}"
+		case "$((Q_fit && Q_a_len < Q_b_len))" in 1)
+			Q_tmp="${Q_b}"
+			Q_b="${Q_a}"
+			Q_a="${Q_tmp}"
+			Q_tmp="${Q_b_len}"
+			Q_b_len="${Q_a_len}"
+			Q_a_len="${Q_tmp}"
 		esac
 
 		# 安全: 桁数が算術展開可能な範囲内 → 全分割点を探索
 		# 危険: 桁数が算術展開不能 or 範囲超過 → 均等分割にフォールバック
-		if M_NUM_BOOL([|__sx_num_mul_nat0_fit_ && __sx_num_mul_nat0_a_len_ <= __sx_num_mul_nat0_safe_ && __sx_num_mul_nat0_b_len_ <= __sx_num_mul_nat0_safe_|]); then
-			__sx_num_mul_nat0_max_x_=$((__sx_num_mul_nat0_b_len_ < __sx_num_mul_nat0_wlen_mul_ ? __sx_num_mul_nat0_b_len_ : __sx_num_mul_nat0_wlen_mul_ - 1))
-			__sx_num_mul_nat0_min_ops_="${__sx_num_mul_nat0_max_ops_}"
-			__sx_num_mul_nat0_opt_x_=1
-			__sx_num_mul_nat0_x_=1
+		if M_NUM_BOOL([|Q_fit && Q_a_len <= Q_safe && Q_b_len <= Q_safe|]); then
+			Q_max_x=$((Q_b_len < Q_wlen_mul ? Q_b_len : Q_wlen_mul - 1))
+			Q_min_ops="${Q_max_ops}"
+			Q_opt_x=1
+			Q_x=1
 
-			while M_NUM_LE([|__sx_num_mul_nat0_x_|], [|__sx_num_mul_nat0_max_x_|]); do
-				__sx_num_mul_nat0_y_=$((__sx_num_mul_nat0_wlen_mul_ - __sx_num_mul_nat0_x_))
-				__sx_num_mul_nat0_ops_=$((((__sx_num_mul_nat0_b_len_ + (__sx_num_mul_nat0_x_ - 1)) / __sx_num_mul_nat0_x_) * ((__sx_num_mul_nat0_a_len_ + (__sx_num_mul_nat0_y_ - 1)) / __sx_num_mul_nat0_y_)))
+			while M_NUM_LE([|Q_x|], [|Q_max_x|]); do
+				Q_y=$((Q_wlen_mul - Q_x))
+				Q_ops=$((((Q_b_len + (Q_x - 1)) / Q_x) * ((Q_a_len + (Q_y - 1)) / Q_y)))
 
-				case "$((__sx_num_mul_nat0_ops_ < __sx_num_mul_nat0_min_ops_))" in 1)
-					__sx_num_mul_nat0_min_ops_="${__sx_num_mul_nat0_ops_}"
-					__sx_num_mul_nat0_opt_x_="${__sx_num_mul_nat0_x_}"
+				case "$((Q_ops < Q_min_ops))" in 1)
+					Q_min_ops="${Q_ops}"
+					Q_opt_x="${Q_x}"
 				esac
 
-				M_NUM_INCR([|__sx_num_mul_nat0_x_|])
+				M_NUM_INCR([|Q_x|])
 			done
 		else
-			__sx_num_mul_nat0_opt_x_=$(((__sx_num_mul_nat0_wlen_mul_ + 1) / 2))
+			Q_opt_x=$(((Q_wlen_mul + 1) / 2))
 		fi
 
 		# 最適分割サイズに基づきチャンク用 QM/ZR をロード
-		__sx_num_mul_nat0_opt_y_=$((__sx_num_mul_nat0_wlen_mul_ - __sx_num_mul_nat0_opt_x_))
+		Q_opt_y=$((Q_wlen_mul - Q_opt_x))
 
-		eval "__sx_num_mul_nat0_qchunk_a_=\"\${SX_NUM_QM_${__sx_num_mul_nat0_opt_y_}}\" \
-		      __sx_num_mul_nat0_zchunk_a_=\"\${SX_NUM_ZR_${__sx_num_mul_nat0_opt_y_}}\" \
-		      __sx_num_mul_nat0_qchunk_b_=\"\${SX_NUM_QM_${__sx_num_mul_nat0_opt_x_}}\" \
-		      __sx_num_mul_nat0_zchunk_b_=\"\${SX_NUM_ZR_${__sx_num_mul_nat0_opt_x_}}\""
+		eval "Q_qchunk_a=\"\${SX_NUM_QM_${Q_opt_y}}\" \
+		      Q_zchunk_a=\"\${SX_NUM_ZR_${Q_opt_y}}\" \
+		      Q_qchunk_b=\"\${SX_NUM_QM_${Q_opt_x}}\" \
+		      Q_zchunk_b=\"\${SX_NUM_ZR_${Q_opt_x}}\""
 
-		__sx_num_mul_nat0_shift_=
+		Q_shift=
 
 		set --
 
 		# a を opt_y 桁ずつ下位からチャンク分割し位置パラメータに格納
 		while
-			case "${__sx_num_mul_nat0_a_}" in
-				${__sx_num_mul_nat0_qchunk_a_}?*)
-					__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_a_%${__sx_num_mul_nat0_qchunk_a_}}"
-					__sx_num_mul_nat0_ch_a_="${__sx_num_mul_nat0_a_#"${__sx_num_mul_nat0_tmp_}"}"
-					__sx_num_mul_nat0_a_="${__sx_num_mul_nat0_tmp_}"
+			case "${Q_a}" in
+				${Q_qchunk_a}?*)
+					Q_tmp="${Q_a%${Q_qchunk_a}}"
+					Q_ch_a="${Q_a#"${Q_tmp}"}"
+					Q_a="${Q_tmp}"
 
-					case "${__sx_num_mul_nat0_ch_a_}" in
-						0*) set -- "${@}" "$((1${__sx_num_mul_nat0_ch_a_} - 1${__sx_num_mul_nat0_zchunk_a_}))";;
-						*) set -- "${@}" "${__sx_num_mul_nat0_ch_a_}";;
+					case "${Q_ch_a}" in
+						0*) set -- "${@}" "$((1${Q_ch_a} - 1${Q_zchunk_a}))";;
+						*) set -- "${@}" "${Q_ch_a}";;
 					esac
 					;;
-				*) set -- "${@}" "${__sx_num_mul_nat0_a_}" && break;;
+				*) set -- "${@}" "${Q_a}" && break;;
 			esac
 
 			continue
 		do :; done
 
-		__sx_num_mul_nat0_a_=0
+		Q_a=0
 
 		# b を opt_x 桁ずつ分割しながら a の全チャンクと乗算
 		while
-			case "${__sx_num_mul_nat0_b_}" in
+			case "${Q_b}" in
 				'') break;;
-				${__sx_num_mul_nat0_qchunk_b_}?*)
-					__sx_num_mul_nat0_tmp_="${__sx_num_mul_nat0_b_%${__sx_num_mul_nat0_qchunk_b_}}"
-					__sx_num_mul_nat0_ch_b_="${__sx_num_mul_nat0_b_#"${__sx_num_mul_nat0_tmp_}"}"
-					__sx_num_mul_nat0_b_="${__sx_num_mul_nat0_tmp_}"
+				${Q_qchunk_b}?*)
+					Q_tmp="${Q_b%${Q_qchunk_b}}"
+					Q_ch_b="${Q_b#"${Q_tmp}"}"
+					Q_b="${Q_tmp}"
 
-					case "${__sx_num_mul_nat0_ch_b_}" in
-						0*[1-9]*) __sx_num_mul_nat0_ch_b_=$((1${__sx_num_mul_nat0_ch_b_} - 1${__sx_num_mul_nat0_zchunk_b_}));;
+					case "${Q_ch_b}" in
+						0*[1-9]*) Q_ch_b=$((1${Q_ch_b} - 1${Q_zchunk_b}));;
 						0*)
-							M_STR_PREPEND([|__sx_num_mul_nat0_shift_|], [|"${__sx_num_mul_nat0_zchunk_b_}"|])
+							M_STR_PREPEND([|Q_shift|], [|"${Q_zchunk_b}"|])
 							continue
 							;;
 					esac
 					;;
 				*)
-					__sx_num_mul_nat0_ch_b_="${__sx_num_mul_nat0_b_}"
-					__sx_num_mul_nat0_b_=
+					Q_ch_b="${Q_b}"
+					Q_b=
 					;;
 			esac
 
-			__sx_num_mul_nat0_g_=
-			__sx_num_mul_nat0_carry_=
+			Q_g=
+			Q_carry=
 
 			# チャンク同士の乗算と桁上げ処理
-			for __sx_num_mul_nat0_ch_a_ in "${@}"; do
-				__sx_num_mul_nat0_tmp_=$((__sx_num_mul_nat0_ch_b_ * __sx_num_mul_nat0_ch_a_ + ${__sx_num_mul_nat0_carry_:-0}))
+			for Q_ch_a in "${@}"; do
+				Q_tmp=$((Q_ch_b * Q_ch_a + ${Q_carry:-0}))
 
-				case "$((1${__sx_num_mul_nat0_zchunk_a_} <= __sx_num_mul_nat0_tmp_))" in
+				case "$((1${Q_zchunk_a} <= Q_tmp))" in
 					1)
-						__sx_num_mul_nat0_carry_="${__sx_num_mul_nat0_tmp_%${__sx_num_mul_nat0_qchunk_a_}}"
-						M_STR_PREPEND([|__sx_num_mul_nat0_g_|], [|"${__sx_num_mul_nat0_tmp_#"${__sx_num_mul_nat0_carry_}"}"|])
+						Q_carry="${Q_tmp%${Q_qchunk_a}}"
+						M_STR_PREPEND([|Q_g|], [|"${Q_tmp#"${Q_carry}"}"|])
 						;;
 					*)
-						__sx_num_mul_nat0_carry_=
+						Q_carry=
 
-						case "${__sx_num_mul_nat0_tmp_}" in
-							${__sx_num_mul_nat0_qchunk_a_}) M_STR_PREPEND([|__sx_num_mul_nat0_g_|], [|"${__sx_num_mul_nat0_tmp_}"|]);;
+						case "${Q_tmp}" in
+							${Q_qchunk_a}) M_STR_PREPEND([|Q_g|], [|"${Q_tmp}"|]);;
 							*)
-								M_NUM_INCR([|__sx_num_mul_nat0_tmp_|], [|1${__sx_num_mul_nat0_zchunk_a_}|])
-								M_STR_PREPEND([|__sx_num_mul_nat0_g_|], [|"${__sx_num_mul_nat0_tmp_#1}"|])
+								M_NUM_INCR([|Q_tmp|], [|1${Q_zchunk_a}|])
+								M_STR_PREPEND([|Q_g|], [|"${Q_tmp#1}"|])
 								;;
 						esac
 						;;
 				esac
 			done
 
-			case "${__sx_num_mul_nat0_carry_}:${__sx_num_mul_nat0_g_}" in :0*)
-				__sx_num_mul_nat0_g_="M_STR_LTRIM([|__sx_num_mul_nat0_g_|], [|[!0]|])"
+			case "${Q_carry}:${Q_g}" in :0*)
+				Q_g="M_STR_LTRIM([|Q_g|], [|[!0]|])"
 			esac
 
 			# 部分積を結果リストに追加
-			__sx_num_add_nat0 __sx_num_mul_nat0_a_ "${__sx_num_mul_nat0_a_}" "${__sx_num_mul_nat0_carry_}${__sx_num_mul_nat0_g_}${__sx_num_mul_nat0_shift_}"
+			__sx_num_add_nat0 Q_a "${Q_a}" "${Q_carry}${Q_g}${Q_shift}"
 
-			M_STR_PREPEND([|__sx_num_mul_nat0_shift_|], [|"${__sx_num_mul_nat0_zchunk_b_}"|])
+			M_STR_PREPEND([|Q_shift|], [|"${Q_zchunk_b}"|])
 			continue
 		do :; done
 	done
 
-	M_VAR_SET([|${__sx_num_mul_nat0_res_}|], [|${__sx_num_mul_nat0_a_}${__sx_num_mul_nat0_endz_}|])
+	M_VAR_SET([|${Q_res}|], [|${Q_a}${Q_endz}|])
 	unset CLEANUP
 }
+|], [|num_mul_nat0|])dnl
 
 ### sx_num_max - 与えられた数値の最大値を取得する
 ##
