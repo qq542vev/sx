@@ -388,7 +388,8 @@ sx_cfg_is_valid() {
 	unset __sx_cfg_is_valid_arg
 }
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_arg Q_chk|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg Q_chk|])dnl
 
 ### sx_cfg_set - SX_CFG_* を設定する
 ##
@@ -787,7 +788,8 @@ __sx_ex_yield() {
 #  FN (Function)
 # ========================================
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_arg|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_fn_is_valid - 関数定義の妥当性（名前および構文）を確認する
 ##
@@ -1517,7 +1519,8 @@ __sx_arg_fold() {
 	unset __sx_arg_fold_arg_
 }
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_int Q_lim Q_flg|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_int Q_lim Q_flg|])dnl
 
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
 ##
@@ -4469,7 +4472,7 @@ __sx_var_unset() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|
+M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_add_int() {
@@ -4559,7 +4562,8 @@ __sx_num_add_int() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_add_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add_nat0 "${@}" || return; return 0;; esac
@@ -4967,7 +4971,8 @@ __sx_num_cmp_nat0() {
 ##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_res Q_dp Q_u|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_res Q_dp Q_u|])dnl
 
 sx_num_div_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_int "${@}" || return; return 0;; esac
@@ -5053,7 +5058,8 @@ __sx_num_div_int() {
 ##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_res Q_dp Q_u|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_res Q_dp Q_u|])dnl
 
 sx_num_div_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_nat0 "${@}" || return; return 0;; esac
@@ -6929,7 +6935,8 @@ __sx_num_is_pint_base() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_mul_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_int "${@}" || return; return 0;; esac
@@ -7004,7 +7011,8 @@ __sx_num_mul_int() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_mul_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_nat0 "${@}" || return; return 0;; esac
@@ -7250,7 +7258,8 @@ __sx_num_mul_nat0() {
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_max() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_max "${@}" || return; return 0;; esac
@@ -7324,7 +7333,8 @@ __sx_num_max() {
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_min() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_min "${@}" || return; return 0;; esac
@@ -7704,7 +7714,8 @@ __sx_num_rel_classify() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_sub_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub_int "${@}" || return; return 0;; esac
@@ -7795,7 +7806,8 @@ __sx_num_sub_int() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_sub_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub_nat0 "${@}" || return; return 0;; esac
@@ -11380,7 +11392,8 @@ __sx_arr_is_bindable() {
 	__sx_var_is_rw "${@}" || return
 }
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_br Q_cr Q_bind|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_br Q_cr Q_bind|])dnl
 
 ### sx_arr_bind - 配列対応バインドで変数を順次割り当てる
 ##
@@ -11513,7 +11526,8 @@ __sx_arr_bind() {
 	return "${1}"
 }
 
-M_RENAME_Q([|define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_first Q_arr Q_len Q_i Q_blk Q_oseg Q_name Q_fseg Q_lim|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_first Q_arr Q_len Q_i Q_blk Q_oseg Q_name Q_fseg Q_lim|])dnl
 
 ### sx_arr_cat - 複数の配列を連結する
 ##
