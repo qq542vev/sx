@@ -9324,7 +9324,7 @@ __sx_str_lower_cb() {
 		O) eval "${1}=o";; P) eval "${1}=p";;
 		Q) eval "${1}=q";; R) eval "${1}=r";;
 		S) eval "${1}=s";; T) eval "${1}=t";;
-		U) eval "${1}=u";; V) eval "${1}=v";;
+		U) eval "${1}=u";; [|V|]) eval "${1}=v";;
 		W) eval "${1}=w";; X) eval "${1}=x";;
 		Y) eval "${1}=y";; Z) eval "${1}=z";;
 		*) eval "${1}=\"\${2}\"";;
@@ -10893,7 +10893,7 @@ __sx_str_upper_cb() {
 		o) eval "${1}=O";; p) eval "${1}=P";;
 		q) eval "${1}=Q";; r) eval "${1}=R";;
 		s) eval "${1}=S";; t) eval "${1}=T";;
-		u) eval "${1}=U";; v) eval "${1}=V";;
+		u) eval "${1}=U";; v) eval "${1}=[|V|]";;
 		w) eval "${1}=W";; x) eval "${1}=X";;
 		y) eval "${1}=Y";; z) eval "${1}=Z";;
 		*) eval "${1}=\"\${2}\"";;
