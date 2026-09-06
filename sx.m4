@@ -388,8 +388,7 @@ sx_cfg_is_valid() {
 	unset __sx_cfg_is_valid_arg
 }
 
-define([|V|], [|__sx_cfg_set_$1|])dnl
-define([|CLEANUP|], [|V(arg) V(chk)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_arg Q_chk|])dnl
 
 ### sx_cfg_set - SX_CFG_* を設定する
 ##
@@ -412,13 +411,13 @@ sx_cfg_set() {
 
 	sx_cfg_is_valid "${@}" || return M_EX_USAGE
 
-	__sx_cfg_set_chk=
+	Q_chk=
 
-	for __sx_cfg_set_arg in "${@}"; do
-		M_STR_APPEND([|__sx_cfg_set_chk|], [|" SX_CFG_${__sx_cfg_set_arg%%=*}"|])
+	for Q_arg in "${@}"; do
+		M_STR_APPEND([|Q_chk|], [|" SX_CFG_${Q_arg%%=*}"|])
 	done
 
-	eval sx_var_is_rw "${__sx_cfg_set_chk}" || {
+	eval sx_var_is_rw "${Q_chk}" || {
 		unset CLEANUP
 		return M_EX_NOPERM
 	}
@@ -426,6 +425,7 @@ sx_cfg_set() {
 	unset CLEANUP
 	__sx_cfg_set "${@}"
 }
+|], [|cfg_set|])dnl
 
 ### __sx_cfg_set - SX_CFG_* の値を実際に設定する（内部用）
 ##
@@ -787,8 +787,7 @@ __sx_ex_yield() {
 #  FN (Function)
 # ========================================
 
-define([|V|], [|__sx_fn_is_valid_$1|])dnl
-define([|CLEANUP|], [|V(arg)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_fn_is_valid - 関数定義の妥当性（名前および構文）を確認する
 ##
@@ -799,9 +798,9 @@ define([|CLEANUP|], [|V(arg)|])dnl
 ##    0  すべて妥当
 ##    1  無効な名前、または構文エラーが含まれる
 sx_fn_is_valid() {
-	for __sx_fn_is_valid_arg in "${@}"; do
-		case "${__sx_fn_is_valid_arg}" in *=*)
-			sx_var_is_name "${__sx_fn_is_valid_arg%%=*}" || {
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in *=*)
+			sx_var_is_name "${Q_arg%%=*}" || {
 				unset CLEANUP
 				return 1
 			}
@@ -822,6 +821,7 @@ sx_fn_is_valid() {
 		done
 	) 2>&- || return 1
 }
+|], [|fn_is_valid|])dnl
 
 ### sx_fn_set - 関数を動的に定義する
 ##
@@ -1517,8 +1517,7 @@ __sx_arg_fold() {
 	unset __sx_arg_fold_arg_
 }
 
-define([|V|], [|__sx_arg_isep_$1|])dnl
-define([|CLEANUP|], [|V(int) V(lim) V(flg)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_int Q_lim Q_flg|])dnl
 
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
 ##
@@ -1563,17 +1562,17 @@ sx_arg_isep() {
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}" | "${2+X${2}}" | "${3+X${3}}") ;;
-		"${4+X${4}}") __sx_arg_isep_int="${3}";;
-		"${5+X${5}}") __sx_arg_isep_int="${3}" __sx_arg_isep_lim="${4}";;
-		"${6+X${6}}") __sx_arg_isep_int="${3}" __sx_arg_isep_lim="${4}" __sx_arg_isep_flg="${5}";;
+		"${4+X${4}}") Q_int="${3}";;
+		"${5+X${5}}") Q_int="${3}" Q_lim="${4}";;
+		"${6+X${6}}") Q_int="${3}" Q_lim="${4}" Q_flg="${5}";;
 	esac
 
-	__sx_num_is_int_safe_inv ${__sx_arg_isep_int:+"${__sx_arg_isep_int}"} && __sx_num_is_nat0_safe ${__sx_arg_isep_lim:+"${__sx_arg_isep_lim}"} ${__sx_arg_isep_flg:+"${__sx_arg_isep_flg}"} || {
+	__sx_num_is_int_safe_inv ${Q_int:+"${Q_int}"} && __sx_num_is_nat0_safe ${Q_lim:+"${Q_lim}"} ${Q_flg:+"${Q_flg}"} || {
 		unset CLEANUP
 		return M_EX_USAGE
 	}
 
-	case ${__sx_arg_isep_int:+"${__sx_arg_isep_int#[+-]}"} in 0)
+	case ${Q_int:+"${Q_int#[+-]}"} in 0)
 		unset CLEANUP
 		return M_EX_USAGE
 	esac
@@ -1582,6 +1581,7 @@ sx_arg_isep() {
 
 	__sx_arg_isep "${@}" || return
 }
+|], [|arg_isep|])dnl
 
 define([|V|], [|__sx_arg_isep_$1_|])dnl
 define([|CLEANUP|], [|V(bind) V(sep) V(int) V(lim) V(flg)|])dnl
@@ -4559,8 +4559,7 @@ __sx_num_add_int() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|V|], [|__sx_num_add_nat0_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_add_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add_nat0 "${@}" || return; return 0;; esac
@@ -4571,7 +4570,7 @@ sx_num_add_nat0() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_num_add_nat0_res="${1}"
+	Q_res="${1}"
 	shift
 
 	__sx_num_is_nat0_base 10 "${@}" || {
@@ -4579,9 +4578,10 @@ sx_num_add_nat0() {
 		return M_EX_USAGE
 	}
 
-	__sx_num_add_nat0 "${__sx_num_add_nat0_res}" "${@}"
+	__sx_num_add_nat0 "${Q_res}" "${@}"
 	unset CLEANUP
 }
+|], [|num_add_nat0|])dnl
 
 ### __sx_num_add_nat0 - 複数の絶対値をチャンク加算する（内部用）
 ##
@@ -4967,8 +4967,7 @@ __sx_num_cmp_nat0() {
 ##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
 
-define([|V|], [|__sx_num_div_int_$1|])dnl
-define([|CLEANUP|], [|V(res) V(dp) V(u)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_res Q_dp Q_u|])dnl
 
 sx_num_div_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_int "${@}" || return; return 0;; esac
@@ -4981,9 +4980,9 @@ sx_num_div_int() {
 
 	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_int_base 10 ${3:+"${3}"} || return M_EX_USAGE
 
-	__sx_num_div_int_res="${1}"
-	__sx_num_div_int_dp="${2:-0}"
-	__sx_num_div_int_u="${3:-0}"
+	Q_res="${1}"
+	Q_dp="${2:-0}"
+	Q_u="${3:-0}"
 	shift "$((0${2+1} + 0${3+1} + 1))"
 
 	__sx_num_is_nzint_base 10 "${@}" || {
@@ -4991,9 +4990,10 @@ sx_num_div_int() {
 		return M_EX_USAGE
 	}
 
-	__sx_num_div_int "${__sx_num_div_int_res}" "${__sx_num_div_int_dp}" "${__sx_num_div_int_u}" "${@}"
+	__sx_num_div_int "${Q_res}" "${Q_dp}" "${Q_u}" "${@}"
 	unset CLEANUP
 }
+|], [|num_div_int|])dnl
 
 define([|V|], [|__sx_num_div_int_$1_|])dnl
 define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q)|])dnl
@@ -5053,8 +5053,7 @@ __sx_num_div_int() {
 ##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
 
-define([|V|], [|__sx_num_div_nat0_$1|])dnl
-define([|CLEANUP|], [|V(res) V(dp) V(u)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_res Q_dp Q_u|])dnl
 
 sx_num_div_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_nat0 "${@}" || return; return 0;; esac
@@ -5067,9 +5066,9 @@ sx_num_div_nat0() {
 
 	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_nat0_base 10 ${3:+"${3}"} || return M_EX_USAGE
 
-	__sx_num_div_nat0_res="${1}"
-	__sx_num_div_nat0_dp="${2:-0}"
-	__sx_num_div_nat0_u="${3:-0}"
+	Q_res="${1}"
+	Q_dp="${2:-0}"
+	Q_u="${3:-0}"
 	shift "$((0${2+1} + 0${3+1} + 1))"
 
 	__sx_num_is_nat1_base 10 "${@}" || {
@@ -5077,9 +5076,10 @@ sx_num_div_nat0() {
 		return M_EX_USAGE
 	}
 
-	__sx_num_div_nat0 "${__sx_num_div_nat0_res}" "${__sx_num_div_nat0_dp}" "${__sx_num_div_nat0_u}" "${@}"
+	__sx_num_div_nat0 "${Q_res}" "${Q_dp}" "${Q_u}" "${@}"
 	unset CLEANUP
 }
+|], [|num_div_nat0|])dnl
 
 define([|V|], [|__sx_num_div_nat0_$1_|])dnl
 define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q) V(r) V(dec) V(zr) V(qm)|])dnl
@@ -6929,8 +6929,7 @@ __sx_num_is_pint_base() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|V|], [|__sx_num_mul_int_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_mul_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_int "${@}" || return; return 0;; esac
@@ -6941,7 +6940,7 @@ sx_num_mul_int() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_num_mul_int_res="${1}"
+	Q_res="${1}"
 	shift
 
 	__sx_num_is_int_base 10 "${@}" || {
@@ -6949,9 +6948,10 @@ sx_num_mul_int() {
 		return M_EX_USAGE
 	}
 
-	__sx_num_mul_int "${__sx_num_mul_int_res}" "${@}"
+	__sx_num_mul_int "${Q_res}" "${@}"
 	unset CLEANUP
 }
+|], [|num_mul_int|])dnl
 
 define([|V|], [|__sx_num_mul_int_$1_|])dnl
 define([|CLEANUP|], [|V(res) V(qty) V(arg) V(abs_args) V(sign) V(acc)|])dnl
@@ -7004,8 +7004,7 @@ __sx_num_mul_int() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|V|], [|__sx_num_mul_nat0_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_mul_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_nat0 "${@}" || return; return 0;; esac
@@ -7016,7 +7015,7 @@ sx_num_mul_nat0() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_num_mul_nat0_res="${1}"
+	Q_res="${1}"
 	shift
 
 	__sx_num_is_nat0_base 10 "${@}" || {
@@ -7024,9 +7023,10 @@ sx_num_mul_nat0() {
 		return M_EX_USAGE
 	}
 
-	__sx_num_mul_nat0 "${__sx_num_mul_nat0_res}" "${@}"
+	__sx_num_mul_nat0 "${Q_res}" "${@}"
 	unset CLEANUP
 }
+|], [|num_mul_nat0|])dnl
 
 ### __sx_num_mul_nat0 - 複数の絶対値を乗算する（内部用）
 ##
@@ -7250,8 +7250,7 @@ __sx_num_mul_nat0() {
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|V|], [|__sx_num_max_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_max() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_max "${@}" || return; return 0;; esac
@@ -7266,7 +7265,7 @@ sx_num_max() {
 		return M_EX_USAGE
 	esac
 
-	__sx_num_max_res="${1}"
+	Q_res="${1}"
 	shift
 
 	__sx_num_is_num_safe "${@}" || {
@@ -7274,9 +7273,10 @@ sx_num_max() {
 		return M_EX_USAGE
 	}
 
-	__sx_num_max "${__sx_num_max_res}" "${@}"
+	__sx_num_max "${Q_res}" "${@}"
 	unset CLEANUP
 }
+|], [|num_max|])dnl
 
 define([|V|], [|__sx_num_max_$1_|])dnl
 define([|CLEANUP|], [|V(res) V(win) V(wnorm) V(arg) V(anorm)|])dnl
@@ -7324,8 +7324,7 @@ __sx_num_max() {
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|V|], [|__sx_num_min_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_min() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_min "${@}" || return; return 0;; esac
@@ -7340,7 +7339,7 @@ sx_num_min() {
 		return M_EX_USAGE
 	esac
 
-	__sx_num_min_res="${1}"
+	Q_res="${1}"
 	shift
 
 	__sx_num_is_num_safe "${@}" || {
@@ -7348,9 +7347,10 @@ sx_num_min() {
 		return M_EX_USAGE
 	}
 
-	__sx_num_min "${__sx_num_min_res}" "${@}"
+	__sx_num_min "${Q_res}" "${@}"
 	unset CLEANUP
 }
+|], [|num_min|])dnl
 
 define([|V|], [|__sx_num_min_$1_|])dnl
 define([|CLEANUP|], [|V(res) V(win) V(wnorm) V(arg) V(anorm)|])dnl
@@ -7704,8 +7704,7 @@ __sx_num_rel_classify() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|V|], [|__sx_num_sub_int_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_sub_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub_int "${@}" || return; return 0;; esac
@@ -7716,7 +7715,7 @@ sx_num_sub_int() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_num_sub_int_res="${1}"
+	Q_res="${1}"
 	shift
 
 	__sx_num_is_int_base 10 "${@}" || {
@@ -7724,9 +7723,10 @@ sx_num_sub_int() {
 		return M_EX_USAGE
 	}
 
-	__sx_num_sub_int "${__sx_num_sub_int_res}" "${@}"
+	__sx_num_sub_int "${Q_res}" "${@}"
 	unset CLEANUP
 }
+|], [|num_sub_int|])dnl
 
 define([|V|], [|__sx_num_sub_int_$1_|])dnl
 define([|CLEANUP|], [|V(res) V(first) V(sign) V(sum) V(tmp)|])dnl
@@ -7795,8 +7795,7 @@ __sx_num_sub_int() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|V|], [|__sx_num_sub_nat0_$1|])dnl
-define([|CLEANUP|], [|V(res)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_sub_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub_nat0 "${@}" || return; return 0;; esac
@@ -7807,7 +7806,7 @@ sx_num_sub_nat0() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_num_sub_nat0_res="${1}"
+	Q_res="${1}"
 	shift
 
 	__sx_num_is_nat0_base 10 "${@}" || {
@@ -7820,9 +7819,10 @@ sx_num_sub_nat0() {
 		return M_EX_USAGE
 	esac
 
-	__sx_num_sub_nat0 "${__sx_num_sub_nat0_res}" "${@}"
+	__sx_num_sub_nat0 "${Q_res}" "${@}"
 	unset CLEANUP
 }
+|], [|num_sub_nat0|])dnl
 
 ### __sx_num_sub_nat0 - 絶対値のチャンク減算を行う（内部用）
 ##
@@ -11380,8 +11380,7 @@ __sx_arr_is_bindable() {
 	__sx_var_is_rw "${@}" || return
 }
 
-define([|V|], [|__sx_arr_bind_$1|])dnl
-define([|CLEANUP|], [|V(br) V(cr) V(bind)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_br Q_cr Q_bind|])dnl
 
 ### sx_arr_bind - 配列対応バインドで変数を順次割り当てる
 ##
@@ -11406,9 +11405,9 @@ sx_arr_bind() {
 	__sx_var_is_rw "${1}" "${2}" || return M_EX_NOPERM
 	__sx_var_is_ebind ${3+"${3}"} || return M_EX_USAGE
 
-	__sx_arr_bind_br="${1}"
-	__sx_arr_bind_cr="${2}"
-	__sx_arr_bind_bind="${3-}"
+	Q_br="${1}"
+	Q_cr="${2}"
+	Q_bind="${3-}"
 
 	shift "$((2 + 0${3+1}))"
 
@@ -11417,12 +11416,13 @@ sx_arr_bind() {
 		return M_EX_USAGE
 	}
 
-	set -- "${__sx_arr_bind_br}" "${__sx_arr_bind_cr}" "${__sx_arr_bind_bind}" "${@}"
+	set -- "${Q_br}" "${Q_cr}" "${Q_bind}" "${@}"
 
 	unset CLEANUP
 
 	__sx_arr_bind "${@}" || return
 }
+|], [|arr_bind|])dnl
 
 define([|V|], [|__sx_arr_bind_$1_|])dnl
 define([|CLEANUP|], [|V(br) V(cr) V(bind) V(chain) V(seg) V(rest) V(m) V(n) V(vn) V(sts)|])dnl
@@ -11513,8 +11513,7 @@ __sx_arr_bind() {
 	return "${1}"
 }
 
-define([|V|], [|__sx_arr_cat_$1|])dnl
-define([|CLEANUP|], [|V(bind) V(chain) V(borg) V(first) V(arr) V(len) V(i) V(blk) V(oseg) V(name) V(fseg) V(lim)|])dnl
+M_RENAME_Q([|define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_first Q_arr Q_len Q_i Q_blk Q_oseg Q_name Q_fseg Q_lim|])dnl
 
 ### sx_arr_cat - 複数の配列を連結する
 ##
@@ -11560,8 +11559,8 @@ sx_arr_cat() {
 		__sx_arr_is_bindable ${1+"${1}"} || return M_EX_NOPERM
 	esac
 
-	__sx_arr_cat_bind="${1-}"
-	__sx_arr_cat_borg=":${1-}"
+	Q_bind="${1-}"
+	Q_borg=":${1-}"
 	shift "$((0${1+1}))"
 
 	case "${SX_CFG_SKIP_CHK-}" in 1) ;; *)
@@ -11577,20 +11576,20 @@ sx_arr_cat() {
 	esac
 
 	# 1) 要素ストリームを1つずつ __sx_arr_bind で処理し、chain を構築する（読み取りのみ）
-	__sx_arr_cat_chain=
+	Q_chain=
 
-	for __sx_arr_cat_arr in "${@}"; do
-		eval "__sx_arr_cat_len=\"\${${__sx_arr_cat_arr}_len}\""
-		__sx_arr_cat_i=0
+	for Q_arr in "${@}"; do
+		eval "Q_len=\"\${${Q_arr}_len}\""
+		Q_i=0
 
-		while M_NUM_LT([|__sx_arr_cat_i|], [|__sx_arr_cat_len|]); do
-			__sx_arr_bind __sx_arr_cat_bind __sx_arr_cat_blk "${__sx_arr_cat_bind}" "${__sx_arr_cat_arr}_${__sx_arr_cat_i}" || break 2
-			M_STR_APPEND([|__sx_arr_cat_chain|], [|" ${__sx_arr_cat_blk}"|])
-			M_NUM_INCR([|__sx_arr_cat_i|])
+		while M_NUM_LT([|Q_i|], [|Q_len|]); do
+			__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_i}" || break 2
+			M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
+			M_NUM_INCR([|Q_i|])
 		done
 	done
 
-	eval set -- "${__sx_arr_cat_chain}"
+	eval set -- "${Q_chain}"
 
 	# 2) トランザクション: 全書き込み先（分配先の個々の変数）の書き込み可否を一括検査
 
@@ -11605,58 +11604,59 @@ sx_arr_cat() {
 	__sx_var_copy "${@}"
 
 	# 4) コミット: bind_org と残り bind を後方比較し、各配列セグメントを生成する
-	__sx_arr_cat_first=1   # 1 回目の走査＝末尾セグメント
+	Q_first=1   # 1 回目の走査＝末尾セグメント
 
-	while M_STR_HAS([|"${__sx_arr_cat_borg}"|], [|':'|]); do
+	while M_STR_HAS([|"${Q_borg}"|], [|':'|]); do
 		# bind_org の末尾セグメントを pop
-		__sx_arr_cat_oseg="${__sx_arr_cat_borg##*:}"
-		__sx_arr_cat_borg="${__sx_arr_cat_borg%:*}"
+		Q_oseg="${Q_borg##*:}"
+		Q_borg="${Q_borg%:*}"
 
-		case "${__sx_arr_cat_bind}" in
+		case "${Q_bind}" in
 			*:*)
-				__sx_arr_cat_fseg="${__sx_arr_cat_bind##*:}"
-				__sx_arr_cat_bind="${__sx_arr_cat_bind%:*}"
+				Q_fseg="${Q_bind##*:}"
+				Q_bind="${Q_bind%:*}"
 				;;
 			*)
-				__sx_arr_cat_fseg="${__sx_arr_cat_bind}"
-				__sx_arr_cat_bind=
+				Q_fseg="${Q_bind}"
+				Q_bind=
 				;;
 		esac
 
-		case "${__sx_arr_cat_first}${__sx_arr_cat_oseg}" in
+		case "${Q_first}${Q_oseg}" in
 			0[1-9]*[_"${SX_STR_ALPHA}"]* | 1[_"${SX_STR_ALPHA}"]*)
-				case "${__sx_arr_cat_oseg}" in
+				case "${Q_oseg}" in
 					[1-9]*)
-						__sx_arr_cat_lim="${__sx_arr_cat_oseg%%[!0-9]*}"
-						__sx_arr_cat_name="${__sx_arr_cat_oseg#"${__sx_arr_cat_lim}"}"
+						Q_lim="${Q_oseg%%[!0-9]*}"
+						Q_name="${Q_oseg#"${Q_lim}"}"
 						;;
 					*)
-						eval "__sx_arr_cat_lim=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
-						__sx_arr_cat_name="${__sx_arr_cat_oseg}"
+						eval "Q_lim=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
+						Q_name="${Q_oseg}"
 						;;
 				esac
 
-				case "${__sx_arr_cat_fseg}" in
-					*/*) __sx_arr_cat_len="${__sx_arr_cat_fseg%%/*}";;
-					?*) __sx_arr_cat_len=0;;
-					*) __sx_arr_cat_len="${__sx_arr_cat_lim}";;
+				case "${Q_fseg}" in
+					*/*) Q_len="${Q_fseg%%/*}";;
+					?*) Q_len=0;;
+					*) Q_len="${Q_lim}";;
 				esac
 
-				__sx_arr_gen "${__sx_arr_cat_name}"
-				M_VAR_SET([|${__sx_arr_cat_name}_len|], [|${__sx_arr_cat_len}|])
+				__sx_arr_gen "${Q_name}"
+				M_VAR_SET([|${Q_name}_len|], [|${Q_len}|])
 				;;
 			0["_${SX_STR_ALPHA}"]*)
-				case "${__sx_arr_cat_fseg}" in ?*)
-					unset "${__sx_arr_cat_oseg}"
+				case "${Q_fseg}" in ?*)
+					unset "${Q_oseg}"
 				esac
 				;;
 		esac
 
-		__sx_arr_cat_first=0
+		Q_first=0
 	done
 
 	unset CLEANUP
 }
+|], [|arr_cat|])dnl
 
 __sx_arr_cat() {
 	SX_CFG_SKIP_CHK=1 sx_arr_cat "${@}"
