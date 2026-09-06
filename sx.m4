@@ -5856,6 +5856,9 @@ __sx_num_edivmod_int() {
 }
 |], [|num_edivmod_int|])dnl
 
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
+
 ### sx_num_is_fixed - すべての引数が 10 進の実数表記（固定小数点形式）であるか確認する
 ##
 ## 使い方:
@@ -5870,17 +5873,18 @@ __sx_num_edivmod_int() {
 ##    0  すべて 10 進の実数表記である (SX_EX_OK)
 ##    1  10 進の実数表記ではない値が含まれる
 sx_num_is_fixed() {
-	for __sx_num_is_fixed_arg in "${@}"; do
-		case "${__sx_num_is_fixed_arg}" in *.*)
-			sx_str_is_digit "${__sx_num_is_fixed_arg#*.}"
-		esac && __sx_num_is_int_base 10 "${__sx_num_is_fixed_arg%%.*}" || {
-			unset __sx_num_is_fixed_arg
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in *.*)
+			sx_str_is_digit "${Q_arg#*.}"
+		esac && __sx_num_is_int_base 10 "${Q_arg%%.*}" || {
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_fixed_arg
+	unset CLEANUP
 }
+|], [|num_is_fixed|])
 
 ### sx_num_is_float - すべての引数が 10 進の実数表記（浮動小数点形式）であるか確認する
 ##
