@@ -1586,8 +1586,8 @@ sx_arg_isep() {
 }
 |], [|arg_isep|])dnl
 
-define([|V|], [|__sx_arg_isep_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(sep) V(int) V(lim) V(flg)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_bind Q_sep Q_int Q_lim Q_flg|])dnl
 
 ### __sx_arg_isep - 引数間にセパレータを挿入する（ディスパッチャ、内部用）
 ##
@@ -1602,31 +1602,31 @@ __sx_arg_isep() {
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") shift;;
 		"${2+X${2}}")
-			__sx_arg_isep_bind_="${1}"
+			Q_bind="${1}"
 			shift 2;;
 		"${3+X${3}}")
-			__sx_arg_isep_bind_="${1}" __sx_arg_isep_sep_="${2}"
+			Q_bind="${1}" Q_sep="${2}"
 			shift 3
 			;;
 		"${4+X${4}}")
-			__sx_arg_isep_bind_="${1}" __sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}"
+			Q_bind="${1}" Q_sep="${2}" Q_int="${3}"
 			shift 4
 			;;
 		"${5+X${5}}")
-			__sx_arg_isep_bind_="${1}" __sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}"
+			Q_bind="${1}" Q_sep="${2}" Q_int="${3}" Q_lim="${4}"
 			shift 5
 			;;
 		"${6+X${6}}")
-			__sx_arg_isep_bind_="${1}" __sx_arg_isep_sep_="${2}" __sx_arg_isep_int_="${3}" __sx_arg_isep_lim_="${4}" __sx_arg_isep_flg_="${5}"
+			Q_bind="${1}" Q_sep="${2}" Q_int="${3}" Q_lim="${4}" Q_flg="${5}"
 			shift 6
 			;;
 		*)
-			__sx_arg_isep_bind_="${1-}"
+			Q_bind="${1-}"
 			shift "$((0${1+1}))"
 			;;
 	esac
 
-	set -- "${__sx_arg_isep_bind_-}" "${__sx_arg_isep_sep_-}" "${__sx_arg_isep_int_:-1}" "${__sx_arg_isep_lim_:-${SX_NUM_I32_MAX}}" "$((${__sx_arg_isep_flg_:-0} & (${#} != 0 ? ~0 : (${__sx_arg_isep_int_:-1} > 0 ? ~SX_ARG_ISEP_POST : ~SX_ARG_ISEP_PRE))))" "${@}"
+	set -- "${Q_bind-}" "${Q_sep-}" "${Q_int:-1}" "${Q_lim:-${SX_NUM_I32_MAX}}" "$((${Q_flg:-0} & (${#} != 0 ? ~0 : (${Q_int:-1} > 0 ? ~SX_ARG_ISEP_POST : ~SX_ARG_ISEP_PRE))))" "${@}"
 	unset CLEANUP
 
 	__sx_var_bind_init "${1}"
@@ -1636,9 +1636,10 @@ __sx_arg_isep() {
 		*) __sx_arg_isep_cb "${@}";;
 	esac || return
 }
+|], [|arg_isep|])dnl
 
-define([|V|], [|__sx_arg_isep_cb_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(int) V(flg) V(cnt) V(stat) V(post) V(r) V(i) V(arg) V(ret)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_bind Q_int Q_flg Q_cnt Q_stat Q_post Q_r Q_i Q_arg Q_ret|])dnl
 
 ### __sx_arg_isep_cb - 引数間にセパレータを挿入する（コールバックモード、内部用）
 ##
@@ -1667,10 +1668,10 @@ __sx_arg_isep_cb() {
 
 		# === PRE セパレータ ===
 		case "$((${1} < ${8} && ${9} & SX_ARG_ISEP_PRE))" in 1)
-			if "${6}" __sx_arg_isep_cb_ret_ 0 "$((${1} + 1))" "${2}"; then
-				case "${__sx_arg_isep_cb_ret_+X}" in X)
-					__sx_var_bind __sx_arg_isep_cb_bind_ "${5}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
-					eval 'shift 5;' set -- "$((${1} + 1))" "${2}" 0 "${4}" "${__sx_arg_isep_cb_bind_}" '"${@}"';;
+			if "${6}" Q_ret 0 "$((${1} + 1))" "${2}"; then
+				case "${Q_ret+X}" in X)
+					__sx_var_bind Q_bind "${5}" "${Q_ret}" "${SX_VAR_BIND_QUOTE}"
+					eval 'shift 5;' set -- "$((${1} + 1))" "${2}" 0 "${4}" "${Q_bind}" '"${@}"';;
 				*)
 					eval 'shift 2;' set -- "$((${1} + 1))" "$((${2} + 1))" '"${@}"';;
 				esac
@@ -1678,18 +1679,18 @@ __sx_arg_isep_cb() {
 				eval 'shift 3;' set -- "${8}" "${2}" "${?}" '"${@}"'
 			fi
 
-			unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_cb_
+			unset Q_ret Q_bind Q_cb
 		esac
 
 		# === メインループ ===
-		for __sx_arg_isep_cb_arg_ in "${@}"; do
-			set -- "${1}" "${2}" "${3}" "$((${4} + 1))" "${5}" "${6}" "${7}" "${8}" "${9}" "${__sx_arg_isep_cb_arg_}"
+		for Q_arg in "${@}"; do
+			set -- "${1}" "${2}" "${3}" "$((${4} + 1))" "${5}" "${6}" "${7}" "${8}" "${9}" "${Q_arg}"
 
 			case "$((${4} < 0))" in 1)
 				continue
 			esac
 
-			unset __sx_arg_isep_cb_arg_
+			unset Q_arg
 
 			case "${5}" in '')
 				return "${3}"
@@ -1697,11 +1698,11 @@ __sx_arg_isep_cb() {
 
 			# 内部セパレータ挿入判定（前向き）
 			case "$((${1} < ${8} && 0 < ${4} && ${4} % ${7} == 0))" in 1)
-				if "${6}" __sx_arg_isep_cb_ret_ "${4}" "$((${1} + 1))" "${2}"; then
-					case "${__sx_arg_isep_cb_ret_+X}" in X)
-						__sx_var_bind __sx_arg_isep_cb_bind_ "${5}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}"
+				if "${6}" Q_ret "${4}" "$((${1} + 1))" "${2}"; then
+					case "${Q_ret+X}" in X)
+						__sx_var_bind Q_bind "${5}" "${Q_ret}" "${SX_VAR_BIND_QUOTE}"
 
-						set -- "$((${1} + 1))" "${2}" 0 "${4}" "${__sx_arg_isep_cb_bind_}" "${6}" "${7}" "${8}" "${9}" "${10}";;
+						set -- "$((${1} + 1))" "${2}" 0 "${4}" "${Q_bind}" "${6}" "${7}" "${8}" "${9}" "${10}";;
 					*)
 						set -- "$((${1} + 1))" "$((${2} + 1))" 0 "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}";;
 					esac
@@ -1710,121 +1711,121 @@ __sx_arg_isep_cb() {
 				fi
 			esac
 
-			__sx_var_bind __sx_arg_isep_cb_bind_ "${5}" "${10}" "${SX_VAR_BIND_QUOTE}" || :
-			set -- "${1}" "${2}" "${3}" "${4}" "${__sx_arg_isep_cb_bind_}" "${6}" "${7}" "${8}" "${9}"
-			unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_bind_
+			__sx_var_bind Q_bind "${5}" "${10}" "${SX_VAR_BIND_QUOTE}" || :
+			set -- "${1}" "${2}" "${3}" "${4}" "${Q_bind}" "${6}" "${7}" "${8}" "${9}"
+			unset Q_ret Q_bind
 		done
 
 		case "${5}" in '')
-			unset __sx_arg_isep_cb_arg_
+			unset Q_arg
 			return "${3}"
 		esac
 
 		# === POST セパレータ ===
 		case "$((${1} < ${8} && ${9} & SX_ARG_ISEP_POST && (${4} + 1) % ${7} == 0))" in 1)
-			if "${6}" __sx_arg_isep_cb_ret_ "$((${4} + 1))" "$((${1} + 1))" "${2}"; then
-				case "${__sx_arg_isep_cb_ret_+X}" in X)
-					__sx_var_bind __sx_arg_isep_cb_bind_ "${5}" "${__sx_arg_isep_cb_ret_}" "${SX_VAR_BIND_QUOTE}" || :
+			if "${6}" Q_ret "$((${4} + 1))" "$((${1} + 1))" "${2}"; then
+				case "${Q_ret+X}" in X)
+					__sx_var_bind Q_bind "${5}" "${Q_ret}" "${SX_VAR_BIND_QUOTE}" || :
 				esac
 			else
 				set -- "${1}" "${2}" "${?}"
 			fi
 		esac
 
-		unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_arg_ __sx_arg_isep_cb_bind_
+		unset Q_ret Q_arg Q_bind
 		return "${3}"
 	else
 		# === 負のインターバル: countベースCB呼出 + 左→右bind ===
-		__sx_arg_isep_cb_bind_="${1}"
-		__sx_arg_isep_cb_cb_="${2}"
-		__sx_arg_isep_cb_int_="${3}"
-		__sx_arg_isep_cb_lim_="${4}"
-		__sx_arg_isep_cb_flg_="${5}"
+		Q_bind="${1}"
+		Q_cb="${2}"
+		Q_int="${3}"
+		Q_lim="${4}"
+		Q_flg="${5}"
 		shift 5
 
 		# max = eff（accumulator、max < lim なら lim を cap）
-		__sx_arg_isep_cb_max_=$(((0 < ${#}) * (${#} - 1) / ${__sx_arg_isep_cb_int_#-}))
+		Q_max=$(((0 < ${#}) * (${#} - 1) / ${Q_int#-}))
 
 		# POST加算
-		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_POST))" in [!0]*)
-			M_NUM_INCR([|__sx_arg_isep_cb_max_|])
+		case "$((Q_flg & SX_ARG_ISEP_POST))" in [!0]*)
+			M_NUM_INCR([|Q_max|])
 		esac
 
 		# PRE加算（eff < lim - post は max < lim に簡約）
-		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_PRE && (${#} % ${__sx_arg_isep_cb_int_#-}) == 0))" in 1)
-			M_NUM_INCR([|__sx_arg_isep_cb_max_|])
+		case "$((Q_flg & SX_ARG_ISEP_PRE && (${#} % ${Q_int#-}) == 0))" in 1)
+			M_NUM_INCR([|Q_max|])
 		esac
 
 		# lim capping
-		__sx_arg_isep_cb_lim_=$((__sx_arg_isep_cb_max_ < __sx_arg_isep_cb_lim_ ? __sx_arg_isep_cb_max_ : __sx_arg_isep_cb_lim_))
+		Q_lim=$((Q_max < Q_lim ? Q_max : Q_lim))
 
 		# ===== Phase 1: countベースCB呼出 + 結果prepend（save/restore対応） =====
 			# SAVE state (8 vars) — 再帰呼び出しでCLEANUPにより変数が消える対策
-		set -- 0 0 "${__sx_arg_isep_cb_bind_}" "${__sx_arg_isep_cb_cb_}" "${__sx_arg_isep_cb_int_}" "${__sx_arg_isep_cb_lim_}" "${__sx_arg_isep_cb_flg_}" "${#}" "${@}"
-		unset __sx_arg_isep_cb_bind_ __sx_arg_isep_cb_cb_ __sx_arg_isep_cb_int_ __sx_arg_isep_cb_lim_ __sx_arg_isep_cb_flg_ __sx_arg_isep_cb_max_
+		set -- 0 0 "${Q_bind}" "${Q_cb}" "${Q_int}" "${Q_lim}" "${Q_flg}" "${#}" "${@}"
+		unset Q_bind Q_cb Q_int Q_lim Q_flg Q_max
 
 		while M_NUM_BOOL([|${1} < ${6}|]); do
-			if "${4}" __sx_arg_isep_cb_ret_ "$(((${7} & SX_ARG_ISEP_POST) && ${1} == 0 ? ${8} : ${8} - (${1} + 1 - ((${7} & SX_ARG_ISEP_POST) != 0)) * ${5#-}))" "$((${1} + 1))" "${2}"; then
-				case "${__sx_arg_isep_cb_ret_+X}" in
+			if "${4}" Q_ret "$(((${7} & SX_ARG_ISEP_POST) && ${1} == 0 ? ${8} : ${8} - (${1} + 1 - ((${7} & SX_ARG_ISEP_POST) != 0)) * ${5#-}))" "$((${1} + 1))" "${2}"; then
+				case "${Q_ret+X}" in
 					X)
-						__sx_arg_isep_cb_cb_="${4}"
-						eval 'shift 8;' set -- "$((${1} + 1))" "${2}" "${3}" '"${__sx_arg_isep_cb_cb_}"' "${5}" "${6}" "${7}" "${8}" '"${__sx_arg_isep_cb_ret_+:}${__sx_arg_isep_cb_ret_-}"' '"${@}"'
+						Q_cb="${4}"
+						eval 'shift 8;' set -- "$((${1} + 1))" "${2}" "${3}" '"${Q_cb}"' "${5}" "${6}" "${7}" "${8}" '"${Q_ret+:}${Q_ret-}"' '"${@}"'
 						;;
 				*) eval 'shift 2;' set -- "$((${1} + 1))" "$((${2} + 1))" '"${@}"';;
 				esac
 			else
-				__sx_arg_isep_cb_stat_="${?}"
+				Q_stat="${?}"
 				break
 			fi
 
-			unset __sx_arg_isep_cb_ret_ __sx_arg_isep_cb_cb_
+			unset Q_ret Q_cb
 		done
 
-		__sx_arg_isep_cb_cnt_="${1}"
-		__sx_arg_isep_cb_bind_="${3}"
-		__sx_arg_isep_cb_int_="${5}"
-		__sx_arg_isep_cb_flg_="${7}"
-		: "${__sx_arg_isep_cb_stat_=0}"
+		Q_cnt="${1}"
+		Q_bind="${3}"
+		Q_int="${5}"
+		Q_flg="${7}"
+		: "${Q_stat=0}"
 		shift 8
 
 		# ===== Phase 2: 左→右bind (for ループ) =====
 		# $@ = sep_N ... sep_1 data_1 ... data_M
 		# cnt_ 個の sep が先頭に積まれている
-		__sx_arg_isep_cb_post_=$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_POST && 0 < __sx_arg_isep_cb_cnt_))
-		__sx_arg_isep_cb_r_=$(((${#} - __sx_arg_isep_cb_cnt_) - (__sx_arg_isep_cb_cnt_ - __sx_arg_isep_cb_post_) * ${__sx_arg_isep_cb_int_#-}))
+		Q_post=$((Q_flg & SX_ARG_ISEP_POST && 0 < Q_cnt))
+		Q_r=$(((${#} - Q_cnt) - (Q_cnt - Q_post) * ${Q_int#-}))
 
 		# $@ 先頭から ${1} + shift で sep を消費する
 		# PRE (先頭セパレータ)
-		case "$((__sx_arg_isep_cb_flg_ & SX_ARG_ISEP_PRE && __sx_arg_isep_cb_r_ == 0))" in 1)
+		case "$((Q_flg & SX_ARG_ISEP_PRE && Q_r == 0))" in 1)
 			case "${1-}" in :*)
-				__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1#:}" "${SX_VAR_BIND_QUOTE}" || {
-					set -- "${__sx_arg_isep_cb_stat_}"
+				__sx_var_bind Q_bind "${Q_bind}" "${1#:}" "${SX_VAR_BIND_QUOTE}" || {
+					set -- "${Q_stat}"
 					unset CLEANUP
 					return "${1}"
 				}
 			esac
 
 			shift
-			M_NUM_DECR([|__sx_arg_isep_cb_cnt_|])
+			M_NUM_DECR([|Q_cnt|])
 		esac
 
 		# 要素を左→右に走査してbind (for ループ)
-		__sx_arg_isep_cb_i_="-${__sx_arg_isep_cb_cnt_}"
-		for __sx_arg_isep_cb_arg_ in "${@}"; do
-			M_NUM_INCR([|__sx_arg_isep_cb_i_|])
+		Q_i="-${Q_cnt}"
+		for Q_arg in "${@}"; do
+			M_NUM_INCR([|Q_i|])
 
 			# 先頭の sep 領域をスキップ
-			case "$((__sx_arg_isep_cb_i_ <= 0))" in 1) continue; esac
+			case "$((Q_i <= 0))" in 1) continue; esac
 
 			# 内部セパレータ
 			case "$((
-				1 < __sx_arg_isep_cb_i_ &&
-				__sx_arg_isep_cb_r_ < __sx_arg_isep_cb_i_ &&
-				(__sx_arg_isep_cb_i_ - __sx_arg_isep_cb_r_ - 1) % ${__sx_arg_isep_cb_int_#-} == 0
+				1 < Q_i &&
+				Q_r < Q_i &&
+				(Q_i - Q_r - 1) % ${Q_int#-} == 0
 			))" in 1)
 				case "${1-}" in :*)
-					__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1#:}" "${SX_VAR_BIND_QUOTE}" || {
-						set -- "${__sx_arg_isep_cb_stat_}"
+					__sx_var_bind Q_bind "${Q_bind}" "${1#:}" "${SX_VAR_BIND_QUOTE}" || {
+						set -- "${Q_stat}"
 						unset CLEANUP
 						return "${1}"
 					}
@@ -1834,23 +1835,24 @@ __sx_arg_isep_cb() {
 			esac
 
 			# 要素本体をbind
-			__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${__sx_arg_isep_cb_arg_}" "${SX_VAR_BIND_QUOTE}" || {
-				set -- "${__sx_arg_isep_cb_stat_}"
+			__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" "${SX_VAR_BIND_QUOTE}" || {
+				set -- "${Q_stat}"
 				unset CLEANUP
 				return "${1}"
 			}
 		done
 
 		# POST (末尾セパレータ)
-		case "$((__sx_arg_isep_cb_post_))${1-}" in 1:*)
-			__sx_var_bind __sx_arg_isep_cb_bind_ "${__sx_arg_isep_cb_bind_}" "${1#:}" "${SX_VAR_BIND_QUOTE}" || :;;
+		case "$((Q_post))${1-}" in 1:*)
+			__sx_var_bind Q_bind "${Q_bind}" "${1#:}" "${SX_VAR_BIND_QUOTE}" || :;;
 		esac
 
-		set -- "${__sx_arg_isep_cb_stat_}"
+		set -- "${Q_stat}"
 		unset CLEANUP
 		return "${1}"
 	fi
 }
+|], [|arg_isep_cb|])dnl
 
 define([|V|], [|__sx_arg_isep_lit_$1_|])dnl
 define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(flg) V(lim) V(eff) V(r) V(i) V(arg) V(max) V(post_ok) __M_BIND_USEVAR|])dnl
@@ -4600,103 +4602,104 @@ sx_num_add_nat0() {
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 ##   逐次方式でアキュムレータに各数値を順次加算する。
 
-define([|V|], [|__sx_num_add_nat0_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(qm) V(carry) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(b)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_res Q_qm Q_carry Q_out Q_rem1 Q_rem2 Q_ch1 Q_ch2 Q_tmp Q_b|])dnl
 
 __sx_num_add_nat0() {
-	__sx_num_add_nat0_res_="${1}"
-	__sx_num_add_nat0_rem1_="${2-0}"
+	Q_res="${1}"
+	Q_rem1="${2-0}"
 	shift "$((1 + 0${2+1}))"
 
 	# チャンク処理定数（事前定義値から選択）
-	eval "__sx_num_add_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_add_nat0_b_=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
+	eval "Q_qm=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" Q_b=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
 
-	for __sx_num_add_nat0_rem2_ in "${@}"; do
-		case "${__sx_num_add_nat0_rem1_}:${__sx_num_add_nat0_rem2_}" in
-			${__sx_num_add_nat0_qm_}?*:* | *:${__sx_num_add_nat0_qm_}?*) ;;
+	for Q_rem2 in "${@}"; do
+		case "${Q_rem1}:${Q_rem2}" in
+			${Q_qm}?*:* | *:${Q_qm}?*) ;;
 			*)
-				M_NUM_INCR([|__sx_num_add_nat0_rem1_|], [|__sx_num_add_nat0_rem2_|])
+				M_NUM_INCR([|Q_rem1|], [|Q_rem2|])
 				continue
 				;;
 		esac
 
 		# (2) 右端→左端 チャンク処理
-		__sx_num_add_nat0_carry_=0
-		__sx_num_add_nat0_out_=
+		Q_carry=0
+		Q_out=
 
 		while
 			# rem1 からチャンク抽出
-			case "${__sx_num_add_nat0_rem1_}" in
-				${__sx_num_add_nat0_qm_}?*)
-					__sx_num_add_nat0_tmp_="${__sx_num_add_nat0_rem1_%${__sx_num_add_nat0_qm_}}"
-					__sx_num_add_nat0_ch1_="${__sx_num_add_nat0_rem1_#"${__sx_num_add_nat0_tmp_}"}"
-					__sx_num_add_nat0_rem1_="${__sx_num_add_nat0_tmp_}"
+			case "${Q_rem1}" in
+				${Q_qm}?*)
+					Q_tmp="${Q_rem1%${Q_qm}}"
+					Q_ch1="${Q_rem1#"${Q_tmp}"}"
+					Q_rem1="${Q_tmp}"
 
-					case "${__sx_num_add_nat0_ch1_}" in 0*)
-						__sx_num_add_nat0_ch1_=$((1${__sx_num_add_nat0_ch1_} - __sx_num_add_nat0_b_))
+					case "${Q_ch1}" in 0*)
+						Q_ch1=$((1${Q_ch1} - Q_b))
 					esac
 					;;
 				*)
-					__sx_num_add_nat0_ch1_="${__sx_num_add_nat0_rem1_}"
-					__sx_num_add_nat0_rem1_=
+					Q_ch1="${Q_rem1}"
+					Q_rem1=
 					;;
 			esac
 
 			# rem2 からチャンク抽出
-			case "${__sx_num_add_nat0_rem2_}" in
-				${__sx_num_add_nat0_qm_}?*)
-					__sx_num_add_nat0_tmp_="${__sx_num_add_nat0_rem2_%${__sx_num_add_nat0_qm_}}"
-					__sx_num_add_nat0_ch2_="${__sx_num_add_nat0_rem2_#"${__sx_num_add_nat0_tmp_}"}"
-					__sx_num_add_nat0_rem2_="${__sx_num_add_nat0_tmp_}"
+			case "${Q_rem2}" in
+				${Q_qm}?*)
+					Q_tmp="${Q_rem2%${Q_qm}}"
+					Q_ch2="${Q_rem2#"${Q_tmp}"}"
+					Q_rem2="${Q_tmp}"
 
-					case "${__sx_num_add_nat0_ch2_}" in 0*)
-						__sx_num_add_nat0_ch2_=$((1${__sx_num_add_nat0_ch2_} - __sx_num_add_nat0_b_))
+					case "${Q_ch2}" in 0*)
+						Q_ch2=$((1${Q_ch2} - Q_b))
 					esac
 					;;
 				*)
-					__sx_num_add_nat0_ch2_="${__sx_num_add_nat0_rem2_}"
-					__sx_num_add_nat0_rem2_=
+					Q_ch2="${Q_rem2}"
+					Q_rem2=
 					;;
 			esac
 
-			__sx_num_add_nat0_tmp_=$((${__sx_num_add_nat0_ch1_} + ${__sx_num_add_nat0_ch2_} + __sx_num_add_nat0_carry_))
-			__sx_num_add_nat0_carry_=$((__sx_num_add_nat0_b_ <= ${__sx_num_add_nat0_tmp_}))
+			Q_tmp=$((${Q_ch1} + ${Q_ch2} + Q_carry))
+			Q_carry=$((Q_b <= ${Q_tmp}))
 
-			case "${__sx_num_add_nat0_carry_}:${__sx_num_add_nat0_rem1_}:${__sx_num_add_nat0_rem2_}" in
-				?::) __sx_num_add_nat0_rem1_="${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}" && break;;
+			case "${Q_carry}:${Q_rem1}:${Q_rem2}" in
+				?::) Q_rem1="${Q_tmp}${Q_out}" && break;;
 				0:?*: | 0::?*)
-					case "${__sx_num_add_nat0_tmp_}" in
-						${__sx_num_add_nat0_qm_}) M_STR_APPEND([|__sx_num_add_nat0_rem1_|], [|"${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_}${__sx_num_add_nat0_out_}"|]);;
+					case "${Q_tmp}" in
+						${Q_qm}) M_STR_APPEND([|Q_rem1|], [|"${Q_rem2}${Q_tmp}${Q_out}"|]);;
 						*)
 							# ゼロ埋めして前置（片方のチャンクが先頭ゼロ除去で短くなった場合の桁揃え）
-							M_NUM_INCR([|__sx_num_add_nat0_tmp_|], [|__sx_num_add_nat0_b_|])
-							M_STR_APPEND([|__sx_num_add_nat0_rem1_|], [|"${__sx_num_add_nat0_rem2_}${__sx_num_add_nat0_tmp_#1}${__sx_num_add_nat0_out_}"|])
+							M_NUM_INCR([|Q_tmp|], [|Q_b|])
+							M_STR_APPEND([|Q_rem1|], [|"${Q_rem2}${Q_tmp#1}${Q_out}"|])
 							;;
 						esac
 
 						break
 						;;
 				0:*)
-					case "${__sx_num_add_nat0_tmp_}" in
-						${__sx_num_add_nat0_qm_}) M_STR_PREPEND([|__sx_num_add_nat0_out_|], [|"${__sx_num_add_nat0_tmp_}"|]);;
+					case "${Q_tmp}" in
+						${Q_qm}) M_STR_PREPEND([|Q_out|], [|"${Q_tmp}"|]);;
 						*)
 							# ゼロ埋めして前置
-							M_NUM_INCR([|__sx_num_add_nat0_tmp_|], [|__sx_num_add_nat0_b_|])
-							M_STR_PREPEND([|__sx_num_add_nat0_out_|], [|"${__sx_num_add_nat0_tmp_#1}"|])
+							M_NUM_INCR([|Q_tmp|], [|Q_b|])
+							M_STR_PREPEND([|Q_out|], [|"${Q_tmp#1}"|])
 							;;
 					esac
 					;;
-				*) M_STR_PREPEND([|__sx_num_add_nat0_out_|], [|"${__sx_num_add_nat0_tmp_#1}"|]);;
+				*) M_STR_PREPEND([|Q_out|], [|"${Q_tmp#1}"|]);;
 			esac
 
 			continue
 		do :; done
 	done
 
-	M_VAR_SET([|${__sx_num_add_nat0_res_}|], [|${__sx_num_add_nat0_rem1_}|])
+	M_VAR_SET([|${Q_res}|], [|${Q_rem1}|])
 
 	unset CLEANUP
 }
+|], [|num_add_nat0|])dnl
 
 ### sx_num_cmp_arith - 2つの数値を算術展開で比較する
 ##
@@ -5092,8 +5095,8 @@ sx_num_div_nat0() {
 }
 |], [|num_div_nat0|])dnl
 
-define([|V|], [|__sx_num_div_nat0_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q) V(r) V(dec) V(zr) V(qm)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_res Q_dp Q_u Q_den Q_q Q_r Q_dec Q_zr Q_qm|])dnl
 
 ### __sx_num_div_nat0 - 絶対値の除算で実数商（整数商 + 小数部）を求める（内部用）
 ##
@@ -5117,62 +5120,63 @@ define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q) V(r) V(dec) V(zr) V(qm)|])dn
 
 __sx_num_div_nat0() {
 	# ステップ 1: 引数の取得（結果変数名、小数桁数 dp、被除数 u、除数群）
-	__sx_num_div_nat0_res_="${1}"
-	__sx_num_div_nat0_dp_="${2:-0}"
-	__sx_num_div_nat0_u_="${3:-0}"
+	Q_res="${1}"
+	Q_dp="${2:-0}"
+	Q_u="${3:-0}"
 	shift 3
 
-	case "${__sx_num_div_nat0_u_}" in 0 | +0 | -0)
-		M_VAR_SET([|${__sx_num_div_nat0_res_}|], [|0|])
+	case "${Q_u}" in 0 | +0 | -0)
+		M_VAR_SET([|${Q_res}|], [|0|])
 		unset CLEANUP
 		return M_EX_OK
 	esac
 
 	# ステップ 2: すべての除数を乗算して単一の除数にする（除数が無い場合は 1）
-	__sx_num_mul_nat0 __sx_num_div_nat0_den_ "${@}"
+	__sx_num_mul_nat0 Q_den "${@}"
 
 	# ステップ 3: 整数商と余剰を求める
-	__sx_num_divmod_nat0 "__sx_num_div_nat0_q_:__sx_num_div_nat0_r_:" "${__sx_num_div_nat0_u_}" "${__sx_num_div_nat0_den_}"
+	__sx_num_divmod_nat0 "Q_q:Q_r:" "${Q_u}" "${Q_den}"
 
 	# ステップ 4: 小数部の導出（dp が 1 以上かつ余剰が 0 でない場合のみ）
 	#   dec = floor(余剰 × 10^dp ÷ den) を dp 桁にゼロ埋めした文字列（末尾 0 は除去）
-	__sx_num_div_nat0_dec_=
+	Q_dec=
 
-	case "${__sx_num_div_nat0_dp_}${__sx_num_div_nat0_r_}" in [!0]*[!0]*)
+	case "${Q_dp}${Q_r}" in [!0]*[!0]*)
 		# "0"×dp は SX_NUM_ZR 定数（1〜37 桁）から参照し、超過時のみ str_rep で生成する
-		__sx_str_zr __sx_num_div_nat0_zr_ "${__sx_num_div_nat0_dp_}"
+		__sx_str_zr Q_zr "${Q_dp}"
 
 		# 小数部 = 余剰 × 10^dp ÷ den の整数商（この除算の余りは不要）
-		__sx_num_divmod_nat0 "__sx_num_div_nat0_dec_:" "${__sx_num_div_nat0_r_}${__sx_num_div_nat0_zr_}" "${__sx_num_div_nat0_den_}"
+		__sx_num_divmod_nat0 "Q_dec:" "${Q_r}${Q_zr}" "${Q_den}"
 
 		# dec が dp 桁未満の場合のみ先頭をゼロ埋めする（len == dp なら定数参照を丸ごとスキップ）
-		if M_STR_NE([|"${#__sx_num_div_nat0_dec_}"|], [|"${__sx_num_div_nat0_dp_}"|]); then
+		if M_STR_NE([|"${#Q_dec}"|], [|"${Q_dp}"|]); then
 			# 前置 "0"×dp から剥ぎ取る '?'×len(dec) は SX_NUM_QM 定数（1〜37 桁）から参照する
-			__sx_str_qm __sx_num_div_nat0_qm_ "${#__sx_num_div_nat0_dec_}"
+			__sx_str_qm Q_qm "${#Q_dec}"
 
 			# "0"×dp を前置して '?'×len(dec) を剥ぎ、末尾 dp 桁だけを採用する
 			# （dec は高々 dp 桁のため、桁不足のときのみこのパスに来る）
-			M_STR_PREPEND([|__sx_num_div_nat0_dec_|], [|"${__sx_num_div_nat0_zr_}"|])
+			M_STR_PREPEND([|Q_dec|], [|"${Q_zr}"|])
 
 			# '?'×len(dec) は ? がパターン一致として働く必要があるため、
 			# 内側の展開は意図的にクォートしない（クォートすると ? がリテラル化して剥ぎ取りが失敗する）
-			__sx_num_div_nat0_dec_="${__sx_num_div_nat0_dec_#${__sx_num_div_nat0_qm_}}"
+			Q_dec="${Q_dec#${Q_qm}}"
 		fi
 
 		# 小数部の末尾 0 を除去する
-		case "${__sx_num_div_nat0_dec_}" in *0)
-			__sx_num_div_nat0_dec_="M_STR_RTRIM([|__sx_num_div_nat0_dec_|], [|[!0]|])";;
+		case "${Q_dec}" in *0)
+			Q_dec="M_STR_RTRIM([|Q_dec|], [|[!0]|])";;
 		esac
 	esac
 
 	# 小数部が空（小数が 0）なら "." を付けず整数商のまま
-	case "${__sx_num_div_nat0_dec_}" in ?*)
-		M_STR_APPEND([|__sx_num_div_nat0_q_|], [|".${__sx_num_div_nat0_dec_}"|])
+	case "${Q_dec}" in ?*)
+		M_STR_APPEND([|Q_q|], [|".${Q_dec}"|])
 	esac
 
-	M_VAR_SET([|${__sx_num_div_nat0_res_}|], [|${__sx_num_div_nat0_q_}|])
+	M_VAR_SET([|${Q_res}|], [|${Q_q}|])
 	unset CLEANUP
 }
+|], [|num_div_nat0|])dnl
 
 ### sx_num_divmod_int - 符号付き整数の除算で整数商と余剰を同時に求める（Truncated）
 ##
@@ -7857,82 +7861,82 @@ sx_num_sub_nat0() {
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 ##   被減数 >= 減数 が保証されていること。
 
-define([|V|], [|__sx_num_sub_nat0_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(qm) V(borrow) V(out) V(rem1) V(rem2) V(ch1) V(ch2) V(tmp) V(b)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_res Q_qm Q_borrow Q_out Q_rem1 Q_rem2 Q_ch1 Q_ch2 Q_tmp Q_b|])dnl
 
 __sx_num_sub_nat0() {
-	__sx_num_sub_nat0_res_="${1}"
-	__sx_num_sub_nat0_rem1_="${2-0}"
-	__sx_num_sub_nat0_rem2_="${3-0}"
-	__sx_num_sub_nat0_borrow_=0
-	__sx_num_sub_nat0_out_=
+	Q_res="${1}"
+	Q_rem1="${2-0}"
+	Q_rem2="${3-0}"
+	Q_borrow=0
+	Q_out=
 
-	eval "__sx_num_sub_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" __sx_num_sub_nat0_b_=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
+	eval "Q_qm=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" Q_b=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
 
 	while
-		case "${__sx_num_sub_nat0_rem1_}" in
-			${__sx_num_sub_nat0_qm_}?*)
-				__sx_num_sub_nat0_tmp_="${__sx_num_sub_nat0_rem1_%${__sx_num_sub_nat0_qm_}}"
-				__sx_num_sub_nat0_ch1_="${__sx_num_sub_nat0_rem1_#"${__sx_num_sub_nat0_tmp_}"}"
-				__sx_num_sub_nat0_rem1_="${__sx_num_sub_nat0_tmp_}"
+		case "${Q_rem1}" in
+			${Q_qm}?*)
+				Q_tmp="${Q_rem1%${Q_qm}}"
+				Q_ch1="${Q_rem1#"${Q_tmp}"}"
+				Q_rem1="${Q_tmp}"
 
-				case "${__sx_num_sub_nat0_ch1_}" in 0*)
-					__sx_num_sub_nat0_ch1_=$((1${__sx_num_sub_nat0_ch1_} - ${__sx_num_sub_nat0_b_}))
+				case "${Q_ch1}" in 0*)
+					Q_ch1=$((1${Q_ch1} - ${Q_b}))
 				esac
 				;;
 			*)
-				__sx_num_sub_nat0_ch1_="${__sx_num_sub_nat0_rem1_}"
-				__sx_num_sub_nat0_rem1_=
+				Q_ch1="${Q_rem1}"
+				Q_rem1=
 				;;
 		esac
 
-		case "${__sx_num_sub_nat0_rem2_}" in
-			${__sx_num_sub_nat0_qm_}?*)
-				__sx_num_sub_nat0_tmp_="${__sx_num_sub_nat0_rem2_%${__sx_num_sub_nat0_qm_}}"
-				__sx_num_sub_nat0_ch2_="${__sx_num_sub_nat0_rem2_#"${__sx_num_sub_nat0_tmp_}"}"
-				__sx_num_sub_nat0_rem2_="${__sx_num_sub_nat0_tmp_}"
+		case "${Q_rem2}" in
+			${Q_qm}?*)
+				Q_tmp="${Q_rem2%${Q_qm}}"
+				Q_ch2="${Q_rem2#"${Q_tmp}"}"
+				Q_rem2="${Q_tmp}"
 
-				case "${__sx_num_sub_nat0_ch2_}" in 0*)
-					__sx_num_sub_nat0_ch2_=$((1${__sx_num_sub_nat0_ch2_} - ${__sx_num_sub_nat0_b_}))
+				case "${Q_ch2}" in 0*)
+					Q_ch2=$((1${Q_ch2} - ${Q_b}))
 				esac
 				;;
 			*)
-				__sx_num_sub_nat0_ch2_="${__sx_num_sub_nat0_rem2_}"
-				__sx_num_sub_nat0_rem2_=
+				Q_ch2="${Q_rem2}"
+				Q_rem2=
 				;;
 		esac
 
-		__sx_num_sub_nat0_tmp_=$((${__sx_num_sub_nat0_ch1_:-0} - ${__sx_num_sub_nat0_ch2_:-0} - __sx_num_sub_nat0_borrow_))
-		__sx_num_sub_nat0_borrow_=$((__sx_num_sub_nat0_tmp_ < 0))
+		Q_tmp=$((${Q_ch1:-0} - ${Q_ch2:-0} - Q_borrow))
+		Q_borrow=$((Q_tmp < 0))
 
-		case "${__sx_num_sub_nat0_borrow_}:${__sx_num_sub_nat0_rem1_}:${__sx_num_sub_nat0_rem2_}" in
+		case "${Q_borrow}:${Q_rem1}:${Q_rem2}" in
 			0::)
 				# 両方の剰余が枯渇 → tmp_ が最上位桁、先頭ゼロ除去のみでゼロ埋め不要
-				case "${__sx_num_sub_nat0_tmp_}" in [!0]*)
-					M_STR_PREPEND([|__sx_num_sub_nat0_out_|], [|"${__sx_num_sub_nat0_tmp_}"|])
+				case "${Q_tmp}" in [!0]*)
+					M_STR_PREPEND([|Q_out|], [|"${Q_tmp}"|])
 				esac
 
 				break
 				;;
 			0:*:)
-				case "${__sx_num_sub_nat0_tmp_}" in
-					${__sx_num_sub_nat0_qm_}*) M_STR_PREPEND([|__sx_num_sub_nat0_out_|], [|"${__sx_num_sub_nat0_rem1_}${__sx_num_sub_nat0_tmp_}"|]);;
+				case "${Q_tmp}" in
+					${Q_qm}*) M_STR_PREPEND([|Q_out|], [|"${Q_rem1}${Q_tmp}"|]);;
 					*)
 						# rem2 のみ枯渇、rem1 に未処理チャンクあり → ゼロ埋めして桁揃え
-						M_NUM_INCR([|__sx_num_sub_nat0_tmp_|], [|__sx_num_sub_nat0_b_|])
-						M_STR_PREPEND([|__sx_num_sub_nat0_out_|], [|"${__sx_num_sub_nat0_rem1_}${__sx_num_sub_nat0_tmp_#1}"|])
+						M_NUM_INCR([|Q_tmp|], [|Q_b|])
+						M_STR_PREPEND([|Q_out|], [|"${Q_rem1}${Q_tmp#1}"|])
 						;;
 				esac
 
 				break
 				;;
-			1:*) M_NUM_INCR([|__sx_num_sub_nat0_tmp_|], [|__sx_num_sub_nat0_b_|]);&
+			1:*) M_NUM_INCR([|Q_tmp|], [|Q_b|]);&
 			*)
-				case "${__sx_num_sub_nat0_tmp_}" in
-					${__sx_num_sub_nat0_qm_}*) M_STR_PREPEND([|__sx_num_sub_nat0_out_|], [|"${__sx_num_sub_nat0_tmp_}"|]);;
+				case "${Q_tmp}" in
+					${Q_qm}*) M_STR_PREPEND([|Q_out|], [|"${Q_tmp}"|]);;
 					*)
-						M_NUM_INCR([|__sx_num_sub_nat0_tmp_|], [|__sx_num_sub_nat0_b_|])
-						M_STR_PREPEND([|__sx_num_sub_nat0_out_|], [|"${__sx_num_sub_nat0_tmp_#1}"|])
+						M_NUM_INCR([|Q_tmp|], [|Q_b|])
+						M_STR_PREPEND([|Q_out|], [|"${Q_tmp#1}"|])
 						;;
 				esac
 				;;
@@ -7941,10 +7945,11 @@ __sx_num_sub_nat0() {
 		continue
 	do :; done
 
-	M_VAR_SET([|${__sx_num_sub_nat0_res_}|], [|${__sx_num_sub_nat0_out_:-0}|])
+	M_VAR_SET([|${Q_res}|], [|${Q_out:-0}|])
 
 	unset CLEANUP
 }
+|], [|num_sub_nat0|])dnl
 
 # ========================================
 #  UUID (UUID Operations)
@@ -11450,8 +11455,8 @@ sx_arr_bind() {
 }
 |], [|arr_bind|])dnl
 
-define([|V|], [|__sx_arr_bind_$1_|])dnl
-define([|CLEANUP|], [|V(br) V(cr) V(bind) V(chain) V(seg) V(rest) V(m) V(n) V(vn) V(sts)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_br Q_cr Q_bind Q_chain Q_seg Q_rest Q_m Q_n Q_vn Q_sts|])dnl
 
 ### __sx_arr_bind - 配列対応バインドで変数を順次割り当てる（内部用）
 ##
@@ -11461,83 +11466,84 @@ define([|CLEANUP|], [|V(br) V(cr) V(bind) V(chain) V(seg) V(rest) V(m) V(n) V(vn
 ## 説明:
 ##   bind文字列を逐次解析し、chain (src-dst) と残りbindを生成する。
 __sx_arr_bind() {
-	__sx_arr_bind_br_="${1-}"
-	__sx_arr_bind_cr_="${2-}"
-	__sx_arr_bind_bind_="${3-}"
-	__sx_arr_bind_chain_=
-	__sx_arr_bind_sts_=0
+	Q_br="${1-}"
+	Q_cr="${2-}"
+	Q_bind="${3-}"
+	Q_chain=
+	Q_sts=0
 	shift 3
 
-	for __sx_arr_bind_vn_ in "${@}"; do
-		case "${__sx_arr_bind_bind_}" in
+	for Q_vn in "${@}"; do
+		case "${Q_bind}" in
 			[0-9]*:*)
-				__sx_arr_bind_seg_="${__sx_arr_bind_bind_%%:*}"
-				__sx_arr_bind_rest_="${__sx_arr_bind_bind_#*:}"
+				Q_seg="${Q_bind%%:*}"
+				Q_rest="${Q_bind#*:}"
 
-				case "${__sx_arr_bind_seg_}" in
+				case "${Q_seg}" in
 					*/*)
-						__sx_arr_bind_m_="${__sx_arr_bind_seg_%%/*}"
-						__sx_arr_bind_seg_="${__sx_arr_bind_seg_#*/}"
+						Q_m="${Q_seg%%/*}"
+						Q_seg="${Q_seg#*/}"
 						;;
-					*) __sx_arr_bind_m_=0;;
+					*) Q_m=0;;
 				esac
 
-				__sx_arr_bind_n_="${__sx_arr_bind_seg_%%[!0-9]*}"
-				__sx_arr_bind_seg_="${__sx_arr_bind_seg_#"${__sx_arr_bind_n_}"}"
+				Q_n="${Q_seg%%[!0-9]*}"
+				Q_seg="${Q_seg#"${Q_n}"}"
 
-				case "${__sx_arr_bind_seg_}" in ["_${SX_STR_ALPHA}"]*)
-					M_STR_APPEND([|__sx_arr_bind_chain_|], [|"${__sx_arr_bind_vn_}-${__sx_arr_bind_seg_}_${__sx_arr_bind_m_}"|], [| |])
+				case "${Q_seg}" in ["_${SX_STR_ALPHA}"]*)
+					M_STR_APPEND([|Q_chain|], [|"${Q_vn}-${Q_seg}_${Q_m}"|], [| |])
 				esac
 
-				M_NUM_INCR([|__sx_arr_bind_m_|])
+				M_NUM_INCR([|Q_m|])
 
-				case "${__sx_arr_bind_m_}" in
-					"${__sx_arr_bind_n_}") __sx_arr_bind_bind_="${__sx_arr_bind_rest_}";;
-					*) __sx_arr_bind_bind_="${__sx_arr_bind_m_}/${__sx_arr_bind_n_}${__sx_arr_bind_seg_}:${__sx_arr_bind_rest_}";;
+				case "${Q_m}" in
+					"${Q_n}") Q_bind="${Q_rest}";;
+					*) Q_bind="${Q_m}/${Q_n}${Q_seg}:${Q_rest}";;
 				esac
 				;;
-			:*) __sx_arr_bind_bind_="${__sx_arr_bind_bind_#*:}";;
+			:*) Q_bind="${Q_bind#*:}";;
 			*:*)
-				M_STR_APPEND([|__sx_arr_bind_chain_|], [|"${__sx_arr_bind_vn_}-${__sx_arr_bind_bind_%%:*}"|], [| |])
-				__sx_arr_bind_bind_="${__sx_arr_bind_bind_#*:}"
+				M_STR_APPEND([|Q_chain|], [|"${Q_vn}-${Q_bind%%:*}"|], [| |])
+				Q_bind="${Q_bind#*:}"
 				;;
 			?*)
-				__sx_arr_bind_seg_="${__sx_arr_bind_bind_}"
-				__sx_arr_bind_m_=0
-				eval "__sx_arr_bind_n_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
+				Q_seg="${Q_bind}"
+				Q_m=0
+				eval "Q_n=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
 
-				case "${__sx_arr_bind_seg_}" in */*)
-					__sx_arr_bind_m_="${__sx_arr_bind_seg_%%/*}"
-					__sx_arr_bind_seg_="${__sx_arr_bind_seg_#*/}"
+				case "${Q_seg}" in */*)
+					Q_m="${Q_seg%%/*}"
+					Q_seg="${Q_seg#*/}"
 				esac
 
-				case "${__sx_arr_bind_seg_}" in [1-9]*)
-					__sx_arr_bind_n_="${__sx_arr_bind_seg_%%[!0-9]*}"
-					__sx_arr_bind_seg_="${__sx_arr_bind_seg_#"${__sx_arr_bind_n_}"}"
+				case "${Q_seg}" in [1-9]*)
+					Q_n="${Q_seg%%[!0-9]*}"
+					Q_seg="${Q_seg#"${Q_n}"}"
 				esac
 
-				M_STR_APPEND([|__sx_arr_bind_chain_|], [|"${__sx_arr_bind_vn_}-${__sx_arr_bind_seg_}_${__sx_arr_bind_m_}"|], [| |])
-				M_NUM_INCR([|__sx_arr_bind_m_|])
+				M_STR_APPEND([|Q_chain|], [|"${Q_vn}-${Q_seg}_${Q_m}"|], [| |])
+				M_NUM_INCR([|Q_m|])
 
-				case "${__sx_arr_bind_m_}" in
-					"${__sx_arr_bind_n_}") __sx_arr_bind_bind_=;;
-					*) __sx_arr_bind_bind_="${__sx_arr_bind_m_}/${__sx_arr_bind_n_}${__sx_arr_bind_seg_}";;
+				case "${Q_m}" in
+					"${Q_n}") Q_bind=;;
+					*) Q_bind="${Q_m}/${Q_n}${Q_seg}";;
 				esac
 				;;
 			*)
-				__sx_arr_bind_sts_=1
+				Q_sts=1
 				break
 				;;
 		esac
 	done
 
-	M_VAR_SET([|${__sx_arr_bind_br_}|], [|${__sx_arr_bind_bind_}|], [|${__sx_arr_bind_cr_}|], [|${__sx_arr_bind_chain_}|])
+	M_VAR_SET([|${Q_br}|], [|${Q_bind}|], [|${Q_cr}|], [|${Q_chain}|])
 
-	set -- "${__sx_arr_bind_sts_}"
+	set -- "${Q_sts}"
 
 	unset CLEANUP
 	return "${1}"
 }
+|], [|arr_bind|])dnl
 
 M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_first Q_arr Q_len Q_i Q_blk Q_oseg Q_name Q_fseg Q_lim|])dnl
