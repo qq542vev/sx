@@ -4509,44 +4509,45 @@ sx_num_add_int() {
 ##   __sx_num_add_nat0 で絶対値加算を行い、最後に絶対値を比較し
 ##   減算して符号を決定する。
 
-define([|V|], [|__sx_num_add_int_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(pos) V(neg) V(pos_sum) V(neg_sum) V(arg) V(acc)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_res Q_pos Q_neg Q_pos_sum Q_neg_sum Q_arg Q_acc|])dnl
 
 __sx_num_add_int() {
-	__sx_num_add_int_res_="${1}"
+	Q_res="${1}"
 	shift
 
 	# Step 1: 正数と負数に分離
-	__sx_num_add_int_pos_=
-	__sx_num_add_int_neg_=
+	Q_pos=
+	Q_neg=
 
-	for __sx_num_add_int_arg_ in "${@}"; do
-		case "${__sx_num_add_int_arg_}" in
-			-*) M_STR_APPEND([|__sx_num_add_int_neg_|], [|" ${__sx_num_add_int_arg_#-}"|]);;
-			*)  M_STR_APPEND([|__sx_num_add_int_pos_|], [|" ${__sx_num_add_int_arg_#+}"|]);;
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			-*) M_STR_APPEND([|Q_neg|], [|" ${Q_arg#-}"|]);;
+			*)  M_STR_APPEND([|Q_pos|], [|" ${Q_arg#+}"|]);;
 		esac
 	done
 
 	# Step 2: 正数の合計
-	eval __sx_num_add_nat0 __sx_num_add_int_pos_sum_ "${__sx_num_add_int_pos_}"
+	eval __sx_num_add_nat0 Q_pos_sum "${Q_pos}"
 
 	# Step 3: 負数（絶対値）の合計
-	eval __sx_num_add_nat0 __sx_num_add_int_neg_sum_ "${__sx_num_add_int_neg_}"
+	eval __sx_num_add_nat0 Q_neg_sum "${Q_neg}"
 
 	# Step 4: 絶対値を比較して最終結果を決定
-	__sx_num_cmp_nat0 "${__sx_num_add_int_pos_sum_}" "${__sx_num_add_int_neg_sum_}" || case "${?}" in
+	__sx_num_cmp_nat0 "${Q_pos_sum}" "${Q_neg_sum}" || case "${?}" in
 		1)
-			__sx_num_sub_nat0 __sx_num_add_int_acc_ "${__sx_num_add_int_neg_sum_}" "${__sx_num_add_int_pos_sum_}"
-			M_STR_PREPEND([|__sx_num_add_int_acc_|], [|-|])
+			__sx_num_sub_nat0 Q_acc "${Q_neg_sum}" "${Q_pos_sum}"
+			M_STR_PREPEND([|Q_acc|], [|-|])
 			;;
-		2) __sx_num_add_int_acc_=0;;
-		3) __sx_num_sub_nat0 __sx_num_add_int_acc_ "${__sx_num_add_int_pos_sum_}" "${__sx_num_add_int_neg_sum_}";;
+		2) Q_acc=0;;
+		3) __sx_num_sub_nat0 Q_acc "${Q_pos_sum}" "${Q_neg_sum}";;
 	esac
 
-	M_VAR_SET([|${__sx_num_add_int_res_}|], [|${__sx_num_add_int_acc_}|])
+	M_VAR_SET([|${Q_res}|], [|${Q_acc}|])
 
 	unset CLEANUP
 }
+|], [|num_add_int|])dnl
 
 ### sx_num_add_nat0 - 複数の絶対値をチャンク加算する
 ##
@@ -4908,8 +4909,8 @@ sx_num_cmp_nat0() {
 	__sx_num_cmp_nat0 "${1}" "${2}" || return
 }
 
-define([|V|], [|__sx_num_cmp_nat0_$1_|])dnl
-define([|CLEANUP|], [|V(l) V(r) V(qm)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_l Q_r Q_qm|])dnl
 
 ### __sx_num_cmp_nat0 - 符号なし10進整数文字列を比較する（内部用）
 ##
@@ -4922,23 +4923,23 @@ __sx_num_cmp_nat0() {
 		return 2
 	esac
 
-	__sx_num_cmp_nat0_l_="${#1}"
-	__sx_num_cmp_nat0_r_="${#2}"
+	Q_l="${#1}"
+	Q_r="${#2}"
 
-	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_cmp_nat0_l_}" "${__sx_num_cmp_nat0_r_}"; then
-		__sx_num_cmp_arith "${__sx_num_cmp_nat0_l_}" "${__sx_num_cmp_nat0_r_}"
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_l}" "${Q_r}"; then
+		__sx_num_cmp_arith "${Q_l}" "${Q_r}"
 	else
-		__sx_num_cmp_nat0 "${__sx_num_cmp_nat0_l_}" "${__sx_num_cmp_nat0_r_}"
+		__sx_num_cmp_nat0 "${Q_l}" "${Q_r}"
 	fi || case "${?}" in 1 | 3)
 		set -- "${?}"
 		unset CLEANUP
 		return "${1}"
 	esac
 
-	eval "__sx_num_cmp_nat0_qm_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
+	eval "Q_qm=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
 
-	while M_STR_MATCH([|"${1}"|], [|${__sx_num_cmp_nat0_qm_}?*|]); do
-		set -- "${1#${__sx_num_cmp_nat0_qm_}}" "${2#${__sx_num_cmp_nat0_qm_}}" "${1}" "${2}"
+	while M_STR_MATCH([|"${1}"|], [|${Q_qm}?*|]); do
+		set -- "${1#${Q_qm}}" "${2#${Q_qm}}" "${1}" "${2}"
 		__sx_num_cmp_arith "1${3%"${1}"}" "1${4%"${2}"}" || case "${?}" in 1 | 3)
 			set -- "${?}"
 			unset CLEANUP
@@ -4950,6 +4951,7 @@ __sx_num_cmp_nat0() {
 
 	__sx_num_cmp_arith "1${1}" "1${2}" || return "${?}"
 }
+|], [|num_cmp_nat0|])dnl
 
 ### sx_num_div_int - 符号付き整数の除算で実数商（整数商 + 小数部）を求める
 ##
@@ -5002,8 +5004,8 @@ sx_num_div_int() {
 }
 |], [|num_div_int|])dnl
 
-define([|V|], [|__sx_num_div_int_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_res Q_dp Q_u Q_den Q_q|])dnl
 
 ### __sx_num_div_int - 符号付き整数の除算で実数商（整数商 + 小数部）を求める（内部用）
 ##
@@ -5015,28 +5017,29 @@ define([|CLEANUP|], [|V(res) V(dp) V(u) V(den) V(q)|])dnl
 ##   前提: 小数桁数は 0 以上の自然数、被除数は任意の符号付き整数、
 ##   すべての除数は 0 以外の符号付き整数であること。
 __sx_num_div_int() {
-	__sx_num_div_int_res_="${1}"
-	__sx_num_div_int_dp_="${2:-0}"
-	__sx_num_div_int_u_="${3:-0}"
+	Q_res="${1}"
+	Q_dp="${2:-0}"
+	Q_u="${3:-0}"
 	shift "$((0${1+1} + 0${2+1} + 0${3+1}))"
 
-	case "${__sx_num_div_int_u_}" in 0 | +0 | -0)
-		M_VAR_SET([|${__sx_num_div_int_res_}|], [|0|])
+	case "${Q_u}" in 0 | +0 | -0)
+		M_VAR_SET([|${Q_res}|], [|0|])
 		unset CLEANUP
 		return M_EX_OK
 	esac
 
-	__sx_num_mul_int __sx_num_div_int_den_ "${@}"
+	__sx_num_mul_int Q_den "${@}"
 
-	__sx_num_div_nat0 __sx_num_div_int_q_ "${__sx_num_div_int_dp_}" "${__sx_num_div_int_u_#[+-]}" "${__sx_num_div_int_den_#[+-]}"
+	__sx_num_div_nat0 Q_q "${Q_dp}" "${Q_u#[+-]}" "${Q_den#[+-]}"
 
-	case "${__sx_num_div_int_u_}:${__sx_num_div_int_den_}:${__sx_num_div_int_q_}" in -*:[!-]*:*[!0]* | [!-]*:-*:*[!0]*)
-		M_STR_PREPEND([|__sx_num_div_int_q_|], [|-|])
+	case "${Q_u}:${Q_den}:${Q_q}" in -*:[!-]*:*[!0]* | [!-]*:-*:*[!0]*)
+		M_STR_PREPEND([|Q_q|], [|-|])
 	esac
 
-	M_VAR_SET([|${__sx_num_div_int_res_}|], [|${__sx_num_div_int_q_}|])
+	M_VAR_SET([|${Q_res}|], [|${Q_q}|])
 	unset CLEANUP
 }
+|], [|num_div_int|])dnl
 
 ### sx_num_div_nat0 - 絶対値の除算で実数商（整数商 + 小数部）を求める
 ##
@@ -5204,8 +5207,8 @@ sx_num_divmod_int() {
 	__sx_num_divmod_int "${@}"
 }
 
-define([|V|], [|__sx_num_divmod_int_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(q) V(r) V(us) V(vs)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_bind Q_q Q_r Q_us Q_vs|])dnl
 
 ### __sx_num_divmod_int - 符号付き整数の除算で整数商と余剰を同時に求める（内部用）
 ##
@@ -5221,36 +5224,37 @@ define([|CLEANUP|], [|V(bind) V(q) V(r) V(us) V(vs)|])dnl
 __sx_num_divmod_int() {
 	__sx_var_bind_init "${1}"
 	set -- "${1}" "${2:-0}" "${3:-1}"
-	__sx_num_divmod_int_us_=0
-	__sx_num_divmod_int_vs_=0
+	Q_us=0
+	Q_vs=0
 
 	case "${2}" in -*)
-		__sx_num_divmod_int_us_=1
+		Q_us=1
 	esac
 
 	case "${3}" in -*)
-		__sx_num_divmod_int_vs_=1
+		Q_vs=1
 	esac
 
-	__sx_num_divmod_nat0 '__sx_num_divmod_int_q_:__sx_num_divmod_int_r_:' "${2#[+-]}" "${3#[+-]}"
+	__sx_num_divmod_nat0 'Q_q:Q_r:' "${2#[+-]}" "${3#[+-]}"
 
-	case "$((__sx_num_divmod_int_us_ ^ __sx_num_divmod_int_vs_))${__sx_num_divmod_int_q_}" in 1[!0]*)
-		M_STR_PREPEND([|__sx_num_divmod_int_q_|], [|-|])
+	case "$((Q_us ^ Q_vs))${Q_q}" in 1[!0]*)
+		M_STR_PREPEND([|Q_q|], [|-|])
 	esac
 
-	__sx_var_bind __sx_num_divmod_int_bind_ "${1}" "${__sx_num_divmod_int_q_}" || {
+	__sx_var_bind Q_bind "${1}" "${Q_q}" || {
 		unset CLEANUP
 		return M_EX_OK
 	}
 
-	case "${__sx_num_divmod_int_us_}${__sx_num_divmod_int_r_}" in 1[!0]*)
-		M_STR_PREPEND([|__sx_num_divmod_int_r_|], [|-|])
+	case "${Q_us}${Q_r}" in 1[!0]*)
+		M_STR_PREPEND([|Q_r|], [|-|])
 	esac
 
-	__sx_var_bind __sx_num_divmod_int_bind_ "${__sx_num_divmod_int_bind_}" "${__sx_num_divmod_int_r_}" || :
+	__sx_var_bind Q_bind "${Q_bind}" "${Q_r}" || :
 
 	unset CLEANUP
 }
+|], [|num_divmod_int|])dnl
 
 ### sx_num_divmod_nat0 - 絶対値の除算で整数商と余剰を同時に求める
 ##
@@ -5786,8 +5790,8 @@ sx_num_edivmod_int() {
 	__sx_num_edivmod_int "${@}"
 }
 
-define([|V|], [|__sx_num_edivmod_int_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(q) V(r) V(us) V(vs)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_bind Q_q Q_r Q_us Q_vs|])dnl
 
 ### __sx_num_edivmod_int - ユークリッド除算で整数商と余剰を同時に求める（内部用）
 ##
@@ -5805,47 +5809,48 @@ define([|CLEANUP|], [|V(bind) V(q) V(r) V(us) V(vs)|])dnl
 __sx_num_edivmod_int() {
 	__sx_var_bind_init "${1}"
 	set -- "${1}" "${2:-0}" "${3:-1}"
-	__sx_num_edivmod_int_us_=0
-	__sx_num_edivmod_int_vs_=0
+	Q_us=0
+	Q_vs=0
 
 	case "${2}" in -*)
-		__sx_num_edivmod_int_us_=1
+		Q_us=1
 	esac
 
 	case "${3}" in -*)
-		__sx_num_edivmod_int_vs_=1
+		Q_vs=1
 	esac
 
-	__sx_num_divmod_nat0 '__sx_num_edivmod_int_q_:__sx_num_edivmod_int_r_:' "${2#[+-]}" "${3#[+-]}"
+	__sx_num_divmod_nat0 'Q_q:Q_r:' "${2#[+-]}" "${3#[+-]}"
 
-	case "${__sx_num_edivmod_int_q_}:${__sx_num_edivmod_int_r_}:${__sx_num_edivmod_int_us_}${__sx_num_edivmod_int_vs_}" in
+	case "${Q_q}:${Q_r}:${Q_us}${Q_vs}" in
 		*:[!0]*:1?)
-			__sx_num_add_nat0 __sx_num_edivmod_int_q_ "${__sx_num_edivmod_int_q_}" 1
+			__sx_num_add_nat0 Q_q "${Q_q}" 1
 
-			case "${__sx_num_edivmod_int_vs_}" in 0)
-				M_STR_PREPEND([|__sx_num_edivmod_int_q_|], [|-|])
+			case "${Q_vs}" in 0)
+				M_STR_PREPEND([|Q_q|], [|-|])
 			esac
 
-			__sx_var_bind __sx_num_edivmod_int_bind_ "${1}" "${__sx_num_edivmod_int_q_}" || {
+			__sx_var_bind Q_bind "${1}" "${Q_q}" || {
 				unset CLEANUP
 				return M_EX_OK
 			}
 
-			__sx_num_sub_nat0 __sx_num_edivmod_int_r_ "${3#[+-]}" "${__sx_num_edivmod_int_r_}"
+			__sx_num_sub_nat0 Q_r "${3#[+-]}" "${Q_r}"
 			;;
-		[!0]*:0:10 | [!0]*:*:01) __sx_num_edivmod_int_q_="-${__sx_num_edivmod_int_q_}";&
+		[!0]*:0:10 | [!0]*:*:01) Q_q="-${Q_q}";&
 		*)
-			__sx_var_bind __sx_num_edivmod_int_bind_ "${1}" "${__sx_num_edivmod_int_q_}" || {
+			__sx_var_bind Q_bind "${1}" "${Q_q}" || {
 				unset CLEANUP
 				return M_EX_OK
 			}
 			;;
 	esac
 
-	__sx_var_bind __sx_num_edivmod_int_bind_ "${__sx_num_edivmod_int_bind_}" "${__sx_num_edivmod_int_r_}" || :
+	__sx_var_bind Q_bind "${Q_bind}" "${Q_r}" || :
 
 	unset CLEANUP
 }
+|], [|num_edivmod_int|])dnl
 
 ### sx_num_is_fixed - すべての引数が 10 進の実数表記（固定小数点形式）であるか確認する
 ##
@@ -6962,40 +6967,41 @@ sx_num_mul_int() {
 }
 |], [|num_mul_int|])dnl
 
-define([|V|], [|__sx_num_mul_int_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(qty) V(arg) V(abs_args) V(sign) V(acc)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_res Q_qty Q_arg Q_abs_args Q_sign Q_acc|])dnl
 
 __sx_num_mul_int() {
-	__sx_num_mul_int_res_="${1}"
+	Q_res="${1}"
 	shift
 
-	__sx_num_mul_int_qty_=0
-	__sx_num_mul_int_abs_args_=
+	Q_qty=0
+	Q_abs_args=
 
-	for __sx_num_mul_int_arg_ in "${@}"; do
-		case "${__sx_num_mul_int_arg_}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			0 | +0 | -0)
-				M_VAR_SET([|${__sx_num_mul_int_res_}|], [|0|])
+				M_VAR_SET([|${Q_res}|], [|0|])
 				unset CLEANUP
 				return
 				;;
-			-*) __sx_num_mul_int_qty_=$((~__sx_num_mul_int_qty_));;
+			-*) Q_qty=$((~Q_qty));;
 		esac
 
-		M_STR_APPEND([|__sx_num_mul_int_abs_args_|], [|" ${__sx_num_mul_int_arg_#[+-]}"|])
+		M_STR_APPEND([|Q_abs_args|], [|" ${Q_arg#[+-]}"|])
 	done
 
-	case "$((__sx_num_mul_int_qty_ & 1))" in
-		1) __sx_num_mul_int_sign_=-;;
-		*) __sx_num_mul_int_sign_=;;
+	case "$((Q_qty & 1))" in
+		1) Q_sign=-;;
+		*) Q_sign=;;
 	esac
 
-	eval __sx_num_mul_nat0 __sx_num_mul_int_acc_ "${__sx_num_mul_int_abs_args_}"
+	eval __sx_num_mul_nat0 Q_acc "${Q_abs_args}"
 
-	M_VAR_SET([|${__sx_num_mul_int_res_}|], [|${__sx_num_mul_int_sign_}${__sx_num_mul_int_acc_}|])
+	M_VAR_SET([|${Q_res}|], [|${Q_sign}${Q_acc}|])
 
 	unset CLEANUP
 }
+|], [|num_mul_int|])dnl
 
 ### sx_num_mul_nat0 - 複数の絶対値を乗算する
 ##
@@ -7743,57 +7749,58 @@ sx_num_sub_int() {
 }
 |], [|num_sub_int|])dnl
 
-define([|V|], [|__sx_num_sub_int_$1_|])dnl
-define([|CLEANUP|], [|V(res) V(first) V(sign) V(sum) V(tmp)|])dnl
+M_RENAME_QI([|dnl
+define([|CLEANUP|], [|Q_res Q_first Q_sign Q_sum Q_tmp|])dnl
 
 __sx_num_sub_int() {
-	__sx_num_sub_int_res_="${1}"
-	__sx_num_sub_int_first_="${2-0}"
-	__sx_num_sub_int_sign_=
+	Q_res="${1}"
+	Q_first="${2-0}"
+	Q_sign=
 
 	shift "$((1 + 0${2+1}))"
 
 	# $2...$n の合計（符号付き加算）
-	__sx_num_add_int __sx_num_sub_int_sum_ "${@}"
+	__sx_num_add_int Q_sum "${@}"
 
 	# 合計が 0 なら第1引数がそのまま結果
-	case "${__sx_num_sub_int_sum_}" in 0)
-		M_VAR_SET([|${__sx_num_sub_int_res_}|], [|${__sx_num_sub_int_first_#+}|])
+	case "${Q_sum}" in 0)
+		M_VAR_SET([|${Q_res}|], [|${Q_first#+}|])
 		unset CLEANUP
 		return
 	esac
 
 	# a - sum を符号の組み合わせ4ケースに分けて直接演算
-	case "${__sx_num_sub_int_first_}${__sx_num_sub_int_sum_}" in
+	case "${Q_first}${Q_sum}" in
 		# ケース4: (-a) - (-s) = |s| - |a|
 		-*-*)
-			__sx_num_cmp_nat0 "${__sx_num_sub_int_first_#-}" "${__sx_num_sub_int_sum_#-}" || case "${?}" in
-				1) __sx_num_sub_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_sum_#-}" "${__sx_num_sub_int_first_#-}";;
+			__sx_num_cmp_nat0 "${Q_first#-}" "${Q_sum#-}" || case "${?}" in
+				1) __sx_num_sub_nat0 Q_tmp "${Q_sum#-}" "${Q_first#-}";;
 				3)
-					__sx_num_sub_int_sign_='-'
-					__sx_num_sub_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_first_#-}" "${__sx_num_sub_int_sum_#-}"
+					Q_sign='-'
+					__sx_num_sub_nat0 Q_tmp "${Q_first#-}" "${Q_sum#-}"
 					;;
 			esac
 			;;
 		# ケース3: (-a) - s = -(a + s)
-		-*) __sx_num_sub_int_sign_='-';&
+		-*) Q_sign='-';&
 		# ケース2: a - (-s) = a + s
-		*-*) __sx_num_add_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_first_#[+-]}" "${__sx_num_sub_int_sum_#-}";;
+		*-*) __sx_num_add_nat0 Q_tmp "${Q_first#[+-]}" "${Q_sum#-}";;
 		# ケース1: a - s
 		*)
-			__sx_num_cmp_nat0 "${__sx_num_sub_int_first_#+}" "${__sx_num_sub_int_sum_}" || case "${?}" in
+			__sx_num_cmp_nat0 "${Q_first#+}" "${Q_sum}" || case "${?}" in
 				1)
-					__sx_num_sub_int_sign_='-'
-					__sx_num_sub_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_sum_}" "${__sx_num_sub_int_first_#+}"
+					Q_sign='-'
+					__sx_num_sub_nat0 Q_tmp "${Q_sum}" "${Q_first#+}"
 					;;
-				3) __sx_num_sub_nat0 __sx_num_sub_int_tmp_ "${__sx_num_sub_int_first_#+}" "${__sx_num_sub_int_sum_#+}";;
+				3) __sx_num_sub_nat0 Q_tmp "${Q_first#+}" "${Q_sum#+}";;
 			esac
 			;;
 	esac
 
-	M_VAR_SET([|${__sx_num_sub_int_res_}|], [|${__sx_num_sub_int_sign_}${__sx_num_sub_int_tmp_-0}|])
+	M_VAR_SET([|${Q_res}|], [|${Q_sign}${Q_tmp-0}|])
 	unset CLEANUP
 }
+|], [|num_sub_int|])dnl
 
 ### sx_num_sub_nat0 - 2つの絶対値の差（被減数 - 減数）を計算する
 ##
