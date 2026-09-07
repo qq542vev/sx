@@ -1420,6 +1420,7 @@ __sx_arg_find() {
 }
 |], [|arg_find|])dnl
 
+M_RENAME_QI([|dnl
 ### __sx_arg_find_cb - 引数リストからコールバックで値を検索する（内部用）
 ##
 ## 使い方:
@@ -1431,17 +1432,20 @@ __sx_arg_find() {
 ##     0 を返すと一致、非0 は不一致としてスキップ。
 ##   引数は正規化済み。引数チェックは行わない。
 ##   状態は位置変数で管理し、__sx_var_bind でバインドする。
+
+define([|CLEANUP|], [|Q_arg Q_bind|])dnl
+
 __sx_arg_find_cb() {
 	set -- -6 0 "$(((${3} & SX_ARG_FIND_TEXT) != 0))" "${@}"
 
-	for __sx_arg_find_cb_arg_ in "${@}"; do
-		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${5}" "${__sx_arg_find_cb_arg_}"
+	for Q_arg in "${@}"; do
+		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${5}" "${Q_arg}"
 
 		case "$((${1} <= 0))" in 1)
 			continue
 		esac
 
-		unset __sx_arg_find_cb_arg_ __sx_arg_find_cb_bind_
+		unset CLEANUP
 
 		case "${4}" in '')
 			break
@@ -1450,18 +1454,19 @@ __sx_arg_find_cb() {
 		# $1=i, $2=match_cnt, $3=txt_flg, $4=bind, $5=cb, $6=value
 		"${5}" "${6}" "${1}" "${2}" && {
 			case "${3}" in
-				0) __sx_var_bind __sx_arg_find_cb_bind_ "${4}" "${1}" 0;;
-				*) __sx_var_bind __sx_arg_find_cb_bind_ "${4}" "${6}" "${SX_VAR_BIND_QUOTE}";;
+				0) __sx_var_bind Q_bind "${4}" "${1}" 0;;
+				*) __sx_var_bind Q_bind "${4}" "${6}" "${SX_VAR_BIND_QUOTE}";;
 			esac
 
-			set -- "${1}" "$((${2} + 1))" "${3}" "${__sx_arg_find_cb_bind_}" "${5}"
+			set -- "${1}" "$((${2} + 1))" "${3}" "${Q_bind}" "${5}"
 		}
 	done
 
-	unset __sx_arg_find_cb_arg_ __sx_arg_find_cb_bind_
+	unset CLEANUP
 
 	return "$((!${2}))"
 }
+|], [|arg_find_cb|])dnl
 
 define([|V|], [|__sx_arg_find_lit_$1_|])dnl
 define([|CLEANUP|], [|V(bind) V(tgt) V(glob) V(text) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
@@ -2823,6 +2828,7 @@ __sx_arg_rfind() {
 }
 |], [|arg_rfind|])dnl
 
+M_RENAME_QI([|dnl
 ### __sx_arg_rfind_cb - 引数リストから指定された値をコールバックで検索する（内部用）
 ##
 ## 使い方:
@@ -2835,6 +2841,9 @@ __sx_arg_rfind() {
 ##      0 を返すと一致、非0 は不一致としてスキップ。
 ##    引数は正規化済み。引数チェックは行わない。
 ##    状態は位置変数で管理し、__sx_var_bind でバインドする。
+
+define([|CLEANUP|], [|Q_bind|])dnl
+
 __sx_arg_rfind_cb() {
 	# 初期状態を設定
 	# $1: 現在のインデックス i (最初は値の個数)
@@ -2849,20 +2858,21 @@ __sx_arg_rfind_cb() {
 		# コールバックを実行。一時変数を使わずに、eval で間接参照する。
 		if eval '"${4}"' "\"\${$((${1} + 8))}\"" "${1}" "${2}"; then
 			case "${5}" in
-				0) __sx_var_bind __sx_arg_rfind_cb_bind_ "${3}" "${1}";;
-				*) eval __sx_var_bind __sx_arg_rfind_cb_bind_ "${3}" "\"\${$((${1} + 8))}\"" "${SX_VAR_BIND_QUOTE}";;
+				0) __sx_var_bind Q_bind "${3}" "${1}";;
+				*) eval __sx_var_bind Q_bind "${3}" "\"\${$((${1} + 8))}\"" "${SX_VAR_BIND_QUOTE}";;
 			esac
 
-			eval 'shift 3;' set -- "$((${1} - 1))" "$((${2} + 1))" '"${__sx_arg_rfind_cb_bind_}"' '"${@}"'
+			eval 'shift 3;' set -- "$((${1} - 1))" "$((${2} + 1))" '"${Q_bind}"' '"${@}"'
 		else
 			eval 'shift 1;' set -- "$((${1} - 1))" '"${@}"'
 		fi
 
-		unset __sx_arg_rfind_cb_bind_
+		unset CLEANUP
 	done
 
 	return "$((!${2}))"
 }
+|], [|arg_rfind_cb|])dnl
 
 define([|V|], [|__sx_arg_rfind_lit_$1_|])dnl
 define([|CLEANUP|], [|V(bind) V(glob) V(text) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
@@ -3915,6 +3925,7 @@ sx_var_is_set() {
 	__sx_var_is_set "${@}" || return
 }
 
+M_RENAME_QI([|dnl
 ### __sx_var_is_set - 変数が設定されているか確認する（内部用）
 ##
 ## 使い方:
@@ -3923,18 +3934,22 @@ sx_var_is_set() {
 ## 説明:
 ##   引数で指定されたすべての変数が設定されているか確認する。
 ##   引数チェックは行わない。
-__sx_var_is_set() {
-	for __sx_var_is_set_arg_ in "${@}"; do
-		eval "__sx_var_is_set_e_=\"\${${__sx_var_is_set_arg_}+X}\""
 
-		case "${__sx_var_is_set_e_}" in '')
-			unset __sx_var_is_set_arg_ __sx_var_is_set_e_
+define([|CLEANUP|], [|Q_arg Q_e|])dnl
+
+__sx_var_is_set() {
+	for Q_arg in "${@}"; do
+		eval "Q_e=\"\${${Q_arg}+X}\""
+
+		case "${Q_e}" in '')
+			unset CLEANUP
 			return 1
 		esac
 
-		unset __sx_var_is_set_arg_ __sx_var_is_set_e_
+		unset CLEANUP
 	done
 }
+|], [|var_is_set|])dnl
 
 ### sx_var_is_val - 変数が値を持ち、かつ空でないか確認する
 ##
@@ -12555,6 +12570,7 @@ __sx_arr_rquote() {
 	unset CLEANUP
 }
 |], [|arr_rquote|])dnl
+
 
 
 
