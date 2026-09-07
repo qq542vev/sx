@@ -3445,6 +3445,8 @@ __sx_var_is_bindable() {
 
 	__sx_var_is_rw "${@}" || return
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_var_is_chain - 文字列が有効な連鎖式であるか確認する
 ##
@@ -3460,19 +3462,20 @@ __sx_var_is_bindable() {
 ##    0  すべて有効な形式である (SX_EX_OK)
 ##    1  無効な形式が含まれる
 sx_var_is_chain() {
-	for __sx_var_is_chain_arg in "${@}"; do
-		case "${__sx_var_is_chain_arg}" in
-			*=*) ! M_STR_MATCH([|"${__sx_var_is_chain_arg}"|], [|*[!"${SX_STR_WORD}"=]*|], [|*==*|], [|=*|], [|*=|], [|[0-9]*|], [|*=[0-9]*|]);;
-			*-*) ! M_STR_MATCH([|"${__sx_var_is_chain_arg}"|], [|*[!"${SX_STR_WORD}"-]*|], [|*--*|], [|-*|], [|*-|], [|[0-9]*|], [|*-[0-9]*|]);;
-			*) sx_var_is_name "${__sx_var_is_chain_arg}";;
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			*=*) ! M_STR_MATCH([|"${Q_arg}"|], [|*[!"${SX_STR_WORD}"=]*|], [|*==*|], [|=*|], [|*=|], [|[0-9]*|], [|*=[0-9]*|]);;
+			*-*) ! M_STR_MATCH([|"${Q_arg}"|], [|*[!"${SX_STR_WORD}"-]*|], [|*--*|], [|-*|], [|*-|], [|[0-9]*|], [|*-[0-9]*|]);;
+			*) sx_var_is_name "${Q_arg}";;
 		esac || {
-			unset __sx_var_is_chain_arg
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_var_is_chain_arg
+	unset CLEANUP
 }
+|], [|var_is_chain|])dnl
 
 ### sx_var_is_copyable - コピー先が構造を含めて書き込み可能か確認する
 ##
@@ -3635,6 +3638,8 @@ __sx_var_is_empty() {
 		unset __sx_var_is_empty_arg_ __sx_var_is_empty_e_
 	done
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_var_is_name - 変数名として有効か確認する
 ##
@@ -3645,15 +3650,16 @@ __sx_var_is_empty() {
 ##    0  すべて有効な変数名 (SX_EX_OK)
 ##    1  無効な変数名が含まれる
 sx_var_is_name() {
-	for __sx_var_is_name_arg in "${@}"; do
-		case "${__sx_var_is_name_arg}" in '' | [0-9]* | *[!"${SX_STR_WORD}"]*)
-			unset __sx_var_is_name_arg
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in '' | [0-9]* | *[!"${SX_STR_WORD}"]*)
+			unset CLEANUP
 			return 1
 		esac
 	done
 
-	unset __sx_var_is_name_arg
+	unset CLEANUP
 }
+|], [|var_is_name|])dnl
 
 ### sx_var_is_ro - 変数が読み取り専用か確認する
 ##
@@ -4100,6 +4106,8 @@ __sx_var_list_set() {
 
 	unset __sx_var_list_set_args_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_pfx_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_chk Q_arg|])dnl
 
 ### sx_var_move - 変数を連鎖移動する
 ##
@@ -4127,24 +4135,25 @@ sx_var_move() {
 
 	__sx_var_is_copyable "${@}" || return M_EX_NOPERM
 
-	__sx_var_move_chk=
-	for __sx_var_move_arg in "${@}"; do
-		case "${__sx_var_move_arg}" in
-			*=*) M_STR_APPEND([|__sx_var_move_chk|], [|" ${__sx_var_move_arg##*=}"|]);;
-			*) M_STR_APPEND([|__sx_var_move_chk|], [|" ${__sx_var_move_arg%%-*}"|]);;
+	Q_chk=
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			*=*) M_STR_APPEND([|Q_chk|], [|" ${Q_arg##*=}"|]);;
+			*) M_STR_APPEND([|Q_chk|], [|" ${Q_arg%%-*}"|]);;
 		esac
 	done
 
-	eval __sx_var_is_rw_all "${__sx_var_move_chk}" || {
-		unset __sx_var_move_chk __sx_var_move_arg
+	eval __sx_var_is_rw_all "${Q_chk}" || {
+		unset CLEANUP
 		return M_EX_NOPERM
 	}
 
 	__sx_var_copy "${@}"
-	eval __sx_var_unset "${__sx_var_move_chk}"
+	eval __sx_var_unset "${Q_chk}"
 
-	unset __sx_var_move_chk __sx_var_move_arg
+	unset CLEANUP
 }
+|], [|var_move|])dnl
 
 ### __sx_var_move - 変数を連鎖移動する（内部用）
 ##
@@ -4166,6 +4175,8 @@ __sx_var_move() {
 
 	unset __sx_var_move_arg_
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg Q_chk|])dnl
 
 ### sx_var_set - 変数に値を設定、または削除する
 ##
@@ -4190,25 +4201,26 @@ __sx_var_move() {
 sx_var_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_set "${@}" || return; return 0;; esac
 
-	__sx_var_set_chk=
+	Q_chk=
 
-	for __sx_var_set_arg in "${@}"; do
-		sx_var_is_name "${__sx_var_set_arg%%=*}" || {
-			unset __sx_var_set_arg __sx_var_set_chk
+	for Q_arg in "${@}"; do
+		sx_var_is_name "${Q_arg%%=*}" || {
+			unset Q_arg Q_chk
 			return M_EX_USAGE
 		}
 
-		M_STR_APPEND([|__sx_var_set_chk|], [|" ${__sx_var_set_arg%%=*}"|])
+		M_STR_APPEND([|Q_chk|], [|" ${Q_arg%%=*}"|])
 	done
 
-	eval sx_var_is_rw_all "${__sx_var_set_chk}" || {
-		unset  __sx_var_set_chk __sx_var_set_arg
+	eval sx_var_is_rw_all "${Q_chk}" || {
+		unset  Q_chk Q_arg
 		return M_EX_NOPERM
 	}
 
-	unset  __sx_var_set_chk __sx_var_set_arg
+	unset  Q_chk Q_arg
 	__sx_var_set "${@}"
 }
+|], [|var_set|])dnl
 
 ### __sx_var_set - 変数に値を設定、または削除する（内部用）
 ##
@@ -4236,6 +4248,8 @@ __sx_var_set() {
 
 	unset __sx_var_set_arg_ __sx_var_set_vn_
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arr Q_arg Q_out Q_tmp|])dnl
 
 ### sx_var_swap - 変数を連鎖的にローテーションする
 ##
@@ -4259,36 +4273,37 @@ sx_var_swap() {
 
 	sx_var_is_chain "${@}" || return M_EX_USAGE
 
-	__sx_var_swap_out=
-	__sx_arr_gen __sx_var_swap_arr
+	Q_out=
+	__sx_arr_gen Q_arr
 
-	for __sx_var_swap_arg in "${@}"; do
-		__sx_arr_push __sx_var_swap_arr ''
-		__sx_var_swap_tmp="__sx_var_swap_arr_$((__sx_var_swap_arr_len - 1))"
+	for Q_arg in "${@}"; do
+		__sx_arr_push Q_arr ''
+		Q_tmp="Q_arr_$((Q_arr_len - 1))"
 
-		case "${__sx_var_swap_arg}" in
+		case "${Q_arg}" in
 			*=*)
-				__sx_var_copy "${__sx_var_swap_arg%%=*}-${__sx_var_swap_tmp}"
-				M_STR_APPEND([|__sx_var_swap_out|], [|" ${__sx_var_swap_arg}=${__sx_var_swap_tmp}"|])
+				__sx_var_copy "${Q_arg%%=*}-${Q_tmp}"
+				M_STR_APPEND([|Q_out|], [|" ${Q_arg}=${Q_tmp}"|])
 				;;
 			*-*)
-				__sx_var_copy "${__sx_var_swap_arg##*-}-${__sx_var_swap_tmp}"
-				M_STR_APPEND([|__sx_var_swap_out|], [|" ${__sx_var_swap_tmp}-${__sx_var_swap_arg}"|])
+				__sx_var_copy "${Q_arg##*-}-${Q_tmp}"
+				M_STR_APPEND([|Q_out|], [|" ${Q_tmp}-${Q_arg}"|])
 				;;
 		esac
 	done
 
-	eval set -- "${__sx_var_swap_out}"
-	unset __sx_var_swap_arg __sx_var_swap_tmp __sx_var_swap_out
+	eval set -- "${Q_out}"
+	unset Q_arg Q_tmp Q_out
 
 	__sx_var_is_copyable "${@}" || {
-		__sx_var_unset __sx_var_swap_arr
+		__sx_var_unset Q_arr
 		return M_EX_NOPERM
 	}
 
 	__sx_var_copy "${@}"
-	__sx_var_unset __sx_var_swap_arr
+	__sx_var_unset Q_arr
 }
+|], [|var_swap|])dnl
 
 ### __sx_var_swap - 変数を連鎖的にローテーションする（内部用）
 ##
