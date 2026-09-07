@@ -343,6 +343,8 @@ SX_SYS_REV=0
 # ========================================
 #  CFG (Configuration)
 # ========================================
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg Q_out Q_vn|])dnl
 
 ### sx_cfg_is_valid - SX_CFG_* の値が妥当か検査する
 ##
@@ -359,34 +361,35 @@ SX_SYS_REV=0
 ##    1  無効な設定項目、または不適切な値が含まれる
 sx_cfg_is_valid() {
 	case "${#}" in 0)
-		__sx_cfg_is_valid_out=
+		Q_out=
 
-		for __sx_cfg_is_valid_vn in NUM_RANGE SKIP_CHK SIG_BASE SIG_ARR SEP; do
-			M_STR_APPEND([|__sx_cfg_is_valid_out|], [|" ${__sx_cfg_is_valid_vn}=\"\${SX_CFG_${__sx_cfg_is_valid_vn}-}\""|])
+		for Q_vn in NUM_RANGE SKIP_CHK SIG_BASE SIG_ARR SEP; do
+			M_STR_APPEND([|Q_out|], [|" ${Q_vn}=\"\${SX_CFG_${Q_vn}-}\""|])
 		done
 
-		eval set -- "${__sx_cfg_is_valid_out}"
-		unset __sx_cfg_is_valid_out __sx_cfg_is_valid_vn
+		eval set -- "${Q_out}"
+		unset Q_out Q_vn
 
 		sx_cfg_is_valid "${@}" || return 1
 
 		return M_EX_OK
 	esac
 
-	for __sx_cfg_is_valid_arg in "${@}"; do
-		case "${__sx_cfg_is_valid_arg}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP) ;;
 			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128) ;;
 			SKIP_CHK=[01] | SEP=?* | SIG_BASE=?* | SIG_ARR=?*) ;;
 			*)
-				unset __sx_cfg_is_valid_arg
+				unset Q_arg
 				return 1
 				;;
 		esac
 	done
 
-	unset __sx_cfg_is_valid_arg
+	unset Q_arg
 }
+|], [|cfg_is_valid|])dnl
 
 M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_arg Q_chk|])dnl
@@ -456,6 +459,8 @@ __sx_cfg_set() {
 # ========================================
 #  EX (Exit Status)
 # ========================================
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_ex_is_err - すべての引数がエラーを示す終了ステータス（1-255）であるか確認する
 ##
@@ -469,17 +474,20 @@ __sx_cfg_set() {
 ##    0  すべて 1-255 の範囲内である (SX_EX_OK)
 ##    1  範囲外、または整数でない値が含まれる
 sx_ex_is_err() {
-	for __sx_ex_is_err_arg in "${@}"; do
-		case "${__sx_ex_is_err_arg}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			[1-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5]) continue;;
 		esac
 
-		unset __sx_ex_is_err_arg
+		unset CLEANUP
 		return 1
 	done
 
-	unset __sx_ex_is_err_arg
+	unset CLEANUP
 }
+|], [|ex_is_err|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_ex_is_status - すべての引数が有効な終了ステータス（0-255）であるか確認する
 ##
@@ -493,17 +501,20 @@ sx_ex_is_err() {
 ##    0  すべて有効な終了ステータスである (SX_EX_OK)
 ##    1  範囲外、または整数でない値が含まれる
 sx_ex_is_status() {
-	for __sx_ex_is_status_arg in "${@}"; do
-		case "${__sx_ex_is_status_arg}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			[0-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5]) continue;;
 		esac
 
-		unset __sx_ex_is_status_arg
+		unset CLEANUP
 		return 1
 	done
 
-	unset __sx_ex_is_status_arg
+	unset CLEANUP
 }
+|], [|ex_is_status|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_ex_is_valid - すべての引数が有効な終了ステータス（数値または名前）であるか確認する
 ##
@@ -518,21 +529,22 @@ sx_ex_is_status() {
 ##    0  すべて有効な終了ステータスである (SX_EX_OK)
 ##    1  範囲外、または無効な値が含まれる
 sx_ex_is_valid() {
-	for __sx_ex_is_valid_arg in "${@}"; do
-		case "${__sx_ex_is_valid_arg}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			[0-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5]) continue;;
 		esac
 
 		case " ${SX_EX_MAP} " in
-			*" ${__sx_ex_is_valid_arg}:"*) continue;;
+			*" ${Q_arg}:"*) continue;;
 		esac
 
-		unset __sx_ex_is_valid_arg
+		unset CLEANUP
 		return 1
 	done
 
-	unset __sx_ex_is_valid_arg
+	unset CLEANUP
 }
+|], [|ex_is_valid|])dnl
 
 ### sx_ex_map - 終了ステータスの数値と名前を相互変換、または有効性を確認する
 ##
@@ -615,6 +627,8 @@ __sx_ex_map() {
 
 	unset CLEANUP
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg Q_src|])dnl
 
 ### sx_ex_remap - 終了ステータスをマッピングしてコマンドを実行する
 ##
@@ -640,36 +654,37 @@ __sx_ex_map() {
 sx_ex_remap() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_remap "${@}" || return; return 0;; esac
 
-	for __sx_ex_remap_arg in "${@}"; do
-		case "${__sx_ex_remap_arg}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			"${SX_CFG_SEP}") break;;
 			*:*) ;;
 			*) break;;
 		esac
 
-		__sx_ex_remap_src="${__sx_ex_remap_arg%%:*}"
+		Q_src="${Q_arg%%:*}"
 
-		case "${__sx_ex_remap_src}" in
+		case "${Q_src}" in
 			-) ;;
-			*?-) sx_ex_is_status "${__sx_ex_remap_src%-}";;
-			-?*) sx_ex_is_status "${__sx_ex_remap_src#-}";;
-			*-*) sx_ex_is_status "${__sx_ex_remap_src#*-}" "${__sx_ex_remap_src%%-*}";;
-			*) sx_ex_is_valid "${__sx_ex_remap_src#!}";;
+			*?-) sx_ex_is_status "${Q_src%-}";;
+			-?*) sx_ex_is_status "${Q_src#-}";;
+			*-*) sx_ex_is_status "${Q_src#*-}" "${Q_src%%-*}";;
+			*) sx_ex_is_valid "${Q_src#!}";;
 		esac || {
-			unset __sx_ex_remap_arg __sx_ex_remap_src
+			unset CLEANUP
 			return M_EX_USAGE
 		}
 
-		sx_ex_is_valid "${__sx_ex_remap_arg#*:}" || {
-			unset __sx_ex_remap_arg __sx_ex_remap_src
+		sx_ex_is_valid "${Q_arg#*:}" || {
+			unset CLEANUP
 			return M_EX_USAGE
 		}
 	done
 
-	unset __sx_ex_remap_arg __sx_ex_remap_src
+	unset CLEANUP
 
 	__sx_ex_remap "${@}" || return
 }
+|], [|ex_remap|])dnl
 
 ### __sx_ex_remap - 終了ステータスのマッピングとコマンド実行を行う（内部用）
 ##
@@ -857,6 +872,8 @@ __sx_fn_set() {
 
 	unset __sx_fn_set_arg_ __sx_fn_set_body_
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_i Q_arg Q_fn|])dnl
 
 ### sx_fn_with - 一時的な匿名関数を定義してコマンドを実行する
 ##
@@ -870,29 +887,30 @@ __sx_fn_set() {
 sx_fn_with() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_with "${@}" || return; return;; esac
 
-	__sx_fn_with_i=0
-	for __sx_fn_with_arg in "${@}"; do
-		case "${__sx_fn_with_arg}" in
+	Q_i=0
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			"${SX_CFG_SEP-}") break;;
 			*=*) ;;
 			*) break;;
 		esac
 
-		M_NUM_INCR([|__sx_fn_with_i|])
+		M_NUM_INCR([|Q_i|])
 	done
 
-	case "${__sx_fn_with_i}" in [!0]*)
-		__sx_arg_quote "${__sx_fn_with_i}__sx_fn_with_fn:" "${@}"
-		eval sx_fn_is_valid "${__sx_fn_with_fn}" || {
-			unset __sx_fn_with_i __sx_fn_with_arg __sx_fn_with_fn
+	case "${Q_i}" in [!0]*)
+		__sx_arg_quote "${Q_i}Q_fn:" "${@}"
+		eval sx_fn_is_valid "${Q_fn}" || {
+			unset CLEANUP
 			return M_EX_USAGE
 		}
 	esac
 
-	unset __sx_fn_with_i __sx_fn_with_arg __sx_fn_with_fn
+	unset CLEANUP
 
 	__sx_fn_with "${@}" || return
 }
+|], [|fn_with|])dnl
 
 ### __sx_fn_with - 一時的な匿名関数を定義してコマンドを実行する（内部用）
 __sx_fn_with() {
@@ -2412,6 +2430,8 @@ __sx_arg_pad_lit() {
 	eval ${__sx_arg_pad_lit_out_:+"${__sx_arg_pad_lit_bind_}=\"\${__sx_arg_pad_lit_out_}\""}
 	unset CLEANUP
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_shape|])dnl
 
 ### sx_arg_resize - 引数リストを指定された形状にリサイズする
 ##
@@ -2461,24 +2481,25 @@ sx_arg_resize() {
 			;;
 	esac
 
-	__sx_arg_resize_shape=
+	Q_shape=
 	case "X${SX_CFG_SEP}" in
-		"${3+X${3}}" | "${4+X${4}}") __sx_arg_resize_shape="${2}";;
+		"${3+X${3}}" | "${4+X${4}}") Q_shape="${2}";;
 		"${5+X${5}}")
 			__sx_num_is_nat0_safe "${4:-}" || return M_EX_USAGE
-			__sx_arg_resize_shape="${2}"
+			Q_shape="${2}"
 			;;
 	esac
 
-	case "${__sx_arg_resize_shape}" in *::* | *-[02-9]* | *[!:0-9-]* | *-1*-1* | :* | *: | *-1[!:]*)
-		unset __sx_arg_resize_shape
+	case "${Q_shape}" in *::* | *-[02-9]* | *[!:0-9-]* | *-1*-1* | :* | *: | *-1[!:]*)
+		unset CLEANUP
 		return M_EX_USAGE
 	esac
 
-	unset __sx_arg_resize_shape
+	unset CLEANUP
 
 	__sx_arg_resize "${@}"
 }
+|], [|arg_resize|])dnl
 
 ### __sx_arg_resize - 引数リストをリサイズする（内部用）
 ##
