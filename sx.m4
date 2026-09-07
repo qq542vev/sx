@@ -344,8 +344,6 @@ SX_SYS_REV=0
 #  CFG (Configuration)
 # ========================================
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg Q_out Q_vn|])dnl
-
 ### sx_cfg_is_valid - SX_CFG_* の値が妥当か検査する
 ##
 ## 使い方:
@@ -359,6 +357,9 @@ define([|CLEANUP|], [|Q_arg Q_out Q_vn|])dnl
 ## 終了ステータス:
 ##    0  すべて妥当 (SX_EX_OK)
 ##    1  無効な設定項目、または不適切な値が含まれる
+
+define([|CLEANUP|], [|Q_arg Q_out Q_vn|])dnl
+
 sx_cfg_is_valid() {
 	case "${#}" in 0)
 		Q_out=
@@ -392,8 +393,6 @@ sx_cfg_is_valid() {
 |], [|cfg_is_valid|])dnl
 
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg Q_chk|])dnl
-
 ### sx_cfg_set - SX_CFG_* を設定する
 ##
 ## 使い方:
@@ -408,6 +407,9 @@ define([|CLEANUP|], [|Q_arg Q_chk|])dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  無効な設定項目、または不適切な値が含まれる (SX_EX_USAGE)
 ##   77  設定項目が読み取り専用 (SX_EX_NOPERM)
+
+define([|CLEANUP|], [|Q_arg Q_chk|])dnl
+
 sx_cfg_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_cfg_set "${@}" || return; return 0;; esac
 
@@ -460,8 +462,6 @@ __sx_cfg_set() {
 #  EX (Exit Status)
 # ========================================
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_ex_is_err - すべての引数がエラーを示す終了ステータス（1-255）であるか確認する
 ##
 ## 使い方:
@@ -473,6 +473,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて 1-255 の範囲内である (SX_EX_OK)
 ##    1  範囲外、または整数でない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_ex_is_err() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -487,8 +490,6 @@ sx_ex_is_err() {
 }
 |], [|ex_is_err|])dnl
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_ex_is_status - すべての引数が有効な終了ステータス（0-255）であるか確認する
 ##
 ## 使い方:
@@ -500,6 +501,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて有効な終了ステータスである (SX_EX_OK)
 ##    1  範囲外、または整数でない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_ex_is_status() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -514,8 +518,6 @@ sx_ex_is_status() {
 }
 |], [|ex_is_status|])dnl
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_ex_is_valid - すべての引数が有効な終了ステータス（数値または名前）であるか確認する
 ##
 ## 使い方:
@@ -528,6 +530,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて有効な終了ステータスである (SX_EX_OK)
 ##    1  範囲外、または無効な値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_ex_is_valid() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -628,8 +633,6 @@ __sx_ex_map() {
 	unset CLEANUP
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg Q_src|])dnl
-
 ### sx_ex_remap - 終了ステータスをマッピングしてコマンドを実行する
 ##
 ## 使い方:
@@ -651,6 +654,9 @@ define([|CLEANUP|], [|Q_arg Q_src|])dnl
 ##   実行したコマンドの（マッピング後の）終了ステータスを返す。
 ##   コマンドが指定されていない場合は 0 (SX_EX_OK) を返す。
 ##   マッピングの引数形式またはステータス値が不正な場合は SX_EX_USAGE (64) を返す。
+
+define([|CLEANUP|], [|Q_arg Q_src|])dnl
+
 sx_ex_remap() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_remap "${@}" || return; return 0;; esac
 
@@ -804,8 +810,6 @@ __sx_ex_yield() {
 # ========================================
 
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_fn_is_valid - 関数定義の妥当性（名前および構文）を確認する
 ##
 ## 使い方:
@@ -814,6 +818,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて妥当
 ##    1  無効な名前、または構文エラーが含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_fn_is_valid() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in *=*)
@@ -873,8 +880,6 @@ __sx_fn_set() {
 	unset __sx_fn_set_arg_ __sx_fn_set_body_
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_i Q_arg Q_fn|])dnl
-
 ### sx_fn_with - 一時的な匿名関数を定義してコマンドを実行する
 ##
 ## 使い方:
@@ -884,6 +889,9 @@ define([|CLEANUP|], [|Q_i Q_arg Q_fn|])dnl
 ##   指定されたエイリアス名で一時的な関数を定義し、コマンドを実行する。
 ##   コマンドの引数の中にエイリアス名と一致するものがあれば、生成された一意な名前に置換される。
 ##   コマンドの実行終了後、定義された関数は自動的に削除される。
+
+define([|CLEANUP|], [|Q_i Q_arg Q_fn|])dnl
+
 sx_fn_with() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_with "${@}" || return; return;; esac
 
@@ -1538,8 +1546,6 @@ __sx_arg_fold() {
 }
 
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_int Q_lim Q_flg|])dnl
-
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
 ##
 ## 使い方:
@@ -1566,6 +1572,9 @@ define([|CLEANUP|], [|Q_int Q_lim Q_flg|])dnl
 ##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [|Q_int Q_lim Q_flg|])dnl
+
 sx_arg_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_isep "${@}" || return; return 0;; esac
 
@@ -1605,8 +1614,6 @@ sx_arg_isep() {
 |], [|arg_isep|])dnl
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|Q_bind Q_sep Q_int Q_lim Q_flg|])dnl
-
 ### __sx_arg_isep - 引数間にセパレータを挿入する（ディスパッチャ、内部用）
 ##
 ## 使い方:
@@ -1615,6 +1622,9 @@ define([|CLEANUP|], [|Q_bind Q_sep Q_int Q_lim Q_flg|])dnl
 ##
 ## 説明:
 ##   ::: のパースと、lit/cb の振り分けを行う。
+
+define([|CLEANUP|], [|Q_bind Q_sep Q_int Q_lim Q_flg|])dnl
+
 __sx_arg_isep() {
 	# ::: の位置を特定 (Bounded Search: $2, $3, $4, $5, $6)
 	case "X${SX_CFG_SEP}" in
@@ -1657,8 +1667,6 @@ __sx_arg_isep() {
 |], [|arg_isep|])dnl
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|Q_bind Q_int Q_flg Q_cnt Q_stat Q_post Q_r Q_i Q_arg Q_ret|])dnl
-
 ### __sx_arg_isep_cb - 引数間にセパレータを挿入する（コールバックモード、内部用）
 ##
 ## 使い方:
@@ -1674,6 +1682,9 @@ define([|CLEANUP|], [|Q_bind Q_int Q_flg Q_cnt Q_stat Q_post Q_r Q_i Q_arg Q_ret
 ##     $10+: 元の値（for ループが走査）
 ##
 ##   コールバック呼出: cb_func ret_var slot count skip
+
+define([|CLEANUP|], [|Q_bind Q_int Q_flg Q_cnt Q_stat Q_post Q_r Q_i Q_arg Q_ret|])dnl
+
 __sx_arg_isep_cb() {
 	if M_NUM_LT([|0|], [|${3}|]); then
 		# === 正のインターバル: 前向き処理 (左→右, append) ===
@@ -2431,8 +2442,6 @@ __sx_arg_pad_lit() {
 	unset CLEANUP
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_shape|])dnl
-
 ### sx_arg_resize - 引数リストを指定された形状にリサイズする
 ##
 ## 使い方:
@@ -2466,6 +2475,9 @@ define([|CLEANUP|], [|Q_shape|])dnl
 ##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE) - shape の形式が不正
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [|Q_shape|])dnl
+
 sx_arg_resize() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_resize "${@}" || return; return 0;; esac
 
@@ -3354,8 +3366,6 @@ sx_var_is_bind() {
 }
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|Q_arg Q_bind|])dnl
-
 ### __sx_var_is_bind - 文字列が分配代入バインド形式として有効か確認する（内部用）
 ##
 ## 使い方:
@@ -3363,6 +3373,9 @@ define([|CLEANUP|], [|Q_arg Q_bind|])dnl
 ##
 ## 説明:
 ##   sx_var_is_bind の内部実装。SX_CFG_NUM_RANGE の妥当性チェックは行わない。
+
+define([|CLEANUP|], [|Q_arg Q_bind|])dnl
+
 __sx_var_is_bind() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in *[!"${SX_STR_WORD}":]* | 0* | *:0*)
@@ -3446,8 +3459,6 @@ __sx_var_is_bindable() {
 	__sx_var_is_rw "${@}" || return
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_var_is_chain - 文字列が有効な連鎖式であるか確認する
 ##
 ## 使い方:
@@ -3461,6 +3472,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて有効な形式である (SX_EX_OK)
 ##    1  無効な形式が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_var_is_chain() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -3545,8 +3559,6 @@ sx_var_is_ebind() {
 }
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|Q_arg Q_seg Q_m Q_n|])dnl
-
 ### __sx_var_is_ebind - 文字列が拡張バインド形式として有効か確認する（内部用）
 ##
 ## 使い方:
@@ -3554,6 +3566,9 @@ define([|CLEANUP|], [|Q_arg Q_seg Q_m Q_n|])dnl
 ##
 ## 説明:
 ##   sx_var_is_ebind の内部実装。SX_CFG_NUM_RANGE の妥当性チェックは行わない。
+
+define([|CLEANUP|], [|Q_arg Q_seg Q_m Q_n|])dnl
+
 __sx_var_is_ebind() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in *[!"${SX_STR_WORD}":/]* | 0[!/]* | *:0[!/]* | /* | */ | *:/* | */[!1-9]*)
@@ -3639,8 +3654,6 @@ __sx_var_is_empty() {
 	done
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_var_is_name - 変数名として有効か確認する
 ##
 ## 使い方:
@@ -3649,6 +3662,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて有効な変数名 (SX_EX_OK)
 ##    1  無効な変数名が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_var_is_name() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in '' | [0-9]* | *[!"${SX_STR_WORD}"]*)
@@ -4107,8 +4123,6 @@ __sx_var_list_set() {
 	unset __sx_var_list_set_args_ __sx_var_list_set_res_ __sx_var_list_set_out_ __sx_var_list_set_pfx_ __sx_var_list_set_ln_ __sx_var_list_set_vn_
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_chk Q_arg|])dnl
-
 ### sx_var_move - 変数を連鎖移動する
 ##
 ## 使い方:
@@ -4128,6 +4142,9 @@ define([|CLEANUP|], [|Q_chk Q_arg|])dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  移動先または削除対象が読み取り専用 (SX_EX_NOPERM)
+
+define([|CLEANUP|], [|Q_chk Q_arg|])dnl
+
 sx_var_move() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_move "${@}" || return; return 0;; esac
 
@@ -4176,8 +4193,6 @@ __sx_var_move() {
 	unset __sx_var_move_arg_
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg Q_chk|])dnl
-
 ### sx_var_set - 変数に値を設定、または削除する
 ##
 ## 使い方:
@@ -4198,6 +4213,9 @@ define([|CLEANUP|], [|Q_arg Q_chk|])dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  読み取り専用変数への操作失敗 (SX_EX_NOPERM)
+
+define([|CLEANUP|], [|Q_arg Q_chk|])dnl
+
 sx_var_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_set "${@}" || return; return 0;; esac
 
@@ -4249,8 +4267,6 @@ __sx_var_set() {
 	unset __sx_var_set_arg_ __sx_var_set_vn_
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arr Q_arg Q_out Q_tmp|])dnl
-
 ### sx_var_swap - 変数を連鎖的にローテーションする
 ##
 ## 使い方:
@@ -4268,6 +4284,9 @@ define([|CLEANUP|], [|Q_arr Q_arg Q_out Q_tmp|])dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
+
+define([|CLEANUP|], [|Q_arr Q_arg Q_out Q_tmp|])dnl
+
 sx_var_swap() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_swap "${@}" || return; return 0;; esac
 
@@ -4949,14 +4968,15 @@ sx_num_cmp_nat0() {
 }
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|Q_l Q_r Q_qm|])dnl
-
 ### __sx_num_cmp_nat0 - 符号なし10進整数文字列を比較する（内部用）
 ##
 ## 終了ステータス:
 ##   1  左辺 < 右辺
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
+
+define([|CLEANUP|], [|Q_l Q_r Q_qm|])dnl
+
 __sx_num_cmp_nat0() {
 	case "${1}" in "${2}")
 		return 2
@@ -5044,8 +5064,6 @@ sx_num_div_int() {
 |], [|num_div_int|])dnl
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|Q_res Q_dp Q_u Q_den Q_q|])dnl
-
 ### __sx_num_div_int - 符号付き整数の除算で実数商（整数商 + 小数部）を求める（内部用）
 ##
 ## 使い方:
@@ -5055,6 +5073,9 @@ define([|CLEANUP|], [|Q_res Q_dp Q_u Q_den Q_q|])dnl
 ##   sx_num_div_int の内部実装。引数チェックは行わない。
 ##   前提: 小数桁数は 0 以上の自然数、被除数は任意の符号付き整数、
 ##   すべての除数は 0 以外の符号付き整数であること。
+
+define([|CLEANUP|], [|Q_res Q_dp Q_u Q_den Q_q|])dnl
+
 __sx_num_div_int() {
 	Q_res="${1}"
 	Q_dp="${2:-0}"
@@ -5132,8 +5153,6 @@ sx_num_div_nat0() {
 |], [|num_div_nat0|])dnl
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|Q_res Q_dp Q_u Q_den Q_q Q_r Q_dec Q_zr Q_qm|])dnl
-
 ### __sx_num_div_nat0 - 絶対値の除算で実数商（整数商 + 小数部）を求める（内部用）
 ##
 ## 使い方:
@@ -5153,6 +5172,8 @@ define([|CLEANUP|], [|Q_res Q_dp Q_u Q_den Q_q Q_r Q_dec Q_zr Q_qm|])dnl
 ##      末尾の 0 を除去する。dec が空（小数が 0）になれば整数商 q をそのまま返す。
 ##      ゼロ埋めの '?'×桁数 / "0"×桁数 は SX_NUM_QM / SX_NUM_ZR 定数（1〜37 桁）から参照し、
 ##      37 桁を超える場合のみ __sx_str_rep で生成する。
+
+define([|CLEANUP|], [|Q_res Q_dp Q_u Q_den Q_q Q_r Q_dec Q_zr Q_qm|])dnl
 
 __sx_num_div_nat0() {
 	# ステップ 1: 引数の取得（結果変数名、小数桁数 dp、被除数 u、除数群）
@@ -5248,8 +5269,6 @@ sx_num_divmod_int() {
 }
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|Q_bind Q_q Q_r Q_us Q_vs|])dnl
-
 ### __sx_num_divmod_int - 符号付き整数の除算で整数商と余剰を同時に求める（内部用）
 ##
 ## 使い方:
@@ -5261,6 +5280,9 @@ define([|CLEANUP|], [|Q_bind Q_q Q_r Q_us Q_vs|])dnl
 ##   絶対値どうしの除算（q0, r0）の後に符号のみを適用する。
 ##   q = sign(u)×sign(v)×q0、r = sign(u)×r0 であり、
 ##   q0 や r0 が 0 のときは "-0" を作らない。
+
+define([|CLEANUP|], [|Q_bind Q_q Q_r Q_us Q_vs|])dnl
+
 __sx_num_divmod_int() {
 	__sx_var_bind_init "${1}"
 	set -- "${1}" "${2:-0}" "${3:-1}"
@@ -5831,8 +5853,6 @@ sx_num_edivmod_int() {
 }
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|Q_bind Q_q Q_r Q_us Q_vs|])dnl
-
 ### __sx_num_edivmod_int - ユークリッド除算で整数商と余剰を同時に求める（内部用）
 ##
 ## 使い方:
@@ -5846,6 +5866,9 @@ define([|CLEANUP|], [|Q_bind Q_q Q_r Q_us Q_vs|])dnl
 ##   - r0 ≠ 0 かつ u < 0 のとき: q = ±(q0 + 1)（v < 0 なら正）、r = |v| - r0
 ##   q0 + 1 は __sx_num_add_nat0、|v| - r0 は __sx_num_sub_nat0 で算出し、
 ##   ネイティブ算術幅を超えても多倍長のまま正しく補正する。
+
+define([|CLEANUP|], [|Q_bind Q_q Q_r Q_us Q_vs|])dnl
+
 __sx_num_edivmod_int() {
 	__sx_var_bind_init "${1}"
 	set -- "${1}" "${2:-0}" "${3:-1}"
@@ -5893,8 +5916,6 @@ __sx_num_edivmod_int() {
 |], [|num_edivmod_int|])dnl
 
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_num_is_fixed - すべての引数が 10 進の実数表記（固定小数点形式）であるか確認する
 ##
 ## 使い方:
@@ -5908,6 +5929,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて 10 進の実数表記である (SX_EX_OK)
 ##    1  10 進の実数表記ではない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_num_is_fixed() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in *.*)
@@ -5920,10 +5944,8 @@ sx_num_is_fixed() {
 
 	unset CLEANUP
 }
-|], [|num_is_fixed|])
+|], [|num_is_fixed|])dnl
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_num_is_float - すべての引数が 10 進の実数表記（浮動小数点形式）であるか確認する
 ##
 ## 使い方:
@@ -5936,6 +5958,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて 10 進の実数表記である (SX_EX_OK)
 ##    1  10 進の実数表記ではない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_num_is_float() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in *[Ee]*)
@@ -5950,8 +5975,6 @@ sx_num_is_float() {
 }
 |], [|num_is_float|])dnl
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_num_is_float_safe - すべての引数が安全な範囲の 10 進の実数表記であるか確認する
 ##
 ## 使い方:
@@ -5964,6 +5987,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて安全な 10 進の実数表記である (SX_EX_OK)
 ##    1  安全ではない、または 10 進の実数表記ではない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_num_is_float_safe() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -5980,8 +6006,6 @@ sx_num_is_float_safe() {
 }
 |], [|num_is_float_safe|])dnl
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_num_is_int - すべての引数が整数であるか確認する
 ##
 ## 使い方:
@@ -5993,6 +6017,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて整数である (SX_EX_OK)
 ##    1  整数ではない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_num_is_int() {
 	for Q_arg in "${@}"; do
 		sx_num_is_nat0 "${Q_arg#[+-]}" || {
@@ -6377,8 +6404,6 @@ __sx_num_is_int_width() {
 	__sx_num_is_int_fit "${@}" || return
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
 ##
 ## 使い方:
@@ -6387,6 +6412,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて 0 以上の自然数である (SX_EX_OK)
 ##    1  自然数ではない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_num_is_nat0() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -6482,8 +6510,6 @@ __sx_num_is_nat0_safe() {
 	__sx_num_is_int_fit "${SX_CFG_NUM_RANGE}" "${@}" || return
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_num_is_nat1 - すべての引数が 1 以上の自然数（符号なし整数） であるか確認する
 ##
 ## 使い方:
@@ -6492,6 +6518,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて 1 以上の自然数である (SX_EX_OK)
 ##    1  1 以上の自然数ではない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_num_is_nat1() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -6586,8 +6615,6 @@ __sx_num_is_nat1_safe() {
 	__sx_num_is_int_fit "${SX_CFG_NUM_RANGE}" "${@}" || return
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_num_is_nint - すべての引数が負の整数であるか確認する
 ##
 ## 使い方:
@@ -6599,6 +6626,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて負の整数である (SX_EX_OK)
 ##    1  負の整数ではない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_num_is_nint() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -6660,8 +6690,6 @@ __sx_num_is_nint_base() {
 	unset __sx_num_is_nint_base_rad_ __sx_num_is_nint_base_arg_
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_num_is_nnint - すべての引数が非負整数（0以上の整数）であるか確認する
 ##
 ## 使い方:
@@ -6673,6 +6701,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて非負整数である (SX_EX_OK)
 ##    1  非負整数ではない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_num_is_nnint() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -6736,8 +6767,6 @@ __sx_num_is_nnint_base() {
 	unset __sx_num_is_nnint_base_rad_ __sx_num_is_nnint_base_arg_
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_num_is_npint - すべての引数が非正整数（0以下の整数）であるか確認する
 ##
 ## 使い方:
@@ -6749,6 +6778,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて非正整数である (SX_EX_OK)
 ##    1  非正整数ではない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_num_is_npint() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -6859,8 +6891,6 @@ __sx_num_is_num_safe() {
 	unset __sx_num_is_num_safe_arg_
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_num_is_nzint - すべての引数が 0 以外の整数であるか確認する
 ##
 ## 使い方:
@@ -6872,6 +6902,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて 0 以外の整数である (SX_EX_OK)
 ##    1  0、または整数ではない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_num_is_nzint() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -6933,8 +6966,6 @@ __sx_num_is_nzint_base() {
 	unset __sx_num_is_nzint_base_rad_ __sx_num_is_nzint_base_arg_
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_num_is_pint - すべての引数が正の整数であるか確認する
 ##
 ## 使い方:
@@ -6946,6 +6977,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて正の整数である (SX_EX_OK)
 ##    1  正の整数ではない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_num_is_pint() {
 	for Q_arg in "${@}"; do
 		sx_num_is_nat1 "${Q_arg#+}" || {
@@ -7371,8 +7405,6 @@ sx_num_max() {
 |], [|num_max|])dnl
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|Q_res Q_win Q_wnorm Q_arg Q_anorm|])dnl
-
 ### __sx_num_max - 与えられた数値の最大値を取得する（内部用）
 ##
 ## 使い方:
@@ -7380,6 +7412,9 @@ define([|CLEANUP|], [|Q_res Q_win Q_wnorm Q_arg Q_anorm|])dnl
 ##
 ## 説明:
 ##   sx_num_max の内部実装。引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_res Q_win Q_wnorm Q_arg Q_anorm|])dnl
+
 __sx_num_max() {
 	Q_res="${1}"
 	Q_win="${2}"
@@ -7447,8 +7482,6 @@ sx_num_min() {
 |], [|num_min|])dnl
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|Q_res Q_win Q_wnorm Q_arg Q_anorm|])dnl
-
 ### __sx_num_min - 与えられた数値の最小値を取得する（内部用）
 ##
 ## 使い方:
@@ -7456,6 +7489,9 @@ define([|CLEANUP|], [|Q_res Q_win Q_wnorm Q_arg Q_anorm|])dnl
 ##
 ## 説明:
 ##   sx_num_min の内部実装。引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_res Q_win Q_wnorm Q_arg Q_anorm|])dnl
+
 __sx_num_min() {
 	Q_res="${1}"
 	Q_win="${2}"
@@ -7673,8 +7709,6 @@ __sx_num_range() {
 	unset CLEANUP
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_num_rel - 数値間の関係を確認する
 ##
 ## 使い方:
@@ -7695,6 +7729,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ##    1  条件を満たさない引数が含まれる
 ##   64  引数不正 (SX_EX_USAGE)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_num_rel() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_rel "${@}" || return; return 0;; esac
 
@@ -8029,8 +8066,6 @@ __sx_num_sub_nat0() {
 #  UUID (UUID Operations)
 # ========================================
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arg|])dnl
-
 ### sx_uuid_is_uuid - すべての引数が UUID 形式であるか確認する
 ##
 ## 使い方:
@@ -8043,6 +8078,9 @@ define([|CLEANUP|], [|Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて UUID 形式である (SX_EX_OK)
 ##    1  UUID 形式ではない文字列が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 sx_uuid_is_uuid() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -8062,8 +8100,6 @@ sx_uuid_is_uuid() {
 #  STR (String Operations)
 # ========================================
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
-
 ### sx_str_any - 第一引数が、後続引数のいずれかの文字列と完全に一致するか確認する
 ##
 ## 使い方:
@@ -8078,6 +8114,9 @@ define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 ## 終了ステータス:
 ##    0  いずれかと一致する (SX_EX_OK)
 ##    1  一つも一致しない
+
+define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
+
 sx_str_any() {
 	Q_tgt="${1-}"
 	shift "$((0 < ${#}))"
@@ -8549,8 +8588,6 @@ __sx_str_cycle() {
 	unset __sx_str_cycle_head_ __sx_str_cycle_tail_
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_first Q_arg|])dnl
-
 ### sx_str_eq - すべての引数が文字列として一致するか確認する
 ##
 ## 使い方:
@@ -8559,6 +8596,9 @@ define([|CLEANUP|], [|Q_first Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて一致する (または引数が1つ以下)
 ##    1  一致しない文字列が含まれる
+
+define([|CLEANUP|], [|Q_first Q_arg|])dnl
+
 sx_str_eq() {
 	Q_first="${1-}"
 	shift "$((0 < ${#}))"
@@ -8691,8 +8731,6 @@ __sx_str_etrim() {
 	M_VAR_SET([|${1}|], [|M_STR_RTRIM([|2|], [|[!"${3}"]|])|])
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
-
 ### sx_str_ew - 第一引数が、第二引数以降のいずれかの文字列で終わっているか確認する
 ##
 ## 使い方:
@@ -8708,6 +8746,9 @@ define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 ## 終了ステータス:
 ##    0  いずれかの終了文字列で終わっている (SX_EX_OK)
 ##    1  一致する終了文字列がない
+
+define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
+
 sx_str_ew() {
 	Q_tgt="${1-}"
 	shift "$((0 < ${#}))"
@@ -8873,8 +8914,6 @@ __sx_str_find() {
 	return "${1}"
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
-
 ### sx_str_has - 第一引数に、第二引数以降のいずれかの文字列が含まれているか確認する
 ##
 ## 使い方:
@@ -8890,6 +8929,9 @@ define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 ## 終了ステータス:
 ##    0  いずれかが含まれている (SX_EX_OK)
 ##    1  一致する文字列がない
+
+define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
+
 sx_str_has() {
 	Q_tgt="${1-}"
 	shift "$((0 < ${#}))"
@@ -9026,8 +9068,6 @@ sx_str_is_oct() {
 	sx_str_is_of "${SX_STR_OCT}" "${@}" || return
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_charset Q_arg|])dnl
-
 ### sx_str_is_of - すべての引数が指定された文字集合のみで構成されているか確認する
 ##
 ## 使い方:
@@ -9041,6 +9081,9 @@ define([|CLEANUP|], [|Q_charset Q_arg|])dnl
 ## 終了ステータス:
 ##    0  すべて指定された文字集合のみで構成されている (SX_EX_OK)
 ##    1  指定された文字集合以外が含まれる、または空文字列が含まれる
+
+define([|CLEANUP|], [|Q_charset Q_arg|])dnl
+
 sx_str_is_of() {
 	Q_charset="${1}"
 	shift
@@ -9439,8 +9482,6 @@ __sx_str_lower_cb() {
 	esac
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
-
 ### sx_str_match - 第一引数が、後続引数のいずれかのパターンにマッチするか確認する
 ##
 ## 使い方:
@@ -9455,6 +9496,9 @@ define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 ## 終了ステータス:
 ##    0  いずれかのパターンにマッチする (SX_EX_OK)
 ##    1  マッチするパターンがない
+
+define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
+
 sx_str_match() {
 	Q_tgt="${1-}"
 	shift "$((0 < ${#}))"
@@ -9979,8 +10023,6 @@ sx_str_splice() {
 }
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|unset Q_res Q_str Q_off Q_len Q_add Q_left Q_right Q_suffix Q_del|])dnl
-
 ### __sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する（内部用）
 ##
 ## 使い方:
@@ -9988,6 +10030,9 @@ define([|CLEANUP|], [|unset Q_res Q_str Q_off Q_len Q_add Q_left Q_right Q_suffi
 ##
 ## 説明:
 ##   sx_str_splice の内部実装。引数チェックは行わない。
+
+define([|CLEANUP|], [|unset Q_res Q_str Q_off Q_len Q_add Q_left Q_right Q_suffix Q_del|])dnl
+
 __sx_str_splice() {
 	Q_res="${1}"
 	Q_str="${2-}"
@@ -10598,8 +10643,6 @@ sx_str_substr() {
 }
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|unset Q_res Q_str Q_off Q_len Q_total Q_drop Q_qm|])dnl
-
 ### __sx_str_substr - 文字列の部分文字列を取得する（内部用）
 ##
 ## 使い方:
@@ -10608,6 +10651,9 @@ define([|CLEANUP|], [|unset Q_res Q_str Q_off Q_len Q_total Q_drop Q_qm|])dnl
 ## 説明:
 ##   sx_str_substr の内部実装。
 ##   引数チェックは行わない。
+
+define([|CLEANUP|], [|unset Q_res Q_str Q_off Q_len Q_total Q_drop Q_qm|])dnl
+
 __sx_str_substr() {
 	Q_res="${1}"
 	Q_str="${2-}"
@@ -10649,8 +10695,6 @@ __sx_str_substr() {
 }
 |], [|str_substr|])dnl
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
-
 ### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
 ##
 ## 使い方:
@@ -10666,6 +10710,9 @@ define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 ## 終了ステータス:
 ##    0  いずれかの開始文字列で始まっている (SX_EX_OK)
 ##    1  一致する開始文字列がない
+
+define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
+
 sx_str_sw() {
 	Q_tgt="${1-}"
 	shift "$((0 < ${#}))"
@@ -11216,8 +11263,6 @@ __sx_glob_escape() {
 #  ARR (Array Operations)
 # ========================================
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arr Q_chk Q_dest Q_err Q_i Q_len Q_pair|])dnl
-
 ### sx_arr_at - 配列の要素を取得または存在確認する
 ##
 ## 使い方:
@@ -11237,6 +11282,9 @@ define([|CLEANUP|], [|Q_arr Q_chk Q_dest Q_err Q_i Q_len Q_pair|])dnl
 ##   64  引数不正 (SX_EX_USAGE)
 ##   65  対象が sx 配列ではない (SX_EX_DATAERR)
 ##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
+
+define([|CLEANUP|], [|Q_arr Q_chk Q_dest Q_err Q_i Q_len Q_pair|])dnl
+
 sx_arr_at() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_at "${@}" || return; return 0;; esac
 
@@ -11512,8 +11560,6 @@ __sx_arr_is_bindable() {
 }
 
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_br Q_cr Q_bind|])dnl
-
 ### sx_arr_bind - 配列対応バインドで変数を順次割り当てる
 ##
 ## 使い方:
@@ -11528,6 +11574,9 @@ define([|CLEANUP|], [|Q_br Q_cr Q_bind|])dnl
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  書き込み権限なし (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [|Q_br Q_cr Q_bind|])dnl
+
 sx_arr_bind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_bind "${@}" || return; return 0;; esac
 
@@ -11557,8 +11606,6 @@ sx_arr_bind() {
 |], [|arr_bind|])dnl
 
 M_RENAME_QI([|dnl
-define([|CLEANUP|], [|Q_br Q_cr Q_bind Q_chain Q_seg Q_rest Q_m Q_n Q_vn Q_sts|])dnl
-
 ### __sx_arr_bind - 配列対応バインドで変数を順次割り当てる（内部用）
 ##
 ## 使い方:
@@ -11566,6 +11613,9 @@ define([|CLEANUP|], [|Q_br Q_cr Q_bind Q_chain Q_seg Q_rest Q_m Q_n Q_vn Q_sts|]
 ##
 ## 説明:
 ##   bind文字列を逐次解析し、chain (src-dst) と残りbindを生成する。
+
+define([|CLEANUP|], [|Q_br Q_cr Q_bind Q_chain Q_seg Q_rest Q_m Q_n Q_vn Q_sts|])dnl
+
 __sx_arr_bind() {
 	Q_br="${1-}"
 	Q_cr="${2-}"
@@ -11647,8 +11697,6 @@ __sx_arr_bind() {
 |], [|arr_bind|])dnl
 
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_first Q_arr Q_len Q_i Q_blk Q_oseg Q_name Q_fseg Q_lim|])dnl
-
 ### sx_arr_cat - 複数の配列を連結する
 ##
 ## 使い方:
@@ -11684,6 +11732,9 @@ define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_first Q_arr Q_len Q_i Q_blk Q_oseg
 ##   65  対象が sx 配列ではない (SX_EX_DATAERR)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_first Q_arr Q_len Q_i Q_blk Q_oseg Q_name Q_fseg Q_lim|])dnl
+
 sx_arr_cat() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) ;; *)
 		sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
@@ -11796,8 +11847,6 @@ __sx_arr_cat() {
 	SX_CFG_SKIP_CHK=1 sx_arr_cat "${@}"
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_arr Q_args Q_chk Q_dest Q_i Q_len|])dnl
-
 ### sx_arr_pop - 配列の末尾から要素を取り出す
 ##
 ## 使い方:
@@ -11818,6 +11867,9 @@ define([|CLEANUP|], [|Q_arr Q_args Q_chk Q_dest Q_i Q_len|])dnl
 ##   64  配列名が無効、または結果変数名と重複している (SX_EX_USAGE)
 ##   65  対象が sx 配列ではない (SX_EX_DATAERR)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
+
+define([|CLEANUP|], [|Q_arr Q_args Q_chk Q_dest Q_i Q_len|])dnl
+
 sx_arr_pop() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_pop "${@}" || return; return 0;; esac
 
@@ -11990,8 +12042,6 @@ __sx_arr_push() {
 	unset __sx_arr_push_i_ __sx_arr_push_arr_ __sx_arr_push_arg_
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_res|])dnl
-
 ### sx_arr_quote - 配列要素をシングルクォートで囲み、スペース区切りで結合する
 ##
 ## 使い方:
@@ -12006,6 +12056,9 @@ define([|CLEANUP|], [|Q_res|])dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+
+define([|CLEANUP|], [|Q_res|])dnl
+
 sx_arr_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_quote "${@}" || return; return 0;; esac
 
@@ -12055,8 +12108,6 @@ __sx_arr_quote() {
 	unset __sx_arr_quote_res_ __sx_arr_quote_out_ __sx_arr_quote_arr_ __sx_arr_quote_esc_
 }
 M_RENAME_Q([|dnl
-define([|CLEANUP|], [|Q_res|])dnl
-
 ### sx_arr_rquote - 配列要素を逆順にシングルクォートで囲み、スペース区切りで結合する
 ##
 ## 使い方:
@@ -12071,6 +12122,9 @@ define([|CLEANUP|], [|Q_res|])dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+
+define([|CLEANUP|], [|Q_res|])dnl
+
 sx_arr_rquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_rquote "${@}" || return; return 0;; esac
 
