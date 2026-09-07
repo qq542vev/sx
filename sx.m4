@@ -8028,6 +8028,8 @@ __sx_num_sub_nat0() {
 # ========================================
 #  UUID (UUID Operations)
 # ========================================
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_uuid_is_uuid - すべての引数が UUID 形式であるか確認する
 ##
@@ -8042,22 +8044,25 @@ __sx_num_sub_nat0() {
 ##    0  すべて UUID 形式である (SX_EX_OK)
 ##    1  UUID 形式ではない文字列が含まれる
 sx_uuid_is_uuid() {
-	for __sx_uuid_is_uuid_arg in "${@}"; do
-		case "${__sx_uuid_is_uuid_arg}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]-[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]) ;;
 			*)
-				unset __sx_uuid_is_uuid_arg
+				unset CLEANUP
 				return 1
 				;;
 		esac
 	done
 
-	unset __sx_uuid_is_uuid_arg
+	unset CLEANUP
 }
+|], [|uuid_is_uuid|])dnl
 
 # ========================================
 #  STR (String Operations)
 # ========================================
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 
 ### sx_str_any - 第一引数が、後続引数のいずれかの文字列と完全に一致するか確認する
 ##
@@ -8074,19 +8079,20 @@ sx_uuid_is_uuid() {
 ##    0  いずれかと一致する (SX_EX_OK)
 ##    1  一つも一致しない
 sx_str_any() {
-	__sx_str_any_tgt="${1-}"
+	Q_tgt="${1-}"
 	shift "$((0 < ${#}))"
 
-	for __sx_str_any_arg in "${@}"; do
-		case "${__sx_str_any_tgt}" in "${__sx_str_any_arg}")
-			unset __sx_str_any_tgt __sx_str_any_arg
+	for Q_arg in "${@}"; do
+		case "${Q_tgt}" in "${Q_arg}")
+			unset CLEANUP
 			return M_EX_OK
 		esac
 	done
 
-	unset __sx_str_any_tgt __sx_str_any_arg
+	unset CLEANUP
 	return 1
 }
+|], [|str_any|])dnl
 
 ### sx_str_camel - さまざまな命名規則を camelCase に変換する
 ##
@@ -8542,6 +8548,8 @@ __sx_str_cycle() {
 
 	unset __sx_str_cycle_head_ __sx_str_cycle_tail_
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_first Q_arg|])dnl
 
 ### sx_str_eq - すべての引数が文字列として一致するか確認する
 ##
@@ -8552,21 +8560,22 @@ __sx_str_cycle() {
 ##    0  すべて一致する (または引数が1つ以下)
 ##    1  一致しない文字列が含まれる
 sx_str_eq() {
-	__sx_str_eq_first="${1-}"
+	Q_first="${1-}"
 	shift "$((0 < ${#}))"
 
-	for __sx_str_eq_arg in "${@}"; do
-		case "${__sx_str_eq_arg}" in
-			"${__sx_str_eq_first}") ;;
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			"${Q_first}") ;;
 			*)
-				unset __sx_str_eq_first __sx_str_eq_arg
+				unset CLEANUP
 				return 1
 				;;
 		esac
 	done
 
-	unset __sx_str_eq_first __sx_str_eq_arg
+	unset CLEANUP
 }
+|], [|str_eq|])dnl
 
 ### sx_str_escape - 文字列内の指定された文字をエスケープする
 ##
@@ -8681,6 +8690,8 @@ __sx_str_etrim() {
 
 	M_VAR_SET([|${1}|], [|M_STR_RTRIM([|2|], [|[!"${3}"]|])|])
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 
 ### sx_str_ew - 第一引数が、第二引数以降のいずれかの文字列で終わっているか確認する
 ##
@@ -8698,19 +8709,20 @@ __sx_str_etrim() {
 ##    0  いずれかの終了文字列で終わっている (SX_EX_OK)
 ##    1  一致する終了文字列がない
 sx_str_ew() {
-	__sx_str_ew_tgt="${1-}"
+	Q_tgt="${1-}"
 	shift "$((0 < ${#}))"
 
-	for __sx_str_ew_arg in "${@}"; do
-		case "${__sx_str_ew_tgt}" in *"${__sx_str_ew_arg}")
-			unset __sx_str_ew_tgt __sx_str_ew_arg
+	for Q_arg in "${@}"; do
+		case "${Q_tgt}" in *"${Q_arg}")
+			unset CLEANUP
 			return M_EX_OK
 		esac
 	done
 
-	unset __sx_str_ew_tgt __sx_str_ew_arg
+	unset CLEANUP
 	return 1
 }
+|], [|str_ew|])dnl
 
 ### sx_str_find - 文字列から指定された文字列を前方一致で探し、位置を取得する
 ##
@@ -8860,6 +8872,8 @@ __sx_str_find() {
 	unset CLEANUP
 	return "${1}"
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 
 ### sx_str_has - 第一引数に、第二引数以降のいずれかの文字列が含まれているか確認する
 ##
@@ -8877,19 +8891,20 @@ __sx_str_find() {
 ##    0  いずれかが含まれている (SX_EX_OK)
 ##    1  一致する文字列がない
 sx_str_has() {
-	__sx_str_has_tgt="${1-}"
+	Q_tgt="${1-}"
 	shift "$((0 < ${#}))"
 
-	for __sx_str_has_arg in "${@}"; do
-		case "${__sx_str_has_tgt}" in *"${__sx_str_has_arg}"*)
-			unset __sx_str_has_tgt __sx_str_has_arg
+	for Q_arg in "${@}"; do
+		case "${Q_tgt}" in *"${Q_arg}"*)
+			unset CLEANUP
 			return M_EX_OK
 		esac
 	done
 
-	unset __sx_str_has_tgt __sx_str_has_arg
+	unset CLEANUP
 	return 1
 }
+|], [|str_has|])dnl
 
 ### sx_str_is_alnum - すべての引数が英数字（A-Z, a-z, 0-9）のみで構成されているか確認する
 ##
@@ -9010,6 +9025,8 @@ sx_str_is_lower() {
 sx_str_is_oct() {
 	sx_str_is_of "${SX_STR_OCT}" "${@}" || return
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_charset Q_arg|])dnl
 
 ### sx_str_is_of - すべての引数が指定された文字集合のみで構成されているか確認する
 ##
@@ -9025,18 +9042,19 @@ sx_str_is_oct() {
 ##    0  すべて指定された文字集合のみで構成されている (SX_EX_OK)
 ##    1  指定された文字集合以外が含まれる、または空文字列が含まれる
 sx_str_is_of() {
-	__sx_str_is_of_charset="${1}"
+	Q_charset="${1}"
 	shift
 
-	for __sx_str_is_of_arg in "${@}"; do
-		case "${__sx_str_is_of_arg}" in '' | *[!"${__sx_str_is_of_charset}"]*)
-			unset __sx_str_is_of_charset __sx_str_is_of_arg
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in '' | *[!"${Q_charset}"]*)
+			unset CLEANUP
 			return 1
 		esac
 	done
 
-	unset __sx_str_is_of_charset __sx_str_is_of_arg
+	unset CLEANUP
 }
+|], [|str_is_of|])dnl
 
 ### sx_str_is_print - すべての引数が表示可能文字（図形文字 + スペース）のみで構成されているか確認する
 ##
@@ -9420,6 +9438,8 @@ __sx_str_lower_cb() {
 		*) eval "${1}=\"\${2}\"";;
 	esac
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 
 ### sx_str_match - 第一引数が、後続引数のいずれかのパターンにマッチするか確認する
 ##
@@ -9436,19 +9456,20 @@ __sx_str_lower_cb() {
 ##    0  いずれかのパターンにマッチする (SX_EX_OK)
 ##    1  マッチするパターンがない
 sx_str_match() {
-	__sx_str_match_tgt="${1-}"
+	Q_tgt="${1-}"
 	shift "$((0 < ${#}))"
 
-	for __sx_str_match_arg in "${@}"; do
-		case "${__sx_str_match_tgt}" in ${__sx_str_match_arg})
-			unset __sx_str_match_tgt __sx_str_match_arg
+	for Q_arg in "${@}"; do
+		case "${Q_tgt}" in ${Q_arg})
+			unset CLEANUP
 			return M_EX_OK
 		esac
 	done
 
-	unset __sx_str_match_tgt __sx_str_match_arg
+	unset CLEANUP
 	return 1
 }
+|], [|str_match|])dnl
 
 ### sx_str_pad - 文字列を指定された長さになるように埋める
 ##
@@ -10627,6 +10648,8 @@ __sx_str_substr() {
 	CLEANUP
 }
 |], [|str_substr|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 
 ### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
 ##
@@ -10644,19 +10667,20 @@ __sx_str_substr() {
 ##    0  いずれかの開始文字列で始まっている (SX_EX_OK)
 ##    1  一致する開始文字列がない
 sx_str_sw() {
-	__sx_str_sw_tgt="${1-}"
+	Q_tgt="${1-}"
 	shift "$((0 < ${#}))"
 
-	for __sx_str_sw_arg in "${@}"; do
-		case "${__sx_str_sw_tgt}" in "${__sx_str_sw_arg}"*)
-			unset __sx_str_sw_tgt __sx_str_sw_arg
+	for Q_arg in "${@}"; do
+		case "${Q_tgt}" in "${Q_arg}"*)
+			unset CLEANUP
 			return M_EX_OK
 		esac
 	done
 
-	unset __sx_str_sw_tgt __sx_str_sw_arg
+	unset CLEANUP
 	return 1
 }
+|], [|str_sw|])dnl
 
 ### sx_str_swapcase - ラテン文字の大文字と小文字を反転する
 ##
