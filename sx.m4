@@ -1168,6 +1168,7 @@ sx_arg_each() {
 	__sx_arg_each "${@}" || return
 }
 
+M_RENAME_QI([|dnl
 ### __sx_arg_each - 引数リストの各要素に対してコールバック関数を実行する（内部用）
 ##
 ## 使い方:
@@ -1179,24 +1180,28 @@ sx_arg_each() {
 ##   カウンタの初期値を状態変数の個数 * -1 に設定し、
 ##   cnt < 0 の間は状態変数領域としてスキップする。
 ##
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 __sx_arg_each() {
 	# $1: cnt, $2: cb, $@: data
 	set -- -2 "${@}"
 
-	for __sx_arg_each_arg_ in "${@}"; do
-		set -- "$((${1} + 1))" "${2}" "${__sx_arg_each_arg_}"
+	for Q_arg in "${@}"; do
+		set -- "$((${1} + 1))" "${2}" "${Q_arg}"
 
 		case "$((${1} <= 0))" in 1)
 			continue
 		esac
 
-		unset __sx_arg_each_arg_
+		unset CLEANUP
 
 		"${2}" "${3}" "${1}" || return
 	done
 
-	unset __sx_arg_each_arg_
+	unset CLEANUP
 }
+|], [|arg_each|])dnl
 
 ### sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する
 ##
@@ -3403,6 +3408,7 @@ sx_var_is_arr() {
 	__sx_var_is_arr "${@}" || return
 }
 
+M_RENAME_QI([|dnl
 ### __sx_var_is_arr - 指定された変数がsx配列であるか確認する（内部用）
 ##
 ## 使い方:
@@ -3411,19 +3417,23 @@ sx_var_is_arr() {
 ## 説明:
 ##   変数の値（シグネチャ）と長さ変数の妥当性をチェックする。
 ##   引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 __sx_var_is_arr() {
-	for __sx_var_is_arr_arg_ in "${@}"; do
+	for Q_arg in "${@}"; do
 		if
-			! eval sx_str_sw "\"\${${__sx_var_is_arr_arg_}-}\"" '"${SX_CFG_SIG_ARR}":' ||
-			! eval __sx_num_is_nat0_base 10 "\"\${${__sx_var_is_arr_arg_}_len-}\""
+			! eval sx_str_sw "\"\${${Q_arg}-}\"" '"${SX_CFG_SIG_ARR}":' ||
+			! eval __sx_num_is_nat0_base 10 "\"\${${Q_arg}_len-}\""
 		then
-			unset __sx_var_is_arr_arg_
+			unset CLEANUP
 			return 1
 		fi
 	done
 
-	unset __sx_var_is_arr_arg_
+	unset CLEANUP
 }
+|], [|var_is_arr|])dnl
 
 ### sx_var_is_bind - 文字列が分配代入バインド形式として有効か確認する
 ##
@@ -3732,6 +3742,7 @@ sx_var_is_empty() {
 	__sx_var_is_empty "${@}" || return
 }
 
+M_RENAME_QI([|dnl
 ### __sx_var_is_empty - 変数が設定されており、かつ空か確認する（内部用）
 ##
 ## 使い方:
@@ -3740,18 +3751,22 @@ sx_var_is_empty() {
 ## 説明:
 ##   引数で指定されたすべての変数が空（かつ設定済み）か確認する。
 ##   引数チェックは行わない。
-__sx_var_is_empty() {
-	for __sx_var_is_empty_arg_ in "${@}"; do
-		eval "__sx_var_is_empty_e_=\"\${${__sx_var_is_empty_arg_}+X}\${${__sx_var_is_empty_arg_}-}\""
 
-		case "${__sx_var_is_empty_e_}" in '' | X?*)
-			unset __sx_var_is_empty_arg_ __sx_var_is_empty_e_
+define([|CLEANUP|], [|Q_arg Q_e|])dnl
+
+__sx_var_is_empty() {
+	for Q_arg in "${@}"; do
+		eval "Q_e=\"\${${Q_arg}+X}\${${Q_arg}-}\""
+
+		case "${Q_e}" in '' | X?*)
+			unset CLEANUP
 			return 1
 		esac
 
-		unset __sx_var_is_empty_arg_ __sx_var_is_empty_e_
+		unset CLEANUP
 	done
 }
+|], [|var_is_empty|])dnl
 M_RENAME_Q([|dnl
 ### sx_var_is_name - 変数名として有効か確認する
 ##
@@ -3792,6 +3807,7 @@ sx_var_is_ro() {
 	__sx_var_is_ro "${@}" || return
 }
 
+M_RENAME_QI([|dnl
 ### __sx_var_is_ro - 変数が読み取り専用か確認する（内部用）
 ##
 ## 使い方:
@@ -3800,16 +3816,20 @@ sx_var_is_ro() {
 ## 説明:
 ##   引数で指定されたすべての変数が読み取り専用か確認する。
 ##   引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 __sx_var_is_ro() {
-	for __sx_var_is_ro_arg_ in "${@}"; do
-		if __sx_var_is_rw "${__sx_var_is_ro_arg_}"; then
-			unset __sx_var_is_ro_arg_
+	for Q_arg in "${@}"; do
+		if __sx_var_is_rw "${Q_arg}"; then
+			unset CLEANUP
 			return 1
 		fi
 
-		unset __sx_var_is_ro_arg_
+		unset CLEANUP
 	done
 }
+|], [|var_is_ro|])dnl
 
 ### sx_var_is_rw - 変数が書き込み可能か確認する
 ##
@@ -3932,6 +3952,7 @@ sx_var_is_val() {
 	__sx_var_is_val "${@}" || return
 }
 
+M_RENAME_QI([|dnl
 ### __sx_var_is_val - 変数が値を持ち、かつ空でないか確認する（内部用）
 ##
 ## 使い方:
@@ -3940,18 +3961,22 @@ sx_var_is_val() {
 ## 説明:
 ##   引数で指定されたすべての変数が値を持ち、空でないか確認する。
 ##   引数チェックは行わない。
-__sx_var_is_val() {
-	for __sx_var_is_val_arg_ in "${@}"; do
-		eval "__sx_var_is_val_e_=\"\${${__sx_var_is_val_arg_}:+X}\""
 
-		case "${__sx_var_is_val_e_}" in '')
-			unset __sx_var_is_val_arg_ __sx_var_is_val_e_
+define([|CLEANUP|], [|Q_arg Q_e|])dnl
+
+__sx_var_is_val() {
+	for Q_arg in "${@}"; do
+		eval "Q_e=\"\${${Q_arg}:+X}\""
+
+		case "${Q_e}" in '')
+			unset CLEANUP
 			return 1
 		esac
 
-		unset __sx_var_is_val_arg_ __sx_var_is_val_e_
+		unset CLEANUP
 	done
 }
+|], [|var_is_val|])dnl
 
 ### sx_var_list_copy - 変数のコピー用代入式リストを生成する
 ##
@@ -6208,6 +6233,7 @@ sx_num_is_int_base() {
 	__sx_num_is_int_base "${@}"
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_is_int_base - 指定された基数で整数か確認する（内部用）
 ##
 ## 使い方:
@@ -6215,19 +6241,23 @@ sx_num_is_int_base() {
 ##
 ## 説明:
 ##   sx_num_is_int_base の内部実装。基数チェックを行わない。
+
+define([|CLEANUP|], [|Q_rad Q_arg|])dnl
+
 __sx_num_is_int_base() {
-	__sx_num_is_int_base_rad_="${1}"
+	Q_rad="${1}"
 	shift
 
-	for __sx_num_is_int_base_arg_ in "${@}"; do
-		__sx_num_is_nat0_base "${__sx_num_is_int_base_rad_}" "${__sx_num_is_int_base_arg_#[+-]}" || {
-			unset __sx_num_is_int_base_rad_ __sx_num_is_int_base_arg_
+	for Q_arg in "${@}"; do
+		__sx_num_is_nat0_base "${Q_rad}" "${Q_arg#[+-]}" || {
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_int_base_rad_ __sx_num_is_int_base_arg_
+	unset CLEANUP
 }
+|], [|num_is_int_base|])dnl
 
 ### sx_num_is_int_fit - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
 ##
@@ -6256,14 +6286,18 @@ sx_num_is_int_fit() {
 	__sx_num_is_int_fit "${@}" || return
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_is_int_fit - 指定されたビット幅の符号付き整数の範囲内か確認する（内部ロジック）
+
+define([|CLEANUP|], [|Q_arg Q_bit Q_xlen Q_olenn Q_oleadn Q_olenp Q_oleadp|])dnl
+
 __sx_num_is_int_fit() {
-	__sx_num_is_int_fit_bit_="${1}"
+	Q_bit="${1}"
 	shift
 
-	for __sx_num_is_int_fit_arg_ in "${@}"; do
+	for Q_arg in "${@}"; do
 		# $1: 値（符号正規化）, $2: 数値部分の長さ
-		set -- "${__sx_num_is_int_fit_arg_#+}" "${#__sx_num_is_int_fit_arg_}"
+		set -- "${Q_arg#+}" "${#Q_arg}"
 		case "${1}" in +* | -*)
 			set -- "${1}" "$((${2} - 1))"
 		esac
@@ -6271,29 +6305,29 @@ __sx_num_is_int_fit() {
 		case "${1}" in
 			0[Xx]* | -0[Xx]*)
 			# 基数16のパラメータ計算
-			: ${__sx_num_is_int_fit_xlen_=$((__sx_num_is_int_fit_bit_ / 4 + 2))}
+			: ${Q_xlen=$((Q_bit / 4 + 2))}
 
 				if
-					M_NUM_LT([|__sx_num_is_int_fit_xlen_|], [|${2}|]) || {
-						M_STR_EQ([|"${__sx_num_is_int_fit_xlen_}"|], [|"${2}"|]) &&
+					M_NUM_LT([|Q_xlen|], [|${2}|]) || {
+						M_STR_EQ([|"${Q_xlen}"|], [|"${2}"|]) &&
 						M_STR_MATCH([|"${1}"|], [|-0[Xx][9ABCDEFabcdef]*|], [|-0[Xx]8*[!0]*|], [|0[Xx][89ABCDEFabcdef]*|])
 					}
 				then
-					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+					unset CLEANUP
 					return 1
 				fi
 				;;
 			0?* | -0?*)
 				# 基数8のパラメータ計算
-				: ${__sx_num_is_int_fit_olenn_=$(((__sx_num_is_int_fit_bit_ - 1) / 3 + 2))}
-				: ${__sx_num_is_int_fit_oleadn_=$((1 << ((__sx_num_is_int_fit_bit_ - 1) % 3)))}
-				: ${__sx_num_is_int_fit_olenp_=$((__sx_num_is_int_fit_olenn_ - (__sx_num_is_int_fit_oleadn_ == 1)))}
-				: ${__sx_num_is_int_fit_oleadp_=$((__sx_num_is_int_fit_oleadn_ == 1 ? 7 : __sx_num_is_int_fit_oleadn_ - 1))}
+				: ${Q_olenn=$(((Q_bit - 1) / 3 + 2))}
+				: ${Q_oleadn=$((1 << ((Q_bit - 1) % 3)))}
+				: ${Q_olenp=$((Q_olenn - (Q_oleadn == 1)))}
+				: ${Q_oleadp=$((Q_oleadn == 1 ? 7 : Q_oleadn - 1))}
 
 				# $3: 制限長さ, $4: 制限先頭文字
 				case "${1}" in
-					-*) set -- "${1}" "${2}" "${__sx_num_is_int_fit_olenn_}" "${__sx_num_is_int_fit_oleadn_}";;
-					*)  set -- "${1}" "${2}" "${__sx_num_is_int_fit_olenp_}" "${__sx_num_is_int_fit_oleadp_}";;
+					-*) set -- "${1}" "${2}" "${Q_olenn}" "${Q_oleadn}";;
+					*)  set -- "${1}" "${2}" "${Q_olenp}" "${Q_oleadp}";;
 				esac
 
 				if
@@ -6302,21 +6336,22 @@ __sx_num_is_int_fit() {
 						M_STR_MATCH([|"${1}"|], [|-0[!1-${4}]*|], [|-0${4}*[!0]*|], [|0[!1-${4}-]*|])
 					}
 				then
-					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+					unset CLEANUP
 					return 1
 				fi
 				;;
 			*)
-				__sx_num_is_int_fit_dec "${__sx_num_is_int_fit_bit_}" "${__sx_num_is_int_fit_arg_}" || {
-					unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+				__sx_num_is_int_fit_dec "${Q_bit}" "${Q_arg}" || {
+					unset CLEANUP
 					return 1
 				}
 				;;
 			esac
 	done
 
-	unset __sx_num_is_int_fit_arg_ __sx_num_is_int_fit_bit_ __sx_num_is_int_fit_xlen_ __sx_num_is_int_fit_olenn_ __sx_num_is_int_fit_oleadn_ __sx_num_is_int_fit_olenp_ __sx_num_is_int_fit_oleadp_
+	unset CLEANUP
 }
+|], [|num_is_int_fit|])dnl
 
 ### sx_num_is_int_fit_dec - すべての引数が指定されたビット幅の符号付き10進整数の範囲内か確認する
 ##
@@ -6345,72 +6380,84 @@ sx_num_is_int_fit_dec() {
 	__sx_num_is_int_fit_dec "${@}" || return
 }
 
+M_RENAME_QI([|dnl
+### __sx_num_is_int_fit_dec - 桁数チェックと10進整数判定を実行する（内部用）
+##
+## 使い方:
+##   __sx_num_is_int_fit_dec ビット幅 [整数1 [整数2 ...]]
+##
+## 説明:
+##   sx_num_is_int_fit_dec の内部実装。
+##   引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_bit Q_arg Q_e|])dnl
+
 __sx_num_is_int_fit_dec() {
-	__sx_num_is_int_fit_dec_bit_="${1}"
+	Q_bit="${1}"
 	shift
 
-	for __sx_num_is_int_fit_dec_arg_ in "${@}"; do
-		case "${__sx_num_is_int_fit_dec_arg_}" in
-			-*) __sx_num_is_int_fit_dec_e_=8;;
-			*) __sx_num_is_int_fit_dec_e_=7;;
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			-*) Q_e=8;;
+			*) Q_e=7;;
 		esac
 
-		__sx_num_is_int_fit_dec_arg_=${__sx_num_is_int_fit_dec_arg_#[+-]}
+		Q_arg=${Q_arg#[+-]}
 
-		case "${__sx_num_is_int_fit_dec_bit_}" in
+		case "${Q_bit}" in
 			8)
-				case "${#__sx_num_is_int_fit_dec_arg_}" in
+				case "${#Q_arg}" in
 					[12]) continue;;
 					3)
-						case "${__sx_num_is_int_fit_dec_arg_}" in
-							1[01]* | 12[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+						case "${Q_arg}" in
+							1[01]* | 12[0-${Q_e}]) continue;;
 						esac
 						;;
 				esac
 				;;
 			16)
-				case "${#__sx_num_is_int_fit_dec_arg_}" in
+				case "${#Q_arg}" in
 					[1-4]) continue;;
 					5)
-						case "${__sx_num_is_int_fit_dec_arg_}" in
+						case "${Q_arg}" in
 							[12]* | 3[01]* | 32[0-6]* | 327[0-5]* | \
-							3276[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+							3276[0-${Q_e}]) continue;;
 						esac
 						;;
 				esac
 				;;
 			32)
-				case "${#__sx_num_is_int_fit_dec_arg_}" in
+				case "${#Q_arg}" in
 					[1-9]) continue;;
 					10)
-						case "${__sx_num_is_int_fit_dec_arg_}" in
+						case "${Q_arg}" in
 							1* | 20* | 21[0-3]* | 214[0-6]* | 2147[0-3]* | 21474[0-7]* | \
 							214748[0-2]* | 2147483[0-5]* | 21474836[0-3]* | \
-							214748364[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+							214748364[0-${Q_e}]) continue;;
 						esac
 						;;
 				esac
 				;;
 			64)
-				case "${#__sx_num_is_int_fit_dec_arg_}" in
+				case "${#Q_arg}" in
 					[1-9] | 1[0-8]) continue;;
 					19)
-						case "${__sx_num_is_int_fit_dec_arg_}" in
+						case "${Q_arg}" in
 							[1-8]* | 9[01]* | 92[01]* | 922[0-2]* | 9223[0-2]* | \
 							92233[0-6]* | 922337[01]* | 92233720[0-2]* | 922337203[0-5]* |\
 							9223372036[0-7]* | 92233720368[0-4]* | 922337203685[0-3]* | \
 							9223372036854[0-6]* | 92233720368547[0-6]* | \
 							922337203685477[0-4]* | 9223372036854775[0-7]* | \
-							922337203685477580[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+							922337203685477580[0-${Q_e}]) continue;;
 						esac
 						;;
 				esac
 				;;
 			128)
-				case "${#__sx_num_is_int_fit_dec_arg_}" in
+				case "${#Q_arg}" in
 					[1-9] | [12][0-9] | 3[0-8]) continue;;
 					39)
-						case "${__sx_num_is_int_fit_dec_arg_}" in
+						case "${Q_arg}" in
 							1[0-6]* | 1700* | 1701[0-3]* | 170140* | 1701410* | \
 							1701411[0-7]* | 17014118[0-2]* | 170141183[0-3]* | \
 							1701411834[0-5]* | 170141183460[0-3]* | 1701411834604[0-5]* | \
@@ -6431,19 +6478,20 @@ __sx_num_is_int_fit_dec() {
 							17014118346046923173168730371588410[0-4]* | \
 							170141183460469231731687303715884105[0-6]* | \
 							1701411834604692317316873037158841057[01]* | \
-							17014118346046923173168730371588410572[0-${__sx_num_is_int_fit_dec_e_}]) continue;;
+							17014118346046923173168730371588410572[0-${Q_e}]) continue;;
 						esac
 						;;
 				esac
 				;;
 		esac
 
-		unset __sx_num_is_int_fit_dec_bit_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
+		unset CLEANUP
 		return 1
 	done
 
-	unset __sx_num_is_int_fit_dec_bit_ __sx_num_is_int_fit_dec_arg_ __sx_num_is_int_fit_dec_e_
+	unset CLEANUP
 }
+|], [|num_is_int_fit_dec|])dnl
 
 ### sx_num_is_int_safe - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
 ##
@@ -6495,6 +6543,7 @@ sx_num_is_int_safe_inv() {
 	__sx_num_is_int_safe_inv "${@}" || return
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_is_int_safe_inv - 符号反転可能な整数の検証を行う（内部用）
 ##
 ## 使い方:
@@ -6502,20 +6551,24 @@ sx_num_is_int_safe_inv() {
 ##
 ## 説明:
 ##   sx_num_is_int_safe_inv の内部実装。引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_min Q_arg|])dnl
+
 __sx_num_is_int_safe_inv() {
 	__sx_num_is_int_safe "${@}" || return
 
-	eval "__sx_num_is_int_safe_inv_min_=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MIN}\""
+	eval "Q_min=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MIN}\""
 
-	for __sx_num_is_int_safe_inv_arg_ in "${@}"; do
-		case "${__sx_num_is_int_safe_inv_arg_}" in "${__sx_num_is_int_safe_inv_min_}")
-			unset __sx_num_is_int_safe_inv_min_ __sx_num_is_int_safe_inv_arg_
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in "${Q_min}")
+			unset CLEANUP
 			return 1
 		esac
 	done
 
-	unset __sx_num_is_int_safe_inv_min_ __sx_num_is_int_safe_inv_arg_
+	unset CLEANUP
 }
+|], [|num_is_int_safe_inv|])dnl
 
 ### sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
 ##
@@ -6542,21 +6595,26 @@ sx_num_is_int_width() {
 	__sx_num_is_int_width "${@}" || return
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する（内部用）
+
+define([|CLEANUP|], [|Q_bits|])dnl
+
 __sx_num_is_int_width() {
-	__sx_num_is_int_width_bits_="${1}"
+	Q_bits="${1}"
 	shift
 
 	sx_num_is_int "${@}" || {
-		unset __sx_num_is_int_width_bits_
+		unset CLEANUP
 		return 1
 	}
 
-	set -- "${__sx_num_is_int_width_bits_}" "${@}"
-	unset __sx_num_is_int_width_bits_
+	set -- "${Q_bits}" "${@}"
+	unset CLEANUP
 
 	__sx_num_is_int_fit "${@}" || return
 }
+|], [|num_is_int_width|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
 ##
@@ -6820,6 +6878,7 @@ sx_num_is_nint_base() {
 	__sx_num_is_nint_base "${@}"
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_is_nint_base - 指定された基数で負の整数（-1以下）か確認する（内部用）
 ##
 ## 使い方:
@@ -6827,22 +6886,26 @@ sx_num_is_nint_base() {
 ##
 ## 説明:
 ##   sx_num_is_nint_base の内部実装。基数チェックを行わない。
+
+define([|CLEANUP|], [|Q_rad Q_arg|])dnl
+
 __sx_num_is_nint_base() {
-	__sx_num_is_nint_base_rad_="${1}"
+	Q_rad="${1}"
 	shift
 
-	for __sx_num_is_nint_base_arg_ in "${@}"; do
-		case "${__sx_num_is_nint_base_arg_}" in
-			-*) __sx_num_is_nat1_base "${__sx_num_is_nint_base_rad_}" "${__sx_num_is_nint_base_arg_#-}";;
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			-*) __sx_num_is_nat1_base "${Q_rad}" "${Q_arg#-}";;
 			*) ! :;;
 			esac || {
-				unset __sx_num_is_nint_base_rad_ __sx_num_is_nint_base_arg_
+				unset CLEANUP
 				return 1
 			}
 	done
 
-	unset __sx_num_is_nint_base_rad_ __sx_num_is_nint_base_arg_
+	unset CLEANUP
 }
+|], [|num_is_nint_base|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_is_nnint - すべての引数が非負整数（0以上の整数）であるか確認する
 ##
@@ -6896,6 +6959,7 @@ sx_num_is_nnint_base() {
 	__sx_num_is_nnint_base "${@}"
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_is_nnint_base - 指定された基数で非負整数（0以上）か確認する（内部用）
 ##
 ## 使い方:
@@ -6903,23 +6967,27 @@ sx_num_is_nnint_base() {
 ##
 ## 説明:
 ##   sx_num_is_nnint_base の内部実装。基数チェックを行わない。
+
+define([|CLEANUP|], [|Q_rad Q_arg|])dnl
+
 __sx_num_is_nnint_base() {
-	__sx_num_is_nnint_base_rad_="${1}"
+	Q_rad="${1}"
 	shift
 
-	for __sx_num_is_nnint_base_arg_ in "${@}"; do
-		case "${__sx_num_is_nnint_base_rad_}${__sx_num_is_nnint_base_arg_}" in
+	for Q_arg in "${@}"; do
+		case "${Q_rad}${Q_arg}" in
 			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) continue;;
 		esac
 
-		__sx_num_is_pint_base "${__sx_num_is_nnint_base_rad_}" "${__sx_num_is_nnint_base_arg_}" || {
-			unset __sx_num_is_nnint_base_rad_ __sx_num_is_nnint_base_arg_
+		__sx_num_is_pint_base "${Q_rad}" "${Q_arg}" || {
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_nnint_base_rad_ __sx_num_is_nnint_base_arg_
+	unset CLEANUP
 }
+|], [|num_is_nnint_base|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_is_npint - すべての引数が非正整数（0以下の整数）であるか確認する
 ##
@@ -6973,6 +7041,7 @@ sx_num_is_npint_base() {
 	__sx_num_is_npint_base "${@}"
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_is_npint_base - 指定された基数で非正整数（0以下）か確認する（内部用）
 ##
 ## 使い方:
@@ -6980,23 +7049,27 @@ sx_num_is_npint_base() {
 ##
 ## 説明:
 ##   sx_num_is_npint_base の内部実装。基数チェックを行わない。
+
+define([|CLEANUP|], [|Q_rad Q_arg|])dnl
+
 __sx_num_is_npint_base() {
-	__sx_num_is_npint_base_rad_="${1}"
+	Q_rad="${1}"
 	shift
 
-	for __sx_num_is_npint_base_arg_ in "${@}"; do
-		case "${__sx_num_is_npint_base_rad_}${__sx_num_is_npint_base_arg_}" in
+	for Q_arg in "${@}"; do
+		case "${Q_rad}${Q_arg}" in
 			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) continue;;
 		esac
 
-		__sx_num_is_nint_base "${__sx_num_is_npint_base_rad_}" "${__sx_num_is_npint_base_arg_}" || {
-			unset __sx_num_is_npint_base_rad_ __sx_num_is_npint_base_arg_
+		__sx_num_is_nint_base "${Q_rad}" "${Q_arg}" || {
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_npint_base_rad_ __sx_num_is_npint_base_arg_
+	unset CLEANUP
 }
+|], [|num_is_npint_base|])dnl
 
 ### sx_num_is_num_safe - すべての引数が有効な数値（整数または実数）であるか確認する
 ##
@@ -7019,6 +7092,7 @@ sx_num_is_num_safe() {
 	__sx_num_is_num_safe "${@}" || return
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_is_num_safe - すべての引数が有効な数値形式であるか検証する（内部用）
 ##
 ## 使い方:
@@ -7031,19 +7105,23 @@ sx_num_is_num_safe() {
 ## 終了ステータス:
 ##    0  すべて有効な数値である (SX_EX_OK)
 ##    1  有効な数値ではない値が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
 __sx_num_is_num_safe() {
-	for __sx_num_is_num_safe_arg_ in "${@}"; do
-		case "${__sx_num_is_num_safe_arg_}" in
-			*[Xx]* | [+-]0[0-9]* | 0[0-9]*) __sx_num_is_int_safe "${__sx_num_is_num_safe_arg_}";;
-			*) sx_num_is_float_safe "${__sx_num_is_num_safe_arg_}";;
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			*[Xx]* | [+-]0[0-9]* | 0[0-9]*) __sx_num_is_int_safe "${Q_arg}";;
+			*) sx_num_is_float_safe "${Q_arg}";;
 		esac || {
-			unset __sx_num_is_num_safe_arg_
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_num_safe_arg_
+	unset CLEANUP
 }
+|], [|num_is_num_safe|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_is_nzint - すべての引数が 0 以外の整数であるか確認する
 ##
@@ -7096,6 +7174,7 @@ sx_num_is_nzint_base() {
 	__sx_num_is_nzint_base "${@}"
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_is_nzint_base - 指定された基数で 0 以外の整数か確認する（内部用）
 ##
 ## 使い方:
@@ -7103,22 +7182,26 @@ sx_num_is_nzint_base() {
 ##
 ## 説明:
 ##   sx_num_is_nzint_base の内部実装。基数チェックを行わない。
+
+define([|CLEANUP|], [|Q_rad Q_arg|])dnl
+
 __sx_num_is_nzint_base() {
-	__sx_num_is_nzint_base_rad_="${1}"
+	Q_rad="${1}"
 	shift
 
-	for __sx_num_is_nzint_base_arg_ in "${@}"; do
-		case "${__sx_num_is_nzint_base_rad_}${__sx_num_is_nzint_base_arg_}" in
+	for Q_arg in "${@}"; do
+		case "${Q_rad}${Q_arg}" in
 			800 | 8[+-]00 | 100 | 10[+-]0 | 160[Xx]0 | 16[+-]0[Xx]0) ! :;;
-			*) __sx_num_is_int_base "${__sx_num_is_nzint_base_rad_}" "${__sx_num_is_nzint_base_arg_}";;
+			*) __sx_num_is_int_base "${Q_rad}" "${Q_arg}";;
 		esac || {
-			unset __sx_num_is_nzint_base_rad_ __sx_num_is_nzint_base_arg_
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_nzint_base_rad_ __sx_num_is_nzint_base_arg_
+	unset CLEANUP
 }
+|], [|num_is_nzint_base|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_is_pint - すべての引数が正の整数であるか確認する
 ##
@@ -7168,6 +7251,7 @@ sx_num_is_pint_base() {
 	__sx_num_is_pint_base "${@}"
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_is_pint_base - 指定された基数で正の整数（1以上）か確認する（内部用）
 ##
 ## 使い方:
@@ -7175,19 +7259,23 @@ sx_num_is_pint_base() {
 ##
 ## 説明:
 ##   sx_num_is_pint_base の内部実装。基数チェックを行わない。
+
+define([|CLEANUP|], [|Q_rad Q_arg|])dnl
+
 __sx_num_is_pint_base() {
-	__sx_num_is_pint_base_rad_="${1}"
+	Q_rad="${1}"
 	shift
 
-	for __sx_num_is_pint_base_arg_ in "${@}"; do
-		__sx_num_is_nat1_base "${__sx_num_is_pint_base_rad_}" "${__sx_num_is_pint_base_arg_#+}" || {
-			unset __sx_num_is_pint_base_rad_ __sx_num_is_pint_base_arg_
+	for Q_arg in "${@}"; do
+		__sx_num_is_nat1_base "${Q_rad}" "${Q_arg#+}" || {
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_pint_base_rad_ __sx_num_is_pint_base_arg_
+	unset CLEANUP
 }
+|], [|num_is_pint_base|])dnl
 
 ### sx_num_mul_int - 複数の符号付き整数を乗算する
 ##
@@ -7908,6 +7996,7 @@ sx_num_rel() {
 }
 |], [|num_rel|])dnl
 
+M_RENAME_QI([|dnl
 ### __sx_num_rel - 数値間の関係を確認する（内部用）
 ##
 ## 使い方:
@@ -7916,50 +8005,54 @@ sx_num_rel() {
 ## 説明:
 ##   sx_num_rel の内部実装。
 ##   引数チェックを行わずに数値と演算子の関係を順次評価する。
-__sx_num_rel() {
-	__sx_num_rel_op_='eq'
 
-	for __sx_num_rel_arg_ in "${@}"; do
-		case "${__sx_num_rel_arg_}" in
-			eq | '==') __sx_num_rel_op_=eq;;
-			ne | '!=') __sx_num_rel_op_=ne;;
-			lt | '<')  __sx_num_rel_op_=lt;;
-			le | '<=') __sx_num_rel_op_=le;;
-			gt | '>')  __sx_num_rel_op_=gt;;
-			ge | '>=') __sx_num_rel_op_=ge;;
+define([|CLEANUP|], [|Q_op Q_lhs Q_lcls Q_rcls Q_arg|])dnl
+
+__sx_num_rel() {
+	Q_op='eq'
+
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			eq | '==') Q_op=eq;;
+			ne | '!=') Q_op=ne;;
+			lt | '<')  Q_op=lt;;
+			le | '<=') Q_op=le;;
+			gt | '>')  Q_op=gt;;
+			ge | '>=') Q_op=ge;;
 			*) ! :;;
 		esac && continue
 
-		__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
+		__sx_num_rel_classify "${Q_arg}" || Q_rcls="${?}"
 
-		case "${__sx_num_rel_rcls_}" in
-			1) : $((__sx_num_rel_arg_ += 0));;
-			2) __sx_num_rel_arg_="${__sx_num_rel_arg_#+}";;
+		case "${Q_rcls}" in
+			1) : $((Q_arg += 0));;
+			2) Q_arg="${Q_arg#+}";;
 			*)
-				__sx_num_norm __sx_num_rel_arg_ "${__sx_num_rel_arg_}"
-				__sx_num_rel_classify "${__sx_num_rel_arg_}" || __sx_num_rel_rcls_="${?}"
+				__sx_num_norm Q_arg "${Q_arg}"
+				__sx_num_rel_classify "${Q_arg}" || Q_rcls="${?}"
 				;;
 		esac
 
-		case "${__sx_num_rel_lhs_+X}" in X)
-			case "${__sx_num_rel_lcls_}:${__sx_num_rel_rcls_}" in
-				1:1) __sx_num_cmp_arith "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
-				*) __sx_num_cmp_fixed "${__sx_num_rel_lhs_}" "${__sx_num_rel_arg_}";;
-			esac || case "${__sx_num_rel_op_}:${?}" in
+		case "${Q_lhs+X}" in X)
+			case "${Q_lcls}:${Q_rcls}" in
+				1:1) __sx_num_cmp_arith "${Q_lhs}" "${Q_arg}";;
+				*) __sx_num_cmp_fixed "${Q_lhs}" "${Q_arg}";;
+			esac || case "${Q_op}:${?}" in
 				eq:2 | ne:1 | ne:3 | lt:1 | le:1 | le:2 | gt:3 | ge:2 | ge:3) ;;
 				*)
-					unset __sx_num_rel_op_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
+					unset CLEANUP
 					return 1
 					;;
 			esac
 		esac
 
-		__sx_num_rel_lcls_="${__sx_num_rel_rcls_}"
-		__sx_num_rel_lhs_="${__sx_num_rel_arg_}"
+		Q_lcls="${Q_rcls}"
+		Q_lhs="${Q_arg}"
 	done
 
-	unset __sx_num_rel_op_ __sx_num_rel_lhs_ __sx_num_rel_lcls_ __sx_num_rel_rcls_ __sx_num_rel_arg_
+	unset CLEANUP
 }
+|], [|num_rel|])dnl
 
 ### __sx_num_rel_classify - 比較方式を分類する（内部用）
 ##
@@ -9407,6 +9500,7 @@ __sx_str_isep() {
 	esac || return
 }
 
+M_RENAME_QI([|dnl
 ### __sx_str_isep_cb - 文字列に一定の間隔でセパレータを挿入する（コールバックモード、内部用）
 ##
 ## 使い方:
@@ -9414,6 +9508,9 @@ __sx_str_isep() {
 ##
 ## 説明:
 ##   __sx_str_isep からコールバックモードを抽出した内部関数。
+
+define([|CLEANUP|], [|Q_ret|])dnl
+
 __sx_str_isep_cb() {
 	# 位置パラメータ構成:
 	# ${1}: res, ${2}: str, ${3}: cb, ${4}: int, ${5}: lim, ${6}: flags
@@ -9421,20 +9518,20 @@ __sx_str_isep_cb() {
 	#
 	# コールバックモードではセパレータの代わりに $3 をコールバック関数名として扱う。
 	# 各挿入位置で callback "結果変数" left right count を呼び出し、
-	# 戻り値（__sx_str_isep_cb_ret_）を挿入文字列として使用する。
+	# 戻り値（Q_ret）を挿入文字列として使用する。
 	# コールバックが非0を返した場合、stat=$? に記録し以降のループを抑制する。
 
 	if M_NUM_LT([|0|], [|${4}|]); then
 		# === Forward: 先頭から interval 文字ごとに区切る ===
 		# PRE: callback("", str, count+1) → 戻り値を追加
 		if M_NUM_BOOL([|${6} & SX_STR_ISEP_PRE && ${9} < ${5}|]); then
-			"${3}" __sx_str_isep_cb_ret_ "" "${2}" "$((${9} + 1))" || {
+			"${3}" Q_ret "" "${2}" "$((${9} + 1))" || {
 				set -- "${@}" "${?}"
-				__sx_str_isep_cb_ret_=
+				Q_ret=
 			}
 
-			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${__sx_str_isep_cb_ret_-}" "${8}" "$((${11-0} ? ${5} : ${9} + 1))" "${10}" ${11+"${11}"}
-			unset __sx_str_isep_cb_ret_
+			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${Q_ret-}" "${8}" "$((${11-0} ? ${5} : ${9} + 1))" "${10}" ${11+"${11}"}
+			unset CLEANUP
 		fi
 
 		# ループ要なら QM を生成してループ実行
@@ -9447,13 +9544,13 @@ __sx_str_isep_cb() {
 				set -- "${@}" "${2#${8}}"
 				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "$((${9} + 1))" "${10}" "${2%"${11}"}"
 
-				"${3}" __sx_str_isep_cb_ret_ "${10}${11}" "${2}" "${9}" || {
+				"${3}" Q_ret "${10}${11}" "${2}" "${9}" || {
 					set -- "${@}" "${?}"
-					__sx_str_isep_cb_ret_=
+					Q_ret=
 				}
 
-				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${11}${__sx_str_isep_cb_ret_-}" "${8}" "$((${12-0} ? ${5} : ${9}))" "${10}${11}" ${12+"${12}"}
-				unset __sx_str_isep_cb_ret_
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${11}${Q_ret-}" "${8}" "$((${12-0} ? ${5} : ${9}))" "${10}${11}" ${12+"${12}"}
+				unset CLEANUP
 			done
 		fi
 
@@ -9462,25 +9559,25 @@ __sx_str_isep_cb() {
 
 		# POST: callback(ctx, "", count+1) → 戻り値を追加
 		if M_NUM_BOOL([|${6} & SX_STR_ISEP_POST && ${9} < ${5} && (${#10} % ${4}) == 0|]); then
-			"${3}" __sx_str_isep_cb_ret_ "${10}" "" "$((${9} + 1))" || {
+			"${3}" Q_ret "${10}" "" "$((${9} + 1))" || {
 				set -- "${@}" "${?}"
-				__sx_str_isep_cb_ret_=
+				Q_ret=
 			}
 
-			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${__sx_str_isep_cb_ret_-}" "${8}" "$((${11-0} ? ${5} : ${9} + 1))" "${10}" ${11+"${11}"}
-			unset __sx_str_isep_cb_ret_
+			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${Q_ret-}" "${8}" "$((${11-0} ? ${5} : ${9} + 1))" "${10}" ${11+"${11}"}
+			unset CLEANUP
 		fi
 	else
 		# === Backward: 末尾から interval 文字ごとに区切る ===
 		# POST: callback(str, "", count+1) → 戻り値を前に追加
 		if M_NUM_BOOL([|${6} & SX_STR_ISEP_POST && ${9} < ${5}|]); then
-			"${3}" __sx_str_isep_cb_ret_ "${2}" "" "$((${9} + 1))" || {
+			"${3}" Q_ret "${2}" "" "$((${9} + 1))" || {
 				set -- "${@}" "${?}"
-				__sx_str_isep_cb_ret_=
+				Q_ret=
 			}
 
-			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${__sx_str_isep_cb_ret_-}${7}" "${8}" "$((${11-0} ? ${5} : ${9} + 1))" "${10}" ${11+"${11}"}
-			unset __sx_str_isep_cb_ret_
+			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_ret-}${7}" "${8}" "$((${11-0} ? ${5} : ${9} + 1))" "${10}" ${11+"${11}"}
+			unset CLEANUP
 		fi
 
 		# ループ要なら QM を生成してループ実行
@@ -9493,13 +9590,13 @@ __sx_str_isep_cb() {
 				set -- "${@}" "${2%${8}}"
 				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "$((${9} + 1))" "${10}" "${2#"${11}"}"
 
-				"${3}" __sx_str_isep_cb_ret_ "${2}" "${11}${10}" "${9}" || {
+				"${3}" Q_ret "${2}" "${11}${10}" "${9}" || {
 					set -- "${@}" "${?}"
-					__sx_str_isep_cb_ret_=
+					Q_ret=
 				}
 
-				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${__sx_str_isep_cb_ret_-}${11}${7}" "${8}" "$((${12-0} ? ${5} : ${9}))" "${11}${10}" ${12+"${12}"}
-				unset __sx_str_isep_cb_ret_
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_ret-}${11}${7}" "${8}" "$((${12-0} ? ${5} : ${9}))" "${11}${10}" ${12+"${12}"}
+				unset CLEANUP
 			done
 		fi
 
@@ -9508,19 +9605,20 @@ __sx_str_isep_cb() {
 
 		# PRE: callback("", ctx, count+1) → 戻り値を前に追加
 		if M_NUM_BOOL([|${6} & SX_STR_ISEP_PRE && ${9} < ${5} && (${#10} % ${4}) == 0|]); then
-			"${3}" __sx_str_isep_cb_ret_ "" "${10}" "$((${9} + 1))" || {
+			"${3}" Q_ret "" "${10}" "$((${9} + 1))" || {
 				set -- "${@}" "${?}"
-				__sx_str_isep_cb_ret_=
+				Q_ret=
 			}
 
-			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${__sx_str_isep_cb_ret_-}${7}" "${8}" "$((${11-0} ? ${5} : ${9} + 1))" "${10}" ${11+"${11}"}
-			unset __sx_str_isep_cb_ret_
+			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_ret-}${7}" "${8}" "$((${11-0} ? ${5} : ${9} + 1))" "${10}" ${11+"${11}"}
+			unset CLEANUP
 		fi
 	fi
 
 	M_VAR_SET([|${1}|], [|${7}|])
 	return "${11-0}"
 }
+|], [|str_isep_cb|])dnl
 
 ### __sx_str_isep_lit - 文字列に一定の間隔でセパレータを挿入する（リテラルモード、内部用）
 ##
@@ -10698,6 +10796,7 @@ __sx_str_sub_isep_adapt() {
 	"${__sx_str_sub_isep_adapt_cb_}" "${1}" '' "${2}" "${3}" "${4}"
 }
 
+M_RENAME_QI([|dnl
 ### __sx_str_sub_cb - 文字列内のパターンをコールバック置換する（内部用）
 ##
 ## 使い方:
@@ -10706,6 +10805,9 @@ __sx_str_sub_isep_adapt() {
 ## 説明:
 ##   __sx_str_sub からコールバックモードを抽出した内部関数。
 ##   パターンが空の場合は __sx_str_isep に委譲する。
+
+define([|CLEANUP|], [|Q_ret|])dnl
+
 __sx_str_sub_cb() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}" "$((${6-0} & SX_STR_SUB_GLOB))" "" 0 ""
 
@@ -10720,13 +10822,13 @@ __sx_str_sub_cb() {
 				set -- "${@}" "${2%%"${3}"*}"
 				set -- "${1}" "${2#*"${3}"}" "${3}" "${4}" "${5}" "${6}" "${7}${10}" "$((${8} + 1))" "${9}${10}"
 
-				"${4}" __sx_str_sub_cb_ret_ "${3}" "${9}" "${2}" "${8}" || {
+				"${4}" Q_ret "${3}" "${9}" "${2}" "${8}" || {
 					set -- "${@}" "${?}"
-					__sx_str_sub_cb_ret_="${3}"
+					Q_ret="${3}"
 				}
 
-				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${__sx_str_sub_cb_ret_-${3}}" "$((${10-0} ? ${5} : ${8}))" "${9}${3}" ${10+"${10}"}
-				unset __sx_str_sub_cb_ret_
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${Q_ret-${3}}" "$((${10-0} ? ${5} : ${8}))" "${9}${3}" ${10+"${10}"}
+				unset CLEANUP
 			done
 		else
 			while M_STR_HAS([|"${2}"|], [|${3}|]) && M_NUM_LT([|${8}|], [|${5}|]); do
@@ -10734,13 +10836,13 @@ __sx_str_sub_cb() {
 				set -- "${@}" "${2#"${10}"}"
 				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}${10}" "$((${8} + 1))" "${9}${10}" "${12%"${11}"}"
 
-				"${4}" __sx_str_sub_cb_ret_ "${10}" "${9}" "${2}" "${8}" || {
+				"${4}" Q_ret "${10}" "${9}" "${2}" "${8}" || {
 					set -- "${@}" "${?}"
-					__sx_str_sub_cb_ret_="${10}"
+					Q_ret="${10}"
 				}
 
-				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${__sx_str_sub_cb_ret_-${10}}" "$((${11-0} ? ${5} : ${8}))" "${9}${10}" ${11+"${11}"}
-				unset __sx_str_sub_cb_ret_
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${Q_ret-${10}}" "$((${11-0} ? ${5} : ${8}))" "${9}${10}" ${11+"${11}"}
+				unset CLEANUP
 			done
 		fi
 
@@ -10753,13 +10855,13 @@ __sx_str_sub_cb() {
 				set -- "${@}" "${2##*"${3}"}"
 				set -- "${1}" "${2%"${3}"*}" "${3}" "${4}" "${5}" "${6}" "${10}${7}" "$((${8} + 1))" "${10}${9}"
 
-				"${4}" __sx_str_sub_cb_ret_ "${3}" "${2}" "${9}" "${8}" || {
+				"${4}" Q_ret "${3}" "${2}" "${9}" "${8}" || {
 					set -- "${@}" "${?}"
-					__sx_str_sub_cb_ret_="${3}"
+					Q_ret="${3}"
 				}
 
-				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${__sx_str_sub_cb_ret_-${3}}${7}" "$((${10-0} ? ${5} : ${8}))" "${3}${9}" ${10+"${10}"}
-				unset __sx_str_sub_cb_ret_
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_ret-${3}}${7}" "$((${10-0} ? ${5} : ${8}))" "${3}${9}" ${10+"${10}"}
+				unset CLEANUP
 			done
 		else
 			while M_STR_HAS([|"${2}"|], [|${3}|]) && M_NUM_LT([|${8}|], [|${5}|]); do
@@ -10767,13 +10869,13 @@ __sx_str_sub_cb() {
 				set -- "${@}" "${2%"${10}"}"
 				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${10}${7}" "$((${8} + 1))" "${10}${9}" "${12#"${11}"}"
 
-				"${4}" __sx_str_sub_cb_ret_ "${10}" "${2}" "${9}" "${8}" || {
+				"${4}" Q_ret "${10}" "${2}" "${9}" "${8}" || {
 					set -- "${@}" "${?}"
-					__sx_str_sub_cb_ret_="${10}"
+					Q_ret="${10}"
 				}
 
-				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${__sx_str_sub_cb_ret_-${10}}${7}" "$((${11-0} ? ${5} : ${8}))" "${10}${9}" ${11+"${11}"}
-				unset __sx_str_sub_cb_ret_
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_ret-${10}}${7}" "$((${11-0} ? ${5} : ${8}))" "${10}${9}" ${11+"${11}"}
+				unset CLEANUP
 			done
 		fi
 
@@ -10782,6 +10884,7 @@ __sx_str_sub_cb() {
 
 	return "${10-0}"
 }
+|], [|str_sub_cb|])dnl
 
 ### __sx_str_sub_lit - 文字列内のパターンをリテラル/Glob置換する（内部用）
 ##
@@ -11593,6 +11696,7 @@ sx_arr_at() {
 }
 |], [|arr_at|])dnl
 
+M_RENAME_QI([|dnl
 ### __sx_arr_at - 配列の要素を取得または存在確認する（内部用）
 ##
 ## 使い方:
@@ -11601,36 +11705,40 @@ sx_arr_at() {
 ## 説明:
 ##   sx_arr_at の内部実装。
 ##   引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_chk Q_arr Q_len Q_pair Q_i|])dnl
+
 __sx_arr_at() {
-	__sx_arr_at_chk_=
-	__sx_arr_at_arr_="${1}"
-	eval "__sx_arr_at_len_=\"\${${1}_len}\""
+	Q_chk=
+	Q_arr="${1}"
+	eval "Q_len=\"\${${1}_len}\""
 	shift
 
-	for __sx_arr_at_pair_ in "${@}"; do
-		__sx_arr_at_i_="${__sx_arr_at_pair_#*=}"
+	for Q_pair in "${@}"; do
+		Q_i="${Q_pair#*=}"
 
 		# 範囲チェック
-		case "$((__sx_arr_at_i_ < __sx_arr_at_len_))" in 0)
-			unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
+		case "$((Q_i < Q_len))" in 0)
+			unset CLEANUP
 			return 1
 		esac
 
-		case "${__sx_arr_at_pair_}" in *?=*)
-			M_STR_APPEND([|__sx_arr_at_chk_|], [|" ${__sx_arr_at_arr_}_${__sx_arr_at_i_}-${__sx_arr_at_pair_%%=*}"|])
+		case "${Q_pair}" in *?=*)
+			M_STR_APPEND([|Q_chk|], [|" ${Q_arr}_${Q_i}-${Q_pair%%=*}"|])
 		esac
 	done
 
-	case "${__sx_arr_at_chk_}" in
+	case "${Q_chk}" in
 		'')
-			unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
+			unset CLEANUP
 			return M_EX_OK
 		;;
 	esac
 
-	eval __sx_var_copy "${__sx_arr_at_chk_}"
-	unset __sx_arr_at_chk_ __sx_arr_at_arr_ __sx_arr_at_len_ __sx_arr_at_pair_ __sx_arr_at_i_
+	eval __sx_var_copy "${Q_chk}"
+	unset CLEANUP
 }
+|], [|arr_at|])dnl
 ### sx_arr_gen - 配列を初期化し、要素を追加する
 ##
 ## 使い方:
@@ -12447,5 +12555,6 @@ __sx_arr_rquote() {
 	unset CLEANUP
 }
 |], [|arr_rquote|])dnl
+
 
 
