@@ -5921,6 +5921,8 @@ sx_num_is_fixed() {
 	unset CLEANUP
 }
 |], [|num_is_fixed|])
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_num_is_float - すべての引数が 10 進の実数表記（浮動小数点形式）であるか確認する
 ##
@@ -5935,17 +5937,20 @@ sx_num_is_fixed() {
 ##    0  すべて 10 進の実数表記である (SX_EX_OK)
 ##    1  10 進の実数表記ではない値が含まれる
 sx_num_is_float() {
-	for __sx_num_is_float_arg in "${@}"; do
-		case "${__sx_num_is_float_arg}" in *[Ee]*)
-			__sx_num_is_int_base 10 "${__sx_num_is_float_arg#*[Ee]}"
-		esac && sx_num_is_fixed "${__sx_num_is_float_arg%%[Ee]*}" || {
-			unset __sx_num_is_float_arg
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in *[Ee]*)
+			__sx_num_is_int_base 10 "${Q_arg#*[Ee]}"
+		esac && sx_num_is_fixed "${Q_arg%%[Ee]*}" || {
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_float_arg
+	unset CLEANUP
 }
+|], [|num_is_float|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_num_is_float_safe - すべての引数が安全な範囲の 10 進の実数表記であるか確認する
 ##
@@ -5960,19 +5965,22 @@ sx_num_is_float() {
 ##    0  すべて安全な 10 進の実数表記である (SX_EX_OK)
 ##    1  安全ではない、または 10 進の実数表記ではない値が含まれる
 sx_num_is_float_safe() {
-	for __sx_num_is_float_safe_arg in "${@}"; do
-		case "${__sx_num_is_float_safe_arg}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			# DoS 対策: 指数の絶対値は 4 桁まで
 			*[Ee][+-]?????* | *[Ee][!+-]????*) ! :;;
-			*) sx_num_is_float "${__sx_num_is_float_safe_arg}";;
+			*) sx_num_is_float "${Q_arg}";;
 		esac || {
-			unset __sx_num_is_float_safe_arg
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_float_safe_arg
+	unset CLEANUP
 }
+|], [|num_is_float_safe|])dnl
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_num_is_int - すべての引数が整数であるか確認する
 ##
@@ -5986,15 +5994,16 @@ sx_num_is_float_safe() {
 ##    0  すべて整数である (SX_EX_OK)
 ##    1  整数ではない値が含まれる
 sx_num_is_int() {
-	for __sx_num_is_int_arg in "${@}"; do
-		sx_num_is_nat0 "${__sx_num_is_int_arg#[+-]}" || {
-			unset __sx_num_is_int_arg
+	for Q_arg in "${@}"; do
+		sx_num_is_nat0 "${Q_arg#[+-]}" || {
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_int_arg
+	unset CLEANUP
 }
+|], [|num_is_int|])dnl
 
 ### sx_num_is_int_base - 指定された基数で整数か確認する
 ##
@@ -6367,6 +6376,8 @@ __sx_num_is_int_width() {
 
 	__sx_num_is_int_fit "${@}" || return
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
 ##
@@ -6377,19 +6388,20 @@ __sx_num_is_int_width() {
 ##    0  すべて 0 以上の自然数である (SX_EX_OK)
 ##    1  自然数ではない値が含まれる
 sx_num_is_nat0() {
-	for __sx_num_is_nat0_arg in "${@}"; do
-		case "${__sx_num_is_nat0_arg}" in
-			0[Xx]*) __sx_num_is_nat0_base 16 "${__sx_num_is_nat0_arg}";;
-			0?*) __sx_num_is_nat0_base 8 "${__sx_num_is_nat0_arg}";;
-			*) __sx_num_is_nat0_base 10 "${__sx_num_is_nat0_arg}";;
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			0[Xx]*) __sx_num_is_nat0_base 16 "${Q_arg}";;
+			0?*) __sx_num_is_nat0_base 8 "${Q_arg}";;
+			*) __sx_num_is_nat0_base 10 "${Q_arg}";;
 		esac || {
-			unset __sx_num_is_nat0_arg
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_nat0_arg
+	unset CLEANUP
 }
+|], [|num_is_nat0|])dnl
 
 ### sx_num_is_nat0_base - 指定された基数で0以上の自然数か確認する
 ##
@@ -6469,6 +6481,8 @@ __sx_num_is_nat0_safe() {
 	sx_num_is_nat0 "${@}" || return
 	__sx_num_is_int_fit "${SX_CFG_NUM_RANGE}" "${@}" || return
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_num_is_nat1 - すべての引数が 1 以上の自然数（符号なし整数） であるか確認する
 ##
@@ -6479,19 +6493,20 @@ __sx_num_is_nat0_safe() {
 ##    0  すべて 1 以上の自然数である (SX_EX_OK)
 ##    1  1 以上の自然数ではない値が含まれる
 sx_num_is_nat1() {
-	for __sx_num_is_nat1_arg in "${@}"; do
-		case "${__sx_num_is_nat1_arg}" in
-			0[Xx]*) __sx_num_is_nat1_base 16 "${__sx_num_is_nat1_arg}";;
-			0?*) __sx_num_is_nat1_base 8 "${__sx_num_is_nat1_arg}";;
-			*) __sx_num_is_nat1_base 10 "${__sx_num_is_nat1_arg}";;
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			0[Xx]*) __sx_num_is_nat1_base 16 "${Q_arg}";;
+			0?*) __sx_num_is_nat1_base 8 "${Q_arg}";;
+			*) __sx_num_is_nat1_base 10 "${Q_arg}";;
 		esac || {
-			unset __sx_num_is_nat1_arg
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_nat1_arg
+	unset CLEANUP
 }
+|], [|num_is_nat1|])dnl
 
 ### sx_num_is_nat1_base - 指定された基数で1以上の自然数か確認する
 ##
@@ -6570,6 +6585,8 @@ __sx_num_is_nat1_safe() {
 	sx_num_is_nat1 "${@}" || return
 	__sx_num_is_int_fit "${SX_CFG_NUM_RANGE}" "${@}" || return
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_num_is_nint - すべての引数が負の整数であるか確認する
 ##
@@ -6583,18 +6600,19 @@ __sx_num_is_nat1_safe() {
 ##    0  すべて負の整数である (SX_EX_OK)
 ##    1  負の整数ではない値が含まれる
 sx_num_is_nint() {
-	for __sx_num_is_nint_arg in "${@}"; do
-		case "${__sx_num_is_nint_arg}" in
-			-*) sx_num_is_nat1 "${__sx_num_is_nint_arg#-}";;
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			-*) sx_num_is_nat1 "${Q_arg#-}";;
 			*) ! :;;
 		esac || {
-			unset __sx_num_is_nint_arg
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_nint_arg
+	unset CLEANUP
 }
+|], [|num_is_nint|])dnl
 
 ### sx_num_is_nint_base - 指定された基数で負の整数（-1以下）か確認する
 ##
@@ -6641,6 +6659,8 @@ __sx_num_is_nint_base() {
 
 	unset __sx_num_is_nint_base_rad_ __sx_num_is_nint_base_arg_
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_num_is_nnint - すべての引数が非負整数（0以上の整数）であるか確認する
 ##
@@ -6654,19 +6674,20 @@ __sx_num_is_nint_base() {
 ##    0  すべて非負整数である (SX_EX_OK)
 ##    1  非負整数ではない値が含まれる
 sx_num_is_nnint() {
-	for __sx_num_is_nnint_arg in "${@}"; do
-		case "${__sx_num_is_nnint_arg}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			00 | [+-]00 | 0 | [+-]0 | 0[Xx]0 | [+-]0[Xx]0) continue;;
 		esac
 
-		sx_num_is_pint "${__sx_num_is_nnint_arg}" || {
-			unset __sx_num_is_nnint_arg
+		sx_num_is_pint "${Q_arg}" || {
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_nnint_arg
+	unset CLEANUP
 }
+|], [|num_is_nnint|])dnl
 
 ### sx_num_is_nnint_base - 指定された基数で非負整数（0以上）か確認する
 ##
@@ -6714,6 +6735,8 @@ __sx_num_is_nnint_base() {
 
 	unset __sx_num_is_nnint_base_rad_ __sx_num_is_nnint_base_arg_
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_num_is_npint - すべての引数が非正整数（0以下の整数）であるか確認する
 ##
@@ -6727,19 +6750,20 @@ __sx_num_is_nnint_base() {
 ##    0  すべて非正整数である (SX_EX_OK)
 ##    1  非正整数ではない値が含まれる
 sx_num_is_npint() {
-	for __sx_num_is_npint_arg in "${@}"; do
-		case "${__sx_num_is_npint_arg}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			00 | [+-]00 | 0 | [+-]0 | 0[Xx]0 | [+-]0[Xx]0) continue;;
 		esac
 
-		sx_num_is_nint "${__sx_num_is_npint_arg}" || {
-			unset __sx_num_is_npint_arg
+		sx_num_is_nint "${Q_arg}" || {
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_npint_arg
+	unset CLEANUP
 }
+|], [|num_is_npint|])dnl
 
 ### sx_num_is_npint_base - 指定された基数で非正整数（0以下）か確認する
 ##
@@ -6834,6 +6858,8 @@ __sx_num_is_num_safe() {
 
 	unset __sx_num_is_num_safe_arg_
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_num_is_nzint - すべての引数が 0 以外の整数であるか確認する
 ##
@@ -6847,18 +6873,19 @@ __sx_num_is_num_safe() {
 ##    0  すべて 0 以外の整数である (SX_EX_OK)
 ##    1  0、または整数ではない値が含まれる
 sx_num_is_nzint() {
-	for __sx_num_is_nzint_arg in "${@}"; do
-		case "${__sx_num_is_nzint_arg}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			0 | [+-]0 | 00 | [+-]00 | 0[Xx]0 | [+-]0[Xx]0) ! :;;
-			*) sx_num_is_int "${__sx_num_is_nzint_arg}";;
+			*) sx_num_is_int "${Q_arg}";;
 		esac || {
-			unset __sx_num_is_nzint_arg
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_nzint_arg
+	unset CLEANUP
 }
+|], [|num_is_nzint|])dnl
 
 ### sx_num_is_nzint_base - 指定された基数で 0 以外の整数か確認する
 ##
@@ -6905,6 +6932,8 @@ __sx_num_is_nzint_base() {
 
 	unset __sx_num_is_nzint_base_rad_ __sx_num_is_nzint_base_arg_
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_num_is_pint - すべての引数が正の整数であるか確認する
 ##
@@ -6918,15 +6947,16 @@ __sx_num_is_nzint_base() {
 ##    0  すべて正の整数である (SX_EX_OK)
 ##    1  正の整数ではない値が含まれる
 sx_num_is_pint() {
-	for __sx_num_is_pint_arg in "${@}"; do
-		sx_num_is_nat1 "${__sx_num_is_pint_arg#+}" || {
-			unset __sx_num_is_pint_arg
+	for Q_arg in "${@}"; do
+		sx_num_is_nat1 "${Q_arg#+}" || {
+			unset CLEANUP
 			return 1
 		}
 	done
 
-	unset __sx_num_is_pint_arg
+	unset CLEANUP
 }
+|], [|num_is_pint|])dnl
 
 ### sx_num_is_pint_base - 指定された基数で正の整数（1以上）か確認する
 ##
@@ -7642,6 +7672,8 @@ __sx_num_range() {
 
 	unset CLEANUP
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 ### sx_num_rel - 数値間の関係を確認する
 ##
@@ -7668,21 +7700,22 @@ sx_num_rel() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	for __sx_num_rel_arg in "${@}"; do
-		case "${__sx_num_rel_arg}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			eq | '==' | ne | '!=' | lt | '<' | le | '<=' | gt | '>' | ge | '>=') continue;;
 		esac
 
-		__sx_num_is_num_safe "${__sx_num_rel_arg}" || {
-			unset __sx_num_rel_arg
+		__sx_num_is_num_safe "${Q_arg}" || {
+			unset CLEANUP
 			return M_EX_USAGE
 		}
 	done
 
-	unset __sx_num_rel_arg
+	unset CLEANUP
 
 	__sx_num_rel "${@}" || return
 }
+|], [|num_rel|])dnl
 
 ### __sx_num_rel - 数値間の関係を確認する（内部用）
 ##
