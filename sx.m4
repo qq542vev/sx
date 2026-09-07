@@ -11215,6 +11215,8 @@ __sx_glob_escape() {
 # ========================================
 #  ARR (Array Operations)
 # ========================================
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arr Q_chk Q_dest Q_err Q_i Q_len Q_pair|])dnl
 
 ### sx_arr_at - 配列の要素を取得または存在確認する
 ##
@@ -11244,47 +11246,47 @@ sx_arr_at() {
 		*) return "${?}";;
 	esac
 
-	__sx_arr_at_arr="${1}"
-	eval "__sx_arr_at_len=\"\${${1}_len}\""
+	Q_arr="${1}"
+	eval "Q_len=\"\${${1}_len}\""
 	shift
 
-	__sx_arr_at_chk=
-	for __sx_arr_at_pair in "${@}"; do
-		__sx_arr_at_dest="${__sx_arr_at_pair%%=*}"
-		__sx_arr_at_i="${__sx_arr_at_pair#*=}"
+	Q_chk=
+	for Q_pair in "${@}"; do
+		Q_dest="${Q_pair%%=*}"
+		Q_i="${Q_pair#*=}"
 
-		__sx_num_is_nat0_base 10 "${__sx_arr_at_i}" || {
-			unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
+		__sx_num_is_nat0_base 10 "${Q_i}" || {
+			unset Q_arr Q_len Q_chk Q_pair Q_dest Q_i
 			return M_EX_USAGE
 		}
 
 		# 範囲チェック
-		case "$((__sx_arr_at_i < __sx_arr_at_len))" in 0)
-			__sx_arr_at_err=
+		case "$((Q_i < Q_len))" in 0)
+			Q_err=
 		esac
 
-		case "${__sx_arr_at_pair}" in *?=*)
+		case "${Q_pair}" in *?=*)
 			# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
 			if
-				! sx_var_is_name "${__sx_arr_at_dest}" ||
-				M_STR_MATCH([|"${__sx_arr_at_dest}"|], [|"${__sx_arr_at_arr}"|], [|"${__sx_arr_at_arr}"_*|])
+				! sx_var_is_name "${Q_dest}" ||
+				M_STR_MATCH([|"${Q_dest}"|], [|"${Q_arr}"|], [|"${Q_arr}"_*|])
 			then
-				unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
+				unset Q_arr Q_len Q_chk Q_pair Q_dest Q_i
 				return M_EX_USAGE
 			fi
 
 			# コピー連鎖式の構築 (src-dest)
-			M_STR_APPEND([|__sx_arr_at_chk|], [|" ${__sx_arr_at_arr}_${__sx_arr_at_i}-${__sx_arr_at_dest}"|])
+			M_STR_APPEND([|Q_chk|], [|" ${Q_arr}_${Q_i}-${Q_dest}"|])
 		esac
 	done
 
-	case "${__sx_arr_at_err+X}" in X)
-		unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i __sx_arr_at_err
+	case "${Q_err+X}" in X)
+		unset Q_arr Q_len Q_chk Q_pair Q_dest Q_i Q_err
 		return 1
 	esac
 
-	eval set -- "${__sx_arr_at_chk}"
-	unset __sx_arr_at_arr __sx_arr_at_len __sx_arr_at_chk __sx_arr_at_pair __sx_arr_at_dest __sx_arr_at_i
+	eval set -- "${Q_chk}"
+	unset Q_arr Q_len Q_chk Q_pair Q_dest Q_i
 
 	case "${#}" in
 		0) return M_EX_OK;;
@@ -11297,6 +11299,7 @@ sx_arr_at() {
 
 	__sx_var_copy "${@}"
 }
+|], [|arr_at|])dnl
 
 ### __sx_arr_at - 配列の要素を取得または存在確認する（内部用）
 ##
@@ -11792,6 +11795,8 @@ sx_arr_cat() {
 __sx_arr_cat() {
 	SX_CFG_SKIP_CHK=1 sx_arr_cat "${@}"
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_arr Q_args Q_chk Q_dest Q_i Q_len|])dnl
 
 ### sx_arr_pop - 配列の末尾から要素を取り出す
 ##
@@ -11821,65 +11826,66 @@ sx_arr_pop() {
 		*) return;;
 	esac
 
-	__sx_arr_pop_arr="${1}"
-	eval "__sx_arr_pop_len=\"\${${1}_len}\""
+	Q_arr="${1}"
+	eval "Q_len=\"\${${1}_len}\""
 	shift
 
 	M_STR_NE([|"${#}"|], [|0|]) || set -- -
-	__sx_arg_norm __sx_arr_pop_args - "${@}"
-	eval set -- "${__sx_arr_pop_args}"
-	unset __sx_arr_pop_args
+	__sx_arg_norm Q_args - "${@}"
+	eval set -- "${Q_args}"
+	unset Q_args
 
 	# 要素数チェック
-	case "$((${#} <= __sx_arr_pop_len))" in 0)
-		unset __sx_arr_pop_arr __sx_arr_pop_len
+	case "$((${#} <= Q_len))" in 0)
+		unset Q_arr Q_len
 		return 1
 	esac
 
 	# 配列の書き込み権限チェック
-	sx_arr_is_rw "${__sx_arr_pop_arr}" || {
+	sx_arr_is_rw "${Q_arr}" || {
 		case "${?}" in
 			1) set -- M_EX_NOPERM;;
 			*) set -- "${?}";;
 		esac
 
-		unset __sx_arr_pop_arr __sx_arr_pop_len
+		unset Q_arr Q_len
 		return "${1}"
 	}
 
-	__sx_arr_pop_chk=
-	__sx_arr_pop_i="${__sx_arr_pop_len}"
-	for __sx_arr_pop_dest in "${@}"; do
-		M_NUM_DECR([|__sx_arr_pop_i|])
+	Q_chk=
+	Q_i="${Q_len}"
+	for Q_dest in "${@}"; do
+		M_NUM_DECR([|Q_i|])
 
-		M_STR_NE([|"${__sx_arr_pop_dest}"|], [|-|]) || continue
+		M_STR_NE([|"${Q_dest}"|], [|-|]) || continue
 
 		# pop中に配列以下の更新を禁止
 		if
-			! sx_var_is_name "${__sx_arr_pop_dest}" ||
-			M_STR_MATCH([|"${__sx_arr_pop_dest}"|], [|"${__sx_arr_pop_arr}"|], [|"${__sx_arr_pop_arr}"_*|])
+			! sx_var_is_name "${Q_dest}" ||
+			M_STR_MATCH([|"${Q_dest}"|], [|"${Q_arr}"|], [|"${Q_arr}"_*|])
 		then
-			unset __sx_arr_pop_arr __sx_arr_pop_len __sx_arr_pop_chk __sx_arr_pop_i __sx_arr_pop_dest
+			unset Q_arr Q_len Q_chk Q_i Q_dest
 			return M_EX_USAGE
 		fi
 
-		M_STR_APPEND([|__sx_arr_pop_chk|], [|" ${__sx_arr_pop_arr}_${__sx_arr_pop_i}-${__sx_arr_pop_dest}"|])
+		M_STR_APPEND([|Q_chk|], [|" ${Q_arr}_${Q_i}-${Q_dest}"|])
 	done
 
-	eval __sx_var_is_copyable "${__sx_arr_pop_chk}" || {
+	eval __sx_var_is_copyable "${Q_chk}" || {
 		case "${?}" in
 			1) set -- M_EX_NOPERM;;
 			*) set -- "${?}";;
 		esac
 
-		unset __sx_arr_pop_arr __sx_arr_pop_len __sx_arr_pop_chk __sx_arr_pop_i __sx_arr_pop_dest
+		unset Q_arr Q_len Q_chk Q_i Q_dest
 		return "${1}"
 	}
 
-	set -- "${__sx_arr_pop_arr}" "${@}"
-	unset __sx_arr_pop_arr __sx_arr_pop_len __sx_arr_pop_chk __sx_arr_pop_i __sx_arr_pop_dest
+	set -- "${Q_arr}" "${@}"
+	unset Q_arr Q_len Q_chk Q_i Q_dest
 	__sx_arr_pop0 "${@}" || return
 }
+|], [|arr_pop|])dnl
 
 ### __sx_arr_pop - 配列の末尾から要素を取り出す（内部用）
 ##
@@ -11983,6 +11989,8 @@ __sx_arr_push() {
 
 	unset __sx_arr_push_i_ __sx_arr_push_arr_ __sx_arr_push_arg_
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_res|])dnl
 
 ### sx_arr_quote - 配列要素をシングルクォートで囲み、スペース区切りで結合する
 ##
@@ -12005,17 +12013,18 @@ sx_arr_quote() {
 
 	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
 
-	__sx_arr_quote_res="${1}"
+	Q_res="${1}"
 	shift
 
 	sx_var_is_arr "${@}" || {
-		unset __sx_arr_quote_res
+		unset CLEANUP
 		return M_EX_USAGE
 	}
 
-	__sx_arr_quote "${__sx_arr_quote_res}" "${@}"
-	unset __sx_arr_quote_res
+	__sx_arr_quote "${Q_res}" "${@}"
+	unset CLEANUP
 }
+|], [|arr_quote|])dnl
 
 ### __sx_arr_quote - 配列要素をシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
@@ -12045,6 +12054,8 @@ __sx_arr_quote() {
 
 	unset __sx_arr_quote_res_ __sx_arr_quote_out_ __sx_arr_quote_arr_ __sx_arr_quote_esc_
 }
+M_RENAME_Q([|dnl
+define([|CLEANUP|], [|Q_res|])dnl
 
 ### sx_arr_rquote - 配列要素を逆順にシングルクォートで囲み、スペース区切りで結合する
 ##
@@ -12067,17 +12078,18 @@ sx_arr_rquote() {
 
 	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
 
-	__sx_arr_rquote_res="${1}"
+	Q_res="${1}"
 	shift
 	sx_var_is_arr "${@}" || {
-		unset __sx_arr_rquote_res
+		unset CLEANUP
 		return M_EX_USAGE
 	}
 
-	set -- "${__sx_arr_rquote_res}" "${@}"
-	unset __sx_arr_rquote_res
+	set -- "${Q_res}" "${@}"
+	unset CLEANUP
 	__sx_arr_rquote "${@}"
 }
+|], [|arr_rquote|])dnl
 
 ### __sx_arr_rquote - 配列要素を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
