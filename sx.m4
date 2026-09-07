@@ -6681,6 +6681,7 @@ sx_num_is_nat0_base() {
 	__sx_num_is_nat0_base "${@}"
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_is_nat0_base - 指定された基数で0以上の自然数か確認する（内部用）
 ##
 ## 使い方:
@@ -6688,25 +6689,29 @@ sx_num_is_nat0_base() {
 ##
 ## 説明:
 ##   sx_num_is_nat0_base の内部実装。基数チェックを行わない。
+
+define([|CLEANUP|], [|Q_arg Q_pfix Q_char|])dnl
+
 __sx_num_is_nat0_base() {
 	eval "
-		__sx_num_is_nat0_base_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
-		__sx_num_is_nat0_base_char_=\"\${SX_NUM_BASE${1}_CHARS}\"
+		Q_pfix=\"\${SX_NUM_BASE${1}_PREFIX}\"
+		Q_char=\"\${SX_NUM_BASE${1}_CHARS}\"
 	"
 	shift
 
-	for __sx_num_is_nat0_base_arg_ in "${@}"; do
-		case "${__sx_num_is_nat0_base_arg_}" in
-			${__sx_num_is_nat0_base_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_nat0_base_arg_#${__sx_num_is_nat0_base_pfix_}}"|] , [|''|], [|0?*|], [|*[!"${__sx_num_is_nat0_base_char_}"]*|]);;
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			${Q_pfix}*) ! M_STR_MATCH([|"${Q_arg#${Q_pfix}}"|] , [|''|], [|0?*|], [|*[!"${Q_char}"]*|]);;
 			*) ! :;;
 		esac || {
-			unset __sx_num_is_nat0_base_pfix_ __sx_num_is_nat0_base_char_ __sx_num_is_nat0_base_arg_
+			unset Q_pfix Q_char Q_arg
 			return 1
 		}
 	done
 
-	unset __sx_num_is_nat0_base_arg_ __sx_num_is_nat0_base_pfix_ __sx_num_is_nat0_base_char_
+	unset CLEANUP
 }
+|], [|num_is_nat0_base|])dnl
 
 ### sx_num_is_nat0_safe - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）の自然数（0以上）か確認する
 ##
@@ -6786,6 +6791,7 @@ sx_num_is_nat1_base() {
 	__sx_num_is_nat1_base "${@}"
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_is_nat1_base - 指定された基数で1以上の自然数か確認する（内部用）
 ##
 ## 使い方:
@@ -6793,25 +6799,29 @@ sx_num_is_nat1_base() {
 ##
 ## 説明:
 ##   sx_num_is_nat1_base の内部実装。基数チェックを行わない。
+
+define([|CLEANUP|], [|Q_arg Q_pfix Q_char|])dnl
+
 __sx_num_is_nat1_base() {
 	eval "
-		__sx_num_is_nat1_base_pfix_=\"\${SX_NUM_BASE${1}_PREFIX}\"
-		__sx_num_is_nat1_base_char_=\"\${SX_NUM_BASE${1}_CHARS}\"
+		Q_pfix=\"\${SX_NUM_BASE${1}_PREFIX}\"
+		Q_char=\"\${SX_NUM_BASE${1}_CHARS}\"
 	"
 	shift
 
-	for __sx_num_is_nat1_base_arg_ in "${@}"; do
-		case "${__sx_num_is_nat1_base_arg_}" in
-			${__sx_num_is_nat1_base_pfix_}*) ! M_STR_MATCH([|"${__sx_num_is_nat1_base_arg_#${__sx_num_is_nat1_base_pfix_}}"|], [|''|], [|0*|], [|*[!"${__sx_num_is_nat1_base_char_}"]*|]);;
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
+			${Q_pfix}*) ! M_STR_MATCH([|"${Q_arg#${Q_pfix}}"|], [|''|], [|0*|], [|*[!"${Q_char}"]*|]);;
 			*) ! :;;
 		esac || {
-			unset __sx_num_is_nat1_base_pfix_ __sx_num_is_nat1_base_char_ __sx_num_is_nat1_base_arg_
+			unset Q_pfix Q_char Q_arg
 			return 1
 		}
 	done
 
-	unset __sx_num_is_nat1_base_arg_ __sx_num_is_nat1_base_pfix_ __sx_num_is_nat1_base_char_
+	unset CLEANUP
 }
+|], [|num_is_nat1_base|])dnl
 
 ### sx_num_is_nat1_safe - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）の自然数（1以上）か確認する
 ##
@@ -12570,6 +12580,7 @@ __sx_arr_rquote() {
 	unset CLEANUP
 }
 |], [|arr_rquote|])dnl
+
 
 
 
