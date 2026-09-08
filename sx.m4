@@ -617,7 +617,7 @@ M_RENAME_QI([|dnl
 ##   sx_ex_map の内部実装。
 ##   引数チェックを行わずに変換処理を行う。
 
-define([|CLEANUP|], [|Q_bind Q_map Q_out Q_arg __M_BIND_USEVARNEW|])dnl
+define([|CLEANUP|], [|Q_bind Q_map Q_out Q_arg Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
 
 __sx_ex_map() {
 	__sx_var_bind_init "${1}"
@@ -641,7 +641,7 @@ __sx_ex_map() {
 		__M_BIND_UNQUOTE([|__sx_ex_map|], [|"${Q_arg}"|], CLEANUP)
 	done
 
-	eval ${Q_out+:+"${Q_bind}=\"\${Q_out}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 
 	unset CLEANUP
 }
@@ -1047,7 +1047,7 @@ M_RENAME_QI([|dnl
 ##   一意な関数名 (sx_fn_anon_${SX_SYS_REV}) を生成して定義し、
 ##   結果変数に格納する。
 
-define([|CLEANUP|], [|Q_bind Q_out Q_arg Q_name __M_BIND_USEVARNEW|])dnl
+define([|CLEANUP|], [|Q_bind Q_out Q_arg Q_name Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
 
 __sx_fn_anon() {
 	__sx_var_bind_init "${1}"
@@ -1065,7 +1065,7 @@ __sx_fn_anon() {
 		M_NUM_INCR([|SX_SYS_REV|])
 	done
 
-	eval ${Q_out+:+"${Q_bind}=\"\${Q_out}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 
 	unset CLEANUP
 }
@@ -1494,9 +1494,7 @@ __sx_arg_find_cb() {
 }
 |], [|arg_find_cb|])dnl
 
-define([|V|], [|__sx_arg_find_lit_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(glob) V(text) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_arg_find_lit - 引数リストから指定された値を探す（内部用: リテラル/glob照合）
 ##
 ## 使い方:
@@ -1505,36 +1503,40 @@ define([|CLEANUP|], [|V(bind) V(tgt) V(glob) V(text) V(out) V(i) V(arg) V(sts) _
 ## 説明:
 ##   __sx_arg_find から呼ばれる。先頭から末尾に向かって検索する。
 ##   引数は正規化済み。引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_bind Q_tgt Q_glob Q_text Q_out Q_i Q_arg Q_sts Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
+
 __sx_arg_find_lit() {
-	__sx_arg_find_lit_bind_="${1}"
-	__sx_arg_find_lit_tgt_="${2}"
-	__sx_arg_find_lit_glob_=$(((${3} & SX_ARG_FIND_GLOB) != 0))
-	__sx_arg_find_lit_text_=$(((${3} & SX_ARG_FIND_TEXT) != 0))
-	__sx_arg_find_lit_i_=1
-	__sx_arg_find_lit_out_=
+	Q_bind="${1}"
+	Q_tgt="${2}"
+	Q_glob=$(((${3} & SX_ARG_FIND_GLOB) != 0))
+	Q_text=$(((${3} & SX_ARG_FIND_TEXT) != 0))
+	Q_i=1
+	Q_out=
 
 	shift 3
 
-	for __sx_arg_find_lit_arg_ in "${@}"; do
-		case "${__sx_arg_find_lit_glob_}${__sx_arg_find_lit_arg_}" in "0${__sx_arg_find_lit_tgt_}" | 1${__sx_arg_find_lit_tgt_})
-			case "${__sx_arg_find_lit_text_}" in
-				0) __M_BIND_UNQUOTE([|__sx_arg_find_lit|], [|"${__sx_arg_find_lit_i_}"|], CLEANUP);;
-				*) __M_BIND_QUOTE([|__sx_arg_find_lit|], [|"${__sx_arg_find_lit_arg_}"|], CLEANUP);;
+	for Q_arg in "${@}"; do
+		case "${Q_glob}${Q_arg}" in "0${Q_tgt}" | 1${Q_tgt})
+			case "${Q_text}" in
+				0) __M_BIND_UNQUOTE([|__sx_arg_find_lit|], [|"${Q_i}"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_arg_find_lit|], [|"${Q_arg}"|], CLEANUP);;
 			esac
 
-			__sx_arg_find_lit_sts_=M_EX_OK
+			Q_sts=M_EX_OK
 		esac
 
-		M_NUM_INCR([|__sx_arg_find_lit_i_|])
+		M_NUM_INCR([|Q_i|])
 	done
 
-	eval ${__sx_arg_find_lit_out_:+"${__sx_arg_find_lit_bind_}=\"\${__sx_arg_find_lit_out_}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 
-	set -- "${__sx_arg_find_lit_sts_-1}"
+	set -- "${Q_sts-1}"
 
 	unset CLEANUP
 	return "${1}"
 }
+|], [|arg_find_lit|])dnl
 
 ### sx_arg_fold - 引数リストをコールバックで畳み込む（fold）
 ##
@@ -1954,9 +1956,7 @@ __sx_arg_isep_cb() {
 }
 |], [|arg_isep_cb|])dnl
 
-define([|V|], [|__sx_arg_isep_lit_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(flg) V(lim) V(eff) V(r) V(i) V(arg) V(max) V(post_ok) __M_BIND_USEVAR|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_arg_isep_lit - 引数間にリテラルセパレータを挿入する（内部用）
 ##
 ## 使い方:
@@ -1965,99 +1965,103 @@ define([|CLEANUP|], [|V(bind) V(out) V(sep) V(int) V(flg) V(lim) V(eff) V(r) V(i
 ## 説明:
 ##   引数間にセパレータを挿入し、すべてをクォートして結合する。
 ##   PRE/POST フラグにより先頭・末尾への挿入も行う。
+
+define([|CLEANUP|], [|Q_bind Q_out Q_sep Q_int Q_flg Q_lim Q_eff Q_r Q_i Q_arg Q_max Q_post_ok Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
+
 __sx_arg_isep_lit() {
-	__sx_arg_isep_lit_bind_="${1}"
-	__sx_arg_isep_lit_sep_="${2}"
-	__sx_arg_isep_lit_int_="${3}"
-	__sx_arg_isep_lit_lim_="${4}"
-	__sx_arg_isep_lit_flg_="${5}"
-	__sx_arg_isep_lit_out_=
+	Q_bind="${1}"
+	Q_sep="${2}"
+	Q_int="${3}"
+	Q_lim="${4}"
+	Q_flg="${5}"
+	Q_out=
 	shift 5
 
 	# セパレータを挿入可能な論理的な箇所数（要素間のみ）を計算
-	__sx_arg_isep_lit_eff_=$(((0 < ${#}) * (${#} - 1) / ${__sx_arg_isep_lit_int_#-}))
+	Q_eff=$(((0 < ${#}) * (${#} - 1) / ${Q_int#-}))
 
 	# --- 特殊処理: 負のインターバル（後方から数えるモード） ---
 	# インターバルが負の場合、末尾（POST側）を基準にするため、
 	# POSTフラグが指定されている場合は、ループ前にあらかじめ回数を1つ消費しておく。
-	case "$((__sx_arg_isep_lit_int_ < 0 && __sx_arg_isep_lit_lim_ != 0 && __sx_arg_isep_lit_flg_ & SX_ARG_ISEP_POST))" in 1)
-		__sx_arg_isep_lit_post_ok_=1
-		M_NUM_DECR([|__sx_arg_isep_lit_lim_|])
+	case "$((Q_int < 0 && Q_lim != 0 && Q_flg & SX_ARG_ISEP_POST))" in 1)
+		Q_post_ok=1
+		M_NUM_DECR([|Q_lim|])
 	esac
 
 	# --- 回数制限 (lim) の調整 ---
 	# PRE/POSTフラグを含めた「物理的に挿入可能な絶対最大数」を算出し、lim がそれを超えないよう制限(cap)する。
-	__sx_arg_isep_lit_max_="${__sx_arg_isep_lit_eff_}"
-	case "$((__sx_arg_isep_lit_flg_ & SX_ARG_ISEP_PRE))" in [!0]*)
-		M_NUM_INCR([|__sx_arg_isep_lit_max_|])
+	Q_max="${Q_eff}"
+	case "$((Q_flg & SX_ARG_ISEP_PRE))" in [!0]*)
+		M_NUM_INCR([|Q_max|])
 	esac
 
-	case "$((__sx_arg_isep_lit_flg_ & SX_ARG_ISEP_POST))" in [!0]*)
-		M_NUM_INCR([|__sx_arg_isep_lit_max_|])
+	case "$((Q_flg & SX_ARG_ISEP_POST))" in [!0]*)
+		M_NUM_INCR([|Q_max|])
 	esac
 
-	case "$((__sx_arg_isep_lit_max_ < __sx_arg_isep_lit_lim_))" in 1)
-		__sx_arg_isep_lit_lim_="${__sx_arg_isep_lit_max_}"
+	case "$((Q_max < Q_lim))" in 1)
+		Q_lim="${Q_max}"
 	esac
 
 	# --- オフセット (r_) の計算 ---
 	# ループ内で最初のセパレータをどこで入れるかを決めるための基準値を算出する。
 	# 正の場合：単純にインターバル数。
 	# 負の場合：要素数と残りの挿入可能回数から、左から数えて何個目を起点にするかを逆算。
-	__sx_arg_isep_lit_r_=$((0 < __sx_arg_isep_lit_int_ ? __sx_arg_isep_lit_int_ : ${#} - __sx_arg_isep_lit_lim_ * ${__sx_arg_isep_lit_int_#-}))
+	Q_r=$((0 < Q_int ? Q_int : ${#} - Q_lim * ${Q_int#-}))
 
 	# --- PRE セパレータの挿入 ---
 	# 先頭にセパレータを配置するフラグがある場合の処理。
 	case "$((
-		__sx_arg_isep_lit_flg_ & SX_ARG_ISEP_PRE &&
-		(0 < __sx_arg_isep_lit_int_ ?
-			__sx_arg_isep_lit_lim_ != 0 :
-			__sx_arg_isep_lit_eff_ < __sx_arg_isep_lit_lim_ &&
-			(__sx_arg_isep_lit_r_ % __sx_arg_isep_lit_int_) == 0)
+		Q_flg & SX_ARG_ISEP_PRE &&
+		(0 < Q_int ?
+			Q_lim != 0 :
+			Q_eff < Q_lim &&
+			(Q_r % Q_int) == 0)
 		))" in 1)
-		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
-		M_NUM_DECR([|__sx_arg_isep_lit_lim_|])
+		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${Q_sep}"|], CLEANUP)
+		M_NUM_DECR([|Q_lim|])
 	esac
 
-	__sx_arg_isep_lit_i_=1
+	Q_i=1
 	# --- メインループ: 引数の結合 ---
-	for __sx_arg_isep_lit_arg_ in "${@}"; do
+	for Q_arg in "${@}"; do
 		# 1. セパレータの挿入判定
 		#    - 制限回数 (lim) が残っている
 		#    - 最初の要素ではなく (1 < j_)
 		#    - オフセット位置を過ぎており (r_ < j_)
 		#    - インターバルの倍数位置である ((j - r - 1) % int == 0)
 		case "$((
-			__sx_arg_isep_lit_lim_ != 0 &&
-			1 < __sx_arg_isep_lit_i_ &&
-			__sx_arg_isep_lit_r_ < __sx_arg_isep_lit_i_ &&
-			(__sx_arg_isep_lit_i_ - __sx_arg_isep_lit_r_ - 1) % __sx_arg_isep_lit_int_ == 0
+			Q_lim != 0 &&
+			1 < Q_i &&
+			Q_r < Q_i &&
+			(Q_i - Q_r - 1) % Q_int == 0
 		))" in 1)
-			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
-			M_NUM_DECR([|__sx_arg_isep_lit_lim_|])
+			__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${Q_sep}"|], CLEANUP)
+			M_NUM_DECR([|Q_lim|])
 		esac
 
 		# 2. 値の結合（クォートして結合）
-		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_arg_}"|], CLEANUP)
-		M_NUM_INCR([|__sx_arg_isep_lit_i_|])
+		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${Q_arg}"|], CLEANUP)
+		M_NUM_INCR([|Q_i|])
 	done
 
 	# --- POST セパレータの挿入 ---
 	# 末尾にセパレータを配置するフラグがある場合の処理。
-	case "$((${__sx_arg_isep_lit_post_ok_-0} || (
-		0 < __sx_arg_isep_lit_int_ &&
-		__sx_arg_isep_lit_lim_ != 0 &&
-		__sx_arg_isep_lit_flg_ & SX_ARG_ISEP_POST &&
-		(${#} - __sx_arg_isep_lit_r_) % ${__sx_arg_isep_lit_int_} == 0
+	case "$((${Q_post_ok-0} || (
+		0 < Q_int &&
+		Q_lim != 0 &&
+		Q_flg & SX_ARG_ISEP_POST &&
+		(${#} - Q_r) % ${Q_int} == 0
 	)))" in 1)
-		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${__sx_arg_isep_lit_sep_}"|], CLEANUP)
+		__M_BIND_QUOTE([|__sx_arg_isep_lit|], [|"${Q_sep}"|], CLEANUP)
 	esac
 
 	# 結果を出力変数に格納
-	eval ${__sx_arg_isep_lit_out_:+"${__sx_arg_isep_lit_bind_}=\"\${__sx_arg_isep_lit_out_}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 
 	unset CLEANUP
 }
+|], [|arg_isep_lit|])dnl
 
 ### sx_arg_join - 引数を指定された区切り文字で結合する
 ##
@@ -2272,9 +2276,7 @@ sx_arg_quote() {
 	__sx_arg_quote "${@}"
 }
 
-define([|V|], [|__sx_arg_quote_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(arg) __M_BIND_USEVAR|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_arg_quote - 引数をシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
 ## 使い方:
@@ -2282,20 +2284,24 @@ define([|CLEANUP|], [|V(bind) V(out) V(arg) __M_BIND_USEVAR|])dnl
 ##
 ## 説明:
 ##   引数チェックを行わずに分配代入およびクォート結合処理を行う。
+
+define([|CLEANUP|], [|Q_bind Q_out Q_arg Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
+
 __sx_arg_quote() {
 	__sx_var_bind_init "${1}"
-	__sx_arg_quote_bind_="${1}"
-	__sx_arg_quote_out_=
+	Q_bind="${1}"
+	Q_out=
 	shift
 
-	for __sx_arg_quote_arg_ in "${@}"; do
-		__M_BIND_QUOTE([|__sx_arg_quote|], [|"${__sx_arg_quote_arg_}"|], CLEANUP)
+	for Q_arg in "${@}"; do
+		__M_BIND_QUOTE([|__sx_arg_quote|], [|"${Q_arg}"|], CLEANUP)
 	done
 
-	eval ${__sx_arg_quote_out_:+"${__sx_arg_quote_bind_}=\"\${__sx_arg_quote_out_}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 
 	unset CLEANUP
 }
+|], [|arg_quote|])dnl
 
 ### sx_arg_pad - 引数リストを指定された長さになるようパディングする
 ##
@@ -2497,8 +2503,7 @@ __sx_arg_pad_cb() {
 }
 |], [|arg_pad_cb|])dnl
 
-define([|V|], [|__sx_arg_pad_lit_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(len) V(val) V(needed) V(arg) __M_BIND_USEVAR|])dnl
+M_RENAME_QI([|dnl
 ### __sx_arg_pad_lit - 引数リストをパディングする（内部用）
 ##
 ## 使い方:
@@ -2506,41 +2511,45 @@ define([|CLEANUP|], [|V(bind) V(out) V(len) V(val) V(needed) V(arg) __M_BIND_USE
 ##
 ## 説明:
 ##   sx_arg_pad の内部実装。引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_bind Q_out Q_len Q_val Q_needed Q_arg Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
+
 __sx_arg_pad_lit() {
-	__sx_arg_pad_lit_bind_="${1}"
-	__sx_arg_pad_lit_len_="${2}"
-	__sx_arg_pad_lit_val_="${3}"
-	__sx_arg_pad_lit_out_=
+	Q_bind="${1}"
+	Q_len="${2}"
+	Q_val="${3}"
+	Q_out=
 	shift 4
 
-	__sx_arg_pad_lit_needed_=$((${__sx_arg_pad_lit_len_#-} - ${#}))
+	Q_needed=$((${Q_len#-} - ${#}))
 
 	# 左パディング（needed <= 0 なら何もしない）
-	case "${__sx_arg_pad_lit_len_}" in -*)
-		while M_NUM_LT([|0|], [|__sx_arg_pad_lit_needed_|]); do
-			__M_BIND_QUOTE([|__sx_arg_pad_lit|], [|"${__sx_arg_pad_lit_val_}"|], CLEANUP)
+	case "${Q_len}" in -*)
+		while M_NUM_LT([|0|], [|Q_needed|]); do
+			__M_BIND_QUOTE([|__sx_arg_pad_lit|], [|"${Q_val}"|], CLEANUP)
 
-			M_NUM_DECR([|__sx_arg_pad_lit_needed_|])
+			M_NUM_DECR([|Q_needed|])
 		done
 	esac
 
 	# 入力値を結合
-	for __sx_arg_pad_lit_arg_ in "${@}"; do
-		__M_BIND_QUOTE([|__sx_arg_pad_lit|], [|"${__sx_arg_pad_lit_arg_}"|], CLEANUP)
+	for Q_arg in "${@}"; do
+		__M_BIND_QUOTE([|__sx_arg_pad_lit|], [|"${Q_arg}"|], CLEANUP)
 	done
 
 	# 右パディング（needed <= 0 なら何もしない）
-	case "${__sx_arg_pad_lit_len_}" in [!-]*)
-		while M_NUM_LT([|0|], [|__sx_arg_pad_lit_needed_|]); do
-			__M_BIND_QUOTE([|__sx_arg_pad_lit|], [|"${__sx_arg_pad_lit_val_}"|], CLEANUP)
+	case "${Q_len}" in [!-]*)
+		while M_NUM_LT([|0|], [|Q_needed|]); do
+			__M_BIND_QUOTE([|__sx_arg_pad_lit|], [|"${Q_val}"|], CLEANUP)
 
-			M_NUM_DECR([|__sx_arg_pad_lit_needed_|])
+			M_NUM_DECR([|Q_needed|])
 		done
 	esac
 
-	eval ${__sx_arg_pad_lit_out_:+"${__sx_arg_pad_lit_bind_}=\"\${__sx_arg_pad_lit_out_}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 	unset CLEANUP
 }
+|], [|arg_pad_lit|])dnl
 M_RENAME_Q([|dnl
 ### sx_arg_resize - 引数リストを指定された形状にリサイズする
 ##
@@ -2915,9 +2924,7 @@ __sx_arg_rfind_cb() {
 }
 |], [|arg_rfind_cb|])dnl
 
-define([|V|], [|__sx_arg_rfind_lit_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(glob) V(text) V(out) V(i) V(arg) V(sts) __M_BIND_USEVAR|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_arg_rfind_lit - 引数リストから指定された値を後ろ向きに探す（内部用: リテラル/Glob）
 ##
 ## 使い方:
@@ -2926,35 +2933,39 @@ define([|CLEANUP|], [|V(bind) V(glob) V(text) V(out) V(i) V(arg) V(sts) __M_BIND
 ## 説明:
 ##   sx_arg_rfind のリテラル/Glob検索実装。末尾から先頭に向かって検索する。
 ##   引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_bind Q_glob Q_text Q_out Q_i Q_arg Q_sts Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
+
 __sx_arg_rfind_lit() {
-	__sx_arg_rfind_lit_bind_="${1}"
-	__sx_arg_rfind_lit_glob_=$(((${3} & SX_ARG_RFIND_GLOB) != 0))
-	__sx_arg_rfind_lit_text_=$(((${3} & SX_ARG_RFIND_TEXT) != 0))
-	__sx_arg_rfind_lit_i_="${#}"
-	__sx_arg_rfind_lit_out_=
+	Q_bind="${1}"
+	Q_glob=$(((${3} & SX_ARG_RFIND_GLOB) != 0))
+	Q_text=$(((${3} & SX_ARG_RFIND_TEXT) != 0))
+	Q_i="${#}"
+	Q_out=
 
-	while M_NUM_LT([|3|], [|__sx_arg_rfind_lit_i_|]); do
-		eval __sx_arg_rfind_lit_arg_=\"\${${__sx_arg_rfind_lit_i_}}\"
+	while M_NUM_LT([|3|], [|Q_i|]); do
+		eval Q_arg=\"\${${Q_i}}\"
 
-		case "${__sx_arg_rfind_lit_glob_}${__sx_arg_rfind_lit_arg_}" in "0${2}" | 1${2})
-			case "${__sx_arg_rfind_lit_text_}" in
-				0) __M_BIND_UNQUOTE([|__sx_arg_rfind_lit|], [|"$((${__sx_arg_rfind_lit_i_} - 3))"|], CLEANUP);;
-				*) __M_BIND_QUOTE([|__sx_arg_rfind_lit|], [|"${__sx_arg_rfind_lit_arg_}"|], CLEANUP);;
+		case "${Q_glob}${Q_arg}" in "0${2}" | 1${2})
+			case "${Q_text}" in
+				0) __M_BIND_UNQUOTE([|__sx_arg_rfind_lit|], [|"$((${Q_i} - 3))"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_arg_rfind_lit|], [|"${Q_arg}"|], CLEANUP);;
 			esac
 
-			__sx_arg_rfind_lit_sts_=M_EX_OK
+			Q_sts=M_EX_OK
 		esac
 
-		M_NUM_DECR([|__sx_arg_rfind_lit_i_|])
+		M_NUM_DECR([|Q_i|])
 	done
 
-	eval ${__sx_arg_rfind_lit_out_:+"${__sx_arg_rfind_lit_bind_}=\"\${__sx_arg_rfind_lit_out_}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 
-	set -- "${__sx_arg_rfind_lit_sts_-1}"
+	set -- "${Q_sts-1}"
 
 	unset CLEANUP
 	return "${1}"
 }
+|], [|arg_rfind_lit|])dnl
 
 ### sx_arg_rfold - 引数リストを右からコールバックで畳み込む（rfold）
 ##
@@ -3093,9 +3104,7 @@ sx_arg_rquote() {
 	__sx_arg_rquote "${@}"
 }
 
-define([|V|], [|__sx_arg_rquote_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(i) V(val) __M_BIND_USEVAR|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
 ## 使い方:
@@ -3103,24 +3112,28 @@ define([|CLEANUP|], [|V(bind) V(out) V(i) V(val) __M_BIND_USEVAR|])dnl
 ##
 ## 説明:
 ##   引数チェックを行わずに逆順分配代入およびクォート結合処理を行う。
+
+define([|CLEANUP|], [|Q_bind Q_out Q_i Q_val Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
+
 __sx_arg_rquote() {
 	__sx_var_bind_init "${1}"
-	__sx_arg_rquote_bind_="${1}"
-	__sx_arg_rquote_out_=
+	Q_bind="${1}"
+	Q_out=
 	shift
-	__sx_arg_rquote_i_="${#}"
+	Q_i="${#}"
 
-	while M_NUM_LT([|0|], [|__sx_arg_rquote_i_|]); do
-		eval "__sx_arg_rquote_val_=\"\${${__sx_arg_rquote_i_}}\""
+	while M_NUM_LT([|0|], [|Q_i|]); do
+		eval "Q_val=\"\${${Q_i}}\""
 
-		__M_BIND_QUOTE([|__sx_arg_rquote|], [|"${__sx_arg_rquote_val_}"|], CLEANUP)
+		__M_BIND_QUOTE([|__sx_arg_rquote|], [|"${Q_val}"|], CLEANUP)
 
-		M_NUM_DECR([|__sx_arg_rquote_i_|])
+		M_NUM_DECR([|Q_i|])
 	done
 
-	eval ${__sx_arg_rquote_out_:+"${__sx_arg_rquote_bind_}=\"\${__sx_arg_rquote_out_}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 	unset CLEANUP
 }
+|], [|arg_rquote|])dnl
 
 # ========================================
 #  VAR (Variable)
@@ -7899,7 +7912,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_num_norm の内部実装。引数の検証は行わない。
 
-define([|CLEANUP|], [|Q_bind Q_out Q_arg Q_in Q_mnt Q_dig Q_flen Q_shift Q_dlen __M_BIND_USEVARNEW|])dnl
+define([|CLEANUP|], [|Q_bind Q_out Q_arg Q_in Q_mnt Q_dig Q_flen Q_shift Q_dlen Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
 
 __sx_num_norm() {
 	__sx_var_bind_init "${1}"
@@ -7963,7 +7976,7 @@ __sx_num_norm() {
 		__M_BIND_UNQUOTE([|__sx_num_norm|], [|"${Q_arg%%[!-]*}${Q_in:-0}"|], CLEANUP)
 	done
 
-	eval ${Q_out+:+"${Q_bind}=\"\${Q_out}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 
 	unset CLEANUP
 }
@@ -8007,9 +8020,7 @@ sx_num_range() {
 	__sx_num_range "${@}"
 }
 
-define([|V|], [|__sx_num_range_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(cur) __M_BIND_USEVAR|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_num_range - 数値の範囲を生成する（内部用）
 ##
 ## 使い方:
@@ -8017,10 +8028,13 @@ define([|CLEANUP|], [|V(bind) V(out) V(cur) __M_BIND_USEVAR|])dnl
 ##
 ## 説明:
 ##   sx_num_range の内部実装。引数チェックを行わない。
+
+define([|CLEANUP|], [|Q_bind Q_out Q_cur Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
+
 __sx_num_range() {
 	__sx_var_bind_init "${1}"
-	__sx_num_range_bind_="${1}"
-	__sx_num_range_out_=
+	Q_bind="${1}"
+	Q_out=
 	shift
 
 	case "${#}" in
@@ -8029,24 +8043,25 @@ __sx_num_range() {
 		*) set -- "${1}" "${2}" "${3-1}";;
 	esac
 
-	__sx_num_range_cur_="${1}"
+	Q_cur="${1}"
 
 	if M_NUM_LT([|0|], [|${3}|]); then
-		while M_NUM_LT([|__sx_num_range_cur_|], [|${2}|]); do
-			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
-			: $((__sx_num_range_cur_ += ${3}))
+		while M_NUM_LT([|Q_cur|], [|${2}|]); do
+			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${Q_cur}"|], CLEANUP)
+			: $((Q_cur += ${3}))
 		done
 	else
-		while M_NUM_LT([|${2}|], [|${__sx_num_range_cur_}|]); do
-			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${__sx_num_range_cur_}"|], CLEANUP)
-			: $((__sx_num_range_cur_ += ${3}))
+		while M_NUM_LT([|${2}|], [|${Q_cur}|]); do
+			__M_BIND_UNQUOTE([|__sx_num_range|], [|"${Q_cur}"|], CLEANUP)
+			: $((Q_cur += ${3}))
 		done
 	fi
 
-	eval ${__sx_num_range_out_:+"${__sx_num_range_bind_}=\"\${__sx_num_range_out_}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 
 	unset CLEANUP
 }
+|], [|num_range|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_rel - 数値間の関係を確認する
 ##
@@ -8765,9 +8780,7 @@ sx_str_chunk() {
 	__sx_str_chunk "${@}"
 }
 
-define([|V|], [|__sx_str_chunk_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(str) V(cycle) V(lim) V(len) V(bwd) V(out) V(newcycle) V(cur) V(qm) V(abs) V(next) V(chunk) __M_BIND_USEVAR|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
 ##
 ## 使い方:
@@ -8776,84 +8789,88 @@ define([|CLEANUP|], [|V(bind) V(str) V(cycle) V(lim) V(len) V(bwd) V(out) V(newc
 ## 説明:
 ##   sx_str_chunk の内部実装。
 ##   引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_bind Q_str Q_cycle Q_lim Q_len Q_bwd Q_out Q_newcycle Q_cur Q_qm Q_abs Q_next Q_chunk Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
+
 __sx_str_chunk() {
 	set -- "${1}" "${2-}" "${3-1}" "${4:-${SX_NUM_I32_MAX}}" "${5:-0}"
 	__sx_var_bind_init "${1}"
-	__sx_str_chunk_bind_="${1}"
-	__sx_str_chunk_str_="${2-}"
-	__sx_str_chunk_cycle_="${3}:"
-	__sx_str_chunk_lim_="${4}"
-	__sx_str_chunk_len_="${#__sx_str_chunk_str_}"
-	__sx_str_chunk_bwd_=
-	__sx_str_chunk_out_=
+	Q_bind="${1}"
+	Q_str="${2-}"
+	Q_cycle="${3}:"
+	Q_lim="${4}"
+	Q_len="${#Q_str}"
+	Q_bwd=
+	Q_out=
 
 	# プリパス: interval に ? パターンを埋め込む (1:-2:3 → 1?:-2??:3???:)
-	__sx_str_chunk_newcycle_=
-	while M_STR_HAS([|"${__sx_str_chunk_cycle_}"|], [|:|]); do
-		__sx_str_chunk_cur_="${__sx_str_chunk_cycle_%%:*}"
-		__sx_str_chunk_cycle_="${__sx_str_chunk_cycle_#*:}"
+	Q_newcycle=
+	while M_STR_HAS([|"${Q_cycle}"|], [|:|]); do
+		Q_cur="${Q_cycle%%:*}"
+		Q_cycle="${Q_cycle#*:}"
 
-		__sx_str_qm __sx_str_chunk_qm_ "${__sx_str_chunk_cur_#-}"
-		M_STR_APPEND([|__sx_str_chunk_newcycle_|], [|"$((0 <= __sx_str_chunk_cur_))${__sx_str_chunk_qm_}:"|])
+		__sx_str_qm Q_qm "${Q_cur#-}"
+		M_STR_APPEND([|Q_newcycle|], [|"$((0 <= Q_cur))${Q_qm}:"|])
 	done
 
-	__sx_str_chunk_cycle_="${__sx_str_chunk_newcycle_}"
+	Q_cycle="${Q_newcycle}"
 
 	# 第1パス: 文字列長・limit から切り取りサイズリストを構築
 	while
-		__sx_str_chunk_cur_="${__sx_str_chunk_cycle_%%:*}" &&
-		__sx_str_chunk_qm_="${__sx_str_chunk_cur_#?}" &&
-		__sx_str_chunk_abs_="${#__sx_str_chunk_qm_}" &&
-		M_NUM_BOOL([|${__sx_str_chunk_abs_} <= __sx_str_chunk_len_ && 0 < __sx_str_chunk_lim_|])
+		Q_cur="${Q_cycle%%:*}" &&
+		Q_qm="${Q_cur#?}" &&
+		Q_abs="${#Q_qm}" &&
+		M_NUM_BOOL([|${Q_abs} <= Q_len && 0 < Q_lim|])
 	do
-		__sx_str_chunk_cycle_="${__sx_str_chunk_cycle_#*:}${__sx_str_chunk_cur_}:"
-		: $((__sx_str_chunk_len_ -= __sx_str_chunk_abs_))
-		M_NUM_DECR([|__sx_str_chunk_lim_|])
+		Q_cycle="${Q_cycle#*:}${Q_cur}:"
+		: $((Q_len -= Q_abs))
+		M_NUM_DECR([|Q_lim|])
 
-		case "${__sx_str_chunk_cur_}" in 0*)
-			M_STR_PREPEND([|__sx_str_chunk_bwd_|], [|"'${__sx_str_chunk_qm_}' "|])
+		case "${Q_cur}" in 0*)
+			M_STR_PREPEND([|Q_bwd|], [|"'${Q_qm}' "|])
 			continue
 		esac
 
-		__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
+		Q_next="${Q_str#${Q_qm}}"
 
-		__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], CLEANUP)
+		__M_BIND_QUOTE([|__sx_str_chunk|], [|"${Q_str%"${Q_next}"}"|], CLEANUP)
 
-		__sx_str_chunk_str_="${__sx_str_chunk_next_}"
+		Q_str="${Q_next}"
 	done
 
 	# 余り処理: limit 到達 or 文字列不足
-	if M_NUM_LT([|0|], [|__sx_str_chunk_len_|]); then
-		__sx_str_qm __sx_str_chunk_qm_ "${__sx_str_chunk_len_}"
+	if M_NUM_LT([|0|], [|Q_len|]); then
+		__sx_str_qm Q_qm "${Q_len}"
 
 		case "$((
-			(__sx_str_chunk_len_ < __sx_str_chunk_abs_ && ${5} & SX_STR_CHUNK_SKIP_SHORT) ||
-			(__sx_str_chunk_abs_ < __sx_str_chunk_len_ && ${5} & SX_STR_CHUNK_SKIP_LONG)
+			(Q_len < Q_abs && ${5} & SX_STR_CHUNK_SKIP_SHORT) ||
+			(Q_abs < Q_len && ${5} & SX_STR_CHUNK_SKIP_LONG)
 		))" in
-			0) eval set -- '"${__sx_str_chunk_qm_}"' "${__sx_str_chunk_bwd_}";;
+			0) eval set -- '"${Q_qm}"' "${Q_bwd}";;
 		*)
-			__sx_str_chunk_str_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
-			eval set -- "${__sx_str_chunk_bwd_}"
+			Q_str="${Q_str#${Q_qm}}"
+			eval set -- "${Q_bwd}"
 			;;
 		esac
 	else
-		eval set -- "${__sx_str_chunk_bwd_}"
+		eval set -- "${Q_bwd}"
 	fi
 
 	# 第2パス: 切り取りリストを左から処理
-	for __sx_str_chunk_qm_ in "${@}"; do
-		__sx_str_chunk_next_="${__sx_str_chunk_str_#${__sx_str_chunk_qm_}}"
-		__sx_str_chunk_chunk_=""
+	for Q_qm in "${@}"; do
+		Q_next="${Q_str#${Q_qm}}"
+		Q_chunk=
 
-		__M_BIND_QUOTE([|__sx_str_chunk|], [|"${__sx_str_chunk_str_%"${__sx_str_chunk_next_}"}"|], CLEANUP)
+		__M_BIND_QUOTE([|__sx_str_chunk|], [|"${Q_str%"${Q_next}"}"|], CLEANUP)
 
-		__sx_str_chunk_str_="${__sx_str_chunk_next_}"
+		Q_str="${Q_next}"
 	done
 
-	eval ${__sx_str_chunk_out_:+"${__sx_str_chunk_bind_}=\"\${__sx_str_chunk_out_}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 
 	unset CLEANUP
 }
+|], [|str_chunk|])dnl
 
 ### sx_str_count - 文字列から指定された文字列の出現回数を取得する
 ##
@@ -9205,9 +9222,7 @@ sx_str_find() {
 	__sx_str_find "${@}" || return
 }
 
-define([|V|], [|__sx_str_find_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(off) V(pre) V(out) V(sts) V(match) V(after) V(text) V(overlap) __M_BIND_USEVAR|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_str_find - 文字列から指定された文字列を前方一致で探す（内部用）
 ##
 ## 使い方:
@@ -9215,89 +9230,93 @@ define([|CLEANUP|], [|V(bind) V(tgt) V(off) V(pre) V(out) V(sts) V(match) V(afte
 ##
 ## 説明:
 ##   sx_str_find の内部実装。引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_bind Q_tgt Q_off Q_pre Q_out Q_sts Q_match Q_after Q_text Q_overlap Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
+
 __sx_str_find() {
 	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
 	__sx_var_bind_init "${1}"
-	__sx_str_find_bind_="${1}"
-	__sx_str_find_tgt_="${2}"
-	__sx_str_find_text_=$((${4} & SX_STR_FIND_TEXT))
-	__sx_str_find_overlap_=$((${4} & SX_STR_FIND_OVERLAP))
-	__sx_str_find_off_=0
-	__sx_str_find_out_=
+	Q_bind="${1}"
+	Q_tgt="${2}"
+	Q_text=$((${4} & SX_STR_FIND_TEXT))
+	Q_overlap=$((${4} & SX_STR_FIND_OVERLAP))
+	Q_off=0
+	Q_out=
 
 	if
 		M_STR_EQ([|"${3}"|], [|''|]) ||
 		{ M_NUM_BOOL([|${4} & SX_STR_FIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
 	then
-		__sx_str_find_sts_=M_EX_OK
+		Q_sts=M_EX_OK
 
 		# 空 needle: 全境界位置（0 〜 len）に長さ0で出力
-		while M_NUM_LE([|${__sx_str_find_off_}|], [|${#__sx_str_find_tgt_}|]); do
-			case "${__sx_str_find_text_}" in
-				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:0"|], CLEANUP);;
+		while M_NUM_LE([|${Q_off}|], [|${#Q_tgt}|]); do
+			case "${Q_text}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${Q_off}:0"|], CLEANUP);;
 				*) __M_BIND_QUOTE([|__sx_str_find|], [|''|], CLEANUP);;
 			esac
 
-			M_NUM_INCR([|__sx_str_find_off_|])
+			M_NUM_INCR([|Q_off|])
 		done
 	elif M_NUM_BOOL([|${4} & SX_STR_FIND_GLOB|]); then
 		# ==== グロブモード ====
-		while M_STR_HAS([|"${__sx_str_find_tgt_}"|], [|${3}|]); do
+		while M_STR_HAS([|"${Q_tgt}"|], [|${3}|]); do
 			# マッチ文字列を抽出（__sx_str_sub_cb と同じ手法）
-			__sx_str_find_pre_="${__sx_str_find_tgt_%%${3}*}"
-			__sx_str_find_after_="${__sx_str_find_tgt_#*${3}}"
-			__sx_str_find_match_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"}"
-			__sx_str_find_match_="${__sx_str_find_match_%"${__sx_str_find_after_}"}"
-			M_NUM_INCR([|__sx_str_find_off_|], [|${#__sx_str_find_pre_}|])
-			: "${__sx_str_find_sts_=M_EX_OK}"
+			Q_pre="${Q_tgt%%${3}*}"
+			Q_after="${Q_tgt#*${3}}"
+			Q_match="${Q_tgt#"${Q_pre}"}"
+			Q_match="${Q_match%"${Q_after}"}"
+			M_NUM_INCR([|Q_off|], [|${#Q_pre}|])
+			: "${Q_sts=M_EX_OK}"
 
-			case "${__sx_str_find_text_}" in
-				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:${#__sx_str_find_match_}"|], CLEANUP);;
-				*) __M_BIND_QUOTE([|__sx_str_find|], [|"${__sx_str_find_match_}"|], CLEANUP);;
+			case "${Q_text}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${Q_off}:${#Q_match}"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_str_find|], [|"${Q_match}"|], CLEANUP);;
 			esac
 
-			case "${__sx_str_find_overlap_}" in
+			case "${Q_overlap}" in
 				0)
-					: $((__sx_str_find_off_ += ${#__sx_str_find_match_}))
-					__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}${__sx_str_find_match_}"}"
+					: $((Q_off += ${#Q_match}))
+					Q_tgt="${Q_tgt#"${Q_pre}${Q_match}"}"
 					;;
 				*)
-					M_NUM_INCR([|__sx_str_find_off_|])
-					__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"?}"
+					M_NUM_INCR([|Q_off|])
+					Q_tgt="${Q_tgt#"${Q_pre}"?}"
 					;;
 			esac
 		done
 	else
 		# ==== リテラルモード ====
-		while M_STR_HAS([|"${__sx_str_find_tgt_}"|], [|"${3}"|]); do
-			__sx_str_find_pre_="${__sx_str_find_tgt_%%"${3}"*}"
-			M_NUM_INCR([|__sx_str_find_off_|], [|${#__sx_str_find_pre_}|])
-			: "${__sx_str_find_sts_=M_EX_OK}"
+		while M_STR_HAS([|"${Q_tgt}"|], [|"${3}"|]); do
+			Q_pre="${Q_tgt%%"${3}"*}"
+			M_NUM_INCR([|Q_off|], [|${#Q_pre}|])
+			: "${Q_sts=M_EX_OK}"
 
-			case "${__sx_str_find_text_}" in
-				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${__sx_str_find_off_}:${#3}"|], CLEANUP);;
+			case "${Q_text}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_find|], [|"${Q_off}:${#3}"|], CLEANUP);;
 				*) __M_BIND_QUOTE([|__sx_str_find|], [|"${3}"|], CLEANUP);;
 			esac
 
-			case "${__sx_str_find_overlap_}" in
+			case "${Q_overlap}" in
 				0)
-					: $((__sx_str_find_off_ += ${#3}))
-					__sx_str_find_tgt_="${__sx_str_find_tgt_#*"${3}"}"
+					: $((Q_off += ${#3}))
+					Q_tgt="${Q_tgt#*"${3}"}"
 					;;
 				*)
-					M_NUM_INCR([|__sx_str_find_off_|])
-					__sx_str_find_tgt_="${__sx_str_find_tgt_#"${__sx_str_find_pre_}"?}"
+					M_NUM_INCR([|Q_off|])
+					Q_tgt="${Q_tgt#"${Q_pre}"?}"
 					;;
 			esac
 		done
 	fi
 
-	eval ${__sx_str_find_out_:+"${__sx_str_find_bind_}=\"\${__sx_str_find_out_}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 
-	set -- "${__sx_str_find_sts_-1}"
+	set -- "${Q_sts-1}"
 	unset CLEANUP
 	return "${1}"
 }
+|], [|str_find|])dnl
 M_RENAME_Q([|dnl
 ### sx_str_has - 第一引数に、第二引数以降のいずれかの文字列が含まれているか確認する
 ##
@@ -10273,9 +10292,7 @@ sx_str_rfind() {
 	__sx_str_rfind "${@}" || return
 }
 
-define([|V|], [|__sx_str_rfind_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(tgt) V(off) V(pre) V(out) V(sts) V(match) V(after) V(text) V(overlap) __M_BIND_USEVAR|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_str_rfind - 文字列から指定された文字列を後方一致で探す（内部用）
 ##
 ## 使い方:
@@ -10283,74 +10300,78 @@ define([|CLEANUP|], [|V(bind) V(tgt) V(off) V(pre) V(out) V(sts) V(match) V(afte
 ##
 ## 説明:
 ##   sx_str_rfind の内部実装。引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_bind Q_tgt Q_off Q_pre Q_out Q_sts Q_match Q_after Q_text Q_overlap Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
+
 __sx_str_rfind() {
 	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
 	__sx_var_bind_init "${1}"
-	__sx_str_rfind_bind_="${1}"
-	__sx_str_rfind_tgt_="${2}"
-	__sx_str_rfind_text_=$((${4} & SX_STR_RFIND_TEXT))
-	__sx_str_rfind_overlap_=$((${4} & SX_STR_RFIND_OVERLAP))
-	__sx_str_rfind_out_=
+	Q_bind="${1}"
+	Q_tgt="${2}"
+	Q_text=$((${4} & SX_STR_RFIND_TEXT))
+	Q_overlap=$((${4} & SX_STR_RFIND_OVERLAP))
+	Q_out=
 
 	if
 		M_STR_EQ([|"${3}"|], [|''|]) ||
 		{ M_NUM_BOOL([|${4} & SX_STR_RFIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
 	then
-		__sx_str_rfind_off_="${#__sx_str_rfind_tgt_}"
-		__sx_str_rfind_sts_=M_EX_OK
+		Q_off="${#Q_tgt}"
+		Q_sts=M_EX_OK
 
 		# 空 needle: len から 0 へ
-		while M_NUM_GE([|${__sx_str_rfind_off_}|], [|0|]); do
-			case "${__sx_str_rfind_text_}" in
-				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${__sx_str_rfind_off_}:0"|], CLEANUP);;
+		while M_NUM_GE([|${Q_off}|], [|0|]); do
+			case "${Q_text}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${Q_off}:0"|], CLEANUP);;
 				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|''|], CLEANUP);;
 			esac
 
-			M_NUM_DECR([|__sx_str_rfind_off_|])
+			M_NUM_DECR([|Q_off|])
 		done
 	elif M_NUM_BOOL([|${4} & SX_STR_RFIND_GLOB|]); then
 		# ==== グロブモード ====
-		while M_STR_HAS([|"${__sx_str_rfind_tgt_}"|], [|${3}|]); do
-			__sx_str_rfind_pre_="${__sx_str_rfind_tgt_%${3}*}"
-			__sx_str_rfind_match_="${__sx_str_rfind_tgt_#${__sx_str_rfind_pre_}}"
-			__sx_str_rfind_after_="${__sx_str_rfind_match_#${3}}"
-			__sx_str_rfind_match_="${__sx_str_rfind_match_%${__sx_str_rfind_after_}}"
-			__sx_str_rfind_sts_=M_EX_OK
+		while M_STR_HAS([|"${Q_tgt}"|], [|${3}|]); do
+			Q_pre="${Q_tgt%${3}*}"
+			Q_match="${Q_tgt#${Q_pre}}"
+			Q_after="${Q_match#${3}}"
+			Q_match="${Q_match%${Q_after}}"
+			Q_sts=M_EX_OK
 
-			case "${__sx_str_rfind_text_}" in
-				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${#__sx_str_rfind_pre_}:${#__sx_str_rfind_match_}"|], CLEANUP);;
-				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|"${__sx_str_rfind_match_}"|], CLEANUP);;
+			case "${Q_text}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${#Q_pre}:${#Q_match}"|], CLEANUP);;
+				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|"${Q_match}"|], CLEANUP);;
 			esac
 
-			case "${__sx_str_rfind_overlap_}" in
-				0) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}";;
-				*) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}${__sx_str_rfind_match_%?}";;
+			case "${Q_overlap}" in
+				0) Q_tgt="${Q_pre}";;
+				*) Q_tgt="${Q_pre}${Q_match%?}";;
 			esac
 		done
 	else
 		# ==== リテラルモード ====
-		while M_STR_HAS([|"${__sx_str_rfind_tgt_}"|], [|"${3}"|]); do
-			__sx_str_rfind_pre_="${__sx_str_rfind_tgt_%"${3}"*}"
-			__sx_str_rfind_sts_=M_EX_OK
+		while M_STR_HAS([|"${Q_tgt}"|], [|"${3}"|]); do
+			Q_pre="${Q_tgt%"${3}"*}"
+			Q_sts=M_EX_OK
 
-			case "${__sx_str_rfind_text_}" in
-				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${#__sx_str_rfind_pre_}:${#3}"|], CLEANUP);;
+			case "${Q_text}" in
+				0) __M_BIND_UNQUOTE([|__sx_str_rfind|], [|"${#Q_pre}:${#3}"|], CLEANUP);;
 				*) __M_BIND_QUOTE([|__sx_str_rfind|], [|"${3}"|], CLEANUP);;
 			esac
 
-			case "${__sx_str_rfind_overlap_}" in
-				0) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}";;
-				*) __sx_str_rfind_tgt_="${__sx_str_rfind_pre_}${3%?}";;
+			case "${Q_overlap}" in
+				0) Q_tgt="${Q_pre}";;
+				*) Q_tgt="${Q_pre}${3%?}";;
 			esac
 		done
 	fi
 
-	eval ${__sx_str_rfind_out_:+"${__sx_str_rfind_bind_}=\"\${__sx_str_rfind_out_}\""}
+	eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 
-	set -- "${__sx_str_rfind_sts_-1}"
+	set -- "${Q_sts-1}"
 	unset CLEANUP
 	return "${1}"
 }
+|], [|str_rfind|])dnl
 
 ### sx_str_rot - 文字セット内で文字をシフトして変換する
 ##
@@ -10522,9 +10543,7 @@ sx_str_split() {
 	__sx_str_split "${@}"
 }
 
-define([|V|], [|__sx_str_split_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(str) V(sep) V(lim) V(flg) V(inc) V(out) V(rem) V(mid) V(val) __M_BIND_USEVAR|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_str_split - 文字列を分割して結果変数に格納する（内部用）
 ##
 ## 使い方:
@@ -10535,137 +10554,141 @@ define([|CLEANUP|], [|V(bind) V(str) V(sep) V(lim) V(flg) V(inc) V(out) V(rem) V
 ##   分割回数（limit）が指定された場合、最大でその回数分だけ分割を行う。
 ##   分割回数が正の場合は前方から、負の場合は後方から分割する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
+
+define([|CLEANUP|], [|Q_bind Q_str Q_sep Q_lim Q_flg Q_inc Q_out Q_rem Q_mid Q_val Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
+
 __sx_str_split() {
 	__sx_var_bind_init "${1}"
-	__sx_str_split_bind_="${1}"
-	__sx_str_split_str_="${2-}"
-	__sx_str_split_sep_="${3-}"
-	__sx_str_split_lim_=$((${4-${SX_NUM_I32_MAX}}))
-	__sx_str_split_flg_=$((${5-0}))
-	__sx_str_split_inc_=$(((__sx_str_split_flg_ & SX_STR_SPLIT_INC) != 0))
-	__sx_str_split_out_=
+	Q_bind="${1}"
+	Q_str="${2-}"
+	Q_sep="${3-}"
+	Q_lim=$((${4-${SX_NUM_I32_MAX}}))
+	Q_flg=$((${5-0}))
+	Q_inc=$(((Q_flg & SX_STR_SPLIT_INC) != 0))
+	Q_out=
 
 	set --
 
 	# 空区切り文字（一文字ずつ分割）の処理
 	if
-		M_STR_EQ([|"${__sx_str_split_sep_}"|], [|''|]) ||
-		{ M_NUM_BOOL([|__sx_str_split_flg_ & SX_STR_SPLIT_GLOB|]) && ! M_STR_HAS([|"${__sx_str_split_sep_}"|], [|*[!*]*|]); }
+		M_STR_EQ([|"${Q_sep}"|], [|''|]) ||
+		{ M_NUM_BOOL([|Q_flg & SX_STR_SPLIT_GLOB|]) && ! M_STR_HAS([|"${Q_sep}"|], [|*[!*]*|]); }
 	then
-		if M_NUM_LT([|0|], [|__sx_str_split_lim_|]); then
+		if M_NUM_LT([|0|], [|Q_lim|]); then
 			# 前方から制限数分だけ分割
-			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" 1 "$((__sx_str_split_lim_ - 1))"
+			__sx_str_chunk Q_out "${Q_str}" 1 "$((Q_lim - 1))"
 
-			case "$((${#__sx_str_split_str_} < __sx_str_split_lim_))" in 1)
-				M_STR_APPEND([|__sx_str_split_out_|], [|"''"|], [| |])
+			case "$((${#Q_str} < Q_lim))" in 1)
+				M_STR_APPEND([|Q_out|], [|"''"|], [| |])
 			esac
 
-			M_STR_PREPEND([|__sx_str_split_out_|], [|"''"|], [| |])
-		elif M_NUM_LT([|__sx_str_split_lim_|], [|0|]); then
+			M_STR_PREPEND([|Q_out|], [|"''"|], [| |])
+		elif M_NUM_LT([|Q_lim|], [|0|]); then
 			# 後方から制限数分だけ分割
-			: $((__sx_str_split_lim_ *= -1))
-			__sx_str_chunk __sx_str_split_out_ "${__sx_str_split_str_}" -1 "$((__sx_str_split_lim_ - 1))"
+			: $((Q_lim *= -1))
+			__sx_str_chunk Q_out "${Q_str}" -1 "$((Q_lim - 1))"
 
-			case "$((${#__sx_str_split_str_} < __sx_str_split_lim_))" in 1)
-				M_STR_PREPEND([|__sx_str_split_out_|], [|"''"|], [| |])
+			case "$((${#Q_str} < Q_lim))" in 1)
+				M_STR_PREPEND([|Q_out|], [|"''"|], [| |])
 			esac
 
-			M_STR_APPEND([|__sx_str_split_out_|], [|"''"|], [| |])
+			M_STR_APPEND([|Q_out|], [|"''"|], [| |])
 		else
 			# 制限なし：文字列全体をクォートして格納
-			__sx_arg_quote __sx_str_split_out_ "${__sx_str_split_str_}"
+			__sx_arg_quote Q_out "${Q_str}"
 		fi
 
-		case "${__sx_str_split_inc_}" in 1)
-			eval __sx_arg_isep __sx_str_split_out_ '"${SX_CFG_SEP}"' "${__sx_str_split_out_}"
+		case "${Q_inc}" in 1)
+			eval __sx_arg_isep Q_out '"${SX_CFG_SEP}"' "${Q_out}"
 		esac
 
-		eval __sx_arg_quote '"${__sx_str_split_bind_}"' "${__sx_str_split_out_}"
-	elif M_NUM_LE([|0|], [|__sx_str_split_lim_|]); then
+		eval __sx_arg_quote '"${Q_bind}"' "${Q_out}"
+	elif M_NUM_LE([|0|], [|Q_lim|]); then
 		# 前方から分割
-		if M_STR_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
+		if M_STR_NE([|$((Q_flg & SX_STR_SPLIT_GLOB))|], [|0|]); then
 			# グロブ（パターン）による前方分割
 			while
-				M_STR_HAS([|"${__sx_str_split_str_}"|], [|${__sx_str_split_sep_}|]) &&
-				M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
+				M_STR_HAS([|"${Q_str}"|], [|${Q_sep}|]) &&
+				M_STR_NE([|"${Q_lim}"|], [|0|])
 			do
-				__sx_str_split_val_="${__sx_str_split_str_%%${__sx_str_split_sep_}*}"
+				Q_val="${Q_str%%${Q_sep}*}"
 
-				__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_val_}"|], CLEANUP)
+				__M_BIND_QUOTE([|__sx_str_split|], [|"${Q_val}"|], CLEANUP)
 
-				__sx_str_split_rem_="${__sx_str_split_str_#*${__sx_str_split_sep_}}"
+				Q_rem="${Q_str#*${Q_sep}}"
 
 				# 区切り文字を含めるフラグがある場合
-				case "${__sx_str_split_inc_}" in 1)
-					__sx_str_split_mid_="${__sx_str_split_str_#${__sx_str_split_val_}}"
-					__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_mid_%${__sx_str_split_rem_}}"|], CLEANUP)
+				case "${Q_inc}" in 1)
+					Q_mid="${Q_str#${Q_val}}"
+					__M_BIND_QUOTE([|__sx_str_split|], [|"${Q_mid%${Q_rem}}"|], CLEANUP)
 				esac
 
-				__sx_str_split_str_="${__sx_str_split_rem_}"
-				M_NUM_DECR([|__sx_str_split_lim_|])
+				Q_str="${Q_rem}"
+				M_NUM_DECR([|Q_lim|])
 			done
 		else
 			# 通常の文字列による前方分割
 			while
-				M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
-				M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
+				M_STR_HAS([|"${Q_str}"|], [|"${Q_sep}"|]) &&
+				M_STR_NE([|"${Q_lim}"|], [|0|])
 			do
-				__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_str_%%"${__sx_str_split_sep_}"*}"|], CLEANUP)
+				__M_BIND_QUOTE([|__sx_str_split|], [|"${Q_str%%"${Q_sep}"*}"|], CLEANUP)
 
-				case "${__sx_str_split_inc_}" in 1)
-					__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_sep_}"|], CLEANUP)
+				case "${Q_inc}" in 1)
+					__M_BIND_QUOTE([|__sx_str_split|], [|"${Q_sep}"|], CLEANUP)
 				esac
 
-				__sx_str_split_str_="${__sx_str_split_str_#*"${__sx_str_split_sep_}"}"
-				M_NUM_DECR([|__sx_str_split_lim_|])
+				Q_str="${Q_str#*"${Q_sep}"}"
+				M_NUM_DECR([|Q_lim|])
 			done
 		fi
 
-		__M_BIND_QUOTE([|__sx_str_split|], [|"${__sx_str_split_str_}"|], CLEANUP)
+		__M_BIND_QUOTE([|__sx_str_split|], [|"${Q_str}"|], CLEANUP)
 
-		eval ${__sx_str_split_out_:+"${__sx_str_split_bind_}=\"\${__sx_str_split_out_}\""}
+		eval ${Q_out:+"${Q_bind}=\"\${Q_out}\""}
 	else
 		# 後方から分割
-		if M_STR_NE([|$((__sx_str_split_flg_ & SX_STR_SPLIT_GLOB))|], [|0|]); then
+		if M_STR_NE([|$((Q_flg & SX_STR_SPLIT_GLOB))|], [|0|]); then
 			# グロブ（パターン）による後方分割
 			while
-				M_STR_HAS([|"${__sx_str_split_str_}"|], [|${__sx_str_split_sep_}|]) &&
-				M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
+				M_STR_HAS([|"${Q_str}"|], [|${Q_sep}|]) &&
+				M_STR_NE([|"${Q_lim}"|], [|0|])
 			do
-				set -- "${__sx_str_split_str_##*${__sx_str_split_sep_}}" "${@}"
-				__sx_str_split_rem_="${__sx_str_split_str_%${__sx_str_split_sep_}*}"
+				set -- "${Q_str##*${Q_sep}}" "${@}"
+				Q_rem="${Q_str%${Q_sep}*}"
 
 				# 区切り文字を含めるフラグがある場合
-				case "${__sx_str_split_inc_}" in 1)
-					__sx_str_split_mid_="${__sx_str_split_str_%${1}}"
-					set -- "${__sx_str_split_mid_#${__sx_str_split_rem_}}" "${@}"
+				case "${Q_inc}" in 1)
+					Q_mid="${Q_str%${1}}"
+					set -- "${Q_mid#${Q_rem}}" "${@}"
 				esac
 
-				__sx_str_split_str_="${__sx_str_split_rem_}"
-				M_NUM_INCR([|__sx_str_split_lim_|])
+				Q_str="${Q_rem}"
+				M_NUM_INCR([|Q_lim|])
 			done
 		else
 			# 通常の文字列による後方分割
 			while
-				M_STR_HAS([|"${__sx_str_split_str_}"|], [|"${__sx_str_split_sep_}"|]) &&
-				M_STR_NE([|"${__sx_str_split_lim_}"|], [|0|])
+				M_STR_HAS([|"${Q_str}"|], [|"${Q_sep}"|]) &&
+				M_STR_NE([|"${Q_lim}"|], [|0|])
 			do
-				set -- "${__sx_str_split_str_##*"${__sx_str_split_sep_}"}" "${@}"
+				set -- "${Q_str##*"${Q_sep}"}" "${@}"
 
-				case "${__sx_str_split_inc_}" in 1)
-					set -- "${__sx_str_split_sep_}" "${@}"
+				case "${Q_inc}" in 1)
+					set -- "${Q_sep}" "${@}"
 				esac
 
-				__sx_str_split_str_="${__sx_str_split_str_%"${__sx_str_split_sep_}"*}"
-				M_NUM_INCR([|__sx_str_split_lim_|])
+				Q_str="${Q_str%"${Q_sep}"*}"
+				M_NUM_INCR([|Q_lim|])
 			done
 		fi
 
-		__sx_arg_quote "${__sx_str_split_bind_}" "${__sx_str_split_str_}" "${@}"
+		__sx_arg_quote "${Q_bind}" "${Q_str}" "${@}"
 	fi
 
 	unset CLEANUP
 }
+|], [|str_split|])dnl
 
 ### sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する
 ##
