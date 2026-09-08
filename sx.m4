@@ -132,6 +132,7 @@ define([|__M_BIND_UNQUOTE|], [|dnl
 		*) unset $3; return M_EX_OK;;
 	esac|])
 define([|__M_BIND_USEVAR|], [|V(bind_cnt) V(bind_name) V(bind_esc)|])dnl
+define([|__M_BIND_USEVARNEW|], [|Q_bind_cnt Q_bind_name Q_bind_esc|])dnl
 
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
@@ -606,8 +607,7 @@ sx_ex_map() {
 }
 |], [|ex_map|])dnl
 
-define([|V|], [|__sx_ex_map_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(map) V(out) V(arg) __M_BIND_USEVAR|])dnl
+M_RENAME_QI([|dnl
 ### __sx_ex_map - 終了ステータスの数値と名前を相互変換、または有効性を確認する（内部用）
 ##
 ## 使い方:
@@ -616,32 +616,36 @@ define([|CLEANUP|], [|V(bind) V(map) V(out) V(arg) __M_BIND_USEVAR|])dnl
 ## 説明:
 ##   sx_ex_map の内部実装。
 ##   引数チェックを行わずに変換処理を行う。
+
+define([|CLEANUP|], [|Q_bind Q_map Q_out Q_arg __M_BIND_USEVARNEW|])dnl
+
 __sx_ex_map() {
 	__sx_var_bind_init "${1}"
-	__sx_ex_map_bind_="${1}"
-	__sx_ex_map_map_=" ${SX_EX_MAP} "
-	__sx_ex_map_out_=
+	Q_bind="${1}"
+	Q_map=" ${SX_EX_MAP} "
+	Q_out=
 	shift
 
-	for __sx_ex_map_arg_ in "${@}"; do
-		case " ${__sx_ex_map_map_} " in
-			*" ${__sx_ex_map_arg_}:"*)
-				__sx_ex_map_arg_="${__sx_ex_map_map_#*" ${__sx_ex_map_arg_}:"}"
-				__sx_ex_map_arg_="${__sx_ex_map_arg_%% *}"
+	for Q_arg in "${@}"; do
+		case " ${Q_map} " in
+			*" ${Q_arg}:"*)
+				Q_arg="${Q_map#*" ${Q_arg}:"}"
+				Q_arg="${Q_arg%% *}"
 				;;
-			*":${__sx_ex_map_arg_} "*)
-				__sx_ex_map_arg_="${__sx_ex_map_map_%":${__sx_ex_map_arg_} "*}"
-				__sx_ex_map_arg_="${__sx_ex_map_arg_##* }"
+			*":${Q_arg} "*)
+				Q_arg="${Q_map%":${Q_arg} "*}"
+				Q_arg="${Q_arg##* }"
 				;;
 		esac
 
-		__M_BIND_UNQUOTE([|__sx_ex_map|], [|"${__sx_ex_map_arg_}"|], CLEANUP)
+		__M_BIND_UNQUOTE([|__sx_ex_map|], [|"${Q_arg}"|], CLEANUP)
 	done
 
-	eval ${__sx_ex_map_out_:+"${__sx_ex_map_bind_}=\"\${__sx_ex_map_out_}\""}
+	eval ${Q_out+:+"${Q_bind}=\"\${Q_out}\""}
 
 	unset CLEANUP
 }
+|], [|ex_map|])dnl
 M_RENAME_Q([|dnl
 ### sx_ex_remap - 終了ステータスをマッピングしてコマンドを実行する
 ##
@@ -1034,9 +1038,7 @@ sx_fn_anon() {
 }
 |], [|fn_anon|])dnl
 
-define([|V|], [|__sx_fn_anon_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(arg) V(name) __M_BIND_USEVAR|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_fn_anon - 匿名関数を実際に生成・定義する（内部用）
 ##
 ## 使い方:
@@ -1044,26 +1046,30 @@ define([|CLEANUP|], [|V(bind) V(out) V(arg) V(name) __M_BIND_USEVAR|])dnl
 ##
 ##   一意な関数名 (sx_fn_anon_${SX_SYS_REV}) を生成して定義し、
 ##   結果変数に格納する。
+
+define([|CLEANUP|], [|Q_bind Q_out Q_arg Q_name __M_BIND_USEVARNEW|])dnl
+
 __sx_fn_anon() {
 	__sx_var_bind_init "${1}"
-	__sx_fn_anon_bind_="${1}"
-	__sx_fn_anon_out_=
+	Q_bind="${1}"
+	Q_out=
 	shift
 
-	for __sx_fn_anon_arg_ in "${@}"; do
-		__sx_fn_anon_name_="sx_fn_anon_${SX_SYS_REV}"
+	for Q_arg in "${@}"; do
+		Q_name="sx_fn_anon_${SX_SYS_REV}"
 
-		__M_BIND_UNQUOTE([|__sx_fn_anon|], [|"${__sx_fn_anon_name_}"|], CLEANUP)
+		__M_BIND_UNQUOTE([|__sx_fn_anon|], [|"${Q_name}"|], CLEANUP)
 
-		__sx_fn_set "${__sx_fn_anon_name_}=${__sx_fn_anon_arg_}"
+		__sx_fn_set "${Q_name}=${Q_arg}"
 
 		M_NUM_INCR([|SX_SYS_REV|])
 	done
 
-	eval ${__sx_fn_anon_out_:+"${__sx_fn_anon_bind_}=\"\${__sx_fn_anon_out_}\""}
+	eval ${Q_out+:+"${Q_bind}=\"\${Q_out}\""}
 
 	unset CLEANUP
 }
+|], [|fn_anon|])dnl
 
 # ========================================
 #  UTIL (Utilities)
@@ -7884,9 +7890,7 @@ sx_num_norm() {
 }
 |], [|num_norm|])dnl
 
-define([|V|], [|__sx_num_norm_$1_|])dnl
-define([|CLEANUP|], [|V(bind) V(out) V(arg) V(in) V(mnt) V(dig) V(flen) V(shift) V(dlen) __M_BIND_USEVAR|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_num_norm - 数値を10進固定小数点形式に正規化する（内部用）
 ##
 ## 使い方:
@@ -7894,72 +7898,76 @@ define([|CLEANUP|], [|V(bind) V(out) V(arg) V(in) V(mnt) V(dig) V(flen) V(shift)
 ##
 ## 説明:
 ##   sx_num_norm の内部実装。引数の検証は行わない。
+
+define([|CLEANUP|], [|Q_bind Q_out Q_arg Q_in Q_mnt Q_dig Q_flen Q_shift Q_dlen __M_BIND_USEVARNEW|])dnl
+
 __sx_num_norm() {
 	__sx_var_bind_init "${1}"
-	__sx_num_norm_bind_="${1}"
-	__sx_num_norm_out_=
+	Q_bind="${1}"
+	Q_out=
 
 	shift
 
-	for __sx_num_norm_arg_ in "${@}"; do
-		__sx_num_norm_in_="${__sx_num_norm_arg_#[+-]}"
+	for Q_arg in "${@}"; do
+		Q_in="${Q_arg#[+-]}"
 
-		case "${__sx_num_norm_in_}" in
+		case "${Q_in}" in
 			*[Ee]*)
 				# 指数表記の展開
-				__sx_num_norm_mnt_="${__sx_num_norm_in_%%[Ee]*}"
-				__sx_num_norm_dig_="${__sx_num_norm_mnt_%%.*}"
+				Q_mnt="${Q_in%%[Ee]*}"
+				Q_dig="${Q_mnt%%.*}"
 
-				case "${__sx_num_norm_mnt_}" in
+				case "${Q_mnt}" in
 					*.*)
-						__sx_num_norm_flen_=$((${#__sx_num_norm_mnt_} - ${#__sx_num_norm_dig_} - 1))
-						M_STR_APPEND([|__sx_num_norm_dig_|], [|"${__sx_num_norm_mnt_#*.}"|])
+						Q_flen=$((${#Q_mnt} - ${#Q_dig} - 1))
+						M_STR_APPEND([|Q_dig|], [|"${Q_mnt#*.}"|])
 						;;
-					*) __sx_num_norm_flen_=0;;
+					*) Q_flen=0;;
 				esac
 
-				__sx_num_norm_shift_=$((${__sx_num_norm_in_#*[Ee]} - __sx_num_norm_flen_))
-					__sx_num_norm_dlen_="${#__sx_num_norm_dig_}"
+				Q_shift=$((${Q_in#*[Ee]} - Q_flen))
+					Q_dlen="${#Q_dig}"
 
-				if M_NUM_LE([|0|], [|__sx_num_norm_shift_|]); then
-					__sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "-$((__sx_num_norm_dlen_ + __sx_num_norm_shift_))" 0
+				if M_NUM_LE([|0|], [|Q_shift|]); then
+					__sx_str_pad Q_in "${Q_dig}" "-$((Q_dlen + Q_shift))" 0
 				else
-					: $((__sx_num_norm_shift_ *= -1))
+					: $((Q_shift *= -1))
 
-					if M_NUM_LT([|__sx_num_norm_shift_|], [|__sx_num_norm_dlen_|]); then
-						__sx_str_splice __sx_num_norm_in_ "${__sx_num_norm_dig_}" "$((__sx_num_norm_dlen_ - __sx_num_norm_shift_))" 0 .
+					if M_NUM_LT([|Q_shift|], [|Q_dlen|]); then
+						__sx_str_splice Q_in "${Q_dig}" "$((Q_dlen - Q_shift))" 0 .
 					else
-						__sx_str_pad __sx_num_norm_in_ "${__sx_num_norm_dig_}" "${__sx_num_norm_shift_}" 0
-						M_STR_PREPEND([|__sx_num_norm_in_|], [|.|])
+						__sx_str_pad Q_in "${Q_dig}" "${Q_shift}" 0
+						M_STR_PREPEND([|Q_in|], [|.|])
 					fi
 				fi
 
-				__sx_num_norm_in_="M_STR_LTRIM([|__sx_num_norm_in_|], [|[!0]|])"
+				Q_in="M_STR_LTRIM([|Q_in|], [|[!0]|])"
 
-				case "${__sx_num_norm_in_}" in .*)
-					M_STR_PREPEND([|__sx_num_norm_in_|], [|0|])
+				case "${Q_in}" in .*)
+					M_STR_PREPEND([|Q_in|], [|0|])
 				esac
 				;;
-			*[Xx]* | 0[0-9]*) __sx_num_norm_in_=$((__sx_num_norm_in_));;
+			*[Xx]* | 0[0-9]*) Q_in=$((Q_in));;
 		esac
 
 		# 小数点以下のクリーンアップ
-		case "${__sx_num_norm_in_}" in *.*)
-			__sx_num_norm_in_="M_STR_RTRIM([|__sx_num_norm_in_|], [|[!0]|])"
-			__sx_num_norm_in_="${__sx_num_norm_in_%.}"
+		case "${Q_in}" in *.*)
+			Q_in="M_STR_RTRIM([|Q_in|], [|[!0]|])"
+			Q_in="${Q_in%.}"
 		esac
 
-		case "${__sx_num_norm_in_}" in '' | 0)
-			__sx_num_norm_arg_=
+		case "${Q_in}" in '' | 0)
+			Q_arg=
 		esac
 
-		__M_BIND_UNQUOTE([|__sx_num_norm|], [|"${__sx_num_norm_arg_%%[!-]*}${__sx_num_norm_in_:-0}"|], CLEANUP)
+		__M_BIND_UNQUOTE([|__sx_num_norm|], [|"${Q_arg%%[!-]*}${Q_in:-0}"|], CLEANUP)
 	done
 
-	eval ${__sx_num_norm_out_:+"${__sx_num_norm_bind_}=\"\${__sx_num_norm_out_}\""}
+	eval ${Q_out+:+"${Q_bind}=\"\${Q_out}\""}
 
 	unset CLEANUP
 }
+|], [|num_norm|])dnl
 
 ### sx_num_range - 数値の範囲を生成する (Python range 互換)
 ##
