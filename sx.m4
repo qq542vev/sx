@@ -12300,9 +12300,23 @@ sx_arr_cat() {
 }
 |], [|arr_cat|])dnl
 
+M_RENAME_QI([|dnl
+### __sx_arr_cat - 配列連結の内部実装（検証スキップ版）
+##
+## 使い方:
+##   __sx_arr_cat bind arr1 [arr2 ...]
+##
+## 説明:
+##   sx_arr_cat の内部実装。SX_CFG_SKIP_CHK=1 を設定して引数チェックを
+##   スキップし、そのまま sx_arr_cat へ委譲する。
+
+define([|CLEANUP|], [| |])dnl
+
 __sx_arr_cat() {
 	SX_CFG_SKIP_CHK=1 sx_arr_cat "${@}"
 }
+|], [|arr_cat|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_arr_pop - 配列の末尾から要素を取り出す
 ##
