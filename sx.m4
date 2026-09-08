@@ -556,6 +556,7 @@ sx_ex_is_valid() {
 }
 |], [|ex_is_valid|])dnl
 
+M_RENAME_Q([|dnl
 ### sx_ex_map - 終了ステータスの数値と名前を相互変換、または有効性を確認する
 ##
 ## 使い方:
@@ -575,6 +576,9 @@ sx_ex_is_valid() {
 ##   - 64 (SX_EX_USAGE): バインド形式が無効、無効なステータス、または対応するマッピングが存在しない。
 ##   - 77 (SX_EX_NOPERM): 書き込み禁止の変数に代入しようとした。
 ##   - 78 (SX_EX_CONFIG): SX_CFG_NUM_RANGE の値が不正。
+
+define([|CLEANUP|], [|Q_bind Q_arg|])dnl
+
 sx_ex_map() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_map "${@}" || return; return 0;; esac
 
@@ -584,22 +588,23 @@ sx_ex_map() {
 
 	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
 
-	__sx_ex_map_bind="${1}"
+	Q_bind="${1}"
 	shift
 
-	for __sx_ex_map_arg in "${@}"; do
+	for Q_arg in "${@}"; do
 		case " ${SX_EX_MAP} " in
-			*" ${__sx_ex_map_arg}:"* | *":${__sx_ex_map_arg} "*) ;;
+			*" ${Q_arg}:"* | *":${Q_arg} "*) ;;
 			*)
-				unset __sx_ex_map_bind __sx_ex_map_arg
+				unset CLEANUP
 				return M_EX_USAGE
 				;;
 		esac
 	done
 
-	__sx_ex_map "${__sx_ex_map_bind}" "${@}"
-	unset __sx_ex_map_bind __sx_ex_map_arg
+	__sx_ex_map "${Q_bind}" "${@}"
+	unset CLEANUP
 }
+|], [|ex_map|])dnl
 
 define([|V|], [|__sx_ex_map_$1_|])dnl
 define([|CLEANUP|], [|V(bind) V(map) V(out) V(arg) __M_BIND_USEVAR|])dnl
@@ -989,6 +994,7 @@ __sx_fn_with() {
 }
 |], [|fn_with|])dnl
 
+M_RENAME_Q([|dnl
 ### sx_fn_anon - 一意な名前を持つ匿名関数を生成して定義する
 ##
 ## 使い方:
@@ -1003,26 +1009,30 @@ __sx_fn_with() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  本体の構文が不正 (SX_EX_USAGE)
+
+define([|CLEANUP|], [|Q_bind Q_chk Q_arg|])dnl
+
 sx_fn_anon() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_anon "${@}" || return; return;; esac
 
-	__sx_fn_anon_bind="${1}"
-	__sx_fn_anon_chk=
+	Q_bind="${1}"
+	Q_chk=
 	shift
 
-	for __sx_fn_anon_arg in "${@}"; do
-		__sx_arg_quote __sx_fn_anon_arg "f=${__sx_fn_anon_arg}"
-		M_STR_APPEND([|__sx_fn_anon_chk|], [|" ${__sx_fn_anon_arg}"|])
+	for Q_arg in "${@}"; do
+		__sx_arg_quote Q_arg "f=${Q_arg}"
+		M_STR_APPEND([|Q_chk|], [|" ${Q_arg}"|])
 	done
 
-	eval sx_fn_is_valid "${__sx_fn_anon_chk}" || {
-		unset __sx_fn_anon_bind __sx_fn_anon_chk __sx_fn_anon_arg
+	eval sx_fn_is_valid "${Q_chk}" || {
+		unset CLEANUP
 		return M_EX_USAGE
 	}
 
-	__sx_fn_anon "${__sx_fn_anon_bind}" "${@}"
-	unset __sx_fn_anon_bind __sx_fn_anon_chk __sx_fn_anon_arg
+	__sx_fn_anon "${Q_bind}" "${@}"
+	unset CLEANUP
 }
+|], [|fn_anon|])dnl
 
 define([|V|], [|__sx_fn_anon_$1_|])dnl
 define([|CLEANUP|], [|V(bind) V(out) V(arg) V(name) __M_BIND_USEVAR|])dnl
@@ -7829,6 +7839,7 @@ __sx_num_min() {
 }
 |], [|num_min|])dnl
 
+M_RENAME_Q([|dnl
 ### sx_num_norm - 数値を10進固定小数点形式に正規化する
 ##
 ## 使い方:
@@ -7848,6 +7859,9 @@ __sx_num_min() {
 ##   64  引数不正: 無効なバインド形式、または数値形式が正しくない (SX_EX_USAGE)
 ##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [|Q_bind|])dnl
+
 sx_num_norm() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_norm "${@}" || return; return 0;; esac
 
@@ -7857,17 +7871,18 @@ sx_num_norm() {
 
 	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
 
-	__sx_num_norm_bind="${1}"
+	Q_bind="${1}"
 	shift
 
 	sx_num_is_num_safe "${@}" || {
-		unset __sx_num_norm_bind
+		unset CLEANUP
 		return M_EX_USAGE
 	}
 
-	__sx_num_norm "${__sx_num_norm_bind}" "${@}"
-	unset __sx_num_norm_bind
+	__sx_num_norm "${Q_bind}" "${@}"
+	unset CLEANUP
 }
+|], [|num_norm|])dnl
 
 define([|V|], [|__sx_num_norm_$1_|])dnl
 define([|CLEANUP|], [|V(bind) V(out) V(arg) V(in) V(mnt) V(dig) V(flen) V(shift) V(dlen) __M_BIND_USEVAR|])dnl
