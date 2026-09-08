@@ -4740,6 +4740,7 @@ __sx_var_unset() {
 ##   標準的な数値範囲、または安全上の制限（DoS 対策）に基づく検証を行う
 ##   形式になる（例: sx_num_is_int_safe）。
 
+M_RENAME_Q([|dnl
 ### sx_num_add_int - 複数の符号付き整数を加算する
 ##
 ## 使い方:
@@ -4755,7 +4756,6 @@ __sx_var_unset() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_add_int() {
@@ -4780,6 +4780,7 @@ sx_num_add_int() {
 }
 |], [|num_add_int|])dnl
 
+M_RENAME_QI([|dnl
 ### __sx_num_add_int - 複数の符号付き整数を加算する（内部用）
 ##
 ## 使い方:
@@ -4790,7 +4791,6 @@ sx_num_add_int() {
 ##   __sx_num_add_nat0 で絶対値加算を行い、最後に絶対値を比較し
 ##   減算して符号を決定する。
 
-M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_res Q_pos Q_neg Q_pos_sum Q_neg_sum Q_arg Q_acc|])dnl
 
 __sx_num_add_int() {
@@ -4830,6 +4830,7 @@ __sx_num_add_int() {
 }
 |], [|num_add_int|])dnl
 
+M_RENAME_Q([|dnl
 ### sx_num_add_nat0 - 複数の絶対値をチャンク加算する
 ##
 ## 使い方:
@@ -4846,7 +4847,6 @@ __sx_num_add_int() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_add_nat0() {
@@ -4871,6 +4871,7 @@ sx_num_add_nat0() {
 }
 |], [|num_add_nat0|])dnl
 
+M_RENAME_QI([|dnl
 ### __sx_num_add_nat0 - 複数の絶対値をチャンク加算する（内部用）
 ##
 ## 使い方:
@@ -4881,7 +4882,6 @@ sx_num_add_nat0() {
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 ##   逐次方式でアキュムレータに各数値を順次加算する。
 
-M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_res Q_qm Q_carry Q_out Q_rem1 Q_rem2 Q_ch1 Q_ch2 Q_tmp Q_b|])dnl
 
 __sx_num_add_nat0() {
@@ -5246,6 +5246,7 @@ __sx_num_cmp_nat0() {
 }
 |], [|num_cmp_nat0|])dnl
 
+M_RENAME_Q([|dnl
 ### sx_num_div_int - 符号付き整数の除算で実数商（整数商 + 小数部）を求める
 ##
 ## 使い方:
@@ -5268,7 +5269,6 @@ __sx_num_cmp_nat0() {
 ##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_res Q_dp Q_u|])dnl
 
 sx_num_div_int() {
@@ -5335,6 +5335,7 @@ __sx_num_div_int() {
 }
 |], [|num_div_int|])dnl
 
+M_RENAME_Q([|dnl
 ### sx_num_div_nat0 - 絶対値の除算で実数商（整数商 + 小数部）を求める
 ##
 ## 使い方:
@@ -5357,7 +5358,6 @@ __sx_num_div_int() {
 ##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_res Q_dp Q_u|])dnl
 
 sx_num_div_nat0() {
@@ -7342,6 +7342,7 @@ __sx_num_is_pint_base() {
 }
 |], [|num_is_pint_base|])dnl
 
+M_RENAME_Q([|dnl
 ### sx_num_mul_int - 複数の符号付き整数を乗算する
 ##
 ## 使い方:
@@ -7357,7 +7358,6 @@ __sx_num_is_pint_base() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_mul_int() {
@@ -7383,6 +7383,15 @@ sx_num_mul_int() {
 |], [|num_mul_int|])dnl
 
 M_RENAME_QI([|dnl
+### __sx_num_mul_int - 複数の符号付き整数を乗算する（内部用）
+##
+## 使い方:
+##   __sx_num_mul_int 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_mul_int の内部実装。引数チェックは行わない。
+##   負号の個数で符号を決定し、__sx_num_mul_nat0 で絶対値乗算を行う。
+
 define([|CLEANUP|], [|Q_res Q_qty Q_arg Q_abs_args Q_sign Q_acc|])dnl
 
 __sx_num_mul_int() {
@@ -7418,6 +7427,7 @@ __sx_num_mul_int() {
 }
 |], [|num_mul_int|])dnl
 
+M_RENAME_Q([|dnl
 ### sx_num_mul_nat0 - 複数の絶対値を乗算する
 ##
 ## 使い方:
@@ -7434,7 +7444,6 @@ __sx_num_mul_int() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_mul_nat0() {
@@ -7459,6 +7468,7 @@ sx_num_mul_nat0() {
 }
 |], [|num_mul_nat0|])dnl
 
+M_RENAME_QI([|dnl
 ### __sx_num_mul_nat0 - 複数の絶対値を乗算する（内部用）
 ##
 ## 使い方:
@@ -7469,7 +7479,6 @@ sx_num_mul_nat0() {
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 ##   逐次方式でアキュムレータに各数値を順次乗算する。
 
-M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_res Q_a Q_b Q_endz Q_qm Q_shift Q_tmp Q_ch_a Q_ch_b Q_wlen_mul Q_max_ops Q_a_len Q_b_len Q_max_x Q_min_ops Q_opt_x Q_opt_y Q_x Q_y Q_ops Q_qchunk_a Q_qchunk_b Q_zchunk_a Q_zchunk_b Q_carry Q_g Q_fit Q_safe|])dnl
 
 __sx_num_mul_nat0() {
@@ -7666,6 +7675,7 @@ __sx_num_mul_nat0() {
 }
 |], [|num_mul_nat0|])dnl
 
+M_RENAME_Q([|dnl
 ### sx_num_max - 与えられた数値の最大値を取得する
 ##
 ## 使い方:
@@ -7682,7 +7692,6 @@ __sx_num_mul_nat0() {
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_max() {
@@ -7743,6 +7752,7 @@ __sx_num_max() {
 }
 |], [|num_max|])dnl
 
+M_RENAME_Q([|dnl
 ### sx_num_min - 与えられた数値の最小値を取得する
 ##
 ## 使い方:
@@ -7759,7 +7769,6 @@ __sx_num_max() {
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_min() {
@@ -8136,6 +8145,7 @@ __sx_num_rel_classify() {
 	return 1
 }
 
+M_RENAME_Q([|dnl
 ### sx_num_sub_int - 複数の符号付き整数を減算する
 ##
 ## 使い方:
@@ -8151,7 +8161,6 @@ __sx_num_rel_classify() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_sub_int() {
@@ -8177,6 +8186,17 @@ sx_num_sub_int() {
 |], [|num_sub_int|])dnl
 
 M_RENAME_QI([|dnl
+### __sx_num_sub_int - 複数の符号付き整数を減算する（内部用）
+##
+## 使い方:
+##   __sx_num_sub_int 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_sub_int の内部実装。引数チェックは行わない。
+##   第2引数以降を __sx_num_add_int で合計し、第1引数と符号付き減算する。
+##   符号の組み合わせに応じて __sx_num_cmp_nat0 / __sx_num_sub_nat0 /
+##   __sx_num_add_nat0 で絶対値の演算を行う。
+
 define([|CLEANUP|], [|Q_res Q_first Q_sign Q_sum Q_tmp|])dnl
 
 __sx_num_sub_int() {
@@ -8229,6 +8249,7 @@ __sx_num_sub_int() {
 }
 |], [|num_sub_int|])dnl
 
+M_RENAME_Q([|dnl
 ### sx_num_sub_nat0 - 2つの絶対値の差（被減数 - 減数）を計算する
 ##
 ## 使い方:
@@ -8244,7 +8265,6 @@ __sx_num_sub_int() {
 ##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_sub_nat0() {
@@ -8274,6 +8294,7 @@ sx_num_sub_nat0() {
 }
 |], [|num_sub_nat0|])dnl
 
+M_RENAME_QI([|dnl
 ### __sx_num_sub_nat0 - 絶対値のチャンク減算を行う（内部用）
 ##
 ## 使い方:
@@ -8284,7 +8305,6 @@ sx_num_sub_nat0() {
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 ##   被減数 >= 減数 が保証されていること。
 
-M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_res Q_qm Q_borrow Q_out Q_rem1 Q_rem2 Q_ch1 Q_ch2 Q_tmp Q_b|])dnl
 
 __sx_num_sub_nat0() {
