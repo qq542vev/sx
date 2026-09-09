@@ -12292,7 +12292,6 @@ __sx_arr_cat() {
 	done
 
 	# 2) chain 適用（一括書き込み）
-
 	eval 	__sx_var_copy "${Q_chain}"
 
 	# 3) コミット: bind_org と残り bind を後方比較し、各配列セグメントを生成する
@@ -12351,154 +12350,138 @@ __sx_arr_cat() {
 |], [|arr_cat|])dnl
 
 M_RENAME_Q([|dnl
-### sx_arr_pop - 配列の末尾から要素を取り出す
+### sx_arr_pop - 配列の末尾から要素を取り出して割り当てる
 ##
 ## 使い方:
-##   sx_arr_pop 配列名 [結果変数名 | ポップ数 ...]
+##   sx_arr_pop bind 配列名
 ##
 ## 説明:
-##   指定された sx 配列の末尾から要素を取り出し、結果変数に格納または破棄する。
-##   結果変数名が指定された場合は、その変数に値を格納してポップする。
-##   正の整数（ポップ数）が指定された場合は、その個数分だけ連続してポップし、値は破棄する。
-##   引数が複数指定された場合は、指定された順に末尾から順次処理を行う。
-##   引数が省略された場合は、1 つの要素をポップして破棄する。
-##   - が結果変数名として指定された場合も、値を破棄して 1 つポップする。
-##   配列名が結果変数名に含まれている場合はエラーを返す。
+##   指定された sx 配列の末尾から、bind の各セグメントが示す個数ぶんの要素を
+##   取り出して割り当てる（または破棄する）拡張 pop。
+##   bind は固定スロット形式であり、各セグメントの末尾に「:」を付けて指定する
+##   （例: x: はスカラー x へ 1 個、2v: は配列 v へ 2 個、1: は 1 個を破棄）。
+##   合計スロット数は各セグメントの個数の合計であり、元配列の要素数を超える
+##   場合は一切書き込まずに 1 を返す（トランザクション）。
+##
+##   セグメントの種類:
+##     - N名前:  配列「名前」へ N 個割り当てる（N は 1 以上の整数）
+##     - 名前:   スカラー「名前」へ 1 個割り当てる
+##     - N:      値は割り当てずに N 個破棄する
+##
+##   取り出しは末尾から行い、先頭セグメントが最後の要素を受け取る
+##   （例: sx_arr_pop x:y: a （a=[1,2]）なら x=2, y=1 となり a は空になる）。
+##   成功すると元配列は残った要素のみになり、長さとリビジョンが更新される。
+##
+##   末尾「:」の無い bind（x や a:b 等）も bind として受理はされるが、
+##   末尾セグメントが「残り全部」扱いになるため実質的に常に要素不足となり 1 を返す。
+##
+## 注意:
+##   分配先に既存配列を使う場合は、事前に sx_var_unset を明示的に呼び出してから呼び出すこと。
+##   元配列と分配先の名前が重複する場合は未定義。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##    1  配列が空、または要素数が不足している
-##   64  配列名が無効、または結果変数名と重複している (SX_EX_USAGE)
+##    1  合計スロット数が要素数を超えている（無変更）
+##   64  引数不正 (SX_EX_USAGE)
 ##   65  対象が sx 配列ではない (SX_EX_DATAERR)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|CLEANUP|], [|Q_arr Q_args Q_chk Q_dest Q_i Q_len|])dnl
+define([|CLEANUP|], [| |])dnl
 
 sx_arr_pop() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_pop "${@}" || return; return 0;; esac
 
-	sx_var_is_arr "${1-}" || case "${?}" in
-		1) return M_EX_DATAERR;;
-		*) return;;
-	esac
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	Q_arr="${1}"
-	eval "Q_len=\"\${${1}_len}\""
-	shift
+	__sx_var_is_bind ${1+"${1}"} || return M_EX_USAGE
 
-	M_STR_NE([|"${#}"|], [|0|]) || set -- -
-	__sx_arg_norm Q_args - "${@}"
-	eval set -- "${Q_args}"
-	unset Q_args
+	__sx_arr_is_bindable ${1+"${1}"} || return M_EX_NOPERM
 
-	# 要素数チェック
-	case "$((${#} <= Q_len))" in 0)
-		unset Q_arr Q_len
-		return 1
-	esac
+	sx_var_is_name "${2-}" || return M_EX_USAGE
 
-	# 配列の書き込み権限チェック
-	sx_var_is_rw_deep "${Q_arr}" || {
-		case "${?}" in
-			1) set -- M_EX_NOPERM;;
-			*) set -- "${?}";;
-		esac
+	__sx_var_is_arr "${2}" || return M_EX_DATAERR
 
-		unset Q_arr Q_len
-		return "${1}"
-	}
+	__sx_var_is_rw_deep "${2}" || return M_EX_NOPERM
 
-	Q_chk=
-	Q_i="${Q_len}"
-	for Q_dest in "${@}"; do
-		M_NUM_DECR([|Q_i|])
-
-		M_STR_NE([|"${Q_dest}"|], [|-|]) || continue
-
-		# pop中に配列以下の更新を禁止
-		if
-			! sx_var_is_name "${Q_dest}" ||
-			M_STR_MATCH([|"${Q_dest}"|], [|"${Q_arr}"|], [|"${Q_arr}"_*|])
-		then
-			unset Q_arr Q_len Q_chk Q_i Q_dest
-			return M_EX_USAGE
-		fi
-
-		M_STR_APPEND([|Q_chk|], [|" ${Q_arr}_${Q_i}-${Q_dest}"|])
-	done
-
-	eval __sx_var_is_copyable "${Q_chk}" || {
-		case "${?}" in
-			1) set -- M_EX_NOPERM;;
-			*) set -- "${?}";;
-		esac
-
-		unset Q_arr Q_len Q_chk Q_i Q_dest
-		return "${1}"
-	}
-
-	set -- "${Q_arr}" "${@}"
-	unset Q_arr Q_len Q_chk Q_i Q_dest
-	__sx_arr_pop0 "${@}" || return
+	__sx_arr_pop "${@}"
 }
 |], [|arr_pop|])dnl
 
 M_RENAME_QI([|dnl
-### __sx_arr_pop - 配列の末尾から要素を取り出す（内部用）
+### __sx_arr_pop - 配列から要素を取り出して割り当てる（内部用）
 ##
 ## 使い方:
-##   __sx_arr_pop 配列名 [結果変数名 | ポップ数 ...]
+##   __sx_arr_pop bind 配列名
 ##
 ## 説明:
-##   指定された配列の末尾から要素を取り出し、結果変数に格納または破棄する。
-##   この関数は引数の検証や書き込み権限のチェックを行わない。
+##   sx_arr_pop の本体実装。取り出し（chain 構築）とコミットを行う。
+##   引数チェック（bind 形式・変数名・配列判定・書き込み権限）は行わない。
+##   合計スロット数が要素数を超える場合は 1 を返し、何も書き込まない。
 
-define([|CLEANUP|], [|Q_args|])dnl
+define([|CLEANUP|], [|Q_bind Q_chain Q_unset Q_len Q_blk Q_seg Q_slot Q_n Q_name|])dnl
 
 __sx_arr_pop() {
-	M_STR_NE([|"${#}"|], [|1|]) || set -- -
-	__sx_arg_norm Q_args - "${@}"
-	eval set -- "${Q_args}"
-	unset CLEANUP
+	Q_bind="${1}"
+	Q_chain=
+	Q_unset=
+	eval "Q_len=\"\${${2}_len}\""
 
-	__sx_arr_pop0 "${@}" || return
-}
-|], [|arr_pop|])dnl
+	# 1) 要素ストリームを末尾から1つずつ __sx_arr_bind で処理し、chain を構築する（読み取りのみ）
+	while M_NUM_LT([|0|], [|Q_len|]); do
+		__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${2}_$((Q_len - 1))" || break
+		M_NUM_DECR([|Q_len|])
 
-### __sx_arr_pop0 - 配列の末尾から要素をポップする実処理（内部用）
-##
-## 使い方:
-##   __sx_arr_pop0 配列名 [結果変数名 | - ...]
-##
-## 説明:
-##   配列の要素数チェック、コピー、削除、および長さとリビジョンの更新を行う。
-##   引数チェック（配列の存在確認や書き込み権限等）は事前に行われていることを前提とする。
-__sx_arr_pop0() {
-	__sx_arr_pop0_arr_="${1}"
-	eval "__sx_arr_pop0_len_=\"\${${1}_len}\""
-	shift
+		case "${Q_blk}" in ?*)
+			M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
+		esac
 
-	case "$((${#} <= __sx_arr_pop0_len_))" in 0)
-		unset __sx_arr_pop0_arr_ __sx_arr_pop0_len_
+		M_STR_APPEND([|Q_unset|], [|" ${2}_${Q_len}"|])
+	done
+
+	# 2) 要素不足: 全要素を消費しても bind に残スロットがある → 無変更で失敗
+	case "${Q_len}:${Q_bind}" in 0:?*)
+		unset CLEANUP
 		return 1
 	esac
 
-	for __sx_arr_pop0_dest_ in "${@}"; do
-		M_NUM_DECR([|__sx_arr_pop0_len_|])
-		__sx_arr_pop0_src_="${__sx_arr_pop0_arr_}_${__sx_arr_pop0_len_}"
+	# 3) chain 適用（一括書き込み）
+	case "${Q_chain}" in ?*)
+		eval 	__sx_var_copy "${Q_chain}"
+	esac
 
-		if M_STR_NE([|"${__sx_arr_pop0_dest_}"|], [|-|]); then
-			__sx_var_copy "${__sx_arr_pop0_src_}-${__sx_arr_pop0_dest_}"
-		fi
+	# 4) コミット: 元 bind の各セグメントを宣言スロット数で確定する
+	Q_seg="${1}"
 
-		__sx_var_unset "${__sx_arr_pop0_src_}"
+	while M_STR_HAS([|"${Q_seg}"|], [|':'|]); do
+		Q_slot="${Q_seg%%:*}"
+		Q_seg="${Q_seg#*:}"
+
+		Q_n="${Q_slot%%[!0-9]*}"
+		Q_name="${Q_slot#"${Q_n}"}"
+
+		case "${Q_n}:${Q_name}" in
+			?*:?*)
+				# 数値プレフィックス付き → 配列として生成
+				__sx_arr_gen "${Q_name}"
+				M_VAR_SET([|${Q_name}_len|], [|${Q_n}|])
+				;;
+			?)
+				# 数値のみ → 破棄（chain に反映されない）
+				;;
+			*)
+				# 素 → スカラー（chain にて書き込み済み）
+				;;
+		esac
 	done
 
-	eval "${__sx_arr_pop0_arr_}_len=${__sx_arr_pop0_len_}"
-	__sx_var_touch "${__sx_arr_pop0_arr_}"
+	eval __sx_var_unset "${Q_unset}"
+	eval "${2}_len=${Q_len}"
+	__sx_var_touch "${2}"
 
-	unset __sx_arr_pop0_arr_ __sx_arr_pop0_len_ __sx_arr_pop0_dest_ __sx_arr_pop0_src_
+	unset CLEANUP
 }
+|], [|arr_pop|])dnl
 
 ### sx_arr_push - 配列の末尾に要素を追加する
 ##
