@@ -12232,36 +12232,54 @@ M_RENAME_Q([|dnl
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_first Q_arr Q_len Q_i Q_blk Q_oseg Q_name Q_fseg Q_lim|])dnl
+define([|CLEANUP|], [|Q_bind|])dnl
 
 sx_arr_cat() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) ;; *)
-		sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_cat "${@}" || return; return 0;; esac
 
-		__sx_var_is_bind ${1+"${1}"} || return M_EX_USAGE
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-		__sx_arr_is_bindable ${1+"${1}"} || return M_EX_NOPERM
-	esac
+	__sx_var_is_bind ${1+"${1}"} || return M_EX_USAGE
+
+	__sx_arr_is_bindable ${1+"${1}"} || return M_EX_NOPERM
 
 	Q_bind="${1-}"
-	Q_borg=":${1-}"
 	shift "$((0${1+1}))"
 
-	case "${SX_CFG_SKIP_CHK-}" in 1) ;; *)
-		sx_var_is_name "${@}" || {
-			unset CLEANUP
-			return M_EX_USAGE
-		}
+	sx_var_is_name "${@}" || {
+		unset CLEANUP
+		return M_EX_USAGE
+	}
 
-		__sx_var_is_arr "${@}" || {
-			unset CLEANUP
-			return M_EX_DATAERR
-		}
-	esac
+	__sx_var_is_arr "${@}" || {
+		unset CLEANUP
+		return M_EX_DATAERR
+	}
+
+	__sx_arr_cat "${Q_bind}" "${@}"
+	unset CLEANUP
+}
+|], [|arr_cat|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_arr_cat - 配列連結の内部実装
+##
+## 使い方:
+##   __sx_arr_cat bind arr1 [arr2 ...]
+##
+## 説明:
+##   sx_arr_cat の本体実装（chain 構築・一括書き込み・コミット）。
+##   引数チェック（bind 形式・変数名・配列判定・書き込み権限）は行わない。
+
+define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_first Q_arr Q_len Q_i Q_blk Q_oseg Q_name Q_fseg Q_lim|])dnl
+
+__sx_arr_cat() {
+	Q_bind="${1-}"
+	Q_borg=":${1-}"
+	Q_chain=
+	shift "$((0${1+1}))"
 
 	# 1) 要素ストリームを1つずつ __sx_arr_bind で処理し、chain を構築する（読み取りのみ）
-	Q_chain=
-
 	for Q_arr in "${@}"; do
 		eval "Q_len=\"\${${Q_arr}_len}\""
 		Q_i=0
@@ -12273,21 +12291,11 @@ sx_arr_cat() {
 		done
 	done
 
-	eval set -- "${Q_chain}"
+	# 2) chain 適用（一括書き込み）
 
-	# 2) トランザクション: 全書き込み先（分配先の個々の変数）の書き込み可否を一括検査
+	eval 	__sx_var_copy "${Q_chain}"
 
-	case "${SX_CFG_SKIP_CHK-}" in 1) ;; *)
-		__sx_var_is_copyable "${@}" || {
-			unset CLEANUP
-			return M_EX_NOPERM
-		}
-	esac
-
-	# 3) chain 適用（一括書き込み）
-	__sx_var_copy "${@}"
-
-	# 4) コミット: bind_org と残り bind を後方比較し、各配列セグメントを生成する
+	# 3) コミット: bind_org と残り bind を後方比較し、各配列セグメントを生成する
 	Q_first=1   # 1 回目の走査＝末尾セグメント
 
 	while M_STR_HAS([|"${Q_borg}"|], [|':'|]); do
@@ -12339,23 +12347,6 @@ sx_arr_cat() {
 	done
 
 	unset CLEANUP
-}
-|], [|arr_cat|])dnl
-
-M_RENAME_QI([|dnl
-### __sx_arr_cat - 配列連結の内部実装（検証スキップ版）
-##
-## 使い方:
-##   __sx_arr_cat bind arr1 [arr2 ...]
-##
-## 説明:
-##   sx_arr_cat の内部実装。SX_CFG_SKIP_CHK=1 を設定して引数チェックを
-##   スキップし、そのまま sx_arr_cat へ委譲する。
-
-define([|CLEANUP|], [| |])dnl
-
-__sx_arr_cat() {
-	SX_CFG_SKIP_CHK=1 sx_arr_cat "${@}"
 }
 |], [|arr_cat|])dnl
 
