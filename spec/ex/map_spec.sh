@@ -103,6 +103,21 @@ Describe 'sx_ex_map'
     End
   End
 
+  Describe '数値プレフィックス付きバインド'
+    It 'Nname: 形式で指定件数分の値を1つの変数に集約すること'
+      When call sx_ex_map "2x:y" OK 65 DATAERR
+      The status should be success
+      The variable x should equal '0 DATAERR'
+      The variable y should equal 65
+    End
+
+    It 'Nname: で1件を指定すると最初の1件のみ格納すること'
+      When call sx_ex_map "1x:" OK 65
+      The status should be success
+      The variable x should equal 0
+    End
+  End
+
   Describe '高速モード (SX_CFG_SKIP_CHK=1)'
     It 'バリデーションをスキップして名前を解決すること'
       SX_CFG_SKIP_CHK=1

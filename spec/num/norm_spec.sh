@@ -93,6 +93,19 @@ Describe 'sx_num_norm'
     The variable b should equal "5 6 10000"
   End
 
+  It 'Nname: 形式で指定件数分の値を1つの変数に集約すること'
+    When call sx_num_norm "2a:" 0x4 05 6.0
+    The status should be success
+    The variable a should equal "4 5"
+  End
+
+  It 'Nname:name 形式で件数分と残りを別の変数に格納すること'
+    When call sx_num_norm "2a:b" 0x4 05 6.0 100e2
+    The status should be success
+    The variable a should equal "4 5"
+    The variable b should equal "6 10000"
+  End
+
   It '不正な入力に対してエラーを返すこと'
     When call sx_num_norm res "abc"
     The status should be failure
