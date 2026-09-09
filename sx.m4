@@ -11897,7 +11897,7 @@ sx_arr_gen() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_gen "${@}" || return; return 0;; esac
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
-	__sx_arr_is_rw "${1}" || return M_EX_NOPERM
+	__sx_var_is_rw_deep "${1}" || return M_EX_NOPERM
 
 	__sx_arr_gen "${@}"
 }
@@ -11916,42 +11916,43 @@ __sx_arr_gen() {
 	__sx_arr_push "${@}"
 }
 
-### sx_arr_is_rw - 配列が書き込み可能か確認する
+### sx_var_is_rw_deep - 変数およびその配下のサブ変数がすべて書き込み可能か確認する
 ##
 ## 使い方:
-##   sx_arr_is_rw 配列名 [配列名 ...]
+##   sx_var_is_rw_deep 変数名 [変数名 ...]
 ##
 ## 説明:
-##   指定された名前に対応する配列（シグネチャ変数・${配列名}_len・全要素）および
-##   長さ保持変数 (${配列名}_len) が書き込み可能か確認する。
-##   実体が sx 配列でない場合でも確認自体は可能で、その場合は名前と ${配列名}_len の
-##   書き込み可否を検査する。
+##   指定された変数と、その配下に存在するサブ変数（${変数名}_len, ${変数名}_0, 等）が
+##   すべて書き込み可能か確認する。
+##   実際の変数構造に依存せず、現在読み取り専用として登録されている名前を
+##   深さを問わず走査して検証する。実体が sx 配列でない場合でも確認自体は可能で、
+##   その場合は変数名と配下のサブ変数の書き込み可否を検査する。
 ##
 ## 終了ステータス:
 ##    0  すべて書き込み可能 (SX_EX_OK)
 ##    1  書き込み不可が含まれる
 ##   64  引数不正 (SX_EX_USAGE)
-sx_arr_is_rw() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_rw "${@}" || return; return 0;; esac
+sx_var_is_rw_deep() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw_deep "${@}" || return; return 0;; esac
 
 	sx_var_is_name "${@}" || return M_EX_USAGE
 
-	__sx_arr_is_rw "${@}" || return
+	__sx_var_is_rw_deep "${@}" || return
 }
 
 M_RENAME_QI([|dnl
-### __sx_arr_is_rw - 配列が書き込み可能か確認する（内部用）
+### __sx_var_is_rw_deep - 変数およびその配下のサブ変数がすべて書き込み可能か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_arr_is_rw 配列名 [配列名 ...]
+##   __sx_var_is_rw_deep 変数名 [変数名 ...]
 ##
 ## 説明:
-##   sx_arr_is_rw の内部実装。
+##   sx_var_is_rw_deep の内部実装。
 ##   引数チェックは行わない。
 
 define([|CLEANUP|], [|Q_ro Q_out Q_arg Q_rest Q_tmp|])dnl
 
-__sx_arr_is_rw() {
+__sx_var_is_rw_deep() {
 	Q_ro="${SX_STR_LF}$(readonly -p)${SX_STR_LF}"
 	Q_out=
 
@@ -11963,16 +11964,11 @@ __sx_arr_is_rw() {
 
 			case "${Q_rest}" in
 				[${SX_STR_LF}=]*) M_STR_APPEND([|Q_out|], [|" ${Q_arg}"|]);;
-				_len[${SX_STR_LF}=]*) M_STR_APPEND([|Q_out|], [|" ${Q_arg}_len"|]);;
-				_[0-9]*)
+				_[${SX_STR_ALNUM}]*)
 					Q_tmp="${Q_rest%%[${SX_STR_LF}=]*}"
 
-					if sx_str_is_word "${Q_tmp}"; then
-						Q_tmp="${Q_tmp#_}"
-
-						if __sx_num_is_nat0_base 10 "${Q_tmp%%_*}"; then
-							M_STR_APPEND([|Q_out|], [|" ${Q_arg}_${Q_tmp}"|])
-						fi
+					if ! M_STR_MATCH([|${Q_tmp}|], [|*_|]) && sx_str_is_word "${Q_tmp}"; then
+						M_STR_APPEND([|Q_out|], [|" ${Q_arg}_${Q_tmp#_}"|])
 					fi
 					;;
 			esac
@@ -11984,7 +11980,7 @@ __sx_arr_is_rw() {
 
 	__sx_var_is_rw "${@}" || return
 }
-|], [|arr_is_rw|])dnl
+|], [|var_is_rw_deep|])dnl
 
 ### sx_arr_is_bindable - バインド形式が有効であり、かつ配列を含む全変数が書き込み可能か確認する
 ##
@@ -12411,7 +12407,7 @@ sx_arr_pop() {
 	esac
 
 	# 配列の書き込み権限チェック
-	sx_arr_is_rw "${Q_arr}" || {
+	sx_var_is_rw_deep "${Q_arr}" || {
 		case "${?}" in
 			1) set -- M_EX_NOPERM;;
 			*) set -- "${?}";;
@@ -12532,7 +12528,7 @@ sx_arr_push() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 	__sx_var_is_arr "${1}" || return M_EX_DATAERR
-	__sx_arr_is_rw "${1}" || return M_EX_NOPERM
+	__sx_var_is_rw_deep "${1}" || return M_EX_NOPERM
 
 	__sx_arr_push "${@}"
 }

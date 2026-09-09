@@ -1,10 +1,10 @@
-Describe 'sx_arr_is_rw -efu 環境検証'
+Describe 'sx_var_is_rw_deep -efu 環境検証'
   Include ./sx.sh
 
   It '正常動作'
     sx_arr_gen arr a b c
 
-    When run efu_run sx_arr_is_rw arr
+    When run efu_run sx_var_is_rw_deep arr
     The status should be success
   End
 
@@ -12,7 +12,7 @@ Describe 'sx_arr_is_rw -efu 環境検証'
     arr_len=1 arr_0=a
     readonly arr_0
 
-    When run efu_run sx_arr_is_rw arr
+    When run efu_run sx_var_is_rw_deep arr
     The status should be failure
   End
 End
