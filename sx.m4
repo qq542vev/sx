@@ -3968,6 +3968,72 @@ __sx_var_is_rw_all() {
 }
 |], [|var_is_rw_all|])dnl
 
+### sx_var_is_rw_deep - 変数およびその配下のサブ変数がすべて書き込み可能か確認する
+##
+## 使い方:
+##   sx_var_is_rw_deep 変数名 [変数名 ...]
+##
+## 説明:
+##   指定された変数と、その配下に存在するサブ変数（${変数名}_len, ${変数名}_0, 等）が
+##   すべて書き込み可能か確認する。
+##   実際の変数構造に依存せず、現在読み取り専用として登録されている名前を
+##   深さを問わず走査して検証する。実体が sx 配列でない場合でも確認自体は可能で、
+##   その場合は変数名と配下のサブ変数の書き込み可否を検査する。
+##
+## 終了ステータス:
+##    0  すべて書き込み可能 (SX_EX_OK)
+##    1  書き込み不可が含まれる
+##   64  引数不正 (SX_EX_USAGE)
+sx_var_is_rw_deep() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw_deep "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${@}" || return M_EX_USAGE
+
+	__sx_var_is_rw_deep "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+### __sx_var_is_rw_deep - 変数およびその配下のサブ変数がすべて書き込み可能か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_rw_deep 変数名 [変数名 ...]
+##
+## 説明:
+##   sx_var_is_rw_deep の内部実装。
+##   引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_ro Q_out Q_arg Q_rest Q_tmp|])dnl
+
+__sx_var_is_rw_deep() {
+	Q_ro="${SX_STR_LF}$(readonly -p)${SX_STR_LF}"
+	Q_out=
+
+	for Q_arg in "${@}"; do
+		Q_rest="${Q_ro}"
+
+		while M_STR_HAS([|"${Q_rest}"|], [|"${SX_STR_LF}readonly ${Q_arg}"|]); do
+			Q_rest="${Q_rest#*"${SX_STR_LF}readonly ${Q_arg}"}"
+
+			case "${Q_rest}" in
+				[${SX_STR_LF}=]*) M_STR_APPEND([|Q_out|], [|" ${Q_arg}"|]);;
+				_[${SX_STR_ALNUM}]*)
+					Q_tmp="${Q_rest%%[${SX_STR_LF}=]*}"
+
+					if ! M_STR_MATCH([|${Q_tmp}|], [|*_|]) && sx_str_is_word "${Q_tmp}"; then
+						M_STR_APPEND([|Q_out|], [|" ${Q_arg}_${Q_tmp#_}"|])
+					fi
+					;;
+			esac
+		done
+	done
+
+	eval set -- "${Q_out}"
+	unset CLEANUP
+
+	__sx_var_is_rw "${@}" || return
+}
+|], [|var_is_rw_deep|])dnl
+
 ### sx_var_is_set - 変数が設定されているか確認する
 ##
 ## 使い方:
@@ -11916,72 +11982,6 @@ __sx_arr_gen() {
 	__sx_arr_push "${@}"
 }
 
-### sx_var_is_rw_deep - 変数およびその配下のサブ変数がすべて書き込み可能か確認する
-##
-## 使い方:
-##   sx_var_is_rw_deep 変数名 [変数名 ...]
-##
-## 説明:
-##   指定された変数と、その配下に存在するサブ変数（${変数名}_len, ${変数名}_0, 等）が
-##   すべて書き込み可能か確認する。
-##   実際の変数構造に依存せず、現在読み取り専用として登録されている名前を
-##   深さを問わず走査して検証する。実体が sx 配列でない場合でも確認自体は可能で、
-##   その場合は変数名と配下のサブ変数の書き込み可否を検査する。
-##
-## 終了ステータス:
-##    0  すべて書き込み可能 (SX_EX_OK)
-##    1  書き込み不可が含まれる
-##   64  引数不正 (SX_EX_USAGE)
-sx_var_is_rw_deep() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw_deep "${@}" || return; return 0;; esac
-
-	sx_var_is_name "${@}" || return M_EX_USAGE
-
-	__sx_var_is_rw_deep "${@}" || return
-}
-
-M_RENAME_QI([|dnl
-### __sx_var_is_rw_deep - 変数およびその配下のサブ変数がすべて書き込み可能か確認する（内部用）
-##
-## 使い方:
-##   __sx_var_is_rw_deep 変数名 [変数名 ...]
-##
-## 説明:
-##   sx_var_is_rw_deep の内部実装。
-##   引数チェックは行わない。
-
-define([|CLEANUP|], [|Q_ro Q_out Q_arg Q_rest Q_tmp|])dnl
-
-__sx_var_is_rw_deep() {
-	Q_ro="${SX_STR_LF}$(readonly -p)${SX_STR_LF}"
-	Q_out=
-
-	for Q_arg in "${@}"; do
-		Q_rest="${Q_ro}"
-
-		while M_STR_HAS([|"${Q_rest}"|], [|"${SX_STR_LF}readonly ${Q_arg}"|]); do
-			Q_rest="${Q_rest#*"${SX_STR_LF}readonly ${Q_arg}"}"
-
-			case "${Q_rest}" in
-				[${SX_STR_LF}=]*) M_STR_APPEND([|Q_out|], [|" ${Q_arg}"|]);;
-				_[${SX_STR_ALNUM}]*)
-					Q_tmp="${Q_rest%%[${SX_STR_LF}=]*}"
-
-					if ! M_STR_MATCH([|${Q_tmp}|], [|*_|]) && sx_str_is_word "${Q_tmp}"; then
-						M_STR_APPEND([|Q_out|], [|" ${Q_arg}_${Q_tmp#_}"|])
-					fi
-					;;
-			esac
-		done
-	done
-
-	eval set -- "${Q_out}"
-	unset CLEANUP
-
-	__sx_var_is_rw "${@}" || return
-}
-|], [|var_is_rw_deep|])dnl
-
 ### sx_arr_is_bindable - バインド形式が有効であり、かつ配列を含む全変数が書き込み可能か確認する
 ##
 ## 使い方:
@@ -12037,13 +12037,13 @@ __sx_arr_is_bindable() {
 					Q_name="${Q_arg%%:*}"
 
 					case "${Q_name}" in *["_${SX_STR_ALPHA}"]*)
-						Q_name="M_STR_LTRIM([|Q_name|], [|[!0-9]|])"
-						M_STR_APPEND([|Q_chk|], [|" ${Q_name} ${Q_name}_len"|])
+						Q_name="M_STR_LTRIM([|Q_name|], [|[!0-9/]|])"
+						M_STR_APPEND([|Q_chk|], [|" ${Q_name}"|])
 					esac
 					;;
 				:*) ;;
 				*:*) M_STR_APPEND([|Q_chk|], [|" ${Q_arg%%:*}"|]);;
-				?*) M_STR_APPEND([|Q_chk|], [|" ${Q_arg} ${Q_arg}_len"|]);&
+				?*) M_STR_APPEND([|Q_chk|], [|" ${Q_arg}"|]);&
 				*) ! :;;
 			esac
 		do
@@ -12054,7 +12054,7 @@ __sx_arr_is_bindable() {
 	eval set -- "${Q_chk}"
 	unset CLEANUP
 
-	__sx_var_is_rw "${@}" || return
+	__sx_var_is_rw_deep "${@}" || return
 }
 |], [|arr_is_bindable|])dnl
 
