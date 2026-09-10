@@ -12271,11 +12271,11 @@ M_RENAME_QI([|dnl
 ##   sx_arr_cat の本体実装（chain 構築・一括書き込み・コミット）。
 ##   引数チェック（bind 形式・変数名・配列判定・書き込み権限）は行わない。
 
-define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_first Q_arr Q_len Q_i Q_blk Q_oseg Q_name Q_fseg Q_lim|])dnl
+define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_arr Q_len Q_i Q_blk|])dnl
 
 __sx_arr_cat() {
 	Q_bind="${1-}"
-	Q_borg=":${1-}"
+	Q_borg="${1-}"
 	Q_chain=
 	shift "$((0${1+1}))"
 
@@ -12291,11 +12291,38 @@ __sx_arr_cat() {
 		done
 	done
 
-	# 2) chain 適用（一括書き込み）
-	eval 	__sx_var_copy "${Q_chain}"
+	# 2) chain 適用とコミット: bind_org と残り bind の後方比較を __sx_arr_bind_commit に委譲する
+	eval __sx_arr_bind_commit '"${Q_borg}"' '"${Q_bind}"' "${Q_chain}"
 
-	# 3) コミット: bind_org と残り bind を後方比較し、各配列セグメントを生成する
+	unset CLEANUP
+}
+|], [|arr_cat|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_arr_bind_commit - 一括書き込みと bind 比較（コミット）を実行する（内部用）
+##
+## 使い方:
+##   __sx_arr_bind_commit bind_org bind_left [chain ...]
+##
+## 説明:
+##   sx_arr_cat / sx_arr_pop から共用される統合書き込み処理。まず chain（連鎖式の
+##   スペース区切りリスト）を __sx_var_copy で一括適用して書き込みを確定し、
+##   続いて bind_org（元のバインド形式。先頭の ':' は関数内で付加）と要素消費後の
+##   残りバインド bind_left を末尾セグメントから順に取り出して比較する。
+##   配列化対象のセグメント（数値先行セグメント・末尾セグメント）は __sx_arr_gen で
+##   確定して _len を実割当数に設定し、割当の無いスカラーセグメントは unset する。
+##   bind は値渡しのため、呼び出し側の変数は変更されない。
+##   引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_borg Q_bind Q_first Q_oseg Q_fseg Q_lim Q_name Q_len|])dnl
+
+__sx_arr_bind_commit() {
+	Q_borg=":${1-}"
+	Q_bind="${2-}"
 	Q_first=1   # 1 回目の走査＝末尾セグメント
+
+	shift 2
+	__sx_var_copy "${@}"
 
 	while M_STR_HAS([|"${Q_borg}"|], [|':'|]); do
 		# bind_org の末尾セグメントを pop
@@ -12347,7 +12374,7 @@ __sx_arr_cat() {
 
 	unset CLEANUP
 }
-|], [|arr_cat|])dnl
+|], [|arr_bind_commit|])dnl
 
 M_RENAME_Q([|dnl
 ### sx_arr_pop - 配列の末尾から要素を取り出して割り当てる
@@ -12404,7 +12431,7 @@ sx_arr_pop() {
 
 	__sx_var_is_rw_deep "${2}" || return M_EX_NOPERM
 
-	__sx_arr_pop "${@}"
+	__sx_arr_pop "${@}" || return
 }
 |], [|arr_pop|])dnl
 
@@ -12419,7 +12446,7 @@ M_RENAME_QI([|dnl
 ##   引数チェック（bind 形式・変数名・配列判定・書き込み権限）は行わない。
 ##   合計スロット数が要素数を超える場合は 1 を返し、何も書き込まない。
 
-define([|CLEANUP|], [|Q_bind Q_chain Q_unset Q_len Q_blk Q_seg Q_slot Q_n Q_name|])dnl
+define([|CLEANUP|], [|Q_bind Q_chain Q_unset Q_len Q_blk|])dnl
 
 __sx_arr_pop() {
 	Q_bind="${1}"
@@ -12446,34 +12473,7 @@ __sx_arr_pop() {
 	esac
 
 	# 3) chain 適用（一括書き込み）
-	case "${Q_chain}" in ?*)
-		eval 	__sx_var_copy "${Q_chain}"
-	esac
-
-	# 4) コミット: 元 bind の各セグメントを宣言スロット数で確定する
-	Q_seg="${1}"
-
-	while M_STR_HAS([|"${Q_seg}"|], [|':'|]); do
-		Q_slot="${Q_seg%%:*}"
-		Q_seg="${Q_seg#*:}"
-
-		Q_n="${Q_slot%%[!0-9]*}"
-		Q_name="${Q_slot#"${Q_n}"}"
-
-		case "${Q_n}:${Q_name}" in
-			?*:?*)
-				# 数値プレフィックス付き → 配列として生成
-				__sx_arr_gen "${Q_name}"
-				M_VAR_SET([|${Q_name}_len|], [|${Q_n}|])
-				;;
-			?)
-				# 数値のみ → 破棄（chain に反映されない）
-				;;
-			*)
-				# 素 → スカラー（chain にて書き込み済み）
-				;;
-		esac
-	done
+	eval __sx_arr_bind_commit '"${1}"' '"${Q_bind}"' "${Q_chain}"
 
 	eval __sx_var_unset "${Q_unset}"
 	eval "${2}_len=${Q_len}"
