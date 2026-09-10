@@ -5075,6 +5075,71 @@ __sx_num_add_nat0() {
 }
 |], [|num_add_nat0|])dnl
 
+M_RENAME_Q([|dnl
+### sx_num_add1_nat0 - 非負整数に1を加算する
+##
+## 使い方:
+##   sx_num_add1_nat0 結果変数名 数値
+##
+## 説明:
+##   符号なし10進整数に1を加算する。
+##   引数の検証を行い、符号なし整数でない場合はエラーとする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+sx_num_add1_nat0() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add1_nat0 "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	__sx_num_is_nat0_base 10 "${2-}" || return M_EX_USAGE
+
+	__sx_num_add1_nat0 "$1" "$2"
+}
+|], [|num_add1_nat0|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_num_add1_nat0 - 非負整数に1を加算する（内部用）
+##
+## 使い方:
+##   __sx_num_add1_nat0 結果変数名 数値
+##
+## 説明:
+##   sx_num_add1_nat0 の内部実装。引数の検証を行わない。
+##   SX_CFG_NUM_RANGE に応じて、ネイティブ算術または __sx_num_add_nat0 に委譲する。
+
+__sx_num_add1_nat0() {
+	case "${SX_CFG_NUM_RANGE}" in
+		32)
+			case "$2" in
+				?????????*) __sx_num_add_nat0 "$1" "$2" 1;;
+				*) : "$(($1 = $2 + 1))";;
+			esac
+			;;
+		64)
+			case "$2" in
+				??????????????????*) __sx_num_add_nat0 "$1" "$2" 1;;
+				*) : "$(($1 = $2 + 1))";;
+			esac
+			;;
+		128)
+			case "$2" in
+				??????????????????????????????????????*) __sx_num_add_nat0 "$1" "$2" 1;;
+				*) : "$(($1 = $2 + 1))";;
+			esac
+			;;
+	esac
+}
+|], [|num_add1_nat0|])dnl
+
 ### sx_num_cmp_arith - 2つの数値を算術展開で比較する
 ##
 ## 使い方:
