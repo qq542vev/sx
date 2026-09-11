@@ -3775,7 +3775,6 @@ __sx_var_is_ebind() {
 		while M_STR_MATCH([|"${Q_arg}"|], [|*:*|]); do
 			Q_seg="${Q_arg%%:*}"
 			Q_arg="${Q_arg#*:}"
-			Q_m=
 
 			case "${Q_seg}" in
 				*[!0-9]*/*)
@@ -12343,10 +12342,10 @@ __sx_arr_cat() {
 		eval "Q_len=\"\${${Q_arr}_len}\""
 		Q_i=0
 
-		while M_NUM_LT([|Q_i|], [|Q_len|]); do
+		while M_STR_NE([|"${Q_i}"|], [|"${Q_len}"|]); do
 			__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_i}" || break 2
 			M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
-			M_NUM_INCR([|Q_i|])
+			M_NUM_INCRM1([|Q_i|])
 		done
 	done
 
