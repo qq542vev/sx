@@ -10,6 +10,7 @@ define([|__M_VAR_SET_REST|], [|ifelse(eval($# > 1), 1, [| "$1="'"$2"'ifelse($#, 
 define([|M_NUM_INCR|], [|ifelse($#, 1, [|$1=$(($1 + 1))|], [|$1=$(($1 + $2))|])|])dnl
 define([|M_NUM_INCRM1|], [|__sx_num_add1_nat0 $1 "${$1}"|])dnl
 define([|M_NUM_DECR|], [|ifelse($#, 1, [|$1=$(($1 - 1))|], [|$1=$(($1 - $2))|])|])dnl
+define([|M_NUM_DECRM1|], [|__sx_num_sub1_nat0 $1 "${$1}"|])dnl
 define([|M_NUM_AMP|], [|ifelse($#, 1, [|$1=$(($1 * 2))|], [|$1=$(($1 * $2))|])|])dnl
 define([|M_STR_APPEND|], [|ifelse($#, 2, [|$1="${$1}"$2|], [|$1="${$1}${$1:+$3}"$2|])|])dnl
 define([|M_STR_PREPEND|], [|ifelse($#, 2, [|$1=$2"${$1}"|], [|$1=$2"${$1:+$3}${$1}"|])|])dnl
@@ -8565,6 +8566,71 @@ __sx_num_sub_nat0() {
 }
 |], [|num_sub_nat0|])dnl
 
+M_RENAME_Q([|dnl
+### sx_num_sub1_nat0 - 正の整数から1を減算する
+##
+## 使い方:
+##   sx_num_sub1_nat0 結果変数名 数値
+##
+## 説明:
+##   符号なし10進整数から1を減算する。
+##   引数の検証を行い、1以上の符号なし整数（nat1）であることを確認する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+sx_num_sub1_nat0() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub1_nat0 "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+
+	__sx_num_is_nat1_base 10 "${2-}" || return M_EX_USAGE
+
+	__sx_num_sub1_nat0 "$1" "$2"
+}
+|], [|num_sub1_nat0|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_num_sub1_nat0 - 正の整数から1を減算する（内部用）
+##
+## 使い方:
+##   __sx_num_sub1_nat0 結果変数名 数値
+##
+## 説明:
+##   sx_num_sub1_nat0 の内部実装。引数の検証を行わない。
+##   SX_CFG_NUM_RANGE に応じて、ネイティブ算術または __sx_num_sub_nat0 に委譲する。
+
+__sx_num_sub1_nat0() {
+	case "${SX_CFG_NUM_RANGE}" in
+		32)
+			case "$2" in
+				?????????*) __sx_num_sub_nat0 "$1" "$2" 1;;
+				*) : "$(($1 = $2 - 1))";;
+			esac
+			;;
+		64)
+			case "$2" in
+				??????????????????*) __sx_num_sub_nat0 "$1" "$2" 1;;
+				*) : "$(($1 = $2 - 1))";;
+			esac
+			;;
+		128)
+			case "$2" in
+				??????????????????????????????????????*) __sx_num_sub_nat0 "$1" "$2" 1;;
+				*) : "$(($1 = $2 - 1))";;
+			esac
+			;;
+	esac
+}
+|], [|num_sub1_nat0|])dnl
+
 # ========================================
 #  UUID (UUID Operations)
 # ========================================
@@ -12504,7 +12570,7 @@ M_RENAME_QI([|dnl
 ##   引数チェック（bind 形式・変数名・配列判定・書き込み権限）は行わない。
 ##   合計スロット数が要素数を超える場合は 1 を返し、何も書き込まない。
 
-define([|CLEANUP|], [|Q_bind Q_chain Q_unset Q_len Q_blk|])dnl
+define([|CLEANUP|], [|Q_bind Q_chain Q_unset Q_len Q_blk Q_tmp|])dnl
 
 __sx_arr_pop() {
 	Q_bind="${1}"
@@ -12513,14 +12579,13 @@ __sx_arr_pop() {
 	eval "Q_len=\"\${${2}_len}\""
 
 	# 1) 要素ストリームを末尾から1つずつ __sx_arr_bind で処理し、chain を構築する（読み取りのみ）
-	while M_NUM_LT([|0|], [|Q_len|]); do
-		__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${2}_$((Q_len - 1))" || break
-		M_NUM_DECR([|Q_len|])
+	while M_STR_NE([|0|], [|"${Q_len}"|]); do
+		__sx_num_sub1_nat0 Q_tmp "${Q_len}"
+		__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${2}_${Q_tmp}" || break
 
-		case "${Q_blk}" in ?*)
-			M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
-		esac
+		Q_len="${Q_tmp}"
 
+		M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
 		M_STR_APPEND([|Q_unset|], [|" ${2}_${Q_len}"|])
 	done
 
