@@ -3042,42 +3042,6 @@ __sx_arg_rfold() {
 }
 |], [|arg_rfold|])dnl
 
-M_RENAME_QI([|dnl
-### __sx_arg_norm - 引数リスト内の数値をプレースホルダに展開して正規化する（内部用）
-##
-## 使い方:
-##   __sx_arg_norm 結果変数名 プレースホルダ [引数...]
-##
-## 説明:
-##   引数リストを走査し、数値 N があればそれを N 個のプレースホルダに展開する。
-##   数値以外の文字列はそのまま残す。
-
-define([|CLEANUP|], [|Q_res Q_pl Q_out Q_arg Q_tmp|])dnl
-
-__sx_arg_norm() {
-	Q_res="${1}"
-	sx_arg_quote Q_pl "${2-}"
-	shift ${2+2}
-
-	Q_out=
-	for Q_arg in "${@}"; do
-		if sx_num_is_nat0 "${Q_arg}"; then
-			# 数値 N を N 個のプレースホルダに展開
-			__sx_str_rep Q_tmp " ${Q_pl}" "${Q_arg}"
-			M_STR_APPEND([|Q_out|], [|"${Q_tmp}"|])
-		else
-			sx_arg_quote Q_tmp "${Q_arg}"
-			M_STR_APPEND([|Q_out|], [|' '"${Q_tmp}"|])
-		fi
-	done
-
-	# 先頭の余計なスペースを削って結果変数に格納
-	M_VAR_SET([|${Q_res}|], [|${Q_out# }|])
-
-	unset CLEANUP
-}
-|], [|arg_norm|])dnl
-
 ### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する
 ##
 ## 使い方:
@@ -3280,7 +3244,9 @@ define([|CLEANUP|], [|Q_seg Q_v Q_c Q_n|])dnl
 __sx_var_bind() {
 	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
 
-	case "${2}" in '') return 1;; esac
+	case "${2}" in '')
+		return 1
+	esac
 
 	Q_seg="${2%%:*}"
 
@@ -3518,7 +3484,7 @@ __sx_var_is_arr() {
 ##     - 有効な変数名
 ##     - スキップを意味する空文字列
 ##     - 数値プレフィックス付きの要素（N名前 / N）
-##       N は SX_CFG_NUM_RANGE の範囲内で安全に処理できる 1 以上の自然数。
+##       N は 1 以上の自然数。カウント値に上限はない（多倍長で処理される）。
 ##       先頭に 0 を置くことはできない（10進のみ解釈）。
 ##   最後の要素は残り蓄積先として変数名で直接使用されるため、
 ##   数字で始めることはできない。
@@ -3526,11 +3492,8 @@ __sx_var_is_arr() {
 ## 終了ステータス:
 ##    0  すべて有効な形式である (SX_EX_OK)
 ##    1  無効な形式が含まれる
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_var_is_bind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_bind "${@}" || return; return 0;; esac
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
 	__sx_var_is_bind "${@}"
 }
@@ -3563,7 +3526,7 @@ __sx_var_is_bind() {
 		while M_STR_MATCH([|"${Q_bind}"|], [|*:[1-9]*|]); do
 			Q_bind="${Q_bind#"${Q_bind%%:[1-9]*}:"}"
 
-			__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_bind%%[!0-9]*}" || {
+			__sx_num_is_nat0_base 10 "${Q_bind%%[!0-9]*}" || {
 				unset CLEANUP
 				return 1
 			}

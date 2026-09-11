@@ -65,13 +65,17 @@ Describe 'sx_var_is_bind'
         The status should be success
     End
 
-    It 'SX_CFG_NUM_RANGE を超えるカウントを拒否すること'
+    It '大きな値のカウントを許可すること'
         When call sx_var_is_bind "2147483648v:" "99999999999999999999999v:"
-        The status should be failure
+        The status should be success
     End
 
-    It 'SX_CFG_NUM_RANGE の境界値のカウントを許可すること'
-        When call sx_var_is_bind "2147483647v:"
+    It 'SX_CFG_NUM_RANGE が不正でも成功すること'
+        check_invalid_config() {
+            SX_CFG_NUM_RANGE=99
+            sx_var_is_bind "a:b:c"
+        }
+        When call check_invalid_config
         The status should be success
     End
 End
