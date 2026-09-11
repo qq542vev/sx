@@ -1,44 +1,45 @@
 #!/bin/sh
 # shellcheck shell=sh
 
-changequote([|, |]) dnl
-changecom() dnl
+changequote([|, |])dnl
+changecom()dnl
 
-define([|M_STR_NE|], [|case $1 in $2) ! :;; esac|]) dnl
-define([|M_VAR_SET|], [|ifelse($#, 1, [|ifelse($1, , [|eval|], [|eval "$1="|])|], [|eval "$1="'"$2"'__M_VAR_SET_REST(shift(shift($@)))|])|]) dnl
-define([|__M_VAR_SET_REST|], [|ifelse(eval($# > 1), 1, [| "$1="'"$2"'ifelse($#, 2, , [|__M_VAR_SET_REST(shift(shift($@)))|])|], [|ifelse($1, , , [| "$1="|])|])|]) dnl
-define([|M_NUM_INCR|], [|ifelse($#, 1, [|$1=$(($1 + 1))|], [|$1=$(($1 + $2))|])|]) dnl
-define([|M_NUM_DECR|], [|ifelse($#, 1, [|$1=$(($1 - 1))|], [|$1=$(($1 - $2))|])|]) dnl
-define([|M_NUM_AMP|], [|ifelse($#, 1, [|$1=$(($1 * 2))|], [|$1=$(($1 * $2))|])|]) dnl
-define([|M_STR_APPEND|], [|ifelse($#, 2, [|$1="${$1}"$2|], [|$1="${$1}${$1:+$3}"$2|])|]) dnl
-define([|M_STR_PREPEND|], [|ifelse($#, 2, [|$1=$2"${$1}"|], [|$1=$2"${$1:+$3}${$1}"|])|]) dnl
-define([|M_STR_WRAP|], [|$1=$2"${$1}"$3|]) dnl
-define([|M_STR_LTRIM|], [|${$1#"${$1%%$2*}"}|]) dnl
-define([|M_STR_RTRIM|], [|${$1%"${$1##*$2}"}|]) dnl
+define([|M_STR_NE|], [|case $1 in $2) ! :;; esac|])dnl
+define([|M_VAR_SET|], [|ifelse($#, 1, [|ifelse($1, , [|eval|], [|eval "$1="|])|], [|eval "$1="'"$2"'__M_VAR_SET_REST(shift(shift($@)))|])|])dnl
+define([|__M_VAR_SET_REST|], [|ifelse(eval($# > 1), 1, [| "$1="'"$2"'ifelse($#, 2, , [|__M_VAR_SET_REST(shift(shift($@)))|])|], [|ifelse($1, , , [| "$1="|])|])|])dnl
+define([|M_NUM_INCR|], [|ifelse($#, 1, [|$1=$(($1 + 1))|], [|$1=$(($1 + $2))|])|])dnl
+define([|M_NUM_INCRM1|], [|__sx_num_add1_nat0 $1 "${$1}"|])dnl
+define([|M_NUM_DECR|], [|ifelse($#, 1, [|$1=$(($1 - 1))|], [|$1=$(($1 - $2))|])|])dnl
+define([|M_NUM_AMP|], [|ifelse($#, 1, [|$1=$(($1 * 2))|], [|$1=$(($1 * $2))|])|])dnl
+define([|M_STR_APPEND|], [|ifelse($#, 2, [|$1="${$1}"$2|], [|$1="${$1}${$1:+$3}"$2|])|])dnl
+define([|M_STR_PREPEND|], [|ifelse($#, 2, [|$1=$2"${$1}"|], [|$1=$2"${$1:+$3}${$1}"|])|])dnl
+define([|M_STR_WRAP|], [|$1=$2"${$1}"$3|])dnl
+define([|M_STR_LTRIM|], [|${$1#"${$1%%$2*}"}|])dnl
+define([|M_STR_RTRIM|], [|${$1%"${$1##*$2}"}|])dnl
 
-define([|M_EX_OK|], [|0|]) dnl
-define([|M_EX_USAGE|], [|64|]) dnl
-define([|M_EX_DATAERR|], [|65|]) dnl
-define([|M_EX_NOINPUT|], [|66|]) dnl
-define([|M_EX_NOUSER|], [|67|]) dnl
-define([|M_EX_NOHOST|], [|68|]) dnl
-define([|M_EX_UNAVAILABLE|], [|69|]) dnl
-define([|M_EX_SOFTWARE|], [|70|]) dnl
-define([|M_EX_OSERR|], [|71|]) dnl
-define([|M_EX_OSFILE|], [|72|]) dnl
-define([|M_EX_CANTCREAT|], [|73|]) dnl
-define([|M_EX_IOERR|], [|74|]) dnl
-define([|M_EX_TEMPFAIL|], [|75|]) dnl
-define([|M_EX_PROTOCOL|], [|76|]) dnl
-define([|M_EX_NOPERM|], [|77|]) dnl
-define([|M_EX_CONFIG|], [|78|]) dnl
+define([|M_EX_OK|], [|0|])dnl
+define([|M_EX_USAGE|], [|64|])dnl
+define([|M_EX_DATAERR|], [|65|])dnl
+define([|M_EX_NOINPUT|], [|66|])dnl
+define([|M_EX_NOUSER|], [|67|])dnl
+define([|M_EX_NOHOST|], [|68|])dnl
+define([|M_EX_UNAVAILABLE|], [|69|])dnl
+define([|M_EX_SOFTWARE|], [|70|])dnl
+define([|M_EX_OSERR|], [|71|])dnl
+define([|M_EX_OSFILE|], [|72|])dnl
+define([|M_EX_CANTCREAT|], [|73|])dnl
+define([|M_EX_IOERR|], [|74|])dnl
+define([|M_EX_TEMPFAIL|], [|75|])dnl
+define([|M_EX_PROTOCOL|], [|76|])dnl
+define([|M_EX_NOPERM|], [|77|])dnl
+define([|M_EX_CONFIG|], [|78|])dnl
 
 define([|M_STR_EQ|], [|dnl
 { case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, [|&& __M_STR_EQ_REST(shift($@))|]); }dnl
-|]) dnl
+|])dnl
 define([|__M_STR_EQ_REST|], [|dnl
 case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, [| && __M_STR_EQ_REST(shift($@))|])dnl
-|]) dnl
+|])dnl
 
 define([|M_STR_HAS|], [|case $1 in __M_STR_HAS_REST(shift($@)));; *) ! :;; esac|])
 define([|__M_STR_HAS_REST|], [|ifelse($#, 0, , $#, 1, [|*$1*|], [|*$1* | __M_STR_HAS_REST(shift($@))|])|])
@@ -48,16 +49,16 @@ define([|__M_STR_MATCH_REST|], [|ifelse($#, 0, , $#, 1, [|$1|], [|$1 | __M_STR_M
 
 define([|__M_NUM_CMP_CHAIN|], [|dnl
 $2 $1 $3 ifelse(eval(3 < $#), 1, [| && __M_NUM_CMP_CHAIN($1, shift(shift($@))) |])dnl
-|]) dnl
-define([|M_NUM_EQ|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(==, $@)))|], 0)|]) dnl
-define([|M_NUM_GE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(>=, $@)))|], 0)|]) dnl
-define([|M_NUM_GT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(>, $@)))|], 0)|]) dnl
-define([|M_NUM_LE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<=, $@)))|], 0)|]) dnl
-define([|M_NUM_LT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<, $@)))|], 0)|]) dnl
-define([|M_NUM_NE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(!=, $@)))|], 0)|]) dnl
-define([|M_NUM_BOOL|], [|M_STR_NE([|$(($1))|], 0)|]) dnl
-define([|M_RENAME_Q|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Za-z]*\)|], [|\1__sx_$2_\2|])|]) dnl
-define([|M_RENAME_QI|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Za-z]*\)|], [|\1__sx_$2_\2_|])|]) dnl
+|])dnl
+define([|M_NUM_EQ|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(==, $@)))|], 0)|])dnl
+define([|M_NUM_GE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(>=, $@)))|], 0)|])dnl
+define([|M_NUM_GT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(>, $@)))|], 0)|])dnl
+define([|M_NUM_LE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<=, $@)))|], 0)|])dnl
+define([|M_NUM_LT|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(<, $@)))|], 0)|])dnl
+define([|M_NUM_NE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(!=, $@)))|], 0)|])dnl
+define([|M_NUM_BOOL|], [|M_STR_NE([|$(($1))|], 0)|])dnl
+define([|M_RENAME_Q|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Za-z]*\)|], [|\1__sx_$2_\2|])|])dnl
+define([|M_RENAME_QI|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Za-z]*\)|], [|\1__sx_$2_\2_|])|])dnl
 
 define([|__M_QUOTE_PREPEND|], [|dnl
 	case $3 in
@@ -3721,8 +3722,15 @@ __sx_var_is_copyable() {
 ## 説明:
 ##   引数で指定されたすべての文字列が、拡張バインド形式として有効であるかを確認する。
 ##   基本的な構造は sx_var_is_bind と同様だが、数値プレフィックスに
-##   M/N 形式の範囲指定（M は 0以上の自然数、N は M より大きい自然数）が追加される。
-##   最後のセグメントは数字で始めることはできない。
+##   バウンド範囲指定が追加される。
+##   - 中間セグメント: 名前、N名前、裸のカウンタ N、M/N名前（M は 0 以上の自然数、
+##     N は M より大きい自然数）のどれかに一致する。
+##   - 最後のセグメント（rest）: 名前（先頭の要素からすべて）または M/名前
+##     （M 番目の要素からすべて）に一致する。rest は要素数を省略することで
+##     「無限」を表し、カウンタ（分母 N）を指定することはできない。
+##   最後のセグメントは数字で始めることはできない（N名前、M/N は拒否される）。
+##   数値のカウント・M/N の値に上限はない（SX_CFG_NUM_RANGE は設定の妥当性
+##   チェックにのみ使用される）。
 ##
 ## 終了ステータス:
 ##    0  すべて有効な形式である (SX_EX_OK)
@@ -3745,17 +3753,17 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_var_is_ebind の内部実装。SX_CFG_NUM_RANGE の妥当性チェックは行わない。
 
-define([|CLEANUP|], [|Q_arg Q_seg Q_m Q_n|])dnl
+define([|CLEANUP|], [|Q_arg Q_seg Q_m|])dnl
 
 __sx_var_is_ebind() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in *[!"${SX_STR_WORD}":/]* | 0[!/]* | *:0[!/]* | /* | */ | *:/* | */[!1-9]*)
+		case "${Q_arg}" in *[!"${SX_STR_WORD}":/]* | 0[!/]* | *:0[!/]* | /* | */ | *:/* | */[!1-9]*:*)
 			unset CLEANUP
 			return 1
 		esac
 
 		case "${Q_arg##*:}" in
-			'' | *[!0-9/]*) ;;
+			'' | [0-9]*/[_"${SX_STR_ALPHA}"]* | [_"${SX_STR_ALPHA}"]*) ;;
 			*)
 				unset CLEANUP
 				return 1
@@ -3770,23 +3778,18 @@ __sx_var_is_ebind() {
 			Q_m=
 
 			case "${Q_seg}" in
-				*/*/* | *[!0-9]*/*)
+				*[!0-9]*/*)
 					unset CLEANUP
 					return 1
 					;;
-				*/*)
+				*/[1-9]*)
 					Q_m="${Q_seg%%/*}"
 					Q_seg="${Q_seg#*/}"
-					;;
-			esac
 
-			case "${Q_seg}" in [1-9]*)
-				Q_n="${Q_seg%%[!0-9]*}"
-
-				__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" ${Q_m:+"${Q_m}"} "${Q_n}" && M_NUM_LT([|${Q_m:-0}|], [|Q_n|]) || {
+				__sx_num_cmp_nat0 "${Q_m}" "${Q_seg%%[!0-9]*}" || case "${?}" in [23])
 					unset CLEANUP
 					return 1
-				}
+				esac
 			esac
 		done
 	done
@@ -5094,11 +5097,11 @@ M_RENAME_Q([|dnl
 sx_num_add1_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add1_nat0 "${@}" || return; return 0;; esac
 
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
 	__sx_num_is_nat0_base 10 "${2-}" || return M_EX_USAGE
 
@@ -12209,7 +12212,7 @@ __sx_arr_bind() {
 					M_STR_APPEND([|Q_chain|], [|"${Q_vn}-${Q_seg}_${Q_m}"|], [| |])
 				esac
 
-				M_NUM_INCR([|Q_m|])
+				M_NUM_INCRM1([|Q_m|])
 
 				case "${Q_m}" in
 					"${Q_n}") Q_bind="${Q_rest}";;
@@ -12224,25 +12227,16 @@ __sx_arr_bind() {
 			?*)
 				Q_seg="${Q_bind}"
 				Q_m=0
-				eval "Q_n=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
 
 				case "${Q_seg}" in */*)
 					Q_m="${Q_seg%%/*}"
 					Q_seg="${Q_seg#*/}"
 				esac
 
-				case "${Q_seg}" in [1-9]*)
-					Q_n="${Q_seg%%[!0-9]*}"
-					Q_seg="${Q_seg#"${Q_n}"}"
-				esac
-
 				M_STR_APPEND([|Q_chain|], [|"${Q_vn}-${Q_seg}_${Q_m}"|], [| |])
-				M_NUM_INCR([|Q_m|])
+				M_NUM_INCRM1([|Q_m|])
 
-				case "${Q_m}" in
-					"${Q_n}") Q_bind=;;
-					*) Q_bind="${Q_m}/${Q_n}${Q_seg}";;
-				esac
+				Q_bind="${Q_m}/${Q_seg}"
 				;;
 			*)
 				Q_sts=1

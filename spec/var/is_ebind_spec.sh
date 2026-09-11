@@ -31,7 +31,7 @@ Describe 'sx_var_is_ebind'
     End
 
     It '数値プレフィックス付きの要素を許可すること'
-        When call sx_var_is_ebind "1a:b" "3:" "v:2v:" "3name"
+        When call sx_var_is_ebind "1a:b" "3:" "v:2v:"
         The status should be success
     End
 
@@ -41,12 +41,22 @@ Describe 'sx_var_is_ebind'
     End
 
     It 'M が 0 の場合を許可すること'
-        When call sx_var_is_ebind "0/3a" "a:0/2b:c"
+        When call sx_var_is_ebind "0/3a:b" "a:0/2b:c"
+        The status should be success
+    End
+
+    It '末尾の無限 rest セグメント（分母省略）を許可すること'
+        When call sx_var_is_ebind "3/arr" "0/unbounded" "a:3/arr" "3/arr2" "3/_x"
         The status should be success
     End
 
     It '末尾の要素が数字で始まる場合は拒否すること'
-        When call sx_var_is_ebind "a:2b" "3" "3a:1/2"
+        When call sx_var_is_ebind "a:2b" "3" "3a:1/2" "3name" "2b"
+        The status should be failure
+    End
+
+    It '末尾の M/N レンジ（分母あり）を拒否すること'
+        When call sx_var_is_ebind "3/4a" "a:3/4a" "0/3a" "0/2147483648a" "2/10a"
         The status should be failure
     End
 
@@ -65,6 +75,11 @@ Describe 'sx_var_is_ebind'
         The status should be failure
     End
 
+    It '中間の分母省略（M/名前）を拒否すること'
+        When call sx_var_is_ebind "3/arr:b" "a:3/arr:b" "a:3/b:c"
+        The status should be failure
+    End
+
     It '複数桁のカウントを許可すること'
         When call sx_var_is_ebind "12v:x" "999999999v:"
         The status should be success
@@ -80,13 +95,13 @@ Describe 'sx_var_is_ebind'
         The status should be success
     End
 
-    It 'SX_CFG_NUM_RANGE を超えるカウントを拒否すること'
-        When call sx_var_is_ebind "2147483648v:" "99999999999999999999999v:" "0/2147483648a"
-        The status should be failure
+    It '大きな値のカウントを許可すること'
+        When call sx_var_is_ebind "2147483648v:" "99999999999999999999999v:" "99999999999999999999999/arr"
+        The status should be success
     End
 
-    It 'SX_CFG_NUM_RANGE の境界値のカウントを許可すること'
-        When call sx_var_is_ebind "2147483647v:" "0/2147483647a"
+    It '大きな M/N レンジを許可すること'
+        When call sx_var_is_ebind "2147483647v:" "0/2147483647a:b"
         The status should be success
     End
 

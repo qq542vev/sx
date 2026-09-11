@@ -26,7 +26,7 @@ Describe 'sx_arr_bind'
             unset br cr
             When call sx_arr_bind br cr "2a:rest" A B C
             The status should be success
-            The variable br should equal "1/2147483647rest"
+            The variable br should equal "1/rest"
             The variable cr should equal "A-a_0 B-a_1 C-rest_0"
         End
 
@@ -42,7 +42,7 @@ Describe 'sx_arr_bind'
             unset br cr
             When call sx_arr_bind br cr "a::b" v1 v2 v3
             The status should be success
-            The variable br should equal "1/2147483647b"
+            The variable br should equal "1/b"
             The variable cr should equal "v1-a v3-b_0"
         End
 
@@ -50,7 +50,7 @@ Describe 'sx_arr_bind'
             unset br cr
             When call sx_arr_bind br cr "a" p1 p2
             The status should be success
-            The variable br should equal "2/2147483647a"
+            The variable br should equal "2/a"
             The variable cr should equal "p1-a_0 p2-a_1"
         End
 
@@ -126,12 +126,12 @@ Describe 'sx_arr_bind'
     End
 
     Context 'SX_CFG_NUM_RANGE が 64 のとき'
-        It '裸セグメントの累積上限が 64bit 相当になること'
+        It '無限 rest セグメントの残り bind が NUM_RANGE 非依存であること'
             unset br cr
             SX_CFG_NUM_RANGE=64
             When call sx_arr_bind br cr "a" p1 p2
             The status should be success
-            The variable br should equal "2/9223372036854775807a"
+            The variable br should equal "2/a"
             The variable cr should equal "p1-a_0 p2-a_1"
         End
 
