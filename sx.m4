@@ -173,8 +173,6 @@ readonly SX_EX_MSG78='EX_CONFIG(78): configuration error'
 
 readonly SX_EX_MAP='OK:0 USAGE:64 DATAERR:65 NOINPUT:66 NOUSER:67 NOHOST:68 UNAVAILABLE:69 SOFTWARE:70 OSERR:71 OSFILE:72 CANTCREAT:73 IOERR:74 TEMPFAIL:75 PROTOCOL:76 NOPERM:77 CONFIG:78'
 
-readonly SX_VAR_BIND_QUOTE=1
-
 readonly SX_STR_SOH=$'\cA'
 readonly SX_STR_STX=$'\cB'
 readonly SX_STR_ETX=$'\cC'
@@ -1482,8 +1480,8 @@ __sx_arg_find_cb() {
 		# $1=i, $2=match_cnt, $3=txt_flg, $4=bind, $5=cb, $6=value
 		"${5}" "${6}" "${1}" "${2}" && {
 			case "${3}" in
-				0) __sx_var_bind Q_bind "${4}" "${1}" 0;;
-				*) __sx_var_bind Q_bind "${4}" "${6}" "${SX_VAR_BIND_QUOTE}";;
+				0) __sx_var_ubind Q_bind "${4}" "${1}";;
+				*) __sx_var_bind Q_bind "${4}" "${6}";;
 			esac
 
 			set -- "${1}" "$((${2} + 1))" "${3}" "${Q_bind}" "${5}"
@@ -1774,7 +1772,7 @@ __sx_arg_isep_cb() {
 		case "$((${1} < ${8} && ${9} & SX_ARG_ISEP_PRE))" in 1)
 			if "${6}" Q_ret 0 "$((${1} + 1))" "${2}"; then
 				case "${Q_ret+X}" in X)
-					__sx_var_bind Q_bind "${5}" "${Q_ret}" "${SX_VAR_BIND_QUOTE}"
+					__sx_var_bind Q_bind "${5}" "${Q_ret}"
 					eval 'shift 5;' set -- "$((${1} + 1))" "${2}" 0 "${4}" "${Q_bind}" '"${@}"';;
 				*)
 					eval 'shift 2;' set -- "$((${1} + 1))" "$((${2} + 1))" '"${@}"';;
@@ -1804,7 +1802,7 @@ __sx_arg_isep_cb() {
 			case "$((${1} < ${8} && 0 < ${4} && ${4} % ${7} == 0))" in 1)
 				if "${6}" Q_ret "${4}" "$((${1} + 1))" "${2}"; then
 					case "${Q_ret+X}" in X)
-						__sx_var_bind Q_bind "${5}" "${Q_ret}" "${SX_VAR_BIND_QUOTE}"
+						__sx_var_bind Q_bind "${5}" "${Q_ret}"
 
 						set -- "$((${1} + 1))" "${2}" 0 "${4}" "${Q_bind}" "${6}" "${7}" "${8}" "${9}" "${10}";;
 					*)
@@ -1815,7 +1813,7 @@ __sx_arg_isep_cb() {
 				fi
 			esac
 
-			__sx_var_bind Q_bind "${5}" "${10}" "${SX_VAR_BIND_QUOTE}" || :
+			__sx_var_bind Q_bind "${5}" "${10}" || :
 			set -- "${1}" "${2}" "${3}" "${4}" "${Q_bind}" "${6}" "${7}" "${8}" "${9}"
 			unset Q_ret Q_bind
 		done
@@ -1829,7 +1827,7 @@ __sx_arg_isep_cb() {
 		case "$((${1} < ${8} && ${9} & SX_ARG_ISEP_POST && (${4} + 1) % ${7} == 0))" in 1)
 			if "${6}" Q_ret "$((${4} + 1))" "$((${1} + 1))" "${2}"; then
 				case "${Q_ret+X}" in X)
-					__sx_var_bind Q_bind "${5}" "${Q_ret}" "${SX_VAR_BIND_QUOTE}" || :
+					__sx_var_bind Q_bind "${5}" "${Q_ret}" || :
 				esac
 			else
 				set -- "${1}" "${2}" "${?}"
@@ -1902,7 +1900,7 @@ __sx_arg_isep_cb() {
 		# PRE (先頭セパレータ)
 		case "$((Q_flg & SX_ARG_ISEP_PRE && Q_r == 0))" in 1)
 			case "${1-}" in :*)
-				__sx_var_bind Q_bind "${Q_bind}" "${1#:}" "${SX_VAR_BIND_QUOTE}" || {
+				__sx_var_bind Q_bind "${Q_bind}" "${1#:}" || {
 					set -- "${Q_stat}"
 					unset CLEANUP
 					return "${1}"
@@ -1928,7 +1926,7 @@ __sx_arg_isep_cb() {
 				(Q_i - Q_r - 1) % ${Q_int#-} == 0
 			))" in 1)
 				case "${1-}" in :*)
-					__sx_var_bind Q_bind "${Q_bind}" "${1#:}" "${SX_VAR_BIND_QUOTE}" || {
+					__sx_var_bind Q_bind "${Q_bind}" "${1#:}" || {
 						set -- "${Q_stat}"
 						unset CLEANUP
 						return "${1}"
@@ -1939,7 +1937,7 @@ __sx_arg_isep_cb() {
 			esac
 
 			# 要素本体をbind
-			__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" "${SX_VAR_BIND_QUOTE}" || {
+			__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || {
 				set -- "${Q_stat}"
 				unset CLEANUP
 				return "${1}"
@@ -1948,7 +1946,7 @@ __sx_arg_isep_cb() {
 
 		# POST (末尾セパレータ)
 		case "$((Q_post))${1-}" in 1:*)
-			__sx_var_bind Q_bind "${Q_bind}" "${1#:}" "${SX_VAR_BIND_QUOTE}" || :;;
+			__sx_var_bind Q_bind "${Q_bind}" "${1#:}" || :;;
 		esac
 
 		set -- "${Q_stat}"
@@ -2236,7 +2234,7 @@ __sx_arg_map() {
 		esac
 
 		case "${Q_ret+X}" in X)
-			__sx_var_bind Q_fmt "${3}" "${Q_ret}"
+			__sx_var_ubind Q_fmt "${3}" "${Q_ret}"
 
 			set -- "${1}" "${2}" "${Q_fmt}" "${4}"
 		esac
@@ -2451,7 +2449,7 @@ __sx_arg_pad_cb() {
 
 			case "${Q_ret+X}" in
 				X)
-					__sx_var_bind Q_bind "${5}" "${Q_ret}" "${SX_VAR_BIND_QUOTE}"
+					__sx_var_bind Q_bind "${5}" "${Q_ret}"
 					eval 'shift 5;' set -- "$((${1} + 1))" "$((${2} + 1))" "${3}" "${4}" "${Q_bind}" '"${@}"'
 					;;
 				*) eval 'shift 3;' set -- "${1}" "$((${2} + 1))" "$((${3} + 1))" '"${@}"';;
@@ -2472,7 +2470,7 @@ __sx_arg_pad_cb() {
 			continue
 		esac
 
-		__sx_var_bind Q_bind "${5}" "${Q_arg}" "${SX_VAR_BIND_QUOTE}" || break
+		__sx_var_bind Q_bind "${5}" "${Q_arg}" || break
 		eval 'shift 5;' set -- "${1}" "${2}" "${3}" "${4}" "${Q_bind}" '"${@}"'
 	done
 
@@ -2489,7 +2487,7 @@ __sx_arg_pad_cb() {
 
 			case "${Q_ret+X}" in
 				X)
-					__sx_var_bind Q_bind "${5}" "${Q_ret}" "${SX_VAR_BIND_QUOTE}"
+					__sx_var_bind Q_bind "${5}" "${Q_ret}"
 					eval 'shift 5;' set -- "$((${1} + 1))" "$((${2} + 1))" "${3}" "${4}" "${Q_bind}" '"${@}"'
 					;;
 				*) eval 'shift 3;' set -- "${1}" "$((${2} + 1))" "$((${3} + 1))" '"${@}"';;
@@ -2710,7 +2708,7 @@ __sx_arg_resize() {
 			break
 		esac
 
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" "${SX_VAR_BIND_QUOTE}" || break
+		__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || break
 		M_NUM_DECR([|Q_shape|])
 	done
 
@@ -2910,8 +2908,8 @@ __sx_arg_rfind_cb() {
 		# コールバックを実行。一時変数を使わずに、eval で間接参照する。
 		if eval '"${4}"' "\"\${$((${1} + 8))}\"" "${1}" "${2}"; then
 			case "${5}" in
-				0) __sx_var_bind Q_bind "${3}" "${1}";;
-				*) eval __sx_var_bind Q_bind "${3}" "\"\${$((${1} + 8))}\"" "${SX_VAR_BIND_QUOTE}";;
+				0) __sx_var_ubind Q_bind "${3}" "${1}";;
+				*) eval __sx_var_bind Q_bind "${3}" "\"\${$((${1} + 8))}\"";;
 			esac
 
 			eval 'shift 3;' set -- "$((${1} - 1))" "$((${2} + 1))" '"${Q_bind}"' '"${@}"'
@@ -3190,18 +3188,23 @@ __sx_var_bind_init() {
 ### sx_var_bind - バインド状態に従って値を割り当てる
 ##
 ## 使い方:
-##   sx_var_bind 結果変数名 バインド形式 値 [フラグ]
+##   sx_var_bind 結果変数名 バインド形式 [値1 [値2 ...]]
 ##
 ## 説明:
 ##   バインド形式（a:b:c 等）を解析し、値を適切な変数に割り当てる。
 ##   割り当て後、残りのバインド形式が結果変数に格納される。
-##   フラグに SX_VAR_BIND_QUOTE (1) を指定すると、リスト蓄積時に値をクオートする。
-##   蓄積スロット（数値プレフィックス付き・最後の変数）は、既存値が空文字列の
-##   場合（bind 未到達を含む）はセパレータを付加せず蓄積する。
+##   複数の値を一度に割り当てることができ、各値はバインド形式の
+##   セグメントに対して順次処理される。バインド先が枯渇し、未処理の
+##   値が残る場合は終了ステータス 1 を返す。
+##   蓄積スロット（数値プレフィックス付き・最後の変数）へ値を蓄積する際は
+##   値をクォートする。クォートせずに蓄積したい場合は sx_var_ubind を
+##   使用する。代入スロット（名前:残り）への代入は値のクォートを行わない。
+##   蓄積スロットは、既存値が空文字列の場合（bind 未到達を含む）は
+##   セパレータを付加せず蓄積する。
 ##
 ## 終了ステータス:
 ##    0  割り当て成功 (SX_EX_OK)
-##    1  バインド先がもうない（バインド形式が空）
+##    1  バインド先がもうない（データがバインド先より多い）
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
@@ -3219,68 +3222,145 @@ sx_var_bind() {
 
 	__sx_var_is_bindable "${2-}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${4+"${4}"} || return M_EX_USAGE
-
 	__sx_var_bind "${@}"
 }
 
-M_RENAME_QI([|dnl
-### __sx_var_bind - バインド状態に従って値を割り当てる（内部用）
+### sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし）
 ##
 ## 使い方:
-##   __sx_var_bind 結果変数名 バインド形式 値 [フラグ]
+##   sx_var_ubind 結果変数名 バインド形式 [値1 [値2 ...]]
 ##
 ## 説明:
-##   バインド形式（a:b:c 等）を解析し、値を適切な変数に割り当てる。
-##   割り当て後、残りのバインド形式が結果変数に格納される。
-##   フラグに SX_VAR_BIND_QUOTE (1) を指定すると、リスト蓄積時に値をクオートする。
+##   sx_var_bind と同様に複数の値をバインド形式に従って割り当てる。
+##   蓄積スロット（数値プレフィックス付き・最後の変数）への蓄積時に
+##   値のクォートを行わない点のみが sx_var_bind と異なる。
+##   代入スロット（名前:残り）への代入は sx_var_bind と同様に生の値となる。
+##
+## 終了ステータス:
+##    0  割り当て成功 (SX_EX_OK)
+##    1  バインド先がもうない（データがバインド先より多い）
+##   64  引数不正 (SX_EX_USAGE)
+##   77  変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_var_ubind() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_ubind "${@}" || return; return 0;; esac
+
+	# 結果変数名自体の妥当性と書き込み権限をチェック
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+
+	__sx_var_is_bind "${2-}" || return M_EX_USAGE
+
+	__sx_var_is_bindable "${2-}" || return M_EX_NOPERM
+
+	__sx_var_ubind "${@}"
+}
+
+M_RENAME_QI([|dnl
+### __sx_var_bind - バインド状態に従って値を割り当てる（クォートあり・内部用）
+##
+## 使い方:
+##   __sx_var_bind 結果変数名 バインド形式 [値1 [値2 ...]]
+##
+## 説明:
+##   sx_var_bind の内部実装。リスト蓄積時に値をクォートする。
+##   引数の検証を行わない。
 ##
 ## 終了ステータス:
 ##    0  割り当て成功
-##    1  バインド先がもうない（バインド形式が空）
-
-define([|CLEANUP|], [|Q_seg Q_v Q_c Q_n|])dnl
+##    1  バインド先がもうない（データがバインド先より多い）
 
 __sx_var_bind() {
-	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
+	__sx_var_bind0 1 "${@}"
+}
 
-	case "${2}" in '')
-		return 1
-	esac
+### __sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし・内部用）
+##
+## 使い方:
+##   __sx_var_ubind 結果変数名 バインド形式 [値1 [値2 ...]]
+##
+## 説明:
+##   sx_var_ubind の内部実装。リスト蓄積時に値をクォートしない。
+##   引数の検証を行わない。
+##
+## 終了ステータス:
+##    0  割り当て成功
+##    1  バインド先がもうない（データがバインド先より多い）
 
-	Q_seg="${2%%:*}"
+__sx_var_ubind() {
+	__sx_var_bind0 0 "${@}"
+}
 
-	case "${Q_seg}" in *["${SX_STR_ALPHA}_"]*)
-		Q_v="${3}"
+define([|CLEANUP|], [|Q_res Q_bind Q_esc Q_arg Q_seg Q_v Q_c Q_n|])dnl
 
-		case "$((${4} & SX_VAR_BIND_QUOTE))" in [!0]*)
-			case "${3}" in
-				*"'"*) __sx_str_sub Q_v "${3}" "'" "'\\''";;
-				*) Q_v="${3}";;
-			esac
+### __sx_var_bind0 - 複数の値をバインド状態に従って順次割り当てる
+##
+## 使い方:
+##   __sx_var_bind0 エスケープフラグ(1/0) 結果変数名 バインド形式 [値1 [値2 ...]]
+##
+## 説明:
+##   sx_var_bind / sx_var_ubind の共通コア実装。
+##   データ列を for で巡回し、1 データにつきバインド状態を 1 セグメント分
+##   進める。蓄積スロット（数値プレフィックス付き・最後の変数）は
+##   Q_esc に応じて値をクォートして累積する。
+##
+## 終了ステータス:
+##    0  データを全て割り当て、残りのバインド形式を結果変数に格納した
+##    1  バインド先が枯渇したままデータが残っている
 
-			M_STR_WRAP([|Q_v|], [|"'"|], [|"'"|])
+__sx_var_bind0() {
+	Q_esc="${1}"
+	Q_res="${2}"
+	Q_bind="${3-}"
+	shift 3
+
+	for Q_arg in "${@}"; do
+		case "${Q_bind}" in
+			'')
+				unset CLEANUP
+				return 1
 		esac
-	esac
 
-	case "${2}" in
-		:*) eval "${1}=\"\${2#*:}\"";;
-		[1-9]*:*)
-			Q_c="${2%%[!0-9]*}"
-			Q_n="${Q_seg#${Q_c}}"
+		Q_seg="${Q_bind%%:*}"
 
-			case "${Q_n}" in ?*)
-				eval "${Q_n}=\"\${${Q_n}-}\${${Q_n}:+ }\${Q_v}\""
+		case "${Q_seg}" in *["${SX_STR_ALPHA}_"]*)
+			Q_v="${Q_arg}"
+
+			case "${Q_esc}" in 1)
+				case "${Q_arg}" in
+					*"'"*) __sx_str_sub Q_v "${Q_arg}" "'" "'\\''";;
+					*) Q_v="${Q_arg}";;
+				esac
+
+				M_STR_WRAP([|Q_v|], [|"'"|], [|"'"|])
 			esac
+		esac
 
-			case "${Q_c}" in
-				1) eval "${1}=\"\${2#*:}\"";;
-				*) eval "${1}=\"$((${Q_c} - 1))${Q_n}:\${2#*:}\"";;
-			esac
-			;;
-		*:*) eval "${2%%:*}=\${3}; ${1}=\"\${2#*:}\"";;
-		*) eval "${2}=\"\${${2}-}\${${2}:+ }\${Q_v}\"; ${1}=\"\${2}\"";;
-	esac
+		case "${Q_bind}" in
+			:*) Q_bind="${Q_bind#*:}";;
+			[1-9]*:*)
+				Q_c="${Q_bind%%[!0-9]*}"
+				Q_n="${Q_seg#${Q_c}}"
+
+				case "${Q_n}" in ?*)
+					eval "${Q_n}=\"\${${Q_n}-}\${${Q_n}:+ }\${Q_v}\""
+				esac
+
+				case "${Q_c}" in
+					1) Q_bind="${Q_bind#*:}";;
+					*) __sx_num_sub1_nat0 Q_c "${Q_c}"
+					   Q_bind="${Q_c}${Q_n}:${Q_bind#*:}";;
+				esac
+				;;
+			*:*) eval "${Q_bind%%:*}=\${Q_arg}; Q_bind=\"\${Q_bind#*:}\"";;
+			*) eval "${Q_bind}=\"\${${Q_bind}-}\${${Q_bind}:+ }\${Q_v}\"";;
+		esac
+	done
+
+	eval "${Q_res}=\"\${Q_bind}\""
 
 	unset CLEANUP
 }
@@ -3550,11 +3630,8 @@ __sx_var_is_bind() {
 ##    0  成功 (SX_EX_OK)
 ##    1  書き込み不可な変数が含まれる (SX_EX_NOPERM)
 ##   64  バインド形式が不正 (SX_EX_USAGE)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_var_is_bindable() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_bindable "${@}" || return; return 0;; esac
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
 	__sx_var_is_bind "${@}" || return M_EX_USAGE
 
@@ -5663,7 +5740,7 @@ __sx_num_divmod_int() {
 		M_STR_PREPEND([|Q_q|], [|-|])
 	esac
 
-	__sx_var_bind Q_bind "${1}" "${Q_q}" || {
+	__sx_var_ubind Q_bind "${1}" "${Q_q}" || {
 		unset CLEANUP
 		return M_EX_OK
 	}
@@ -5672,7 +5749,7 @@ __sx_num_divmod_int() {
 		M_STR_PREPEND([|Q_r|], [|-|])
 	esac
 
-	__sx_var_bind Q_bind "${Q_bind}" "${Q_r}" || :
+	__sx_var_ubind Q_bind "${Q_bind}" "${Q_r}" || :
 
 	unset CLEANUP
 }
@@ -5777,7 +5854,7 @@ __sx_num_divmod_nat0() {
 		__sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_u_}"
 		__sx_num_divmod_nat0_r_=0
 
-		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
+		__sx_var_ubind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
 			unset CLEANUP
 			return M_EX_OK
 		}
@@ -5789,7 +5866,7 @@ __sx_num_divmod_nat0() {
 			*) ! :
 		esac
 	then
-		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
+		__sx_var_ubind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
 			unset CLEANUP
 			return M_EX_OK
 		}
@@ -5827,7 +5904,7 @@ __sx_num_divmod_nat0() {
 	elif __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_divmod_nat0_u_}"; then
 		__sx_num_divmod_nat0_q_=$((__sx_num_divmod_nat0_u_ / __sx_num_divmod_nat0_v_))
 
-		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
+		__sx_var_ubind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
 			unset CLEANUP
 			return M_EX_OK
 		}
@@ -5905,7 +5982,7 @@ __sx_num_divmod_nat0() {
 			__sx_num_divmod_nat0_q_="M_STR_LTRIM([|__sx_num_divmod_nat0_q_|], [|[!0]|])"
 		esac
 
-		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
+		__sx_var_ubind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
 			unset CLEANUP
 			return M_EX_OK
 		}
@@ -6143,7 +6220,7 @@ __sx_num_divmod_nat0() {
 			__sx_num_divmod_nat0_q_="M_STR_LTRIM([|__sx_num_divmod_nat0_q_|], [|[!0]|])"
 		esac
 
-		__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
+		__sx_var_ubind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
 			unset CLEANUP
 			return M_EX_OK
 		}
@@ -6173,7 +6250,7 @@ __sx_num_divmod_nat0() {
 		esac
 	fi
 
-	__sx_var_bind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_r_:-0}" || :
+	__sx_var_ubind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_r_:-0}" || :
 
 	unset CLEANUP
 }
@@ -6253,7 +6330,7 @@ __sx_num_edivmod_int() {
 				M_STR_PREPEND([|Q_q|], [|-|])
 			esac
 
-			__sx_var_bind Q_bind "${1}" "${Q_q}" || {
+			__sx_var_ubind Q_bind "${1}" "${Q_q}" || {
 				unset CLEANUP
 				return M_EX_OK
 			}
@@ -6262,14 +6339,14 @@ __sx_num_edivmod_int() {
 			;;
 		[!0]*:0:10 | [!0]*:*:01) Q_q="-${Q_q}";&
 		*)
-			__sx_var_bind Q_bind "${1}" "${Q_q}" || {
+			__sx_var_ubind Q_bind "${1}" "${Q_q}" || {
 				unset CLEANUP
 				return M_EX_OK
 			}
 			;;
 	esac
 
-	__sx_var_bind Q_bind "${Q_bind}" "${Q_r}" || :
+	__sx_var_ubind Q_bind "${Q_bind}" "${Q_r}" || :
 
 	unset CLEANUP
 }
@@ -11529,7 +11606,7 @@ __sx_str_tr() {
 	Q_cnt=0
 
 	case "${3}" in
-		'') __sx_var_bind Q_bind "${Q_bind}" "${Q_str}";;
+		'') __sx_var_ubind Q_bind "${Q_bind}" "${Q_str}";;
 		*)
 			__sx_str_chunk Q_to "${4}" 1
 			eval set -- "${Q_to}"
@@ -11553,7 +11630,7 @@ __sx_str_tr() {
 					M_NUM_INCR([|Q_cnt|])
 				done
 
-				__sx_var_bind Q_bind "${Q_bind}" "${Q_str}${Q_out}" "${SX_VAR_BIND_QUOTE}"
+				__sx_var_bind Q_bind "${Q_bind}" "${Q_str}${Q_out}"
 			else
 				while M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
 					Q_pre="${Q_str%%["${Q_from}"]*}"
@@ -11571,10 +11648,10 @@ __sx_str_tr() {
 					M_NUM_INCR([|Q_cnt|])
 				done
 
-				__sx_var_bind Q_bind "${Q_bind}" "${Q_out}${Q_str}" "${SX_VAR_BIND_QUOTE}"
+				__sx_var_bind Q_bind "${Q_bind}" "${Q_out}${Q_str}"
 			fi
 			;;
-	esac && __sx_var_bind Q_bind "${Q_bind}" "${Q_cnt}" "${SX_VAR_BIND_QUOTE}" || :
+	esac && __sx_var_bind Q_bind "${Q_bind}" "${Q_cnt}" || :
 
 	unset CLEANUP
 }
