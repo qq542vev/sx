@@ -63,21 +63,21 @@ define([|M_RENAME_QI|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Z
 
 define([|__M_QUOTE_PREPEND|], [|dnl
 	case $3 in
-		*"'"*) __sx_str_sub $1_bind_esc_ $3 "'" "'\\''";;
+		*"'"*) __sx_str_sub $1_bind_esc_: $3 "'" "'\\''";;
 		*) $1_bind_esc_=$3 ;;
 	esac
 	$2="'${$1_bind_esc_}'${$2:+ }${$2}"|])
 
 define([|__M_QUOTE_APPEND|], [|dnl
 	case $3 in
-		*"'"*) __sx_str_sub $1_bind_esc_ $3 "'" "'\\''";;
+		*"'"*) __sx_str_sub $1_bind_esc_: $3 "'" "'\\''";;
 		*) $1_bind_esc_=$3 ;;
 	esac
 	$2="${$2}${$2:+ }'${$1_bind_esc_}'"|])
 
 define([|M_STR_QUOTE|], [|dnl
 	case $2 in
-		*"'"*) __sx_str_sub $1 $2 "'" "'\\''";;
+		*"'"*) __sx_str_sub $1: $2 "'" "'\\''";;
 		*) $1=$2;;
 	esac
 
@@ -2664,8 +2664,8 @@ __sx_arg_resize() {
 	: "${Q_bind=}" "${Q_shape:=${#}}" "${Q_val=}" "${Q_flg:=0}"
 
 	__sx_var_bind_init "${Q_bind}"
-	__sx_str_sub Q_shape "${Q_shape}" : '*'
-	__sx_str_sub Q_tmp "${Q_shape}" -1 1
+	__sx_str_sub Q_shape: "${Q_shape}" : '*'
+	__sx_str_sub Q_tmp: "${Q_shape}" -1 1
 	Q_total=$((${Q_tmp}))
 
 	# 形状解析
@@ -2673,7 +2673,7 @@ __sx_arg_resize() {
 		Q_inferred=$((Q_total == 0 ? 0 : (${#} + Q_total - 1) / Q_total))
 
 		Q_total=$((Q_total * Q_inferred))
-		__sx_str_sub Q_shape "${Q_shape}" -1 "${Q_inferred}"
+		__sx_str_sub Q_shape: "${Q_shape}" -1 "${Q_inferred}"
 	esac
 
 	__sx_arg_pad Q_padded "$((Q_total * (${Q_flg} & SX_ARG_RESIZE_PAD_LEFT ? -1 : 1)))" "${Q_val}" ::: "${@}"
@@ -2773,7 +2773,7 @@ __sx_arg_range() {
 	case "${Q_idxs}" in
 		'') M_VAR_SET([|${Q_res}|], [||]);;
 		*)
-			__sx_str_sub Q_tmp "${Q_idxs}" ' ' '}" "${'
+			__sx_str_sub Q_tmp: "${Q_idxs}" ' ' '}" "${'
 			M_VAR_SET([|${Q_res}|], [|\"\${${Q_tmp}}\"|])
 			;;
 	esac
@@ -3335,7 +3335,7 @@ __sx_var_bind0() {
 
 				case "${Q_vn}" in ?*)
 					case "${Q_esc}${Q_arg}" in
-						1*"'"*) __sx_str_sub Q_arg "${Q_arg}" "'" "'\\''";&
+						1*"'"*) __sx_str_sub Q_arg: "${Q_arg}" "'" "'\\''";&
 						1*) M_STR_WRAP([|Q_arg|], [|"'"|], [|"'"|]);;
 					esac
 
@@ -3353,7 +3353,7 @@ __sx_var_bind0() {
 			*:*) eval "${Q_bind%%:*}=\"\${Q_arg}\" Q_bind=\"\${Q_bind#*:}\"";;
 			?*)
 				case "${Q_esc}${Q_arg}" in
-					1*"'"*) __sx_str_sub Q_arg "${Q_arg}" "'" "'\\''";&
+					1*"'"*) __sx_str_sub Q_arg: "${Q_arg}" "'" "'\\''";&
 					1*) M_STR_WRAP([|Q_arg|], [|"'"|], [|"'"|]);;
 				esac
 
@@ -3438,11 +3438,11 @@ __sx_var_copy() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
 			*=*)
-				sx_str_sub Q_dsts "${Q_arg%=*}" = ' '
+				sx_str_sub Q_dsts: "${Q_arg%=*}" = ' '
 				eval __sx_var_unset "${Q_dsts}"
 				;;
 			*-*)
-				sx_str_sub Q_dsts "${Q_arg#*-}" - ' '
+				sx_str_sub Q_dsts: "${Q_arg#*-}" - ' '
 				eval __sx_var_unset "${Q_dsts}"
 				;;
 		esac
@@ -4215,10 +4215,10 @@ __sx_var_list_copy() {
 	for Q_chain in "${@}"; do
 		case "${Q_chain}" in
 			*=*)
-				sx_str_sub Q_args "${Q_chain}" = ' '
+				sx_str_sub Q_args: "${Q_chain}" = ' '
 				eval __sx_arg_rquote Q_args "${Q_args}"
 				;;
-			*) sx_str_sub Q_args "${Q_chain}" - ' ';;
+			*) sx_str_sub Q_args: "${Q_chain}" - ' ';;
 		esac
 
 		eval set -- "${Q_args}"
@@ -9314,7 +9314,7 @@ __sx_str_escape() {
 
 	__sx_glob_bracket Q_gs "${3}"
 
-	Q_cb_se="${4}" Q_cb_ee="${5}" __sx_str_sub "${1}" "${2}" "${Q_gs}" __sx_str_escape_cb '' "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+	Q_cb_se="${4}" Q_cb_ee="${5}" __sx_str_sub "${1}:" "${2}" "${Q_gs}" __sx_str_escape_cb '' "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
 
 	unset CLEANUP
 }
@@ -11122,10 +11122,12 @@ __sx_str_strim() {
 ### sx_str_sub - 文字列内のパターンを置換する
 ##
 ## 使い方:
-##   sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限 [フラグ]]]]]
+##   sx_str_sub バインド形式 [元文字列 [検索パターン [置換文字列 [回数制限 [フラグ]]]]]
 ##
 ## 説明:
-##   元文字列の中に含まれる検索パターンを、置換文字列に置き換えて結果変数に格納する。
+##   元文字列の中に含まれる検索パターンを、置換文字列に置き換える。
+##   バインド形式で置換結果と置換回数を取得できる。
+##   例: res:（結果のみ）、res:cnt（結果と回数）。
 ##   省略された引数は、元文字列・検索パターン・置換文字列が空文字列、
 ##   回数制限が 2147483647（無制限）として扱われる。
 ##   検索パターンが空文字列の場合は、各文字の間および両端に置換文字列を挿入する。
@@ -11150,9 +11152,9 @@ sx_str_sub() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -11164,7 +11166,7 @@ sx_str_sub() {
 ### __sx_str_sub - 文字列内のパターンを置換する（ディスパッチャ）
 ##
 ## 使い方:
-##   __sx_str_sub 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限 [フラグ]]]]]
+##   __sx_str_sub バインド形式 [元文字列 [検索パターン [置換文字列 [回数制限 [フラグ]]]]]
 ##
 ## 説明:
 ##   sx_str_sub の内部実装。フラグに応じてリテラル/Glob 置換または
@@ -11197,11 +11199,14 @@ M_RENAME_QI([|dnl
 ### __sx_str_sub_cb - 文字列内のパターンをコールバック置換する（内部用）
 ##
 ## 使い方:
-##   __sx_str_sub_cb 結果変数名 [元文字列 [検索パターン [コールバック [回数制限 [フラグ]]]]]
+##   __sx_str_sub_cb バインド形式 [元文字列 [検索パターン [コールバック [回数制限 [フラグ]]]]]
 ##
 ## 説明:
 ##   __sx_str_sub からコールバックモードを抽出した内部関数。
 ##   パターンが空の場合は __sx_str_isep に委譲する。
+##   バインド形式で置換結果と成功置換回数を取得できる。
+##   コールバックが非0を返した場合、残リミット(${5})を 0 にして
+##   以降の置換を抑止する。置換回数(${8})は成功数のまま残るため、そのまま bind できる。
 
 define([|CLEANUP|], [|Q_ret|])dnl
 
@@ -11212,19 +11217,17 @@ __sx_str_sub_cb() {
 		M_STR_EQ([|"${3}"|], [|''|]) ||
 		{ M_NUM_BOOL([|${6}|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
 	then
-		__sx_str_sub_isep_adapt_cb_="${4}" __sx_str_isep "${1}:" "${2}" __sx_str_sub_isep_adapt "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST | SX_STR_ISEP_CB))" || return
+		__sx_str_sub_isep_adapt_cb_="${4}" __sx_str_isep "${1}" "${2}" __sx_str_sub_isep_adapt "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST | SX_STR_ISEP_CB))" || return
 	elif M_NUM_LE([|0|], [|${5}|]); then
 		if M_STR_EQ([|"${6}"|], [|0|]); then
 			while M_STR_HAS([|"${2}"|], [|"${3}"|]) && M_NUM_LT([|${8}|], [|${5}|]); do
 				set -- "${@}" "${2%%"${3}"*}"
 				set -- "${1}" "${2#*"${3}"}" "${3}" "${4}" "${5}" "${6}" "${7}${10}" "$((${8} + 1))" "${9}${10}"
 
-				"${4}" Q_ret "${3}" "${9}" "${2}" "${8}" || {
-					set -- "${@}" "${?}"
-					Q_ret="${3}"
-				}
+				"${4}" Q_ret "${3}" "${9}" "${2}" "${8}" && \
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${Q_ret-${3}}" "${8}" "${9}${3}" || \
+				set -- "${1}" "${2}" "${3}" "${4}" 0 "${6}" "${7}${3}" "$((${8} - 1))" "${9}${3}" "${?}"
 
-				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${Q_ret-${3}}" "$((${10-0} ? ${5} : ${8}))" "${9}${3}" ${10+"${10}"}
 				unset CLEANUP
 			done
 		else
@@ -11233,17 +11236,19 @@ __sx_str_sub_cb() {
 				set -- "${@}" "${2#"${10}"}"
 				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}${10}" "$((${8} + 1))" "${9}${10}" "${12%"${11}"}"
 
-				"${4}" Q_ret "${10}" "${9}" "${2}" "${8}" || {
-					set -- "${@}" "${?}"
-					Q_ret="${10}"
-				}
+				"${4}" Q_ret "${10}" "${9}" "${2}" "${8}" && \
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${Q_ret-${10}}" "${8}" "${9}${10}" || \
+				set -- "${1}" "${2}" "${3}" "${4}" 0 "${6}" "${7}${10}" "$((${8} - 1))" "${9}${10}" "${?}"
 
-				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${Q_ret-${10}}" "$((${11-0} ? ${5} : ${8}))" "${9}${10}" ${11+"${11}"}
 				unset CLEANUP
 			done
 		fi
 
-		M_VAR_SET([|${1}|], [|${7}${2}|])
+		__sx_var_bind_init "${1}"
+		__sx_var_bind Q_ret "${1}" "${7}${2}" "${8}" || :
+
+		unset CLEANUP
+		return "${10-0}"
 	else
 		set -- "${1}" "${2}" "${3}" "${4}" "${5#-}" "${6}" "${7}" "${8}" "${9}"
 
@@ -11252,12 +11257,10 @@ __sx_str_sub_cb() {
 				set -- "${@}" "${2##*"${3}"}"
 				set -- "${1}" "${2%"${3}"*}" "${3}" "${4}" "${5}" "${6}" "${10}${7}" "$((${8} + 1))" "${10}${9}"
 
-				"${4}" Q_ret "${3}" "${2}" "${9}" "${8}" || {
-					set -- "${@}" "${?}"
-					Q_ret="${3}"
-				}
+				"${4}" Q_ret "${3}" "${2}" "${9}" "${8}" && \
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_ret-${3}}${7}" "${8}" "${3}${9}" || \
+				set -- "${1}" "${2}" "${3}" "${4}" 0 "${6}" "${3}${7}" "$((${8} - 1))" "${3}${9}" "${?}"
 
-				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_ret-${3}}${7}" "$((${10-0} ? ${5} : ${8}))" "${3}${9}" ${10+"${10}"}
 				unset CLEANUP
 			done
 		else
@@ -11266,65 +11269,81 @@ __sx_str_sub_cb() {
 				set -- "${@}" "${2%"${10}"}"
 				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${10}${7}" "$((${8} + 1))" "${10}${9}" "${12#"${11}"}"
 
-				"${4}" Q_ret "${10}" "${2}" "${9}" "${8}" || {
-					set -- "${@}" "${?}"
-					Q_ret="${10}"
-				}
+				"${4}" Q_ret "${10}" "${2}" "${9}" "${8}" && \
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_ret-${10}}${7}" "${8}" "${10}${9}" || \
+				set -- "${1}" "${2}" "${3}" "${4}" 0 "${6}" "${10}${7}" "$((${8} - 1))" "${10}${9}" "${?}"
 
-				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_ret-${10}}${7}" "$((${11-0} ? ${5} : ${8}))" "${10}${9}" ${11+"${11}"}
 				unset CLEANUP
 			done
 		fi
 
-		M_VAR_SET([|${1}|], [|${2}${7}|])
-	fi
+		__sx_var_bind_init "${1}"
+		__sx_var_bind Q_ret "${1}" "${2}${7}" "${8}" || :
 
-	return "${10-0}"
+		unset CLEANUP
+		return "${10-0}"
+	fi
 }
 |], [|str_sub_cb|])dnl
 
+M_RENAME_QI([|dnl
 ### __sx_str_sub_lit - 文字列内のパターンをリテラル/Glob置換する（内部用）
 ##
 ## 使い方:
-##   __sx_str_sub_lit 結果変数名 [元文字列 [検索パターン [置換文字列 [回数制限 [フラグ]]]]]
+##   __sx_str_sub_lit バインド形式 [元文字列 [検索パターン [置換文字列 [回数制限 [フラグ]]]]]
 ##
 ## 説明:
 ##   __sx_str_sub からリテラル/Globモードを抽出した内部関数。
 ##   パターンが空の場合は __sx_str_isep に委譲する。
+##   バインド形式で置換結果と置換回数を取得できる。
+
+define([|CLEANUP|], [|Q_bind Q_cnt|])dnl
+
 __sx_str_sub_lit() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}" "$((${6-0} & SX_STR_SUB_GLOB))" ""
+
+	__sx_var_bind_init "${1}"
+	Q_bind="${1}"
+	Q_cnt=0
 
 	if
 		M_STR_EQ([|"${3}"|], [|''|]) ||
 		{ M_NUM_BOOL([|${6}|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
 	then
-		__sx_str_isep "${1}:" "${2}" "${4}" "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))"
+		__sx_str_isep "${1}" "${2}" "${4}" "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))"
 	elif M_NUM_LE([|0|], [|${5}|]); then
 		if M_STR_EQ([|"${6}"|], [|0|]); then
 			while M_STR_HAS([|"${2}"|], [|"${3}"|]) && M_NUM_NE([|${5}|], [|0|]); do
 				set -- "${1}" "${2#*"${3}"}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${7}${2%%"${3}"*}${4}"
+				M_NUM_INCR([|Q_cnt|])
 			done
 		else
 			while M_STR_HAS([|"${2}"|], [|${3}|]) && M_NUM_NE([|${5}|], [|0|]); do
 				set -- "${1}" "${2#*${3}}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${7}${2%%${3}*}${4}"
+				M_NUM_INCR([|Q_cnt|])
 			done
 		fi
 
-		M_VAR_SET([|${1}|], [|${7}${2}|])
+		__sx_var_bind Q_bind "${Q_bind}" "${7}${2}" "${Q_cnt}" || :
 	elif M_NUM_LT([|${5}|], [|0|]); then
 		if M_STR_EQ([|"${6}"|], [|0|]); then
 			while M_STR_HAS([|"${2}"|], [|"${3}"|]) && M_NUM_NE([|${5}|], [|0|]); do
 				set -- "${1}" "${2%"${3}"*}" "${3}" "${4}" "$((${5} + 1))" "${6}" "${4}${2##*"${3}"}${7}"
+				M_NUM_INCR([|Q_cnt|])
 			done
 		else
 			while M_STR_HAS([|"${2}"|], [|${3}|]) && M_NUM_NE([|${5}|], [|0|]); do
 				set -- "${1}" "${2%${3}*}" "${3}" "${4}" "$((${5} + 1))" "${6}" "${4}${2##*${3}}${7}"
+				M_NUM_INCR([|Q_cnt|])
 			done
 		fi
 
-		M_VAR_SET([|${1}|], [|${2}${7}|])
+		__sx_var_bind Q_bind "${Q_bind}" "${2}${7}" "${Q_cnt}" || :
 	fi
+
+	unset CLEANUP
 }
+|], [|str_sub_lit|])dnl
 
 ### sx_str_substr - 文字列の指定した位置から指定した長さの部分文字列を取得する
 ##
@@ -11541,7 +11560,7 @@ __sx_str_title() {
 
 	__sx_glob_bracket Q_gs "${3}"
 	__sx_str_tr Q_tmp: "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${SX_NUM_I32_MAX}"
-	__sx_str_sub Q_tmp "${3%"${3#?}"}${Q_tmp}" "${Q_gs}[${SX_STR_LOWER}]" __sx_str_title_cb "${SX_NUM_I32_MAX}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+	__sx_str_sub Q_tmp: "${3%"${3#?}"}${Q_tmp}" "${Q_gs}[${SX_STR_LOWER}]" __sx_str_title_cb "${SX_NUM_I32_MAX}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
 
 	M_VAR_SET([|${1}|], [|${Q_tmp#?}|])
 	unset CLEANUP
@@ -11848,7 +11867,7 @@ define([|CLEANUP|], [|Q_tmp|])dnl
 __sx_str_words() {
 	set -- "${1}" "${2-}" "${3:- }" "${4:-"_-/.:${SX_STR_SPACE}"}"
 
-	Q_cb_c="${4%"${4#?}"}" __sx_str_sub Q_tmp "${2}" "[${SX_STR_UPPER}]" __sx_str_words_cb '' "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+	Q_cb_c="${4%"${4#?}"}" __sx_str_sub Q_tmp: "${2}" "[${SX_STR_UPPER}]" __sx_str_words_cb '' "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
 	__sx_str_squish Q_tmp "${Q_tmp}" "${4}" "${3}"
 	__sx_str_lower "${1}" "${Q_tmp}"
 
