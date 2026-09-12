@@ -3222,7 +3222,7 @@ sx_var_bind() {
 
 	__sx_var_is_bindable "${2-}" || return M_EX_NOPERM
 
-	__sx_var_bind "${@}"
+	__sx_var_bind "${@}" || return
 }
 
 ### sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし）
@@ -3256,10 +3256,9 @@ sx_var_ubind() {
 
 	__sx_var_is_bindable "${2-}" || return M_EX_NOPERM
 
-	__sx_var_ubind "${@}"
+	__sx_var_ubind "${@}" || return
 }
 
-M_RENAME_QI([|dnl
 ### __sx_var_bind - バインド状態に従って値を割り当てる（クォートあり・内部用）
 ##
 ## 使い方:
@@ -3274,7 +3273,7 @@ M_RENAME_QI([|dnl
 ##    1  バインド先がもうない（データがバインド先より多い）
 
 __sx_var_bind() {
-	__sx_var_bind0 1 "${@}"
+	__sx_var_bind0 1 "${@}" || return
 }
 
 ### __sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし・内部用）
@@ -3291,11 +3290,10 @@ __sx_var_bind() {
 ##    1  バインド先がもうない（データがバインド先より多い）
 
 __sx_var_ubind() {
-	__sx_var_bind0 0 "${@}"
+	__sx_var_bind0 0 "${@}" || return
 }
 
-define([|CLEANUP|], [|Q_res Q_bind Q_esc Q_arg Q_seg Q_v Q_c Q_n|])dnl
-
+M_RENAME_QI([|dnl
 ### __sx_var_bind0 - 複数の値をバインド状態に従って順次割り当てる
 ##
 ## 使い方:
@@ -3311,56 +3309,57 @@ define([|CLEANUP|], [|Q_res Q_bind Q_esc Q_arg Q_seg Q_v Q_c Q_n|])dnl
 ##    0  データを全て割り当て、残りのバインド形式を結果変数に格納した
 ##    1  バインド先が枯渇したままデータが残っている
 
+define([|CLEANUP|], [|Q_res Q_bind Q_esc Q_arg Q_seg Q_lim Q_vn|])dnl
+
 __sx_var_bind0() {
 	Q_esc="${1}"
 	Q_res="${2}"
 	Q_bind="${3-}"
-	shift 3
+	shift "$((2 + 0${3+1}))"
 
 	for Q_arg in "${@}"; do
-		case "${Q_bind}" in
-			'')
-				unset CLEANUP
-				return 1
-		esac
-
-		Q_seg="${Q_bind%%:*}"
-
-		case "${Q_seg}" in *["${SX_STR_ALPHA}_"]*)
-			Q_v="${Q_arg}"
-
-			case "${Q_esc}" in 1)
-				case "${Q_arg}" in
-					*"'"*) __sx_str_sub Q_v "${Q_arg}" "'" "'\\''";;
-					*) Q_v="${Q_arg}";;
-				esac
-
-				M_STR_WRAP([|Q_v|], [|"'"|], [|"'"|])
-			esac
+		case "${Q_bind}" in '')
+			unset CLEANUP
+			return 1
 		esac
 
 		case "${Q_bind}" in
 			:*) Q_bind="${Q_bind#*:}";;
 			[1-9]*:*)
-				Q_c="${Q_bind%%[!0-9]*}"
-				Q_n="${Q_seg#${Q_c}}"
+				Q_lim="${Q_bind%%[!0-9]*}"
+				Q_seg="${Q_bind%%:*}"
+				Q_vn="${Q_seg#${Q_lim}}"
 
-				case "${Q_n}" in ?*)
-					eval "${Q_n}=\"\${${Q_n}-}\${${Q_n}:+ }\${Q_v}\""
+				case "${Q_vn}" in ?*)
+					case "${Q_esc}${Q_arg}" in
+						1*"'"*) __sx_str_sub Q_arg "${Q_arg}" "'" "'\\''";&
+						1*) M_STR_WRAP([|Q_arg|], [|"'"|], [|"'"|]);;
+					esac
+
+					eval "${Q_vn}=\"\${${Q_vn}-}\${${Q_vn}:+ }\${Q_arg}\""
 				esac
 
-				case "${Q_c}" in
+				case "${Q_lim}" in
 					1) Q_bind="${Q_bind#*:}";;
-					*) __sx_num_sub1_nat0 Q_c "${Q_c}"
-					   Q_bind="${Q_c}${Q_n}:${Q_bind#*:}";;
+					*)
+						__sx_num_sub1_nat0 Q_lim "${Q_lim}"
+						Q_bind="${Q_lim}${Q_vn}:${Q_bind#*:}"
+						;;
 				esac
 				;;
-			*:*) eval "${Q_bind%%:*}=\${Q_arg}; Q_bind=\"\${Q_bind#*:}\"";;
-			*) eval "${Q_bind}=\"\${${Q_bind}-}\${${Q_bind}:+ }\${Q_v}\"";;
+			*:*) eval "${Q_bind%%:*}=\"\${Q_arg}\" Q_bind=\"\${Q_bind#*:}\"";;
+			*)
+				case "${Q_esc}${Q_arg}" in
+					1*"'"*) __sx_str_sub Q_arg "${Q_arg}" "'" "'\\''";&
+					1*) M_STR_WRAP([|Q_arg|], [|"'"|], [|"'"|]);;
+				esac
+
+				eval "${Q_bind}=\"\${${Q_bind}-}\${${Q_bind}:+ }\${Q_arg}\""
+				;;
 		esac
 	done
 
-	eval "${Q_res}=\"\${Q_bind}\""
+	M_VAR_SET([|${Q_res}|], [|${Q_bind}|])
 
 	unset CLEANUP
 }
