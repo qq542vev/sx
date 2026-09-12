@@ -65,13 +65,13 @@ Describe 'sx_var_bind'
             The variable res should equal "out"
         End
 
-        It 'スロットが尽きた場合に 1 を返すこと'
+        It 'スロットが尽きた場合に 1 を返し、結果変数に空のバインド形式が書き込まれること'
             unset v1 res
             res="unchanged"
             When call sx_var_bind res "v1:" "a" "b"
             The status should equal 1
             The variable v1 should equal "a"
-            The variable res should equal "unchanged"
+            The variable res should equal ""
         End
 
         It 'データが無い場合にバインド状態を結果に書き込んで成功すること'

@@ -3195,7 +3195,8 @@ __sx_var_bind_init() {
 ##   割り当て後、残りのバインド形式が結果変数に格納される。
 ##   複数の値を一度に割り当てることができ、各値はバインド形式の
 ##   セグメントに対して順次処理される。バインド先が枯渇し、未処理の
-##   値が残る場合は終了ステータス 1 を返す。
+##   値が残る場合は終了ステータス 1 を返し、結果変数に残りのバインド形式
+##   （枯渇時は空文字列）が書き込まれる。
 ##   蓄積スロット（数値プレフィックス付き・最後の変数）へ値を蓄積する際は
 ##   値をクォートする。クォートせずに蓄積したい場合は sx_var_ubind を
 ##   使用する。代入スロット（名前:残り）への代入は値のクォートを行わない。
@@ -3204,7 +3205,7 @@ __sx_var_bind_init() {
 ##
 ## 終了ステータス:
 ##    0  割り当て成功 (SX_EX_OK)
-##    1  バインド先がもうない（データがバインド先より多い）
+##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
@@ -3216,7 +3217,7 @@ sx_var_bind() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_var_is_bind "${2-}" || return M_EX_USAGE
 
@@ -3235,10 +3236,12 @@ sx_var_bind() {
 ##   蓄積スロット（数値プレフィックス付き・最後の変数）への蓄積時に
 ##   値のクォートを行わない点のみが sx_var_bind と異なる。
 ##   代入スロット（名前:残り）への代入は sx_var_bind と同様に生の値となる。
+##   バインド先が枯渇し、未処理の値が残る場合は終了ステータス 1 を返し、
+##   結果変数に残りのバインド形式（空文字列）が書き込まれる。
 ##
 ## 終了ステータス:
 ##    0  割り当て成功 (SX_EX_OK)
-##    1  バインド先がもうない（データがバインド先より多い）
+##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
@@ -3250,7 +3253,7 @@ sx_var_ubind() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_var_is_bind "${2-}" || return M_EX_USAGE
 
@@ -3267,10 +3270,12 @@ sx_var_ubind() {
 ## 説明:
 ##   sx_var_bind の内部実装。リスト蓄積時に値をクォートする。
 ##   引数の検証を行わない。
+##   バインド先が枯渇し、未処理の値が残る場合は終了ステータス 1 を返し、
+##   結果変数に残りのバインド形式（枯渇時は空文字列）が書き込まれる。
 ##
 ## 終了ステータス:
 ##    0  割り当て成功
-##    1  バインド先がもうない（データがバインド先より多い）
+##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
 
 __sx_var_bind() {
 	__sx_var_bind0 1 "${@}" || return
@@ -3284,10 +3289,12 @@ __sx_var_bind() {
 ## 説明:
 ##   sx_var_ubind の内部実装。リスト蓄積時に値をクォートしない。
 ##   引数の検証を行わない。
+##   バインド先が枯渇し、未処理の値が残る場合は終了ステータス 1 を返し、
+##   結果変数に残りのバインド形式（枯渇時は空文字列）が書き込まれる。
 ##
 ## 終了ステータス:
 ##    0  割り当て成功
-##    1  バインド先がもうない（データがバインド先より多い）
+##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
 
 __sx_var_ubind() {
 	__sx_var_bind0 0 "${@}" || return
@@ -3304,10 +3311,11 @@ M_RENAME_QI([|dnl
 ##   データ列を for で巡回し、1 データにつきバインド状態を 1 セグメント分
 ##   進める。蓄積スロット（数値プレフィックス付き・最後の変数）は
 ##   Q_esc に応じて値をクォートして累積する。
+##   バインド先が枯渇した場合は Q_res に空の残りバインドを書き込んで 1 を返す。
 ##
 ## 終了ステータス:
 ##    0  データを全て割り当て、残りのバインド形式を結果変数に格納した
-##    1  バインド先が枯渇したままデータが残っている
+##    1  バインド先が枯渇したままデータが残っている。結果変数へ空文字列を書き込む
 
 define([|CLEANUP|], [|Q_res Q_bind Q_esc Q_arg Q_seg Q_lim Q_vn|])dnl
 
@@ -3318,11 +3326,6 @@ __sx_var_bind0() {
 	shift "$((2 + 0${3+1}))"
 
 	for Q_arg in "${@}"; do
-		case "${Q_bind}" in '')
-			unset CLEANUP
-			return 1
-		esac
-
 		case "${Q_bind}" in
 			:*) Q_bind="${Q_bind#*:}";;
 			[1-9]*:*)
@@ -3348,13 +3351,18 @@ __sx_var_bind0() {
 				esac
 				;;
 			*:*) eval "${Q_bind%%:*}=\"\${Q_arg}\" Q_bind=\"\${Q_bind#*:}\"";;
-			*)
+			?*)
 				case "${Q_esc}${Q_arg}" in
 					1*"'"*) __sx_str_sub Q_arg "${Q_arg}" "'" "'\\''";&
 					1*) M_STR_WRAP([|Q_arg|], [|"'"|], [|"'"|]);;
 				esac
 
 				eval "${Q_bind}=\"\${${Q_bind}-}\${${Q_bind}:+ }\${Q_arg}\""
+				;;
+			*)
+				M_VAR_SET([|${Q_res}|], [|${Q_bind}|])
+				unset CLEANUP
+				return 1
 				;;
 		esac
 	done
@@ -11605,7 +11613,7 @@ __sx_str_tr() {
 	Q_cnt=0
 
 	case "${3}" in
-		'') __sx_var_ubind Q_bind "${Q_bind}" "${Q_str}";;
+		'') __sx_var_bind Q_bind "${Q_bind}" "${Q_str}" "${Q_cnt}";;
 		*)
 			__sx_str_chunk Q_to "${4}" 1
 			eval set -- "${Q_to}"
@@ -11629,7 +11637,7 @@ __sx_str_tr() {
 					M_NUM_INCR([|Q_cnt|])
 				done
 
-				__sx_var_bind Q_bind "${Q_bind}" "${Q_str}${Q_out}"
+				__sx_var_bind Q_bind "${Q_bind}" "${Q_str}${Q_out}" "${Q_cnt}"
 			else
 				while M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
 					Q_pre="${Q_str%%["${Q_from}"]*}"
@@ -11647,10 +11655,10 @@ __sx_str_tr() {
 					M_NUM_INCR([|Q_cnt|])
 				done
 
-				__sx_var_bind Q_bind "${Q_bind}" "${Q_out}${Q_str}"
+				__sx_var_bind Q_bind "${Q_bind}" "${Q_out}${Q_str}" "${Q_cnt}"
 			fi
 			;;
-	esac && __sx_var_bind Q_bind "${Q_bind}" "${Q_cnt}" || :
+	esac || :
 
 	unset CLEANUP
 }
@@ -12284,15 +12292,21 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   bind文字列を逐次解析し、chain (src-dst) と残りbindを生成する。
+##   バインド先が枯渇し、未処理の変数名が残る場合は終了ステータス 1 を返し、
+##   bind_res に残りのバインド形式（枯渇時は空文字列）、chain_res に途中までの
+##   chain を書き込む。
+##
+## 終了ステータス:
+##    0  全て割り当て、残りのバインド形式と chain を各結果変数に格納した
+##    1  バインド先が枯渇したまま変数名が残っている。bind_res へ空文字列を書き込む
 
-define([|CLEANUP|], [|Q_br Q_cr Q_bind Q_chain Q_seg Q_rest Q_m Q_n Q_vn Q_sts|])dnl
+define([|CLEANUP|], [|Q_br Q_cr Q_bind Q_chain Q_seg Q_rest Q_m Q_n Q_vn|])dnl
 
 __sx_arr_bind() {
 	Q_br="${1-}"
 	Q_cr="${2-}"
 	Q_bind="${3-}"
 	Q_chain=
-	Q_sts=0
 	shift 3
 
 	for Q_vn in "${@}"; do
@@ -12343,18 +12357,16 @@ __sx_arr_bind() {
 				Q_bind="${Q_m}/${Q_seg}"
 				;;
 			*)
-				Q_sts=1
-				break
+				M_VAR_SET([|${Q_br}|], [|${Q_bind}|], [|${Q_cr}|], [|${Q_chain}|])
+				unset CLEANUP
+				return 1
 				;;
 		esac
 	done
 
 	M_VAR_SET([|${Q_br}|], [|${Q_bind}|], [|${Q_cr}|], [|${Q_chain}|])
 
-	set -- "${Q_sts}"
-
 	unset CLEANUP
-	return "${1}"
 }
 |], [|arr_bind|])dnl
 
