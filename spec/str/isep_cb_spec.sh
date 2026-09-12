@@ -7,14 +7,14 @@ Describe 'sx_str_isep (callback)'
 
   It '正方向のコールバックで動的セパレータを挿入すること'
     cb() { __sx_var_set "${1}=($4)"; }
-    When call sx_str_isep res "123456" cb 2 "" "$SX_STR_ISEP_CB"
+    When call sx_str_isep res: "123456" cb 2 "" "$SX_STR_ISEP_CB"
     The status should be success
     The variable res should equal "12(1)34(2)56"
   End
 
   It '逆方向のコールバックで動的セパレータを挿入すること'
     cb() { __sx_var_set "${1}=($4)"; }
-    When call sx_str_isep res "12345" cb -2 "" "$SX_STR_ISEP_CB"
+    When call sx_str_isep res: "12345" cb -2 "" "$SX_STR_ISEP_CB"
     The status should be success
     The variable res should equal "1(2)23(1)45"
   End
@@ -26,7 +26,7 @@ Describe 'sx_str_isep (callback)'
     # Forward: 123456, int=2
     # 1st: left=12, right=3456, count=1
     # 2nd: left=1234, right=56, count=2
-    When call sx_str_isep res "123456" cb 2 "" "$SX_STR_ISEP_CB"
+    When call sx_str_isep res: "123456" cb 2 "" "$SX_STR_ISEP_CB"
     The status should be success
     The variable res should equal "12:12|3456:134:1234|56:256"
   End
@@ -37,28 +37,28 @@ Describe 'sx_str_isep (callback)'
     # Backward: 123456, int=-2
     # 1st: left=1234, right=56, count=1
     # 2nd: left=12, right=3456, count=2
-    When call sx_str_isep res "123456" cb -2 "" "$SX_STR_ISEP_CB"
+    When call sx_str_isep res: "123456" cb -2 "" "$SX_STR_ISEP_CB"
     The status should be success
     The variable res should equal "12:12|3456:234:1234|56:156"
   End
 
   It 'ab に対する正方向 (int=1) の left/right が正しいこと'
     cb() { __sx_var_set "${1}=[${2}:${3}]"; }
-    When call sx_str_isep res "ab" cb 1 "" "$SX_STR_ISEP_CB"
+    When call sx_str_isep res: "ab" cb 1 "" "$SX_STR_ISEP_CB"
     The status should be success
     The variable res should equal "a[a:b]b"
   End
 
   It 'ab に対する逆方向 (int=-1) の left/right が正しいこと'
     cb() { __sx_var_set "${1}=[${2}:${3}]"; }
-    When call sx_str_isep res "ab" cb -1 "" "$SX_STR_ISEP_CB"
+    When call sx_str_isep res: "ab" cb -1 "" "$SX_STR_ISEP_CB"
     The status should be success
     The variable res should equal "a[a:b]b"
   End
 
   It 'リミットがコールバックでも機能すること'
     cb() { __sx_var_set "${1}=*"; }
-    When call sx_str_isep res "123456" cb 2 1 "$SX_STR_ISEP_CB"
+    When call sx_str_isep res: "123456" cb 2 1 "$SX_STR_ISEP_CB"
     The status should be success
     The variable res should equal "12*3456"
   End
@@ -70,7 +70,7 @@ Describe 'sx_str_isep (callback)'
     }
     # 1st: left=12, count=1 -> returns 0, inserts !
     # 2nd: left=1234, count=2 -> returns 1、セパレータは空になり中断
-    When call sx_str_isep res "123456" cb_stop 2 "" "$SX_STR_ISEP_CB"
+    When call sx_str_isep res: "123456" cb_stop 2 "" "$SX_STR_ISEP_CB"
     The status should be failure
     The variable res should equal "12!3456"
   End
@@ -83,7 +83,7 @@ Describe 'sx_str_isep (callback)'
     # Backward "123456" int=-2
     # 1st: right=56, count=1 -> returns 0, inserts !
     # 2nd: right=3456, count=2 -> returns 1、セパレータは空になり中断
-    When call sx_str_isep res "123456" cb_stop -2 "" "$SX_STR_ISEP_CB"
+    When call sx_str_isep res: "123456" cb_stop -2 "" "$SX_STR_ISEP_CB"
     The status should be failure
     The variable res should equal "1234!56"
   End
@@ -95,7 +95,7 @@ Describe 'sx_str_isep (callback)'
       # 1st: PRE -> left="", right="abc", count=1
       # 2nd: loop -> left="a", right="bc", count=2
       # 3rd: loop -> left="ab", right="c", count=3
-      When call sx_str_isep res "abc" cb 1 "" $((SX_STR_ISEP_CB | SX_STR_ISEP_PRE))
+      When call sx_str_isep res: "abc" cb 1 "" $((SX_STR_ISEP_CB | SX_STR_ISEP_PRE))
       The status should be success
       The variable res should equal "<:abc:1>a<a:bc:2>b<ab:c:3>c"
     End
@@ -106,7 +106,7 @@ Describe 'sx_str_isep (callback)'
       # 1st: loop -> left="a", right="bc", count=1
       # 2nd: loop -> left="ab", right="c", count=2
       # 3rd: POST -> left="abc", right="", count=3
-      When call sx_str_isep res "abc" cb 1 "" $((SX_STR_ISEP_CB | SX_STR_ISEP_POST))
+      When call sx_str_isep res: "abc" cb 1 "" $((SX_STR_ISEP_CB | SX_STR_ISEP_POST))
       The status should be success
       The variable res should equal "a<a:bc:1>b<ab:c:2>c<abc::3>"
     End
@@ -117,16 +117,72 @@ Describe 'sx_str_isep (callback)'
       # 1st: POST -> count=1
       # 2nd: loop -> count=2
       # 3rd: PRE  -> count=3
-      When call sx_str_isep res "1234" cb -2 "" $((SX_STR_ISEP_CB | SX_STR_ISEP_PRE | SX_STR_ISEP_POST))
+      When call sx_str_isep res: "1234" cb -2 "" $((SX_STR_ISEP_CB | SX_STR_ISEP_PRE | SX_STR_ISEP_POST))
       The status should be success
       The variable res should equal "(3)12(2)34(1)"
     End
 
     It '空文字列に対して PRE|POST を指定した場合 (コールバック)'
       cb() { __sx_var_set "${1}=A"; }
-      When call sx_str_isep res "" cb 1 "" $((SX_STR_ISEP_CB | SX_STR_ISEP_PRE | SX_STR_ISEP_POST))
+      When call sx_str_isep res: "" cb 1 "" $((SX_STR_ISEP_CB | SX_STR_ISEP_PRE | SX_STR_ISEP_POST))
       The status should be success
       The variable res should equal "A"
+    End
+  End
+
+  Context 'バインド形式で成功挿入回数を取得する場合 (コールバック)'
+    It 'res:cnt で結果と成功回数を取得すること'
+      cb() { __sx_var_set "${1}=($4)"; }
+      When call sx_str_isep res:cnt "123456" cb 2 "" "$SX_STR_ISEP_CB"
+      The status should be success
+      The variable res should equal "12(1)34(2)56"
+      The variable cnt should equal "'2'"
+    End
+
+    It '中断した場合は成功分のみ数えること'
+      cb_stop() {
+        __sx_var_set "${1}=!"
+        [ "$4" -lt 2 ]
+      }
+      When call sx_str_isep res:cnt "123456" cb_stop 2 "" "$SX_STR_ISEP_CB"
+      The status should be failure
+      The variable res should equal "12!3456"
+      The variable cnt should equal "'1'"
+    End
+  End
+
+  Context '再入呼び出し (コールバック内で sx_str_isep を呼ぶ場合)'
+    It 'コールバック内のリテラル挿入が外側の結果・回数を壊さないこと'
+      cb() {
+        sx_str_isep inner: "ab" "-" 1
+        __sx_var_set "${1}=[${inner}:$4]"
+      }
+      When call sx_str_isep res:cnt "123456" cb 2 "" "$SX_STR_ISEP_CB"
+      The status should be success
+      The variable res should equal "12[a-b:1]34[a-b:2]56"
+      The variable cnt should equal "'2'"
+    End
+
+    It 'コールバック内のコールバック挿入が内外の回数を壊さないこと'
+      inner() { __sx_var_set "${1}=($4)"; }
+      cb() {
+        sx_str_isep sub:scnt "ab" inner 1 "" "$SX_STR_ISEP_CB"
+        __sx_var_set "${1}=<$sub:$scnt:$4>"
+      }
+      When call sx_str_isep res:cnt "123456" cb 2 "" "$SX_STR_ISEP_CB"
+      The status should be success
+      The variable res should equal "12<a(1)b:'1':1>34<a(1)b:'1':2>56"
+      The variable cnt should equal "'2'"
+    End
+
+    It '同名変数でのネストでも外側の bind が汚染されないこと'
+      cb() {
+        sx_str_isep shared: "ab" "-" 1
+        __sx_var_set "${1}=($4)"
+      }
+      When call sx_str_isep shared "12" cb 1 "" "$SX_STR_ISEP_CB"
+      The status should be success
+      The variable shared should equal "'1(1)2' '1'"
     End
   End
 End
