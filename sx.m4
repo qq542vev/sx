@@ -11313,48 +11313,61 @@ M_RENAME_QI([|dnl
 ##   パターンが空の場合は __sx_str_isep に委譲する。
 ##   バインド形式で置換結果と置換回数を取得できる。
 
-define([|CLEANUP|], [|Q_bind Q_cnt|])dnl
+define([|CLEANUP|], [|Q_bind Q_str Q_pat Q_rep Q_lim Q_flg Q_out Q_cnt|])dnl
 
 __sx_str_sub_lit() {
-	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}" "$((${6-0} & SX_STR_SUB_GLOB))" ""
+	# 名前付き変数で状態を管理する（__sx_str_isep_lit 準拠）。
+	# __sx_str_sub_cb とは対照的に位置パラメータを使わない。
 
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
+	Q_str="${2-}"
+	Q_pat="${3-}"
+	Q_rep="${4-}"
+	Q_lim="${5-}"
+	Q_flg="$((${6-0} & SX_STR_SUB_GLOB))"
+	Q_out=
 	Q_cnt=0
 
 	if
-		M_STR_EQ([|"${3}"|], [|''|]) ||
-		{ M_NUM_BOOL([|${6}|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
+		M_STR_EQ([|"${Q_pat}"|], [|''|]) ||
+		{ M_NUM_BOOL([|Q_flg|]) && ! M_STR_HAS([|"${Q_pat}"|], [|*[!*]*|]); }
 	then
-		__sx_str_isep "${1}" "${2}" "${4}" "$((${5} < 0 ? -1 : 1))" "$((${5} < 0 ? 0 - ${5} : ${5}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))"
-	elif M_NUM_LE([|0|], [|${5}|]); then
-		if M_STR_EQ([|"${6}"|], [|0|]); then
-			while M_STR_HAS([|"${2}"|], [|"${3}"|]) && M_NUM_NE([|${5}|], [|0|]); do
-				set -- "${1}" "${2#*"${3}"}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${7}${2%%"${3}"*}${4}"
+		__sx_str_isep "${Q_bind}" "${Q_str}" "${Q_rep}" "$((${Q_lim} < 0 ? -1 : 1))" "$((${Q_lim} < 0 ? 0 - ${Q_lim} : ${Q_lim}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))"
+	elif M_NUM_LE([|0|], [|Q_lim|]); then
+		if M_STR_EQ([|"${Q_flg}"|], [|0|]); then
+			while M_STR_HAS([|"${Q_str}"|], [|"${Q_pat}"|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
+				M_STR_APPEND([|Q_out|], [|"${Q_str%%"${Q_pat}"*}${Q_rep}"|])
+				Q_str="${Q_str#*"${Q_pat}"}"
 				M_NUM_INCR([|Q_cnt|])
 			done
 		else
-			while M_STR_HAS([|"${2}"|], [|${3}|]) && M_NUM_NE([|${5}|], [|0|]); do
-				set -- "${1}" "${2#*${3}}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${7}${2%%${3}*}${4}"
+			while M_STR_HAS([|"${Q_str}"|], [|${Q_pat}|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
+				M_STR_APPEND([|Q_out|], [|"${Q_str%%${Q_pat}*}${Q_rep}"|])
+				Q_str="${Q_str#*${Q_pat}}"
 				M_NUM_INCR([|Q_cnt|])
 			done
 		fi
 
-		__sx_var_bind Q_bind "${Q_bind}" "${7}${2}" "${Q_cnt}" || :
-	elif M_NUM_LT([|${5}|], [|0|]); then
-		if M_STR_EQ([|"${6}"|], [|0|]); then
-			while M_STR_HAS([|"${2}"|], [|"${3}"|]) && M_NUM_NE([|${5}|], [|0|]); do
-				set -- "${1}" "${2%"${3}"*}" "${3}" "${4}" "$((${5} + 1))" "${6}" "${4}${2##*"${3}"}${7}"
+		__sx_var_bind Q_bind "${Q_bind}" "${Q_out}${Q_str}" "${Q_cnt}" || :
+	elif M_NUM_LT([|Q_lim|], [|0|]); then
+		Q_lim=$((0 - Q_lim))
+
+		if M_STR_EQ([|"${Q_flg}"|], [|0|]); then
+			while M_STR_HAS([|"${Q_str}"|], [|"${Q_pat}"|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
+				M_STR_PREPEND([|Q_out|], [|"${Q_rep}${Q_str##*"${Q_pat}"}"|])
+				Q_str="${Q_str%"${Q_pat}"*}"
 				M_NUM_INCR([|Q_cnt|])
 			done
 		else
-			while M_STR_HAS([|"${2}"|], [|${3}|]) && M_NUM_NE([|${5}|], [|0|]); do
-				set -- "${1}" "${2%${3}*}" "${3}" "${4}" "$((${5} + 1))" "${6}" "${4}${2##*${3}}${7}"
+			while M_STR_HAS([|"${Q_str}"|], [|${Q_pat}|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
+				M_STR_PREPEND([|Q_out|], [|"${Q_rep}${Q_str##*${Q_pat}}"|])
+				Q_str="${Q_str%${Q_pat}*}"
 				M_NUM_INCR([|Q_cnt|])
 			done
 		fi
 
-		__sx_var_bind Q_bind "${Q_bind}" "${2}${7}" "${Q_cnt}" || :
+		__sx_var_bind Q_bind "${Q_bind}" "${Q_str}${Q_out}" "${Q_cnt}" || :
 	fi
 
 	unset CLEANUP
