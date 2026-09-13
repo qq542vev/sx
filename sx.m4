@@ -9994,82 +9994,87 @@ M_RENAME_QI([|dnl
 ### __sx_str_isep_lit - 文字列に一定の間隔でセパレータを挿入する（リテラルモード、内部用）
 ##
 ## 使い方:
-##   __sx_str_isep_lit バインド形式 文字列 セパレータ インターバル 残リミット フラグ out qm
+##   __sx_str_isep_lit バインド形式 文字列 セパレータ インターバル リミット フラグ out qm
 ##
 ## 説明:
 ##   __sx_str_isep からリテラルモードを抽出した内部関数。
 ##   バインド形式で挿入結果と挿入回数を取得できる。
 
-define([|CLEANUP|], [|Q_bind Q_cnt|])dnl
+define([|CLEANUP|], [|Q_bind Q_str Q_sep Q_int Q_lim Q_flg Q_out Q_qm Q_cnt|])dnl
 
 __sx_str_isep_lit() {
-	# 位置パラメータ構成:
-	# ${1}: bind, ${2}: str, ${3}: sep, ${4}: int, ${5}: lim, ${6}: flags
-	# ${7}: out, ${8}: qm
+	# 名前付き変数で状態を管理する（速度優先）。
+	# __sx_str_isep_cb とは対照的に位置パラメータを使わない。
 
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
+	Q_str="${2}"
+	Q_sep="${3}"
+	Q_int="${4}"
+	Q_lim="${5}"
+	Q_flg="${6}"
+	Q_out="${7}"
+	Q_qm="${8}"
 	Q_cnt=0
 
-	if M_NUM_LT([|0|], [|${4}|]); then
+	if M_NUM_LT([|0|], [|${Q_int}|]); then
 		# === Forward: 先頭から interval 文字ごとに区切る ===
 		# PRE: 先頭の境界
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_PRE && ${5} != 0|]); then
-			set -- "${1}" "${2}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${7}${3}" "${8}"
+		if M_NUM_BOOL([|${Q_flg} & SX_STR_ISEP_PRE && ${Q_cnt} < ${Q_lim}|]); then
+			Q_out="${Q_out}${Q_sep}"
 			M_NUM_INCR([|Q_cnt|])
 		fi
 
 		# ループ要なら QM を生成してループ実行
-		if M_NUM_BOOL([|${4} < ${#2} && ${5} != 0|]); then
-			__sx_str_qm __sx_str_isep_qm_ "${4}"
-			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${__sx_str_isep_qm_}"
-			unset __sx_str_isep_qm_
+		if M_NUM_BOOL([|${Q_int} < ${#Q_str} && ${Q_cnt} < ${Q_lim}|]); then
+			__sx_str_qm Q_qm "${Q_int}"
 
-			while M_NUM_BOOL([|${4} < ${#2} && ${5} != 0|]); do
-				set -- "${1}" "${2#${8}}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${7}${2%"${2#${8}}"}${3}" "${8}"
+			while M_NUM_BOOL([|${Q_int} < ${#Q_str} && ${Q_cnt} < ${Q_lim}|]); do
+				Q_out="${Q_out}${Q_str%"${Q_str#${Q_qm}}"}${Q_sep}"
+				Q_str="${Q_str#${Q_qm}}"
 				M_NUM_INCR([|Q_cnt|])
 			done
 		fi
 
 		# 残り文字列を末尾に追加
-		set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${2}" "${8}"
+		Q_out="${Q_out}${Q_str}"
 
 		# POST: 末尾の境界（count < lim かつ 残り文字列長 % interval == 0）
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_POST && ${5} != 0 && (${#2} % ${4}) == 0|]); then
-			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${3}" "${8}"
+		if M_NUM_BOOL([|${Q_flg} & SX_STR_ISEP_POST && ${Q_cnt} < ${Q_lim} && (${#Q_str} % ${Q_int}) == 0|]); then
+			Q_out="${Q_out}${Q_sep}"
 			M_NUM_INCR([|Q_cnt|])
 		fi
 	else
 		# === Backward: 末尾から interval 文字ごとに区切る ===
 		# POST: 末尾の境界（後方処理では最初に処理する境界）
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_POST && ${5} != 0|]); then
-			set -- "${1}" "${2}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${3}${7}" "${8}"
+		if M_NUM_BOOL([|${Q_flg} & SX_STR_ISEP_POST && ${Q_cnt} < ${Q_lim}|]); then
+			Q_out="${Q_sep}${Q_out}"
 			M_NUM_INCR([|Q_cnt|])
 		fi
 
 		# ループ要なら QM を生成してループ実行
-		if M_NUM_BOOL([|(0 - ${#2}) < ${4} && ${5} != 0|]); then
-			__sx_str_qm __sx_str_isep_qm_ "${4#-}"
-			set -- "${1}" "${2}" "${3}" "${4#-}" "${5}" "${6}" "${7}" "${__sx_str_isep_qm_}"
-			unset __sx_str_isep_qm_
+		if M_NUM_BOOL([|(0 - ${#Q_str}) < ${Q_int} && ${Q_cnt} < ${Q_lim}|]); then
+			__sx_str_qm Q_qm "${Q_int#-}"
+			Q_int="${Q_int#-}"
 
-			while M_NUM_BOOL([|${4} < ${#2} && ${5} != 0|]); do
-				set -- "${1}" "${2%${8}}" "${3}" "${4}" "$((${5} - 1))" "${6}" "${3}${2#"${2%${8}}"}${7}" "${8}"
+			while M_NUM_BOOL([|${Q_int} < ${#Q_str} && ${Q_cnt} < ${Q_lim}|]); do
+				Q_out="${Q_sep}${Q_str#"${Q_str%${Q_qm}}"}${Q_out}"
+				Q_str="${Q_str%${Q_qm}}"
 				M_NUM_INCR([|Q_cnt|])
 			done
 		fi
 
 		# 残り文字列を先頭に追加
-		set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${2}${7}" "${8}"
+		Q_out="${Q_str}${Q_out}"
 
 		# PRE: 先頭の境界（後方処理では最後に処理する境界）
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_PRE && ${5} != 0 && (${#2} % ${4}) == 0|]); then
-			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${3}${7}" "${8}"
+		if M_NUM_BOOL([|${Q_flg} & SX_STR_ISEP_PRE && ${Q_cnt} < ${Q_lim} && (${#Q_str} % ${Q_int}) == 0|]); then
+			Q_out="${Q_sep}${Q_out}"
 			M_NUM_INCR([|Q_cnt|])
 		fi
 	fi
 
-	__sx_var_bind Q_bind "${Q_bind}" "${7}" "${Q_cnt}" || :
+	__sx_var_bind Q_bind "${Q_bind}" "${Q_out}" "${Q_cnt}" || :
 
 	unset CLEANUP
 }
