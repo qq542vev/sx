@@ -10039,7 +10039,7 @@ __sx_str_isep_lit() {
 		fi
 
 		# ループ要なら QM を生成してループ実行
-		if M_NUM_BOOL([|${Q_cnt} < ${Q_lim}|]); then
+		if M_NUM_LT([|Q_cnt|], [|Q_lim|]); then
 			__sx_str_qm Q_qm "${Q_int}"
 
 			while M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
@@ -10066,11 +10066,10 @@ __sx_str_isep_lit() {
 		fi
 
 		# ループ要なら QM を生成してループ実行
-		if M_NUM_BOOL([|(0 - ${#Q_str}) < ${Q_int} && ${Q_cnt} < ${Q_lim}|]); then
+		if M_NUM_LT([|Q_cnt|], [|Q_lim|]); then
 			__sx_str_qm Q_qm "${Q_int#-}"
-			Q_int="${Q_int#-}"
 
-			while M_NUM_BOOL([|${Q_int} < ${#Q_str} && ${Q_cnt} < ${Q_lim}|]); do
+			while M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
 				Q_out="${Q_sep}${Q_str#"${Q_str%${Q_qm}}"}${Q_out}"
 				Q_str="${Q_str%${Q_qm}}"
 				M_NUM_INCR([|Q_cnt|])
