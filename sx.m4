@@ -3317,61 +3317,74 @@ M_RENAME_QI([|dnl
 ##    0  データを全て割り当て、残りのバインド形式を結果変数に格納した
 ##    1  バインド先が枯渇したままデータが残っている。結果変数へ空文字列を書き込む
 
-define([|CLEANUP|], [|Q_res Q_bind Q_esc Q_arg Q_seg Q_lim Q_vn|])dnl
-
+define([|CLEANUP|], [|Q_bind Q_ret Q_esc Q_res|])dnl
 __sx_var_bind0() {
-	Q_esc="${1}"
-	Q_res="${2}"
-	Q_bind="${3-}"
-	shift "$((2 + 0${3+1}))"
-
-	for Q_arg in "${@}"; do
-		case "${Q_bind}" in
-			:*) Q_bind="${Q_bind#*:}";;
+	# 1: esc, 2: res, 3: bind, 4 data...
+	while M_STR_NE([|"${4+X}"|], [|''|]); do
+		case "${3}" in
+			:*) Q_bind="${3#*:}";;
 			[1-9]*:*)
-				Q_lim="${Q_bind%%[!0-9]*}"
-				Q_seg="${Q_bind%%:*}"
-				Q_vn="${Q_seg#${Q_lim}}"
+				# 1: name, 2: lim, 3: seg, 4: esc, 5: res, 6: bind, 7: data...
+				set -- "${3%%[!0-9]*}" "${3%%:*}" "${@}"
+				set -- "${2#${1}}" "${@}"
 
-				case "${Q_vn}" in ?*)
-					case "${Q_esc}${Q_arg}" in
-						1*"'"*) __sx_str_sub Q_arg: "${Q_arg}" "'" "'\\''";&
-						1*) M_STR_WRAP([|Q_arg|], [|"'"|], [|"'"|]);;
+				case "${1}" in ?*)
+					case "${4}${7}" in
+						1*"'"*)
+							__sx_str_sub Q_tmp: "${7}" "'" "'\\''"
+							Q_ret="'${Q_tmp}'"
+							unset Q_tmp
+							;;
+						1*) Q_ret="'${7}'";;
+						*) Q_ret="${7}";;
 					esac
 
-					eval "${Q_vn}=\"\${${Q_vn}-}\${${Q_vn}:+ }\${Q_arg}\""
+					eval "${1}=\"\${${1}-}\${${1}:+ }\${Q_ret}\""
 				esac
 
-				case "${Q_lim}" in
-					1) Q_bind="${Q_bind#*:}";;
+				case "${2}" in
+					1) Q_bind="${6#*:}";;
 					*)
-						__sx_num_sub1_nat0 Q_lim "${Q_lim}"
-						Q_bind="${Q_lim}${Q_vn}:${Q_bind#*:}"
+						__sx_num_sub1_nat0 Q_ret "${2}"
+						Q_bind="${Q_ret}${1}:${6#*:}"
 						;;
 				esac
+
+				shift 3
 				;;
-			*:*) eval "${Q_bind%%:*}=\"\${Q_arg}\" Q_bind=\"\${Q_bind#*:}\"";;
+			*:*) eval "${3%%:*}=\"\${4}\" Q_bind=\"\${3#*:}\"";;
 			?*)
-				case "${Q_esc}${Q_arg}" in
-					1*"'"*) __sx_str_sub Q_arg: "${Q_arg}" "'" "'\\''";&
-					1*) M_STR_WRAP([|Q_arg|], [|"'"|], [|"'"|]);;
+				case "${1}${4}" in
+					1*"'"*)
+						__sx_str_sub Q_tmp: "${4}" "'" "'\\''"
+						Q_ret="'${Q_tmp}'"
+						unset Q_tmp
+						;;
+					1*) Q_ret="'${4}'";;
+					*) Q_ret="${4}";;
 				esac
 
-				eval "${Q_bind}=\"\${${Q_bind}-}\${${Q_bind}:+ }\${Q_arg}\""
+				eval "${3}=\"\${${3}-}\${${3}:+ }\${Q_ret}\""
+				Q_bind="${3}"
 				;;
 			*)
-				M_VAR_SET([|${Q_res}|], [|${Q_bind}|])
+				M_VAR_SET([|${2}|], [|${3}|])
 				unset CLEANUP
 				return 1
 				;;
 		esac
+
+		Q_esc="${1}" Q_res="${2}"
+		shift 4
+
+		set -- "${Q_esc}" "${Q_res}" "${Q_bind}" "${@}"
 	done
 
-	M_VAR_SET([|${Q_res}|], [|${Q_bind}|])
-
 	unset CLEANUP
+
+	M_VAR_SET([|${2}|], [|${3}|])
 }
-|], [|var_bind|])dnl
+|], [|var_bind0|])dnl
 
 ### sx_var_copy - 変数の値を連鎖コピーする
 ##
@@ -10026,10 +10039,10 @@ __sx_str_isep_lit() {
 		fi
 
 		# ループ要なら QM を生成してループ実行
-		if M_NUM_BOOL([|${Q_int} < ${#Q_str} && ${Q_cnt} < ${Q_lim}|]); then
+		if M_NUM_BOOL([|${Q_cnt} < ${Q_lim}|]); then
 			__sx_str_qm Q_qm "${Q_int}"
 
-			while M_NUM_BOOL([|${Q_int} < ${#Q_str} && ${Q_cnt} < ${Q_lim}|]); do
+			while M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
 				Q_out="${Q_out}${Q_str%"${Q_str#${Q_qm}}"}${Q_sep}"
 				Q_str="${Q_str#${Q_qm}}"
 				M_NUM_INCR([|Q_cnt|])
