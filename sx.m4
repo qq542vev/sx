@@ -42,11 +42,11 @@ define([|__M_STR_EQ_REST|], [|dnl
 case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, [| && __M_STR_EQ_REST(shift($@))|])dnl
 |])dnl
 
-define([|M_STR_HAS|], [|case $1 in __M_STR_HAS_REST(shift($@)));; *) ! :;; esac|])
-define([|__M_STR_HAS_REST|], [|ifelse($#, 0, , $#, 1, [|*$1*|], [|*$1* | __M_STR_HAS_REST(shift($@))|])|])
+define([|M_STR_HAS|], [|case $1 in __M_STR_HAS_REST(shift($@)));; *) ! :;; esac|])dnl
+define([|__M_STR_HAS_REST|], [|ifelse($#, 0, , $#, 1, [|*$1*|], [|*$1* | __M_STR_HAS_REST(shift($@))|])|])dnl
 
-define([|M_STR_MATCH|], [|case $1 in __M_STR_MATCH_REST(shift($@)));; *) ! :;; esac|])
-define([|__M_STR_MATCH_REST|], [|ifelse($#, 0, , $#, 1, [|$1|], [|$1 | __M_STR_MATCH_REST(shift($@))|])|])
+define([|M_STR_MATCH|], [|case $1 in __M_STR_MATCH_REST(shift($@)));; *) ! :;; esac|])dnl
+define([|__M_STR_MATCH_REST|], [|ifelse($#, 0, , $#, 1, [|$1|], [|$1 | __M_STR_MATCH_REST(shift($@))|])|])dnl
 
 define([|__M_NUM_CMP_CHAIN|], [|dnl
 $2 $1 $3 ifelse(eval(3 < $#), 1, [| && __M_NUM_CMP_CHAIN($1, shift(shift($@))) |])dnl
@@ -60,28 +60,6 @@ define([|M_NUM_NE|], [|M_STR_NE([|$((__M_NUM_CMP_CHAIN(!=, $@)))|], 0)|])dnl
 define([|M_NUM_BOOL|], [|M_STR_NE([|$(($1))|], 0)|])dnl
 define([|M_RENAME_Q|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Za-z]*\)|], [|\1__sx_$2_\2|])|])dnl
 define([|M_RENAME_QI|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Za-z]*\)|], [|\1__sx_$2_\2_|])|])dnl
-
-define([|__M_QUOTE_PREPEND|], [|dnl
-	case $3 in
-		*"'"*) __sx_str_sub $1_bind_esc_: $3 "'" "'\\''";;
-		*) $1_bind_esc_=$3 ;;
-	esac
-	$2="'${$1_bind_esc_}'${$2:+ }${$2}"|])
-
-define([|__M_QUOTE_APPEND|], [|dnl
-	case $3 in
-		*"'"*) __sx_str_sub $1_bind_esc_: $3 "'" "'\\''";;
-		*) $1_bind_esc_=$3 ;;
-	esac
-	$2="${$2}${$2:+ }'${$1_bind_esc_}'"|])
-
-define([|M_STR_QUOTE|], [|dnl
-	case $2 in
-		*"'"*) __sx_str_sub $1: $2 "'" "'\\''";;
-		*) $1=$2;;
-	esac
-
-	$1="'${$1}'"|])
 
 # sysexits(3) compatible exit codes
 readonly SX_EX_OK=0
@@ -852,6 +830,7 @@ __sx_fn_set() {
 	unset CLEANUP
 }
 |], [|fn_set|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_fn_with - 一時的な匿名関数を定義してコマンドを実行する
 ##
