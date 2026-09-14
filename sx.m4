@@ -79,6 +79,23 @@ readonly SX_EX_PROTOCOL=76
 readonly SX_EX_NOPERM=77
 readonly SX_EX_CONFIG=78
 
+readonly SX_EX_STS0=OK
+readonly SX_EX_STS64=USAGE
+readonly SX_EX_STS65=DATAERR
+readonly SX_EX_STS66=NOINPUT
+readonly SX_EX_STS67=NOUSER
+readonly SX_EX_STS68=NOHOST
+readonly SX_EX_STS69=UNAVAILABLE
+readonly SX_EX_STS70=SOFTWARE
+readonly SX_EX_STS71=OSERR
+readonly SX_EX_STS72=OSFILE
+readonly SX_EX_STS73=CANTCREAT
+readonly SX_EX_STS74=IOERR
+readonly SX_EX_STS75=TEMPFAIL
+readonly SX_EX_STS76=PROTOCOL
+readonly SX_EX_STS77=NOPERM
+readonly SX_EX_STS78=CONFIG
+
 readonly SX_EX_MSG0='EX_OK(0): successful termination'
 readonly SX_EX_MSG64='EX_USAGE(64): command line usage error'
 readonly SX_EX_MSG65='EX_DATAERR(65): data format error'
@@ -269,6 +286,7 @@ SX_SYS_REV=0
 # ========================================
 #  CFG (Configuration)
 # ========================================
+
 M_RENAME_Q([|dnl
 ### sx_cfg_is_valid - SX_CFG_* の値が妥当か検査する
 ##
@@ -284,22 +302,16 @@ M_RENAME_Q([|dnl
 ##    0  すべて妥当 (SX_EX_OK)
 ##    1  無効な設定項目、または不適切な値が含まれる
 
-define([|CLEANUP|], [|Q_arg Q_out Q_vn|])dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 sx_cfg_is_valid() {
 	case "${#}" in 0)
-		Q_out=
-
-		for Q_vn in NUM_RANGE SKIP_CHK SIG_BASE SIG_ARR SEP; do
-			M_STR_APPEND([|Q_out|], [|" ${Q_vn}=\"\${SX_CFG_${Q_vn}-}\""|])
-		done
-
-		eval set -- "${Q_out}"
-		unset Q_out Q_vn
-
-		sx_cfg_is_valid "${@}" || return 1
-
-		return M_EX_OK
+		set -- \
+			NUM_RANGE="${SX_CFG_NUM_RANGE-}" \
+			SKIP_CHK="${SX_CFG_SKIP_CHK-}" \
+			SIG_BASE="${SX_CFG_SIG_BASE-}" \
+			SIG_ARR="${SX_CFG_SIG_ARR-}" \
+			SEP="${SX_CFG_SEP-}"
 	esac
 
 	for Q_arg in "${@}"; do
@@ -308,13 +320,13 @@ sx_cfg_is_valid() {
 			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128) ;;
 			SKIP_CHK=[01] | SEP=?* | SIG_BASE=?* | SIG_ARR=?*) ;;
 			*)
-				unset Q_arg
+				unset CLEANUP
 				return 1
 				;;
 		esac
 	done
 
-	unset Q_arg
+	unset CLEANUP
 }
 |], [|cfg_is_valid|])dnl
 
@@ -392,6 +404,7 @@ __sx_cfg_set() {
 # ========================================
 #  EX (Exit Status)
 # ========================================
+
 M_RENAME_Q([|dnl
 ### sx_ex_is_err - すべての引数がエラーを示す終了ステータス（1-255）であるか確認する
 ##
@@ -420,6 +433,7 @@ sx_ex_is_err() {
 	unset CLEANUP
 }
 |], [|ex_is_err|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_ex_is_status - すべての引数が有効な終了ステータス（0-255）であるか確認する
 ##
@@ -448,6 +462,7 @@ sx_ex_is_status() {
 	unset CLEANUP
 }
 |], [|ex_is_status|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_ex_is_valid - すべての引数が有効な終了ステータス（数値または名前）であるか確認する
 ##
@@ -568,6 +583,7 @@ __sx_ex_map() {
 	unset CLEANUP
 }
 |], [|ex_map|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_ex_remap - 終了ステータスをマッピングしてコマンドを実行する
 ##
@@ -2207,16 +2223,11 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   引数チェックを行わずに分配代入およびクォート結合処理を行う。
 
-define([|CLEANUP|], [|Q_bind Q_arg|])dnl
+define([|CLEANUP|], [|Q_bind|])dnl
 
 __sx_arg_quote() {
-	__sx_var_bind_init "${1}"
-	Q_bind="${1}"
-	shift
-
-	for Q_arg in "${@}"; do
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || break
-	done
+	__sx_var_bind_init "${1-}"
+	__sx_var_bind Q_bind "${@}" || :
 
 	unset CLEANUP
 }
@@ -12827,9 +12838,3 @@ __sx_arr_rquote() {
 	unset CLEANUP
 }
 |], [|arr_rquote|])dnl
-
-
-
-
-
-
