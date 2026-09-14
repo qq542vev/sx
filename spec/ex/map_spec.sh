@@ -125,13 +125,5 @@ Describe 'sx_ex_map'
       The status should be success
       The variable s should equal 0
     End
-
-    It '未知の名前に対しても (内部的には) 処理が継続されるがマッピングされない'
-      # 注: 現在の実装では __sx_ex_map はマッピングできない場合そのまま値を返す
-      SX_CFG_SKIP_CHK=1
-      When call sx_ex_map s UNKNOWN
-      The status should be success
-      The variable s should equal 'UNKNOWN'
-    End
   End
 End

@@ -113,8 +113,6 @@ readonly SX_EX_MSG76='EX_PROTOCOL(76): remote error in protocol'
 readonly SX_EX_MSG77='EX_NOPERM(77): permission denied'
 readonly SX_EX_MSG78='EX_CONFIG(78): configuration error'
 
-readonly SX_EX_MAP='OK:0 USAGE:64 DATAERR:65 NOINPUT:66 NOUSER:67 NOHOST:68 UNAVAILABLE:69 SOFTWARE:70 OSERR:71 OSFILE:72 CANTCREAT:73 IOERR:74 TEMPFAIL:75 PROTOCOL:76 NOPERM:77 CONFIG:78'
-
 readonly SX_STR_SOH=$'\cA'
 readonly SX_STR_STX=$'\cB'
 readonly SX_STR_ETX=$'\cC'
@@ -482,11 +480,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 sx_ex_is_valid() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			[0-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5]) continue;;
-		esac
-
-		case " ${SX_EX_MAP} " in
-			*" ${Q_arg}:"*) continue;;
+			[0-9] | [1-9][0-9] | 1[0-9][0-9] | 2[0-4][0-9] | 25[0-5] | OK | USAGE | DATAERR | NOINPUT | NOUSER | NOHOST | UNAVAILABLE | SOFTWARE | OSERR | OSFILE | CANTCREAT | IOERR | TEMPFAIL | PROTOCOL | NOPERM | CONFIG) continue;;
 		esac
 
 		unset CLEANUP
@@ -529,12 +523,12 @@ sx_ex_map() {
 
 	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
 
-	Q_bind="${1}"
+	Q_bind="${1-}"
 	shift
 
 	for Q_arg in "${@}"; do
-		case " ${SX_EX_MAP} " in
-			*" ${Q_arg}:"* | *":${Q_arg} "*) ;;
+		case "${Q_arg}" in
+			0 | 6[4-9] | 7[0-8] | OK | USAGE | DATAERR | NOINPUT | NOUSER | NOHOST | UNAVAILABLE | SOFTWARE | OSERR | OSFILE | CANTCREAT | IOERR | TEMPFAIL | PROTOCOL | NOPERM | CONFIG) ;;
 			*)
 				unset CLEANUP
 				return M_EX_USAGE
@@ -557,27 +551,18 @@ M_RENAME_QI([|dnl
 ##   sx_ex_map の内部実装。
 ##   引数チェックを行わずに変換処理を行う。
 
-define([|CLEANUP|], [|Q_bind Q_map Q_arg|])dnl
+define([|CLEANUP|], [|Q_bind Q_arg|])dnl
 
 __sx_ex_map() {
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
-	Q_map=" ${SX_EX_MAP} "
 	shift
 
 	for Q_arg in "${@}"; do
-		case " ${Q_map} " in
-			*" ${Q_arg}:"*)
-				Q_arg="${Q_map#*" ${Q_arg}:"}"
-				Q_arg="${Q_arg%% *}"
-				;;
-			*":${Q_arg} "*)
-				Q_arg="${Q_map%":${Q_arg} "*}"
-				Q_arg="${Q_arg##* }"
-				;;
-		esac
-
-		__sx_var_ubind Q_bind "${Q_bind}" "${Q_arg}" || break
+		case "${Q_arg}" in
+			[0-9]*) eval __sx_var_ubind Q_bind '"${Q_bind}"' "\"\${SX_EX_STS${Q_arg}}\"";;
+			*) eval __sx_var_ubind Q_bind '"${Q_bind}"' "\"\${SX_EX_${Q_arg}}\"";;
+		esac || break
 	done
 
 	unset CLEANUP
