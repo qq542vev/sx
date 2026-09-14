@@ -5623,9 +5623,9 @@ sx_num_divmod_int() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_int_base 10 ${2:+"${2}"} && __sx_num_is_nzint_base 10 ${3:+"${3}"} || return M_EX_USAGE
 
@@ -5707,9 +5707,9 @@ sx_num_divmod_nat0() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_base 10 ${2:+"${2}"} && __sx_num_is_nat1_base 10 ${3:+"${3}"} || return M_EX_USAGE
 
@@ -6207,9 +6207,9 @@ sx_num_edivmod_int() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_int_base 10 ${2:+"${2}"} && __sx_num_is_nzint_base 10 ${3:+"${3}"} || return M_EX_USAGE
 
@@ -7987,9 +7987,9 @@ sx_num_norm() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	Q_bind="${1}"
 	shift
@@ -8105,9 +8105,9 @@ sx_num_range() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_int_safe "${2-}" ${3+"${3}"} ${4+"${4}"} || return M_EX_USAGE
 
@@ -8148,7 +8148,7 @@ __sx_num_range() {
 			: $((Q_cur += ${3}))
 		done
 	else
-		while M_NUM_LT([|${2}|], [|${Q_cur}|]); do
+		while M_NUM_LT([|${2}|], [|Q_cur|]); do
 			__sx_var_ubind Q_bind "${Q_bind}" "${Q_cur}" || break
 			: $((Q_cur += ${3}))
 		done
@@ -8916,9 +8916,9 @@ sx_str_chunk() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -9371,9 +9371,9 @@ sx_str_find() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -9755,9 +9755,9 @@ sx_str_isep() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -10451,9 +10451,9 @@ sx_str_rfind() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -10699,9 +10699,9 @@ sx_str_split() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -11072,9 +11072,9 @@ sx_str_sub() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -11539,9 +11539,9 @@ sx_str_tr() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
