@@ -104,4 +104,96 @@ Describe 'sx_fn_with'
       The variable res should equal "it's me"
     End
   End
+
+  Describe 'B方式の懸念点: eval再解釈の検証'
+    It 'ダブルクォートを含む引数を壊さないこと'
+      When call sx_fn_with 'f=res="$1"' -- f 'he said "hi"'
+      The status should be success
+      The variable res should equal 'he said "hi"'
+    End
+
+    It 'ダブルクォートの境界を壊さないこと'
+      When call sx_fn_with 'f=res="$1"' -- f 'a"b'
+      The status should be success
+      The variable res should equal 'a"b'
+    End
+
+    It 'ドル・コマンド置換を再評価しないこと'
+      When call sx_fn_with 'f=res="$1"' -- f 'a$b `c`'
+      The status should be success
+      The variable res should equal 'a$b `c`'
+    End
+
+    It 'グロブ文字を展開しないこと'
+      When call sx_fn_with 'f=res="$1"' -- f "*"
+      The status should be success
+      The variable res should equal "*"
+    End
+
+    It '空文字引数を欠落させないこと'
+      When call sx_fn_with 'f=res="[$1][$2]"' -- f "" "x"
+      The status should be success
+      The variable res should equal "[][x]"
+    End
+
+    It 'セミコロンをコマンドとして実行しないこと'
+      When call sx_fn_with 'f=res="$1"' -- f 'a;res=hacked'
+      The status should be success
+      The variable res should equal 'a;res=hacked'
+    End
+
+    It 'SEP後のa=bはコマンドとして失敗すること'
+      When call sx_fn_with 'f=:' -- 'a=b'
+      The status should be failure
+      The stderr should include 'a=b'
+    End
+
+    It 'SEP後のa=bを定義扱いしないこと (REVは1だけ増える)'
+      rev_before=$SX_SYS_REV
+      sx_fn_with 'f=:' -- 'a=b' >/dev/null 2>&1 || :
+      The variable SX_SYS_REV should equal $((rev_before + 1))
+    End
+
+    It '改行を含む引数を壊さないこと'
+      # shellspec の When call + should equal は複数行値の転送に弱いため、
+      # 直接呼出しと case で検証する (本体が改行を保持することは別途手動確認済み)。
+      sx_fn_with 'f=res="$1"' -- f 'a
+b'
+      case "${res}" in
+        'a
+b') nl_ok=1;;
+        *) nl_ok=0;;
+      esac
+      The variable nl_ok should equal 1
+    End
+
+    It '失敗時もstatusを返しREVが2増えること'
+      rev_before=$SX_SYS_REV
+      sx_fn_with 'f1=return 42' 'f2=:' -- f1 || status=$?
+      The variable status should equal 42
+      The variable SX_SYS_REV should equal $((rev_before + 2))
+    End
+
+    It '失敗時も複数の匿名関数を削除すること'
+      rev_before=$SX_SYS_REV
+      sx_fn_with 'f1=return 42' 'f2=:' -- f1 >/dev/null 2>&1 || :
+      n1="sx_fn_anon_${rev_before}"
+      n2="sx_fn_anon_$((rev_before + 1))"
+      type "${n1}" >/dev/null 2>&1 && leak1=1 || leak1=0
+      type "${n2}" >/dev/null 2>&1 && leak2=1 || leak2=0
+      The variable leak1 should equal 0
+      The variable leak2 should equal 0
+    End
+
+    It '空コマンドは成功すること'
+      When call sx_fn_with -- :
+      The status should be success
+    End
+
+    It '空コマンド時はREVを増やさないこと'
+      rev_before=$SX_SYS_REV
+      sx_fn_with -- :
+      The variable SX_SYS_REV should equal $rev_before
+    End
+  End
 End
