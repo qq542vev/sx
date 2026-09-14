@@ -612,12 +612,7 @@ sx_ex_remap() {
 			-?*) sx_ex_is_status "${Q_src#-}";;
 			*-*) sx_ex_is_status "${Q_src#*-}" "${Q_src%%-*}";;
 			*) sx_ex_is_valid "${Q_src#!}";;
-		esac || {
-			unset CLEANUP
-			return M_EX_USAGE
-		}
-
-		sx_ex_is_valid "${Q_arg#*:}" || {
+		esac && sx_ex_is_valid "${Q_arg#*:}" || {
 			unset CLEANUP
 			return M_EX_USAGE
 		}
@@ -640,28 +635,23 @@ M_RENAME_QI([|dnl
 ##   引数のバリデーションは行わず、マッピングのパース、コマンドの実行、
 ##   および終了ステータスの変換を順次行う。
 
-define([|CLEANUP|], [|Q_sts Q_map Q_n|])dnl
+define([|CLEANUP|], [|Q_sts Q_map Q_arg Q_tmp|])dnl
 
 __sx_ex_remap() {
 	Q_map=
 
-	while M_STR_NE([|"${#}"|], [|0|]); do
-		case "${1}" in
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in
 			"${SX_CFG_SEP}") shift; break;;
 			*:*)
-				M_STR_APPEND([|Q_map|], [|" '${1}'"|])
+				M_STR_APPEND([|Q_map|], [|" '${Q_arg}'"|])
 				shift
 				;;
 			*) break;;
 		esac
 	done
 
-	__sx_arg_quote Q_cmd "${@}"
-	set -- "${Q_map}" "${Q_cmd}"
-	unset Q_map Q_cmd
-
-	eval "${2}" && Q_sts="${?}" || Q_sts="${?}"
-	eval set -- "${1}"
+	eval "unset CLEANUP; \"\${@:-:}\" && Q_sts=0 || Q_sts=\"\${?}\"; set -- ${Q_map}"
 
 	for Q_map in "${@}"; do
 		set -- "${Q_map%%:*}" "${Q_map#*:}"
@@ -677,8 +667,8 @@ __sx_ex_remap() {
 				;;
 			!*)
 				case "${1}" in ![!0-9]*)
-					__sx_ex_map Q_n "${1#!}"
-					set -- "!${Q_n}" "${2}"
+					__sx_ex_map Q_tmp "${1#!}"
+					set -- "!${Q_tmp}" "${2}"
 				esac
 
 				if M_STR_NE([|"${1#!}"|], [|"${Q_sts}"|]); then
@@ -686,9 +676,9 @@ __sx_ex_remap() {
 				fi
 				;;
 			[!0-9]*)
-				__sx_ex_map Q_n "${1}"
+				__sx_ex_map Q_tmp "${1}"
 
-				case "${Q_n}" in "${Q_sts}")
+				case "${Q_tmp}" in "${Q_sts}")
 					Q_sts="${2}"; break
 				esac
 				;;
@@ -699,7 +689,7 @@ __sx_ex_remap() {
 		__sx_ex_map Q_sts "${Q_sts}"
 	esac
 
-	set -- "${Q_sts}"
+	set -- "${Q_sts-0}"
 	unset CLEANUP
 	return "${1}"
 }
