@@ -519,11 +519,11 @@ sx_ex_map() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
-	Q_bind="${1-}"
+	Q_bind="${1}"
 	shift
 
 	for Q_arg in "${@}"; do
@@ -921,24 +921,34 @@ M_RENAME_Q([|dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  本体の構文が不正 (SX_EX_USAGE)
 
-define([|CLEANUP|], [|Q_bind Q_chk Q_arg|])dnl
+define([|CLEANUP|], [|Q_bind Q_arg|])dnl
 
 sx_fn_anon() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_anon "${@}" || return; return;; esac
 
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
+
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
+
 	Q_bind="${1}"
-	Q_chk=
 	shift
 
 	for Q_arg in "${@}"; do
-		__sx_arg_quote Q_arg "f=${Q_arg}"
-		M_STR_APPEND([|Q_chk|], [|" ${Q_arg}"|])
+		shift
+		set -- "${@}" "sx_fn_anon_0=${Q_arg}"
 	done
 
-	eval sx_fn_is_valid "${Q_chk}" || {
+	sx_fn_is_valid "${@}" || {
 		unset CLEANUP
 		return M_EX_USAGE
 	}
+
+	for Q_arg in "${@}"; do
+		shift
+		set -- "${@}" "${Q_arg#sx_fn_anon_0=}"
+	done
 
 	__sx_fn_anon "${Q_bind}" "${@}"
 	unset CLEANUP
@@ -968,7 +978,7 @@ __sx_fn_anon() {
 
 		__sx_fn_set "${Q_name}=${Q_arg}"
 
-		M_NUM_INCR([|SX_SYS_REV|])
+		M_NUM_INCRM1([|SX_SYS_REV|])
 	done
 
 	unset CLEANUP
