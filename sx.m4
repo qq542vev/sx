@@ -10489,7 +10489,7 @@ __sx_str_rfind() {
 		Q_sts=M_EX_OK
 
 		# 空 needle: len から 0 へ
-		while M_NUM_GE([|Q_off|], [|0|]); do
+		while M_NUM_LE([|0|], [|Q_off|]); do
 			case "${Q_text}" in
 				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:0" || :;;
 				*) __sx_var_bind Q_bind "${Q_bind}" '' || :;;
