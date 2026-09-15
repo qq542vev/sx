@@ -2588,7 +2588,7 @@ __sx_arg_resize() {
 		__sx_str_sub Q_shape: "${Q_shape}" -1 "${Q_inferred}"
 	esac
 
-	__sx_arg_pad Q_padded "$((Q_total * (${Q_flg} & SX_ARG_RESIZE_PAD_LEFT ? -1 : 1)))" "${Q_val}" ::: "${@}"
+	__sx_arg_pad Q_padded "$((Q_total * (Q_flg & SX_ARG_RESIZE_PAD_LEFT ? -1 : 1)))" "${Q_val}" ::: "${@}"
 
 	eval set -- "${Q_padded}"
 
@@ -2859,7 +2859,7 @@ __sx_arg_rfind_lit() {
 
 		case "${Q_glob}${Q_arg}" in "0${2}" | 1${2})
 			case "${Q_text}" in
-				0) __sx_var_ubind Q_bind "${Q_bind}" "$((${Q_i} - 3))" || :;;
+				0) __sx_var_ubind Q_bind "${Q_bind}" "$(( Q_i - 3 ))" || :;;
 				*) __sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || :;;
 			esac
 
@@ -5005,8 +5005,8 @@ __sx_num_add_nat0() {
 					;;
 			esac
 
-			Q_tmp=$((${Q_ch1} + ${Q_ch2} + Q_carry))
-			Q_carry=$((Q_b <= ${Q_tmp}))
+			Q_tmp=$(( Q_ch1 + Q_ch2 + Q_carry ))
+			Q_carry=$(( Q_b <= Q_tmp ))
 
 			case "${Q_carry}:${Q_rem1}:${Q_rem2}" in
 				?::) Q_rem1="${Q_tmp}${Q_out}" && break;;
@@ -8457,7 +8457,7 @@ __sx_num_sub_nat0() {
 				Q_rem1="${Q_tmp}"
 
 				case "${Q_ch1}" in 0*)
-					Q_ch1=$((1${Q_ch1} - ${Q_b}))
+					Q_ch1=$((1${Q_ch1} - Q_b))
 				esac
 				;;
 			*)
@@ -8473,7 +8473,7 @@ __sx_num_sub_nat0() {
 				Q_rem2="${Q_tmp}"
 
 				case "${Q_ch2}" in 0*)
-					Q_ch2=$((1${Q_ch2} - ${Q_b}))
+					Q_ch2=$((1${Q_ch2} - Q_b))
 				esac
 				;;
 			*)
@@ -11237,7 +11237,7 @@ __sx_str_sub_lit() {
 		M_STR_EQ([|"${Q_pat}"|], [|''|]) ||
 		{ M_NUM_BOOL([|Q_glob|]) && ! M_STR_HAS([|"${Q_pat}"|], [|*[!*]*|]); }
 	then
-		__sx_str_isep "${Q_bind}" "${Q_str}" "${Q_rep}" "$((${Q_lim} < 0 ? -1 : 1))" "$((${Q_lim} < 0 ? 0 - ${Q_lim} : ${Q_lim}))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))"
+		__sx_str_isep "${Q_bind}" "${Q_str}" "${Q_rep}" "$(( Q_lim < 0 ? -1 : 1 ))" "$(( Q_lim < 0 ? 0 - Q_lim : Q_lim ))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))"
 	elif M_NUM_LE([|0|], [|Q_lim|]); then
 		if M_STR_EQ([|"${Q_glob}"|], [|0|]); then
 			while M_STR_HAS([|"${Q_str}"|], [|"${Q_pat}"|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
