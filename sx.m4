@@ -4348,9 +4348,11 @@ __sx_var_list_ro() {
 sx_var_list_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_set "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_rw "${1}" IFS || return M_EX_NOPERM
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
+
+	__sx_var_is_bindable "${1}" IFS || return M_EX_NOPERM
 
 	__sx_var_list_set "${@}"
 }
@@ -4365,40 +4367,43 @@ M_RENAME_QI([|dnl
 ##   sx_var_list_set の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_args Q_res Q_out Q_pfx Q_ln Q_vn|])dnl
+define([|CLEANUP|], [|Q_args Q_bind Q_cnt Q_tmp Q_ln Q_vn|])dnl
 
 __sx_var_list_set() {
 	IFS="${SX_STR_LF}" __sx_str_split_ifs Q_args "$(set)"
-	Q_res="${1}"
-	Q_out=
-	Q_pfx=Q_v
+	__sx_var_bind_init "${1-}"
+	Q_bind="${1-}"
+	Q_cnt=0
 
 	eval set -- "${Q_args}"
 
-	for Q_ln; do
+	for Q_ln in "${@}"; do
+		shift
+
 		case "${Q_ln}" in [_"${SX_STR_ALPHA}"]=* | [_"${SX_STR_ALPHA}"]*["${SX_STR_WORD}"]=*)
 			Q_vn="${Q_ln%%=*}"
 
 			if
 				sx_var_is_name "${Q_vn}" &&
-				! __sx_var_is_set "${Q_pfx}${Q_vn}_" &&
+				! __sx_var_is_set "Q_v_${Q_vn}_" &&
 				__sx_var_is_set "${Q_vn}"
 			then
-				M_STR_APPEND([|Q_out|], [|"${Q_vn}"|], [| |])
-				eval "${Q_pfx}${Q_vn}_="
+				__sx_var_ubind Q_bind "${Q_bind}" "${Q_vn}" || :
+
+				case "${Q_bind}" in '')
+					__sx_num_sub_nat0 Q_tmp "${#}" "${Q_cnt}"
+					shift "${Q_tmp}"
+					break
+				esac
+
+				eval "Q_v_${Q_vn}_="
+				set -- "${@}" "Q_v_${Q_vn}_"
+				M_NUM_INCRM1([|Q_cnt|])
 			fi
 		esac
 	done
 
-	eval set -- "${Q_out}"
-
-	for Q_vn in "${@}"; do
-		unset "${Q_pfx}${Q_vn}_"
-	done
-
-	M_VAR_SET([|${Q_res}|], [|${Q_out}|])
-
-	unset CLEANUP
+	unset CLEANUP "${@}"
 }
 |], [|var_list_set|])dnl
 
