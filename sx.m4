@@ -4264,7 +4264,7 @@ __sx_var_list_dep() {
 ### sx_var_list_ro - 読み取り専用変数の一覧を取得する
 ##
 ## 使い方:
-##   sx_var_list_ro 結果変数名
+##   sx_var_list_ro 結果変数名（またはバインド形式）
 ##
 ## 説明:
 ##   現在のシェルで読み取り専用として設定されている全ての変数名（重複除去済み）を
@@ -4277,9 +4277,11 @@ __sx_var_list_dep() {
 sx_var_list_ro() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_ro "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_rw "${1}" IFS || return M_EX_NOPERM
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
+
+	__sx_var_is_bindable "${1}" IFS || return M_EX_NOPERM
 
 	__sx_var_list_ro "${@}"
 }
@@ -4288,54 +4290,57 @@ M_RENAME_QI([|dnl
 ### __sx_var_list_ro - 読み取り専用変数の一覧を取得する（内部用）
 ##
 ## 使い方:
-##   __sx_var_list_ro 結果変数名
+##   __sx_var_list_ro 結果変数名（またはバインド形式）
 ##
 ## 説明:
 ##   sx_var_list_ro の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_res Q_out Q_pfx Q_args Q_ln Q_vn|])dnl
+define([|CLEANUP|], [|Q_args Q_bind Q_cnt Q_tmp Q_ln Q_vn|])dnl
 
 __sx_var_list_ro() {
-	Q_res="${1}"
-	Q_out=
-	Q_pfx=Q_v
-
 	IFS="${SX_STR_LF}" __sx_str_split_ifs Q_args "$(readonly -p)"
+	__sx_var_bind_init "${1-}"
+	Q_bind="${1-}"
+	Q_cnt=0
+
 	eval set -- "${Q_args}"
 
-	for Q_ln; do
+	for Q_ln in "${@}"; do
+		shift
+
 		case "${Q_ln}" in 'readonly '[_"${SX_STR_ALPHA}"] | 'readonly '[_"${SX_STR_ALPHA}"]*["${SX_STR_WORD}"] | 'readonly '[_"${SX_STR_ALPHA}"]=* | 'readonly '[_"${SX_STR_ALPHA}"]*["${SX_STR_WORD}"]=*)
 			Q_vn="${Q_ln#readonly }"
 			Q_vn="${Q_vn%%=*}"
 
 			if
 				sx_var_is_name "${Q_vn}" &&
-				! __sx_var_is_set "${Q_pfx}${Q_vn}_" &&
+				! __sx_var_is_set "Q_v${Q_vn}_" &&
 				__sx_var_is_ro "${Q_vn}"
 			then
-				M_STR_APPEND([|Q_out|], [|"${Q_vn}"|], [| |])
-				eval "${Q_pfx}${Q_vn}_="
+				__sx_var_ubind Q_bind "${Q_bind}" "${Q_vn}" || :
+
+				case "${Q_bind}" in '')
+					__sx_num_sub_nat0 Q_tmp "${#}" "${Q_cnt}"
+					shift "${Q_tmp}"
+					break
+				esac
+
+				eval "Q_v${Q_vn}_="
+				set -- "${@}" "Q_v${Q_vn}_"
+				M_NUM_INCRM1([|Q_cnt|])
 			fi
 		esac
 	done
 
-	eval set -- "${Q_out}"
-
-	for Q_vn in "${@}"; do
-		unset "${Q_pfx}${Q_vn}_"
-	done
-
-	M_VAR_SET([|${Q_res}|], [|${Q_out}|])
-
-	unset CLEANUP
+	unset CLEANUP "${@}"
 }
 |], [|var_list_ro|])dnl
 
 ### sx_var_list_set - 設定されている変数の一覧を取得する
 ##
 ## 使い方:
-##   sx_var_list_set 結果変数名
+##   sx_var_list_set 結果変数名（またはバインド形式）
 ##
 ## 説明:
 ##   現在のシェルで設定されている全ての変数名（重複除去済み）をスペース区切りの文字列として取得し、
@@ -4361,7 +4366,7 @@ M_RENAME_QI([|dnl
 ### __sx_var_list_set - 設定されている変数の一覧を取得する（内部用）
 ##
 ## 使い方:
-##   __sx_var_list_set 結果変数名
+##   __sx_var_list_set 結果変数名（またはバインド形式）
 ##
 ## 説明:
 ##   sx_var_list_set の内部実装。
@@ -4385,7 +4390,7 @@ __sx_var_list_set() {
 
 			if
 				sx_var_is_name "${Q_vn}" &&
-				! __sx_var_is_set "Q_v_${Q_vn}_" &&
+				! __sx_var_is_set "Q_v${Q_vn}_" &&
 				__sx_var_is_set "${Q_vn}"
 			then
 				__sx_var_ubind Q_bind "${Q_bind}" "${Q_vn}" || :
@@ -4396,8 +4401,8 @@ __sx_var_list_set() {
 					break
 				esac
 
-				eval "Q_v_${Q_vn}_="
-				set -- "${@}" "Q_v_${Q_vn}_"
+				eval "Q_v${Q_vn}_="
+				set -- "${@}" "Q_v${Q_vn}_"
 				M_NUM_INCRM1([|Q_cnt|])
 			fi
 		esac
