@@ -29,4 +29,11 @@ Describe 'sx_var_is_copyable'
     When call sx_var_is_copyable "a+b"
     The status should equal 64
   End
+
+  It 'コピー先と接頭辞を共有する読み取り専用変数がある場合に失敗を返すこと'
+    v1=a v2=b
+    readonly v2_ro=c
+    When call sx_var_is_copyable "v1-v2"
+    The status should be failure
+  End
 End

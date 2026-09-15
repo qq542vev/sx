@@ -2134,7 +2134,9 @@ __sx_arg_map() {
 			continue
 		esac
 
-		case "${3}" in '') break;; esac
+		case "${3}" in '')
+			break
+		esac
 
 		case "${1}" in
 			0)
@@ -3643,6 +3645,9 @@ sx_var_is_chain() {
 ## 説明:
 ##   与えられた連鎖式群を実行した場合に、書き込み対象となる全ての変数
 ##   （配列の子要素を含む）が書き込み可能か確認する。
+##   「名前_*」形式の変数は暗黙的に「名前」に属するとみなす。
+##   そのため、宛先が配列でない場合でも、属する全ての変数が
+##   書き込み可能であることを要求する。
 ##
 ## 終了ステータス:
 ##    0  すべて書き込み可能 (SX_EX_OK)
@@ -3660,27 +3665,38 @@ M_RENAME_QI([|dnl
 ### __sx_var_is_copyable - コピー先が構造を含めて書き込み可能か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_var_is_copyable 変数名1 変数名2 [変数名3 ...]
+##   __sx_var_is_copyable [連鎖式1 [連鎖式2 ...]]
 ##
 ## 説明:
 ##   sx_var_is_copyable の内部実装。
 ##   引数チェックは行わない。
+##   「名前_*」形式の変数は暗黙的に「名前」に属するとみなすため、
+##   __sx_var_is_rw_deep により配下の変数も含めて確認する。
 
-define([|CLEANUP|], [|Q_ls Q_out Q_arg|])dnl
+define([|CLEANUP|], [|Q_ls Q_arg|])dnl
 
 __sx_var_is_copyable() {
-	__sx_var_list_copy Q_ls "${@}"
-	eval set -- "${Q_ls}"
+	Q_ls=''
 
-	Q_out=
 	for Q_arg in "${@}"; do
-		M_STR_APPEND([|Q_out|], [|" ${Q_arg%%=*}"|])
+		case "${Q_arg}" in
+			*=*) Q_arg="${Q_arg%[=-]*}";;
+			*-*) Q_arg="${Q_arg#*[=-]}";;
+			*) continue;;
+		esac
+
+		while M_STR_MATCH([|"${Q_arg}"|], [|*[=-]*|]); do
+			M_STR_APPEND([|Q_ls|], [|" ${Q_arg%%[=-]*}"|])
+			Q_arg="${Q_arg#*[=-]}"
+		done
+
+		M_STR_APPEND([|Q_ls|], [|" ${Q_arg}"|])
 	done
 
-	eval set -- "${Q_out}"
+	eval set -- "${Q_ls}"
 	unset CLEANUP
 
-	__sx_var_is_rw_all "${@}" || return
+	__sx_var_is_rw_deep "${@}" || return
 }
 |], [|var_is_copyable|])dnl
 
@@ -4407,7 +4423,7 @@ M_RENAME_Q([|dnl
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  移動先または削除対象が読み取り専用 (SX_EX_NOPERM)
 
-define([|CLEANUP|], [|Q_chk Q_arg|])dnl
+define([|CLEANUP|], [|Q_src Q_arg|])dnl
 
 sx_var_move() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_move "${@}" || return; return 0;; esac
@@ -4416,21 +4432,20 @@ sx_var_move() {
 
 	__sx_var_is_copyable "${@}" || return M_EX_NOPERM
 
-	Q_chk=
+	Q_src=
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			*=*) M_STR_APPEND([|Q_chk|], [|" ${Q_arg##*=}"|]);;
-			*) M_STR_APPEND([|Q_chk|], [|" ${Q_arg%%-*}"|]);;
+			*=*) M_STR_APPEND([|Q_src|], [|" ${Q_arg##*=}"|]);;
+			*) M_STR_APPEND([|Q_src|], [|" ${Q_arg%%-*}"|]);;
 		esac
 	done
 
-	eval __sx_var_is_rw_all "${Q_chk}" || {
+	eval __sx_var_is_rw_all "${Q_src}" || {
 		unset CLEANUP
 		return M_EX_NOPERM
 	}
 
-	__sx_var_copy "${@}"
-	eval __sx_var_unset "${Q_chk}"
+	__sx_var_move "${@}"
 
 	unset CLEANUP
 }
@@ -4561,42 +4576,41 @@ M_RENAME_Q([|dnl
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 
-define([|CLEANUP|], [|Q_arr Q_arg Q_out Q_tmp|])dnl
+define([|CLEANUP|], [|Q_arg Q_toggle|])dnl
 
 sx_var_swap() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_swap "${@}" || return; return 0;; esac
 
 	sx_var_is_chain "${@}" || return M_EX_USAGE
 
-	Q_out=
-	__sx_arr_gen Q_arr
-
 	for Q_arg in "${@}"; do
-		__sx_arr_push Q_arr ''
-		Q_tmp="Q_arr_$((Q_arr_len - 1))"
+		shift
 
 		case "${Q_arg}" in
-			*=*)
-				__sx_var_copy "${Q_arg%%=*}-${Q_tmp}"
-				M_STR_APPEND([|Q_out|], [|" ${Q_arg}=${Q_tmp}"|])
-				;;
-			*-*)
-				__sx_var_copy "${Q_arg##*-}-${Q_tmp}"
-				M_STR_APPEND([|Q_out|], [|" ${Q_tmp}-${Q_arg}"|])
-				;;
+			*=*) set -- "${@}" "${Q_arg}" "${Q_arg##*=}=${Q_arg%%=*}";;
+			*-*) set -- "${@}" "${Q_arg}" "${Q_arg##*-}-${Q_arg%%-*}";;
 		esac
 	done
 
-	eval set -- "${Q_out}"
-	unset Q_arg Q_tmp Q_out
-
 	__sx_var_is_copyable "${@}" || {
-		__sx_var_unset Q_arr
+		unset CLEANUP
 		return M_EX_NOPERM
 	}
 
-	__sx_var_copy "${@}"
-	__sx_var_unset Q_arr
+	Q_toggle=0
+
+	for Q_arg in "${@}"; do
+		shift
+
+		case "${Q_toggle}" in 0)
+			set -- "${@}" "${Q_arg}"
+		esac
+
+		Q_toggle="$((!Q_toggle))"
+	done
+
+	__sx_var_swap "${@}"
+	unset CLEANUP
 }
 |], [|var_swap|])dnl
 
@@ -4610,32 +4624,21 @@ M_RENAME_QI([|dnl
 ##   sx_var_swap の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_arg Q_tmp Q_out|])dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_var_swap() {
-	Q_out=
-	__sx_arr_gen Q_arr
-
 	for Q_arg in "${@}"; do
-		__sx_arr_push Q_arr ''
-		Q_tmp="Q_arr_$((__sx_var_swap_arr__len - 1))"
+		shift
 
 		case "${Q_arg}" in
-			*=*)
-				__sx_var_copy "${Q_arg%%=*}-${Q_tmp}"
-				M_STR_APPEND([|Q_out|], [|" ${Q_arg}=${Q_tmp}"|])
-				;;
-			*-*)
-				__sx_var_copy "${Q_arg##*-}-${Q_tmp}"
-				M_STR_APPEND([|Q_out|], [|" ${Q_tmp}-${Q_arg}"|])
-				;;
+			*=*) set -- "${@}" "${Q_arg}" "${Q_arg##*=}=${Q_arg%%=*}";;
+			*-*) set -- "${@}" "${Q_arg}" "${Q_arg##*-}-${Q_arg%%-*}";;
 		esac
 	done
 
-	eval __sx_var_copy "${Q_out}"
+	__sx_var_copy "${@}"
 
 	unset CLEANUP
-	__sx_var_unset Q_arr
 }
 |], [|var_swap|])dnl
 

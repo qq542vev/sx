@@ -79,6 +79,15 @@ Describe 'sx_var_copy'
       When call sx_var_copy v1-ro_var
       The status should equal 77
     End
+
+    It 'コピー先と接頭辞を共有する読み取り専用変数がある場合に EX_NOPERM を返すこと'
+      v1=a v2=b
+      readonly v2_ro=c
+      When call sx_var_copy v1-v2
+      The status should equal 77
+      The variable v1 should equal "a"
+      The variable v2 should equal "b"
+    End
   End
 
   Describe '境界ケース'

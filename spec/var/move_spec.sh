@@ -52,4 +52,13 @@ Describe 'sx_var_move'
     When call sx_var_move "a+b"
     The status should equal 64
   End
+
+  It '移動先と接頭辞を共有する読み取り専用変数がある場合に EX_NOPERM を返すこと'
+    v1=a v2=b
+    readonly v2_ro=c
+    When call sx_var_move v1-v2
+    The status should equal 77
+    The variable v1 should equal "a"
+    The variable v2 should equal "b"
+  End
 End
