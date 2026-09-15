@@ -8979,7 +8979,7 @@ __sx_str_chunk() {
 		Q_cur="${Q_cycle%%:*}" &&
 		Q_qm="${Q_cur#?}" &&
 		Q_abs="${#Q_qm}" &&
-		M_NUM_BOOL([|${Q_abs} <= Q_len && 0 < Q_lim|])
+		M_NUM_BOOL([|Q_abs <= Q_len && 0 < Q_lim|])
 	do
 		Q_cycle="${Q_cycle#*:}${Q_cur}:"
 		: $((Q_len -= Q_abs))
@@ -9409,7 +9409,7 @@ __sx_str_find() {
 		Q_sts=M_EX_OK
 
 		# 空 needle: 全境界位置（0 〜 len）に長さ0で出力
-		while M_NUM_LE([|${Q_off}|], [|${#Q_tgt}|]); do
+		while M_NUM_LE([|Q_off|], [|${#Q_tgt}|]); do
 			case "${Q_text}" in
 				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:0" || :;;
 				*) __sx_var_bind Q_bind "${Q_bind}" '' || :;;
@@ -9927,7 +9927,7 @@ __sx_str_isep_lit() {
 	Q_out=
 	Q_cnt=0
 
-	if M_NUM_LT([|0|], [|${Q_int}|]); then
+	if M_NUM_LT([|0|], [|Q_int|]); then
 		# === Forward: 先頭から interval 文字ごとに区切る ===
 		# PRE: 先頭の境界
 		if M_NUM_BOOL([|Q_flg & SX_STR_ISEP_PRE && Q_cnt < Q_lim|]); then
@@ -10489,7 +10489,7 @@ __sx_str_rfind() {
 		Q_sts=M_EX_OK
 
 		# 空 needle: len から 0 へ
-		while M_NUM_GE([|${Q_off}|], [|0|]); do
+		while M_NUM_GE([|Q_off|], [|0|]); do
 			case "${Q_text}" in
 				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:0" || :;;
 				*) __sx_var_bind Q_bind "${Q_bind}" '' || :;;
@@ -11580,7 +11580,7 @@ __sx_str_tr() {
 			__sx_str_chunk Q_to "${4}" 1
 			eval set -- "${Q_to}"
 
-			if M_NUM_LT([|${Q_lim}|], [|0|]); then
+			if M_NUM_LT([|Q_lim|], [|0|]); then
 				Q_lim="${Q_lim#-}"
 
 				while M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
