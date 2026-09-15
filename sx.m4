@@ -2462,6 +2462,7 @@ __sx_arg_pad_lit() {
 	unset CLEANUP
 }
 |], [|arg_pad_lit|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_arg_resize - 引数リストを指定された形状にリサイズする
 ##
@@ -3600,6 +3601,7 @@ __sx_var_is_bindable() {
 	__sx_var_is_rw "${@}" || return
 }
 |], [|var_is_bindable|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_var_is_chain - 文字列が有効な連鎖式であるか確認する
 ##
@@ -3806,6 +3808,7 @@ __sx_var_is_empty() {
 	done
 }
 |], [|var_is_empty|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_var_is_name - 変数名として有効か確認する
 ##
@@ -4187,6 +4190,7 @@ sx_var_list_dep() {
 
 	__sx_var_list_dep "${@}"
 }
+
 M_RENAME_QI([|dnl
 ### __sx_var_list_dep - 指定された変数に関連するすべての変数名を取得する（内部用）
 ##
@@ -4381,6 +4385,7 @@ __sx_var_list_set() {
 	unset CLEANUP
 }
 |], [|var_list_set|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_var_move - 変数を連鎖移動する
 ##
@@ -4456,6 +4461,7 @@ __sx_var_move() {
 	unset CLEANUP
 }
 |], [|var_move|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_var_set - 変数に値を設定、または削除する
 ##
@@ -4535,6 +4541,7 @@ __sx_var_set() {
 	unset CLEANUP
 }
 |], [|var_set|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_var_swap - 変数を連鎖的にローテーションする
 ##
@@ -6309,6 +6316,7 @@ sx_num_is_fixed() {
 	unset CLEANUP
 }
 |], [|num_is_fixed|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_num_is_float - すべての引数が 10 進の実数表記（浮動小数点形式）であるか確認する
 ##
@@ -6338,6 +6346,7 @@ sx_num_is_float() {
 	unset CLEANUP
 }
 |], [|num_is_float|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_num_is_float_safe - すべての引数が安全な範囲の 10 進の実数表記であるか確認する
 ##
@@ -6369,6 +6378,7 @@ sx_num_is_float_safe() {
 	unset CLEANUP
 }
 |], [|num_is_float_safe|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_num_is_int - すべての引数が整数であるか確認する
 ##
@@ -6800,6 +6810,7 @@ __sx_num_is_int_width() {
 	__sx_num_is_int_fit "${@}" || return
 }
 |], [|num_is_int_width|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_num_is_nat0 - すべての引数が 0 以上の自然数（符号なし整数） であるか確認する
 ##
@@ -6911,6 +6922,7 @@ __sx_num_is_nat0_safe() {
 	sx_num_is_nat0 "${@}" || return
 	__sx_num_is_int_fit "${SX_CFG_NUM_RANGE}" "${@}" || return
 }
+
 M_RENAME_Q([|dnl
 ### sx_num_is_nat1 - すべての引数が 1 以上の自然数（符号なし整数） であるか確認する
 ##
@@ -7021,6 +7033,7 @@ __sx_num_is_nat1_safe() {
 	sx_num_is_nat1 "${@}" || return
 	__sx_num_is_int_fit "${SX_CFG_NUM_RANGE}" "${@}" || return
 }
+
 M_RENAME_Q([|dnl
 ### sx_num_is_nint - すべての引数が負の整数であるか確認する
 ##
@@ -7101,6 +7114,7 @@ __sx_num_is_nint_base() {
 	unset CLEANUP
 }
 |], [|num_is_nint_base|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_num_is_nnint - すべての引数が非負整数（0以上の整数）であるか確認する
 ##
@@ -7183,6 +7197,7 @@ __sx_num_is_nnint_base() {
 	unset CLEANUP
 }
 |], [|num_is_nnint_base|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_num_is_npint - すべての引数が非正整数（0以下の整数）であるか確認する
 ##
@@ -7317,6 +7332,7 @@ __sx_num_is_num_safe() {
 	unset CLEANUP
 }
 |], [|num_is_num_safe|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_num_is_nzint - すべての引数が 0 以外の整数であるか確認する
 ##
@@ -7397,6 +7413,7 @@ __sx_num_is_nzint_base() {
 	unset CLEANUP
 }
 |], [|num_is_nzint_base|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_num_is_pint - すべての引数が正の整数であるか確認する
 ##
@@ -8157,6 +8174,7 @@ __sx_num_range() {
 	unset CLEANUP
 }
 |], [|num_range|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_num_rel - 数値間の関係を確認する
 ##
@@ -8595,6 +8613,7 @@ __sx_num_sub1_nat0() {
 # ========================================
 #  UUID (UUID Operations)
 # ========================================
+
 M_RENAME_Q([|dnl
 ### sx_uuid_is_uuid - すべての引数が UUID 形式であるか確認する
 ##
@@ -8629,6 +8648,7 @@ sx_uuid_is_uuid() {
 # ========================================
 #  STR (String Operations)
 # ========================================
+
 M_RENAME_Q([|dnl
 ### sx_str_any - 第一引数が、後続引数のいずれかの文字列と完全に一致するか確認する
 ##
@@ -9144,6 +9164,7 @@ __sx_str_cycle() {
 	unset CLEANUP
 }
 |], [|str_cycle|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_str_eq - すべての引数が文字列として一致するか確認する
 ##
@@ -9292,6 +9313,7 @@ __sx_str_etrim() {
 
 	M_VAR_SET([|${1}|], [|M_STR_RTRIM([|2|], [|[!"${3}"]|])|])
 }
+
 M_RENAME_Q([|dnl
 ### sx_str_ew - 第一引数が、第二引数以降のいずれかの文字列で終わっているか確認する
 ##
@@ -9474,6 +9496,7 @@ __sx_str_find() {
 	return "${1}"
 }
 |], [|str_find|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_str_has - 第一引数に、第二引数以降のいずれかの文字列が含まれているか確認する
 ##
@@ -9628,6 +9651,7 @@ sx_str_is_lower() {
 sx_str_is_oct() {
 	sx_str_is_of "${SX_STR_OCT}" "${@}" || return
 }
+
 M_RENAME_Q([|dnl
 ### sx_str_is_of - すべての引数が指定された文字集合のみで構成されているか確認する
 ##
@@ -10060,6 +10084,7 @@ __sx_str_lower_cb() {
 		*) eval "${1}=\"\${2}\"";;
 	esac
 }
+
 M_RENAME_Q([|dnl
 ### sx_str_match - 第一引数が、後続引数のいずれかのパターンにマッチするか確認する
 ##
@@ -11365,6 +11390,7 @@ __sx_str_substr() {
 	CLEANUP
 }
 |], [|str_substr|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
 ##
@@ -11958,6 +11984,7 @@ __sx_glob_escape() {
 # ========================================
 #  ARR (Array Operations)
 # ========================================
+
 M_RENAME_Q([|dnl
 ### sx_arr_at - 配列の要素を取得または存在確認する
 ##
@@ -12674,6 +12701,7 @@ __sx_arr_push() {
 	unset CLEANUP
 }
 |], [|arr_push|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_arr_quote - 配列要素をシングルクォートで囲み、スペース区切りで結合する
 ##
@@ -12745,6 +12773,7 @@ __sx_arr_quote() {
 	unset CLEANUP
 }
 |], [|arr_quote|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_arr_rquote - 配列要素を逆順にシングルクォートで囲み、スペース区切りで結合する
 ##
