@@ -136,4 +136,75 @@ Describe 'sx_var_bind'
             The status should equal 78
         End
     End
+
+    Describe '@ 記法（配列マーカー）'
+        It '末尾 @name に残りの全要素を分配すること'
+            sx_var_bind_init "x:@b_arr"
+            unset res
+            When call sx_var_bind res "x:@b_arr" "v1" "v2" "v3"
+            The status should be success
+            The variable x should equal "v1"
+            The variable b_arr_len should equal "2"
+            The variable b_arr_0 should equal "v2"
+            The variable b_arr_1 should equal "v3"
+            The variable res should equal "@b_arr"
+        End
+
+        It 'N@name 中間形で個数制限どおりに分配すること'
+            sx_var_bind_init "a:2@b_arr2:c"
+            unset res
+            When call sx_var_bind res "a:2@b_arr2:c" "v1" "v2" "v3" "v4"
+            The status should be success
+            The variable a should equal "v1"
+            The variable b_arr2_len should equal "2"
+            The variable b_arr2_0 should equal "v2"
+            The variable b_arr2_1 should equal "v3"
+            The variable c should equal "'v4'"
+            The variable res should equal "c"
+        End
+
+        It '空白やクォートを含む値を生のまま格納すること'
+            sx_var_bind_init "x:@b_arr3"
+            unset res
+            When call sx_var_bind res "x:@b_arr3" "a b" "c'd" "e f"
+            The status should be success
+            The variable x should equal "a b"
+            The variable b_arr3_len should equal "2"
+            The variable b_arr3_0 should equal "c'd"
+            The variable b_arr3_1 should equal "e f"
+        End
+
+        It '単独 @name に全要素を分配すること'
+            sx_var_bind_init "@b_arr5"
+            unset res
+            When call sx_var_bind res "@b_arr5" "v1" "v2"
+            The status should be success
+            The variable b_arr5_len should equal "2"
+            The variable b_arr5_0 should equal "v1"
+            The variable b_arr5_1 should equal "v2"
+            The variable res should equal "@b_arr5"
+        End
+
+        It 'データが無い場合にバインド形式を残して成功すること'
+            sx_var_bind_init "x:@b_arr4"
+            unset res
+            When call sx_var_bind res "x:@b_arr4"
+            The status should be success
+            The variable b_arr4_len should equal "0"
+            The variable res should equal "x:@b_arr4"
+        End
+
+        It '初期化されていない @name に対して EX_DATAERR (65) を返すこと'
+            unset b_fresh_x b_fresh
+            When call sx_var_bind res "b_fresh_x:@b_fresh" "v1" "v2"
+            The status should equal 65 # SX_EX_DATAERR
+        End
+
+        It '読み取り専用の配列に対して EX_NOPERM (77) を返すこと'
+            sx_arr_gen ro_barr "x"
+            readonly ro_barr ro_barr_len ro_barr_0
+            When call sx_var_bind res "bq:@ro_barr" "v"
+            The status should equal 77 # SX_EX_NOPERM
+        End
+    End
 End

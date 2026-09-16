@@ -99,4 +99,37 @@ Describe 'sx_var_ubind'
             The status should equal 78
         End
     End
+
+    Describe '@ 記法（配列マーカー）'
+        It '末尾 @name に残りの全要素を生のまま分配すること'
+            sx_var_bind_init "x:@u_arr"
+            unset res
+            When call sx_var_ubind res "x:@u_arr" "a b" "c'd" "e"
+            The status should be success
+            The variable x should equal "a b"
+            The variable u_arr_len should equal "2"
+            The variable u_arr_0 should equal "c'd"
+            The variable u_arr_1 should equal "e"
+            The variable res should equal "@u_arr"
+        End
+
+        It 'N@name 中間形で個数制限どおりに分配すること'
+            sx_var_bind_init "a:2@u_arr2:c"
+            unset res
+            When call sx_var_ubind res "a:2@u_arr2:c" "v1" "v2" "v3" "v4"
+            The status should be success
+            The variable a should equal "v1"
+            The variable u_arr2_len should equal "2"
+            The variable u_arr2_0 should equal "v2"
+            The variable u_arr2_1 should equal "v3"
+            The variable c should equal "v4"
+            The variable res should equal "c"
+        End
+
+        It '初期化されていない @name に対して EX_DATAERR (65) を返すこと'
+            unset u_fresh_x u_fresh
+            When call sx_var_ubind res "u_fresh_x:@u_fresh" "v1" "v2"
+            The status should equal 65 # SX_EX_DATAERR
+        End
+    End
 End

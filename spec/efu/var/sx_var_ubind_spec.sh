@@ -20,4 +20,14 @@ Describe 'sx_var_ubind -efu 環境検証'
     When run efu_run efu_ubind_exhaust
     The status should equal 1
   End
+
+  It '@name への分配が正常動作すること'
+    efu_ubind_arr() {
+      sx_var_bind_init "x:@eu_arr"
+      sx_var_ubind res "x:@eu_arr" "v1" "v2" "v3"
+    }
+
+    When run efu_run efu_ubind_arr
+    The status should be success
+  End
 End
