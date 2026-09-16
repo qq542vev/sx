@@ -1430,10 +1430,14 @@ __sx_arg_find_lit() {
 	shift 3
 
 	for Q_arg in "${@}"; do
+		case "${Q_bind}" in '')
+			break
+		esac
+
 		case "${Q_glob}${Q_arg}" in "0${Q_tgt}" | 1${Q_tgt})
 			case "${Q_text}" in
-				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_i}" || :;;
-				*) __sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || :;;
+				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_i}";;
+				*) __sx_var_bind Q_bind "${Q_bind}" "${Q_arg}";;
 			esac
 
 			Q_sts=M_EX_OK
@@ -2849,21 +2853,24 @@ M_RENAME_QI([|dnl
 ##   sx_arg_rfind のリテラル/Glob検索実装。末尾から先頭に向かって検索する。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_bind Q_glob Q_text Q_i Q_arg Q_sts|])dnl
+define([|CLEANUP|], [|Q_bind Q_match Q_glob Q_text Q_i Q_arg Q_sts|])dnl
 
 __sx_arg_rfind_lit() {
 	Q_bind="${1}"
+	Q_match="${2}"
 	Q_glob=$(((${3} & SX_ARG_RFIND_GLOB) != 0))
 	Q_text=$(((${3} & SX_ARG_RFIND_TEXT) != 0))
+
+	shift 3
 	Q_i="${#}"
 
-	while M_NUM_LT([|3|], [|Q_i|]); do
+	while M_NUM_LT([|0|], [|Q_i|]) && M_STR_NE([|"${Q_bind}"|], [|''|]); do
 		eval Q_arg=\"\${${Q_i}}\"
 
-		case "${Q_glob}${Q_arg}" in "0${2}" | 1${2})
+		case "${Q_glob}${Q_arg}" in "0${Q_match}" | 1${Q_match})
 			case "${Q_text}" in
-				0) __sx_var_ubind Q_bind "${Q_bind}" "$(( Q_i - 3 ))" || :;;
-				*) __sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || :;;
+				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_i}";;
+				*) __sx_var_bind Q_bind "${Q_bind}" "${Q_arg}";;
 			esac
 
 			Q_sts=M_EX_OK
