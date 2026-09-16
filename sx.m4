@@ -3524,30 +3524,58 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_var_is_bind の内部実装。SX_CFG_NUM_RANGE の妥当性チェックは行わない。
 
-define([|CLEANUP|], [|Q_arg Q_bind|])dnl
+define([|CLEANUP|], [|Q_arg Q_bind Q_mark Q_seg Q_vn Q_type Q_tmp|])dnl
 
 __sx_var_is_bind() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in *[!"${SX_STR_WORD}":]* | 0* | *:0*)
-			unset CLEANUP
+		Q_mark=
+
+		case "${Q_arg}" in *[!":@${SX_STR_WORD}"]* | 0* | *:0* | *@ | *@[!"_${SX_STR_ALPHA}"]* | @*:* | *[!0-9]@*:*)
+			eval unset CLEANUP "${Q_mark}"
 			return 1
 		esac
 
 		case "${Q_arg##*:}" in [0-9]*)
-			unset CLEANUP
+			eval unset CLEANUP "${Q_mark}"
 			return 1
 		esac
 
-		Q_bind=":${Q_arg}"
+		Q_bind="${Q_arg}:"
 
-		while M_STR_MATCH([|"${Q_bind}"|], [|*:[1-9]*|]); do
-			Q_bind="${Q_bind#"${Q_bind%%:[1-9]*}:"}"
+		while
+			Q_seg="${Q_bind%%:*}"
+			Q_bind="${Q_bind#*:}"
+			Q_vn=
 
-			__sx_num_is_nat0_base 10 "${Q_bind%%[!0-9]*}" || {
-				unset CLEANUP
-				return 1
-			}
-		done
+			case "${Q_seg}" in
+				*["_${SX_STR_ALPHA}"]*@*)
+					eval unset CLEANUP "${Q_mark}"
+					return 1
+					;;
+				*@*) Q_vn="${Q_seg#*@}" Q_type=arr;;
+				[1-9]*["_${SX_STR_ALPHA}"]*) Q_vn="${Q_seg#"${Q_seg%%[!1-9]*}"}" Q_type=list;;
+				["_${SX_STR_ALPHA}"]*)
+					case "${Q_bind}" in
+						?*) Q_vn="${Q_seg}" Q_type=scalar;;
+						*) Q_vn="${Q_seg}" Q_type=list;;
+					esac
+					;;
+			esac
+
+			case "${Q_vn}" in ?*)
+				eval "Q_tmp=\"\${Q_v${Q_vn}_=${Q_type}}\""
+				M_STR_APPEND([|Q_mark|], [|"Q_v${Q_vn}_ "|])
+
+				if M_STR_NE([|"${Q_tmp}"|], [|"${Q_type}"|]); then
+					eval unset CLEANUP "${Q_mark}"
+					return 1
+				fi
+			esac
+
+			M_STR_NE([|"${Q_bind}"|], [|''|]) && continue
+		do :; done
+
+		eval ${Q_mark:+"unset ${Q_mark}"}
 	done
 
 	unset CLEANUP
@@ -4260,7 +4288,7 @@ __sx_var_list_dep() {
 
 		case "${Q_mark}" in ?*)
 			eval "Q_v${1}_="
-			M_STR_APPEND([|Q_mark|], [|"Q_v${1}_"|], [| |])
+			M_STR_APPEND([|Q_mark|], [|"Q_v${1}_ "|])
 		esac
 
 		if __sx_var_is_arr "${1}"; then

@@ -69,11 +69,24 @@ POSIX sh には `local` が存在しないため、命名規則と `m4` 展開�
 
 ## 6. 検証プロトコル (Validation)
 
-- **静的解析・テスト**: `shellcheck` と `shellspec`（`--warning-as-failure`、全 Example を `-efu` 下で実行＋`check_no_leak`）をパスすることを必須とします。通常は `make test` を使用してください。
+- **静的解析**: `shellcheck` を必須とします（個別・全体を問わず毎回実行）。
+- **テスト**: `shellspec`（`--warning-as-failure`、全 Example を `-efu` 下で実行＋`check_no_leak`）をパスすることを必須とします。
+- **個別テスト（日常の原則）**: `make all` でビルド後、変更に関連する spec のみを実行します。`.shellspec` の警告・`spec_helper`（`-efu`＋`check_no_leak`）は個別実行時も自動継承されます。
+  ```sh
+  # 機能単位（公開 API と -efu 検証の両方を実行）
+  shellspec spec/num/add_nat0_spec.sh spec/efu/num/sx_num_add_nat0_spec.sh
+  # ディレクトリ単位も可
+  shellspec spec/num/
+  ```
+  - 対応関係: `sx.m4` の対象機能 `sx_<領域>_<機能>` は `spec/<領域>/<機能>_spec.sh` と `spec/efu/<領域>/sx_<領域>_<機能>_spec.sh` が対応します。
+- **全体テスト（`make test`）**: 以下のいずれかに該当する場合にのみ必須とします。
+  - 共通部品の変更時: `M_*` マクロ、`M_RENAME_Q/QI`、`CLEANUP` 規約、`SX_CFG_*`／`SX_SYS_REV`、`spec_helper.sh`。
+  - 複数領域に跨がる変更（指定された機能の公開 API と内部関数の両方が変わる場合等）。
+  - PR 提出・リリース前の最終確認。
 
 ## 7. コミュニケーションとワークフロー (Communication & Workflow)
 
 - **使用言語**: AI とのチャット、コード内のコメント、ドキュメント、Git のコミットメッセージは、原則として**日本語**を使用してください。
 - **ビルドプロセス**: 通常は `make all` を使用してください（`m4` 処理後に行頭 `#` コメント行を除去。shebang は保持）。`shfmt` 等による minify は yash の算術展開の意味を変えるため禁止です。
 - **生成物のコメント方針**: `sx.sh` にコメントを含めません。仕様は `sx.m4` の `###` ヘッダまたは本書を参照してください。
-- **変更の適用**: 必ず `sx.m4` を編集し、ビルド後に `make test` を実行してください。
+- **変更の適用**: 必ず `sx.m4` を編集し、ビルド（`make all`）後に関連 spec の個別テストを実行してから進めてください。全体テスト（`make test`）は §6 に該当する場合にのみ実行します。
