@@ -7,7 +7,8 @@ Describe 'sx_var_ubind'
 
     Describe '基本動作'
         It '蓄積スロットにクォートなしで累積すること'
-            unset out res
+            sx_var_bind_init "out"
+            unset res
             When call sx_var_ubind res "out" "a1" "a2"
             The status should be success
             The variable out should equal "a1 a2"
@@ -15,7 +16,8 @@ Describe 'sx_var_ubind'
         End
 
         It 'カウント指定で複数の値を順に蓄積すること'
-            unset arr res
+            sx_var_bind_init "2arr:rest"
+            unset res
             When call sx_var_ubind res "2arr:rest" "a1" "a2"
             The status should be success
             The variable arr should equal "a1 a2"
@@ -23,7 +25,8 @@ Describe 'sx_var_ubind'
         End
 
         It '代入スロットと蓄積スロットが混在しても生の値になること'
-            unset arr out res
+            sx_var_bind_init "arr:out"
+            unset res
             When call sx_var_ubind res "arr:out" "it's me" "don't stop"
             The status should be success
             The variable arr should equal "it's me"
@@ -31,14 +34,16 @@ Describe 'sx_var_ubind'
         End
 
         It '先頭の蓄積値が空文字列の場合もセパレータを付加しないこと'
-            unset b res
+            sx_var_bind_init "2b:rest"
+            unset res
             When call sx_var_ubind res "2b:rest" "" "x"
             The status should be success
             The variable b should equal "x"
         End
 
         It 'データが不足している場合に残りのバインド状態を保持すること'
-            unset arr res
+            sx_var_bind_init "3arr:rest"
+            unset res
             When call sx_var_ubind res "3arr:rest" "a1"
             The status should be success
             The variable arr should equal "a1"
@@ -46,6 +51,7 @@ Describe 'sx_var_ubind'
         End
 
         It 'データが無い場合にバインド状態を結果に書き込んで成功すること'
+            sx_var_bind_init "v1:rest"
             unset res
             When call sx_var_ubind res "v1:rest"
             The status should be success
@@ -53,7 +59,8 @@ Describe 'sx_var_ubind'
         End
 
         It 'カウントが 2^64 を超えても正しく減算できること'
-            unset arr res
+            sx_var_bind_init "18446744073709551615arr:rest"
+            unset res
             When call sx_var_ubind res "18446744073709551615arr:rest" "a1" "a2"
             The status should be success
             The variable arr should equal "a1 a2"
@@ -61,7 +68,8 @@ Describe 'sx_var_ubind'
         End
 
         It 'スロットが尽きた場合に 1 を返し、結果変数に空のバインド形式が書き込まれること'
-            unset v1 res
+            sx_var_bind_init "v1:"
+            unset res
             res="unchanged"
             When call sx_var_ubind res "v1:" "a" "b"
             The status should equal 1

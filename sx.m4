@@ -3021,6 +3021,161 @@ __sx_arg_rquote() {
 #  VAR (Variable)
 # ========================================
 
+### sx_var_bind - バインド状態に従って値を割り当てる
+##
+## 使い方:
+##   sx_var_bind 結果変数名 バインド形式 [値1 [値2 ...]]
+##
+## 説明:
+##   バインド形式（a:b:c 等）を解析し、値を適切な変数に割り当てる。
+##   割り当て後、残りのバインド形式が結果変数に格納される。
+##   複数の値を一度に割り当てることができ、各値はバインド形式の
+##   セグメントに対して順次処理される。バインド先が枯渇し、未処理の
+##   値が残る場合は終了ステータス 1 を返し、結果変数に残りのバインド形式
+##   （枯渇時は空文字列）が書き込まれる。
+##   蓄積スロット（数値プレフィックス付き・最後の変数）へ値を蓄積する際は
+##   値をクォートする。クォートせずに蓄積したい場合は sx_var_ubind を
+##   使用する。代入スロット（名前:残り）への代入は値のクォートを行わない。
+##   蓄積スロットは、既存値が空文字列の場合（bind 未到達を含む）は
+##   セパレータを付加せず蓄積する。
+##
+## 終了ステータス:
+##    0  割り当て成功 (SX_EX_OK)
+##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
+##   64  引数不正 (SX_EX_USAGE)
+##   77  変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_var_bind() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind "${@}" || return; return 0;; esac
+
+	# 結果変数名自体の妥当性と書き込み権限をチェック
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	__sx_var_is_bind "${2-}" || return M_EX_USAGE
+
+	__sx_var_is_bindable "${2-}" || return M_EX_NOPERM
+
+	__sx_var_is_bind_ready "${2-}" || return M_EX_DATAERR
+
+	__sx_var_bind "${@}" || return
+}
+
+### __sx_var_bind - バインド状態に従って値を割り当てる（クォートあり・内部用）
+##
+## 使い方:
+##   __sx_var_bind 結果変数名 バインド形式 [値1 [値2 ...]]
+##
+## 説明:
+##   sx_var_bind の内部実装。リスト蓄積時に値をクォートする。
+##   引数の検証を行わない。
+##   バインド先が枯渇し、未処理の値が残る場合は終了ステータス 1 を返し、
+##   結果変数に残りのバインド形式（枯渇時は空文字列）が書き込まれる。
+##
+## 終了ステータス:
+##    0  割り当て成功
+##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
+
+__sx_var_bind() {
+	__sx_var_bind0 1 "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+### __sx_var_bind0 - 複数の値をバインド状態に従って順次割り当てる
+##
+## 使い方:
+##   __sx_var_bind0 エスケープフラグ(1/0) 結果変数名 バインド形式 [値1 [値2 ...]]
+##
+## 説明:
+##   sx_var_bind / sx_var_ubind の共通コア実装。
+##   データ列を for で巡回し、1 データにつきバインド状態を 1 セグメント分
+##   進める。蓄積スロット（数値プレフィックス付き・最後の変数）は
+##   Q_esc に応じて値をクォートして累積する。
+##   バインド先が枯渇した場合は Q_res に空の残りバインドを書き込んで 1 を返す。
+##
+## 終了ステータス:
+##    0  データを全て割り当て、残りのバインド形式を結果変数に格納した
+##    1  バインド先が枯渇したままデータが残っている。結果変数へ空文字列を書き込む
+
+define([|CLEANUP|], [|Q_bind Q_ret Q_esc Q_res|])dnl
+__sx_var_bind0() {
+	# 1: esc, 2: res, 3: bind, 4 data...
+	while M_STR_NE([|"${4+X}"|], [|''|]); do
+		case "${3}" in
+			:*) Q_bind="${3#*:}";;
+			[1-9]*:*)
+				# 1: name, 2: lim, 3: seg, 4: esc, 5: res, 6: bind, 7: data...
+				set -- "${3%%[!0-9]*}" "${3%%:*}" "${@}"
+				set -- "${2#${1}}" "${@}"
+
+				case "${1}" in
+					@*) __sx_arr_push "${1#@}" "${7}";;
+					?*)
+						case "${4}${7}" in
+							1*"'"*)
+								__sx_str_sub Q_tmp: "${7}" "'" "'\\''"
+								Q_ret="'${Q_tmp}'"
+								unset Q_tmp
+								;;
+							1*) Q_ret="'${7}'";;
+							*) Q_ret="${7}";;
+						esac
+
+						eval "${1}=\"\${${1}-}\${${1}:+ }\${Q_ret}\""
+						;;
+				esac
+
+				case "${2}" in
+					1) Q_bind="${6#*:}";;
+					*)
+						__sx_num_sub1_nat0 Q_ret "${2}"
+						Q_bind="${Q_ret}${1}:${6#*:}"
+						;;
+				esac
+
+				shift 3
+				;;
+			*:*) eval "${3%%:*}=\"\${4}\" Q_bind=\"\${3#*:}\"";;
+			@*)
+				__sx_arr_push "${3#@}" "${4}"
+				Q_bind="${3}"
+				;;
+			?*)
+				case "${1}${4}" in
+					1*"'"*)
+						__sx_str_sub Q_tmp: "${4}" "'" "'\\''"
+						Q_ret="'${Q_tmp}'"
+						unset Q_tmp
+						;;
+					1*) Q_ret="'${4}'";;
+					*) Q_ret="${4}";;
+				esac
+
+				eval "${3}=\"\${${3}-}\${${3}:+ }\${Q_ret}\""
+				Q_bind="${3}"
+				;;
+			*)
+				M_VAR_SET([|${2}|], [|${3}|])
+				unset CLEANUP
+				return 1
+				;;
+		esac
+
+		Q_esc="${1}" Q_res="${2}"
+		shift 4
+
+		set -- "${Q_esc}" "${Q_res}" "${Q_bind}" "${@}"
+	done
+
+	unset CLEANUP
+
+	M_VAR_SET([|${2}|], [|${3}|])
+}
+|], [|var_bind0|])dnl
+
 ### sx_var_bind_init - バインド形式に基づき変数を初期化する
 ##
 ## 使い方:
@@ -3095,206 +3250,6 @@ __sx_var_bind_init() {
 }
 |], [|var_bind_init|])dnl
 
-### sx_var_bind - バインド状態に従って値を割り当てる
-##
-## 使い方:
-##   sx_var_bind 結果変数名 バインド形式 [値1 [値2 ...]]
-##
-## 説明:
-##   バインド形式（a:b:c 等）を解析し、値を適切な変数に割り当てる。
-##   割り当て後、残りのバインド形式が結果変数に格納される。
-##   複数の値を一度に割り当てることができ、各値はバインド形式の
-##   セグメントに対して順次処理される。バインド先が枯渇し、未処理の
-##   値が残る場合は終了ステータス 1 を返し、結果変数に残りのバインド形式
-##   （枯渇時は空文字列）が書き込まれる。
-##   蓄積スロット（数値プレフィックス付き・最後の変数）へ値を蓄積する際は
-##   値をクォートする。クォートせずに蓄積したい場合は sx_var_ubind を
-##   使用する。代入スロット（名前:残り）への代入は値のクォートを行わない。
-##   蓄積スロットは、既存値が空文字列の場合（bind 未到達を含む）は
-##   セパレータを付加せず蓄積する。
-##
-## 終了ステータス:
-##    0  割り当て成功 (SX_EX_OK)
-##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
-##   64  引数不正 (SX_EX_USAGE)
-##   77  変数名が読み取り専用 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_var_bind() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind "${@}" || return; return 0;; esac
-
-	# 結果変数名自体の妥当性と書き込み権限をチェック
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
-
-	sx_var_is_name "${1-}" || return M_EX_USAGE
-
-	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	__sx_var_is_bind "${2-}" || return M_EX_USAGE
-
-	__sx_var_is_bindable "${2-}" || return M_EX_NOPERM
-
-	__sx_var_bind "${@}" || return
-}
-
-### sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし）
-##
-## 使い方:
-##   sx_var_ubind 結果変数名 バインド形式 [値1 [値2 ...]]
-##
-## 説明:
-##   sx_var_bind と同様に複数の値をバインド形式に従って割り当てる。
-##   蓄積スロット（数値プレフィックス付き・最後の変数）への蓄積時に
-##   値のクォートを行わない点のみが sx_var_bind と異なる。
-##   代入スロット（名前:残り）への代入は sx_var_bind と同様に生の値となる。
-##   バインド先が枯渇し、未処理の値が残る場合は終了ステータス 1 を返し、
-##   結果変数に残りのバインド形式（空文字列）が書き込まれる。
-##
-## 終了ステータス:
-##    0  割り当て成功 (SX_EX_OK)
-##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
-##   64  引数不正 (SX_EX_USAGE)
-##   77  変数名が読み取り専用 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
-sx_var_ubind() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_ubind "${@}" || return; return 0;; esac
-
-	# 結果変数名自体の妥当性と書き込み権限をチェック
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
-
-	sx_var_is_name "${1-}" || return M_EX_USAGE
-
-	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	__sx_var_is_bind "${2-}" || return M_EX_USAGE
-
-	__sx_var_is_bindable "${2-}" || return M_EX_NOPERM
-
-	__sx_var_ubind "${@}" || return
-}
-
-### __sx_var_bind - バインド状態に従って値を割り当てる（クォートあり・内部用）
-##
-## 使い方:
-##   __sx_var_bind 結果変数名 バインド形式 [値1 [値2 ...]]
-##
-## 説明:
-##   sx_var_bind の内部実装。リスト蓄積時に値をクォートする。
-##   引数の検証を行わない。
-##   バインド先が枯渇し、未処理の値が残る場合は終了ステータス 1 を返し、
-##   結果変数に残りのバインド形式（枯渇時は空文字列）が書き込まれる。
-##
-## 終了ステータス:
-##    0  割り当て成功
-##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
-
-__sx_var_bind() {
-	__sx_var_bind0 1 "${@}" || return
-}
-
-### __sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし・内部用）
-##
-## 使い方:
-##   __sx_var_ubind 結果変数名 バインド形式 [値1 [値2 ...]]
-##
-## 説明:
-##   sx_var_ubind の内部実装。リスト蓄積時に値をクォートしない。
-##   引数の検証を行わない。
-##   バインド先が枯渇し、未処理の値が残る場合は終了ステータス 1 を返し、
-##   結果変数に残りのバインド形式（枯渇時は空文字列）が書き込まれる。
-##
-## 終了ステータス:
-##    0  割り当て成功
-##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
-
-__sx_var_ubind() {
-	__sx_var_bind0 0 "${@}" || return
-}
-
-M_RENAME_QI([|dnl
-### __sx_var_bind0 - 複数の値をバインド状態に従って順次割り当てる
-##
-## 使い方:
-##   __sx_var_bind0 エスケープフラグ(1/0) 結果変数名 バインド形式 [値1 [値2 ...]]
-##
-## 説明:
-##   sx_var_bind / sx_var_ubind の共通コア実装。
-##   データ列を for で巡回し、1 データにつきバインド状態を 1 セグメント分
-##   進める。蓄積スロット（数値プレフィックス付き・最後の変数）は
-##   Q_esc に応じて値をクォートして累積する。
-##   バインド先が枯渇した場合は Q_res に空の残りバインドを書き込んで 1 を返す。
-##
-## 終了ステータス:
-##    0  データを全て割り当て、残りのバインド形式を結果変数に格納した
-##    1  バインド先が枯渇したままデータが残っている。結果変数へ空文字列を書き込む
-
-define([|CLEANUP|], [|Q_bind Q_ret Q_esc Q_res|])dnl
-__sx_var_bind0() {
-	# 1: esc, 2: res, 3: bind, 4 data...
-	while M_STR_NE([|"${4+X}"|], [|''|]); do
-		case "${3}" in
-			:*) Q_bind="${3#*:}";;
-			[1-9]*:*)
-				# 1: name, 2: lim, 3: seg, 4: esc, 5: res, 6: bind, 7: data...
-				set -- "${3%%[!0-9]*}" "${3%%:*}" "${@}"
-				set -- "${2#${1}}" "${@}"
-
-				case "${1}" in ?*)
-					case "${4}${7}" in
-						1*"'"*)
-							__sx_str_sub Q_tmp: "${7}" "'" "'\\''"
-							Q_ret="'${Q_tmp}'"
-							unset Q_tmp
-							;;
-						1*) Q_ret="'${7}'";;
-						*) Q_ret="${7}";;
-					esac
-
-					eval "${1}=\"\${${1}-}\${${1}:+ }\${Q_ret}\""
-				esac
-
-				case "${2}" in
-					1) Q_bind="${6#*:}";;
-					*)
-						__sx_num_sub1_nat0 Q_ret "${2}"
-						Q_bind="${Q_ret}${1}:${6#*:}"
-						;;
-				esac
-
-				shift 3
-				;;
-			*:*) eval "${3%%:*}=\"\${4}\" Q_bind=\"\${3#*:}\"";;
-			?*)
-				case "${1}${4}" in
-					1*"'"*)
-						__sx_str_sub Q_tmp: "${4}" "'" "'\\''"
-						Q_ret="'${Q_tmp}'"
-						unset Q_tmp
-						;;
-					1*) Q_ret="'${4}'";;
-					*) Q_ret="${4}";;
-				esac
-
-				eval "${3}=\"\${${3}-}\${${3}:+ }\${Q_ret}\""
-				Q_bind="${3}"
-				;;
-			*)
-				M_VAR_SET([|${2}|], [|${3}|])
-				unset CLEANUP
-				return 1
-				;;
-		esac
-
-		Q_esc="${1}" Q_res="${2}"
-		shift 4
-
-		set -- "${Q_esc}" "${Q_res}" "${Q_bind}" "${@}"
-	done
-
-	unset CLEANUP
-
-	M_VAR_SET([|${2}|], [|${3}|])
-}
-|], [|var_bind0|])dnl
 
 ### sx_var_copy - 変数の値を連鎖コピーする
 ##
@@ -3576,6 +3531,53 @@ __sx_var_is_bind() {
 	unset CLEANUP
 }
 |], [|var_is_bind|])dnl
+
+sx_var_is_bind_ready() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_bind_ready "${@}" || return; return 0;; esac
+
+	__sx_var_is_bind "${@}" || return M_EX_USAGE
+
+	__sx_var_is_bindable "${@}" || return M_EX_NOPERM
+
+	__sx_var_is_bind_ready "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+
+define([|CLEANUP|], [|Q_arg Q_seg|])dnl
+
+__sx_var_is_bind_ready() {
+	for Q_arg in "${@}"; do
+		while
+			Q_seg="${Q_arg%%:*}"
+
+			case "${Q_seg}" in
+				*@*) __sx_var_is_arr "${Q_seg#*@}";;
+				[${SX_STR_SWORD}]*)
+					case "${Q_arg}" in
+						*:*) ! __sx_var_is_set "${Q_seg}";;
+						*) __sx_var_is_set "${Q_seg}";;
+					esac
+					;;
+				*[${SX_STR_SWORD}]*) __sx_var_is_set "M_STR_LTRIM([|Q_seg|], [|[!0-9]|])";;
+			esac || {
+				unset CLEANUP
+				return 1
+			}
+
+			case "${Q_arg}" in
+				*:*) Q_arg="${Q_arg#*:}";;
+				*) break;;
+			esac
+
+			continue
+		do :; done
+	done
+
+	unset CLEANUP
+}
+|], [|var_is_bind_ready|])dnl
+
 
 ### sx_var_is_bindable - バインド形式が有効であり、かつ全変数が書き込み可能か確認する
 ##
@@ -4750,6 +4752,63 @@ __sx_var_touch() {
 	unset CLEANUP
 }
 |], [|var_touch|])dnl
+
+### sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし）
+##
+## 使い方:
+##   sx_var_ubind 結果変数名 バインド形式 [値1 [値2 ...]]
+##
+## 説明:
+##   sx_var_bind と同様に複数の値をバインド形式に従って割り当てる。
+##   蓄積スロット（数値プレフィックス付き・最後の変数）への蓄積時に
+##   値のクォートを行わない点のみが sx_var_bind と異なる。
+##   代入スロット（名前:残り）への代入は sx_var_bind と同様に生の値となる。
+##   バインド先が枯渇し、未処理の値が残る場合は終了ステータス 1 を返し、
+##   結果変数に残りのバインド形式（空文字列）が書き込まれる。
+##
+## 終了ステータス:
+##    0  割り当て成功 (SX_EX_OK)
+##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
+##   64  引数不正 (SX_EX_USAGE)
+##   77  変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_var_ubind() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_ubind "${@}" || return; return 0;; esac
+
+	# 結果変数名自体の妥当性と書き込み権限をチェック
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	__sx_var_is_bind "${2-}" || return M_EX_USAGE
+
+	__sx_var_is_bindable "${2-}" || return M_EX_NOPERM
+
+	__sx_var_is_bind_ready "${2-}" || return M_EX_DATAERR
+
+	__sx_var_ubind "${@}" || return
+}
+
+### __sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし・内部用）
+##
+## 使い方:
+##   __sx_var_ubind 結果変数名 バインド形式 [値1 [値2 ...]]
+##
+## 説明:
+##   sx_var_ubind の内部実装。リスト蓄積時に値をクォートしない。
+##   引数の検証を行わない。
+##   バインド先が枯渇し、未処理の値が残る場合は終了ステータス 1 を返し、
+##   結果変数に残りのバインド形式（枯渇時は空文字列）が書き込まれる。
+##
+## 終了ステータス:
+##    0  割り当て成功
+##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
+
+__sx_var_ubind() {
+	__sx_var_bind0 0 "${@}" || return
+}
 
 ### sx_var_unexport - 変数のエクスポート属性を解除する
 ##

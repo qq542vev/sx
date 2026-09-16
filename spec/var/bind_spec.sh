@@ -7,7 +7,8 @@ Describe 'sx_var_bind'
 
     Describe '基本動作'
         It '単純な代入を実行し、状態を更新すること'
-            unset v1 v2 rest res
+            sx_var_bind_init "v1:v2:rest"
+            unset res
             When call sx_var_bind res "v1:v2:rest" "val1"
             The status should be success
             The variable v1 should equal "val1"
@@ -15,7 +16,8 @@ Describe 'sx_var_bind'
         End
 
         It '複数の値を一度に割り当てること'
-            unset v1 v2 rest res
+            sx_var_bind_init "v1:v2:rest"
+            unset res
             When call sx_var_bind res "v1:v2:rest" "a" "b" "c"
             The status should be success
             The variable v1 should equal "a"
@@ -25,7 +27,8 @@ Describe 'sx_var_bind'
         End
 
         It 'スキップスロットを正しく処理すること'
-            unset v2 rest res
+            sx_var_bind_init ":v2:rest"
+            unset res
             When call sx_var_bind res ":v2:rest" "discarded" "val2"
             The status should be success
             The variable v2 should equal "val2"
@@ -33,7 +36,8 @@ Describe 'sx_var_bind'
         End
 
         It 'カウント指定代入を処理すること'
-            unset arr res
+            sx_var_bind_init "2arr:rest"
+            unset res
             When call sx_var_bind res "2arr:rest" "a1" "a2"
             The status should be success
             The variable arr should equal "'a1' 'a2'"
@@ -41,7 +45,8 @@ Describe 'sx_var_bind'
         End
 
         It 'データが不足している場合に残りのバインド状態を保持すること'
-            unset arr res
+            sx_var_bind_init "3arr:rest"
+            unset res
             When call sx_var_bind res "3arr:rest" "a1"
             The status should be success
             The variable arr should equal "'a1'"
@@ -58,7 +63,8 @@ Describe 'sx_var_bind'
         End
 
         It '残り（rest）スロットに累積すること'
-            unset out res
+            sx_var_bind_init "out"
+            unset res
             When call sx_var_bind res "out" "a1" "a2"
             The status should be success
             The variable out should equal "'a1' 'a2'"
@@ -66,7 +72,8 @@ Describe 'sx_var_bind'
         End
 
         It 'スロットが尽きた場合に 1 を返し、結果変数に空のバインド形式が書き込まれること'
-            unset v1 res
+            sx_var_bind_init "v1:"
+            unset res
             res="unchanged"
             When call sx_var_bind res "v1:" "a" "b"
             The status should equal 1
@@ -75,6 +82,7 @@ Describe 'sx_var_bind'
         End
 
         It 'データが無い場合にバインド状態を結果に書き込んで成功すること'
+            sx_var_bind_init "v1:rest"
             unset res
             When call sx_var_bind res "v1:rest"
             The status should be success
@@ -84,7 +92,8 @@ Describe 'sx_var_bind'
 
     Describe 'クォート動作'
         It '代入スロットは生の値、蓄積スロットはクォートされること'
-            unset arr out res
+            sx_var_bind_init "arr:out"
+            unset res
             When call sx_var_bind res "arr:out" "it's me" "don't stop"
             The status should be success
             The variable arr should equal "it's me"
@@ -92,7 +101,8 @@ Describe 'sx_var_bind'
         End
 
         It 'カウント指定でもクォートが適用されること'
-            unset arr res
+            sx_var_bind_init "2arr:rest"
+            unset res
             When call sx_var_bind res "2arr:rest" "a'b" "c d"
             The status should be success
             The variable arr should equal "'a'\''b' 'c d'"
