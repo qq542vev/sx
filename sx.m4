@@ -3524,7 +3524,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_var_is_bind の内部実装。SX_CFG_NUM_RANGE の妥当性チェックは行わない。
 
-define([|CLEANUP|], [|Q_arg Q_bind Q_mark Q_seg Q_vn Q_type Q_tmp|])dnl
+define([|CLEANUP|], [|Q_arg Q_mark Q_seg Q_vn Q_type Q_tmp|])dnl
 
 __sx_var_is_bind() {
 	for Q_arg in "${@}"; do
@@ -3540,11 +3540,8 @@ __sx_var_is_bind() {
 			return 1
 		esac
 
-		Q_bind="${Q_arg}:"
-
 		while
-			Q_seg="${Q_bind%%:*}"
-			Q_bind="${Q_bind#*:}"
+			Q_seg="${Q_arg%%:*}"
 			Q_vn=
 
 			case "${Q_seg}" in
@@ -3553,10 +3550,10 @@ __sx_var_is_bind() {
 					return 1
 					;;
 				*@*) Q_vn="${Q_seg#*@}" Q_type=arr;;
-				[1-9]*["_${SX_STR_ALPHA}"]*) Q_vn="${Q_seg#"${Q_seg%%[!1-9]*}"}" Q_type=list;;
+				[1-9]*["_${SX_STR_ALPHA}"]*) Q_vn="M_STR_LTRIM([|Q_seg|], [|[!0-9]|])" Q_type=list;;
 				["_${SX_STR_ALPHA}"]*)
-					case "${Q_bind}" in
-						?*) Q_vn="${Q_seg}" Q_type=scalar;;
+					case "${Q_arg}" in
+						*:*) Q_vn="${Q_seg}" Q_type=scalar;;
 						*) Q_vn="${Q_seg}" Q_type=list;;
 					esac
 					;;
@@ -3572,8 +3569,10 @@ __sx_var_is_bind() {
 				fi
 			esac
 
-			M_STR_NE([|"${Q_bind}"|], [|''|]) && continue
-		do :; done
+			M_STR_HAS([|"${Q_arg}"|], [|:|])
+		do
+			Q_arg="${Q_arg#*:}"
+		done
 
 		eval ${Q_mark:+"unset ${Q_mark}"}
 	done
@@ -3600,7 +3599,7 @@ sx_var_is_bindable() {
 
 	__sx_var_is_bind "${@}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${@}"
+	__sx_var_is_bindable "${@}" || return
 }
 
 M_RENAME_QI([|dnl
@@ -3617,25 +3616,34 @@ M_RENAME_QI([|dnl
 ##    0  すべて書き込み可能 (SX_EX_OK)
 ##    1  書き込み不可な変数が含まれる
 
-define([|CLEANUP|], [|Q_chk Q_arg Q_seg|])dnl
+define([|CLEANUP|], [|Q_str Q_arr Q_arg Q_seg|])dnl
 
 __sx_var_is_bindable() {
-	Q_chk=
+	Q_str=
+	Q_arr=
 
 	for Q_arg in "${@}"; do
 		while
 			Q_seg="${Q_arg%%:*}"
-			M_STR_APPEND([|Q_chk|], [|" M_STR_LTRIM([|Q_seg|], [|[!0-9]|])"|])
+
+			case "${Q_seg}" in
+				*@*) M_STR_APPEND([|Q_arr|], [|"${Q_seg#*@} "|]);;
+				[1-9]*["_${SX_STR_ALPHA}"]*) M_STR_APPEND([|Q_str|], [|"M_STR_LTRIM([|Q_seg|], [|[!0-9]|]) "|]);;
+				["_${SX_STR_ALPHA}"]*) M_STR_APPEND([|Q_str|], [|"${Q_seg} "|]);;
+			esac
+
 			M_STR_HAS([|"${Q_arg}"|], [|:|])
 		do
 			Q_arg="${Q_arg#*:}"
 		done
 	done
 
-	eval "set -- ${Q_chk}"
-	unset CLEANUP
+	eval ${Q_str:+"__sx_var_is_rw ${Q_str}"} && eval ${Q_arr:+"__sx_var_is_rw_deep ${Q_arr}"} || {
+		unset CLEANUP
+		return 1
+	}
 
-	__sx_var_is_rw "${@}" || return
+	unset CLEANUP
 }
 |], [|var_is_bindable|])dnl
 
