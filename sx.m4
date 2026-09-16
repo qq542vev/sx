@@ -3532,6 +3532,28 @@ __sx_var_is_bind() {
 }
 |], [|var_is_bind|])dnl
 
+### sx_var_is_bind_ready - バインド形式が直ちにバインド可能な状態か確認する
+##
+## 使い方:
+##   sx_var_is_bind_ready [バインド形式1 [バインド形式2 ...]]
+##
+## 説明:
+##   引数で指定されたすべてのバインド形式が、直ちに sx_var_bind / sx_var_ubind
+##   で使用できる状態（bind_init 直後の状態）にあるかを確認する。
+##   形式検査と書き込み権限検査も行う。
+##   各要素は以下の状態である必要がある。
+##     - @name / N@name: 対象が sx 配列であること
+##     - 中間の素変数名: 未設定であること
+##     - 末尾の素変数名: 設定済みであること
+##     - 数値プレフィックス付きの要素（N名前）: 数字を除いた名前が設定済みであること
+##   空セグメントと裸の数値は検査対象外とする。
+##   bind_init を事前に実行していないバインド形式は拒否される。
+##
+## 終了ステータス:
+##    0  すべてバインド可能な状態である (SX_EX_OK)
+##    1  バインド可能な状態にないものが含まれる
+##   64  バインド形式が不正 (SX_EX_USAGE)
+##   77  書き込み不可な変数が含まれる (SX_EX_NOPERM)
 sx_var_is_bind_ready() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_bind_ready "${@}" || return; return 0;; esac
 
@@ -3543,6 +3565,18 @@ sx_var_is_bind_ready() {
 }
 
 M_RENAME_QI([|dnl
+### __sx_var_is_bind_ready - バインド形式が直ちにバインド可能な状態か確認する（内部用）
+##
+## 使い方:
+##   __sx_var_is_bind_ready [バインド形式1 [バインド形式2 ...]]
+##
+## 説明:
+##   sx_var_is_bind_ready の内部実装。
+##   引数チェックは行わない。
+##
+## 終了ステータス:
+##    0  すべてバインド可能な状態である (SX_EX_OK)
+##    1  バインド可能な状態にないものが含まれる
 
 define([|CLEANUP|], [|Q_arg Q_seg|])dnl
 
@@ -3577,7 +3611,6 @@ __sx_var_is_bind_ready() {
 	unset CLEANUP
 }
 |], [|var_is_bind_ready|])dnl
-
 
 ### sx_var_is_bindable - バインド形式が有効であり、かつ全変数が書き込み可能か確認する
 ##
