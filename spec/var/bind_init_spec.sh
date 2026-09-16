@@ -90,4 +90,34 @@ Describe 'sx_var_bind_init'
         The variable arr should equal ""
         The variable rest should equal ""
     End
+
+    Describe '@ 記法（配列マーカー）'
+        It '@name を sx 配列として生成すること'
+            When call sx_var_bind_init "x:@bi_arr"
+            The status should be success
+            The variable x should be undefined
+            The variable bi_arr_len should equal "0"
+        End
+
+        It '@name で生成した変数が sx 配列として認識されること'
+            sx_var_bind_init "x:@bi_arr2"
+            When call sx_var_is_arr "bi_arr2"
+            The status should be success
+        End
+
+        It 'N@name 中間形で配列を生成し他を通常初期化すること'
+            bi_a="olda" bi_c="oldc"
+            When call sx_var_bind_init "bi_a:2@bi_b:bi_c"
+            The status should be success
+            The variable bi_a should be undefined
+            The variable bi_b_len should equal "0"
+            The variable bi_c should equal ""
+        End
+
+        It '読み取り専用の @name に対して EX_NOPERM を返すこと'
+            readonly TEST_RO_BI="ro"
+            When call sx_var_bind_init "x:@TEST_RO_BI"
+            The status should equal 77 # SX_EX_NOPERM
+        End
+    End
 End

@@ -158,6 +158,7 @@ readonly SX_STR_PUNCT='!"#$%&'\''()*+,-./:;<=>?@[\]^_`{|}~'
 readonly SX_STR_ALPHA="${SX_STR_UPPER}${SX_STR_LOWER}"
 readonly SX_STR_ALNUM="${SX_STR_DIGIT}${SX_STR_ALPHA}"
 readonly SX_STR_WORD="_${SX_STR_ALNUM}"
+readonly SX_STR_SWORD="_${SX_STR_ALPHA}"
 readonly SX_STR_GRAPH="${SX_STR_PUNCT}${SX_STR_ALNUM}"
 readonly SX_STR_PRINT=" ${SX_STR_GRAPH}"
 readonly SX_STR_ASCII="${SX_STR_CNTRL}${SX_STR_GRAPH}"
@@ -3064,25 +3065,17 @@ M_RENAME_QI([|dnl
 ##   最後の変数は空文字列（""）で初期化される。
 ##   対象が sx 配列である場合は、その関連要素（_len, _n 等）も含めて削除する。
 
-define([|CLEANUP|], [|Q_arg Q_seg Q_set|])dnl
+define([|CLEANUP|], [|Q_arg Q_seg|])dnl
 
 __sx_var_bind_init() {
 	for Q_arg in "${@}"; do
 		while
 			Q_seg="${Q_arg%%:*}"
-			Q_set=
 
 			case "${Q_seg}" in
-				[1-9]*)
-					Q_seg="M_STR_LTRIM([|Q_seg|], [|[!0-9]|])"
-					Q_set=1
-					;;
-				*) Q_set=0;;
-			esac
-
-			case "${Q_set}${Q_seg}" in
-				0?*) unset "${Q_seg}";;
-				1?*) eval "${Q_seg}=";;
+				*@*) __sx_arr_gen "${Q_seg#*@}";;
+				["${SX_STR_SWORD}"]*) unset "${Q_seg}";;
+				*["${SX_STR_SWORD}"]*) eval "M_STR_LTRIM([|Q_seg|], [|[!0-9]|])=";;
 			esac
 
 			case "${Q_arg}" in
@@ -3093,7 +3086,7 @@ __sx_var_bind_init() {
 			continue
 		do :; done
 
-		case "${Q_seg}" in ?*)
+		case "${Q_seg}" in ["${SX_STR_SWORD}"]*)
 			eval "${Q_seg}="
 		esac
 	done
@@ -3530,7 +3523,7 @@ __sx_var_is_bind() {
 	for Q_arg in "${@}"; do
 		Q_mark=
 
-		case "${Q_arg}" in *[!":@${SX_STR_WORD}"]* | 0* | *:0* | *@ | *@[!"_${SX_STR_ALPHA}"]* | @*:* | *[!0-9]@*:*)
+		case "${Q_arg}" in *[!":@${SX_STR_WORD}"]* | 0* | *:0* | *@ | *@[!"${SX_STR_SWORD}"]* | @*:* | *[!0-9]@*:*)
 			eval unset CLEANUP "${Q_mark}"
 			return 1
 		esac
@@ -3545,18 +3538,18 @@ __sx_var_is_bind() {
 			Q_vn=
 
 			case "${Q_seg}" in
-				*["_${SX_STR_ALPHA}"]*@*)
+				*["${SX_STR_SWORD}"]*@*)
 					eval unset CLEANUP "${Q_mark}"
 					return 1
 					;;
 				*@*) Q_vn="${Q_seg#*@}" Q_type=arr;;
-				[1-9]*["_${SX_STR_ALPHA}"]*) Q_vn="M_STR_LTRIM([|Q_seg|], [|[!0-9]|])" Q_type=list;;
-				["_${SX_STR_ALPHA}"]*)
+				["${SX_STR_SWORD}"]*)
 					case "${Q_arg}" in
 						*:*) Q_vn="${Q_seg}" Q_type=scalar;;
 						*) Q_vn="${Q_seg}" Q_type=list;;
 					esac
 					;;
+				*["${SX_STR_SWORD}"]*) Q_vn="M_STR_LTRIM([|Q_seg|], [|[!0-9]|])" Q_type=list;;
 			esac
 
 			case "${Q_vn}" in ?*)
@@ -3569,10 +3562,13 @@ __sx_var_is_bind() {
 				fi
 			esac
 
-			M_STR_HAS([|"${Q_arg}"|], [|:|])
-		do
-			Q_arg="${Q_arg#*:}"
-		done
+			case "${Q_arg}" in
+				*:*) Q_arg="${Q_arg#*:}";;
+				*) break;;
+			esac
+
+			continue
+		do :; done
 
 		eval ${Q_mark:+"unset ${Q_mark}"}
 	done
@@ -3628,14 +3624,17 @@ __sx_var_is_bindable() {
 
 			case "${Q_seg}" in
 				*@*) M_STR_APPEND([|Q_arr|], [|"${Q_seg#*@} "|]);;
-				[1-9]*["_${SX_STR_ALPHA}"]*) M_STR_APPEND([|Q_str|], [|"M_STR_LTRIM([|Q_seg|], [|[!0-9]|]) "|]);;
-				["_${SX_STR_ALPHA}"]*) M_STR_APPEND([|Q_str|], [|"${Q_seg} "|]);;
+				["${SX_STR_SWORD}"]*) M_STR_APPEND([|Q_str|], [|"${Q_seg} "|]);;
+				*["${SX_STR_SWORD}"]*) M_STR_APPEND([|Q_str|], [|"M_STR_LTRIM([|Q_seg|], [|[!0-9]|]) "|]);;
 			esac
 
-			M_STR_HAS([|"${Q_arg}"|], [|:|])
-		do
-			Q_arg="${Q_arg#*:}"
-		done
+			case "${Q_arg}" in
+				*:*) Q_arg="${Q_arg#*:}";;
+				*) break;;
+			esac
+
+			continue
+		do :; done
 	done
 
 	eval ${Q_str:+"__sx_var_is_rw ${Q_str}"} && eval ${Q_arr:+"__sx_var_is_rw_deep ${Q_arr}"} || {
@@ -3792,7 +3791,7 @@ __sx_var_is_ebind() {
 		esac
 
 		case "${Q_arg##*:}" in
-			'' | [0-9]*/[_"${SX_STR_ALPHA}"]* | [_"${SX_STR_ALPHA}"]*) ;;
+			'' | [0-9]*/["${SX_STR_SWORD}"]* | ["${SX_STR_SWORD}"]*) ;;
 			*)
 				unset CLEANUP
 				return 1
@@ -4367,7 +4366,7 @@ __sx_var_list_ro() {
 	for Q_ln in "${@}"; do
 		shift
 
-		case "${Q_ln}" in 'readonly '[_"${SX_STR_ALPHA}"] | 'readonly '[_"${SX_STR_ALPHA}"]*["${SX_STR_WORD}"] | 'readonly '[_"${SX_STR_ALPHA}"]=* | 'readonly '[_"${SX_STR_ALPHA}"]*["${SX_STR_WORD}"]=*)
+		case "${Q_ln}" in 'readonly '["${SX_STR_SWORD}"] | 'readonly '["${SX_STR_SWORD}"]*["${SX_STR_WORD}"] | 'readonly '["${SX_STR_SWORD}"]=* | 'readonly '["${SX_STR_SWORD}"]*["${SX_STR_WORD}"]=*)
 			Q_vn="${Q_ln#readonly }"
 			Q_vn="${Q_vn%%=*}"
 
@@ -4443,7 +4442,7 @@ __sx_var_list_set() {
 	for Q_ln in "${@}"; do
 		shift
 
-		case "${Q_ln}" in [_"${SX_STR_ALPHA}"]=* | [_"${SX_STR_ALPHA}"]*["${SX_STR_WORD}"]=*)
+		case "${Q_ln}" in ["${SX_STR_SWORD}"]=* | ["${SX_STR_SWORD}"]*["${SX_STR_WORD}"]=*)
 			Q_vn="${Q_ln%%=*}"
 
 			if
@@ -12276,7 +12275,7 @@ __sx_arr_is_bindable() {
 				[1-9]*)
 					Q_name="${Q_arg%%:*}"
 
-					case "${Q_name}" in *["_${SX_STR_ALPHA}"]*)
+					case "${Q_name}" in *["${SX_STR_SWORD}"]*)
 						Q_name="M_STR_LTRIM([|Q_name|], [|[!0-9/]|])"
 						M_STR_APPEND([|Q_chk|], [|" ${Q_name}"|])
 					esac
@@ -12386,7 +12385,7 @@ __sx_arr_bind() {
 				Q_n="${Q_seg%%[!0-9]*}"
 				Q_seg="${Q_seg#"${Q_n}"}"
 
-				case "${Q_seg}" in ["_${SX_STR_ALPHA}"]*)
+				case "${Q_seg}" in ["${SX_STR_SWORD}"]*)
 					M_STR_APPEND([|Q_chain|], [|"${Q_vn}-${Q_seg}_${Q_m}"|], [| |])
 				esac
 
@@ -12576,7 +12575,7 @@ __sx_arr_bind_commit() {
 		esac
 
 		case "${Q_first}${Q_oseg}" in
-			0[1-9]*[_"${SX_STR_ALPHA}"]* | 1[_"${SX_STR_ALPHA}"]*)
+			0[1-9]*["${SX_STR_SWORD}"]* | 1["${SX_STR_SWORD}"]*)
 				case "${Q_oseg}" in
 					[1-9]*)
 						Q_lim="${Q_oseg%%[!0-9]*}"
@@ -12597,7 +12596,7 @@ __sx_arr_bind_commit() {
 				__sx_arr_gen "${Q_name}"
 				M_VAR_SET([|${Q_name}_len|], [|${Q_len}|])
 				;;
-			0["_${SX_STR_ALPHA}"]*)
+			0["${SX_STR_SWORD}"]*)
 				case "${Q_fseg}" in ?*)
 					unset "${Q_oseg}"
 				esac
