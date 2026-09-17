@@ -274,12 +274,14 @@ readonly SX_CFG_DEF_SIG_ARR="array-${SX_CFG_DEF_SIG_BASE}"
 readonly SX_CFG_DEF_SKIP_CHK=0
 readonly SX_CFG_DEF_NUM_RANGE=32
 readonly SX_CFG_DEF_SEP=':::'
+readonly SX_CFG_DEF_ARR_UPDATE=1
 
 : "${SX_CFG_SIG_BASE:=${SX_CFG_DEF_SIG_BASE}}"
 : "${SX_CFG_SIG_ARR:=${SX_CFG_DEF_SIG_ARR}}"
 : "${SX_CFG_SKIP_CHK:=${SX_CFG_DEF_SKIP_CHK}}"
 : "${SX_CFG_NUM_RANGE:=${SX_CFG_DEF_NUM_RANGE}}"
 : "${SX_CFG_SEP:=${SX_CFG_DEF_SEP}}"
+: "${SX_CFG_ARR_UPDATE:=${SX_CFG_DEF_ARR_UPDATE}}"
 SX_SYS_REV=0
 
 # ========================================
@@ -310,14 +312,15 @@ sx_cfg_is_valid() {
 			SKIP_CHK="${SX_CFG_SKIP_CHK-}" \
 			SIG_BASE="${SX_CFG_SIG_BASE-}" \
 			SIG_ARR="${SX_CFG_SIG_ARR-}" \
-			SEP="${SX_CFG_SEP-}"
+			SEP="${SX_CFG_SEP-}" \
+			ARR_UPDATE="${SX_CFG_ARR_UPDATE-}"
 	esac
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP) ;;
+			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP | ARR_UPDATE) ;;
 			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128) ;;
-			SKIP_CHK=[01] | SEP=?* | SIG_BASE=?* | SIG_ARR=?*) ;;
+			SKIP_CHK=[01] | SIG_BASE=?* | SIG_ARR=?* | SEP=?* | ARR_UPDATE=[01]) ;;
 			*)
 				unset CLEANUP
 				return 1
@@ -3123,7 +3126,7 @@ __sx_var_bind0() {
 				set -- "${2#${1}}" "${@}"
 
 				case "${1}" in
-					@*) __sx_arr_push "${1#@}" "${7}";;
+					@*) SX_CFG_ARR_UPDATE=0 __sx_arr_push "${1#@}" "${7}";;
 					?*)
 						case "${4}${7}" in
 							1*"'"*)
@@ -3151,7 +3154,7 @@ __sx_var_bind0() {
 				;;
 			*:*) eval "${3%%:*}=\"\${4}\" Q_bind=\"\${3#*:}\"";;
 			@*)
-				__sx_arr_push "${3#@}" "${4}"
+				SX_CFG_ARR_UPDATE=0 __sx_arr_push "${3#@}" "${4}"
 				Q_bind="${3}"
 				;;
 			?*)
@@ -4790,7 +4793,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_var_touch() {
 	for Q_arg in "${@}"; do
-		eval "${Q_arg}=\"\${${Q_arg}%:*}:\${SX_SYS_REV}\""
+		eval "${Q_arg}=\"\${${Q_arg}:+\"\${${Q_arg}%:*}\"}:\${SX_SYS_REV}\""
 		M_NUM_INCR([|SX_SYS_REV|])
 	done
 
@@ -12330,7 +12333,7 @@ sx_arr_gen() {
 __sx_arr_gen() {
 	M_VAR_SET([|${1}|], [|${SX_CFG_SIG_ARR}:|], [|${1}_len|], [|0|])
 
-	__sx_arr_push "${@}"
+	SX_CFG_ARR_UPDATE=1 __sx_arr_push "${@}"
 }
 
 ### sx_arr_is_bindable - バインド形式が有効であり、かつ配列を含む全変数が書き込み可能か確認する
@@ -12822,7 +12825,10 @@ __sx_arr_pop() {
 
 	eval __sx_var_unset "${Q_unset}"
 	eval "${2}_len=${Q_len}"
-	__sx_var_touch "${2}"
+
+	case "${SX_CFG_ARR_UPDATE-}" in 1)
+		__sx_var_touch "${2}"
+	esac
 
 	unset CLEANUP
 }
@@ -12878,7 +12884,10 @@ __sx_arr_push() {
 
 	# 長さを更新
 	eval "${Q_arr}_len=${Q_i}"
-	__sx_var_touch "${Q_arr}"
+
+	case "${SX_CFG_ARR_UPDATE-}" in 1)
+		__sx_var_touch "${Q_arr}"
+	esac
 
 	unset CLEANUP
 }
