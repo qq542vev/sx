@@ -4236,7 +4236,7 @@ M_RENAME_QI([|dnl
 ##   変数名列から右方向連鎖コピー用の代入式リストを生成する。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_res Q_out Q_chain Q_args Q_ls Q_dest Q_name|])dnl
+define([|CLEANUP|], [|Q_res Q_out Q_chain Q_dest Q_dep Q_name Q_src|])dnl
 
 __sx_var_list_copy() {
 	Q_res="${1}"
@@ -4244,30 +4244,32 @@ __sx_var_list_copy() {
 	shift
 
 	for Q_chain in "${@}"; do
-		case "${Q_chain}" in
-			*=*)
-				sx_str_sub Q_args: "${Q_chain}" = ' '
-				eval __sx_arg_rquote Q_args "${Q_args}"
-				;;
-			*) sx_str_sub Q_args: "${Q_chain}" - ' ';;
-		esac
+		Q_src=
 
-		eval set -- "${Q_args}"
+		while
+			case "${Q_chain}" in
+				*=*) Q_dest="${Q_chain##*=}" Q_chain="${Q_chain%=*}";;
+				*-*) Q_dest="${Q_chain%%-*}" Q_chain="${Q_chain#*-}";;
+				*) Q_dest="${Q_chain}" Q_chain=;;
+			esac
 
-		for Q_dest in "${@}"; do
-			if sx_var_is_set Q_src; then
-				__sx_var_list_dep Q_ls "${Q_src}"
-				eval set -- "${Q_ls}"
+			case "${Q_src}" in ?*)
+				__sx_var_list_dep Q_dep "${Q_src}"
+
+				eval set -- "${Q_dep}"
 
 				for Q_name in "${@}"; do
 					M_STR_APPEND([|Q_out|], [|"${Q_dest}${Q_name#"${Q_src}"}=${Q_name}"|], [| |])
 				done
-			fi
+			esac
+
+			case "${Q_chain}" in '')
+				break
+			esac
 
 			Q_src="${Q_dest}"
-		done
-
-		unset Q_src
+			continue
+		do :; done
 	done
 
 	M_VAR_SET([|${Q_res}|], [|${Q_out}|])

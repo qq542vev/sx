@@ -50,10 +50,10 @@ Describe '可変長 sx_arg_* の引数個数ガード'
   End
 
   Describe '内部呼び出し (__sx_var_list_copy)'
-    It 'コピー用リスト生成が内部版 rquote を利用して従来どおり成功すること'
-      When call __sx_var_list_copy out "a=b c=d"
+    It '有効な連鎖式でコピー用リスト生成が成功すること'
+      When call __sx_var_list_copy out "a=b" "c=d"
       The status should be success
-      The variable out should equal "c=d b=c a=b"
+      The variable out should equal "a=b c=d"
     End
   End
 End
