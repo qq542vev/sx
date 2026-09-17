@@ -5,10 +5,6 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_var_is_bind_ready'
     Include ./sx.sh
 
-    readonly BIR_RO="ro"
-    readonly BIR_RO_ARR="v"
-    readonly BIR_RO_ARR2_LEN="0"
-
     Describe '受理 - bind_init 直後の状態'
         It '中間未設定・末尾設定済みの場合に成功を返すこと'
             sx_var_bind_init "bir_a:bir_b"
@@ -103,20 +99,31 @@ Describe 'sx_var_is_bind_ready'
         End
     End
 
-    Describe '拒否 - 権限 (EX_NOPERM)'
-        It '読み取り専用変数に対して EX_NOPERM (77) を返すこと'
-            When call sx_var_is_bind_ready "BIR_RO"
-            The status should equal 77
+    Describe '権限分離（EX_NOPERM を返さない）'
+        It '読み取り専用の素変数を含む準備済み形式に成功を返すこと'
+            sx_var_bind_init "bir_ro1:bir_ro2"
+            readonly bir_ro1 bir_ro2
+            When call sx_var_is_bind_ready "bir_ro1:bir_ro2"
+            The status should be success
         End
 
-        It '配列本体が読み取り専用の場合に EX_NOPERM (77) を返すこと'
-            When call sx_var_is_bind_ready "bir_k3:@BIR_RO_ARR"
-            The status should equal 77
+        It '読み取り専用の配列を含む準備済み形式に成功を返すこと'
+            sx_var_bind_init "bir_rok:@bir_roarr"
+            readonly bir_roarr bir_roarr_len
+            When call sx_var_is_bind_ready "bir_rok:@bir_roarr"
+            The status should be success
         End
 
-        It '配列の _len のみが読み取り専用の場合に EX_NOPERM (77) を返すこと'
-            When call sx_var_is_bind_ready "bir_k4:@BIR_RO_ARR2"
-            The status should equal 77
+        It '配列でない対象の @name に失敗 (1) を返すこと（権限ではなく状態で判定）'
+            readonly BIR_P3_NARR="v"
+            When call sx_var_is_bind_ready "bir_p3k:@BIR_P3_NARR"
+            The status should equal 1
+        End
+
+        It '署名なしで _len のみ設定された対象の @name に失敗 (1) を返すこと'
+            readonly BIR_P3_LENONLY_LEN="0"
+            When call sx_var_is_bind_ready "bir_p3k2:@BIR_P3_LENONLY"
+            The status should equal 1
         End
     End
 

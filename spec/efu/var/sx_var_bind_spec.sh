@@ -30,4 +30,24 @@ Describe 'sx_var_bind -efu 環境検証'
     When run efu_run efu_bind_arr
     The status should be success
   End
+
+  It '空結果変数で残りを破棄できること'
+    efu_bind_empty() {
+      sx_var_bind_init "e1:e2:erest"
+      sx_var_bind "" "e1:e2:erest" "a"
+    }
+
+    When run efu_run efu_bind_empty
+    The status should be success
+  End
+
+  It '空結果変数で枯渇時に 1 を返すこと'
+    efu_bind_empty_exhaust() {
+      sx_var_bind_init "e3:"
+      sx_var_bind "" "e3:" "a" "b"
+    }
+
+    When run efu_run efu_bind_empty_exhaust
+    The status should equal 1
+  End
 End

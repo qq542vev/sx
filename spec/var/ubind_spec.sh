@@ -132,4 +132,26 @@ Describe 'sx_var_ubind'
             The status should equal 65 # SX_EX_DATAERR
         End
     End
+
+    Describe '空結果変数（残り破棄）'
+        It '成功時に残りを破棄し、生値で割り当てること'
+            sx_var_bind_init "eu1:euurest"
+            When call sx_var_ubind "" "eu1:euurest" "a b"
+            The status should be success
+            The variable eu1 should equal "a b"
+        End
+
+        It 'スロット枯渇時に 1 を返し、残りを破棄すること'
+            sx_var_bind_init "eu2:"
+            When call sx_var_ubind "" "eu2:" "a" "b"
+            The status should equal 1
+            The variable eu2 should equal "a"
+        End
+
+        It 'データが無い場合に成功すること'
+            sx_var_bind_init "eu3:euurest2"
+            When call sx_var_ubind "" "eu3:euurest2"
+            The status should be success
+        End
+    End
 End

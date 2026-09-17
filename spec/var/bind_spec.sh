@@ -207,4 +207,26 @@ Describe 'sx_var_bind'
             The status should equal 77 # SX_EX_NOPERM
         End
     End
+
+    Describe '空結果変数（残り破棄）'
+        It '成功時に残りを破棄し、割当ては実行すること'
+            sx_var_bind_init "eb1:eb2:eberest"
+            When call sx_var_bind "" "eb1:eb2:eberest" "a"
+            The status should be success
+            The variable eb1 should equal "a"
+        End
+
+        It 'スロット枯渇時に 1 を返し、残りを破棄すること'
+            sx_var_bind_init "eb3:"
+            When call sx_var_bind "" "eb3:" "a" "b"
+            The status should equal 1
+            The variable eb3 should equal "a"
+        End
+
+        It 'データが無い場合に成功すること'
+            sx_var_bind_init "eb4:eberest2"
+            When call sx_var_bind "" "eb4:eberest2"
+            The status should be success
+        End
+    End
 End

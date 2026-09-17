@@ -29,4 +29,15 @@ Describe 'sx_var_is_bind_ready -efu 環境検証'
     When run efu_run bir_efu_bad_case
     The status should equal 64
   End
+
+  It '読み取り専用変数を含む準備済み形式に成功を返すこと'
+    bir_efu_ro_case() {
+      sx_var_bind_init "bir_re1:bir_re2"
+      readonly bir_re1 bir_re2
+      sx_var_is_bind_ready "bir_re1:bir_re2"
+    }
+
+    When run efu_run bir_efu_ro_case
+    The status should be success
+  End
 End

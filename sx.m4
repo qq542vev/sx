@@ -3024,15 +3024,16 @@ __sx_arg_rquote() {
 ### sx_var_bind - バインド状態に従って値を割り当てる
 ##
 ## 使い方:
-##   sx_var_bind 結果変数名 バインド形式 [値1 [値2 ...]]
+##   sx_var_bind 結果変数名（空文字列可） バインド形式 [値1 [値2 ...]]
 ##
 ## 説明:
 ##   バインド形式（a:b:c 等）を解析し、値を適切な変数に割り当てる。
 ##   割り当て後、残りのバインド形式が結果変数に格納される。
+##   結果変数名に空文字列を指定した場合は、残りのバインド形式を書き込まずに破棄する。
 ##   複数の値を一度に割り当てることができ、各値はバインド形式の
 ##   セグメントに対して順次処理される。バインド先が枯渇し、未処理の
-##   値が残る場合は終了ステータス 1 を返し、結果変数に残りのバインド形式
-##   （枯渇時は空文字列）が書き込まれる。
+##   値が残る場合は終了ステータス 1 を返し、結果変数が空でない場合に限り
+##   残りのバインド形式（枯渇時は空文字列）が書き込まれる。
 ##   蓄積スロット（数値プレフィックス付き・最後の変数）へ値を蓄積する際は
 ##   値をクォートする。クォートせずに蓄積したい場合は sx_var_ubind を
 ##   使用する。代入スロット（名前:残り）への代入は値のクォートを行わない。
@@ -3046,10 +3047,10 @@ __sx_arg_rquote() {
 ##
 ## 終了ステータス:
 ##    0  割り当て成功 (SX_EX_OK)
-##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
+##    1  バインド先がもうない（データがバインド先より多い）。結果変数が空でない場合に限り空文字列が書き込まれる
 ##   64  引数不正 (SX_EX_USAGE)
 ##   65  バインド先が割当て可能な状態にない (SX_EX_DATAERR)
-##   77  変数名が読み取り専用 (SX_EX_NOPERM)
+##   77  結果変数名（空でない場合）またはバインド先が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_var_bind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind "${@}" || return; return 0;; esac
@@ -3057,9 +3058,11 @@ sx_var_bind() {
 	# 結果変数名自体の妥当性と書き込み権限をチェック
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	case "${1-}" in ?*)
+		sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+		__sx_var_is_rw "${1}" || return M_EX_NOPERM
+	esac
 
 	__sx_var_is_bind "${2-}" || return M_EX_USAGE
 
@@ -3073,17 +3076,17 @@ sx_var_bind() {
 ### __sx_var_bind - バインド状態に従って値を割り当てる（クォートあり・内部用）
 ##
 ## 使い方:
-##   __sx_var_bind 結果変数名 バインド形式 [値1 [値2 ...]]
+##   __sx_var_bind 結果変数名（空文字列可） バインド形式 [値1 [値2 ...]]
 ##
 ## 説明:
 ##   sx_var_bind の内部実装。リスト蓄積時に値をクォートする。
-##   引数の検証を行わない。
+##   引数の検証を行わない。結果変数名が空文字列の場合は残りを破棄する。
 ##   バインド先が枯渇し、未処理の値が残る場合は終了ステータス 1 を返し、
-##   結果変数に残りのバインド形式（枯渇時は空文字列）が書き込まれる。
+##   結果変数が空でない場合に限り残りのバインド形式（枯渇時は空文字列）が書き込まれる。
 ##
 ## 終了ステータス:
 ##    0  割り当て成功
-##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
+##    1  バインド先がもうない（データがバインド先より多い）。結果変数が空でない場合に限り空文字列が書き込まれる
 
 __sx_var_bind() {
 	__sx_var_bind0 1 "${@}" || return
@@ -3093,7 +3096,7 @@ M_RENAME_QI([|dnl
 ### __sx_var_bind0 - 複数の値をバインド状態に従って順次割り当てる
 ##
 ## 使い方:
-##   __sx_var_bind0 エスケープフラグ(1/0) 結果変数名 バインド形式 [値1 [値2 ...]]
+##   __sx_var_bind0 エスケープフラグ(1/0) 結果変数名（空文字列可） バインド形式 [値1 [値2 ...]]
 ##
 ## 説明:
 ##   sx_var_bind / sx_var_ubind の共通コア実装。
@@ -3101,11 +3104,12 @@ M_RENAME_QI([|dnl
 ##   進める。蓄積スロット（数値プレフィックス付き・最後の変数）は
 ##   Q_esc に応じて値をクォートして累積する。
 ##   @name / N@name 形式の要素は sx 配列へ値を追加し、クォートは行わない。
-##   バインド先が枯渇した場合は Q_res に空の残りバインドを書き込んで 1 を返す。
+##   結果変数名が空文字列の場合は残りのバインド形式を破棄する。
+##   バインド先が枯渇した場合は Q_res が空でない場合に限り空の残りバインドを書き込んで 1 を返す。
 ##
 ## 終了ステータス:
-##    0  データを全て割り当て、残りのバインド形式を結果変数に格納した
-##    1  バインド先が枯渇したままデータが残っている。結果変数へ空文字列を書き込む
+##    0  データを全て割り当て、結果変数が空でない場合に限り残りのバインド形式を格納した
+##    1  バインド先が枯渇したままデータが残っている。結果変数が空でない場合に限り空文字列を書き込む
 
 define([|CLEANUP|], [|Q_bind Q_ret Q_esc Q_res|])dnl
 __sx_var_bind0() {
@@ -3165,7 +3169,10 @@ __sx_var_bind0() {
 				Q_bind="${3}"
 				;;
 			*)
-				M_VAR_SET([|${2}|], [|${3}|])
+				case "${2-}" in ?*)
+					M_VAR_SET([|${2}|], [|${3}|])
+				esac
+
 				unset CLEANUP
 				return 1
 				;;
@@ -3179,7 +3186,9 @@ __sx_var_bind0() {
 
 	unset CLEANUP
 
-	M_VAR_SET([|${2}|], [|${3}|])
+	case "${2-}" in ?*)
+		M_VAR_SET([|${2}|], [|${3}|])
+	esac
 }
 |], [|var_bind0|])dnl
 
@@ -3547,7 +3556,6 @@ __sx_var_is_bind() {
 ## 説明:
 ##   引数で指定されたすべてのバインド形式が、直ちに sx_var_bind / sx_var_ubind
 ##   で使用できる状態（bind_init 直後の状態）にあるかを確認する。
-##   形式検査と書き込み権限検査も行う。
 ##   各要素は以下の状態である必要がある。
 ##     - @name / N@name: 対象が sx 配列であること
 ##     - 中間の素変数名: 未設定であること
@@ -3560,13 +3568,10 @@ __sx_var_is_bind() {
 ##    0  すべてバインド可能な状態である (SX_EX_OK)
 ##    1  バインド可能な状態にないものが含まれる
 ##   64  バインド形式が不正 (SX_EX_USAGE)
-##   77  書き込み不可な変数が含まれる (SX_EX_NOPERM)
 sx_var_is_bind_ready() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_bind_ready "${@}" || return; return 0;; esac
 
 	__sx_var_is_bind "${@}" || return M_EX_USAGE
-
-	__sx_var_is_bindable "${@}" || return M_EX_NOPERM
 
 	__sx_var_is_bind_ready "${@}" || return
 }
@@ -4796,15 +4801,16 @@ __sx_var_touch() {
 ### sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし）
 ##
 ## 使い方:
-##   sx_var_ubind 結果変数名 バインド形式 [値1 [値2 ...]]
+##   sx_var_ubind 結果変数名（空文字列可） バインド形式 [値1 [値2 ...]]
 ##
 ## 説明:
 ##   sx_var_bind と同様に複数の値をバインド形式に従って割り当てる。
 ##   蓄積スロット（数値プレフィックス付き・最後の変数）への蓄積時に
 ##   値のクォートを行わない点のみが sx_var_bind と異なる。
 ##   代入スロット（名前:残り）への代入は sx_var_bind と同様に生の値となる。
+##   結果変数名に空文字列を指定した場合は、残りのバインド形式を書き込まずに破棄する。
 ##   バインド先が枯渇し、未処理の値が残る場合は終了ステータス 1 を返し、
-##   結果変数に残りのバインド形式（空文字列）が書き込まれる。
+##   結果変数が空でない場合に限り残りのバインド形式（空文字列）が書き込まれる。
 ##   @name / N@name 形式の要素は sx 配列への分配先となる。
 ##   バインド形式は事前に sx_var_bind_init で初期化されている必要がある。
 ##   未初期化の状態で呼び出すと終了ステータス 65 を返す。
@@ -4812,10 +4818,10 @@ __sx_var_touch() {
 ##
 ## 終了ステータス:
 ##    0  割り当て成功 (SX_EX_OK)
-##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
+##    1  バインド先がもうない（データがバインド先より多い）。結果変数が空でない場合に限り空文字列が書き込まれる
 ##   64  引数不正 (SX_EX_USAGE)
 ##   65  バインド先が割当て可能な状態にない (SX_EX_DATAERR)
-##   77  変数名が読み取り専用 (SX_EX_NOPERM)
+##   77  結果変数名（空でない場合）またはバインド先が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_var_ubind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_ubind "${@}" || return; return 0;; esac
@@ -4823,9 +4829,11 @@ sx_var_ubind() {
 	# 結果変数名自体の妥当性と書き込み権限をチェック
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	case "${1-}" in ?*)
+		sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+		__sx_var_is_rw "${1}" || return M_EX_NOPERM
+	esac
 
 	__sx_var_is_bind "${2-}" || return M_EX_USAGE
 
@@ -4839,17 +4847,17 @@ sx_var_ubind() {
 ### __sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし・内部用）
 ##
 ## 使い方:
-##   __sx_var_ubind 結果変数名 バインド形式 [値1 [値2 ...]]
+##   __sx_var_ubind 結果変数名（空文字列可） バインド形式 [値1 [値2 ...]]
 ##
 ## 説明:
 ##   sx_var_ubind の内部実装。リスト蓄積時に値をクォートしない。
-##   引数の検証を行わない。
+##   引数の検証を行わない。結果変数名が空文字列の場合は残りを破棄する。
 ##   バインド先が枯渇し、未処理の値が残る場合は終了ステータス 1 を返し、
-##   結果変数に残りのバインド形式（枯渇時は空文字列）が書き込まれる。
+##   結果変数が空でない場合に限り残りのバインド形式（枯渇時は空文字列）が書き込まれる。
 ##
 ## 終了ステータス:
 ##    0  割り当て成功
-##    1  バインド先がもうない（データがバインド先より多い）。結果変数へ空文字列が書き込まれる
+##    1  バインド先がもうない（データがバインド先より多い）。結果変数が空でない場合に限り空文字列が書き込まれる
 
 __sx_var_ubind() {
 	__sx_var_bind0 0 "${@}" || return
@@ -10091,7 +10099,7 @@ __sx_str_isep_cb() {
 	fi
 
 	__sx_var_bind_init "${1}"
-	__sx_var_bind Q_ret "${1}" "${7}" "${9}" || :
+	__sx_var_bind '' "${1}" "${7}" "${9}" || :
 
 	unset CLEANUP
 
@@ -10181,7 +10189,7 @@ __sx_str_isep_lit() {
 		fi
 	fi
 
-	__sx_var_bind Q_bind "${Q_bind}" "${Q_out}" "${Q_cnt}" || :
+	__sx_var_bind '' "${Q_bind}" "${Q_out}" "${Q_cnt}" || :
 
 	unset CLEANUP
 }
@@ -11364,7 +11372,7 @@ __sx_str_sub_cb() {
 		fi
 
 		__sx_var_bind_init "${1}"
-		__sx_var_bind Q_ret "${1}" "${7}${2}" "${8}" || :
+		__sx_var_bind '' "${1}" "${7}${2}" "${8}" || :
 
 		unset CLEANUP
 		return "${10-0}"
@@ -11397,7 +11405,7 @@ __sx_str_sub_cb() {
 		fi
 
 		__sx_var_bind_init "${1}"
-		__sx_var_bind Q_ret "${1}" "${2}${7}" "${8}" || :
+		__sx_var_bind '' "${1}" "${2}${7}" "${8}" || :
 
 		unset CLEANUP
 		return "${10-0}"
@@ -11452,7 +11460,7 @@ __sx_str_sub_lit() {
 			done
 		fi
 
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_out}${Q_str}" "${Q_cnt}" || :
+		__sx_var_bind '' "${Q_bind}" "${Q_out}${Q_str}" "${Q_cnt}" || :
 	elif M_NUM_LT([|Q_lim|], [|0|]); then
 		Q_lim="${Q_lim#-}"
 
@@ -11470,7 +11478,7 @@ __sx_str_sub_lit() {
 			done
 		fi
 
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_str}${Q_out}" "${Q_cnt}" || :
+		__sx_var_bind '' "${Q_bind}" "${Q_str}${Q_out}" "${Q_cnt}" || :
 	fi
 
 	unset CLEANUP
@@ -11775,7 +11783,7 @@ __sx_str_tr() {
 	Q_cnt=0
 
 	case "${3}" in
-		'') __sx_var_bind Q_bind "${Q_bind}" "${Q_str}" "${Q_cnt}";;
+		'') __sx_var_bind '' "${Q_bind}" "${Q_str}" "${Q_cnt}";;
 		*)
 			__sx_str_chunk Q_to "${4}" 1
 			eval set -- "${Q_to}"
@@ -11799,7 +11807,7 @@ __sx_str_tr() {
 					M_NUM_INCR([|Q_cnt|])
 				done
 
-				__sx_var_bind Q_bind "${Q_bind}" "${Q_str}${Q_out}" "${Q_cnt}"
+				__sx_var_bind '' "${Q_bind}" "${Q_str}${Q_out}" "${Q_cnt}"
 			else
 				while M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
 					Q_pre="${Q_str%%["${Q_from}"]*}"
@@ -11817,7 +11825,7 @@ __sx_str_tr() {
 					M_NUM_INCR([|Q_cnt|])
 				done
 
-				__sx_var_bind Q_bind "${Q_bind}" "${Q_out}${Q_str}" "${Q_cnt}"
+				__sx_var_bind '' "${Q_bind}" "${Q_out}${Q_str}" "${Q_cnt}"
 			fi
 			;;
 	esac || :
