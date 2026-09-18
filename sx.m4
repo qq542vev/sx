@@ -4691,38 +4691,26 @@ M_RENAME_Q([|dnl
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 
-define([|CLEANUP|], [|Q_arg Q_toggle|])dnl
+define([|CLEANUP|], [|Q_arg Q_chain|])dnl
 
 sx_var_swap() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_swap "${@}" || return; return 0;; esac
 
 	sx_var_is_chain "${@}" || return M_EX_USAGE
 
-	for Q_arg in "${@}"; do
-		shift
+	Q_chain=
 
+	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			*=*) set -- "${@}" "${Q_arg}" "${Q_arg##*=}=${Q_arg%%=*}";;
-			*-*) set -- "${@}" "${Q_arg}" "${Q_arg##*-}-${Q_arg%%-*}";;
+			*=*) M_STR_APPEND([|Q_chain|], [|"${Q_arg##*=}=${Q_arg} "|]);;
+			*-*) M_STR_APPEND([|Q_chain|], [|"${Q_arg}-${Q_arg%%-*} "|]);;
 		esac
 	done
 
-	__sx_var_is_copyable "${@}" || {
+	eval __sx_var_is_copyable "${Q_chain}" || {
 		unset CLEANUP
 		return M_EX_NOPERM
 	}
-
-	Q_toggle=0
-
-	for Q_arg in "${@}"; do
-		shift
-
-		case "${Q_toggle}" in 0)
-			set -- "${@}" "${Q_arg}"
-		esac
-
-		Q_toggle="$((!Q_toggle))"
-	done
 
 	__sx_var_swap "${@}"
 	unset CLEANUP
@@ -4739,19 +4727,19 @@ M_RENAME_QI([|dnl
 ##   sx_var_swap の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_arg|])dnl
+define([|CLEANUP|], [|Q_arg Q_chain|])dnl
 
 __sx_var_swap() {
-	for Q_arg in "${@}"; do
-		shift
+	Q_chain=
 
+	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			*=*) set -- "${@}" "${Q_arg}" "${Q_arg##*=}=${Q_arg%%=*}";;
-			*-*) set -- "${@}" "${Q_arg}" "${Q_arg##*-}-${Q_arg%%-*}";;
+			*=*) M_STR_APPEND([|Q_chain|], [|"${Q_arg##*=}=${Q_arg} "|]);;
+			*-*) M_STR_APPEND([|Q_chain|], [|"${Q_arg}-${Q_arg%%-*} "|]);;
 		esac
 	done
 
-	__sx_var_copy "${@}"
+	eval __sx_var_copy "${Q_chain}"
 
 	unset CLEANUP
 }
