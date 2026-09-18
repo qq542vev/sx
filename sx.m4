@@ -4526,6 +4526,8 @@ M_RENAME_Q([|dnl
 ##   最後に元のソースである v1 を削除する。
 ##   複数の連鎖式が指定された場合は、順次実行される。
 ##   引数が単一の変数名の場合は、その変数を削除する。
+##   移動元と移動先が重なる場合（例: a-a、a-b c-a）は移動先への復元を優先し、
+##   移動先は保持される。特に自己への移動（a-a、a=a）は何もせず成功する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -4545,7 +4547,8 @@ sx_var_move() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
 			*=*) M_STR_APPEND([|Q_src|], [|" ${Q_arg##*=}"|]);;
-			*) M_STR_APPEND([|Q_src|], [|" ${Q_arg%%-*}"|]);;
+			*-*) M_STR_APPEND([|Q_src|], [|" ${Q_arg%%-*}"|]);;
+			*) M_STR_APPEND([|Q_src|], [|" ${Q_arg}"|]);;
 		esac
 	done
 
@@ -4570,17 +4573,20 @@ M_RENAME_QI([|dnl
 ##   sx_var_move の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_arg|])dnl
+define([|CLEANUP|], [|Q_arg Q_script|])dnl
 
 __sx_var_move() {
-	__sx_var_copy "${@}"
+	__sx_var_copy_script Q_script "${@}"
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
 			*=*) __sx_var_unset "${Q_arg##*=}";;
-			*) __sx_var_unset "${Q_arg%%-*}";;
+			*-*) __sx_var_unset "${Q_arg%%-*}";;
+			*) __sx_var_unset "${Q_arg}";;
 		esac
 	done
+
+	eval "${Q_script}"
 
 	unset CLEANUP
 }
