@@ -3361,7 +3361,7 @@ M_RENAME_QI([|dnl
 ##   変数名列から右方向連鎖コピー用の実行スクリプトを生成する。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_res Q_out Q_chain Q_dest Q_dep Q_name Q_src Q_val Q_set|])dnl
+define([|CLEANUP|], [|Q_res Q_out Q_chain Q_dest Q_dep Q_src Q_vn Q_set Q_val|])dnl
 
 __sx_var_copy_script() {
 	Q_res="${1}"
@@ -3385,8 +3385,8 @@ __sx_var_copy_script() {
 
 				eval set -- "${Q_dep}"
 
-				for Q_name in "${@}"; do
-					eval "Q_set=\"\${${Q_name}+X}\" Q_val=\"\${${Q_name}-}\""
+				for Q_vn in "${@}"; do
+					eval "Q_set=\"\${${Q_vn}+X}\" Q_val=\"\${${Q_vn}-}\""
 
 					case "${Q_set}" in
 						?*)
@@ -3394,9 +3394,9 @@ __sx_var_copy_script() {
 							__sx_str_sub Q_val: "${Q_val}" "'" "'\\''"
 						esac
 
-							M_STR_APPEND([|Q_out|], [|"${Q_dest}${Q_name#"${Q_src}"}='${Q_val}'${SX_STR_LF}"|])
+							M_STR_APPEND([|Q_out|], [|"${Q_dest}${Q_vn#"${Q_src}"}='${Q_val}'${SX_STR_LF}"|])
 							;;
-						*) M_STR_APPEND([|Q_out|], [|"unset ${Q_dest}${Q_name#"${Q_src}"}${SX_STR_LF}"|])
+						*) M_STR_APPEND([|Q_out|], [|"unset ${Q_dest}${Q_vn#"${Q_src}"}${SX_STR_LF}"|]);;
 					esac
 				done
 			esac
@@ -3450,23 +3450,29 @@ M_RENAME_QI([|dnl
 ##   sx_var_dump の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_res Q_out Q_ls Q_vn Q_val|])dnl
+define([|CLEANUP|], [|Q_res Q_out Q_dep Q_vn Q_set Q_val|])dnl
 
 __sx_var_dump() {
 	Q_res="${1}"
 	Q_out=
 	shift
 
-	__sx_var_list_dep Q_ls "${@}"
-	eval set -- "${Q_ls}"
+	__sx_var_list_dep Q_dep "${@}"
+	eval set -- "${Q_dep}"
 
 	for Q_vn in "${@}"; do
-		if sx_var_is_set "${Q_vn}"; then
-			eval __sx_arg_quote Q_val "\"\${${Q_vn}}\""
-			M_STR_APPEND([|Q_out|], [|"${Q_vn}=${Q_val}${SX_STR_LF}"|])
-		else
-			M_STR_APPEND([|Q_out|], [|"unset ${Q_vn}${SX_STR_LF}"|])
-		fi
+		eval "Q_set=\"\${${Q_vn}+X}\" Q_val=\"\${${Q_vn}-}\""
+
+		case "${Q_set}" in
+			?*)
+				case "${Q_val}" in *"'"*)
+					__sx_str_sub Q_val: "${Q_val}" "'" "'\\''"
+				esac
+
+				M_STR_APPEND([|Q_out|], [|"${Q_vn}='${Q_val}'${SX_STR_LF}"|])
+				;;
+			*) M_STR_APPEND([|Q_out|], [|"unset ${Q_vn}${SX_STR_LF}"|]);;
+		esac
 	done
 
 	M_VAR_SET([|${Q_res}|], [|${Q_out}|])
