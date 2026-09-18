@@ -3330,7 +3330,7 @@ __sx_var_copy() {
 ##   与えられた連鎖式群に対するコピー処理で必要となる、
 ##   実行可能なコピースクリプトを生成して結果変数に格納する。
 ##   連鎖ごとにコピー先の削除（__sx_var_unset）に続けて、
-##   コピー元の現在値を取得した代入式（dest='値'）または削除式（unset dest）を
+##   コピー元の現在値を取得した代入式（dest='値'）または削除式（unset -v dest）を
 ##   SX_STR_LF 区切りで並べる。コピー元が sx 配列である場合は、
 ##   関連するすべての要素も含めて展開する。
 ##   生成されたスクリプトは eval で実行できる。
@@ -3396,7 +3396,7 @@ __sx_var_copy_script() {
 
 							M_STR_APPEND([|Q_out|], [|"${Q_dest}${Q_vn#"${Q_src}"}='${Q_val}'${SX_STR_LF}"|])
 							;;
-						*) M_STR_APPEND([|Q_out|], [|"unset ${Q_dest}${Q_vn#"${Q_src}"}${SX_STR_LF}"|]);;
+						*) M_STR_APPEND([|Q_out|], [|"unset -v ${Q_dest}${Q_vn#"${Q_src}"}${SX_STR_LF}"|]);;
 					esac
 				done
 			esac
@@ -3424,7 +3424,7 @@ __sx_var_copy_script() {
 ## 説明:
 ##   指定された変数（または配列）の現在の状態を、代入式（name='value'）の
 ##   形式で取得し、結果変数に格納する。配列の場合は関連する全要素を含む。
-##   変数が設定されていない場合は 'unset name' の形式となる。
+##   変数が設定されていない場合は 'unset -v name' の形式となる。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -3471,7 +3471,7 @@ __sx_var_dump() {
 
 				M_STR_APPEND([|Q_out|], [|"${Q_vn}='${Q_val}'${SX_STR_LF}"|])
 				;;
-			*) M_STR_APPEND([|Q_out|], [|"unset ${Q_vn}${SX_STR_LF}"|]);;
+			*) M_STR_APPEND([|Q_out|], [|"unset -v ${Q_vn}${SX_STR_LF}"|]);;
 		esac
 	done
 

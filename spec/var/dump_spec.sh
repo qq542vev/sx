@@ -33,7 +33,7 @@ Describe 'sx_var_dump'
     unset undef_var
     When call sx_var_dump res undef_var
     The status should be success
-    The variable res should equal "unset undef_var${SX_STR_LF}"
+    The variable res should equal "unset -v undef_var${SX_STR_LF}"
   End
 
   It '結果変数が読み取り専用の場合に EX_NOPERM を返すこと'

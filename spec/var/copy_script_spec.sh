@@ -8,21 +8,21 @@ Describe 'sx_var_copy_script'
   It '右方向連鎖式のコピースクリプトを生成すること'
     When call sx_var_copy_script result "a-b-c"
     The status should be success
-    # a->b, b->c (未設定のため unset 形式)
+    # a->b, b->c (未設定のため unset -v 形式)
     The variable result should include "__sx_var_unset b"
-    The variable result should include "unset b"
+    The variable result should include "unset -v b"
     The variable result should include "__sx_var_unset c"
-    The variable result should include "unset c"
+    The variable result should include "unset -v c"
   End
 
   It '左方向連鎖式のコピースクリプトを生成すること'
     When call sx_var_copy_script result "a=b=c"
     The status should be success
-    # a<-b, b<-c (未設定のため unset 形式)
+    # a<-b, b<-c (未設定のため unset -v 形式)
     The variable result should include "__sx_var_unset b"
-    The variable result should include "unset b"
+    The variable result should include "unset -v b"
     The variable result should include "__sx_var_unset a"
-    The variable result should include "unset a"
+    The variable result should include "unset -v a"
   End
 
   It '設定済み変数の値を埋め込んだ代入式を生成すること'
