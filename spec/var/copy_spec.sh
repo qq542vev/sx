@@ -65,6 +65,28 @@ Describe 'sx_var_copy'
       The variable arr3_len should equal 1
       The variable arr3_0 should equal "b"
     End
+
+    It '同一コピー先への複数連鎖で古い要素が残らないこと'
+      sx_arr_gen reg_a 0 1 2
+      sx_arr_gen reg_c 3
+      When call sx_var_copy reg_a-reg_b reg_c-reg_b
+      The status should be success
+      The variable reg_b_len should equal 1
+      The variable reg_b_0 should equal "3"
+      The variable reg_b_1 should be undefined
+      The variable reg_b_2 should be undefined
+    End
+
+    It '要素数の少ない配列で上書きしたときに古い要素が残らないこと'
+      sx_arr_gen big_arr 0 1 2
+      sx_arr_gen small_arr 9
+      When call sx_var_copy small_arr-big_arr
+      The status should be success
+      The variable big_arr_len should equal 1
+      The variable big_arr_0 should equal "9"
+      The variable big_arr_1 should be undefined
+      The variable big_arr_2 should be undefined
+    End
   End
 
   Describe 'エラーケース'

@@ -3308,50 +3308,113 @@ M_RENAME_QI([|dnl
 ##   sx_var_copy の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_esc Q_ls Q_asg Q_pair Q_dst Q_src Q_val Q_dsts Q_arg|])dnl
+define([|CLEANUP|], [|Q_asg|])dnl
 
 __sx_var_copy() {
-	__sx_arg_quote Q_esc "${@}"
-	__sx_var_list_copy Q_ls "${@}"
-	eval set -- "${Q_ls}"
+	__sx_var_copy_script Q_asg "${@}"
 
-	# 1. 値のキャプチャと代入式の生成
-	Q_asg=
-
-	for Q_pair in "${@}"; do
-		Q_dst="${Q_pair%%=*}"
-		Q_src="${Q_pair#*=}"
-
-		if sx_var_is_set "${Q_src}"; then
-			eval __sx_arg_quote Q_val "\"\${${Q_src}}\""
-			M_STR_APPEND([|Q_asg|], [|" ${Q_dst}=${Q_val};"|])
-		else
-			M_STR_APPEND([|Q_asg|], [|" unset ${Q_dst};"|])
-		fi
-	done
-
-	# 2. コピー先を削除
-	eval set -- "${Q_esc}"
-	for Q_arg in "${@}"; do
-		case "${Q_arg}" in
-			*=*)
-				sx_str_sub Q_dsts: "${Q_arg%=*}" = ' '
-				eval __sx_var_unset "${Q_dsts}"
-				;;
-			*-*)
-				sx_str_sub Q_dsts: "${Q_arg#*-}" - ' '
-				eval __sx_var_unset "${Q_dsts}"
-				;;
-		esac
-	done
-
-	# 3. 代入の実行
+	# 代入の実行
 	eval "${Q_asg}"
 
 	# 内部用変数を掃除
 	unset CLEANUP
 }
 |], [|var_copy|])dnl
+
+### sx_var_copy_script - 変数のコピー用スクリプトを生成する
+##
+## 使い方:
+##   sx_var_copy_script 結果変数名 [連鎖式1 [連鎖式2 ...]]
+##
+## 説明:
+##   与えられた連鎖式群に対するコピー処理で必要となる、
+##   実行可能なコピースクリプトを生成して結果変数に格納する。
+##   連鎖ごとにコピー先の削除（__sx_var_unset）に続けて、
+##   コピー元の現在値を取得した代入式（dest='値'）または削除式（unset dest）を
+##   SX_STR_LF 区切りで並べる。コピー元が sx 配列である場合は、
+##   関連するすべての要素も含めて展開する。
+##   生成されたスクリプトは eval で実行できる。
+##   連鎖式が指定されない場合や引数が単一の変数名の場合は、空文字列を格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+sx_var_copy_script() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_copy_script "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+	sx_var_is_chain "${@}" || return M_EX_USAGE
+
+	__sx_var_copy_script "${@}"
+}
+
+M_RENAME_QI([|dnl
+### __sx_var_copy_script - 変数のコピー用スクリプトを生成する（内部用）
+##
+## 使い方:
+##   __sx_var_copy_script 結果変数名 [変数名1 [変数名2 [変数名3 ...]]]
+##
+## 説明:
+##   sx_var_copy_script の内部実装。
+##   変数名列から右方向連鎖コピー用の実行スクリプトを生成する。
+##   引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_res Q_out Q_chain Q_dest Q_dep Q_name Q_src Q_val Q_set|])dnl
+
+__sx_var_copy_script() {
+	Q_res="${1}"
+	Q_out=
+	shift
+
+	for Q_chain in "${@}"; do
+		Q_src=
+
+		while
+			case "${Q_chain}" in
+				*=*) Q_dest="${Q_chain##*=}" Q_chain="${Q_chain%=*}";;
+				*-*) Q_dest="${Q_chain%%-*}" Q_chain="${Q_chain#*-}";;
+				*) Q_dest="${Q_chain}" Q_chain=;;
+			esac
+
+			case "${Q_src}" in ?*)
+				M_STR_APPEND([|Q_out|], [|"__sx_var_unset ${Q_dest}${SX_STR_LF}"|])
+
+				__sx_var_list_dep Q_dep "${Q_src}"
+
+				eval set -- "${Q_dep}"
+
+				for Q_name in "${@}"; do
+					eval "Q_set=\"\${${Q_name}+X}\" Q_val=\"\${${Q_name}-}\""
+
+					case "${Q_set}" in
+						?*)
+						case "${Q_val}" in *"'"*)
+							__sx_str_sub Q_val: "${Q_val}" "'" "'\\''"
+						esac
+
+							M_STR_APPEND([|Q_out|], [|"${Q_dest}${Q_name#"${Q_src}"}='${Q_val}'${SX_STR_LF}"|])
+							;;
+						*) M_STR_APPEND([|Q_out|], [|"unset ${Q_dest}${Q_name#"${Q_src}"}${SX_STR_LF}"|])
+					esac
+				done
+			esac
+
+			case "${Q_chain}" in '')
+				break
+			esac
+
+			Q_src="${Q_dest}"
+			continue
+		do :; done
+	done
+
+	M_VAR_SET([|${Q_res}|], [|${Q_out}|])
+
+	unset CLEANUP
+}
+|], [|var_copy_script|])dnl
 
 ### sx_var_dump - 変数や配列の状態を文字列として取得する
 ##
@@ -4198,85 +4261,6 @@ __sx_var_is_val() {
 	done
 }
 |], [|var_is_val|])dnl
-
-### sx_var_list_copy - 変数のコピー用代入式リストを生成する
-##
-## 使い方:
-##   sx_var_list_copy 結果変数名 [連鎖式1 [連鎖式2 ...]]
-##
-## 説明:
-##   与えられた連鎖式群に対するコピー処理で必要となる、
-##   スペース区切りの代入式リスト（例: "dest=src dest2=src2"）を生成して結果変数に格納する。
-##   コピー元が sx 配列である場合は、関連するすべての要素も含めてリストに含める。
-##   生成されたリストは eval set -- 等で利用できる。
-##   連鎖式が指定されない場合や引数が単一の変数名の場合は、空文字列を格納する。
-##
-## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数不正 (SX_EX_USAGE)
-##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-sx_var_list_copy() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_copy "${@}" || return; return 0;; esac
-
-	sx_var_is_name "${1-}" || return M_EX_USAGE
-	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-	sx_var_is_chain "${@}" || return M_EX_USAGE
-
-	__sx_var_list_copy "${@}"
-}
-
-M_RENAME_QI([|dnl
-### __sx_var_list_copy - 変数のコピー用代入式リストを生成する（内部用）
-##
-## 使い方:
-##   __sx_var_list_copy 結果変数名 [変数名1 [変数名2 [変数名3 ...]]]
-##
-## 説明:
-##   sx_var_list_copy の内部実装。
-##   変数名列から右方向連鎖コピー用の代入式リストを生成する。
-##   引数チェックは行わない。
-
-define([|CLEANUP|], [|Q_res Q_out Q_chain Q_dest Q_dep Q_name Q_src|])dnl
-
-__sx_var_list_copy() {
-	Q_res="${1}"
-	Q_out=
-	shift
-
-	for Q_chain in "${@}"; do
-		Q_src=
-
-		while
-			case "${Q_chain}" in
-				*=*) Q_dest="${Q_chain##*=}" Q_chain="${Q_chain%=*}";;
-				*-*) Q_dest="${Q_chain%%-*}" Q_chain="${Q_chain#*-}";;
-				*) Q_dest="${Q_chain}" Q_chain=;;
-			esac
-
-			case "${Q_src}" in ?*)
-				__sx_var_list_dep Q_dep "${Q_src}"
-
-				eval set -- "${Q_dep}"
-
-				for Q_name in "${@}"; do
-					M_STR_APPEND([|Q_out|], [|"${Q_dest}${Q_name#"${Q_src}"}=${Q_name}"|], [| |])
-				done
-			esac
-
-			case "${Q_chain}" in '')
-				break
-			esac
-
-			Q_src="${Q_dest}"
-			continue
-		do :; done
-	done
-
-	M_VAR_SET([|${Q_res}|], [|${Q_out}|])
-
-	unset CLEANUP
-}
-|], [|var_list_copy|])dnl
 
 M_RENAME_Q([|dnl
 ### sx_var_list_dep - 指定された変数に関連するすべての変数名を取得する

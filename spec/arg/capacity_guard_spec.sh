@@ -49,11 +49,14 @@ Describe '可変長 sx_arg_* の引数個数ガード'
     End
   End
 
-  Describe '内部呼び出し (__sx_var_list_copy)'
-    It '有効な連鎖式でコピー用リスト生成が成功すること'
-      When call __sx_var_list_copy out "a=b" "c=d"
+  Describe '内部呼び出し (__sx_var_copy_script)'
+    It '有効な連鎖式でコピースクリプト生成が成功すること'
+      When call __sx_var_copy_script out "a=b" "c=d"
       The status should be success
-      The variable out should equal "a=b c=d"
+      The variable out should include "__sx_var_unset a"
+      The variable out should include "unset a"
+      The variable out should include "__sx_var_unset c"
+      The variable out should include "unset c"
     End
   End
 End
