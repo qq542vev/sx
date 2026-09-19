@@ -124,6 +124,14 @@ Describe 'sx_arr_rquote'
     cleanup
   End
 
+  It '配列ではない引数が含まれる場合に EX_DATAERR を返すこと'
+    setup
+    not_arr="not an array"
+    When call sx_arr_rquote result arr1 not_arr
+    The status should equal 65
+    cleanup
+  End
+
   It '結果変数が読み取り専用の場合に EX_NOPERM を返すこと'
     setup
     readonly ro_res_arr_rquote="fixed"
