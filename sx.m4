@@ -11059,12 +11059,13 @@ __sx_str_split() {
 ### sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する
 ##
 ## 使い方:
-##   IFS=',' sx_str_split_ifs 結果変数名 [文字列 ...]
+##   IFS=',' sx_str_split_ifs 結果変数名（またはバインド形式） [文字列 ...]
 ##
 ## 説明:
 ##   現在の IFS（内部フィールド区切り文字）を用いて、第2引数以降の文字列を
 ##   単語分割（Word Splitting）し、各単語をシングルクォートで囲み、
 ##   スペース区切りで結合した文字列として結果変数に格納する。
+##   第一引数にはバインド形式を指定して分配代入を行うことも可能。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -11077,9 +11078,9 @@ sx_str_split_ifs() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -11090,15 +11091,15 @@ M_RENAME_QI([|dnl
 ### __sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する（内部用）
 ##
 ## 使い方:
-##   __sx_str_split_ifs 結果変数名 [文字列 ...]
+##   __sx_str_split_ifs 結果変数名（またはバインド形式） [文字列 ...]
 ##
 ## 説明:
-##   引数チェックを行わずに単語分割処理を行う。
+##   sx_str_split_ifs の内部実装。引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_res Q_opts|])dnl
+define([|CLEANUP|], [|Q_bind Q_opts|])dnl
 
 __sx_str_split_ifs() {
-	Q_res="${1}"
+	Q_bind="${1}"
 	Q_opts="${-}"
 	shift
 
@@ -11109,7 +11110,7 @@ __sx_str_split_ifs() {
 		set +f
 	esac
 
-	__sx_arg_quote "${Q_res}" "${@}"
+	__sx_arg_quote "${Q_bind}" "${@}"
 
 	unset CLEANUP
 }
