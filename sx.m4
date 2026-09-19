@@ -12921,12 +12921,13 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_arr_splice の本体実装。引数チェック（個数・変数名・配列判定・
 ##   書き込み権限・数値形式）は行わない。
+##   長さ・添字・値個数は文字列数値関数で処理し、シェルの算術幅に依存しない。
 ##   尾部は要素ごとに __sx_var_copy で移動する（拡大は後ろから前へ、
 ##   縮小は前から後ろへ回して未読のソースを壊さず、生成スクリプトを
 ##   1要素ぶんに抑える）。中央は __sx_var_unset で深く掃除してから
 ##   代入し、余剰尾部は __sx_var_unset で深く掃除する。最後に長さを更新する。
 
-define([|CLEANUP|], [|Q_arr Q_len Q_n Q_del Q_rest Q_cnt Q_shift Q_new Q_i Q_j Q_val|])dnl
+define([|CLEANUP|], [|Q_arr Q_len Q_n Q_del Q_rest Q_cnt Q_dir Q_new Q_src Q_end Q_i Q_j Q_val|])dnl
 
 __sx_arr_splice() {
 	Q_arr="${1}"
@@ -12938,81 +12939,122 @@ __sx_arr_splice() {
 
 	# 1) 範囲の丸め (clamp): n が末尾を超えていれば末尾挿入、
 	#    del が残りを超えていれば残り全部の削除として扱う。
-	#    Q_new は操作後の長さ (len - del + cnt) である。
-	case "$((Q_n > Q_len))" in 1)
-		Q_n="${Q_len}"
+	#    算術展開は使わず、比較結果と絶対値演算を必要な回数だけ行う。
+	__sx_num_cmp_nat0 "${Q_n}" "${Q_len}" || case "${?}" in
+		1) __sx_num_sub_nat0 Q_rest "${Q_len}" "${Q_n}";;
+		2) Q_rest=0;;
+		3) Q_n="${Q_len}" Q_rest=0;;
 	esac
 
-	Q_rest=$((Q_len - Q_n))
-
-	case "$((Q_del > Q_rest))" in 1)
-		Q_del="${Q_rest}"
+	__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in
+		3) Q_del="${Q_rest}";;
 	esac
 
-	Q_new=$((Q_len - Q_del + Q_cnt))
+	# 2) 挿入・削除後の長さを計算する。cnt と del が等しい場合は
+	#    元の長さをそのまま使い、不要な加減算を行わない。
+	__sx_num_cmp_nat0 "${Q_cnt}" "${Q_del}" || case "${?}" in
+		1)
+			Q_dir=-
+			case "${Q_cnt}:${Q_del}" in
+				0:*) __sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}";;
+				*)
+					__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}"
+					__sx_num_add_nat0 Q_new "${Q_new}" "${Q_cnt}"
+					;;
+			esac
+			;;
+		2) Q_dir=0 Q_new="${Q_len}";;
+		3)
+			Q_dir=+
+			case "${Q_del}" in
+				0) __sx_num_add_nat0 Q_new "${Q_len}" "${Q_cnt}";;
+				*)
+					__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}"
+					__sx_num_add_nat0 Q_new "${Q_new}" "${Q_cnt}"
+					;;
+			esac
+			;;
+	esac
 
-	# 2) 尾部の移動 (要素ごと): 削除範囲の後ろ [n+del, len) を
+	# 尾部の移動先および中央の終端 [n, n+cnt) を一度だけ計算する。
+	Q_end="${Q_n}"
+	case "${Q_cnt}" in
+		0) ;;
+		*) __sx_num_add_nat0 Q_end "${Q_n}" "${Q_cnt}";;
+	esac
+
+	# 3) 尾部の移動 (要素ごと): 削除範囲の後ろ [n+del, len) を
 	#    挿入後の位置 [n+cnt, new) へずらす。1要素ずつ __sx_var_copy
 	#    で移すことで、巨大配列でも生成スクリプトを1要素ぶんに抑える。
-	#    拡大 (cnt>del) は後ろから前、縮小 (cnt<del) は前から後ろへ
-	#    読むため、一部を上書きしても未読のソースを壊さない
-	#    (shift==0 なら位置不変のため移動不要)。
+	#    拡大 (cnt>del) は後ろから前、縮小 (cnt<del) は前から後ろへ読むため、
+	#    一部を上書きしても未読のソースを壊さない (cnt=del なら移動不要)。
 	#    尾部がなければ (純粋な末尾操作) 何もしない。
-	Q_shift=$((Q_cnt - Q_del))
+	case "${Q_dir}" in
+		-)
+			Q_src="${Q_n}"
+			case "${Q_del}" in
+				0) ;;
+				*) __sx_num_add_nat0 Q_src "${Q_n}" "${Q_del}";;
+				esac
 
-	case "${Q_shift}" in
-		0) ;;
-		-*)
-			Q_i=$((Q_n + Q_del))
-
+			Q_i="${Q_src}"
+			Q_j="${Q_end}"
 			while M_STR_NE([|"${Q_i}"|], [|"${Q_len}"|]); do
-				__sx_var_copy "${Q_arr}_${Q_i}-${Q_arr}_$((Q_i + Q_shift))"
-				Q_i=$((Q_i + 1))
+				__sx_var_copy "${Q_arr}_${Q_i}-${Q_arr}_${Q_j}"
+				M_NUM_INCRM1([|Q_i|])
+				M_NUM_INCRM1([|Q_j|])
 			done
 			;;
-		*)
-			Q_i=$((Q_len - 1))
+		0) ;;
+		+)
+			Q_src="${Q_n}"
+			case "${Q_del}" in
+				0) ;;
+				*) __sx_num_add_nat0 Q_src "${Q_n}" "${Q_del}";;
+			esac
 
-			while case "$((Q_i >= Q_n + Q_del))" in 0) ! :;; esac; do
-				__sx_var_copy "${Q_arr}_${Q_i}-${Q_arr}_$((Q_i + Q_shift))"
-				Q_i=$((Q_i - 1))
+			Q_i="${Q_len}"
+			Q_j="${Q_new}"
+			while M_STR_NE([|"${Q_i}"|], [|"${Q_src}"|]); do
+				M_NUM_DECRM1([|Q_i|])
+				M_NUM_DECRM1([|Q_j|])
+				__sx_var_copy "${Q_arr}_${Q_i}-${Q_arr}_${Q_j}"
 			done
 			;;
 	esac
 
 
-	# 3) 中央の書込み: 挿入位置 [n, n+cnt) を __sx_var_unset で
+	# 4) 中央の書込み: 挿入位置 [n, n+cnt) を __sx_var_unset で
 	#    深く掃除してから値を代入する。素の代入だけでは要素に
 	#    配列が含まれていた場合に配下 (xxx_len, xxx_0...) の
 	#    残骸が残るため、先に掃除が必須である。
 	#    値がなければ (純削除) 何もしない。
 	Q_i="${Q_n}"
-	Q_j=$((Q_n + Q_cnt))
-
-	while M_STR_NE([|"${Q_i}"|], [|"${Q_j}"|]); do
+	while M_STR_NE([|"${Q_i}"|], [|"${Q_end}"|]); do
 		__sx_var_unset "${Q_arr}_${Q_i}"
-		Q_i=$((Q_i + 1))
+		M_NUM_INCRM1([|Q_i|])
 	done
 
 	Q_i="${Q_n}"
 
 	for Q_val in "${@}"; do
 		eval "${Q_arr}_${Q_i}=\"\${Q_val}\""
-		Q_i=$((Q_i + 1))
+		M_NUM_INCRM1([|Q_i|])
 	done
 
-	# 4) 余剰尾部の掃除: 縮小時は [new, len) がはみ出すので
-	#    __sx_var_unset で深く掃除する。拡大時は new > len のため
-	#    文字列比較では終わらないので、数値比較で回す
-	#    (divmod の while case 構文と同型)。
-	Q_i="${Q_new}"
+	# 5) 余剰尾部の掃除: cnt < del の場合だけ [new, len) がはみ出すので
+	#    __sx_var_unset で深く掃除する。cnt と del の比較結果を再利用する。
+	case "${Q_dir}" in
+		-)
+			Q_i="${Q_new}"
+			while M_STR_NE([|"${Q_i}"|], [|"${Q_len}"|]); do
+				__sx_var_unset "${Q_arr}_${Q_i}"
+				M_NUM_INCRM1([|Q_i|])
+			done
+			;;
+	esac
 
-	while case "$((Q_i < Q_len))" in 0) ! :;; esac; do
-		__sx_var_unset "${Q_arr}_${Q_i}"
-		Q_i=$((Q_i + 1))
-	done
-
-	# 5) 長さの確定とリビジョン更新 (ARR_UPDATE=0 では抑止)
+	# 6) 長さの確定とリビジョン更新 (ARR_UPDATE=0 では抑止)
 	eval "${Q_arr}_len=${Q_new}"
 
 	case "${SX_CFG_ARR_UPDATE-}" in 1)
