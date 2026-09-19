@@ -275,6 +275,7 @@ readonly SX_CFG_DEF_SKIP_CHK=0
 readonly SX_CFG_DEF_NUM_RANGE=32
 readonly SX_CFG_DEF_SEP=':::'
 readonly SX_CFG_DEF_ARR_UPDATE=1
+readonly SX_CFG_DEF_ARR_UNSET=
 
 : "${SX_CFG_SIG_BASE:=${SX_CFG_DEF_SIG_BASE}}"
 : "${SX_CFG_SIG_ARR:=${SX_CFG_DEF_SIG_ARR}}"
@@ -282,6 +283,7 @@ readonly SX_CFG_DEF_ARR_UPDATE=1
 : "${SX_CFG_NUM_RANGE:=${SX_CFG_DEF_NUM_RANGE}}"
 : "${SX_CFG_SEP:=${SX_CFG_DEF_SEP}}"
 : "${SX_CFG_ARR_UPDATE:=${SX_CFG_DEF_ARR_UPDATE}}"
+: "${SX_CFG_ARR_UNSET:=${SX_CFG_DEF_ARR_UNSET}}"
 SX_SYS_REV=0
 
 # ========================================
@@ -313,14 +315,15 @@ sx_cfg_is_valid() {
 			SIG_BASE="${SX_CFG_SIG_BASE-}" \
 			SIG_ARR="${SX_CFG_SIG_ARR-}" \
 			SEP="${SX_CFG_SEP-}" \
-			ARR_UPDATE="${SX_CFG_ARR_UPDATE-}"
+			ARR_UPDATE="${SX_CFG_ARR_UPDATE-}" \
+			ARR_UNSET="${SX_CFG_ARR_UNSET-}"
 	esac
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP | ARR_UPDATE) ;;
+			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP | ARR_UPDATE | ARR_UNSET) ;;
 			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128) ;;
-			SKIP_CHK=[01] | SIG_BASE=?* | SIG_ARR=?* | SEP=?* | ARR_UPDATE=[01]) ;;
+			SKIP_CHK=[01] | SIG_BASE=?* | SIG_ARR=?* | SEP=?* | ARR_UPDATE=[01] | ARR_UNSET=*) ;;
 			*)
 				unset CLEANUP
 				return 1
@@ -3388,7 +3391,7 @@ __sx_var_copy_script() {
 				for Q_vn in "${@}"; do
 					eval "Q_set=\"\${${Q_vn}+X}\" Q_val=\"\${${Q_vn}-}\""
 					case "${Q_set}" in
-						?*)
+						X)
 						case "${Q_val}" in *"'"*)
 							__sx_str_sub Q_val: "${Q_val}" "'" "'\\''"
 						esac
@@ -3465,7 +3468,7 @@ __sx_var_dump() {
 		eval "Q_set=\"\${${Q_vn}+X}\" Q_val=\"\${${Q_vn}-}\""
 
 		case "${Q_set}" in
-			?*)
+			X)
 				case "${Q_val}" in *"'"*)
 					__sx_str_sub Q_val: "${Q_val}" "'" "'\\''"
 				esac
@@ -4883,10 +4886,10 @@ define([|CLEANUP|], [|Q_arg Q_tmp Q_set|])dnl
 
 __sx_var_unexport() {
 	for Q_arg in "${@}"; do
-		eval "Q_tmp=\"\${${Q_arg}-}\" Q_set=\"\${${Q_arg}+1}\""
+		eval "Q_tmp=\"\${${Q_arg}-}\" Q_set=\"\${${Q_arg}+X}\""
 		unset -v "${Q_arg}"
 
-		case "${Q_set}" in 1)
+		case "${Q_set}" in X)
 			M_VAR_SET([|${Q_arg}|], [|${Q_tmp}|])
 		esac
 	done
@@ -12929,7 +12932,7 @@ M_RENAME_QI([|dnl
 ##   sx_arr_quote の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_bind Q_arr Q_len Q_i|])dnl
+define([|CLEANUP|], [|Q_bind Q_arr Q_len Q_i Q_set Q_val|])dnl
 
 __sx_arr_quote() {
 	__sx_var_bind_init "${1}"
@@ -12941,7 +12944,13 @@ __sx_arr_quote() {
 		Q_i=0
 
 		while M_STR_NE([|"${Q_i}"|], [|"${Q_len}"|]); do
-			eval __sx_var_bind Q_bind '"${Q_bind}"' "\"\${${Q_arr}_${Q_i}-}\"" || break 2
+			eval "Q_set=\"\${${Q_arr}_${Q_i}+X}\" Q_val=\"\${${Q_arr}_${Q_i}-}\""
+
+			case "${Q_set}" in
+				X) __sx_var_bind Q_bind "${Q_bind}" "${Q_val}";;
+				*) __sx_var_bind Q_bind "${Q_bind}" "${SX_CFG_ARR_UNSET-}";;
+			esac || break 2
+
 			M_NUM_INCRM1([|Q_i|])
 		done
 	done
