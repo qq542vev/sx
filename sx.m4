@@ -12874,36 +12874,47 @@ M_RENAME_Q([|dnl
 ### sx_arr_quote - 配列要素をシングルクォートで囲み、スペース区切りで結合する
 ##
 ## 使い方:
-##   sx_arr_quote 結果変数名 配列名1 [配列名2 ...]
+##   sx_arr_quote bind 配列名1 [配列名2 ...]
 ##
 ## 説明:
 ##   指定されたすべての配列の要素をそれぞれシングルクォートで囲み（内部のシングルクォートはエスケープ）、
 ##   スペース区切りで順方向に結合した文字列を作成して結果変数に格納する。
 ##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
+##   結果はバインド形式（sx_var_is_bind 参照）で指定できる。
+##   単一の変数名なら全要素をクォートして結合した文字列になる。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
+##   65  対象が sx 配列ではない (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|CLEANUP|], [|Q_res|])dnl
+define([|CLEANUP|], [|Q_bind|])dnl
 
 sx_arr_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_quote "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	Q_res="${1}"
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
+
+	Q_bind="${1-}"
 	shift
 
-	sx_var_is_arr "${@}" || {
+	sx_var_is_name "${@}" || {
 		unset CLEANUP
 		return M_EX_USAGE
 	}
 
-	__sx_arr_quote "${Q_res}" "${@}"
+	__sx_var_is_arr "${@}" || {
+		unset CLEANUP
+		return M_EX_DATAERR
+	}
+
+	__sx_arr_quote "${Q_bind}" "${@}"
 	unset CLEANUP
 }
 |], [|arr_quote|])dnl
@@ -12912,31 +12923,28 @@ M_RENAME_QI([|dnl
 ### __sx_arr_quote - 配列要素をシングルクォートで囲み、スペース区切りで結合する（内部用）
 ##
 ## 使い方:
-##   __sx_arr_quote 結果変数名 配列名1 [配列名2 ...]
+##   __sx_arr_quote バインド形式 配列名1 [配列名2 ...]
 ##
 ## 説明:
 ##   sx_arr_quote の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_res Q_out Q_arr Q_esc|])dnl
+define([|CLEANUP|], [|Q_bind Q_arr Q_len Q_i|])dnl
 
 __sx_arr_quote() {
-	Q_out=
-	Q_res="${1}"
+	__sx_var_bind_init "${1}"
+	Q_bind="${1}"
 	shift
 
 	for Q_arr in "${@}"; do
-		eval set -- 0 "\"\${${Q_arr}_len}\""
+		eval "Q_len=\"\${${Q_arr}_len}\""
+		Q_i=0
 
-		while M_NUM_LT([|${1}|], [|${2}|]); do
-			eval __sx_arg_quote Q_esc "\"\${${Q_arr}_${1}}\""
-			M_STR_APPEND([|Q_out|], [|"${Q_esc}"|], [| |])
-
-			set -- "$((${1} + 1))" "${2}"
+		while M_STR_NE([|"${Q_i}"|], [|"${Q_len}"|]); do
+			eval __sx_var_bind Q_bind '"${Q_bind}"' "\"\${${Q_arr}_${Q_i}-}\"" || break 2
+			M_NUM_INCRM1([|Q_i|])
 		done
 	done
-
-	M_VAR_SET([|${Q_res}|], [|${Q_out}|])
 
 	unset CLEANUP
 }

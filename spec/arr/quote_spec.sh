@@ -66,11 +66,11 @@ Describe 'sx_arr_quote'
     cleanup
   End
 
-  It '配列ではない引数が含まれる場合に EX_USAGE を返すこと'
+  It '配列ではない引数が含まれる場合に EX_DATAERR を返すこと'
     setup
     not_arr="not an array"
     When call sx_arr_quote result arr1 not_arr
-    The status should equal 64
+    The status should equal 65
     cleanup
   End
 
