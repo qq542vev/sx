@@ -275,7 +275,7 @@ readonly SX_CFG_DEF_SKIP_CHK=0
 readonly SX_CFG_DEF_NUM_RANGE=32
 readonly SX_CFG_DEF_SEP=':::'
 readonly SX_CFG_DEF_ARR_UPDATE=1
-readonly SX_CFG_DEF_ARR_UNSET=
+readonly SX_CFG_DEF_ARR_HOLE=
 
 : "${SX_CFG_SIG_BASE:=${SX_CFG_DEF_SIG_BASE}}"
 : "${SX_CFG_SIG_ARR:=${SX_CFG_DEF_SIG_ARR}}"
@@ -283,7 +283,7 @@ readonly SX_CFG_DEF_ARR_UNSET=
 : "${SX_CFG_NUM_RANGE:=${SX_CFG_DEF_NUM_RANGE}}"
 : "${SX_CFG_SEP:=${SX_CFG_DEF_SEP}}"
 : "${SX_CFG_ARR_UPDATE:=${SX_CFG_DEF_ARR_UPDATE}}"
-: "${SX_CFG_ARR_UNSET:=${SX_CFG_DEF_ARR_UNSET}}"
+: "${SX_CFG_ARR_HOLE:=${SX_CFG_DEF_ARR_HOLE}}"
 SX_SYS_REV=0
 
 # ========================================
@@ -316,14 +316,14 @@ sx_cfg_is_valid() {
 			SIG_ARR="${SX_CFG_SIG_ARR-}" \
 			SEP="${SX_CFG_SEP-}" \
 			ARR_UPDATE="${SX_CFG_ARR_UPDATE-}" \
-			ARR_UNSET="${SX_CFG_ARR_UNSET-}"
+			ARR_HOLE="${SX_CFG_ARR_HOLE-}"
 	esac
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP | ARR_UPDATE | ARR_UNSET) ;;
+			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP | ARR_UPDATE | ARR_HOLE) ;;
 			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128) ;;
-			SKIP_CHK=[01] | SIG_BASE=?* | SIG_ARR=?* | SEP=?* | ARR_UPDATE=[01] | ARR_UNSET=*) ;;
+			SKIP_CHK=[01] | SIG_BASE=?* | SIG_ARR=?* | SEP=?* | ARR_UPDATE=[01] | ARR_HOLE=*) ;;
 			*)
 				unset CLEANUP
 				return 1
@@ -12948,7 +12948,7 @@ __sx_arr_quote() {
 
 			case "${Q_set}" in
 				X) __sx_var_bind Q_bind "${Q_bind}" "${Q_val}";;
-				*) __sx_var_bind Q_bind "${Q_bind}" "${SX_CFG_ARR_UNSET-}";;
+				*) __sx_var_bind Q_bind "${Q_bind}" "${SX_CFG_ARR_HOLE-}";;
 			esac || break 2
 
 			M_NUM_INCRM1([|Q_i|])
