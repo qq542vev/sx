@@ -19,13 +19,4 @@ Describe 'sx_var_list_set'
     When call sx_var_list_set ro_res_list_set
     The status should equal 77
   End
-
-  It 'IFS が読み取り専用の場合に EX_NOPERM を返すこと'
-    test_ro_ifs() {
-      readonly IFS
-      sx_var_list_set res
-    }
-    When run test_ro_ifs
-    The status should equal 77
-  End
 End

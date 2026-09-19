@@ -878,7 +878,7 @@ __sx_fn_with() {
 			"${SX_CFG_SEP-}") shift; break;;
 			*=*)
 				__sx_fn_anon Q_anon "${Q_arg#*=}"
-				M_STR_APPEND([|Q_fns|], [|"${Q_anon}"|], [| |])
+				M_STR_APPEND([|Q_fns|], [|"${Q_anon} "|])
 				M_STR_APPEND([|Q_map|], [|"${Q_arg%%=*}:${Q_anon} "|])
 				shift
 				;;
@@ -3361,7 +3361,7 @@ M_RENAME_QI([|dnl
 ##   変数名列から右方向連鎖コピー用の実行スクリプトを生成する。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_res Q_out Q_chain Q_dest Q_dep Q_src Q_vn Q_set Q_val|])dnl
+define([|CLEANUP|], [|Q_res Q_out Q_chain Q_dest Q_dep Q_src Q_vn Q_set Q_val Q_expr Q_unset|])dnl
 
 __sx_var_copy_script() {
 	Q_res="${1}"
@@ -3379,7 +3379,7 @@ __sx_var_copy_script() {
 			esac
 
 			case "${Q_src}" in ?*)
-				M_STR_APPEND([|Q_out|], [|"__sx_var_unset ${Q_dest}${SX_STR_LF}"|])
+				Q_expr= Q_unset=
 
 				__sx_var_list_dep Q_dep "${Q_src}"
 
@@ -3387,18 +3387,19 @@ __sx_var_copy_script() {
 
 				for Q_vn in "${@}"; do
 					eval "Q_set=\"\${${Q_vn}+X}\" Q_val=\"\${${Q_vn}-}\""
-
 					case "${Q_set}" in
 						?*)
 						case "${Q_val}" in *"'"*)
 							__sx_str_sub Q_val: "${Q_val}" "'" "'\\''"
 						esac
 
-							M_STR_APPEND([|Q_out|], [|"${Q_dest}${Q_vn#"${Q_src}"}='${Q_val}'${SX_STR_LF}"|])
+							M_STR_APPEND([|Q_expr|], [|"${Q_dest}${Q_vn#"${Q_src}"}='${Q_val}' "|])
 							;;
-						*) M_STR_APPEND([|Q_out|], [|"unset -v ${Q_dest}${Q_vn#"${Q_src}"}${SX_STR_LF}"|]);;
+						*) M_STR_APPEND([|Q_unset|], [|"${Q_dest}${Q_vn#"${Q_src}"} "|]);;
 					esac
 				done
+
+				M_STR_APPEND([|Q_out|], [|"__sx_var_unset ${Q_dest}${SX_STR_LF}${Q_expr}${SX_STR_LF}${Q_unset:+unset -v ${Q_unset}${SX_STR_LF}}"|])
 			esac
 
 			case "${Q_chain}" in '')
@@ -4380,7 +4381,7 @@ sx_var_list_ro() {
 
 	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1}" IFS || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_var_list_ro "${@}"
 }
@@ -4395,44 +4396,38 @@ M_RENAME_QI([|dnl
 ##   sx_var_list_ro の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_args Q_bind Q_cnt Q_tmp Q_ln Q_vn|])dnl
+define([|CLEANUP|], [|Q_list Q_bind Q_mark Q_vn|])dnl
 
 __sx_var_list_ro() {
-	IFS="${SX_STR_LF}" __sx_str_split_ifs Q_args "$(readonly -p)"
+	Q_list="${SX_STR_LF}$(readonly -p)${SX_STR_LF}"
 	__sx_var_bind_init "${1-}"
 	Q_bind="${1-}"
-	Q_cnt=0
+	Q_mark=
 
-	eval set -- "${Q_args}"
+	while M_STR_HAS([|"${Q_list}"|], [|"${SX_STR_LF}readonly "|]); do
+		Q_list="${Q_list#*${SX_STR_LF}readonly }"
 
-	for Q_ln in "${@}"; do
-		shift
+		case "${Q_list}" in ["${SX_STR_SWORD}"]*)
+			case "${Q_bind}" in '')
+				break
+			esac
 
-		case "${Q_ln}" in 'readonly '["${SX_STR_SWORD}"] | 'readonly '["${SX_STR_SWORD}"]*["${SX_STR_WORD}"] | 'readonly '["${SX_STR_SWORD}"]=* | 'readonly '["${SX_STR_SWORD}"]*["${SX_STR_WORD}"]=*)
-			Q_vn="${Q_ln#readonly }"
-			Q_vn="${Q_vn%%=*}"
+			Q_vn="${Q_list%%[!"${SX_STR_WORD}"]*}"
 
 			if
 				sx_var_is_name "${Q_vn}" &&
 				! __sx_var_is_set "Q_v${Q_vn}_" &&
 				__sx_var_is_ro "${Q_vn}"
 			then
-				__sx_var_ubind Q_bind "${Q_bind}" "${Q_vn}" || :
-
-				case "${Q_bind}" in '')
-					__sx_num_sub_nat0 Q_tmp "${#}" "${Q_cnt}"
-					shift "${Q_tmp}"
-					break
-				esac
+				__sx_var_ubind Q_bind "${Q_bind}" "${Q_vn}"
 
 				eval "Q_v${Q_vn}_="
-				set -- "${@}" "Q_v${Q_vn}_"
-				M_NUM_INCRM1([|Q_cnt|])
+				M_STR_APPEND([|Q_mark|], [|"Q_v${Q_vn}_ "|])
 			fi
 		esac
 	done
 
-	unset CLEANUP "${@}"
+	eval unset CLEANUP "${Q_mark}"
 }
 |], [|var_list_ro|])dnl
 
@@ -4456,7 +4451,7 @@ sx_var_list_set() {
 
 	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1}" IFS || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_var_list_set "${@}"
 }
@@ -4471,20 +4466,23 @@ M_RENAME_QI([|dnl
 ##   sx_var_list_set の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_args Q_bind Q_cnt Q_tmp Q_ln Q_vn|])dnl
+define([|CLEANUP|], [|Q_list Q_bind Q_mark Q_ln Q_vn|])dnl
 
 __sx_var_list_set() {
-	IFS="${SX_STR_LF}" __sx_str_split_ifs Q_args "$(set)"
+	Q_list="$(set)${SX_STR_LF}"
 	__sx_var_bind_init "${1-}"
 	Q_bind="${1-}"
-	Q_cnt=0
+	Q_mark=
 
-	eval set -- "${Q_args}"
-
-	for Q_ln in "${@}"; do
-		shift
+	while M_STR_HAS([|"${Q_list}"|], [|"${SX_STR_LF}"|]); do
+		Q_ln="${Q_list%%${SX_STR_LF}*}"
+		Q_list="${Q_list#*${SX_STR_LF}}"
 
 		case "${Q_ln}" in ["${SX_STR_SWORD}"]=* | ["${SX_STR_SWORD}"]*["${SX_STR_WORD}"]=*)
+			case "${Q_bind}" in '')
+				break
+			esac
+
 			Q_vn="${Q_ln%%=*}"
 
 			if
@@ -4492,22 +4490,15 @@ __sx_var_list_set() {
 				! __sx_var_is_set "Q_v${Q_vn}_" &&
 				__sx_var_is_set "${Q_vn}"
 			then
-				__sx_var_ubind Q_bind "${Q_bind}" "${Q_vn}" || :
-
-				case "${Q_bind}" in '')
-					__sx_num_sub_nat0 Q_tmp "${#}" "${Q_cnt}"
-					shift "${Q_tmp}"
-					break
-				esac
+				__sx_var_ubind Q_bind "${Q_bind}" "${Q_vn}"
 
 				eval "Q_v${Q_vn}_="
-				set -- "${@}" "Q_v${Q_vn}_"
-				M_NUM_INCRM1([|Q_cnt|])
+				M_STR_APPEND([|Q_mark|], [|"Q_v${Q_vn}_ "|])
 			fi
 		esac
 	done
 
-	unset CLEANUP "${@}"
+	eval unset CLEANUP "${Q_mark}"
 }
 |], [|var_list_set|])dnl
 
