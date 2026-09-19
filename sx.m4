@@ -12883,6 +12883,7 @@ M_RENAME_Q([|dnl
 ##   指定されたすべての配列の要素をそれぞれシングルクォートで囲み（内部のシングルクォートはエスケープ）、
 ##   スペース区切りで順方向に結合した文字列を作成して結果変数に格納する。
 ##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
+##   未設定の要素（疎配列の穴）は SX_CFG_ARR_HOLE の値で表す。
 ##   結果はバインド形式（sx_var_is_bind 参照）で指定できる。
 ##   単一の変数名なら全要素をクォートして結合した文字列になる。
 ##
@@ -12969,6 +12970,7 @@ M_RENAME_Q([|dnl
 ##   指定されたすべての配列の要素を、完全な逆順（最後の配列の最後の要素が先頭）で
 ##   それぞれシングルクォートで囲み、スペース区切りで結合した文字列を作成して結果変数に格納する。
 ##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
+##   未設定の要素（疎配列の穴）は SX_CFG_ARR_HOLE の値で表す。
 ##   結果はバインド形式（sx_var_is_bind 参照）で指定できる。
 ##   単一の変数名なら全要素をクォートして結合した文字列になる。
 ##
@@ -13018,7 +13020,7 @@ M_RENAME_QI([|dnl
 ##   sx_arr_rquote の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_bind Q_argi Q_arr Q_arri|])dnl
+define([|CLEANUP|], [|Q_bind Q_argi Q_arr Q_arri Q_set Q_val|])dnl
 
 __sx_arr_rquote() {
 	__sx_var_bind_init "${1}"
@@ -13032,7 +13034,12 @@ __sx_arr_rquote() {
 
 		while M_STR_NE([|"${Q_arri}"|], [|0|]); do
 			M_NUM_DECRM1([|Q_arri|])
-			eval __sx_var_bind Q_bind '"${Q_bind}"' "\"\${${Q_arr}_${Q_arri}-}\"" || break 2
+			eval "Q_set=\"\${${Q_arr}_${Q_arri}+X}\" Q_val=\"\${${Q_arr}_${Q_arri}-}\""
+
+			case "${Q_set}" in
+				X) __sx_var_bind Q_bind "${Q_bind}" "${Q_val}";;
+				*) __sx_var_bind Q_bind "${Q_bind}" "${SX_CFG_ARR_HOLE-}";;
+			esac || break 2
 		done
 
 		M_NUM_DECRM1([|Q_argi|])

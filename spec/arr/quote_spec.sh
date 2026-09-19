@@ -66,6 +66,38 @@ Describe 'sx_arr_quote'
     cleanup
   End
 
+  It '疎配列の穴を既定（空文字）で表すこと'
+    sx_arr_gen sparse_arr a b c
+    sx_var_unset sparse_arr_1
+    When call sx_arr_quote result sparse_arr
+    The status should be success
+
+    eval "set -- $result"
+    res1=$1 res2=$2 res3=$3 cnt=$#
+    The variable res1 should equal "a"
+    The variable res2 should equal ""
+    The variable res3 should equal "c"
+    The variable cnt should equal 3
+    sx_var_unset sparse_arr result
+  End
+
+  It '疎配列の穴をSX_CFG_ARR_HOLEの値で表すこと'
+    sx_arr_gen sparse_arr a b c
+    sx_var_unset sparse_arr_1
+    sx_cfg_set "ARR_HOLE=HOLE"
+    When call sx_arr_quote result sparse_arr
+    The status should be success
+
+    eval "set -- $result"
+    res1=$1 res2=$2 res3=$3 cnt=$#
+    The variable res1 should equal "a"
+    The variable res2 should equal "HOLE"
+    The variable res3 should equal "c"
+    The variable cnt should equal 3
+    sx_cfg_set "ARR_HOLE"
+    sx_var_unset sparse_arr result
+  End
+
   It '配列ではない引数が含まれる場合に EX_DATAERR を返すこと'
     setup
     not_arr="not an array"
@@ -130,6 +162,38 @@ Describe 'sx_arr_rquote'
     When call sx_arr_rquote result arr1 not_arr
     The status should equal 65
     cleanup
+  End
+
+  It '疎配列の穴を既定（空文字）で逆順に表すこと'
+    sx_arr_gen sparse_arr a b c
+    sx_var_unset sparse_arr_1
+    When call sx_arr_rquote result sparse_arr
+    The status should be success
+
+    eval "set -- $result"
+    res1=$1 res2=$2 res3=$3 cnt=$#
+    The variable res1 should equal "c"
+    The variable res2 should equal ""
+    The variable res3 should equal "a"
+    The variable cnt should equal 3
+    sx_var_unset sparse_arr result
+  End
+
+  It '疎配列の穴をSX_CFG_ARR_HOLEの値で逆順に表すこと'
+    sx_arr_gen sparse_arr a b c
+    sx_var_unset sparse_arr_1
+    sx_cfg_set "ARR_HOLE=HOLE"
+    When call sx_arr_rquote result sparse_arr
+    The status should be success
+
+    eval "set -- $result"
+    res1=$1 res2=$2 res3=$3 cnt=$#
+    The variable res1 should equal "c"
+    The variable res2 should equal "HOLE"
+    The variable res3 should equal "a"
+    The variable cnt should equal 3
+    sx_cfg_set "ARR_HOLE"
+    sx_var_unset sparse_arr result
   End
 
   It '結果変数が読み取り専用の場合に EX_NOPERM を返すこと'
