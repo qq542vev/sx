@@ -12875,6 +12875,155 @@ __sx_arr_push() {
 |], [|arr_push|])dnl
 
 M_RENAME_Q([|dnl
+### sx_arr_splice - 配列の一部を削除し、同位置に値を挿入する
+##
+## 使い方:
+##   sx_arr_splice 配列名 n del [値 ...]
+##
+## 説明:
+##   n（0起点）から del 個の要素を削除し、同位置に値を挿入する。
+##   n が長さを超える場合は末尾扱い、del が残りを超える場合は残り全部に
+##   丸める（clamp）。del=0 で純挿入、値なしで純削除になる。
+##   削除された要素は破棄する。中央の上書き前と余剰尾部は深く掃除するため、
+##   要素に配列が含まれていても残骸を残さない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   65  対象が sx 配列ではない (SX_EX_DATAERR)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [| |])dnl
+
+sx_arr_splice() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_splice "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	case "${#}" in 0|1|2) return M_EX_USAGE;; esac
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_arr "${1}" || return M_EX_DATAERR
+	__sx_var_is_rw_deep "${1}" || return M_EX_NOPERM
+	__sx_num_is_nat0_base 10 "${2-}" "${3-}" || return M_EX_USAGE
+
+	__sx_arr_splice "${@}"
+}
+|], [|arr_splice|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_arr_splice - 配列の一部を削除し、同位置に値を挿入する（内部用）
+##
+## 使い方:
+##   __sx_arr_splice 配列名 n del [値 ...]
+##
+## 説明:
+##   sx_arr_splice の本体実装。引数チェック（個数・変数名・配列判定・
+##   書き込み権限・数値形式）は行わない。
+##   尾部は要素ごとに __sx_var_copy で移動する（拡大は後ろから前へ、
+##   縮小は前から後ろへ回して未読のソースを壊さず、生成スクリプトを
+##   1要素ぶんに抑える）。中央は __sx_var_unset で深く掃除してから
+##   代入し、余剰尾部は __sx_var_unset で深く掃除する。最後に長さを更新する。
+
+define([|CLEANUP|], [|Q_arr Q_len Q_n Q_del Q_rest Q_cnt Q_shift Q_new Q_i Q_j Q_val|])dnl
+
+__sx_arr_splice() {
+	Q_arr="${1}"
+	Q_n="${2}"
+	Q_del="${3}"
+	shift 3
+	eval "Q_len=\"\${${Q_arr}_len}\""
+	Q_cnt="${#}"
+
+	# 1) 範囲の丸め (clamp): n が末尾を超えていれば末尾挿入、
+	#    del が残りを超えていれば残り全部の削除として扱う。
+	#    Q_new は操作後の長さ (len - del + cnt) である。
+	case "$((Q_n > Q_len))" in 1)
+		Q_n="${Q_len}"
+	esac
+
+	Q_rest=$((Q_len - Q_n))
+
+	case "$((Q_del > Q_rest))" in 1)
+		Q_del="${Q_rest}"
+	esac
+
+	Q_new=$((Q_len - Q_del + Q_cnt))
+
+	# 2) 尾部の移動 (要素ごと): 削除範囲の後ろ [n+del, len) を
+	#    挿入後の位置 [n+cnt, new) へずらす。1要素ずつ __sx_var_copy
+	#    で移すことで、巨大配列でも生成スクリプトを1要素ぶんに抑える。
+	#    拡大 (cnt>del) は後ろから前、縮小 (cnt<del) は前から後ろへ
+	#    読むため、一部を上書きしても未読のソースを壊さない
+	#    (shift==0 なら位置不変のため移動不要)。
+	#    尾部がなければ (純粋な末尾操作) 何もしない。
+	Q_shift=$((Q_cnt - Q_del))
+
+	case "${Q_shift}" in
+		0) ;;
+		-*)
+			Q_i=$((Q_n + Q_del))
+
+			while M_STR_NE([|"${Q_i}"|], [|"${Q_len}"|]); do
+				__sx_var_copy "${Q_arr}_${Q_i}-${Q_arr}_$((Q_i + Q_shift))"
+				Q_i=$((Q_i + 1))
+			done
+			;;
+		*)
+			Q_i=$((Q_len - 1))
+
+			while case "$((Q_i >= Q_n + Q_del))" in 0) ! :;; esac; do
+				__sx_var_copy "${Q_arr}_${Q_i}-${Q_arr}_$((Q_i + Q_shift))"
+				Q_i=$((Q_i - 1))
+			done
+			;;
+	esac
+
+
+	# 3) 中央の書込み: 挿入位置 [n, n+cnt) を __sx_var_unset で
+	#    深く掃除してから値を代入する。素の代入だけでは要素に
+	#    配列が含まれていた場合に配下 (xxx_len, xxx_0...) の
+	#    残骸が残るため、先に掃除が必須である。
+	#    値がなければ (純削除) 何もしない。
+	Q_i="${Q_n}"
+	Q_j=$((Q_n + Q_cnt))
+
+	while M_STR_NE([|"${Q_i}"|], [|"${Q_j}"|]); do
+		__sx_var_unset "${Q_arr}_${Q_i}"
+		Q_i=$((Q_i + 1))
+	done
+
+	Q_i="${Q_n}"
+
+	for Q_val in "${@}"; do
+		eval "${Q_arr}_${Q_i}=\"\${Q_val}\""
+		Q_i=$((Q_i + 1))
+	done
+
+	# 4) 余剰尾部の掃除: 縮小時は [new, len) がはみ出すので
+	#    __sx_var_unset で深く掃除する。拡大時は new > len のため
+	#    文字列比較では終わらないので、数値比較で回す
+	#    (divmod の while case 構文と同型)。
+	Q_i="${Q_new}"
+
+	while case "$((Q_i < Q_len))" in 0) ! :;; esac; do
+		__sx_var_unset "${Q_arr}_${Q_i}"
+		Q_i=$((Q_i + 1))
+	done
+
+	# 5) 長さの確定とリビジョン更新 (ARR_UPDATE=0 では抑止)
+	eval "${Q_arr}_len=${Q_new}"
+
+	case "${SX_CFG_ARR_UPDATE-}" in 1)
+		__sx_var_touch "${Q_arr}"
+	esac
+
+	unset CLEANUP
+}
+|], [|arr_splice|])dnl
+
+M_RENAME_Q([|dnl
 ### sx_arr_quote - 配列要素をシングルクォートで囲み、スペース区切りで結合する
 ##
 ## 使い方:
