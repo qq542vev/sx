@@ -103,12 +103,6 @@ Describe 'sx_arr_splice'
     The variable myarr_1_0 should be undefined
   End
 
-  It '引数が3未満の場合は EX_USAGE を返すこと'
-    sx_arr_gen myarr a b
-    When call sx_arr_splice myarr 1
-    The status should equal 64
-  End
-
   It 'n が自然数でない場合は EX_USAGE を返すこと'
     sx_arr_gen myarr a b
     When call sx_arr_splice myarr x 1 X

@@ -276,6 +276,7 @@ readonly SX_CFG_DEF_NUM_RANGE=32
 readonly SX_CFG_DEF_SEP=':::'
 readonly SX_CFG_DEF_ARR_UPDATE=1
 readonly SX_CFG_DEF_ARR_HOLE=
+readonly SX_CFG_DEF_ARR_REF=
 
 : "${SX_CFG_SIG_BASE:=${SX_CFG_DEF_SIG_BASE}}"
 : "${SX_CFG_SIG_ARR:=${SX_CFG_DEF_SIG_ARR}}"
@@ -284,6 +285,7 @@ readonly SX_CFG_DEF_ARR_HOLE=
 : "${SX_CFG_SEP:=${SX_CFG_DEF_SEP}}"
 : "${SX_CFG_ARR_UPDATE:=${SX_CFG_DEF_ARR_UPDATE}}"
 : "${SX_CFG_ARR_HOLE:=${SX_CFG_DEF_ARR_HOLE}}"
+: "${SX_CFG_ARR_REF:=${SX_CFG_DEF_ARR_REF}}"
 SX_SYS_REV=0
 
 # ========================================
@@ -316,14 +318,15 @@ sx_cfg_is_valid() {
 			SIG_ARR="${SX_CFG_SIG_ARR-}" \
 			SEP="${SX_CFG_SEP-}" \
 			ARR_UPDATE="${SX_CFG_ARR_UPDATE-}" \
-			ARR_HOLE="${SX_CFG_ARR_HOLE-}"
+			ARR_HOLE="${SX_CFG_ARR_HOLE-}" \
+			ARR_REF="${SX_CFG_ARR_REF-}"
 	esac
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP | ARR_UPDATE | ARR_HOLE) ;;
+			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP | ARR_UPDATE | ARR_HOLE | ARR_REF) ;;
 			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128) ;;
-			SKIP_CHK=[01] | SIG_BASE=?* | SIG_ARR=?* | SEP=?* | ARR_UPDATE=[01] | ARR_HOLE=*) ;;
+			SKIP_CHK=[01] | SIG_BASE=?* | SIG_ARR=?* | SEP=?* | ARR_UPDATE=[01] | ARR_HOLE=* | ARR_REF=*) ;;
 			*)
 				unset CLEANUP
 				return 1
@@ -3117,84 +3120,119 @@ M_RENAME_QI([|dnl
 ##    0  データを全て割り当て、結果変数が空でない場合に限り残りのバインド形式を格納した
 ##    1  バインド先が枯渇したままデータが残っている。結果変数が空でない場合に限り空文字列を書き込む
 
-define([|CLEANUP|], [|Q_bind Q_ret Q_esc Q_res|])dnl
+define([|CLEANUP|], [|Q_esc Q_res Q_bind Q_seg Q_lim Q_vn Q_tmp Q_val|])dnl
 __sx_var_bind0() {
-	# 1: esc, 2: res, 3: bind, 4 data...
-	while M_STR_NE([|"${4+X}"|], [|''|]); do
-		case "${3}" in
-			:*) Q_bind="${3#*:}";;
-			[1-9]*:*)
-				# 1: name, 2: lim, 3: seg, 4: esc, 5: res, 6: bind, 7: data...
-				set -- "${3%%[!0-9]*}" "${3%%:*}" "${@}"
-				set -- "${2#${1}}" "${@}"
+	Q_esc="${1}"
+	Q_res="${2}"
+	Q_bind="${3}"
+	shift 3
 
-				case "${1}" in
-					@*) SX_CFG_ARR_UPDATE=0 __sx_arr_push "${1#@}" "${7}";;
-					?*)
-						case "${4}${7}" in
-							1*"'"*)
-								__sx_str_sub Q_tmp: "${7}" "'" "'\\''"
-								Q_ret="'${Q_tmp}'"
-								unset Q_tmp
-								;;
-							1*) Q_ret="'${7}'";;
-							*) Q_ret="${7}";;
+	while M_STR_NE([|"${#}"|], [|0|]); do
+		case "${Q_bind}" in
+			:*)
+				Q_bind="${Q_bind#*:}"
+				shift
+				;;
+			[1-9]*:*)
+				Q_seg="${Q_bind%%:*}"
+				Q_lim="${Q_bind%%[!0-9]*}"
+				Q_vn="${Q_seg#"${Q_lim}"}"
+
+				case "${Q_vn}" in
+					'')
+						__sx_num_cmp_nat0 "${Q_lim}" "${#}" || case "${?}" in [12])
+							shift "${Q_lim}"
+							Q_bind="${Q_bind#*:}"
+							continue 2
 						esac
 
-						eval "${1}=\"\${${1}-}\${${1}:+ }\${Q_ret}\""
+						__sx_num_sub_nat0 Q_lim "${Q_lim}" "${#}"
+						shift "${#}"
 						;;
-				esac
+					@*)
+						Q_tmp="${Q_vn#@}"
 
-				case "${2}" in
-					1) Q_bind="${6#*:}";;
+						for Q_val in "${@}"; do
+							shift
+
+							SX_CFG_ARR_UPDATE=0 __sx_arr_push "${Q_tmp}" "${Q_val}"
+
+							case "${Q_lim}" in 1)
+								Q_bind="${Q_bind#*:}"
+								continue 2
+							esac
+
+							M_NUM_DECRM1([|Q_lim|])
+						done
+						;;
 					*)
-						__sx_num_sub1_nat0 Q_ret "${2}"
-						Q_bind="${Q_ret}${1}:${6#*:}"
+						Q_tmp=
+
+						for Q_val in "${@}"; do
+							shift
+
+							case "${Q_esc}" in 1)
+								__sx_str_quote Q_val "${Q_val}"
+							esac
+
+							Q_tmp="${Q_tmp}${Q_tmp:+ }${Q_val}"
+
+							case "${Q_lim}" in 1)
+								eval "${Q_vn}=\"\${${Q_vn}-}\${${Q_vn}:+ }\${Q_tmp# }\""
+								Q_bind="${Q_bind#*:}"
+								continue 2
+							esac
+
+							M_NUM_DECRM1([|Q_lim|])
+						done
+
+						eval "${Q_vn}=\"\${${Q_vn}-}\${${Q_vn}:+ }\${Q_tmp# }\""
 						;;
+					'')
 				esac
 
-				shift 3
+				Q_bind="${Q_lim}${Q_vn}:${Q_bind#*:}"
+				break
 				;;
-			*:*) eval "${3%%:*}=\"\${4}\" Q_bind=\"\${3#*:}\"";;
+			*:*)
+				M_VAR_SET([|${Q_bind%%:*}|], [|${1}|])
+				Q_bind="${Q_bind#*:}"
+				shift
+				;;
 			@*)
-				SX_CFG_ARR_UPDATE=0 __sx_arr_push "${3#@}" "${4}"
-				Q_bind="${3}"
+				SX_CFG_ARR_UPDATE=0 __sx_arr_push "${Q_bind#@}" "${@}"
+				break
 				;;
 			?*)
-				case "${1}${4}" in
-					1*"'"*)
-						__sx_str_sub Q_tmp: "${4}" "'" "'\\''"
-						Q_ret="'${Q_tmp}'"
-						unset Q_tmp
-						;;
-					1*) Q_ret="'${4}'";;
-					*) Q_ret="${4}";;
-				esac
+				Q_tmp=
 
-				eval "${3}=\"\${${3}-}\${${3}:+ }\${Q_ret}\""
-				Q_bind="${3}"
+				for Q_val in "${@}";do
+					case "${Q_esc}" in 1)
+						__sx_str_quote Q_val "${Q_val}"
+					esac
+
+					Q_tmp="${Q_tmp} ${Q_val}"
+				done
+
+				eval "${Q_bind}=\"\${${Q_bind}-}\${${Q_bind}:+ }\${Q_tmp# }\""
+				break
 				;;
 			*)
-				case "${2-}" in ?*)
-					M_VAR_SET([|${2}|], [|${3}|])
+				case "${Q_res}" in ?*)
+					M_VAR_SET([|${Q_res}|], [|${Q_bind}|])
 				esac
 
 				unset CLEANUP
 				return 1
 				;;
 		esac
-
-		Q_esc="${1}" Q_res="${2}"
-		shift 4
-
-		set -- "${Q_esc}" "${Q_res}" "${Q_bind}" "${@}"
 	done
 
-	unset CLEANUP
-
-	case "${2-}" in ?*)
-		M_VAR_SET([|${2}|], [|${3}|])
+	case "${Q_res}" in ?*)
+		M_VAR_SET([|${Q_res}|], [|${Q_bind}|])
 	esac
+
+	unset CLEANUP
 }
 |], [|var_bind0|])dnl
 
@@ -5521,30 +5559,32 @@ __sx_num_cmp_nat0() {
 	Q_l="${#1}"
 	Q_r="${#2}"
 
+	case "${Q_l}" in "${Q_r}")
+		eval "Q_qm=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
+
+		while M_STR_MATCH([|"${1}"|], [|${Q_qm}?*|]); do
+			set -- "${1#${Q_qm}}" "${2#${Q_qm}}" "${1}" "${2}"
+			__sx_num_cmp_arith "1${3%"${1}"}" "1${4%"${2}"}" || case "${?}" in 1 | 3)
+				set -- "${?}"
+				unset CLEANUP
+				return "${1}"
+			esac
+		done
+
+		unset CLEANUP
+
+	__sx_num_cmp_arith "1${1}" "1${2}" || return "${?}"
+	esac
+
 	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_l}" "${Q_r}"; then
 		__sx_num_cmp_arith "${Q_l}" "${Q_r}"
 	else
 		__sx_num_cmp_nat0 "${Q_l}" "${Q_r}"
-	fi || case "${?}" in 1 | 3)
+	fi || {
 		set -- "${?}"
 		unset CLEANUP
 		return "${1}"
-	esac
-
-	eval "Q_qm=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
-
-	while M_STR_MATCH([|"${1}"|], [|${Q_qm}?*|]); do
-		set -- "${1#${Q_qm}}" "${2#${Q_qm}}" "${1}" "${2}"
-		__sx_num_cmp_arith "1${3%"${1}"}" "1${4%"${2}"}" || case "${?}" in 1 | 3)
-			set -- "${?}"
-			unset CLEANUP
-			return "${1}"
-		esac
-	done
-
-	unset CLEANUP
-
-	__sx_num_cmp_arith "1${1}" "1${2}" || return "${?}"
+	}
 }
 |], [|num_cmp_nat0|])dnl
 
@@ -10417,6 +10457,24 @@ __sx_str_pascal() {
 }
 |], [|str_pascal|])dnl
 
+M_RENAME_QI([|dnl
+
+define([|CLEANUP|], [|Q_str Q_out|])dnl
+
+__sx_str_quote() {
+	Q_str="${2}"
+	Q_out=
+
+	while M_STR_HAS([|"${Q_str}"|], [|"'"|]); do
+		M_STR_APPEND([|Q_out|], [|"${Q_str%%"'"*}'\\''"|])
+		Q_str="${Q_str#*"'"}"
+	done
+
+	eval "${1}=\"'\${Q_out}\${Q_str}'\""
+	unset CLEANUP
+}
+|], [|str_quote|])dnl
+
 ### sx_str_rep - 文字列を繰り返す
 ##
 ## 使い方:
@@ -12901,12 +12959,10 @@ sx_arr_splice() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	case "${#}" in 0|1|2) return M_EX_USAGE;; esac
-
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 	__sx_var_is_arr "${1}" || return M_EX_DATAERR
 	__sx_var_is_rw_deep "${1}" || return M_EX_NOPERM
-	__sx_num_is_nat0_base 10 "${2-}" "${3-}" || return M_EX_USAGE
+	__sx_num_is_nat0_base 10 ${2:+"${2}"} ${3:+"${3}"} || return M_EX_USAGE
 
 	__sx_arr_splice "${@}"
 }
@@ -12922,141 +12978,124 @@ M_RENAME_QI([|dnl
 ##   sx_arr_splice の本体実装。引数チェック（個数・変数名・配列判定・
 ##   書き込み権限・数値形式）は行わない。
 ##   長さ・添字・値個数は文字列数値関数で処理し、シェルの算術幅に依存しない。
-##   尾部は要素ごとに __sx_var_copy で移動する（拡大は後ろから前へ、
-##   縮小は前から後ろへ回して未読のソースを壊さず、生成スクリプトを
-##   1要素ぶんに抑える）。中央は __sx_var_unset で深く掃除してから
-##   代入し、余剰尾部は __sx_var_unset で深く掃除する。最後に長さを更新する。
+##   n と del を配列範囲に丸めた後、cnt と del の大小に応じて尾部を移動する。
+##   尾部移動は要素単位の __sx_var_copy で行い、拡大時は後方から前方へ、
+##   縮小時は前方から後方へ処理して未読のソースを保護する。
+##   尾部移動後に長さと余剰尾部を確定し、中央の各要素を深く掃除してから代入する。
 
-define([|CLEANUP|], [|Q_arr Q_len Q_n Q_del Q_rest Q_cnt Q_dir Q_new Q_src Q_end Q_i Q_j Q_val|])dnl
+define([|CLEANUP|], [|Q_arr Q_len Q_n Q_del Q_rest Q_cnt Q_new Q_src Q_end Q_val Q_vn|])dnl
 
 __sx_arr_splice() {
 	Q_arr="${1}"
-	Q_n="${2}"
-	Q_del="${3}"
-	shift 3
+	Q_n="${2:-0}"
+	Q_del="${3:-${#}}"
+	shift "$((1 + 0${2+1} + 0${3+1}))"
 	eval "Q_len=\"\${${Q_arr}_len}\""
 	Q_cnt="${#}"
 
-	# 1) 範囲の丸め (clamp): n が末尾を超えていれば末尾挿入、
-	#    del が残りを超えていれば残り全部の削除として扱う。
-	#    算術展開は使わず、比較結果と絶対値演算を必要な回数だけ行う。
+	# 1) 範囲の丸め (clamp)。n と len を比較し、次のように処理する。
+	#    1: n < len。残り長 len-n を求め、del を残り長以内に丸める。
+	#    2: n = len。残り長は 0 なので del を 0 にする。
+	#    3: n > len。n を len に丸め、del を 0 にする。
 	__sx_num_cmp_nat0 "${Q_n}" "${Q_len}" || case "${?}" in
-		1) __sx_num_sub_nat0 Q_rest "${Q_len}" "${Q_n}";;
-		2) Q_rest=0;;
-		3) Q_n="${Q_len}" Q_rest=0;;
-	esac
-
-	__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in
-		3) Q_del="${Q_rest}";;
-	esac
-
-	# 2) 挿入・削除後の長さを計算する。cnt と del が等しい場合は
-	#    元の長さをそのまま使い、不要な加減算を行わない。
-	__sx_num_cmp_nat0 "${Q_cnt}" "${Q_del}" || case "${?}" in
 		1)
-			Q_dir=-
-			case "${Q_cnt}:${Q_del}" in
-				0:*) __sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}";;
-				*)
-					__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}"
-					__sx_num_add_nat0 Q_new "${Q_new}" "${Q_cnt}"
-					;;
+			__sx_num_sub_nat0 Q_rest "${Q_len}" "${Q_n}"
+
+			# del が残り長を超える場合は、残り全体の削除に丸める。
+			__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in 3)
+				Q_del="${Q_rest}"
 			esac
 			;;
-		2) Q_dir=0 Q_new="${Q_len}";;
-		3)
-			Q_dir=+
-			case "${Q_del}" in
-				0) __sx_num_add_nat0 Q_new "${Q_len}" "${Q_cnt}";;
-				*)
-					__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}"
-					__sx_num_add_nat0 Q_new "${Q_new}" "${Q_cnt}"
-					;;
-			esac
-			;;
+		2) Q_del=0;;
+		3) Q_n="${Q_len}" Q_del=0;;
 	esac
 
-	# 尾部の移動先および中央の終端 [n, n+cnt) を一度だけ計算する。
-	Q_end="${Q_n}"
-	case "${Q_cnt}" in
-		0) ;;
-		*) __sx_num_add_nat0 Q_end "${Q_n}" "${Q_cnt}";;
-	esac
-
-	# 3) 尾部の移動 (要素ごと): 削除範囲の後ろ [n+del, len) を
+	# 2) 尾部の移動 (要素ごと): 削除範囲の後ろ [n+del, len) を
 	#    挿入後の位置 [n+cnt, new) へずらす。1要素ずつ __sx_var_copy
 	#    で移すことで、巨大配列でも生成スクリプトを1要素ぶんに抑える。
-	#    拡大 (cnt>del) は後ろから前、縮小 (cnt<del) は前から後ろへ読むため、
-	#    一部を上書きしても未読のソースを壊さない (cnt=del なら移動不要)。
-	#    尾部がなければ (純粋な末尾操作) 何もしない。
-	case "${Q_dir}" in
-		-)
-			Q_src="${Q_n}"
-			case "${Q_del}" in
-				0) ;;
-				*) __sx_num_add_nat0 Q_src "${Q_n}" "${Q_del}";;
-				esac
+	__sx_num_cmp_nat0 "${Q_cnt}" "${Q_del}" || case "${?}" in
+		1)
+			# 縮小 (cnt < del): ソースと宛先を前方へ進める。
+			# src=n+del、end=n+cnt とし、尾部を重複しない順序で移動する。
+			__sx_num_add_nat0 Q_src "${Q_n}" "${Q_del}"
+			__sx_num_add_nat0 Q_end "${Q_n}" "${Q_cnt}"
 
-			Q_i="${Q_src}"
-			Q_j="${Q_end}"
-			while M_STR_NE([|"${Q_i}"|], [|"${Q_len}"|]); do
-				__sx_var_copy "${Q_arr}_${Q_i}-${Q_arr}_${Q_j}"
-				M_NUM_INCRM1([|Q_i|])
-				M_NUM_INCRM1([|Q_j|])
-			done
-			;;
-		0) ;;
-		+)
-			Q_src="${Q_n}"
-			case "${Q_del}" in
-				0) ;;
-				*) __sx_num_add_nat0 Q_src "${Q_n}" "${Q_del}";;
+			case "${Q_src}" in
+				# 尾部がない場合は new=n+cnt=end を再利用する。
+				"${Q_len}") Q_new="${Q_end}";;
+				*)
+					# 通常の縮小では new=len-del+cnt を求めてから尾部を移動する。
+					__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}"
+					__sx_num_add_nat0 Q_new "${Q_new}" "${Q_cnt}"
+
+					while M_STR_NE([|"${Q_src}"|], [|"${Q_len}"|]); do
+						__sx_var_copy "${Q_arr}_${Q_src}-${Q_arr}_${Q_end}"
+						M_NUM_INCRM1([|Q_src|])
+						M_NUM_INCRM1([|Q_end|])
+					done
+					;;
 			esac
 
-			Q_i="${Q_len}"
-			Q_j="${Q_new}"
-			while M_STR_NE([|"${Q_i}"|], [|"${Q_src}"|]); do
-				M_NUM_DECRM1([|Q_i|])
-				M_NUM_DECRM1([|Q_j|])
-				__sx_var_copy "${Q_arr}_${Q_i}-${Q_arr}_${Q_j}"
+			# 長さを確定し、new 以降に残った旧要素を深く掃除する。
+			eval "${Q_arr}_len=${Q_new}"
+
+			while M_STR_NE([|"${Q_new}"|], [|"${Q_len}"|]); do
+				__sx_var_unset "${Q_arr}_${Q_new}"
+				M_NUM_INCRM1([|Q_new|])
 			done
+			;;
+		3)
+			# 拡大 (cnt > del): src=n+del を起点に、末尾から逆順で移動する。
+			__sx_num_add_nat0 Q_src "${Q_n}" "${Q_del}"
+
+			case "${Q_src}" in
+				# 尾部がない場合は new=n+cnt を直接求める。
+				"${Q_len}") __sx_num_add_nat0 "${Q_arr}_len" "${Q_n}" "${Q_cnt}";;
+				*)
+					# 通常の拡大では new=len-del+cnt を求めてから尾部を移動する。
+					__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}"
+					__sx_num_add_nat0 Q_new "${Q_new}" "${Q_cnt}"
+
+					# 長さを確定する。拡大では余剰尾部の掃除は発生しない。
+					eval "${Q_arr}_len=${Q_new}"
+
+					while M_STR_NE([|"${Q_len}"|], [|"${Q_src}"|]); do
+						M_NUM_DECRM1([|Q_len|])
+						M_NUM_DECRM1([|Q_new|])
+						__sx_var_copy "${Q_arr}_${Q_len}-${Q_arr}_${Q_new}"
+					done
+					;;
+			esac
 			;;
 	esac
 
-
-	# 4) 中央の書込み: 挿入位置 [n, n+cnt) を __sx_var_unset で
-	#    深く掃除してから値を代入する。素の代入だけでは要素に
-	#    配列が含まれていた場合に配下 (xxx_len, xxx_0...) の
-	#    残骸が残るため、先に掃除が必須である。
-	#    値がなければ (純削除) 何もしない。
-	Q_i="${Q_n}"
-	while M_STR_NE([|"${Q_i}"|], [|"${Q_end}"|]); do
-		__sx_var_unset "${Q_arr}_${Q_i}"
-		M_NUM_INCRM1([|Q_i|])
-	done
-
-	Q_i="${Q_n}"
-
+	# 3) 中央の書込み: 尾部移動後、各挿入位置を深く掃除してから
+	#    直ちに代入する。スロットは互いに独立しているため、掃除と代入を
+	#    一周に統合して添字の多倍長インクリメントを重複させない。
 	for Q_val in "${@}"; do
-		eval "${Q_arr}_${Q_i}=\"\${Q_val}\""
-		M_NUM_INCRM1([|Q_i|])
+		case "${SX_CFG_ARR_HOLE-}" in '') ;; "${Q_val}")
+			__sx_var_unset "${Q_arr}_${Q_n}"
+			M_NUM_INCRM1([|Q_n|])
+			continue
+		esac
+
+		if
+			M_STR_NE([|"${SX_CFG_ARR_REF-}"|], [|''|]) && \
+			M_STR_MATCH([|"${Q_val}"|], [|"${SX_CFG_ARR_REF-}${SX_STR_SWORD}"*|]) && \
+			Q_vn="${Q_val#"${SX_CFG_ARR_REF-}"}" && \
+			sx_var_is_name "${Q_vn}"
+		then
+			__sx_var_copy "${Q_vn}-${Q_arr}_${Q_n}"
+			M_NUM_INCRM1([|Q_n|])
+			continue
+		fi
+
+			__sx_var_unset "${Q_arr}_${Q_n}"
+		eval "${Q_arr}_${Q_n}=\"\${Q_val}\""
+		M_NUM_INCRM1([|Q_n|])
 	done
 
-	# 5) 余剰尾部の掃除: cnt < del の場合だけ [new, len) がはみ出すので
-	#    __sx_var_unset で深く掃除する。cnt と del の比較結果を再利用する。
-	case "${Q_dir}" in
-		-)
-			Q_i="${Q_new}"
-			while M_STR_NE([|"${Q_i}"|], [|"${Q_len}"|]); do
-				__sx_var_unset "${Q_arr}_${Q_i}"
-				M_NUM_INCRM1([|Q_i|])
-			done
-			;;
-	esac
-
-	# 6) 長さの確定とリビジョン更新 (ARR_UPDATE=0 では抑止)
-	eval "${Q_arr}_len=${Q_new}"
-
+	# 4) リビジョン更新。長さは尾部処理の各分岐で確定済みである。
 	case "${SX_CFG_ARR_UPDATE-}" in 1)
 		__sx_var_touch "${Q_arr}"
 	esac
