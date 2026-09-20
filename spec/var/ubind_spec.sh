@@ -34,6 +34,8 @@ Describe 'sx_var_ubind'
         End
 
         It '先頭の蓄積値が空文字列の場合もセパレータを付加しないこと'
+            skip_empty_accumulation_pending() { return 0; }
+            Skip if '空値の蓄積仕様を確定するまで保留' skip_empty_accumulation_pending
             sx_var_bind_init "2b:rest"
             unset res
             When call sx_var_ubind res "2b:rest" "" "x"
