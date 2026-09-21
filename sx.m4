@@ -3467,11 +3467,9 @@ __sx_var_copy_script() {
 					eval "Q_set=\"\${${Q_vn}+X}\" Q_val=\"\${${Q_vn}-}\""
 					case "${Q_set}" in
 						X)
-						case "${Q_val}" in *"'"*)
-							__sx_str_sub Q_val: "${Q_val}" "'" "'\\''"
-						esac
+							__sx_str_quote Q_val "${Q_val}"
 
-							M_STR_APPEND([|Q_expr|], [|"${Q_dest}${Q_vn#"${Q_src}"}='${Q_val}' "|])
+							M_STR_APPEND([|Q_expr|], [|"${Q_dest}${Q_vn#"${Q_src}"}=${Q_val} "|])
 							;;
 						*) M_STR_APPEND([|Q_unset|], [|"${Q_dest}${Q_vn#"${Q_src}"} "|]);;
 					esac
@@ -3544,11 +3542,9 @@ __sx_var_dump() {
 
 		case "${Q_set}" in
 			X)
-				case "${Q_val}" in *"'"*)
-					__sx_str_sub Q_val: "${Q_val}" "'" "'\\''"
-				esac
+			__sx_str_quote Q_val "${Q_val}"
 
-				M_STR_APPEND([|Q_out|], [|"${Q_vn}='${Q_val}'${SX_STR_LF}"|])
+				M_STR_APPEND([|Q_out|], [|"${Q_vn}=${Q_val}${SX_STR_LF}"|])
 				;;
 			*) M_STR_APPEND([|Q_out|], [|"unset -v ${Q_vn}${SX_STR_LF}"|]);;
 		esac
