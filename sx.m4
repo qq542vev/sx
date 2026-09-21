@@ -10478,6 +10478,20 @@ __sx_str_pascal() {
 }
 |], [|str_pascal|])dnl
 
+### sx_str_quote - 文字列をシングルクォートで囲む
+##
+## 使い方:
+##   sx_str_quote 結果変数名 [元文字列]
+##
+## 説明:
+##   元文字列をシングルクォートで囲み、内部のシングルクォートを
+##   '\'' 形式に置換して結果変数に格納する。
+##   元文字列が省略された場合は、空文字列を引用した '' を格納する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 sx_str_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_quote "${@}" || return; return 0;; esac
 
@@ -10489,6 +10503,13 @@ sx_str_quote() {
 }
 
 M_RENAME_QI([|dnl
+### __sx_str_quote - 文字列をシングルクォートで囲む（内部用）
+##
+## 使い方:
+##   __sx_str_quote 結果変数名 [元文字列]
+##
+## 説明:
+##   sx_str_quote の内部実装。引数チェックは行わない。
 
 define([|CLEANUP|], [|Q_str Q_out|])dnl
 
