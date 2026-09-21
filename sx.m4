@@ -5957,6 +5957,7 @@ sx_num_divmod_nat0() {
 	__sx_num_divmod_nat0 "${@}"
 }
 
+M_RENAME_QI([|dnl
 ### __sx_num_divmod_nat0 - 絶対値の除算で整数商と余剰を同時に求める（内部用）
 ##
 ## 使い方:
@@ -6001,40 +6002,39 @@ sx_num_divmod_nat0() {
 ##   ネイティブ演算の語積は必ず qhat*v_j < b^2 = 10^(2c) に収まり、
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
-define([|V|], [|__sx_num_divmod_nat0_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(bind) V(u) V(v) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(n) V(chunk) V(q) V(r) V(t) V(top2) V(qhat) V(rhat) V(uw) V(p) V(carry) V(ck) V(ut) V(new) V(zv) V(btail) V(vstr) V(v1) V(v2)|])dnl
+define([|CLEANUP|], [|Q_tmp Q_bind Q_u Q_v Q_c Q_b Q_qm Q_zr Q_d Q_qmd Q_n Q_chunk Q_q Q_r Q_t Q_top2 Q_qhat Q_rhat Q_uw Q_p Q_carry Q_ck Q_ut Q_new Q_zv Q_btail Q_vstr Q_v1 Q_v2|])dnl
 
 __sx_num_divmod_nat0() {
 	# ステップ 1: 引数の取得（バインド形式と、被除数 u・除数 v の値）
 	#   q_/r_ は直前のフレーム（再帰呼び出し元）から値が残っている場合があるため、
 	#   計算前に必ずクリアする（6505 の分岐が q_ の残存値に誤導されるのを防ぐ）。
 	__sx_var_bind_init "${1}"
-	__sx_num_divmod_nat0_bind_="${1}"
-	__sx_num_divmod_nat0_u_="${2:-0}"
-	__sx_num_divmod_nat0_v_="${3:-1}"
-	__sx_num_divmod_nat0_q_=
-	__sx_num_divmod_nat0_r_=
+	Q_bind="${1}"
+	Q_u="${2:-0}"
+	Q_v="${3:-1}"
+	Q_q=
+	Q_r=
 
 	# ステップ 2: 高速パス 1〜3（自明なケースを即座に確定する）
 	#   高速パス 1: 除数が 1 なら商 = 被除数、余り = 0
 
-	if M_STR_EQ([|"${__sx_num_divmod_nat0_v_}"|], [|1|]); then
-		__sx_num_divmod_nat0_q_="${__sx_num_divmod_nat0_u_}"
-		__sx_num_divmod_nat0_r_=0
+	if M_STR_EQ([|"${Q_v}"|], [|1|]); then
+		Q_q="${Q_u}"
+		Q_r=0
 
-		__sx_var_ubind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
+		__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
 			unset CLEANUP
 			return M_EX_OK
 		}
 	elif
 		# 高速パス 3: 被除数 < 除数なら商 = 0、余り = 被除数
-		__sx_num_cmp_nat0 "${__sx_num_divmod_nat0_u_}" "${__sx_num_divmod_nat0_v_}" || case "${?}" in
-			1) __sx_num_divmod_nat0_q_=0 __sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_u_}";;
-			2) __sx_num_divmod_nat0_q_=1 __sx_num_divmod_nat0_r_=0;;
+		__sx_num_cmp_nat0 "${Q_u}" "${Q_v}" || case "${?}" in
+			1) Q_q=0 Q_r="${Q_u}";;
+			2) Q_q=1 Q_r=0;;
 			*) ! :
 		esac
 	then
-		__sx_var_ubind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
+		__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
 			unset CLEANUP
 			return M_EX_OK
 		}
@@ -6047,123 +6047,123 @@ __sx_num_divmod_nat0() {
 		#   適用条件:
 		#     kz > WLEN（末尾ゼロが 1 語幅を超える）場合のみ縮小する。
 		#     kz は fit_dec によりネイティブ演算の桁数上限に制限される。
-		__sx_num_divmod_nat0_btail_=
+		Q_btail=
 
-		case "${__sx_num_divmod_nat0_v_}" in *0${SX_SYS_NUM_ZR})
-			__sx_num_divmod_nat0_zv_="${__sx_num_divmod_nat0_v_##*[!0]}"
-			__sx_num_divmod_nat0_tmp_="${#__sx_num_divmod_nat0_zv_}"
+		case "${Q_v}" in *0${SX_SYS_NUM_ZR})
+			Q_zv="${Q_v##*[!0]}"
+			Q_tmp="${#Q_zv}"
 
-			if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_divmod_nat0_tmp_}"; then
-				__sx_str_qm __sx_num_divmod_nat0_qm_ "${__sx_num_divmod_nat0_tmp_}"
+			if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_tmp}"; then
+				__sx_str_qm Q_qm "${Q_tmp}"
 
-				__sx_num_divmod_nat0_tmp_="${__sx_num_divmod_nat0_u_%${__sx_num_divmod_nat0_qm_}}"
-				__sx_num_divmod_nat0_btail_="${__sx_num_divmod_nat0_u_#"${__sx_num_divmod_nat0_tmp_}"}"
-				__sx_num_divmod_nat0_v_="${__sx_num_divmod_nat0_v_%"${__sx_num_divmod_nat0_zv_}"}"
-				__sx_num_divmod_nat0_u_="${__sx_num_divmod_nat0_tmp_}"
+				Q_tmp="${Q_u%${Q_qm}}"
+				Q_btail="${Q_u#"${Q_tmp}"}"
+				Q_v="${Q_v%"${Q_zv}"}"
+				Q_u="${Q_tmp}"
 			fi
 		esac
 	fi
 
-	if M_STR_NE([|"${__sx_num_divmod_nat0_q_-}"|], [|''|]); then
+	if M_STR_NE([|"${Q_q-}"|], [|''|]); then
 		:
 	# ステップ 5: 高速パス 4 — 被除数全体がネイティブ除算で確定できる場合
-	elif __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_divmod_nat0_u_}"; then
-		__sx_num_divmod_nat0_q_=$((__sx_num_divmod_nat0_u_ / __sx_num_divmod_nat0_v_))
+	elif __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_u}"; then
+		Q_q=$((Q_u / Q_v))
 
-		__sx_var_ubind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
+		__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
 			unset CLEANUP
 			return M_EX_OK
 		}
 
-		__sx_num_divmod_nat0_r_="$((__sx_num_divmod_nat0_u_ % __sx_num_divmod_nat0_v_))${__sx_num_divmod_nat0_btail_}"
+		Q_r="$((Q_u % Q_v))${Q_btail}"
 
 		# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
-		case "${__sx_num_divmod_nat0_r_}" in 0*)
-			__sx_num_divmod_nat0_r_="M_STR_LTRIM([|__sx_num_divmod_nat0_r_|], [|[!0]|])"
+		case "${Q_r}" in 0*)
+			Q_r="M_STR_LTRIM([|Q_r|], [|[!0]|])"
 		esac
 	elif
 		# ステップ 6: 高速パス 5 — 除数が (WLEN-1)*9/10 桁以内なら語単位のネイティブ筆算
 		#   語幅 c = WLEN - len(v) は約 WLEN/10 + 1 以上に保たれる。c が小さいと反復回数と
 		#   商文字列の連結コスト（O(len(q)^2)）が増え、被除数が長い場合は Knuth D 法に
 		#   逆転される（実測では c = 2 で ulen ~ 500 付近から逆転）ため安全マージンを確保する。
-		__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_divmod_nat0_v_}" &&
-		M_NUM_LE([|${#__sx_num_divmod_nat0_v_}|], [|(SX_SYS_NUM_WLEN - 1) * 9 / 10|])
+		__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_v}" &&
+		M_NUM_LE([|${#Q_v}|], [|(SX_SYS_NUM_WLEN - 1) * 9 / 10|])
 	then
 		# v の桁数 s に応じて語幅を c = WLEN - s へ拡大する。
 		# 余り r は常に r < v なので、1 反復で取る u の桁を s のぶんだけ増やしても
 		# nv = r * 10^c + chunk < 10^WLEN が保たれ、ネイティブ演算に収まる。
-		__sx_num_divmod_nat0_q_=
-		__sx_num_divmod_nat0_r_=0
-		__sx_num_divmod_nat0_c_=$((SX_SYS_NUM_WLEN - ${#__sx_num_divmod_nat0_v_}))
+		Q_q=
+		Q_r=0
+		Q_c=$((SX_SYS_NUM_WLEN - ${#Q_v}))
 
-		eval "__sx_num_divmod_nat0_qm_=\"\${SX_NUM_QM_${__sx_num_divmod_nat0_c_}}\" __sx_num_divmod_nat0_b_=\"1\${SX_NUM_ZR_${__sx_num_divmod_nat0_c_}}\""
+		eval "Q_qm=\"\${SX_NUM_QM_${Q_c}}\" Q_b=\"1\${SX_NUM_ZR_${Q_c}}\""
 
 		# 筆算の1語分: 前語までの余りを基数倍して次の語を結合し、ネイティブ除算で商1語を確定する
 		while
-			case "${__sx_num_divmod_nat0_u_}" in
+			case "${Q_u}" in
 				'') break;;
-				${__sx_num_divmod_nat0_qm_}?*)
-					__sx_num_divmod_nat0_tmp_="${__sx_num_divmod_nat0_u_#${__sx_num_divmod_nat0_qm_}}"
-					__sx_num_divmod_nat0_chunk_="${__sx_num_divmod_nat0_u_%"${__sx_num_divmod_nat0_tmp_}"}"
-					__sx_num_divmod_nat0_u_="${__sx_num_divmod_nat0_tmp_}"
+				${Q_qm}?*)
+					Q_tmp="${Q_u#${Q_qm}}"
+					Q_chunk="${Q_u%"${Q_tmp}"}"
+					Q_u="${Q_tmp}"
 					;;
 				*)
-					__sx_num_divmod_nat0_c_="${#__sx_num_divmod_nat0_u_}"
-					eval "__sx_num_divmod_nat0_qm_=\"\${SX_NUM_QM_${__sx_num_divmod_nat0_c_}}\" __sx_num_divmod_nat0_b_=\"1\${SX_NUM_ZR_${__sx_num_divmod_nat0_c_}}\""
-					__sx_num_divmod_nat0_chunk_="${__sx_num_divmod_nat0_u_}"
-					__sx_num_divmod_nat0_u_=
+					Q_c="${#Q_u}"
+					eval "Q_qm=\"\${SX_NUM_QM_${Q_c}}\" Q_b=\"1\${SX_NUM_ZR_${Q_c}}\""
+					Q_chunk="${Q_u}"
+					Q_u=
 					;;
 			esac
 
-			case "${__sx_num_divmod_nat0_chunk_}" in
-				0*[1-9]*) __sx_num_divmod_nat0_chunk_=$((1${__sx_num_divmod_nat0_chunk_} - __sx_num_divmod_nat0_b_));;
+			case "${Q_chunk}" in
+				0*[1-9]*) Q_chunk=$((1${Q_chunk} - Q_b));;
 				0*)
-					case "${__sx_num_divmod_nat0_r_}" in 0)
-						M_STR_APPEND([|__sx_num_divmod_nat0_q_|], [|"${__sx_num_divmod_nat0_b_#1}"|])
+					case "${Q_r}" in 0)
+						M_STR_APPEND([|Q_q|], [|"${Q_b#1}"|])
 						continue
 					esac
 
-					__sx_num_divmod_nat0_chunk_=0
+					Q_chunk=0
 					;;
 			esac
 
 			# chunk を nv（r * 10^c + chunk）として再利用する
-			M_NUM_INCR([|__sx_num_divmod_nat0_chunk_|], [|__sx_num_divmod_nat0_r_ * __sx_num_divmod_nat0_b_|])
-			__sx_num_divmod_nat0_r_=$((__sx_num_divmod_nat0_chunk_ % __sx_num_divmod_nat0_v_))
+			M_NUM_INCR([|Q_chunk|], [|Q_r * Q_b|])
+			Q_r=$((Q_chunk % Q_v))
 				# 商1語がちょうど c 桁ならゼロ埋め・切り出しを省略し、それ以外は c 桁に整形する
-			__sx_num_divmod_nat0_tmp_=$((__sx_num_divmod_nat0_chunk_ / __sx_num_divmod_nat0_v_))
+			Q_tmp=$((Q_chunk / Q_v))
 
-			case "${__sx_num_divmod_nat0_tmp_}" in
-				${__sx_num_divmod_nat0_qm_}) M_STR_APPEND([|__sx_num_divmod_nat0_q_|], [|"${__sx_num_divmod_nat0_tmp_}"|]);;
+			case "${Q_tmp}" in
+				${Q_qm}) M_STR_APPEND([|Q_q|], [|"${Q_tmp}"|]);;
 				*)
-					M_NUM_INCR([|__sx_num_divmod_nat0_tmp_|], [|__sx_num_divmod_nat0_b_|])
-					M_STR_APPEND([|__sx_num_divmod_nat0_q_|], [|"${__sx_num_divmod_nat0_tmp_#1}"|])
+					M_NUM_INCR([|Q_tmp|], [|Q_b|])
+					M_STR_APPEND([|Q_q|], [|"${Q_tmp#1}"|])
 					;;
 			esac
 
 			continue
 		do :; done
 
-		case "${__sx_num_divmod_nat0_q_}" in 0*)
-			__sx_num_divmod_nat0_q_="M_STR_LTRIM([|__sx_num_divmod_nat0_q_|], [|[!0]|])"
+		case "${Q_q}" in 0*)
+			Q_q="M_STR_LTRIM([|Q_q|], [|[!0]|])"
 		esac
 
-		__sx_var_ubind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
+		__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
 			unset CLEANUP
 			return M_EX_OK
 		}
 
 			# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
-			M_STR_APPEND([|__sx_num_divmod_nat0_r_|], [|"${__sx_num_divmod_nat0_btail_}"|])
+			M_STR_APPEND([|Q_r|], [|"${Q_btail}"|])
 
-			case "${__sx_num_divmod_nat0_r_}" in 0*)
-				__sx_num_divmod_nat0_r_="M_STR_LTRIM([|__sx_num_divmod_nat0_r_|], [|[!0]|])";;
+			case "${Q_r}" in 0*)
+				Q_r="M_STR_LTRIM([|Q_r|], [|[!0]|])";;
 			esac
 	else
 		# 語サイズ c の決定
-		__sx_num_divmod_nat0_c_=$((SX_SYS_NUM_WLEN / 2))
-		eval "__sx_num_divmod_nat0_qm_=\"\${SX_NUM_QM_${__sx_num_divmod_nat0_c_}}\" __sx_num_divmod_nat0_zr_=\"\${SX_NUM_ZR_${__sx_num_divmod_nat0_c_}}\""
-		__sx_num_divmod_nat0_b_="1${__sx_num_divmod_nat0_zr_}"
+		Q_c=$((SX_SYS_NUM_WLEN / 2))
+		eval "Q_qm=\"\${SX_NUM_QM_${Q_c}}\" Q_zr=\"\${SX_NUM_ZR_${Q_c}}\""
+		Q_b="1${Q_zr}"
 		# ステップ 7: 一般パス — 融合 Knuth D 法（u > v、u は 19 桁以上、v は 2 語以上）
 		# ステップ 7.1: 正規化 — u・v を 10^d 倍し、v の先頭語をちょうど c 桁に揃える
 		#   d = c - s（s は v の先頭語の桁数、s = (len(v) mod c) の剰余。s がちょうど c なら d = 0）
@@ -6189,47 +6189,48 @@ __sx_num_divmod_nat0() {
 		#   正規化量 d = c - s を確定し、v_n に 0^d を末尾付加して正規化する。
 		#   文字列の全長を算術式に入れず、残余は高々 c 桁なので ${#残余} のみ算術に使う。
 		#   v_ は分割中に消費される（分割後は使用しない）。
-		__sx_num_divmod_nat0_vstr_=
-		__sx_num_divmod_nat0_n_=1
+		Q_vstr=
+		Q_n=1
 		while
-			case "${__sx_num_divmod_nat0_v_}" in
-				${__sx_num_divmod_nat0_qm_}?*)
-					__sx_num_divmod_nat0_tmp_="${__sx_num_divmod_nat0_v_#${__sx_num_divmod_nat0_qm_}}"
-					__sx_num_divmod_nat0_chunk_="${__sx_num_divmod_nat0_v_%"${__sx_num_divmod_nat0_tmp_}"}"
-					__sx_num_divmod_nat0_v_="${__sx_num_divmod_nat0_tmp_}"
+			case "${Q_v}" in
+				${Q_qm}?*)
+					Q_tmp="${Q_v#${Q_qm}}"
+					Q_chunk="${Q_v%"${Q_tmp}"}"
+					Q_v="${Q_tmp}"
 					;;
 				*)
 					# 残余が 1..c 文字 = 最下位語 v_n。ここで s → d が確定する
 					# （残余がちょうど c 文字のときもこの分岐に入り d = 0 になる）。
 					# 残余は v_ に残っている（chunk_ は直前の c 文字チャンクのため使用しない）。
-					__sx_num_divmod_nat0_d_=$((__sx_num_divmod_nat0_c_ - ${#__sx_num_divmod_nat0_v_}))
+					Q_d=$((Q_c - ${#Q_v}))
 
-					case "${__sx_num_divmod_nat0_d_}" in [!0]*)
-						eval "__sx_num_divmod_nat0_tmp_=\"\${SX_NUM_ZR_${__sx_num_divmod_nat0_d_}}\" __sx_num_divmod_nat0_qmd_=\"\${SX_NUM_QM_${__sx_num_divmod_nat0_d_}}\""
-						M_STR_APPEND([|__sx_num_divmod_nat0_v_|], [|"${__sx_num_divmod_nat0_tmp_}"|])
-						M_STR_APPEND([|__sx_num_divmod_nat0_u_|], [|"${__sx_num_divmod_nat0_tmp_}"|])
+					case "${Q_d}" in [!0]*)
+						eval "Q_tmp=\"\${SX_NUM_ZR_${Q_d}}\" Q_qmd=\"\${SX_NUM_QM_${Q_d}}\""
+						M_STR_APPEND([|Q_v|], [|"${Q_tmp}"|])
+						M_STR_APPEND([|Q_u|], [|"${Q_tmp}"|])
 					esac
 
-					__sx_num_divmod_nat0_chunk_="${__sx_num_divmod_nat0_v_}"
-					__sx_num_divmod_nat0_v_=
+					Q_chunk="${Q_v}"
+					Q_v=
 					;;
 			esac
 
-			case "${__sx_num_divmod_nat0_chunk_}" in 0*)
-				__sx_num_divmod_nat0_chunk_=$((1${__sx_num_divmod_nat0_chunk_} - __sx_num_divmod_nat0_b_))
+			case "${Q_chunk}" in 0*)
+				Q_chunk=$((1${Q_chunk} - Q_b))
 			esac
 
-			M_STR_PREPEND([|__sx_num_divmod_nat0_vstr_|], [|"${__sx_num_divmod_nat0_chunk_} \"\${${__sx_num_divmod_nat0_n_}}\" "|])
+			M_STR_PREPEND([|Q_vstr|], [|"${Q_chunk} \"\${${Q_n}}\" "|])
 
-			case "${__sx_num_divmod_nat0_n_}" in [12])
-				eval "__sx_num_divmod_nat0_v${__sx_num_divmod_nat0_n_}_=\${__sx_num_divmod_nat0_chunk_}"
+			case "${Q_n}" in
+				1) Q_v1="${Q_chunk}";;
+				2) Q_v2="${Q_chunk}";;
 			esac
 
-			case "${__sx_num_divmod_nat0_v_}" in '')
+			case "${Q_v}" in '')
 				break
 			esac
 
-			__sx_num_add_nat0 __sx_num_divmod_nat0_n_ "${__sx_num_divmod_nat0_n_}" 1
+			__sx_num_add_nat0 Q_n "${Q_n}" 1
 
 			continue
 		do :; done
@@ -6249,24 +6250,24 @@ __sx_num_divmod_nat0() {
 		set --
 
 		while
-			case "${__sx_num_divmod_nat0_u_}" in
+			case "${Q_u}" in
 				'') break;;
-				${__sx_num_divmod_nat0_qm_}?*)
-					__sx_num_divmod_nat0_tmp_="${__sx_num_divmod_nat0_u_%${__sx_num_divmod_nat0_qm_}}"
-					__sx_num_divmod_nat0_chunk_="${__sx_num_divmod_nat0_u_#${__sx_num_divmod_nat0_tmp_}}"
-					__sx_num_divmod_nat0_u_="${__sx_num_divmod_nat0_tmp_}"
+				${Q_qm}?*)
+					Q_tmp="${Q_u%${Q_qm}}"
+					Q_chunk="${Q_u#${Q_tmp}}"
+					Q_u="${Q_tmp}"
 
-					case "${__sx_num_divmod_nat0_chunk_}" in 0*)
-						__sx_num_divmod_nat0_chunk_=$((1${__sx_num_divmod_nat0_chunk_} - __sx_num_divmod_nat0_b_))
+					case "${Q_chunk}" in 0*)
+						Q_chunk=$((1${Q_chunk} - Q_b))
 					esac
 					;;
 				*)
-					__sx_num_divmod_nat0_chunk_="${__sx_num_divmod_nat0_u_}"
-					__sx_num_divmod_nat0_u_=
+					Q_chunk="${Q_u}"
+					Q_u=
 					;;
 			esac
 
-			set -- "${__sx_num_divmod_nat0_chunk_}" "${@}"
+			set -- "${Q_chunk}" "${@}"
 
 			continue
 		do :; done
@@ -6278,50 +6279,50 @@ __sx_num_divmod_nat0() {
 		#   反復末尾に shift n+1 → set -- ${new_} "$@" → shift 1（退出語 u_{W-n} を破棄）で
 		#   次窓 $1..$(n+1) = u_{W-n+1}..u_{W+1} を確定する。
 		#   D4/D5 は下位語（窓の末尾側）から上位語へ走査するため、読み出しのみ eval を使用する。
-		__sx_num_divmod_nat0_q_=
+		Q_q=
 
-		while M_STR_NE([|"${__sx_num_divmod_nat0_n_}"|], [|"${#}"|]); do
+		while M_STR_NE([|"${Q_n}"|], [|"${#}"|]); do
 			# D2: 商の見積り — 窓の先頭 2 語（$1, $2）を v1 で割って qhat を仮定する
 			#   top2 = u_{W-n}*b + u_{W-n+1}、qhat = top2 ÷ v1（b を超えたら b-1 に丸める）
-			__sx_num_divmod_nat0_top2_=$((${1} * __sx_num_divmod_nat0_b_ + ${2}))
-			__sx_num_divmod_nat0_qhat_=$((__sx_num_divmod_nat0_top2_ / __sx_num_divmod_nat0_v1_))
+			Q_top2=$((${1} * Q_b + ${2}))
+			Q_qhat=$((Q_top2 / Q_v1))
 
-			case "$((__sx_num_divmod_nat0_b_ <= __sx_num_divmod_nat0_qhat_))" in
+			case "$((Q_b <= Q_qhat))" in
 				1)
-					__sx_num_divmod_nat0_qhat_=$((__sx_num_divmod_nat0_b_ - 1))
-					__sx_num_divmod_nat0_rhat_=$((__sx_num_divmod_nat0_top2_ - __sx_num_divmod_nat0_qhat_ * __sx_num_divmod_nat0_v1_))
+					Q_qhat=$((Q_b - 1))
+					Q_rhat=$((Q_top2 - Q_qhat * Q_v1))
 					;;
-				*) __sx_num_divmod_nat0_rhat_=$((__sx_num_divmod_nat0_top2_ % __sx_num_divmod_nat0_v1_));;
+				*) Q_rhat=$((Q_top2 % Q_v1));;
 			esac
 
 			# D3: 精緻化 — qhat×v2 が b×rhat + u_{W-n+2}（= $3）を超える間 qhat を 1 ずつ減らす
 			#   （qhat の過大見積りを補正する。rhat が b 未満である限り繰り返す）
-			while M_NUM_BOOL([|__sx_num_divmod_nat0_rhat_ < __sx_num_divmod_nat0_b_ && (__sx_num_divmod_nat0_b_ * __sx_num_divmod_nat0_rhat_ + ${3-0}) < (__sx_num_divmod_nat0_qhat_ * __sx_num_divmod_nat0_v2_)|]); do
-				M_NUM_DECR([|__sx_num_divmod_nat0_qhat_|])
-				M_NUM_INCR([|__sx_num_divmod_nat0_rhat_|], [|__sx_num_divmod_nat0_v1_|])
+			while M_NUM_BOOL([|Q_rhat < Q_b && (Q_b * Q_rhat + ${3-0}) < (Q_qhat * Q_v2)|]); do
+				M_NUM_DECR([|Q_qhat|])
+				M_NUM_INCR([|Q_rhat|], [|Q_v1|])
 			done
 
 			# D4: 融合 multiply-subtract — 窓の語 u_{W-n+1}..u_W（= $2..$(n+1)）から qhat×v を一括減算する
 			#   語積 p = qhat×v_j + carry を一度に算出し、下位語から上位語へ繰り上がりを伝搬する
 			#   （vstr_ を用いて $1=v_j, $2=u_j ペアを展開し、計算結果は new_ への前置で MS-first に整列する）
-			__sx_num_divmod_nat0_carry_=0
-			__sx_num_divmod_nat0_new_=
-			__sx_num_divmod_nat0_ut_="${1}"
+			Q_carry=0
+			Q_new=
+			Q_ut="${1}"
 			shift
 
-			eval set -- "${__sx_num_divmod_nat0_vstr_}" - '"${@}"'
+			eval set -- "${Q_vstr}" - '"${@}"'
 
 			while
-				__sx_num_divmod_nat0_p_=$((__sx_num_divmod_nat0_qhat_ * ${1} + __sx_num_divmod_nat0_carry_))
-				__sx_num_divmod_nat0_t_=$((${2} - __sx_num_divmod_nat0_p_ % __sx_num_divmod_nat0_b_))
-				__sx_num_divmod_nat0_carry_=$((__sx_num_divmod_nat0_p_ / __sx_num_divmod_nat0_b_))
+				Q_p=$((Q_qhat * ${1} + Q_carry))
+				Q_t=$((${2} - Q_p % Q_b))
+				Q_carry=$((Q_p / Q_b))
 
-				case "${__sx_num_divmod_nat0_t_}" in -*)
-					M_NUM_INCR([|__sx_num_divmod_nat0_t_|], [|__sx_num_divmod_nat0_b_|])
-					M_NUM_INCR([|__sx_num_divmod_nat0_carry_|])
+				case "${Q_t}" in -*)
+					M_NUM_INCR([|Q_t|], [|Q_b|])
+					M_NUM_INCR([|Q_carry|])
 				esac
 
-				M_STR_PREPEND([|__sx_num_divmod_nat0_new_|], [|"${__sx_num_divmod_nat0_t_} "|])
+				M_STR_PREPEND([|Q_new|], [|"${Q_t} "|])
 				shift 2
 
 				case "${1}" in -)
@@ -6332,29 +6333,29 @@ __sx_num_divmod_nat0() {
 				continue
 			do :; done
 
-			M_NUM_DECR([|__sx_num_divmod_nat0_ut_|], [|__sx_num_divmod_nat0_carry_|])
-			shift "${__sx_num_divmod_nat0_n_}"
-			eval set -- "${__sx_num_divmod_nat0_new_}" '"${@}"'
+			M_NUM_DECR([|Q_ut|], [|Q_carry|])
+			shift "${Q_n}"
+			eval set -- "${Q_new}" '"${@}"'
 
 			# D5: 加算復帰 — D4 の減算結果が負（qhat が過大）だった場合に v を加算して qhat を 1 減らす
 			#   （通常 0 回、最大 2 回で収束する。新窓 $1..$n に対して vstr_ で加算し、新窓を置換する）
-			while M_NUM_LT([|__sx_num_divmod_nat0_ut_|], [|0|]); do
-				__sx_num_divmod_nat0_ck_=0
-				__sx_num_divmod_nat0_new_=
+			while M_NUM_LT([|Q_ut|], [|0|]); do
+				Q_ck=0
+				Q_new=
 
-				eval set -- "${__sx_num_divmod_nat0_vstr_}" - '"${@}"'
+				eval set -- "${Q_vstr}" - '"${@}"'
 
 				while
-					__sx_num_divmod_nat0_t_=$((${2} + ${1} + __sx_num_divmod_nat0_ck_))
-					case "$((__sx_num_divmod_nat0_b_ <= __sx_num_divmod_nat0_t_))" in
+					Q_t=$((${2} + ${1} + Q_ck))
+					case "$((Q_b <= Q_t))" in
 						1)
-							M_NUM_DECR([|__sx_num_divmod_nat0_t_|], [|__sx_num_divmod_nat0_b_|])
-							__sx_num_divmod_nat0_ck_=1
+							M_NUM_DECR([|Q_t|], [|Q_b|])
+							Q_ck=1
 							;;
-						*) __sx_num_divmod_nat0_ck_=0;;
+						*) Q_ck=0;;
 					esac
 
-					M_STR_PREPEND([|__sx_num_divmod_nat0_new_|], [|"${__sx_num_divmod_nat0_t_} "|])
+					M_STR_PREPEND([|Q_new|], [|"${Q_t} "|])
 					shift 2
 
 					case "${1}" in -)
@@ -6365,61 +6366,62 @@ __sx_num_divmod_nat0() {
 					continue
 				do :; done
 
-				shift "${__sx_num_divmod_nat0_n_}"
-				eval set -- "${__sx_num_divmod_nat0_new_}" '"${@}"'
+				shift "${Q_n}"
+				eval set -- "${Q_new}" '"${@}"'
 
-				M_NUM_DECR([|__sx_num_divmod_nat0_qhat_|])
-				M_NUM_INCR([|__sx_num_divmod_nat0_ut_|], [|__sx_num_divmod_nat0_ck_|])
+				M_NUM_DECR([|Q_qhat|])
+				M_NUM_INCR([|Q_ut|], [|Q_ck|])
 			done
 
-			case "${__sx_num_divmod_nat0_qhat_}" in
-				${__sx_num_divmod_nat0_qm_}) M_STR_APPEND([|__sx_num_divmod_nat0_q_|], [|"${__sx_num_divmod_nat0_qhat_}"|]);;
+			case "${Q_qhat}" in
+				${Q_qm}) M_STR_APPEND([|Q_q|], [|"${Q_qhat}"|]);;
 				*)
 					# 商に qhat を c 桁ゼロ埋めで連結
-					M_STR_PREPEND([|__sx_num_divmod_nat0_qhat_|], [|"${__sx_num_divmod_nat0_zr_}"|])
-					M_STR_APPEND([|__sx_num_divmod_nat0_q_|], [|"${__sx_num_divmod_nat0_qhat_#"${__sx_num_divmod_nat0_qhat_%${__sx_num_divmod_nat0_qm_}}"}"|])
+					M_STR_PREPEND([|Q_qhat|], [|"${Q_zr}"|])
+					M_STR_APPEND([|Q_q|], [|"${Q_qhat#"${Q_qhat%${Q_qm}}"}"|])
 					;;
 			esac
 		done
 
-		case "${__sx_num_divmod_nat0_q_}" in 0*)
-			__sx_num_divmod_nat0_q_="M_STR_LTRIM([|__sx_num_divmod_nat0_q_|], [|[!0]|])"
+		case "${Q_q}" in 0*)
+			Q_q="M_STR_LTRIM([|Q_q|], [|[!0]|])"
 		esac
 
-		__sx_var_ubind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_q_}" || {
+		__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
 			unset CLEANUP
 			return M_EX_OK
 		}
 
 		# ステップ 7.4: 余り抽出 — 位置パラメータに残る末尾 n 語（u_{K-n+1}..u_K）を c 桁ゼロ埋めで連結する
 		#   （主ループが各反復で 1 語ずつ破棄したため、ループ終了後の $@ がちょうど余りの n 語になる）
-		__sx_num_divmod_nat0_r_=
-		for __sx_num_divmod_nat0_uw_ in "${@}"; do
-			case "${__sx_num_divmod_nat0_uw_}" in
-				${__sx_num_divmod_nat0_qm_}) M_STR_APPEND([|__sx_num_divmod_nat0_r_|], [|"${__sx_num_divmod_nat0_uw_}"|]);;
+		Q_r=
+		for Q_uw in "${@}"; do
+			case "${Q_uw}" in
+				${Q_qm}) M_STR_APPEND([|Q_r|], [|"${Q_uw}"|]);;
 				*)
-					M_STR_PREPEND([|__sx_num_divmod_nat0_uw_|], [|"${__sx_num_divmod_nat0_zr_}"|])
-					M_STR_APPEND([|__sx_num_divmod_nat0_r_|], [|"${__sx_num_divmod_nat0_uw_#"${__sx_num_divmod_nat0_uw_%${__sx_num_divmod_nat0_qm_}}"}"|])
+					M_STR_PREPEND([|Q_uw|], [|"${Q_zr}"|])
+					M_STR_APPEND([|Q_r|], [|"${Q_uw#"${Q_uw%${Q_qm}}"}"|])
 					;;
 			esac
 		done
 
 		# ステップ 7.5: 逆正規化 — 余りの末尾 d 桁を除去して 10^d 倍を戻す（商は影響を受けない）
-		case "${__sx_num_divmod_nat0_d_}" in [!0]*)
-			__sx_num_divmod_nat0_r_="${__sx_num_divmod_nat0_r_%${__sx_num_divmod_nat0_qmd_}}"
+		case "${Q_d}" in [!0]*)
+			Q_r="${Q_r%${Q_qmd}}"
 		esac
 
-		M_STR_APPEND([|__sx_num_divmod_nat0_r_|], [|"${__sx_num_divmod_nat0_btail_}"|])
+		M_STR_APPEND([|Q_r|], [|"${Q_btail}"|])
 
-		case "${__sx_num_divmod_nat0_r_}" in 0*)
-			__sx_num_divmod_nat0_r_="M_STR_LTRIM([|__sx_num_divmod_nat0_r_|], [|[!0]|])";;
+		case "${Q_r}" in 0*)
+			Q_r="M_STR_LTRIM([|Q_r|], [|[!0]|])";;
 		esac
 	fi
 
-	__sx_var_ubind __sx_num_divmod_nat0_bind_ "${__sx_num_divmod_nat0_bind_}" "${__sx_num_divmod_nat0_r_:-0}" || :
+	__sx_var_ubind Q_bind "${Q_bind}" "${Q_r:-0}" || :
 
 	unset CLEANUP
 }
+|], [|num_divmod_nat0|])dnl
 
 ### sx_num_edivmod_int - ユークリッド除算で整数商と余剰を同時に求める
 ##
