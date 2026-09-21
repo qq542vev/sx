@@ -10478,12 +10478,22 @@ __sx_str_pascal() {
 }
 |], [|str_pascal|])dnl
 
+sx_str_quote() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_quote "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	__sx_str_quote "${@}"
+}
+
 M_RENAME_QI([|dnl
 
 define([|CLEANUP|], [|Q_str Q_out|])dnl
 
 __sx_str_quote() {
-	Q_str="${2}"
+	Q_str="${2-}"
 	Q_out=
 
 	while M_STR_HAS([|"${Q_str}"|], [|"'"|]); do
