@@ -200,19 +200,49 @@ readonly SX_STR_CHUNK_SKIP_LONG=2
 # 数値定数 (8bit / 16bit / 32bit / 64bit / 128bit 整数限界)
 readonly SX_NUM_I8_MAX=127
 readonly SX_NUM_I8_MIN=-128
+readonly SX_NUM_I8_WLEN=1
+readonly SX_NUM_I8_QM='?'
+readonly SX_NUM_I8_ZR='0'
 readonly SX_NUM_U8_MAX=255
+readonly SX_NUM_U8_WLEN=2
+readonly SX_NUM_U8_QM='??'
+readonly SX_NUM_U8_ZR='00'
 readonly SX_NUM_I16_MAX=32767
 readonly SX_NUM_I16_MIN=-32768
+readonly SX_NUM_I16_WLEN=4
+readonly SX_NUM_I16_QM='????'
+readonly SX_NUM_I16_ZR='0000'
 readonly SX_NUM_U16_MAX=65535
+readonly SX_NUM_U16_WLEN=4
+readonly SX_NUM_U16_QM='????'
+readonly SX_NUM_U16_ZR='0000'
 readonly SX_NUM_I32_MAX=2147483647
 readonly SX_NUM_I32_MIN=-2147483648
+readonly SX_NUM_I32_WLEN=9
+readonly SX_NUM_I32_QM='?????????'
+readonly SX_NUM_I32_ZR='000000000'
 readonly SX_NUM_U32_MAX=4294967295
+readonly SX_NUM_U32_WLEN=9
+readonly SX_NUM_U32_QM='?????????'
+readonly SX_NUM_U32_ZR='000000000'
 readonly SX_NUM_I64_MAX=9223372036854775807
 readonly SX_NUM_I64_MIN=-9223372036854775808
+readonly SX_NUM_I64_WLEN=18
+readonly SX_NUM_I64_QM='??????????????????'
+readonly SX_NUM_I64_ZR='000000000000000000'
 readonly SX_NUM_U64_MAX=18446744073709551615
+readonly SX_NUM_U64_WLEN=18
+readonly SX_NUM_U64_QM='??????????????????'
+readonly SX_NUM_U64_ZR='000000000000000000'
 readonly SX_NUM_I128_MAX=170141183460469231731687303715884105727
 readonly SX_NUM_I128_MIN=-170141183460469231731687303715884105728
+readonly SX_NUM_I128_WLEN=37
+readonly SX_NUM_I128_QM='?????????????????????????????????????'
+readonly SX_NUM_I128_ZR='0000000000000000000000000000000000000'
 readonly SX_NUM_U128_MAX=340282366920938463463374607431768211455
+readonly SX_NUM_U128_WLEN=38
+readonly SX_NUM_U128_QM='??????????????????????????????????????'
+readonly SX_NUM_U128_ZR='00000000000000000000000000000000000000'
 
 # SX_CFG_NUM_RANGE に対応するチャンク処理定数（事前定義）
 # wlen = (SX_CFG_NUM_RANGE - 2) * 30103 / 100000 により
@@ -286,7 +316,10 @@ readonly SX_CFG_DEF_ARR_REF=
 : "${SX_CFG_ARR_UPDATE:=${SX_CFG_DEF_ARR_UPDATE}}"
 : "${SX_CFG_ARR_HOLE:=${SX_CFG_DEF_ARR_HOLE}}"
 : "${SX_CFG_ARR_REF:=${SX_CFG_DEF_ARR_REF}}"
+
 SX_SYS_REV=0
+eval SX_SYS_NUM_WLEN="\${SX_NUM_I${SX_CFG_NUM_RANGE}_WLEN}" SX_SYS_NUM_QM="\${SX_NUM_I${SX_CFG_NUM_RANGE}_QM}" SX_SYS_NUM_ZR="\${SX_NUM_I${SX_CFG_NUM_RANGE}_ZR}" SX_SYS_NUM_MAX="\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}" SX_SYS_NUM_MIN="\${SX_NUM_I${SX_CFG_NUM_RANGE}_MIN}"
+
 
 # ========================================
 #  CFG (Configuration)
@@ -402,6 +435,10 @@ __sx_cfg_set() {
 
 		case "${Q_arg}" in SIG_BASE | SIG_BASE=*)
 			SX_CFG_SIG_ARR="array-${SX_CFG_SIG_BASE}"
+		esac
+
+		case "${Q_arg}" in NUM_RANGE | NUM_RANGE=*)
+			eval SX_SYS_NUM_WLEN="\${SX_NUM_I${SX_CFG_NUM_RANGE}_WLEN}" SX_SYS_NUM_QM="\${SX_NUM_I${SX_CFG_NUM_RANGE}_QM}" SX_SYS_NUM_ZR="\${SX_NUM_I${SX_CFG_NUM_RANGE}_ZR}" SX_SYS_NUM_MAX="\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}" SX_SYS_NUM_MIN="\${SX_NUM_I${SX_CFG_NUM_RANGE}_MIN}"
 		esac
 	done
 
@@ -3175,7 +3212,7 @@ __sx_var_bind0() {
 								__sx_str_quote Q_val "${Q_val}"
 							esac
 
-							Q_tmp="${Q_tmp}${Q_tmp:+ }${Q_val}"
+							Q_tmp="${Q_tmp} ${Q_val}"
 
 							case "${Q_lim}" in 1)
 								eval "${Q_vn}=\"\${${Q_vn}-}\${${Q_vn}:+ }\${Q_tmp# }\""
@@ -5162,14 +5199,13 @@ define([|CLEANUP|], [|Q_res Q_qm Q_carry Q_out Q_rem1 Q_rem2 Q_ch1 Q_ch2 Q_tmp Q
 __sx_num_add_nat0() {
 	Q_res="${1}"
 	Q_rem1="${2-0}"
-	shift "$((1 + 0${2+1}))"
+	Q_b="1${SX_SYS_NUM_ZR}"
 
-	# チャンク処理定数（事前定義値から選択）
-	eval "Q_qm=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" Q_b=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
+	shift "$((1 + 0${2+1}))"
 
 	for Q_rem2 in "${@}"; do
 		case "${Q_rem1}:${Q_rem2}" in
-			${Q_qm}?*:* | *:${Q_qm}?*) ;;
+			${SX_SYS_NUM_QM}?*:* | *:${SX_SYS_NUM_QM}?*) ;;
 			*)
 				M_NUM_INCR([|Q_rem1|], [|Q_rem2|])
 				continue
@@ -5183,8 +5219,8 @@ __sx_num_add_nat0() {
 		while
 			# rem1 からチャンク抽出
 			case "${Q_rem1}" in
-				${Q_qm}?*)
-					Q_tmp="${Q_rem1%${Q_qm}}"
+				${SX_SYS_NUM_QM}?*)
+					Q_tmp="${Q_rem1%${SX_SYS_NUM_QM}}"
 					Q_ch1="${Q_rem1#"${Q_tmp}"}"
 					Q_rem1="${Q_tmp}"
 
@@ -5200,8 +5236,8 @@ __sx_num_add_nat0() {
 
 			# rem2 からチャンク抽出
 			case "${Q_rem2}" in
-				${Q_qm}?*)
-					Q_tmp="${Q_rem2%${Q_qm}}"
+				${SX_SYS_NUM_QM}?*)
+					Q_tmp="${Q_rem2%${SX_SYS_NUM_QM}}"
 					Q_ch2="${Q_rem2#"${Q_tmp}"}"
 					Q_rem2="${Q_tmp}"
 
@@ -5222,7 +5258,7 @@ __sx_num_add_nat0() {
 				?::) Q_rem1="${Q_tmp}${Q_out}" && break;;
 				0:?*: | 0::?*)
 					case "${Q_tmp}" in
-						${Q_qm}) M_STR_APPEND([|Q_rem1|], [|"${Q_rem2}${Q_tmp}${Q_out}"|]);;
+						${SX_SYS_NUM_QM}) M_STR_APPEND([|Q_rem1|], [|"${Q_rem2}${Q_tmp}${Q_out}"|]);;
 						*)
 							# ゼロ埋めして前置（片方のチャンクが先頭ゼロ除去で短くなった場合の桁揃え）
 							M_NUM_INCR([|Q_tmp|], [|Q_b|])
@@ -5234,7 +5270,7 @@ __sx_num_add_nat0() {
 						;;
 				0:*)
 					case "${Q_tmp}" in
-						${Q_qm}) M_STR_PREPEND([|Q_out|], [|"${Q_tmp}"|]);;
+						${SX_SYS_NUM_QM}) M_STR_PREPEND([|Q_out|], [|"${Q_tmp}"|]);;
 						*)
 							# ゼロ埋めして前置
 							M_NUM_INCR([|Q_tmp|], [|Q_b|])
@@ -5436,37 +5472,33 @@ M_RENAME_QI([|dnl
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 
-define([|CLEANUP|], [|Q_z|])dnl
+define([|CLEANUP|], [||])dnl
 
 __sx_num_cmp_fixed_frac() {
-	# 完全に一致する場合は即座に終了 (EQ)
-	case "${1}" in "${2}") return 2;; esac
-
 	# 接頭辞チェック（正規化により、長い方が必ず大きい）
 	# 冒頭で行うことで、長い小数部の延長比較をループなしで高速に処理する
-	case "${1}" in "${2}"*) return 3;; esac
-	case "${2}" in "${1}"*) return 1;; esac
+	# 完全に一致する場合は即座に終了 (EQ)
+	case "${1}" in
+		"${2}") return 2;;
+		"${2}"*) return 3;;
+	esac
 
-	# 窓幅パターン（?????????）を準備
-	eval "Q_q=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
-	# $1: qm, $2: lhs, $3: rhs
-	set -- "${Q_q}" "${1}" "${2}"
-	unset Q_q
+	case "${2}" in "${1}"*)
+		return 1
+	esac
 
 	# 両方の文字列が窓幅以上の間、チャンクごとに比較
-	while M_STR_MATCH([|"${2}"|], [|${1}?*|]) && M_STR_MATCH([|"${3}"|], [|${1}?*|]); do
-		set -- "${1}" "${2#${1}}" "${3#${1}}" "${2}" "${3}"
-		__sx_num_cmp_arith_digit "${4%"${2}"}" "${5%"${3}"}" || case "${?}" in
+	while M_STR_MATCH([|"${1}"|], [|${SX_SYS_NUM_QM}?*|]) && M_STR_MATCH([|"${2}"|], [|${SX_SYS_NUM_QM}?*|]); do
+		set -- "${1#${SX_SYS_NUM_QM}}" "${2#${SX_SYS_NUM_QM}}" "${1}" "${2}"
+		__sx_num_cmp_arith_digit "${3%"${1}"}" "${4%"${2}"}" || case "${?}" in
 			1 | 3) return "${?}";;
 		esac
 	done
 
 	# 接頭辞の関係にない（＝どこかの桁で異なる）残りの部分をパディングして最後の比較
-	eval "Q_z=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
-	set -- "${1}" "${2}${Q_z}" "${3}${Q_z}"
-	unset CLEANUP
+	set -- "${1}${SX_SYS_NUM_ZR}" "${2}${SX_SYS_NUM_ZR}"
 
-	__sx_num_cmp_arith_digit "${2%"${2#${1}}"}" "${3%"${3#${1}}"}" || return "${?}"
+	__sx_num_cmp_arith_digit "${1%"${1#${SX_SYS_NUM_QM}}"}" "${2%"${2#${SX_SYS_NUM_QM}}"}" || return "${?}"
 }
 |], [|num_cmp_fixed_frac|])dnl
 
@@ -5560,10 +5592,8 @@ __sx_num_cmp_nat0() {
 	Q_r="${#2}"
 
 	case "${Q_l}" in "${Q_r}")
-		eval "Q_qm=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\""
-
-		while M_STR_MATCH([|"${1}"|], [|${Q_qm}?*|]); do
-			set -- "${1#${Q_qm}}" "${2#${Q_qm}}" "${1}" "${2}"
+		while M_STR_MATCH([|"${1}"|], [|${SX_SYS_NUM_QM}?*|]); do
+			set -- "${1#${SX_SYS_NUM_QM}}" "${2#${SX_SYS_NUM_QM}}" "${1}" "${2}"
 			__sx_num_cmp_arith "1${3%"${1}"}" "1${4%"${2}"}" || case "${?}" in 1 | 3)
 				set -- "${?}"
 				unset CLEANUP
@@ -7844,10 +7874,8 @@ __sx_num_mul_nat0() {
 		set --
 	esac
 
-	eval "Q_qm=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" Q_wlen_mul=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" Q_max_ops=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
-
 	# safe_: 分割探索式の (len + (x - 1)) が INT_MAX を超えないための上限
-	Q_safe=$((Q_max_ops - Q_wlen_mul + 2))
+	Q_safe=$((SX_SYS_NUM_MAX - SX_SYS_NUM_WLEN + 2))
 
 	for Q_b in "${@}"; do
 		case "${Q_b}" in 0)
@@ -7858,7 +7886,7 @@ __sx_num_mul_nat0() {
 
 		# 高速パス: 両因数が1語に収まればシェル算術で直接乗算
 		case "${Q_a}${Q_b}" in
-			${Q_qm}?*) ;;
+			${SX_SYS_NUM_QM}?*) ;;
 			*)
 				M_NUM_AMP([|Q_a|], [|Q_b|])
 				continue
@@ -7882,7 +7910,7 @@ __sx_num_mul_nat0() {
 		case "${Q_a}:${Q_b}" in
 			1:*) Q_a="${Q_b}";&
 			*:1) ! :;;
-			${Q_qm}??*) ;;
+			${SX_SYS_NUM_QM}??*) ;;
 			*) ! M_NUM_AMP([|Q_a|], [|Q_b|])
 		esac || continue
 
@@ -7908,13 +7936,13 @@ __sx_num_mul_nat0() {
 		# 安全: 桁数が算術展開可能な範囲内 → 全分割点を探索
 		# 危険: 桁数が算術展開不能 or 範囲超過 → 均等分割にフォールバック
 		if M_NUM_BOOL([|Q_fit && Q_a_len <= Q_safe && Q_b_len <= Q_safe|]); then
-			Q_max_x=$((Q_b_len < Q_wlen_mul ? Q_b_len : Q_wlen_mul - 1))
-			Q_min_ops="${Q_max_ops}"
+			Q_max_x=$((Q_b_len < SX_SYS_NUM_WLEN ? Q_b_len : SX_SYS_NUM_WLEN - 1))
+			Q_min_ops="${SX_SYS_NUM_MAX}"
 			Q_opt_x=1
 			Q_x=1
 
 			while M_NUM_LE([|Q_x|], [|Q_max_x|]); do
-				Q_y=$((Q_wlen_mul - Q_x))
+				Q_y=$((SX_SYS_NUM_WLEN - Q_x))
 				Q_ops=$((((Q_b_len + (Q_x - 1)) / Q_x) * ((Q_a_len + (Q_y - 1)) / Q_y)))
 
 				case "$((Q_ops < Q_min_ops))" in 1)
@@ -7925,11 +7953,11 @@ __sx_num_mul_nat0() {
 				M_NUM_INCR([|Q_x|])
 			done
 		else
-			Q_opt_x=$(((Q_wlen_mul + 1) / 2))
+			Q_opt_x=$(((SX_SYS_NUM_WLEN + 1) / 2))
 		fi
 
 		# 最適分割サイズに基づきチャンク用 QM/ZR をロード
-		Q_opt_y=$((Q_wlen_mul - Q_opt_x))
+		Q_opt_y=$((SX_SYS_NUM_WLEN - Q_opt_x))
 
 		eval "Q_qchunk_a=\"\${SX_NUM_QM_${Q_opt_y}}\" \
 		      Q_zchunk_a=\"\${SX_NUM_ZR_${Q_opt_y}}\" \

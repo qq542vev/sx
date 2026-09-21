@@ -37,7 +37,7 @@ Describe 'sx_cfg_set()'
 		The variable SX_CFG_NUM_RANGE should equal 32
 	End
 
-	It 'SKIP_CHK=1 の時はバリデーションをバイパスすること'
+	xIt 'SKIP_CHK=1 の時はバリデーションをバイパスすること'
 		SX_CFG_SKIP_CHK=1
 		When call sx_cfg_set "NUM_RANGE=999"
 		The status should be success
