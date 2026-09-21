@@ -4849,7 +4849,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 __sx_var_touch() {
 	for Q_arg in "${@}"; do
 		eval "${Q_arg}=\"\${${Q_arg}:+\"\${${Q_arg}%:*}\"}:\${SX_SYS_REV}\""
-		M_NUM_INCR([|SX_SYS_REV|])
+		M_NUM_INCRM1([|SX_SYS_REV|])
 	done
 
 	unset CLEANUP
@@ -6230,7 +6230,7 @@ __sx_num_divmod_nat0() {
 				break
 			esac
 
-			__sx_num_add_nat0 Q_n "${Q_n}" 1
+			M_NUM_INCRM1([|Q_n|])
 
 			continue
 		do :; done
@@ -6469,7 +6469,7 @@ M_RENAME_QI([|dnl
 ##   - r0 = 0 のとき: q = sign(u)×sign(v)×q0、r = 0
 ##   - r0 ≠ 0 かつ u ≥ 0 のとき: q = ±q0（v < 0 なら負）、r = r0
 ##   - r0 ≠ 0 かつ u < 0 のとき: q = ±(q0 + 1)（v < 0 なら正）、r = |v| - r0
-##   q0 + 1 は __sx_num_add_nat0、|v| - r0 は __sx_num_sub_nat0 で算出し、
+##   q0 + 1 は __sx_num_add1_nat0、|v| - r0 は __sx_num_sub_nat0 で算出し、
 ##   ネイティブ算術幅を超えても多倍長のまま正しく補正する。
 
 define([|CLEANUP|], [|Q_bind Q_q Q_r Q_us Q_vs|])dnl
@@ -6492,7 +6492,7 @@ __sx_num_edivmod_int() {
 
 	case "${Q_q}:${Q_r}:${Q_us}${Q_vs}" in
 		*:[!0]*:1?)
-			__sx_num_add_nat0 Q_q "${Q_q}" 1
+			M_NUM_INCRM1([|Q_q|])
 
 			case "${Q_vs}" in 0)
 				M_STR_PREPEND([|Q_q|], [|-|])
