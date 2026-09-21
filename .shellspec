@@ -1,5 +1,4 @@
 --shell sh
 --warning-as-failure
 --require spec_helper
---format documentation
 --random specfiles

@@ -5194,12 +5194,11 @@ M_RENAME_QI([|dnl
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 ##   逐次方式でアキュムレータに各数値を順次加算する。
 
-define([|CLEANUP|], [|Q_res Q_qm Q_carry Q_out Q_rem1 Q_rem2 Q_ch1 Q_ch2 Q_tmp Q_b|])dnl
+define([|CLEANUP|], [|Q_res Q_carry Q_out Q_rem1 Q_rem2 Q_ch1 Q_ch2 Q_tmp|])dnl
 
 __sx_num_add_nat0() {
 	Q_res="${1}"
 	Q_rem1="${2-0}"
-	Q_b="1${SX_SYS_NUM_ZR}"
 
 	shift "$((1 + 0${2+1}))"
 
@@ -5225,7 +5224,7 @@ __sx_num_add_nat0() {
 					Q_rem1="${Q_tmp}"
 
 					case "${Q_ch1}" in 0*)
-						Q_ch1=$((1${Q_ch1} - Q_b))
+						Q_ch1=$((1${Q_ch1} - 1${SX_SYS_NUM_ZR}))
 					esac
 					;;
 				*)
@@ -5242,7 +5241,7 @@ __sx_num_add_nat0() {
 					Q_rem2="${Q_tmp}"
 
 					case "${Q_ch2}" in 0*)
-						Q_ch2=$((1${Q_ch2} - Q_b))
+						Q_ch2=$((1${Q_ch2} - 1${SX_SYS_NUM_ZR}))
 					esac
 					;;
 				*)
@@ -5252,7 +5251,7 @@ __sx_num_add_nat0() {
 			esac
 
 			Q_tmp=$(( Q_ch1 + Q_ch2 + Q_carry ))
-			Q_carry=$(( Q_b <= Q_tmp ))
+			Q_carry=$((1${SX_SYS_NUM_ZR} <= Q_tmp))
 
 			case "${Q_carry}:${Q_rem1}:${Q_rem2}" in
 				?::) Q_rem1="${Q_tmp}${Q_out}" && break;;
@@ -5261,7 +5260,7 @@ __sx_num_add_nat0() {
 						${SX_SYS_NUM_QM}) M_STR_APPEND([|Q_rem1|], [|"${Q_rem2}${Q_tmp}${Q_out}"|]);;
 						*)
 							# ゼロ埋めして前置（片方のチャンクが先頭ゼロ除去で短くなった場合の桁揃え）
-							M_NUM_INCR([|Q_tmp|], [|Q_b|])
+							M_NUM_INCR([|Q_tmp|], [|1${SX_SYS_NUM_ZR}|])
 							M_STR_APPEND([|Q_rem1|], [|"${Q_rem2}${Q_tmp#1}${Q_out}"|])
 							;;
 						esac
@@ -5273,7 +5272,7 @@ __sx_num_add_nat0() {
 						${SX_SYS_NUM_QM}) M_STR_PREPEND([|Q_out|], [|"${Q_tmp}"|]);;
 						*)
 							# ゼロ埋めして前置
-							M_NUM_INCR([|Q_tmp|], [|Q_b|])
+							M_NUM_INCR([|Q_tmp|], [|1${SX_SYS_NUM_ZR}|])
 							M_STR_PREPEND([|Q_out|], [|"${Q_tmp#1}"|])
 							;;
 					esac
@@ -6003,7 +6002,7 @@ sx_num_divmod_nat0() {
 ##   c = WLEN/2 より 10^(2c) は SX_CFG_NUM_RANGE の算術幅内に収まる。
 
 define([|V|], [|__sx_num_divmod_nat0_$1_|])dnl
-define([|CLEANUP|], [|V(tmp) V(bind) V(u) V(v) V(wlen) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(n) V(chunk) V(q) V(r) V(t) V(top2) V(qhat) V(rhat) V(uw) V(p) V(carry) V(ck) V(ut) V(new) V(zv) V(btail) V(vstr) V(v1) V(v2)|])dnl
+define([|CLEANUP|], [|V(tmp) V(bind) V(u) V(v) V(c) V(b) V(qm) V(zr) V(d) V(qmd) V(n) V(chunk) V(q) V(r) V(t) V(top2) V(qhat) V(rhat) V(uw) V(p) V(carry) V(ck) V(ut) V(new) V(zv) V(btail) V(vstr) V(v1) V(v2)|])dnl
 
 __sx_num_divmod_nat0() {
 	# ステップ 1: 引数の取得（バインド形式と、被除数 u・除数 v の値）
@@ -6040,8 +6039,6 @@ __sx_num_divmod_nat0() {
 			return M_EX_OK
 		}
 	else
-		eval "__sx_num_divmod_nat0_wlen_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_WLEN}\" __sx_num_divmod_nat0_zr_=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
-
 		# ステップ 4: 末尾ゼロ分解（v = m × 10^k に分解して両者を 10^k で縮小する）
 		#   数式: q = (u ÷ 10^k) ÷ m、r = ((u ÷ 10^k) mod m) × 10^k + (u mod 10^k)
 		#   商は変化せず、余りには縮小で取り除いた u の下位 k 桁（btail）を最後に復元する。
@@ -6052,7 +6049,7 @@ __sx_num_divmod_nat0() {
 		#     kz は fit_dec によりネイティブ演算の桁数上限に制限される。
 		__sx_num_divmod_nat0_btail_=
 
-		case "${__sx_num_divmod_nat0_v_}" in *0${__sx_num_divmod_nat0_zr_})
+		case "${__sx_num_divmod_nat0_v_}" in *0${SX_SYS_NUM_ZR})
 			__sx_num_divmod_nat0_zv_="${__sx_num_divmod_nat0_v_##*[!0]}"
 			__sx_num_divmod_nat0_tmp_="${#__sx_num_divmod_nat0_zv_}"
 
@@ -6090,14 +6087,14 @@ __sx_num_divmod_nat0() {
 		#   商文字列の連結コスト（O(len(q)^2)）が増え、被除数が長い場合は Knuth D 法に
 		#   逆転される（実測では c = 2 で ulen ~ 500 付近から逆転）ため安全マージンを確保する。
 		__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${__sx_num_divmod_nat0_v_}" &&
-		M_NUM_LE([|${#__sx_num_divmod_nat0_v_}|], [|(__sx_num_divmod_nat0_wlen_ - 1) * 9 / 10|])
+		M_NUM_LE([|${#__sx_num_divmod_nat0_v_}|], [|(SX_SYS_NUM_WLEN - 1) * 9 / 10|])
 	then
 		# v の桁数 s に応じて語幅を c = WLEN - s へ拡大する。
 		# 余り r は常に r < v なので、1 反復で取る u の桁を s のぶんだけ増やしても
 		# nv = r * 10^c + chunk < 10^WLEN が保たれ、ネイティブ演算に収まる。
 		__sx_num_divmod_nat0_q_=
 		__sx_num_divmod_nat0_r_=0
-		__sx_num_divmod_nat0_c_=$((__sx_num_divmod_nat0_wlen_ - ${#__sx_num_divmod_nat0_v_}))
+		__sx_num_divmod_nat0_c_=$((SX_SYS_NUM_WLEN - ${#__sx_num_divmod_nat0_v_}))
 
 		eval "__sx_num_divmod_nat0_qm_=\"\${SX_NUM_QM_${__sx_num_divmod_nat0_c_}}\" __sx_num_divmod_nat0_b_=\"1\${SX_NUM_ZR_${__sx_num_divmod_nat0_c_}}\""
 
@@ -6164,7 +6161,7 @@ __sx_num_divmod_nat0() {
 			esac
 	else
 		# 語サイズ c の決定
-		__sx_num_divmod_nat0_c_=$((__sx_num_divmod_nat0_wlen_ / 2))
+		__sx_num_divmod_nat0_c_=$((SX_SYS_NUM_WLEN / 2))
 		eval "__sx_num_divmod_nat0_qm_=\"\${SX_NUM_QM_${__sx_num_divmod_nat0_c_}}\" __sx_num_divmod_nat0_zr_=\"\${SX_NUM_ZR_${__sx_num_divmod_nat0_c_}}\""
 		__sx_num_divmod_nat0_b_="1${__sx_num_divmod_nat0_zr_}"
 		# ステップ 7: 一般パス — 融合 Knuth D 法（u > v、u は 19 桁以上、v は 2 語以上）
@@ -8689,7 +8686,7 @@ M_RENAME_QI([|dnl
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 ##   被減数 >= 減数 が保証されていること。
 
-define([|CLEANUP|], [|Q_res Q_qm Q_borrow Q_out Q_rem1 Q_rem2 Q_ch1 Q_ch2 Q_tmp Q_b|])dnl
+define([|CLEANUP|], [|Q_res Q_borrow Q_out Q_rem1 Q_rem2 Q_ch1 Q_ch2 Q_tmp|])dnl
 
 __sx_num_sub_nat0() {
 	Q_res="${1}"
@@ -8698,17 +8695,15 @@ __sx_num_sub_nat0() {
 	Q_borrow=0
 	Q_out=
 
-	eval "Q_qm=\"\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_QM}\" Q_b=\"1\${SX_NUM_RANGE_${SX_CFG_NUM_RANGE}_ZR}\""
-
 	while
 		case "${Q_rem1}" in
-			${Q_qm}?*)
-				Q_tmp="${Q_rem1%${Q_qm}}"
+			${SX_SYS_NUM_QM}?*)
+				Q_tmp="${Q_rem1%${SX_SYS_NUM_QM}}"
 				Q_ch1="${Q_rem1#"${Q_tmp}"}"
 				Q_rem1="${Q_tmp}"
 
 				case "${Q_ch1}" in 0*)
-					Q_ch1=$((1${Q_ch1} - Q_b))
+					Q_ch1=$((1${Q_ch1} - 1${SX_SYS_NUM_ZR}))
 				esac
 				;;
 			*)
@@ -8718,13 +8713,13 @@ __sx_num_sub_nat0() {
 		esac
 
 		case "${Q_rem2}" in
-			${Q_qm}?*)
-				Q_tmp="${Q_rem2%${Q_qm}}"
+			${SX_SYS_NUM_QM}?*)
+				Q_tmp="${Q_rem2%${SX_SYS_NUM_QM}}"
 				Q_ch2="${Q_rem2#"${Q_tmp}"}"
 				Q_rem2="${Q_tmp}"
 
 				case "${Q_ch2}" in 0*)
-					Q_ch2=$((1${Q_ch2} - Q_b))
+					Q_ch2=$((1${Q_ch2} - 1${SX_SYS_NUM_ZR}))
 				esac
 				;;
 			*)
@@ -8747,22 +8742,22 @@ __sx_num_sub_nat0() {
 				;;
 			0:*:)
 				case "${Q_tmp}" in
-					${Q_qm}*) M_STR_PREPEND([|Q_out|], [|"${Q_rem1}${Q_tmp}"|]);;
+					${SX_SYS_NUM_QM}*) M_STR_PREPEND([|Q_out|], [|"${Q_rem1}${Q_tmp}"|]);;
 					*)
 						# rem2 のみ枯渇、rem1 に未処理チャンクあり → ゼロ埋めして桁揃え
-						M_NUM_INCR([|Q_tmp|], [|Q_b|])
+						M_NUM_INCR([|Q_tmp|], [|1${SX_SYS_NUM_ZR}|])
 						M_STR_PREPEND([|Q_out|], [|"${Q_rem1}${Q_tmp#1}"|])
 						;;
 				esac
 
 				break
 				;;
-			1:*) M_NUM_INCR([|Q_tmp|], [|Q_b|]);&
+			1:*) M_NUM_INCR([|Q_tmp|], [|1${SX_SYS_NUM_ZR}|]);&
 			*)
 				case "${Q_tmp}" in
-					${Q_qm}*) M_STR_PREPEND([|Q_out|], [|"${Q_tmp}"|]);;
+					${SX_SYS_NUM_QM}*) M_STR_PREPEND([|Q_out|], [|"${Q_tmp}"|]);;
 					*)
-						M_NUM_INCR([|Q_tmp|], [|Q_b|])
+						M_NUM_INCR([|Q_tmp|], [|1${SX_SYS_NUM_ZR}|])
 						M_STR_PREPEND([|Q_out|], [|"${Q_tmp#1}"|])
 						;;
 				esac
