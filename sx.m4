@@ -1081,7 +1081,7 @@ sx_arg_count() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}" | "${3+X${3}}") ;;
@@ -1531,7 +1531,7 @@ sx_arg_fold() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_arg_fold "${@}" || return
 }
@@ -2051,7 +2051,7 @@ sx_arg_join() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_arg_join "${@}"
 }
@@ -2104,7 +2104,7 @@ sx_arg_len() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_arg_len "${@}"
 }
@@ -2708,7 +2708,7 @@ sx_arg_range() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe "${2-}" ${3+"${3}"} ${4+"${4}"} || return M_EX_USAGE
 
@@ -2963,7 +2963,7 @@ sx_arg_rfold() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_arg_rfold "${@}" || return
 }
@@ -5071,7 +5071,7 @@ sx_num_add_int() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
@@ -5162,7 +5162,7 @@ sx_num_add_nat0() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
@@ -5309,7 +5309,7 @@ sx_num_add1_nat0() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_base 10 "${2-}" || return M_EX_USAGE
 
@@ -5643,7 +5643,7 @@ sx_num_div_int() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
@@ -5732,7 +5732,7 @@ sx_num_div_nat0() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
@@ -7742,7 +7742,7 @@ sx_num_mul_int() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
@@ -7828,7 +7828,7 @@ sx_num_mul_nat0() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
@@ -8074,7 +8074,7 @@ sx_num_max() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
@@ -8151,7 +8151,7 @@ sx_num_min() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
@@ -8547,7 +8547,7 @@ sx_num_sub_int() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
@@ -8651,7 +8651,7 @@ sx_num_sub_nat0() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
@@ -8794,7 +8794,7 @@ sx_num_sub1_nat0() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat1_base 10 "${2-}" || return M_EX_USAGE
 
@@ -8940,7 +8940,7 @@ sx_str_camel() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -9000,7 +9000,7 @@ sx_str_capital() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -9071,7 +9071,7 @@ sx_str_center() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${#4}"} ${5+"${#5}"} || return M_EX_DATAERR
 
@@ -9303,7 +9303,7 @@ sx_str_count() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -9354,7 +9354,7 @@ sx_str_cycle() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -9447,7 +9447,7 @@ sx_str_escape() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -9514,7 +9514,7 @@ sx_str_etrim() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -10264,7 +10264,7 @@ sx_str_lower() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -10372,7 +10372,7 @@ sx_str_pad() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${#4}"} || return M_EX_DATAERR
 
@@ -10447,7 +10447,7 @@ sx_str_pascal() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -10549,7 +10549,7 @@ sx_str_rep() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -10668,7 +10668,7 @@ sx_str_rev() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -10869,7 +10869,7 @@ sx_str_rot() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -10926,7 +10926,7 @@ sx_str_splice() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -11251,7 +11251,7 @@ sx_str_squish() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -11314,7 +11314,7 @@ sx_str_strim() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -11605,7 +11605,7 @@ sx_str_substr() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -11727,7 +11727,7 @@ sx_str_swapcase() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -11771,7 +11771,7 @@ sx_str_title() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -11950,7 +11950,7 @@ sx_str_trim() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -12004,7 +12004,7 @@ sx_str_upper() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -12078,7 +12078,7 @@ sx_str_words() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
@@ -12159,7 +12159,7 @@ sx_glob_bracket() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 	case "${2-}" in '')
 		return M_EX_USAGE
 	esac
@@ -12241,7 +12241,7 @@ sx_glob_escape() {
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
-	__sx_var_is_rw "${1-}" || return M_EX_NOPERM
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_glob_escape "${@}" || return
 }
