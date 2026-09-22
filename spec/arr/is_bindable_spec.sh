@@ -89,6 +89,16 @@ Describe 'sx_arr_is_bindable'
     The status should equal 64
   End
 
+  It '@ を含むバインド形式に対して EX_USAGE (64) を返すこと'
+    When call sx_arr_is_bindable "x:@arr"
+    The status should equal 64
+  End
+
+  It 'bare @name に対して EX_USAGE (64) を返すこと'
+    When call sx_arr_is_bindable "@arr"
+    The status should equal 64
+  End
+
   It '複数バインド形式のすべてが書き込み可能な場合に成功を返すこと'
     a=1 b=2
     When call sx_arr_is_bindable "a" "b"

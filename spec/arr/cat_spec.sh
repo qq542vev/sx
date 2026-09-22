@@ -120,9 +120,9 @@ Describe 'sx_arr_cat'
   End
 
   Describe '空源と切り詰め'
-    It '引数が0個の場合に成功すること'
+    It '引数が0個の場合に 64 を返すこと'
       When call sx_arr_cat
-      The status should be success
+      The status should equal 64
     End
 
     It '源配列が無い場合に空配列を生成すること'
@@ -200,6 +200,13 @@ Describe 'sx_arr_cat'
       sx_arr_gen a1 a b
 
       When call sx_arr_cat "0a" a1
+      The status should equal 64
+    End
+
+    It '@ を含むバインド形式の場合に 64 を返すこと'
+      sx_arr_gen a1 a b
+
+      When call sx_arr_cat "x:@arr" a1
       The status should equal 64
     End
 

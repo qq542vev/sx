@@ -159,6 +159,13 @@ Describe 'sx_arr_pop'
       The status should equal 64
     End
 
+    It '@ を含む bind の場合に 64 を返すこと'
+      sx_arr_gen myarr a b
+
+      When call sx_arr_pop "x:@arr:" myarr
+      The status should equal 64
+    End
+
     It '配列名が未指定の場合に 64 を返すこと'
       sx_arr_gen myarr a b
 

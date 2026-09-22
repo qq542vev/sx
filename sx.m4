@@ -4042,6 +4042,129 @@ __sx_var_is_ebind() {
 }
 |], [|var_is_ebind|])dnl
 
+### sx_var_to_ebind - bind形式を拡張bind形式に変換する
+##
+## 使い方:
+##   sx_var_to_ebind 結果変数名 bind形式
+##
+## 説明:
+##   bind形式（sx_var_is_bind 参照）を拡張bind形式（sx_var_is_ebind 参照）の
+##   初期状態（進行度0）に変換し、結果変数に格納する。
+##   中間の N / Nvn / N@vn は 0/N 形式に、同名の再利用は合算して M/N 形式にする。
+##   末尾の素 vn / @vn は M/vn / M/@vn 形式の rest に変換する。
+##   例: 2:3a:b:9@c:2a:2d::d -> 0/2:0/3a:b:0/9@c:3/5a:0/2d::2/d
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正、bind形式が不正 (SX_EX_USAGE)
+##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_var_to_ebind() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_to_ebind "${@}" || return; return 0;; esac
+
+	case "${#}" in 2) ;; *) return M_EX_USAGE;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	__sx_var_is_bind "${2-}" || return M_EX_USAGE
+
+	__sx_var_to_ebind "${@}"
+}
+
+M_RENAME_QI([|dnl
+### __sx_var_to_ebind - bind形式を拡張bind形式に変換する（内部用）
+##
+## 使い方:
+##   __sx_var_to_ebind 結果変数名 bind形式
+##
+## 説明:
+##   sx_var_to_ebind の内部実装。
+##   内部実装。引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_res Q_bind Q_out Q_mark Q_seg Q_n Q_vn Q_prior Q_e|])dnl
+
+__sx_var_to_ebind() {
+	# 残り入力・出力バッファ・動的合算値の後始末リストを初期化する。
+	# 動的合算値は変数ごとに作る（初出0、2回目以降は前回までの合計）。
+	Q_res="${1}"
+	Q_bind="${2-}"
+	Q_out=
+	Q_mark=
+
+	# bindを先頭から1セグメントずつ切り出してebind片へ直す。
+	# コロンの数を保存するため、空セグメントも1件として扱う。
+	while
+		# セグメント分割: コロンが残っていれば中間、なければ末尾。
+		Q_seg="${Q_bind%%:*}"
+
+		# セグメント別の変換則:
+		#   空     -> 空のまま（1件スキップ）
+		#   N      -> 0/N（N件スキップ）
+		#   Nvn    -> Prior/Total+vn（同名は合算、初回は 0/N+vn）
+		#   N@vn   -> Prior/Total@vn（配列版の合算）
+		#   @vn    -> Prior/@vn（末尾の配列rest）
+		#   素vn   -> 中間はそのまま、末尾は Prior/vn のrest化
+		case "${Q_seg}" in
+			'') Q_e=;;
+			[1-9]*)
+				# 先頭数字を個数、その残りを宛先に分ける。
+				Q_n="${Q_seg%%[!0-9]*}"
+				Q_vn="${Q_seg#"${Q_n}"}"
+
+				case "${Q_vn}" in
+					# 素の数値は型なしスキップなので合算不要。
+					'') Q_e="0/${Q_n}";;
+					@*)
+						# 配列の制限付き取り分。同じ配列名の合計を積み上げる。
+						Q_vn="${Q_vn#@}"
+						eval "Q_prior=\"\${Q_s${Q_vn}_-0}\""
+						__sx_num_add_nat0 "Q_s${Q_vn}_" "${Q_prior}" "${Q_n}"
+						eval "Q_e=\"\${Q_prior}/\${Q_s${Q_vn}_}@\${Q_vn}\""
+						M_STR_APPEND([|Q_mark|], [|"Q_s${Q_vn}_ "|])
+						;;
+					*)
+						# 通常変数の制限付き取り分。例: 3a,2a -> 0/3a,3/5a。
+						eval "Q_prior=\"\${Q_s${Q_vn}_-0}\""
+						__sx_num_add_nat0 "Q_s${Q_vn}_" "${Q_prior}" "${Q_n}"
+						eval "Q_e=\"\${Q_prior}/\${Q_s${Q_vn}_}\${Q_vn}\""
+						M_STR_APPEND([|Q_mark|], [|"Q_s${Q_vn}_ "|])
+						;;
+				esac
+				;;
+			# 末尾の配列rest。ここまでの同名合計を分子に載せる。
+			@*) eval "Q_e=\"\${Q_s${Q_seg#@}_-0}/${Q_seg}\"";;
+			*)
+				case "${Q_bind}" in
+					# 中間の素変数は1件代入なので書き換えない。
+					*:*) Q_e="${Q_seg}";;
+					# 末尾の素変数は残り全部のrestなので M/vn 化する。
+					*) eval "Q_e=\"\${Q_s${Q_seg}_-0}/\${Q_seg}\"";;
+				esac
+				;;
+		esac
+
+		# 変換片をコロン区切りで積む。末尾に毎回 : を付けておく。
+		M_STR_APPEND([|Q_out|], [|"${Q_e}:"|])
+
+		case "${Q_bind}" in *:*)
+			Q_bind="${Q_bind#*:}"
+			continue
+		esac
+
+		break
+	do :; done
+
+	# 積み上げ時に付けた余分な末尾 : を1つ落として確定させる。
+	M_VAR_SET([|${Q_res}|], [|${Q_out%:}|])
+
+	eval unset CLEANUP "${Q_mark}"
+}
+|], [|var_to_ebind|])dnl
+
 ### sx_var_is_empty - 変数が設定されており、かつ空か確認する
 ##
 ## 使い方:
@@ -12450,6 +12573,57 @@ __sx_arr_gen() {
 	SX_CFG_ARR_UPDATE=1 __sx_arr_push "${@}"
 }
 
+### sx_arr_is_bind - 文字列が配列分配用バインド形式として有効か確認する
+##
+## 使い方:
+##   sx_arr_is_bind [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   引数で指定されたすべての文字列が、配列分配用バインド形式として有効かを確認する。
+##   sx_var_is_bind の検査に加え、`@` を含む形式を拒否する。
+##
+## 終了ステータス:
+##    0  すべて有効な形式である (SX_EX_OK)
+##    1  無効な形式が含まれる
+sx_arr_is_bind() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_bind "${@}" || return; return 0;; esac
+
+	__sx_arr_is_bind "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+### __sx_arr_is_bind - 文字列が配列分配用バインド形式として有効か確認する（内部用）
+##
+## 使い方:
+##   __sx_arr_is_bind [文字列1 [文字列2 ...]]
+##
+## 説明:
+##   sx_arr_is_bind の内部実装。引数チェックは行わない。
+##   sx_var_is_bind の検査に加え、`@` を含む形式を拒否する。
+##
+## 終了ステータス:
+##    0  すべて有効な形式である
+##    1  無効な形式が含まれる
+
+define([|CLEANUP|], [|Q_arg|])dnl
+
+__sx_arr_is_bind() {
+	__sx_var_is_bind "${@}" || {
+		unset CLEANUP
+		return 1
+	}
+
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in *@*)
+			unset CLEANUP
+			return 1
+		esac
+	done
+
+	unset CLEANUP
+}
+|], [|arr_is_bind|])dnl
+
 ### sx_arr_is_bindable - バインド形式が有効であり、かつ配列を含む全変数が書き込み可能か確認する
 ##
 ## 使い方:
@@ -12461,6 +12635,7 @@ __sx_arr_gen() {
 ##   数値プレフィックス（N名前）を含むセグメントは配列とみなし、
 ##   name_len の書き込み可否も検査する。
 ##   最終セグメントは「残り全て」として配列扱いし、name_len の検査を行う。
+##   `@` を含む形式は配列分配用として無効である（sx_arr_is_bind 参照）。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -12472,7 +12647,7 @@ sx_arr_is_bindable() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${@}" || return M_EX_USAGE
+	__sx_arr_is_bind "${@}" || return M_EX_USAGE
 
 	__sx_arr_is_bindable "${@}"
 }
@@ -12667,7 +12842,8 @@ M_RENAME_Q([|dnl
 ## 説明:
 ##   指定された sx 配列（arr1, arr2, ...）の全要素を順方向に連結した要素ストリームを生成する
 ##   （cat = concatenate）。
-##   分配先をバインド形式（sx_var_is_bind 参照。例: x, 2a:x, a:10b:3c:1d:e）で指定できる。
+##   分配先をバインド形式（sx_arr_is_bind 参照。例: x, 2a:x, a:10b:3c:1d:e）で指定できる。
+##   `@` を含む形式は無効である。bind の省略は不可であり、引数なしは引数不正となる。
 ##   これは拡張機能で、連結したストリームをどの変数群へ割り当てるかを選ぶだけのもの
 ##   （単一の末尾セグメント（x 等）なら純粋な連結になる）。他の sx_arr_* 関数にも導入される
 ##   共通オプションである。
@@ -12702,12 +12878,12 @@ sx_arr_cat() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind ${1+"${1}"} || return M_EX_USAGE
+	__sx_arr_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_arr_is_bindable ${1+"${1}"} || return M_EX_NOPERM
+	__sx_arr_is_bindable "${1}" || return M_EX_NOPERM
 
-	Q_bind="${1-}"
-	shift "$((0${1+1}))"
+	Q_bind="${1}"
+	shift
 
 	sx_var_is_name "${@}" || {
 		unset CLEANUP
@@ -12737,10 +12913,10 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_arr Q_len Q_i Q_blk|])dnl
 
 __sx_arr_cat() {
-	Q_bind="${1-}"
-	Q_borg="${1-}"
+	Q_bind="${1}"
+	Q_borg="${1}"
 	Q_chain=
-	shift "$((0${1+1}))"
+	shift
 
 	# 1) 要素ストリームを1つずつ __sx_arr_bind で処理し、chain を構築する（読み取りのみ）
 	for Q_arr in "${@}"; do
@@ -12850,6 +13026,7 @@ M_RENAME_Q([|dnl
 ##   取り出して割り当てる（または破棄する）拡張 pop。
 ##   bind は固定スロット形式であり、各セグメントの末尾に「:」を付けて指定する
 ##   （例: x: はスカラー x へ 1 個、2v: は配列 v へ 2 個、1: は 1 個を破棄）。
+##   bind に `@` を含む形式は無効である（sx_arr_is_bind 参照）。
 ##   合計スロット数は各セグメントの個数の合計であり、元配列の要素数を超える
 ##   場合は一切書き込まずに 1 を返す（トランザクション）。
 ##
@@ -12884,9 +13061,9 @@ sx_arr_pop() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_var_is_bind ${1+"${1}"} || return M_EX_USAGE
+	__sx_arr_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_arr_is_bindable ${1+"${1}"} || return M_EX_NOPERM
+	__sx_arr_is_bindable "${1}" || return M_EX_NOPERM
 
 	sx_var_is_name "${2-}" || return M_EX_USAGE
 

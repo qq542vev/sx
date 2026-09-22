@@ -2,9 +2,9 @@ Describe 'sx_arr_cat -efu 環境検証'
   Include ./sx.sh
 
   Describe '単一の末尾配列へ連結'
-    It '引数が0個の場合は成功する'
+    It '引数が0個の場合は 64 を返す'
       When run efu_run sx_arr_cat
-      The status should be success
+      The status should equal 64
     End
 
     It '複数の配列を連結する'
@@ -90,6 +90,12 @@ Describe 'sx_arr_cat -efu 環境検証'
     It 'バインド形式が不正な場合は 64 を返す'
       sx_arr_gen a1 a b
       When run efu_run sx_arr_cat "2b" a1
+      The status should equal 64
+    End
+
+    It '@ を含むバインド形式の場合は 64 を返す'
+      sx_arr_gen a1 a b
+      When run efu_run sx_arr_cat "x:@arr" a1
       The status should equal 64
     End
 
