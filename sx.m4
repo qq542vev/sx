@@ -3656,7 +3656,7 @@ __sx_var_is_bind() {
 			Q_vn=
 
 			case "${Q_seg}" in
-				*["${SX_STR_SWORD}"]*@*)
+				*[!0-9]*@*)
 					eval unset CLEANUP "${Q_mark}"
 					return 1
 					;;
@@ -3972,7 +3972,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_var_is_ebind の内部実装。SX_CFG_NUM_RANGE の妥当性チェックは行わない。
 
-define([|CLEANUP|], [|Q_arg Q_mark Q_seg Q_vn Q_type Q_tmp Q_frac Q_m|])dnl
+define([|CLEANUP|], [|Q_arg Q_mark Q_seg Q_vn Q_type Q_tmp Q_frac|])dnl
 
 __sx_var_is_ebind() {
 	for Q_arg in "${@}"; do
@@ -4007,9 +4007,7 @@ __sx_var_is_ebind() {
 
 					case "${Q_seg}" in
 						@*) Q_vn="${Q_seg#*@}" Q_type=arr;;
-						?*) Q_m="${Q_seg%%[!0-9]*}"
-							Q_vn="${Q_seg#"${Q_m}"}"
-							Q_type=list;;
+						?*) Q_vn="${Q_seg}" Q_type=list;;
 					esac
 					;;
 				[1-9]*)
