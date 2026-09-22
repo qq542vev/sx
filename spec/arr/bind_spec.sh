@@ -24,7 +24,7 @@ Describe 'sx_arr_bind'
 
         It 'カウント指定バインドで chain と残り bind を生成すること'
             unset br cr
-            When call sx_arr_bind br cr "2a:rest" A B C
+            When call sx_arr_bind br cr "0/2a:rest" A B C
             The status should be success
             The variable br should equal "1/rest"
             The variable cr should equal "A-a_0 B-a_1 C-rest_0"
@@ -56,7 +56,7 @@ Describe 'sx_arr_bind'
 
         It '末尾に空セグメントがあるバインドで drop すること'
             unset br cr
-            When call sx_arr_bind br cr "3v:" w1 w2 w3
+            When call sx_arr_bind br cr "0/3v:" w1 w2 w3
             The status should be success
             The variable br should equal ""
             The variable cr should equal "w1-v_0 w2-v_1 w3-v_2"
@@ -82,7 +82,7 @@ Describe 'sx_arr_bind'
 
         It '対象が尽きる前にバインドを消費した場合に 1 を返すこと'
             unset br cr
-            When call sx_arr_bind br cr "3v:" w1 w2 w3 w4
+            When call sx_arr_bind br cr "0/3v:" w1 w2 w3 w4
             The status should equal 1
             The variable br should equal ""
             The variable cr should equal "w1-v_0 w2-v_1 w3-v_2"

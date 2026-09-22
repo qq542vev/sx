@@ -3943,16 +3943,13 @@ __sx_var_is_copyable() {
 ##
 ## 説明:
 ##   引数で指定されたすべての文字列が、拡張バインド形式として有効であるかを確認する。
-##   基本的な構造は sx_var_is_bind と同様だが、数値プレフィックスに
-##   バウンド範囲指定が追加される。
-##   - 中間セグメント: 名前、N名前、裸のカウンタ N、M/N名前（M は 0 以上の自然数、
-##     N は M より大きい自然数）のどれかに一致する。
-##   - 最後のセグメント（rest）: 名前（先頭の要素からすべて）または M/名前
-##     （M 番目の要素からすべて）に一致する。rest は要素数を省略することで
-##     「無限」を表し、カウンタ（分母 N）を指定することはできない。
-##   最後のセグメントは数字で始めることはできない（N名前、M/N は拒否される）。
-##   数値のカウント・M/N の値に上限はない（SX_CFG_NUM_RANGE は設定の妥当性
-##   チェックにのみ使用される）。
+##   vn を変数名、nat1 を [1-9][0-9]*、nat0 を 0|nat1、M を nat0、N を nat1 とし、
+##   seg を M/vn | M/Nvn | M/ | M/N | vn | 空 | M/@vn | M/N@vn、
+##   ebind を seg(:seg)* とする。N が存在する場合は M<N が必須である。
+##   素 vn は中間で scalar、末尾で list、M/vn・M/Nvn は list、
+##   M/@vn・M/N@vn は arr、空・M/・M/N は型なしとなる。
+##   異なる型で同名の変数を2回以上利用するのはエラー（sx_var_is_bind と同様）。
+##   数値に上限はない（SX_CFG_NUM_RANGE は設定の妥当性チェックにのみ使用される）。
 ##
 ## 終了ステータス:
 ##    0  すべて有効な形式である (SX_EX_OK)
@@ -3975,44 +3972,154 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_var_is_ebind の内部実装。SX_CFG_NUM_RANGE の妥当性チェックは行わない。
 
-define([|CLEANUP|], [|Q_arg Q_seg Q_m|])dnl
+define([|CLEANUP|], [|Q_arg Q_mark Q_seg Q_vn Q_type Q_tmp Q_m Q_n Q_rest|])dnl
 
 __sx_var_is_ebind() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in *[!"${SX_STR_WORD}":/]* | 0[!/]* | *:0[!/]* | /* | */ | *:/* | */[!1-9]*:*)
-			unset CLEANUP
+		Q_mark=
+
+		case "${Q_arg}" in *[!":@/${SX_STR_WORD}"]* | 0[!/]* | *:0[!/]* | /* | *[!0-9]/* | *@ | *@[!"${SX_STR_SWORD}"]* | @* | *[!/0-9]@*)
+			eval unset CLEANUP "${Q_mark}"
 			return 1
 		esac
 
-		case "${Q_arg##*:}" in
-			'' | [0-9]*/["${SX_STR_SWORD}"]* | ["${SX_STR_SWORD}"]*) ;;
-			*)
-				unset CLEANUP
-				return 1
-				;;
-		esac
-
-		M_STR_APPEND([|Q_arg|], [|:|])
-
-		while M_STR_MATCH([|"${Q_arg}"|], [|*:*|]); do
+		while
 			Q_seg="${Q_arg%%:*}"
-			Q_arg="${Q_arg#*:}"
+			Q_vn=
 
 			case "${Q_seg}" in
-				*[!0-9]*/*)
-					unset CLEANUP
-					return 1
-					;;
-				*/[1-9]*)
-					Q_m="${Q_seg%%/*}"
-					Q_seg="${Q_seg#*/}"
+				*@*)
+					case "${Q_seg#*@}" in *@*)
+						eval unset CLEANUP "${Q_mark}"
+						return 1
+						;;
+					esac
 
-				__sx_num_cmp_nat0 "${Q_m}" "${Q_seg%%[!0-9]*}" || case "${?}" in [23])
-					unset CLEANUP
-					return 1
-				esac
+					Q_rest="${Q_seg%%@*}"
+					Q_vn="${Q_seg#*@}"
+
+					case "${Q_vn}" in '' | [0-9]* | *[!"${SX_STR_WORD}"]*)
+						eval unset CLEANUP "${Q_mark}"
+						return 1
+						;;
+					esac
+
+					case "${Q_rest}" in */*) ;;
+						*)
+							eval unset CLEANUP "${Q_mark}"
+							return 1
+							;;
+					esac
+
+					case "${Q_rest#*/}" in */*)
+						eval unset CLEANUP "${Q_mark}"
+						return 1
+						;;
+					esac
+
+					Q_m="${Q_rest%%/*}"
+					Q_n="${Q_rest#*/}"
+
+					case "${Q_m}" in '' | *[!0-9]* | 0?*)
+						eval unset CLEANUP "${Q_mark}"
+						return 1
+						;;
+					esac
+
+					case "${Q_n}" in '' ) ;;
+						*[!0-9]* | 0*)
+							eval unset CLEANUP "${Q_mark}"
+							return 1
+							;;
+					esac
+
+					case "${Q_n}" in ?*)
+						__sx_num_cmp_nat0 "${Q_m}" "${Q_n}" || case "${?}" in [23])
+							eval unset CLEANUP "${Q_mark}"
+							return 1
+						esac
+					esac
+
+					Q_type=arr
+					;;
+				*/*)
+					case "${Q_seg#*/}" in */*)
+						eval unset CLEANUP "${Q_mark}"
+						return 1
+						;;
+					esac
+
+					Q_m="${Q_seg%%/*}"
+					Q_rest="${Q_seg#*/}"
+
+					case "${Q_m}" in '' | *[!0-9]* | 0?*)
+						eval unset CLEANUP "${Q_mark}"
+						return 1
+						;;
+					esac
+
+					Q_n="${Q_rest%%[!0-9]*}"
+					Q_vn="${Q_rest#"${Q_n}"}"
+
+					case "${Q_n}" in '' ) ;;
+						*[!0-9]* | 0*)
+							eval unset CLEANUP "${Q_mark}"
+							return 1
+							;;
+					esac
+
+					case "${Q_vn}" in '' ) ;;
+						[0-9]* | *[!"${SX_STR_WORD}"]*)
+							eval unset CLEANUP "${Q_mark}"
+							return 1
+							;;
+						*)
+							Q_type=list
+							;;
+					esac
+
+					case "${Q_n}" in ?*)
+						__sx_num_cmp_nat0 "${Q_m}" "${Q_n}" || case "${?}" in [23])
+							eval unset CLEANUP "${Q_mark}"
+							return 1
+						esac
+					esac
+					;;
+				'')
+					;;
+				*)
+					case "${Q_seg}" in [0-9]* | *[!"${SX_STR_WORD}"]*)
+						eval unset CLEANUP "${Q_mark}"
+						return 1
+						;;
+					esac
+
+					case "${Q_arg}" in
+						*:*) Q_vn="${Q_seg}" Q_type=scalar;;
+						*) Q_vn="${Q_seg}" Q_type=list;;
+					esac
+					;;
 			esac
-		done
+
+			case "${Q_vn}" in ?*)
+				eval "Q_tmp=\"\${Q_v${Q_vn}_=${Q_type}}\""
+				M_STR_APPEND([|Q_mark|], [|"Q_v${Q_vn}_ "|])
+
+				if M_STR_NE([|"${Q_tmp}"|], [|"${Q_type}"|]); then
+					eval unset CLEANUP "${Q_mark}"
+					return 1
+				fi
+			esac
+
+			case "${Q_arg}" in
+				*:*) Q_arg="${Q_arg#*:}";;
+				*) break;;
+			esac
+
+			continue
+		do :; done
+
+		eval ${Q_mark:+"unset ${Q_mark}"}
 	done
 
 	unset CLEANUP

@@ -30,13 +30,8 @@ Describe 'sx_var_is_ebind'
         The status should be failure
     End
 
-    It '数値プレフィックス付きの要素を許可すること'
-        When call sx_var_is_ebind "1a:b" "3:" "v:2v:"
-        The status should be success
-    End
-
     It 'M/N レンジ指定を許可すること'
-        When call sx_var_is_ebind "0/3a:b" "3a:0/2b:c" "0/1a:b"
+        When call sx_var_is_ebind "0/3a:b" "0/1a:b" "0/2b:c"
         The status should be success
     End
 
@@ -50,58 +45,73 @@ Describe 'sx_var_is_ebind'
         The status should be success
     End
 
+    It 'rest でも分母あり（M/N）を許可すること（均一化）'
+        When call sx_var_is_ebind "3/4a" "x:3/4a" "0/3a"
+        The status should be success
+    End
+
+    It '中間の分母省略（M/名前）を許可すること'
+        When call sx_var_is_ebind "3/arr:b" "a:3/arr:b" "a:3/b:c"
+        The status should be success
+    End
+
+    It 'M/・M/N の型なしセグメントを許可すること'
+        When call sx_var_is_ebind "3/" "3/4" "0/" "a:3/:b"
+        The status should be success
+    End
+
+    It 'M/@・M/N@ の配列セグメントを許可すること'
+        When call sx_var_is_ebind "3/@a" "0/3@a" "3/@a:b" "2/@a:3/@a:x"
+        The status should be success
+    End
+
+    It '同型での同名再利用を許可すること'
+        When call sx_var_is_ebind "2/a:3/a:x" "2/@a:3/@a:x" "a:x:a:y"
+        The status should be success
+    End
+
     It '末尾の要素が数字で始まる場合は拒否すること'
-        When call sx_var_is_ebind "a:2b" "3" "3a:1/2" "3name" "2b"
+        When call sx_var_is_ebind "a:2b" "3" "3a" "2b" "1a:b" "3:"
         The status should be failure
     End
 
-    It '末尾の M/N レンジ（分母あり）を拒否すること'
-        When call sx_var_is_ebind "3/4a" "a:3/4a" "0/3a" "0/2147483648a" "2/10a"
+    It 'スラッシュなしの数値プレフィックスを拒否すること'
+        When call sx_var_is_ebind "1a:b" "12v:x" "v:2v:" "a:2:b" "1a:2:c3:tt4t" "2147483648v:"
+        The status should be failure
+    End
+
+    It 'スラッシュなしの @ 形式を拒否すること'
+        When call sx_var_is_ebind "@arr" "3@a" "a:@arr" "a:10@x" "@" "a:@"
         The status should be failure
     End
 
     It 'M が N 以上のレンジを拒否すること'
-        When call sx_var_is_ebind "1/0a:b" "1/1a:b" "2/1a:b" "5/5a"
+        When call sx_var_is_ebind "1/0a:b" "1/1a:b" "2/1a:b" "5/5a" "3/3a" "0/0a" "10/2a"
+        The status should be failure
+    End
+
+    It '異なる型での同名再利用を拒否すること'
+        When call sx_var_is_ebind "a:3/a" "a:3/@a" "2/a:3/@a" "a:a"
         The status should be failure
     End
 
     It '先頭に 0 を持つ数値プレフィックスを拒否すること'
-        When call sx_var_is_ebind "0:" "a:0:b" "01a:b" "0b:c" "01/3a"
+        When call sx_var_is_ebind "0:" "a:0:b" "01/a:b" "0b:c" "01/3a" "3/01a" "00/a"
         The status should be failure
     End
 
     It 'スラッシュを含む不正な形式を拒否すること'
-        When call sx_var_is_ebind "/3a" "0/" "a:/3b" "a:3b/" "a:b/2c"
+        When call sx_var_is_ebind "/3a" "a:/3b" "a:3b/" "a:b/2c" "3//a" "3/@a@b"
         The status should be failure
-    End
-
-    It '中間の分母省略（M/名前）を拒否すること'
-        When call sx_var_is_ebind "3/arr:b" "a:3/arr:b" "a:3/b:c"
-        The status should be failure
-    End
-
-    It '複数桁のカウントを許可すること'
-        When call sx_var_is_ebind "12v:x" "999999999v:"
-        The status should be success
-    End
-
-    It '裸のカウンタを許可すること'
-        When call sx_var_is_ebind "a:2:b"
-        The status should be success
-    End
-
-    It '変数名中間の数字をカウントとみなさないこと'
-        When call sx_var_is_ebind "1a:2:c3:tt4t"
-        The status should be success
     End
 
     It '大きな値のカウントを許可すること'
-        When call sx_var_is_ebind "2147483648v:" "99999999999999999999999v:" "99999999999999999999999/arr"
+        When call sx_var_is_ebind "99999999999999999999999/arr" "0/99999999999999999999999a"
         The status should be success
     End
 
     It '大きな M/N レンジを許可すること'
-        When call sx_var_is_ebind "2147483647v:" "0/2147483647a:b"
+        When call sx_var_is_ebind "0/2147483647a:b"
         The status should be success
     End
 
@@ -116,6 +126,11 @@ Describe 'sx_var_is_ebind'
         It 'M が N 以上のレンジを拒否すること'
             When call sx_var_is_ebind "1/1a"
             The status should be failure
+        End
+
+        It '新形式を受理すること'
+            When call sx_var_is_ebind "3/@a:b"
+            The status should be success
         End
     End
 
