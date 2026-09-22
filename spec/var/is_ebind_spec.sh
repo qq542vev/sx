@@ -66,12 +66,12 @@ Describe 'sx_var_is_ebind'
     End
 
     It '同型での同名再利用を許可すること'
-        When call sx_var_is_ebind "2/a:3/a:x" "2/@a:3/@a:x" "a:x:a:y"
+        When call sx_var_is_ebind "2/a:3/a:x" "2/@a:3/@a:x" "a:x:a:y" "a:a" "a:b:a"
         The status should be success
     End
 
     It '末尾の要素が数字で始まる場合は拒否すること'
-        When call sx_var_is_ebind "a:2b" "3" "3a" "2b" "1a:b" "3:"
+        When call sx_var_is_ebind "a:2b" "3" "0" "a:0" "3a" "2b" "1a:b" "3:"
         The status should be failure
     End
 
@@ -91,7 +91,7 @@ Describe 'sx_var_is_ebind'
     End
 
     It '異なる型での同名再利用を拒否すること'
-        When call sx_var_is_ebind "a:3/a" "a:3/@a" "2/a:3/@a" "a:a"
+        When call sx_var_is_ebind "a:3/a" "a:0/3a" "a:3/@a" "2/a:3/@a"
         The status should be failure
     End
 
@@ -101,7 +101,7 @@ Describe 'sx_var_is_ebind'
     End
 
     It 'スラッシュを含む不正な形式を拒否すること'
-        When call sx_var_is_ebind "/3a" "a:/3b" "a:3b/" "a:b/2c" "3//a" "3/@a@b"
+        When call sx_var_is_ebind "/3a" "a:/3b" "a:3b/" "a:b/2c" "3//a" "3/@a@b" "3/4/5a" "1/2/3"
         The status should be failure
     End
 

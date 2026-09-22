@@ -3946,7 +3946,7 @@ __sx_var_is_copyable() {
 ##   vn を変数名、nat1 を [1-9][0-9]*、nat0 を 0|nat1、M を nat0、N を nat1 とし、
 ##   seg を M/vn | M/Nvn | M/ | M/N | vn | 空 | M/@vn | M/N@vn、
 ##   ebind を seg(:seg)* とする。N が存在する場合は M<N が必須である。
-##   素 vn は中間で scalar、末尾で list、M/vn・M/Nvn は list、
+##   素 vn は scalar、M/vn・M/Nvn は list、
 ##   M/@vn・M/N@vn は arr、空・M/・M/N は型なしとなる。
 ##   異なる型で同名の変数を2回以上利用するのはエラー（sx_var_is_bind と同様）。
 ##   数値に上限はない（SX_CFG_NUM_RANGE は設定の妥当性チェックにのみ使用される）。
@@ -3972,13 +3972,13 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_var_is_ebind の内部実装。SX_CFG_NUM_RANGE の妥当性チェックは行わない。
 
-define([|CLEANUP|], [|Q_arg Q_mark Q_seg Q_vn Q_type Q_tmp Q_m Q_n Q_rest|])dnl
+define([|CLEANUP|], [|Q_arg Q_mark Q_seg Q_vn Q_type Q_tmp Q_frac Q_m|])dnl
 
 __sx_var_is_ebind() {
 	for Q_arg in "${@}"; do
 		Q_mark=
 
-		case "${Q_arg}" in *[!":@/${SX_STR_WORD}"]* | 0[!/]* | *:0[!/]* | /* | *[!0-9]/* | *@ | *@[!"${SX_STR_SWORD}"]* | @* | *[!/0-9]@*)
+		case "${Q_arg}" in *[!":@/${SX_STR_WORD}"]* | 0 | 0[!/]* | *:0[!/]* | /* | *[!0-9]/* | */0* | *@ | *@[!"${SX_STR_SWORD}"]* | @* | *[!/0-9]@*)
 			eval unset CLEANUP "${Q_mark}"
 			return 1
 		esac
@@ -3988,117 +3988,35 @@ __sx_var_is_ebind() {
 			Q_vn=
 
 			case "${Q_seg}" in
-				*@*)
-					case "${Q_seg#*@}" in *@*)
-						eval unset CLEANUP "${Q_mark}"
-						return 1
-						;;
-					esac
-
-					Q_rest="${Q_seg%%@*}"
-					Q_vn="${Q_seg#*@}"
-
-					case "${Q_vn}" in '' | [0-9]* | *[!"${SX_STR_WORD}"]*)
-						eval unset CLEANUP "${Q_mark}"
-						return 1
-						;;
-					esac
-
-					case "${Q_rest}" in */*) ;;
-						*)
-							eval unset CLEANUP "${Q_mark}"
-							return 1
-							;;
-					esac
-
-					case "${Q_rest#*/}" in */*)
-						eval unset CLEANUP "${Q_mark}"
-						return 1
-						;;
-					esac
-
-					Q_m="${Q_rest%%/*}"
-					Q_n="${Q_rest#*/}"
-
-					case "${Q_m}" in '' | *[!0-9]* | 0?*)
-						eval unset CLEANUP "${Q_mark}"
-						return 1
-						;;
-					esac
-
-					case "${Q_n}" in '' ) ;;
-						*[!0-9]* | 0*)
-							eval unset CLEANUP "${Q_mark}"
-							return 1
-							;;
-					esac
-
-					case "${Q_n}" in ?*)
-						__sx_num_cmp_nat0 "${Q_m}" "${Q_n}" || case "${?}" in [23])
-							eval unset CLEANUP "${Q_mark}"
-							return 1
-						esac
-					esac
-
-					Q_type=arr
+				*[!0-9]*/* | *[!/0-9]*@*)
+					eval unset CLEANUP "${Q_mark}"
+					return 1
 					;;
 				*/*)
-					case "${Q_seg#*/}" in */*)
-						eval unset CLEANUP "${Q_mark}"
-						return 1
-						;;
-					esac
+					Q_frac="${Q_seg%%[!/0-9]*}"
 
-					Q_m="${Q_seg%%/*}"
-					Q_rest="${Q_seg#*/}"
-
-					case "${Q_m}" in '' | *[!0-9]* | 0?*)
-						eval unset CLEANUP "${Q_mark}"
-						return 1
-						;;
-					esac
-
-					Q_n="${Q_rest%%[!0-9]*}"
-					Q_vn="${Q_rest#"${Q_n}"}"
-
-					case "${Q_n}" in '' ) ;;
-						*[!0-9]* | 0*)
-							eval unset CLEANUP "${Q_mark}"
-							return 1
-							;;
-					esac
-
-					case "${Q_vn}" in '' ) ;;
-						[0-9]* | *[!"${SX_STR_WORD}"]*)
-							eval unset CLEANUP "${Q_mark}"
-							return 1
-							;;
-						*)
-							Q_type=list
-							;;
-					esac
-
-					case "${Q_n}" in ?*)
-						__sx_num_cmp_nat0 "${Q_m}" "${Q_n}" || case "${?}" in [23])
+					# M nat0・N nat1は事前検査で保証済み
+					case "${Q_frac}" in *[0-9])
+						__sx_num_cmp_nat0 "${Q_frac%/*}" "${Q_frac#*/}" || case "${?}" in [23])
 							eval unset CLEANUP "${Q_mark}"
 							return 1
 						esac
 					esac
-					;;
-				'')
-					;;
-				*)
-					case "${Q_seg}" in [0-9]* | *[!"${SX_STR_WORD}"]*)
-						eval unset CLEANUP "${Q_mark}"
-						return 1
-						;;
-					esac
 
-					case "${Q_arg}" in
-						*:*) Q_vn="${Q_seg}" Q_type=scalar;;
-						*) Q_vn="${Q_seg}" Q_type=list;;
+					Q_seg="${Q_seg#"${Q_frac}"}"
+
+					case "${Q_seg}" in
+						@*) Q_vn="${Q_seg#*@}" Q_type=arr;;
+						?*) Q_m="${Q_seg%%[!0-9]*}"
+							Q_vn="${Q_seg#"${Q_m}"}"
+							Q_type=list;;
 					esac
 					;;
+				[1-9]*)
+					eval unset CLEANUP "${Q_mark}"
+					return 1
+					;;
+				*) Q_vn="${Q_seg}" Q_type=scalar;;
 			esac
 
 			case "${Q_vn}" in ?*)
