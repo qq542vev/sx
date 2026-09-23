@@ -5342,6 +5342,7 @@ __sx_num_add_nat0() {
 
 	for Q_rem2 in "${@}"; do
 		case "${Q_rem1}:${Q_rem2}" in
+			*:0) continue;;
 			${SX_SYS_NUM_QM}?*:* | *:${SX_SYS_NUM_QM}?*) ;;
 			*)
 				M_NUM_INCR([|Q_rem1|], [|Q_rem2|])
@@ -13015,22 +13016,22 @@ M_RENAME_QI([|dnl
 ##   配列セグメント（M/Nvn・M/vn）は __sx_arr_gen で確定して _len を実割当数に設定する。
 ##   実割当数は fseg の進行度（cnt/...）から求め、同名セグメント（合算）が複数ある
 ##   場合は先頭側の値で上書きし、剥離済み（fseg 空）は未記録のときに限り N を用いる。
-##   既視管理は Q_w マークで行う。割当の無いスカラーセグメントは unset する。
+##   既視管理は Q_v マークで行う。割当の無いスカラーセグメントは unset する。
 ##   M/N・M/・空セグメントはスキップする。
 ##   bind は値渡しのため、呼び出し側の変数は変更されない。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_borg Q_bind Q_mark Q_oseg Q_fseg Q_frac Q_lim Q_vn Q_len Q_seen|])dnl
+define([|CLEANUP|], [|Q_borg Q_bind Q_mark Q_oseg Q_fseg Q_frac Q_vn|])dnl
 
 __sx_arr_bind_commit() {
-	Q_borg=":${1-}"
-	Q_bind="${2-}"
+	Q_borg=":${1}"
+	Q_bind="${2}"
 	Q_mark=
 
 	shift 2
 	__sx_var_copy "${@}"
 
-	while M_STR_HAS([|"${Q_borg}"|], [|':'|]); do
+	while M_STR_HAS([|"${Q_borg}"|], [|:|]); do
 		# bind_org の末尾セグメントを pop
 		Q_oseg="${Q_borg##*:}"
 		Q_borg="${Q_borg%:*}"
@@ -13047,35 +13048,22 @@ __sx_arr_bind_commit() {
 		esac
 
 		case "${Q_oseg}" in
-			*/*)
+			*/*["${SX_STR_SWORD}"]*)
 				Q_frac="${Q_oseg%%[!/0-9]*}"
-				Q_lim="${Q_frac#*/}"
 				Q_vn="${Q_oseg#"${Q_frac}"}"
 
-				case "${Q_vn}" in
-					?*) ;;
-					*) continue;;
-				esac
-
 				case "${Q_fseg}" in
-					*/*)
-						Q_len="${Q_fseg%%/*}"
-						__sx_arr_gen "${Q_vn}"
-						M_VAR_SET([|${Q_vn}_len|], [|${Q_len}|])
-						eval "Q_w${Q_vn}_=1"
-						M_STR_APPEND([|Q_mark|], [|"Q_w${Q_vn}_ "|])
-						;;
-					?*)
-						:;;
-					*)
-						eval "Q_seen=\"\${Q_w${Q_vn}_-}\""
-						case "${Q_seen}" in "")
-							Q_len="${Q_lim:-0}"
+					'')
+						if ! __sx_var_is_set "Q_v${Q_vn}_"; then
 							__sx_arr_gen "${Q_vn}"
-							M_VAR_SET([|${Q_vn}_len|], [|${Q_len}|])
-							eval "Q_w${Q_vn}_=1"
-							M_STR_APPEND([|Q_mark|], [|"Q_w${Q_vn}_ "|])
-						esac
+							M_VAR_SET([|${Q_vn}_len|], [|${Q_frac#*/}|], [|Q_v${Q_vn}_|], [|1|])
+							M_STR_APPEND([|Q_mark|], [|"Q_v${Q_vn}_ "|])
+						fi
+						;;
+					*)
+						__sx_arr_gen "${Q_vn}"
+						M_VAR_SET([|${Q_vn}_len|], [|${Q_fseg%%/*}|], [|Q_v${Q_vn}_|], [|1|])
+						M_STR_APPEND([|Q_mark|], [|"Q_v${Q_vn}_ "|])
 						;;
 				esac
 				;;
@@ -13084,13 +13072,10 @@ __sx_arr_bind_commit() {
 					unset "${Q_oseg}"
 				esac
 				;;
-			*)
-				:;;
 		esac
 	done
 
-	eval ${Q_mark:+"unset ${Q_mark}"}
-	unset CLEANUP
+	eval unset CLEANUP "${Q_mark}"
 }
 |], [|arr_bind_commit|])dnl
 
@@ -13326,10 +13311,13 @@ __sx_arr_splice() {
 	Q_cnt="${#}"
 
 	# 1) 範囲の丸め (clamp)。n と len を比較し、次のように処理する。
-	#    1: n < len。残り長 len-n を求め、del を残り長以内に丸める。
-	#    2: n = len。残り長は 0 なので del を 0 にする。
-	#    3: n > len。n を len に丸め、del を 0 にする。
+	#    3: n > len。n を len に丸めて 2) へ落下し、同様に終了する。
+	#    2: n = len。尾部は空なので len=n+cnt を確定して終了する。
+	#    1: n < len。残り長 len-n を求め、del を残り長以内に丸めた後、
+	#       下の 2) へ進み尾部を移動する。
 	__sx_num_cmp_nat0 "${Q_n}" "${Q_len}" || case "${?}" in
+		3) Q_n="${Q_len}";&
+		2) __sx_num_add_nat0 "${Q_arr}_len" "${Q_n}" "${Q_cnt}";;
 		1)
 			__sx_num_sub_nat0 Q_rest "${Q_len}" "${Q_n}"
 
@@ -13337,68 +13325,68 @@ __sx_arr_splice() {
 			__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in 3)
 				Q_del="${Q_rest}"
 			esac
-			;;
-		2) Q_del=0;;
-		3) Q_n="${Q_len}" Q_del=0;;
-	esac
 
-	# 2) 尾部の移動 (要素ごと): 削除範囲の後ろ [n+del, len) を
-	#    挿入後の位置 [n+cnt, new) へずらす。1要素ずつ __sx_var_copy
-	#    で移すことで、巨大配列でも生成スクリプトを1要素ぶんに抑える。
-	__sx_num_cmp_nat0 "${Q_cnt}" "${Q_del}" || case "${?}" in
-		1)
-			# 縮小 (cnt < del): ソースと宛先を前方へ進める。
-			# src=n+del、end=n+cnt とし、尾部を重複しない順序で移動する。
-			__sx_num_add_nat0 Q_src "${Q_n}" "${Q_del}"
-			__sx_num_add_nat0 Q_end "${Q_n}" "${Q_cnt}"
+		# 2) 尾部の移動 (要素ごと): 削除範囲の後ろ [n+del, len) を
+		#    挿入後の位置 [n+cnt, new) へずらす。1要素ずつ __sx_var_copy
+		#    で移すことで、巨大配列でも生成スクリプトを1要素ぶんに抑える。
+		#    n>=len の末尾追加パスは尾部が空で len 確定済みのため、
+		#    上の 2) で終了しここへは到達しない。
+		__sx_num_cmp_nat0 "${Q_cnt}" "${Q_del}" || case "${?}" in
+			1)
+				# 縮小 (cnt < del): ソースと宛先を前方へ進める。
+				# src=n+del、end=n+cnt とし、尾部を重複しない順序で移動する。
+				__sx_num_add_nat0 Q_src "${Q_n}" "${Q_del}"
+				__sx_num_add_nat0 Q_end "${Q_n}" "${Q_cnt}"
 
-			case "${Q_src}" in
-				# 尾部がない場合は new=n+cnt=end を再利用する。
-				"${Q_len}") Q_new="${Q_end}";;
-				*)
-					# 通常の縮小では new=len-del+cnt を求めてから尾部を移動する。
-					__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}"
-					__sx_num_add_nat0 Q_new "${Q_new}" "${Q_cnt}"
+				case "${Q_src}" in
+					# 尾部がない場合は new=n+cnt=end を再利用する。
+					"${Q_len}") Q_new="${Q_end}";;
+					*)
+						# 通常の縮小では new=len-del+cnt を求めてから尾部を移動する。
+						__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}"
+						__sx_num_add_nat0 Q_new "${Q_new}" "${Q_cnt}"
 
-					while M_STR_NE([|"${Q_src}"|], [|"${Q_len}"|]); do
-						__sx_var_copy "${Q_arr}_${Q_src}-${Q_arr}_${Q_end}"
-						M_NUM_INCRM1([|Q_src|])
-						M_NUM_INCRM1([|Q_end|])
-					done
-					;;
-			esac
+						while M_STR_NE([|"${Q_src}"|], [|"${Q_len}"|]); do
+							__sx_var_copy "${Q_arr}_${Q_src}-${Q_arr}_${Q_end}"
+							M_NUM_INCRM1([|Q_src|])
+							M_NUM_INCRM1([|Q_end|])
+						done
+						;;
+				esac
 
-			# 長さを確定し、new 以降に残った旧要素を深く掃除する。
-			eval "${Q_arr}_len=${Q_new}"
+				# 長さを確定し、new 以降に残った旧要素を深く掃除する。
+				eval "${Q_arr}_len=${Q_new}"
 
-			while M_STR_NE([|"${Q_new}"|], [|"${Q_len}"|]); do
-				__sx_var_unset "${Q_arr}_${Q_new}"
-				M_NUM_INCRM1([|Q_new|])
-			done
-			;;
-		3)
-			# 拡大 (cnt > del): src=n+del を起点に、末尾から逆順で移動する。
-			__sx_num_add_nat0 Q_src "${Q_n}" "${Q_del}"
+				while M_STR_NE([|"${Q_new}"|], [|"${Q_len}"|]); do
+					__sx_var_unset "${Q_arr}_${Q_new}"
+					M_NUM_INCRM1([|Q_new|])
+				done
+				;;
+			3)
+				# 拡大 (cnt > del): src=n+del を起点に、末尾から逆順で移動する。
+				__sx_num_add_nat0 Q_src "${Q_n}" "${Q_del}"
 
-			case "${Q_src}" in
-				# 尾部がない場合は new=n+cnt を直接求める。
-				"${Q_len}") __sx_num_add_nat0 "${Q_arr}_len" "${Q_n}" "${Q_cnt}";;
-				*)
-					# 通常の拡大では new=len-del+cnt を求めてから尾部を移動する。
-					__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}"
-					__sx_num_add_nat0 Q_new "${Q_new}" "${Q_cnt}"
+				case "${Q_src}" in
+					# 尾部がない場合は new=n+cnt を直接求める。
+					"${Q_len}") __sx_num_add_nat0 "${Q_arr}_len" "${Q_n}" "${Q_cnt}";;
+					*)
+						# 通常の拡大では new=len-del+cnt を求めてから尾部を移動する。
+						__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}"
+						__sx_num_add_nat0 Q_new "${Q_new}" "${Q_cnt}"
 
-					# 長さを確定する。拡大では余剰尾部の掃除は発生しない。
-					eval "${Q_arr}_len=${Q_new}"
+						# 長さを確定する。拡大では余剰尾部の掃除は発生しない。
+						eval "${Q_arr}_len=${Q_new}"
 
-					while M_STR_NE([|"${Q_len}"|], [|"${Q_src}"|]); do
-						M_NUM_DECRM1([|Q_len|])
-						M_NUM_DECRM1([|Q_new|])
-						__sx_var_copy "${Q_arr}_${Q_len}-${Q_arr}_${Q_new}"
-					done
-					;;
-			esac
-			;;
+						while M_STR_NE([|"${Q_len}"|], [|"${Q_src}"|]); do
+							M_NUM_DECRM1([|Q_len|])
+							M_NUM_DECRM1([|Q_new|])
+							__sx_var_copy "${Q_arr}_${Q_len}-${Q_arr}_${Q_new}"
+						done
+						;;
+				esac
+				;;
+		esac
+		;;
 	esac
 
 	# 3) 中央の書込み: 尾部移動後、各挿入位置を深く掃除してから
