@@ -3227,7 +3227,7 @@ __sx_var_bind0() {
 				Q_bind="${Q_lim}${Q_vn}:${Q_bind#*:}"
 				break
 				;;
-			*["${SX_STR_SWORD}"]:*) M_VAR_SET([|${Q_bind%%:*}|], [|${1}|]);&
+			["${SX_STR_SWORD}"]*:*) M_VAR_SET([|${Q_bind%%:*}|], [|${1}|]);&
 			:*)
 				Q_bind="${Q_bind#*:}"
 				shift
@@ -12976,8 +12976,8 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_arr Q_len Q_i Q_blk|])dnl
 
 __sx_arr_cat() {
-	Q_bind="${1}"
-	Q_borg="${1}"
+	__sx_var_to_ebind Q_bind "${1}"
+	Q_borg="${Q_bind}"
 	Q_chain=
 	shift
 
@@ -13007,21 +13007,25 @@ M_RENAME_QI([|dnl
 ##   __sx_arr_bind_commit bind_org bind_left [chain ...]
 ##
 ## 説明:
-##   sx_arr_cat / sx_arr_pop から共用される統合書き込み処理。まず chain（連鎖式の
+##   sx_arr_cat / sx_arr_pop から共用される統合書き込み処理。bind_org・bind_left は
+##   ともに拡張バインド形式（__sx_var_to_ebind の出力）であること。まず chain（連鎖式の
 ##   スペース区切りリスト）を __sx_var_copy で一括適用して書き込みを確定し、
 ##   続いて bind_org（元のバインド形式。先頭の ':' は関数内で付加）と要素消費後の
 ##   残りバインド bind_left を末尾セグメントから順に取り出して比較する。
-##   配列化対象のセグメント（数値先行セグメント・末尾セグメント）は __sx_arr_gen で
-##   確定して _len を実割当数に設定し、割当の無いスカラーセグメントは unset する。
+##   配列セグメント（M/Nvn・M/vn）は __sx_arr_gen で確定して _len を実割当数に設定する。
+##   実割当数は fseg の進行度（cnt/...）から求め、同名セグメント（合算）が複数ある
+##   場合は先頭側の値で上書きし、剥離済み（fseg 空）は未記録のときに限り N を用いる。
+##   既視管理は Q_w マークで行う。割当の無いスカラーセグメントは unset する。
+##   M/N・M/・空セグメントはスキップする。
 ##   bind は値渡しのため、呼び出し側の変数は変更されない。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_borg Q_bind Q_first Q_oseg Q_fseg Q_lim Q_name Q_len|])dnl
+define([|CLEANUP|], [|Q_borg Q_bind Q_mark Q_oseg Q_fseg Q_frac Q_lim Q_vn Q_len Q_seen|])dnl
 
 __sx_arr_bind_commit() {
 	Q_borg=":${1-}"
 	Q_bind="${2-}"
-	Q_first=1   # 1 回目の走査＝末尾セグメント
+	Q_mark=
 
 	shift 2
 	__sx_var_copy "${@}"
@@ -13042,38 +13046,50 @@ __sx_arr_bind_commit() {
 				;;
 		esac
 
-		case "${Q_first}${Q_oseg}" in
-			0[1-9]*["${SX_STR_SWORD}"]* | 1["${SX_STR_SWORD}"]*)
-				case "${Q_oseg}" in
-					[1-9]*)
-						Q_lim="${Q_oseg%%[!0-9]*}"
-						Q_name="${Q_oseg#"${Q_lim}"}"
-						;;
-					*)
-						eval "Q_lim=\"\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}\""
-						Q_name="${Q_oseg}"
-						;;
+		case "${Q_oseg}" in
+			*/*)
+				Q_frac="${Q_oseg%%[!/0-9]*}"
+				Q_lim="${Q_frac#*/}"
+				Q_vn="${Q_oseg#"${Q_frac}"}"
+
+				case "${Q_vn}" in
+					?*) ;;
+					*) continue;;
 				esac
 
 				case "${Q_fseg}" in
-					*/*) Q_len="${Q_fseg%%/*}";;
-					?*) Q_len=0;;
-					*) Q_len="${Q_lim}";;
+					*/*)
+						Q_len="${Q_fseg%%/*}"
+						__sx_arr_gen "${Q_vn}"
+						M_VAR_SET([|${Q_vn}_len|], [|${Q_len}|])
+						eval "Q_w${Q_vn}_=1"
+						M_STR_APPEND([|Q_mark|], [|"Q_w${Q_vn}_ "|])
+						;;
+					?*)
+						:;;
+					*)
+						eval "Q_seen=\"\${Q_w${Q_vn}_-}\""
+						case "${Q_seen}" in "")
+							Q_len="${Q_lim:-0}"
+							__sx_arr_gen "${Q_vn}"
+							M_VAR_SET([|${Q_vn}_len|], [|${Q_len}|])
+							eval "Q_w${Q_vn}_=1"
+							M_STR_APPEND([|Q_mark|], [|"Q_w${Q_vn}_ "|])
+						esac
+						;;
 				esac
-
-				__sx_arr_gen "${Q_name}"
-				M_VAR_SET([|${Q_name}_len|], [|${Q_len}|])
 				;;
-			0["${SX_STR_SWORD}"]*)
+			["${SX_STR_SWORD}"]*)
 				case "${Q_fseg}" in ?*)
 					unset "${Q_oseg}"
 				esac
 				;;
+			*)
+				:;;
 		esac
-
-		Q_first=0
 	done
 
+	eval ${Q_mark:+"unset ${Q_mark}"}
 	unset CLEANUP
 }
 |], [|arr_bind_commit|])dnl
@@ -13149,10 +13165,11 @@ M_RENAME_QI([|dnl
 ##   引数チェック（bind 形式・変数名・配列判定・書き込み権限）は行わない。
 ##   合計スロット数が要素数を超える場合は 1 を返し、何も書き込まない。
 
-define([|CLEANUP|], [|Q_bind Q_chain Q_unset Q_len Q_blk Q_tmp|])dnl
+define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_unset Q_len Q_blk Q_tmp|])dnl
 
 __sx_arr_pop() {
-	Q_bind="${1}"
+	__sx_var_to_ebind Q_bind "${1}"
+	Q_borg="${Q_bind}"
 	Q_chain=
 	Q_unset=
 	eval "Q_len=\"\${${2}_len}\""
@@ -13175,7 +13192,7 @@ __sx_arr_pop() {
 	esac
 
 	# 3) chain 適用（一括書き込み）
-	eval __sx_arr_bind_commit '"${1}"' '"${Q_bind}"' "${Q_chain}"
+	eval __sx_arr_bind_commit '"${Q_borg}"' '"${Q_bind}"' "${Q_chain}"
 
 	eval __sx_var_unset "${Q_unset}"
 	eval "${2}_len=${Q_len}"
