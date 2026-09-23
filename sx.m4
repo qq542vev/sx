@@ -3166,10 +3166,6 @@ __sx_var_bind0() {
 
 	while M_STR_NE([|"${#}"|], [|0|]); do
 		case "${Q_bind}" in
-			:*)
-				Q_bind="${Q_bind#*:}"
-				shift
-				;;
 			[1-9]*:*)
 				Q_seg="${Q_bind%%:*}"
 				Q_lim="${Q_bind%%[!0-9]*}"
@@ -3180,7 +3176,7 @@ __sx_var_bind0() {
 						__sx_num_cmp_nat0 "${Q_lim}" "${#}" || case "${?}" in [12])
 							shift "${Q_lim}"
 							Q_bind="${Q_bind#*:}"
-							continue 2
+							continue
 						esac
 
 						__sx_num_sub_nat0 Q_lim "${Q_lim}" "${#}"
@@ -3231,8 +3227,8 @@ __sx_var_bind0() {
 				Q_bind="${Q_lim}${Q_vn}:${Q_bind#*:}"
 				break
 				;;
-			*:*)
-				M_VAR_SET([|${Q_bind%%:*}|], [|${1}|])
+			*["${SX_STR_SWORD}"]:*) M_VAR_SET([|${Q_bind%%:*}|], [|${1}|]);&
+			:*)
 				Q_bind="${Q_bind#*:}"
 				shift
 				;;
@@ -12765,29 +12761,29 @@ M_RENAME_Q([|dnl
 ##   77  書き込み権限なし (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|CLEANUP|], [|Q_br Q_cr Q_bind|])dnl
+define([|CLEANUP|], [|Q_bres Q_cres Q_bind|])dnl
 
 sx_arr_bind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_bind "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	sx_var_is_name "${1-}" "${2-}" || return M_EX_USAGE
-	__sx_var_is_rw "${1}" "${2}" || return M_EX_NOPERM
-	__sx_var_is_ebind ${3+"${3}"} || return M_EX_USAGE
+	sx_var_is_name ${1:+"${1}"} "${2-}" || return M_EX_USAGE
+	__sx_var_is_rw ${1:+"${1}"} "${2}" || return M_EX_NOPERM
+	__sx_arr_is_ebind "${3-!}" || return M_EX_USAGE
 
-	Q_br="${1}"
-	Q_cr="${2}"
-	Q_bind="${3-}"
+	Q_bres="${1}"
+	Q_cres="${2}"
+	Q_bind="${3}"
 
-	shift "$((2 + 0${3+1}))"
+	shift 3
 
 	sx_var_is_name "${@}" || {
 		unset CLEANUP
 		return M_EX_USAGE
 	}
 
-	set -- "${Q_br}" "${Q_cr}" "${Q_bind}" "${@}"
+	set -- "${Q_bres}" "${Q_cres}" "${Q_bind}" "${@}"
 
 	unset CLEANUP
 
@@ -12811,71 +12807,90 @@ M_RENAME_QI([|dnl
 ##    0  全て割り当て、残りのバインド形式と chain を各結果変数に格納した
 ##    1  バインド先が枯渇したまま変数名が残っている。bind_res へ空文字列を書き込む
 
-define([|CLEANUP|], [|Q_br Q_cr Q_bind Q_chain Q_seg Q_rest Q_m Q_n Q_vn|])dnl
+define([|CLEANUP|], [|Q_bres Q_cres Q_bind Q_chain Q_seg Q_frac Q_cnt Q_lim Q_vn Q_arg Q_tmp|])dnl
 
 __sx_arr_bind() {
-	Q_br="${1-}"
-	Q_cr="${2-}"
-	Q_bind="${3-}"
+	Q_bres="${1}"
+	Q_cres="${2}"
+	Q_bind="${3}${3:+:}"
 	Q_chain=
 	shift 3
 
-	for Q_vn in "${@}"; do
+	while M_STR_NE([|"${#}"|], [|0|]); do
 		case "${Q_bind}" in
-			[0-9]*:*)
+			[0-9]*)
 				Q_seg="${Q_bind%%:*}"
-				Q_rest="${Q_bind#*:}"
+				Q_frac="${Q_bind%%[!/0-9]*}"
+				Q_cnt="${Q_frac%/*}"
+				Q_lim="${Q_frac#*/}"
+				Q_vn="${Q_seg#"${Q_frac}"}"
 
-				case "${Q_seg}" in
-					*/*)
-						Q_m="${Q_seg%%/*}"
-						Q_seg="${Q_seg#*/}"
+				case "${Q_lim}:${Q_vn}" in
+					# seg: M/
+					:)
+						__sx_num_add_nat0 Q_cnt "${Q_cnt}" "${#}"
+						shift "${#}"
 						;;
-					*) Q_m=0;;
+					# seg: M/vn
+					:*)
+						for Q_arg in "${@}"; do
+							M_STR_APPEND([|Q_chain|], [|"${Q_arg}-${Q_vn}_${Q_cnt}"|], [| |])
+							M_NUM_INCRM1([|Q_cnt|])
+						done
+
+						shift "${#}"
+						;;
+					# seg: M/N
+					*:)
+						__sx_num_sub_nat0 Q_tmp "${Q_lim}" "${Q_cnt}"
+						__sx_num_cmp_nat0 "${Q_tmp}" "${#}" || case "${?}" in [12])
+							shift "${Q_tmp}"
+							Q_bind="${Q_bind#*:}"
+							continue
+						esac
+
+						__sx_num_add_nat0 Q_cnt "${Q_cnt}" "${#}"
+						shift "${#}"
+						;;
+					*)
+						for Q_arg in "${@}"; do
+							shift
+							M_STR_APPEND([|Q_chain|], [|"${Q_arg}-${Q_vn}_${Q_cnt}"|], [| |])
+							M_NUM_INCRM1([|Q_cnt|])
+
+							case "${Q_cnt}" in "${Q_lim}")
+								Q_bind="${Q_bind#*:}"
+								continue 2
+							esac
+						done
+						;;
 				esac
 
-				Q_n="${Q_seg%%[!0-9]*}"
-				Q_seg="${Q_seg#"${Q_n}"}"
-
-				case "${Q_seg}" in ["${SX_STR_SWORD}"]*)
-					M_STR_APPEND([|Q_chain|], [|"${Q_vn}-${Q_seg}_${Q_m}"|], [| |])
-				esac
-
-				M_NUM_INCRM1([|Q_m|])
-
-				case "${Q_m}" in
-					"${Q_n}") Q_bind="${Q_rest}";;
-					*) Q_bind="${Q_m}/${Q_n}${Q_seg}:${Q_rest}";;
-				esac
+				Q_bind="${Q_cnt}/${Q_lim}${Q_vn}:${Q_bind#*:}"
 				;;
-			:*) Q_bind="${Q_bind#*:}";;
-			*:*)
-				M_STR_APPEND([|Q_chain|], [|"${Q_vn}-${Q_bind%%:*}"|], [| |])
+			["${SX_STR_SWORD}"]*) M_STR_APPEND([|Q_chain|], [|"${1}-${Q_bind%%:*}"|], [| |]);&
+			:*)
 				Q_bind="${Q_bind#*:}"
+				shift
 				;;
-			?*)
-				Q_seg="${Q_bind}"
-				Q_m=0
-
-				case "${Q_seg}" in */*)
-					Q_m="${Q_seg%%/*}"
-					Q_seg="${Q_seg#*/}"
+			'')
+				case "${Q_bres}" in ?*)
+					M_VAR_SET([|${Q_bres}|], [|${Q_bind}|])
 				esac
 
-				M_STR_APPEND([|Q_chain|], [|"${Q_vn}-${Q_seg}_${Q_m}"|], [| |])
-				M_NUM_INCRM1([|Q_m|])
+				M_VAR_SET([|${Q_cres}|], [|${Q_chain}|])
 
-				Q_bind="${Q_m}/${Q_seg}"
-				;;
-			*)
-				M_VAR_SET([|${Q_br}|], [|${Q_bind}|], [|${Q_cr}|], [|${Q_chain}|])
 				unset CLEANUP
 				return 1
 				;;
 		esac
 	done
 
-	M_VAR_SET([|${Q_br}|], [|${Q_bind}|], [|${Q_cr}|], [|${Q_chain}|])
+	case "${Q_bres}" in ?*)
+		M_VAR_SET([|${Q_bres}|], [|${Q_bind%:}|])
+	esac
+
+	M_VAR_SET([|${Q_cres}|], [|${Q_chain}|])
 
 	unset CLEANUP
 }

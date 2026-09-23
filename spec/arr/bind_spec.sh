@@ -26,8 +26,8 @@ Describe 'sx_arr_bind'
             unset br cr
             When call sx_arr_bind br cr "0/2a:rest" A B C
             The status should be success
-            The variable br should equal "1/rest"
-            The variable cr should equal "A-a_0 B-a_1 C-rest_0"
+            The variable br should equal ""
+            The variable cr should equal "A-a_0 B-a_1 C-rest"
         End
 
         It 'M/N レンジ指定バインドで chain と残り bind を生成すること'
@@ -42,16 +42,48 @@ Describe 'sx_arr_bind'
             unset br cr
             When call sx_arr_bind br cr "a::b" v1 v2 v3
             The status should be success
-            The variable br should equal "1/b"
-            The variable cr should equal "v1-a v3-b_0"
+            The variable br should equal ""
+            The variable cr should equal "v1-a v3-b"
         End
 
-        It '最終セグメント（rest）に複数累積すること'
+        It '末尾スカラーが単発で枯渇時に 1 を返すこと'
             unset br cr
             When call sx_arr_bind br cr "a" p1 p2
+            The status should equal 1
+            The variable br should equal ""
+            The variable cr should equal "p1-a"
+        End
+
+        It 'M/vn 無限累積で残り bind と chain を生成すること'
+            unset br cr
+            When call sx_arr_bind br cr "0/a" p1 p2
             The status should be success
             The variable br should equal "2/a"
             The variable cr should equal "p1-a_0 p2-a_1"
+        End
+
+        It 'M/N 部分消費で残り bind を返すこと'
+            unset br cr
+            When call sx_arr_bind br cr "0/2" v1
+            The status should be success
+            The variable br should equal "1/2"
+            The variable cr should equal ""
+        End
+
+        It 'M/N 超過で 1 を返すこと'
+            unset br cr
+            When call sx_arr_bind br cr "0/2" v1 v2 v3
+            The status should equal 1
+            The variable br should equal ""
+            The variable cr should equal ""
+        End
+
+        It 'M/ スキップで残り bind を返すこと'
+            unset br cr
+            When call sx_arr_bind br cr "0/" v1 v2
+            The status should be success
+            The variable br should equal "2/"
+            The variable cr should equal ""
         End
 
         It '末尾に空セグメントがあるバインドで drop すること'
@@ -80,9 +112,17 @@ Describe 'sx_arr_bind'
             The variable cr should equal ""
         End
 
-        It '対象が尽きる前にバインドを消費した場合に 1 を返すこと'
+        It '末尾空セグメントが 1 件スキップすること'
             unset br cr
             When call sx_arr_bind br cr "0/3v:" w1 w2 w3 w4
+            The status should be success
+            The variable br should equal ""
+            The variable cr should equal "w1-v_0 w2-v_1 w3-v_2"
+        End
+
+        It '枠超過で 1 を返し途中までの chain を保持すること'
+            unset br cr
+            When call sx_arr_bind br cr "0/3v" w1 w2 w3 w4
             The status should equal 1
             The variable br should equal ""
             The variable cr should equal "w1-v_0 w2-v_1 w3-v_2"
@@ -126,10 +166,10 @@ Describe 'sx_arr_bind'
     End
 
     Context 'SX_CFG_NUM_RANGE が 64 のとき'
-        It '無限 rest セグメントの残り bind が NUM_RANGE 非依存であること'
+        It 'M/vn 無限累積の残り bind が NUM_RANGE 非依存であること'
             unset br cr
             SX_CFG_NUM_RANGE=64
-            When call sx_arr_bind br cr "a" p1 p2
+            When call sx_arr_bind br cr "0/a" p1 p2
             The status should be success
             The variable br should equal "2/a"
             The variable cr should equal "p1-a_0 p2-a_1"
