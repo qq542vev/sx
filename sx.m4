@@ -13224,28 +13224,10 @@ M_RENAME_QI([|dnl
 ##   指定された配列の末尾に一つ以上の値を追加し、長さを更新する。
 ##   この関数は引数の検証や書き込み権限のチェックを行わない。
 
-define([|CLEANUP|], [|Q_i Q_arr Q_arg|])dnl
+define([|CLEANUP|], [||])dnl
 
 __sx_arr_push() {
-	eval "Q_i=\"\${${1}_len}\""
-
-	Q_arr="${1}"
-	shift
-
-	# 値の追加
-	for Q_arg in "${@}"; do
-		eval "${Q_arr}_${Q_i}=\"\${Q_arg}\""
-		Q_i=$((Q_i + 1))
-	done
-
-	# 長さを更新
-	eval "${Q_arr}_len=${Q_i}"
-
-	case "${SX_CFG_ARR_UPDATE-}" in 1)
-		__sx_var_touch "${Q_arr}"
-	esac
-
-	unset CLEANUP
+	eval 'shift;' __sx_arr_splice "${1}" "\"\${${1}_len}\"" 0 '"${@}"'
 }
 |], [|arr_push|])dnl
 
