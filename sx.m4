@@ -6,7 +6,7 @@ changecom()dnl
 
 define([|M_STR_NE|], [|case $1 in $2) ! :;; esac|])dnl
 define([|M_VAR_SET|], [|ifelse($#, 1, [|ifelse($1, , [|eval|], [|eval "$1="|])|], [|eval "$1="'"$2"'__M_VAR_SET_REST(shift(shift($@)))|])|])dnl
-define([|__M_VAR_SET_REST|], [|ifelse(eval($# > 1), 1, [| "$1="'"$2"'ifelse($#, 2, , [|__M_VAR_SET_REST(shift(shift($@)))|])|], [|ifelse($1, , , [| "$1="|])|])|])dnl
+define([|__M_VAR_SET_REST|], [|ifelse(eval(1 < $#), 1, [| "$1="'"$2"'ifelse($#, 2, , [|__M_VAR_SET_REST(shift(shift($@)))|])|], [|ifelse($1, , , [| "$1="|])|])|])dnl
 define([|M_NUM_INCR|], [|ifelse($#, 1, [|$1=$(($1 + 1))|], [|$1=$(($1 + $2))|])|])dnl
 define([|M_NUM_INCRM1|], [|__sx_num_add1_nat0 $1 "${$1}"|])dnl
 define([|M_NUM_DECR|], [|ifelse($#, 1, [|$1=$(($1 - 1))|], [|$1=$(($1 - $2))|])|])dnl
@@ -36,10 +36,10 @@ define([|M_EX_NOPERM|], [|77|])dnl
 define([|M_EX_CONFIG|], [|78|])dnl
 
 define([|M_STR_EQ|], [|dnl
-{ case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, [|&& __M_STR_EQ_REST(shift($@))|]); }dnl
+{ case $1 in $2);; *) ! :;; esac ifelse(eval(2 < $#), 1, [|&& __M_STR_EQ_REST(shift($@))|]); }dnl
 |])dnl
 define([|__M_STR_EQ_REST|], [|dnl
-case $1 in $2);; *) ! :;; esac ifelse(eval($# > 2), 1, [| && __M_STR_EQ_REST(shift($@))|])dnl
+case $1 in $2);; *) ! :;; esac ifelse(eval(2 < $#), 1, [| && __M_STR_EQ_REST(shift($@))|])dnl
 |])dnl
 
 define([|M_STR_HAS|], [|case $1 in __M_STR_HAS_REST(shift($@)));; *) ! :;; esac|])dnl
@@ -1689,7 +1689,7 @@ __sx_arg_isep() {
 			;;
 	esac
 
-	set -- "${Q_bind-}" "${Q_sep-}" "${Q_int:-1}" "${Q_lim:-${SX_NUM_I32_MAX}}" "$((${Q_flg:-0} & (${#} != 0 ? ~0 : (${Q_int:-1} > 0 ? ~SX_ARG_ISEP_POST : ~SX_ARG_ISEP_PRE))))" "${@}"
+	set -- "${Q_bind-}" "${Q_sep-}" "${Q_int:-1}" "${Q_lim:-${SX_NUM_I32_MAX}}" "$((${Q_flg:-0} & (${#} != 0 ? ~0 : (0 < ${Q_int:-1} ? ~SX_ARG_ISEP_POST : ~SX_ARG_ISEP_PRE))))" "${@}"
 	unset CLEANUP
 
 	__sx_var_bind_init "${1}"
@@ -5389,7 +5389,7 @@ __sx_num_add_nat0() {
 					;;
 			esac
 
-			Q_tmp=$(( Q_ch1 + Q_ch2 + Q_carry ))
+			Q_tmp=$((Q_ch1 + Q_ch2 + Q_carry))
 			Q_carry=$((1${SX_SYS_NUM_ZR} <= Q_tmp))
 
 			case "${Q_carry}:${Q_rem1}:${Q_rem2}" in
@@ -5522,7 +5522,7 @@ sx_num_cmp_arith() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_cmp_arith() {
-	return "$((${1} < ${2} ? 1 : (${1} > ${2} ? 3 : 2)))"
+	return "$((${1} == ${2} ? 2 : (${1} < ${2} ? 1 : 3)))"
 }
 
 ### __sx_num_cmp_arith_digit - 10進整数文字列を算術展開で比較する（内部用）
@@ -9247,8 +9247,8 @@ __sx_str_center() {
 		return M_EX_OK
 	esac
 
-	Q_lpad=$(( (Q_needed + (${3} < 0)) / 2 ))
-	Q_rpad=$(( Q_needed - Q_lpad ))
+	Q_lpad=$(((Q_needed + (${3} < 0)) / 2))
+	Q_rpad=$((Q_needed - Q_lpad))
 
 	case "${4}" in ?*)
 		__sx_str_rep Q_lrep "${4}" "$((((Q_needed + 1) / 2 - 1) / ${#4} + 1))"
@@ -10176,7 +10176,7 @@ __sx_str_isep() {
 	# ${1}: bind, ${2}: str, ${3}: sep/cb, ${4}: int, ${5}: lim, ${6}: flags
 	# ${7}: out, ${8}: qm, ${9}: count, ${10}: ctx, ${11}: stat
 	# 文字列が空の場合は、重複防止のため POST (int>0) または PRE (int<0) フラグを無効化する
-	set -- "${1}" "${2-}" "${3-}" "${4:-1}" "${5:-${SX_NUM_I32_MAX}}" "$((${6:-0} & (${#2} != 0 ? ~0 : (${4:-1} > 0 ? ~SX_STR_ISEP_POST : ~SX_STR_ISEP_PRE))))" '' '' 0 ''
+	set -- "${1}" "${2-}" "${3-}" "${4:-1}" "${5:-${SX_NUM_I32_MAX}}" "$((${6:-0} & (${#2} != 0 ? ~0 : (0 < ${4:-1} ? ~SX_STR_ISEP_POST : ~SX_STR_ISEP_PRE))))" '' '' 0 ''
 
 	case "$((${6} & SX_STR_ISEP_CB))" in
 		0) __sx_str_isep_lit "${@}";;
@@ -11681,7 +11681,7 @@ __sx_str_sub_lit() {
 		M_STR_EQ([|"${Q_pat}"|], [|''|]) ||
 		{ M_NUM_BOOL([|Q_glob|]) && ! M_STR_HAS([|"${Q_pat}"|], [|*[!*]*|]); }
 	then
-		__sx_str_isep "${Q_bind}" "${Q_str}" "${Q_rep}" "$(( Q_lim < 0 ? -1 : 1 ))" "$(( Q_lim < 0 ? 0 - Q_lim : Q_lim ))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))"
+		__sx_str_isep "${Q_bind}" "${Q_str}" "${Q_rep}" "$((Q_lim < 0 ? -1 : 1))" "$((Q_lim < 0 ? 0 - Q_lim : Q_lim))" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))"
 	elif M_NUM_LE([|0|], [|Q_lim|]); then
 		if M_STR_EQ([|"${Q_glob}"|], [|0|]); then
 			while M_STR_HAS([|"${Q_str}"|], [|"${Q_pat}"|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
