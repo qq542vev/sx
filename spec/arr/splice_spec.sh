@@ -103,15 +103,269 @@ Describe 'sx_arr_splice'
     The variable myarr_1_0 should be undefined
   End
 
-  It 'n が自然数でない場合は EX_USAGE を返すこと'
+  It 'n が負の場合は len+n に換算すること'
+    sx_arr_gen myarr a b c d
+    When call sx_arr_splice myarr -1 1 X
+    The status should be success
+    The variable myarr_len should equal 4
+    The variable myarr_0 should equal "a"
+    The variable myarr_1 should equal "b"
+    The variable myarr_2 should equal "c"
+    The variable myarr_3 should equal "X"
+  End
+
+  It 'n の絶対値が長さを超える場合は先頭扱いに丸めること'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr -10 1 HEAD
+    The status should be success
+    The variable myarr_len should equal 2
+    The variable myarr_0 should equal "HEAD"
+    The variable myarr_1 should equal "b"
+  End
+
+  It 'n が -len の場合は先頭になること'
+    sx_arr_gen myarr a b c d
+    When call sx_arr_splice myarr -4 1 X
+    The status should be success
+    The variable myarr_len should equal 4
+    The variable myarr_0 should equal "X"
+    The variable myarr_1 should equal "b"
+  End
+
+  It 'n が -0 の場合は先頭になること'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr -0 0 HEAD
+    The status should be success
+    The variable myarr_len should equal 3
+    The variable myarr_0 should equal "HEAD"
+    The variable myarr_1 should equal "a"
+    The variable myarr_2 should equal "b"
+  End
+
+  It 'n の先頭の + は除去されること'
+    sx_arr_gen myarr a b c d
+    When call sx_arr_splice myarr +1 1 X
+    The status should be success
+    The variable myarr_len should equal 4
+    The variable myarr_0 should equal "a"
+    The variable myarr_1 should equal "X"
+    The variable myarr_2 should equal "c"
+    The variable myarr_3 should equal "d"
+  End
+
+  It 'del が負の場合は残り長との和に丸めること'
+    sx_arr_gen myarr a b c d
+    When call sx_arr_splice myarr 1 -1
+    The status should be success
+    The variable myarr_len should equal 2
+    The variable myarr_0 should equal "a"
+    The variable myarr_1 should equal "d"
+    The variable myarr_2 should be undefined
+  End
+
+  It 'del の絶対値が残り長と等しい場合は純挿入になること'
+    sx_arr_gen myarr a b c d
+    When call sx_arr_splice myarr 1 -3 HEAD
+    The status should be success
+    The variable myarr_len should equal 5
+    The variable myarr_0 should equal "a"
+    The variable myarr_1 should equal "HEAD"
+    The variable myarr_2 should equal "b"
+    The variable myarr_3 should equal "c"
+    The variable myarr_4 should equal "d"
+  End
+
+  It 'del の絶対値が残り長を超える場合は純挿入になること'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr 0 -10 X
+    The status should be success
+    The variable myarr_len should equal 3
+    The variable myarr_0 should equal "X"
+    The variable myarr_1 should equal "a"
+    The variable myarr_2 should equal "b"
+  End
+
+  It 'del が -0 の場合は純挿入になること'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr 1 -0 X
+    The status should be success
+    The variable myarr_len should equal 3
+    The variable myarr_0 should equal "a"
+    The variable myarr_1 should equal "X"
+    The variable myarr_2 should equal "b"
+  End
+
+  It 'del の先頭の + は除去されること'
+    sx_arr_gen myarr a b c d
+    When call sx_arr_splice myarr 1 +1 X
+    The status should be success
+    The variable myarr_len should equal 4
+    The variable myarr_0 should equal "a"
+    The variable myarr_1 should equal "X"
+    The variable myarr_2 should equal "c"
+    The variable myarr_3 should equal "d"
+  End
+
+  It 'del が +0 の場合は純挿入になること'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr 1 +0 X
+    The status should be success
+    The variable myarr_len should equal 3
+    The variable myarr_0 should equal "a"
+    The variable myarr_1 should equal "X"
+    The variable myarr_2 should equal "b"
+  End
+
+  It 'n が +0 の場合は先頭になること'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr +0 0 HEAD
+    The status should be success
+    The variable myarr_len should equal 3
+    The variable myarr_0 should equal "HEAD"
+    The variable myarr_1 should equal "a"
+    The variable myarr_2 should equal "b"
+  End
+
+  It 'n が先行0付きの場合は EX_USAGE を返すこと'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr 01 1 X
+    The status should equal 64
+  End
+
+  It 'n が -00 の場合は EX_USAGE を返すこと'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr -00 1 X
+    The status should equal 64
+  End
+
+  It 'n が符号のみの場合は EX_USAGE を返すこと'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr + 1 X
+    The status should equal 64
+  End
+
+  It 'n が --1 の場合は EX_USAGE を返すこと'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr --1 1 X
+    The status should equal 64
+  End
+
+  It 'del が先行0付きの場合は EX_USAGE を返すこと'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr 0 +01 X
+    The status should equal 64
+  End
+
+  It 'del が -00 の場合は EX_USAGE を返すこと'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr 0 -00 X
+    The status should equal 64
+  End
+
+  It 'del が --1 の場合は EX_USAGE を返すこと'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr 0 --1 X
+    The status should equal 64
+  End
+
+  It 'n が長さを超える場合は del が負でも末尾追加になること'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr 10 -5 TAIL
+    The status should be success
+    The variable myarr_len should equal 3
+    The variable myarr_0 should equal "a"
+    The variable myarr_1 should equal "b"
+    The variable myarr_2 should equal "TAIL"
+  End
+
+  It 'n が長さと等しい場合は del が負でも末尾追加になること'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr 2 -1 TAIL
+    The status should be success
+    The variable myarr_len should equal 3
+    The variable myarr_0 should equal "a"
+    The variable myarr_1 should equal "b"
+    The variable myarr_2 should equal "TAIL"
+  End
+
+  It 'n と del が共に負の場合は換算後に削除すること'
+    sx_arr_gen myarr a b c d
+    When call sx_arr_splice myarr -3 -1
+    The status should be success
+    The variable myarr_len should equal 2
+    The variable myarr_0 should equal "a"
+    The variable myarr_1 should equal "d"
+    The variable myarr_2 should be undefined
+  End
+
+  It 'n と del が共に負の場合に挿入できること'
+    sx_arr_gen myarr a b c d
+    When call sx_arr_splice myarr -2 -1 X Y
+    The status should be success
+    The variable myarr_len should equal 5
+    The variable myarr_0 should equal "a"
+    The variable myarr_1 should equal "b"
+    The variable myarr_2 should equal "X"
+    The variable myarr_3 should equal "Y"
+    The variable myarr_4 should equal "d"
+  End
+
+  It '空配列で n が負の場合は末尾追加になること'
+    sx_arr_gen myarr
+    When call sx_arr_splice myarr -1 0 X
+    The status should be success
+    The variable myarr_len should equal 1
+    The variable myarr_0 should equal "X"
+  End
+
+  It '空配列で del が負の場合は純挿入になること'
+    sx_arr_gen myarr
+    When call sx_arr_splice myarr 0 -1 X
+    The status should be success
+    The variable myarr_len should equal 1
+    The variable myarr_0 should equal "X"
+  End
+
+  It 'n が巨大数の場合は末尾扱いに丸めること'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr 10000000000000000000000 0 TAIL
+    The status should be success
+    The variable myarr_len should equal 3
+    The variable myarr_0 should equal "a"
+    The variable myarr_1 should equal "b"
+    The variable myarr_2 should equal "TAIL"
+  End
+
+  It 'n の絶対値が巨大数の場合は先頭扱いに丸めること'
+    sx_arr_gen myarr a b c d
+    When call sx_arr_splice myarr -10000000000000000000000 1 HEAD
+    The status should be success
+    The variable myarr_len should equal 4
+    The variable myarr_0 should equal "HEAD"
+    The variable myarr_1 should equal "b"
+    The variable myarr_2 should equal "c"
+    The variable myarr_3 should equal "d"
+  End
+
+  It 'del の絶対値が巨大数の場合は純挿入になること'
+    sx_arr_gen myarr a b
+    When call sx_arr_splice myarr 0 -10000000000000000000000 X
+    The status should be success
+    The variable myarr_len should equal 3
+    The variable myarr_0 should equal "X"
+    The variable myarr_1 should equal "a"
+    The variable myarr_2 should equal "b"
+  End
+
+  It 'n が整数でない場合は EX_USAGE を返すこと'
     sx_arr_gen myarr a b
     When call sx_arr_splice myarr x 1 X
     The status should equal 64
   End
 
-  It 'del が自然数でない場合は EX_USAGE を返すこと'
+  It 'del が整数でない場合は EX_USAGE を返すこと'
     sx_arr_gen myarr a b
-    When call sx_arr_splice myarr 0 -1 X
+    When call sx_arr_splice myarr 0 y X
     The status should equal 64
   End
 

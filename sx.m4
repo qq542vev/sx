@@ -13241,6 +13241,9 @@ M_RENAME_Q([|dnl
 ##   n（0起点）から del 個の要素を削除し、同位置に値を挿入する。
 ##   n が長さを超える場合は末尾扱い、del が残りを超える場合は残り全部に
 ##   丸める（clamp）。del=0 で純挿入、値なしで純削除になる。
+##   n が負の場合は len+n に換算し、下限を 0 とする。
+##   del が負の場合は残り長との和に換算し、下限を 0 とする。
+##   -0 は 0 とみなし、先頭の + は除去する。
 ##   削除された要素は破棄する。中央の上書き前と余剰尾部は深く掃除するため、
 ##   要素に配列が含まれていても残骸を残さない。
 ##
@@ -13261,7 +13264,7 @@ sx_arr_splice() {
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 	__sx_var_is_arr "${1}" || return M_EX_DATAERR
 	__sx_var_is_rw_deep "${1}" || return M_EX_NOPERM
-	__sx_num_is_nat0_base 10 ${2:+"${2}"} ${3:+"${3}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 ${2:+"${2}"} ${3:+"${3}"} || return M_EX_USAGE
 
 	__sx_arr_splice "${@}"
 }
@@ -13274,9 +13277,9 @@ M_RENAME_QI([|dnl
 ##   __sx_arr_splice 配列名 n del [値 ...]
 ##
 ## 説明:
-##   sx_arr_splice の本体実装。引数チェック（個数・変数名・配列判定・
-##   書き込み権限・数値形式）は行わない。
+##   sx_arr_splice の本体実装。内部実装。引数チェックは行わない。
 ##   長さ・添字・値個数は文字列数値関数で処理し、シェルの算術幅に依存しない。
+##   負の n は len との和（下限 0）、負の del は残り長との和（下限 0）に丸める。
 ##   n と del を配列範囲に丸めた後、cnt と del の大小に応じて尾部を移動する。
 ##   尾部移動は要素単位の __sx_var_copy で行い、拡大時は後方から前方へ、
 ##   縮小時は前方から後方へ処理して未読のソースを保護する。
@@ -13292,6 +13295,19 @@ __sx_arr_splice() {
 	eval "Q_len=\"\${${Q_arr}_len}\""
 	Q_cnt="${#}"
 
+	case "${Q_n}" in
+		-0) Q_n=0;;
+		-*)
+			Q_n="${Q_n#-}"
+
+			__sx_num_cmp_nat0 "${Q_n}" "${Q_len}" || case "${?}" in
+				1) __sx_num_sub_nat0 Q_n "${Q_len}" "${Q_n}";;
+				*) Q_n=0;;
+			esac
+			;;
+		+*) Q_n="${Q_n#+}";;
+	esac
+
 	# 1) 範囲の丸め (clamp)。n と len を比較し、次のように処理する。
 	#    3: n > len。n を len に丸めて 2) へ落下し、同様に終了する。
 	#    2: n = len。尾部は空なので len=n+cnt を確定して終了する。
@@ -13303,9 +13319,22 @@ __sx_arr_splice() {
 		1)
 			__sx_num_sub_nat0 Q_rest "${Q_len}" "${Q_n}"
 
-			# del が残り長を超える場合は、残り全体の削除に丸める。
-			__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in 3)
-				Q_del="${Q_rest}"
+			case "${Q_del}" in
+				-0) Q_del=0;;
+				-*)
+					Q_del="${Q_del#-}"
+					__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in
+						1) __sx_num_sub_nat0 Q_del "${Q_rest}" "${Q_del}";;
+						*) Q_del=0;;
+					esac
+					;;
+				+*) Q_del="${Q_del#+}";&
+				*)
+					# del が残り長を超える場合は、残り全体の削除に丸める。
+					__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in 3)
+						Q_del="${Q_rest}"
+					esac
+					;;
 			esac
 
 		# 2) 尾部の移動 (要素ごと): 削除範囲の後ろ [n+del, len) を
