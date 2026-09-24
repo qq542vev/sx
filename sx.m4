@@ -12534,6 +12534,221 @@ __sx_arr_at() {
 	unset CLEANUP
 }
 |], [|arr_at|])dnl
+
+M_RENAME_Q([|dnl
+### sx_arr_get - 配列から指定要素を順序保持で切り出して分配する
+##
+## 使い方:
+##   sx_arr_get bind 配列名 [spec ...]
+##   spec := 整数 | 整数~整数
+##   整数は符号付き10進整数（+1 / -1 の接頭辞可、前ゼロなし、-0 は 0 とみなす）。
+##
+## 説明:
+##   指定された sx 配列から spec の順に要素を取り出し、要素ストリームを
+##   bind（sx_arr_cat と同一の配列分配形式。例: x, 2a:x）へ分配する（get = 取得）。
+##   sx_arr_at（厳密: 範囲外で 1 を返し代入しない）とは異なり、範囲外の単体は
+##   スキップし、範囲端点は丸める寛容系であり、結果が空でも 0 を返して空配列を確定する。
+##   spec なしの場合も空配列を確定して成功する。
+##   単体指定:
+##     n が負の場合は len+n に換算する（-1 は末尾）。換算後も範囲外（0 未満、
+##     len 以上）の場合はその spec をスキップする。
+##   範囲指定 s~e（~ のみ。- 区切りは不可）:
+##     半開区間 [min(s,e), max(s,e)) を、s<e なら昇順、s>e なら降順で排出する。
+##     s==e は空である。各端点は負なら len+n 換算の上で [0, len] に丸める
+##     （下側は 0、上側は len）。例: arr=[a,b,c,d,e] なら 0~3→a,b,c、
+##     3~0→c,b,a、400~1→e,d,c,b、6~10→空。
+##
+## 注意:
+##   分配先に既存配列を使う場合は、事前に sx_var_unset を明示的に呼び出してから呼び出すこと。
+##   源配列と分配先の名前が重複する場合は未定義。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK。空結果・spec なしも空配列で成功)
+##   64  引数不正（bind 形式不正、spec 形式不正を含む）(SX_EX_USAGE)
+##   65  対象が sx 配列ではない (SX_EX_DATAERR)
+##   77  変数が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [|Q_bind Q_arr Q_spec Q_l Q_r|])dnl
+
+sx_arr_get() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_get "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	__sx_arr_is_bind "${1-!}" || return M_EX_USAGE
+
+	__sx_arr_is_bindable "${1}" || return M_EX_NOPERM
+
+	sx_var_is_name "${2-}" || return M_EX_USAGE
+
+	__sx_var_is_arr "${2}" || return M_EX_DATAERR
+
+	Q_bind="${1}"
+	Q_arr="${2}"
+	shift 2
+
+	for Q_spec in "${@}"; do
+		case "${Q_spec}" in *~*~*)
+			unset CLEANUP
+			return M_EX_USAGE
+			;;
+		*~*)
+			Q_l="${Q_spec%%~*}"
+			Q_r="${Q_spec#*~}"
+
+			__sx_num_is_int_base 10 "${Q_l}" || {
+				unset CLEANUP
+				return M_EX_USAGE
+			}
+
+			__sx_num_is_int_base 10 "${Q_r}" || {
+				unset CLEANUP
+				return M_EX_USAGE
+			}
+			;;
+		*)
+			__sx_num_is_int_base 10 "${Q_spec}" || {
+				unset CLEANUP
+				return M_EX_USAGE
+			}
+			;;
+		esac
+	done
+
+	__sx_arr_get "${Q_bind}" "${Q_arr}" "${@}"
+	unset CLEANUP
+}
+|], [|arr_get|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_arr_get_end - 区間端点を [0, len] に正規化する（内部用）
+##
+## 使い方:
+##   __sx_arr_get_end 結果変数名 整数文字列 長さ
+##
+## 説明:
+##   sx_arr_get の内部実装。
+##   引数チェックは行わない。
+##   整数文字列は検証済み（符号付き10進、前ゼロなし）を前提とする。
+##   負の場合は len+n に換算し、超過分は 0 に丸める。
+##   非負の場合は len を超える分を len に丸める。
+##   -0 は 0 とみなす。
+
+define([|CLEANUP|], [|Q_res Q_body Q_tmp|])dnl
+
+__sx_arr_get_end() {
+	Q_res="${1}"
+
+	case "${2}" in
+		-0)
+			M_VAR_SET([|${Q_res}|], [|0|])
+			unset CLEANUP
+			return
+			;;
+		-*)
+			Q_body="${2#-}"
+
+			__sx_num_cmp_nat0 "${Q_body}" "${3}" || case "${?}" in
+				3) M_VAR_SET([|${Q_res}|], [|0|]);;
+				*) __sx_num_sub_nat0 "${Q_res}" "${3}" "${Q_body}";;
+			esac
+			;;
+		*)
+			case "${2}" in +*) Q_tmp="${2#+}";; *) Q_tmp="${2}";; esac
+
+			__sx_num_cmp_nat0 "${Q_tmp}" "${3}" || case "${?}" in
+				3) M_VAR_SET([|${Q_res}|], [|${3}|]);;
+				*) M_VAR_SET([|${Q_res}|], [|${Q_tmp}|]);;
+			esac
+			;;
+	esac
+
+	unset CLEANUP
+}
+|], [|arr_get_end|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_arr_get - 配列から指定要素を順序保持で切り出す（内部用）
+##
+## 使い方:
+##   __sx_arr_get bind 配列名 [spec ...]
+##
+## 説明:
+##   sx_arr_get の本体実装（要素ストリーム構築・一括書き込み・コミット）。
+##   引数チェック（bind 形式・変数名・配列判定・書き込み権限・spec 形式）は行わない。
+##   spec の順に単体・範囲を解決し、__sx_arr_bind で chain を構築した後、
+##   __sx_arr_bind_commit で確定する。範囲外単体はスキップし、空結果でも成功する。
+
+define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_l Q_r Q_s Q_e Q_i Q_blk Q_tmp|])dnl
+
+__sx_arr_get() {
+	__sx_var_to_ebind Q_bind "${1}"
+	Q_borg="${Q_bind}"
+	Q_chain=
+	Q_arr="${2}"
+	eval "Q_len=\"\${${2}_len}\""
+	shift 2
+
+	for Q_spec in "${@}"; do
+		case "${Q_spec}" in *~*)
+			Q_l="${Q_spec%%~*}"
+			Q_r="${Q_spec#*~}"
+			__sx_arr_get_end Q_s "${Q_l}" "${Q_len}"
+			__sx_arr_get_end Q_e "${Q_r}" "${Q_len}"
+
+			__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in
+				1)
+					Q_i="${Q_s}"
+
+					while M_STR_NE([|"${Q_i}"|], [|"${Q_e}"|]); do
+						__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_i}" || break 2
+						M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
+						M_NUM_INCRM1([|Q_i|])
+					done
+					;;
+				3)
+					Q_i="${Q_s}"
+
+					while M_STR_NE([|"${Q_i}"|], [|"${Q_e}"|]); do
+						M_NUM_DECRM1([|Q_i|])
+						__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_i}" || break 2
+						M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
+					done
+					;;
+			esac
+			;;
+		*)
+			case "${Q_spec}" in
+				-0) Q_i=0;;
+				-*)
+					Q_tmp="${Q_spec#-}"
+
+					__sx_num_cmp_nat0 "${Q_tmp}" "${Q_len}" || case "${?}" in
+						3) continue;;
+						*) __sx_num_sub_nat0 Q_i "${Q_len}" "${Q_tmp}";;
+					esac
+					;;
+				+*) Q_i="${Q_spec#+}";;
+				*) Q_i="${Q_spec}";;
+			esac
+
+			__sx_num_cmp_nat0 "${Q_i}" "${Q_len}" || case "${?}" in
+				1) ;;
+				*) continue;;
+			esac
+
+			__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_i}" || break
+			M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
+			;;
+		esac
+	done
+
+	eval __sx_arr_bind_commit '"${Q_borg}"' '"${Q_bind}"' "${Q_chain}"
+
+	unset CLEANUP
+}
+|], [|arr_get|])dnl
 ### sx_arr_gen - 配列を初期化し、要素を追加する
 ##
 ## 使い方:
@@ -13118,7 +13333,7 @@ M_RENAME_Q([|dnl
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|CLEANUP|], [| |])dnl
+define([|CLEANUP|], [||])dnl
 
 sx_arr_pop() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_pop "${@}" || return; return 0;; esac
@@ -13254,7 +13469,7 @@ M_RENAME_Q([|dnl
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|CLEANUP|], [| |])dnl
+define([|CLEANUP|], [||])dnl
 
 sx_arr_splice() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_splice "${@}" || return; return 0;; esac
