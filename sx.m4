@@ -6562,6 +6562,69 @@ __sx_num_divmod_nat0() {
 }
 |], [|num_divmod_nat0|])dnl
 
+M_RENAME_Q([|dnl
+### sx_num_divceil_nat0 - 絶対値の除算で切り上げ商を求める
+##
+## 使い方:
+##   sx_num_divceil_nat0 結果変数名 被除数 [除数]
+##
+## 説明:
+##   符号なし10進整数の絶対値の除算を行い、余りがあれば切り上げた商を求める。
+##   ceil(被除数 ÷ 除数) に等しく、__sx_num_divmod_nat0 で求めた余りが 0 でなければ
+##   __sx_num_add1_nat0 で商に 1 を加算する。
+##   被除数は 0 以上の自然数、除数は 1 以上の自然数。
+##   除数に 0 を指定した場合は引数不正とみなす。
+##   被除数・除数は省略可能で、省略した場合はそれぞれ 0、1 として扱われる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+
+sx_num_divceil_nat0() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_divceil_nat0 "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	__sx_num_is_nat0_base 10 ${2:+"${2}"} && __sx_num_is_nat1_base 10 ${3:+"${3}"} || return M_EX_USAGE
+
+	__sx_num_divceil_nat0 "${@}"
+}
+|], [|num_divceil_nat0|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_num_divceil_nat0 - 絶対値の除算で切り上げ商を求める（内部用）
+##
+## 使い方:
+##   __sx_num_divceil_nat0 結果変数名 被除数 [除数]
+##
+## 説明:
+##   sx_num_divceil_nat0 の内部実装。引数チェックは行わない。
+##   前提: 結果変数名は有効で書き込み可能、被除数は 0 以上の自然数、
+##   除数は 1 以上の自然数であること。被除数・除数は省略時、
+##   それぞれ 0、1 として扱われる。
+
+define([|CLEANUP|], [|Q_res Q_q Q_r|])dnl
+
+__sx_num_divceil_nat0() {
+	Q_res="${1}"
+
+	__sx_num_divmod_nat0 'Q_q:Q_r:' "${2:-0}" "${3:-1}"
+
+	case "${Q_r}" in [!0]*)
+		M_NUM_INCRM1([|Q_q|])
+	esac
+
+	M_VAR_SET([|${Q_res}|], [|${Q_q}|])
+	unset CLEANUP
+}
+|], [|num_divceil_nat0|])dnl
+
 ### sx_num_edivmod_int - ユークリッド除算で整数商と余剰を同時に求める
 ##
 ## 使い方:
