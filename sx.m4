@@ -12540,7 +12540,7 @@ M_RENAME_Q([|dnl
 ##
 ## 使い方:
 ##   sx_arr_get bind 配列名 [spec ...]
-##   spec := 整数 | 整数~整数
+##   spec := 整数 | 整数:整数
 ##   整数は符号付き10進整数（+1 / -1 の接頭辞可、前ゼロなし、-0 は 0 とみなす）。
 ##
 ## 説明:
@@ -12552,11 +12552,11 @@ M_RENAME_Q([|dnl
 ##   単体指定:
 ##     n が負の場合は len+n に換算した上で [0, len] に丸める。
 ##     丸め結果が len に等しい場合（正方向の範囲外）はその spec をスキップする。
-##   範囲指定 s~e（~ のみ。- 区切りは不可）:
+##   範囲指定 s:e（: のみ。- / ~ 区切りは不可）:
 ##     半開区間 [min(s,e), max(s,e)) を、s<e なら昇順、s>e なら降順で排出する。
 ##     s==e は空である。各端点は負なら len+n 換算の上で [0, len] に丸める
-##     （下側は 0、上側は len）。例: arr=[a,b,c,d,e] なら 0~3→a,b,c、
-##     3~0→c,b,a、400~1→e,d,c,b、6~10→空。
+##     （下側は 0、上側は len）。例: arr=[a,b,c,d,e] なら 0:3→a,b,c、
+##     3:0→c,b,a、400:1→e,d,c,b、6:10→空。
 ##
 ## 注意:
 ##   分配先に既存配列を使う場合は、事前に sx_var_unset を明示的に呼び出してから呼び出すこと。
@@ -12589,13 +12589,13 @@ sx_arr_get() {
 	shift 2
 
 	for Q_spec in "${@}"; do
-		case "${Q_spec}" in *~*~*)
+		case "${Q_spec}" in *:*:*)
 			unset CLEANUP
 			return M_EX_USAGE
 			;;
-		*~*)
-			Q_l="${Q_spec%%~*}"
-			Q_r="${Q_spec#*~}"
+		*:*)
+			Q_l="${Q_spec%%:*}"
+			Q_r="${Q_spec#*:}"
 
 			__sx_num_is_int_base 10 "${Q_l}" || {
 				unset CLEANUP
@@ -12683,9 +12683,9 @@ __sx_arr_get() {
 	shift 2
 
 	for Q_spec in "${@}"; do
-		case "${Q_spec}" in *~*)
-			__sx_arr_get_end Q_s "${Q_spec%%~*}" "${Q_len}"
-			__sx_arr_get_end Q_e "${Q_spec#*~}" "${Q_len}"
+		case "${Q_spec}" in *:*)
+			__sx_arr_get_end Q_s "${Q_spec%%:*}" "${Q_len}"
+			__sx_arr_get_end Q_e "${Q_spec#*:}" "${Q_len}"
 
 			__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in
 				1)
