@@ -12550,8 +12550,8 @@ M_RENAME_Q([|dnl
 ##   スキップし、範囲端点は丸める寛容系であり、結果が空でも 0 を返して空配列を確定する。
 ##   spec なしの場合も空配列を確定して成功する。
 ##   単体指定:
-##     n が負の場合は len+n に換算する（-1 は末尾）。換算後も範囲外（0 未満、
-##     len 以上）の場合はその spec をスキップする。
+##     n が負の場合は len+n に換算した上で [0, len] に丸める。
+##     丸め結果が len に等しい場合（正方向の範囲外）はその spec をスキップする。
 ##   範囲指定 s~e（~ のみ。- 区切りは不可）:
 ##     半開区間 [min(s,e), max(s,e)) を、s<e なら昇順、s>e なら降順で排出する。
 ##     s==e は空である。各端点は負なら len+n 換算の上で [0, len] に丸める
@@ -12635,36 +12635,27 @@ M_RENAME_QI([|dnl
 ##   非負の場合は len を超える分を len に丸める。
 ##   -0 は 0 とみなす。
 
-define([|CLEANUP|], [|Q_res Q_body Q_tmp|])dnl
+define([|CLEANUP|], [||])dnl
 
 __sx_arr_get_end() {
-	Q_res="${1}"
-
 	case "${2}" in
-		-0)
-			M_VAR_SET([|${Q_res}|], [|0|])
-			unset CLEANUP
-			return
-			;;
+		-0) M_VAR_SET([|${1}|], [|0|]);;
 		-*)
-			Q_body="${2#-}"
+			set -- "${1}" "${2#-}" "${3}"
 
-			__sx_num_cmp_nat0 "${Q_body}" "${3}" || case "${?}" in
-				3) M_VAR_SET([|${Q_res}|], [|0|]);;
-				*) __sx_num_sub_nat0 "${Q_res}" "${3}" "${Q_body}";;
+			__sx_num_cmp_nat0 "${2}" "${3}" || case "${?}" in
+				3) M_VAR_SET([|${1}|], [|0|]);;
+				*) __sx_num_sub_nat0 "${1}" "${3}" "${2}";;
 			esac
 			;;
+		+*) set -- "${1}" "${2#+}" "${3}";&
 		*)
-			case "${2}" in +*) Q_tmp="${2#+}";; *) Q_tmp="${2}";; esac
-
-			__sx_num_cmp_nat0 "${Q_tmp}" "${3}" || case "${?}" in
-				3) M_VAR_SET([|${Q_res}|], [|${3}|]);;
-				*) M_VAR_SET([|${Q_res}|], [|${Q_tmp}|]);;
+			__sx_num_cmp_nat0 "${2}" "${3}" || case "${?}" in
+				3) M_VAR_SET([|${1}|], [|${3}|]);;
+				*) M_VAR_SET([|${1}|], [|${2}|]);;
 			esac
 			;;
 	esac
-
-	unset CLEANUP
 }
 |], [|arr_get_end|])dnl
 
@@ -12678,9 +12669,10 @@ M_RENAME_QI([|dnl
 ##   sx_arr_get の本体実装（要素ストリーム構築・一括書き込み・コミット）。
 ##   引数チェック（bind 形式・変数名・配列判定・書き込み権限・spec 形式）は行わない。
 ##   spec の順に単体・範囲を解決し、__sx_arr_bind で chain を構築した後、
-##   __sx_arr_bind_commit で確定する。範囲外単体はスキップし、空結果でも成功する。
+##   __sx_arr_bind_commit で確定する。単体は [0, len] に丸め、len はスキップし、
+##   空結果でも成功する。
 
-define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_l Q_r Q_s Q_e Q_i Q_blk Q_tmp|])dnl
+define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_i Q_blk|])dnl
 
 __sx_arr_get() {
 	__sx_var_to_ebind Q_bind "${1}"
@@ -12692,10 +12684,8 @@ __sx_arr_get() {
 
 	for Q_spec in "${@}"; do
 		case "${Q_spec}" in *~*)
-			Q_l="${Q_spec%%~*}"
-			Q_r="${Q_spec#*~}"
-			__sx_arr_get_end Q_s "${Q_l}" "${Q_len}"
-			__sx_arr_get_end Q_e "${Q_r}" "${Q_len}"
+			__sx_arr_get_end Q_s "${Q_spec%%~*}" "${Q_len}"
+			__sx_arr_get_end Q_e "${Q_spec#*~}" "${Q_len}"
 
 			__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in
 				1)
@@ -12719,23 +12709,10 @@ __sx_arr_get() {
 			esac
 			;;
 		*)
-			case "${Q_spec}" in
-				-0) Q_i=0;;
-				-*)
-					Q_tmp="${Q_spec#-}"
+			__sx_arr_get_end Q_i "${Q_spec}" "${Q_len}"
 
-					__sx_num_cmp_nat0 "${Q_tmp}" "${Q_len}" || case "${?}" in
-						3) continue;;
-						*) __sx_num_sub_nat0 Q_i "${Q_len}" "${Q_tmp}";;
-					esac
-					;;
-				+*) Q_i="${Q_spec#+}";;
-				*) Q_i="${Q_spec}";;
-			esac
-
-			__sx_num_cmp_nat0 "${Q_i}" "${Q_len}" || case "${?}" in
-				1) ;;
-				*) continue;;
+			case "${Q_i}" in "${Q_len}")
+				continue
 			esac
 
 			__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_i}" || break

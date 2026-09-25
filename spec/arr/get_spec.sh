@@ -59,10 +59,11 @@ Describe 'sx_arr_get'
       The variable x_1 should equal "c"
     End
 
-    It '換算後も範囲外の負数はスキップすること'
+    It '換算後も範囲外の負数は 0 に丸めること'
       When call sx_arr_get x myarr -6
       The status should be success
-      The variable x_len should equal 0
+      The variable x_len should equal 1
+      The variable x_0 should equal "a"
     End
 
     It '-len は先頭要素を示すこと'
