@@ -13604,7 +13604,7 @@ __sx_arr_splice() {
 
 		if
 			M_STR_NE([|"${SX_CFG_ARR_REF-}"|], [|''|]) && \
-			M_STR_MATCH([|"${Q_val}"|], [|"${SX_CFG_ARR_REF-}${SX_STR_SWORD}"*|]) && \
+			M_STR_MATCH([|"${Q_val}"|], [|"${SX_CFG_ARR_REF-}"["${SX_STR_SWORD}"]*|]) && \
 			Q_vn="${Q_val#"${SX_CFG_ARR_REF-}"}" && \
 			sx_var_is_name "${Q_vn}"
 		then

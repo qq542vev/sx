@@ -66,4 +66,15 @@ Describe 'sx_arr_push'
     The variable myarr_mul_len should equal 6
     The variable myarr_mul_5 should equal "last"
   End
+
+  It 'ARR_REF 設定時は参照をコピーしてプッシュすること'
+    src="hello"
+    sx_arr_gen myarr_push_ref
+    sx_cfg_set "ARR_REF=@"
+    When call sx_arr_push myarr_push_ref "@src"
+    The status should be success
+    The variable myarr_push_ref_0 should equal "hello"
+    sx_cfg_set "ARR_REF"
+    sx_var_unset myarr_push_ref src
+  End
 End

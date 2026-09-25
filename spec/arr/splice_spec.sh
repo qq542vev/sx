@@ -403,4 +403,38 @@ Describe 'sx_arr_splice'
       The variable myarr_1 should equal "b"
     End
   End
+
+  Describe 'SX_CFG_ARR_REF'
+    It '参照形式（@名前）は変数の値をコピーすること'
+      src="hello"
+      sx_arr_gen myarr a b
+      sx_cfg_set "ARR_REF=@"
+      When call sx_arr_splice myarr 1 0 "@src"
+      The status should be success
+      The variable myarr_len should equal 3
+      The variable myarr_1 should equal "hello"
+      sx_cfg_set "ARR_REF"
+      sx_var_unset myarr src
+    End
+
+    It '参照先が変数名でない場合はリテラル扱いになること'
+      sx_arr_gen myarr2 x
+      sx_cfg_set "ARR_REF=@"
+      When call sx_arr_splice myarr2 1 0 "@123"
+      The status should be success
+      The variable myarr2_1 should equal "@123"
+      sx_cfg_set "ARR_REF"
+      sx_var_unset myarr2
+    End
+
+    It 'ARR_REF が空の場合は参照せずリテラル扱いになること'
+      src="hello"
+      sx_arr_gen myarr3 x
+      sx_cfg_set "ARR_REF"
+      When call sx_arr_splice myarr3 1 0 "@src"
+      The status should be success
+      The variable myarr3_1 should equal "@src"
+      sx_var_unset myarr3 src
+    End
+  End
 End
