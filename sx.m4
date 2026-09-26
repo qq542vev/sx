@@ -5565,17 +5565,20 @@ sx_num_cmp_fixed() {
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 __sx_num_cmp_fixed() {
-	set -- "${1#[+-]}" "${2#[+-]}" "${1%%[!-]*}" "${2%%[!-]*}"
-
-	case "${3:-+}${4:-+}" in
-		-+) return 1;;
-		+-) return 3;;
+	case "${1}:${2}" in
+		*[1-9]*:* | *:*[1-9]*) ;;
+		*) return 2;;
 	esac
 
-	case "${3}" in
-		-*) __sx_num_cmp_fixed_abs "${2}" "${1}";;
-		*)  __sx_num_cmp_fixed_abs "${1}" "${2}";;
-	esac || return "${?}"
+	case "${1}:${2}" in
+		-*:[+0-9]*) return 1;;
+		[+0-9]*:-*) return 3;;
+	esac
+
+	case "${1}" in
+		-*) __sx_num_cmp_fixed_abs "${2#[+-]}" "${1#[+-]}";;
+		*)  __sx_num_cmp_fixed_abs "${1#[+-]}" "${2#[+-]}";;
+	esac || return
 }
 
 ### __sx_num_cmp_fixed_abs - 正規化済み絶対値同士を比較する（内部用）
@@ -8642,9 +8645,9 @@ sx_num_range() {
 
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_int_safe "${2-}" ${3+"${3}"} ${4+"${4}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 "${2-}" ${3+"${3}"} ${4+"${4}"} || return M_EX_USAGE
 
-	case "$((${4-1}))" in 0)
+	case "${4-1}" in 0 | [+-]0)
 		return M_EX_USAGE
 	esac
 
@@ -8660,7 +8663,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_num_range の内部実装。引数チェックを行わない。
 
-define([|CLEANUP|], [|Q_bind Q_cur|])dnl
+define([|CLEANUP|], [|Q_bind Q_cur Q_tmp|])dnl
 
 __sx_num_range() {
 	__sx_var_bind_init "${1}"
@@ -8670,20 +8673,33 @@ __sx_num_range() {
 	case "${#}" in
 		1) set -- 0 "${1}" 1;;
 		2) set -- "${1}" "${2}" 1;;
-		*) set -- "${1}" "${2}" "${3-1}";;
 	esac
 
-	Q_cur="${1}"
+	__sx_num_cmp_fixed "${1}" "${2}" || case "${?}${3}" in 1-* | 2* | 3[!-]*)
+		unset CLEANUP
+		return
+	esac
 
-	if M_NUM_LT([|0|], [|${3}|]); then
-		while M_NUM_LT([|Q_cur|], [|${2}|]); do
+	__sx_num_sub_int Q_tmp "${2}" "${1}"
+	__sx_num_divceil_int Q_tmp "${Q_tmp}" "${3}"
+	__sx_num_mul_int Q_tmp "${Q_tmp}" "${3}"
+	__sx_num_add_int Q_tmp "${Q_tmp}" "${1}"
+
+	Q_cur="${1#+}"
+
+	case "${Q_cur}" in -0)
+		Q_cur=0
+	esac
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_cur}" "${Q_tmp}" "${3}"; then
+		while M_STR_NE([|"${Q_cur}"|], [|"${Q_tmp}"|]); do
 			__sx_var_ubind Q_bind "${Q_bind}" "${Q_cur}" || break
-			: $((Q_cur += ${3}))
+			Q_cur=$((Q_cur + ${3}))
 		done
 	else
-		while M_NUM_LT([|${2}|], [|Q_cur|]); do
+		while M_STR_NE([|"${Q_cur}"|], [|"${Q_tmp}"|]); do
 			__sx_var_ubind Q_bind "${Q_bind}" "${Q_cur}" || break
-			: $((Q_cur += ${3}))
+			__sx_num_add_int Q_cur "${Q_cur}" "${3}"
 		done
 	fi
 
