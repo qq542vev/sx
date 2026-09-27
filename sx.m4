@@ -8663,7 +8663,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_num_range の内部実装。引数チェックを行わない。
 
-define([|CLEANUP|], [|Q_bind Q_cur Q_tmp Q_end Q_s Q_e Q_t Q_p Q_e1 Q_ra Q_rb|])dnl
+define([|CLEANUP|], [|Q_bind Q_cur Q_tmp Q_end Q_s Q_e Q_t Q_c Q_p Q_e1 Q_diff|])dnl
 
 __sx_num_range() {
 	__sx_var_bind_init "${1}"
@@ -8695,21 +8695,11 @@ __sx_num_range() {
 		# 最終要素の算出。空判定済みのため端の加減算は溢れない。
 		# 中間結果は被演算子の大きさを超えない。
 		# 符号は文字列で判定し、以降の算術は直線的に行う。
-		case "${Q_t}" in -*)
-			Q_p="${Q_t#-}"
-			Q_e1="$((Q_e + 1))"
-			Q_ra=$(((Q_s % Q_p) + Q_p * (Q_s < 0)))
-			Q_rb=$(((Q_e1 % Q_p) + Q_p * (Q_e1 < 0)))
-			Q_end=$((Q_e1 + (Q_ra - Q_rb + Q_p * (Q_ra < Q_rb))))
-			;;
-		*)
-			Q_p="${Q_t#+}"
-			Q_e1="$((Q_e - 1))"
-			Q_ra=$(((Q_e1 % Q_p) + Q_p * (Q_e1 < 0)))
-			Q_rb=$(((Q_s % Q_p) + Q_p * (Q_s < 0)))
-			Q_end=$((Q_e1 - (Q_ra - Q_rb + Q_p * (Q_ra < Q_rb))))
-			;;
-		esac
+		Q_c=$((Q_t < 0 ? 1 : -1))
+		Q_p="${Q_t#-}"
+		Q_e1=$((Q_e + Q_c))
+		Q_diff=$((((Q_s % Q_p) + Q_p * (Q_s < 0)) - ((Q_e1 % Q_p) + Q_p * (Q_e1 < 0))))
+		Q_end=$((Q_e1 + (Q_diff + (Q_c * Q_p * (Q_c * Q_diff < 0)))))
 
 		while
 			__sx_var_ubind Q_bind "${Q_bind}" "${Q_cur}" || break
