@@ -8663,7 +8663,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_num_range の内部実装。引数チェックを行わない。
 
-define([|CLEANUP|], [|Q_bind Q_cur Q_tmp|])dnl
+define([|CLEANUP|], [|Q_bind Q_cur Q_tmp Q_end Q_s Q_e Q_t Q_p Q_edge Q_a Q_b Q_ra Q_rb Q_diff|])dnl
 
 __sx_num_range() {
 	__sx_var_bind_init "${1}"
@@ -8675,15 +8675,7 @@ __sx_num_range() {
 		2) set -- "${1}" "${2}" 1;;
 	esac
 
-	__sx_num_cmp_fixed "${1}" "${2}" || case "${?}${3}" in 1-* | 2* | 3[!-]*)
-		unset CLEANUP
-		return
-	esac
-
-	__sx_num_sub_int Q_tmp "${2}" "${1}"
-	__sx_num_divceil_int Q_tmp "${Q_tmp}" "${3}"
-	__sx_num_mul_int Q_tmp "${Q_tmp}" "${3}"
-	__sx_num_add_int Q_tmp "${Q_tmp}" "${1}"
+	Q_s="${1}" Q_e="${2}" Q_t="${3}"
 
 	Q_cur="${1#+}"
 
@@ -8691,12 +8683,50 @@ __sx_num_range() {
 		Q_cur=0
 	esac
 
-	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_cur}" "${Q_tmp}" "${3}"; then
-		while M_STR_NE([|"${Q_cur}"|], [|"${Q_tmp}"|]); do
+	# 高速経路: 全入力が設定幅に収まり、増分が最小値でない場合。
+	# 最小値の増分は絶対値化で溢れるため低速経路に回す。
+	# 幅と増分の組み合わせは新しい入力のみで判定する。
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${1}" "${2}" "${3}" && M_STR_NE([|"${3}"|], [|"${SX_SYS_NUM_MIN}"|]); then
+		case "$((Q_s == Q_e || (Q_s < Q_e && Q_t < 0) || (Q_e < Q_s && 0 < Q_t)))" in 1)
+			unset CLEANUP
+			return
+		esac
+
+		# 最終要素の算出。空判定済みのため端の加減算は溢れない。
+		# 中間結果は被演算子の大きさを超えない。
+		Q_p=$((Q_t > 0 ? Q_t : -Q_t))
+		Q_edge=$((Q_t > 0 ? Q_e - 1 : Q_e + 1))
+		Q_a=$((Q_t > 0 ? Q_edge : Q_s))
+		Q_b=$((Q_t > 0 ? Q_s : Q_edge))
+		Q_ra=$((Q_a % Q_p))
+		case "${Q_ra}" in -*) Q_ra=$((Q_ra + Q_p));; esac
+		Q_rb=$((Q_b % Q_p))
+		case "${Q_rb}" in -*) Q_rb=$((Q_rb + Q_p));; esac
+		Q_diff=$((Q_ra - Q_rb))
+		case "${Q_diff}" in -*) Q_diff=$((Q_diff + Q_p));; esac
+		Q_end=$((Q_t > 0 ? Q_edge - Q_diff : Q_edge + Q_diff))
+
+		while
 			__sx_var_ubind Q_bind "${Q_bind}" "${Q_cur}" || break
-			Q_cur=$((Q_cur + ${3}))
-		done
+
+			case "${Q_cur}" in "${Q_end}")
+				break
+			esac
+
+			Q_cur=$((Q_cur + Q_t))
+			continue
+		do :; done
 	else
+		__sx_num_cmp_fixed "${1}" "${2}" || case "${?}${3}" in 1-* | 2* | 3[!-]*)
+			unset CLEANUP
+			return
+		esac
+
+		__sx_num_sub_int Q_tmp "${2}" "${1}"
+		__sx_num_divceil_int Q_tmp "${Q_tmp}" "${3}"
+		__sx_num_mul_int Q_tmp "${Q_tmp}" "${3}"
+		__sx_num_add_int Q_tmp "${Q_tmp}" "${1}"
+
 		while M_STR_NE([|"${Q_cur}"|], [|"${Q_tmp}"|]); do
 			__sx_var_ubind Q_bind "${Q_bind}" "${Q_cur}" || break
 			__sx_num_add_int Q_cur "${Q_cur}" "${3}"
