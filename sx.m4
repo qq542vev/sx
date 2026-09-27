@@ -8699,7 +8699,8 @@ __sx_num_range() {
 		Q_p="${Q_t#-}"
 		Q_e1=$((Q_e + Q_c))
 		Q_diff=$((((Q_s % Q_p) + Q_p * (Q_s < 0)) - ((Q_e1 % Q_p) + Q_p * (Q_e1 < 0))))
-		Q_end=$((Q_e1 + (Q_diff + (Q_c * Q_p * (Q_c * Q_diff < 0)))))
+		# 被演算子の順番変更を行わないこと。桁溢れの可能性あり。
+		Q_end=$((Q_diff + (Q_c * Q_p * (Q_c * Q_diff < 0)) + Q_e1))
 
 		while
 			__sx_var_ubind Q_bind "${Q_bind}" "${Q_cur}" || break
