@@ -8694,17 +8694,33 @@ __sx_num_range() {
 
 		# 最終要素の算出。空判定済みのため端の加減算は溢れない。
 		# 中間結果は被演算子の大きさを超えない。
-		Q_p=$((Q_t > 0 ? Q_t : -Q_t))
-		Q_edge=$((Q_t > 0 ? Q_e - 1 : Q_e + 1))
-		Q_a=$((Q_t > 0 ? Q_edge : Q_s))
-		Q_b=$((Q_t > 0 ? Q_s : Q_edge))
+		# 符号は文字列で一度だけ判定し、以降の算術は直線的に行う。
+		case "${Q_t}" in -*)
+			Q_p=$((-Q_t))
+			Q_edge=$((Q_e + 1))
+			Q_a="${Q_s}"
+			Q_b="${Q_edge}"
+			;;
+		*)
+			Q_p="${Q_t#+}"
+			Q_edge=$((Q_e - 1))
+			Q_a="${Q_edge}"
+			Q_b="${Q_s}"
+			;;
+		esac
 		Q_ra=$((Q_a % Q_p))
 		case "${Q_ra}" in -*) Q_ra=$((Q_ra + Q_p));; esac
 		Q_rb=$((Q_b % Q_p))
 		case "${Q_rb}" in -*) Q_rb=$((Q_rb + Q_p));; esac
 		Q_diff=$((Q_ra - Q_rb))
 		case "${Q_diff}" in -*) Q_diff=$((Q_diff + Q_p));; esac
-		Q_end=$((Q_t > 0 ? Q_edge - Q_diff : Q_edge + Q_diff))
+		case "${Q_t}" in -*)
+			Q_end=$((Q_edge + Q_diff))
+			;;
+		*)
+			Q_end=$((Q_edge - Q_diff))
+			;;
+		esac
 
 		while
 			__sx_var_ubind Q_bind "${Q_bind}" "${Q_cur}" || break
