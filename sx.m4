@@ -8663,7 +8663,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_num_range の内部実装。引数チェックを行わない。
 
-define([|CLEANUP|], [|Q_bind Q_cur Q_tmp Q_end Q_s Q_e Q_t Q_p Q_edge Q_a Q_b Q_ra Q_rb Q_diff|])dnl
+define([|CLEANUP|], [|Q_bind Q_cur Q_tmp Q_end Q_s Q_e Q_t Q_p Q_e1 Q_ra Q_rb|])dnl
 
 __sx_num_range() {
 	__sx_var_bind_init "${1}"
@@ -8697,27 +8697,17 @@ __sx_num_range() {
 		# 符号は文字列で判定し、以降の算術は直線的に行う。
 		case "${Q_t}" in -*)
 			Q_p="${Q_t#-}"
-			Q_edge=$((Q_e + 1))
-			Q_ra=$((Q_s % Q_p))
-			Q_rb=$((Q_edge % Q_p))
+			Q_e1="$((Q_e + 1))"
+			Q_ra=$(((Q_s % Q_p) + Q_p * (Q_s < 0)))
+			Q_rb=$(((Q_e1 % Q_p) + Q_p * (Q_e1 < 0)))
+			Q_end=$((Q_e1 + (Q_ra - Q_rb + Q_p * (Q_ra < Q_rb))))
 			;;
 		*)
 			Q_p="${Q_t#+}"
-			Q_edge=$((Q_e - 1))
-			Q_ra=$((Q_edge % Q_p))
-			Q_rb=$((Q_s % Q_p))
-			;;
-		esac
-
-		case "${Q_ra}" in -*) Q_ra=$((Q_ra + Q_p));; esac
-		case "${Q_rb}" in -*) Q_rb=$((Q_rb + Q_p));; esac
-		Q_diff=$((Q_ra - Q_rb))
-		case "${Q_diff}" in -*) Q_diff=$((Q_diff + Q_p));; esac
-		case "${Q_t}" in -*)
-			Q_end=$((Q_e + 1 + Q_diff))
-			;;
-		*)
-			Q_end=$((Q_e - 1 - Q_diff))
+			Q_e1="$((Q_e - 1))"
+			Q_ra=$(((Q_e1 % Q_p) + Q_p * (Q_e1 < 0)))
+			Q_rb=$(((Q_s % Q_p) + Q_p * (Q_s < 0)))
+			Q_end=$((Q_e1 - (Q_ra - Q_rb + Q_p * (Q_ra < Q_rb))))
 			;;
 		esac
 
