@@ -8698,19 +8698,18 @@ __sx_num_range() {
 		case "${Q_t}" in -*)
 			Q_p=$((-Q_t))
 			Q_edge=$((Q_e + 1))
-			Q_a="${Q_s}"
-			Q_b="${Q_edge}"
+			Q_ra=$((Q_s % Q_p))
+			Q_rb=$((Q_edge % Q_p))
 			;;
 		*)
 			Q_p="${Q_t#+}"
 			Q_edge=$((Q_e - 1))
-			Q_a="${Q_edge}"
-			Q_b="${Q_s}"
+			Q_ra=$((Q_edge % Q_p))
+			Q_rb=$((Q_s % Q_p))
 			;;
 		esac
-		Q_ra=$((Q_a % Q_p))
+
 		case "${Q_ra}" in -*) Q_ra=$((Q_ra + Q_p));; esac
-		Q_rb=$((Q_b % Q_p))
 		case "${Q_rb}" in -*) Q_rb=$((Q_rb + Q_p));; esac
 		Q_diff=$((Q_ra - Q_rb))
 		case "${Q_diff}" in -*) Q_diff=$((Q_diff + Q_p));; esac
