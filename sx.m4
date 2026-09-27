@@ -8694,9 +8694,9 @@ __sx_num_range() {
 
 		# 最終要素の算出。空判定済みのため端の加減算は溢れない。
 		# 中間結果は被演算子の大きさを超えない。
-		# 符号は文字列で一度だけ判定し、以降の算術は直線的に行う。
+		# 符号は文字列で判定し、以降の算術は直線的に行う。
 		case "${Q_t}" in -*)
-			Q_p=$((-Q_t))
+			Q_p="${Q_t#-}"
 			Q_edge=$((Q_e + 1))
 			Q_ra=$((Q_s % Q_p))
 			Q_rb=$((Q_edge % Q_p))
@@ -8714,10 +8714,10 @@ __sx_num_range() {
 		Q_diff=$((Q_ra - Q_rb))
 		case "${Q_diff}" in -*) Q_diff=$((Q_diff + Q_p));; esac
 		case "${Q_t}" in -*)
-			Q_end=$((Q_edge + Q_diff))
+			Q_end=$((Q_e + 1 + Q_diff))
 			;;
 		*)
-			Q_end=$((Q_edge - Q_diff))
+			Q_end=$((Q_e - 1 - Q_diff))
 			;;
 		esac
 
