@@ -6699,16 +6699,101 @@ __sx_num_divceil_int() {
 	__sx_num_divmod_nat0 'Q_q:Q_r:' "${2#[+-]}" "${3#[+-]}"
 
 	case "$((Q_us ^ Q_vs)):${Q_q}:${Q_r}" in
-		0:*:[!0]*)
-			M_NUM_INCRM1([|Q_q|]);;
-		1:[!0]*:*)
-			M_STR_PREPEND([|Q_q|], [|-|]);;
+		0:*:[!0]*) M_NUM_INCRM1([|Q_q|]);;
+		1:[!0]*:*) M_STR_PREPEND([|Q_q|], [|-|]);;
 	esac
 
 	M_VAR_SET([|${1}|], [|${Q_q}|])
 	unset CLEANUP
 }
 |], [|num_divceil_int|])dnl
+
+M_RENAME_Q([|dnl
+### sx_num_divfloor_int - 符号付き整数の除算で切り捨て商を求める
+##
+## 使い方:
+##   sx_num_divfloor_int 結果変数名 被除数 [除数]
+##
+## 説明:
+##   符号付き10進整数の除算を行い、数学的 floor（負の無限大方向）の商を求める。
+##   同符号では floor（絶対値の商）、異符号では -ceil（絶対値の商）に等しい。
+##   __sx_num_divmod_nat0 で絶対値の商 q0 と余り r0 を求め、
+##   余りがあり被除数と除数が異符号の場合のみ __sx_num_add1_nat0 で 1 を加算し、
+##   異符号で商が 0 でない場合は負号を付与する。
+##   被除数は任意の符号付き整数、除数は 0 以外の符号付き整数。
+##   除数に 0 を指定した場合は引数不正とみなす。
+##   被除数・除数は省略可能で、省略した場合はそれぞれ 0、1 として扱われる。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+
+sx_num_divfloor_int() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_divfloor_int "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	__sx_num_is_int_base 10 ${2:+"${2}"} && __sx_num_is_nzint_base 10 ${3:+"${3}"} || return M_EX_USAGE
+
+	__sx_num_divfloor_int "${@}"
+}
+|], [|num_divfloor_int|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_num_divfloor_int - 符号付き整数の除算で切り捨て商を求める（内部用）
+##
+## 使い方:
+##   __sx_num_divfloor_int 結果変数名 被除数 [除数]
+##
+## 説明:
+##   sx_num_divfloor_int の内部実装。引数チェックは行わない。
+##   前提: 結果変数名は有効で書き込み可能、被除数は任意の符号付き整数、
+##   除数は 0 以外の符号付き整数であること。被除数・除数は省略時、
+##   それぞれ 0、1 として扱われる。
+##   絶対値どうしの除算（q0, r0）の後に floor 規約を適用する。
+##   - r0 = 0 のとき: q = sign(u)×sign(v)×q0（“-0”は作らない）
+##   - r0 ≠ 0 かつ同符号のとき: q = ±q0（打ち切りがそのまま floor になる）
+##   - r0 ≠ 0 かつ異符号のとき: q = ±(q0 + 1)（負方向に1だけ丸める）
+##   加算は増分前の値で判定し、符号付与は増分後の値で判定することで、
+##   q0 = 0 のときの -1 と r0 = 0 のときの -0 回避を両立する。
+
+define([|CLEANUP|], [|Q_q Q_r Q_us Q_vs|])dnl
+
+__sx_num_divfloor_int() {
+	set -- "${1}" "${2:-0}" "${3:-1}"
+	Q_us=0
+	Q_vs=0
+
+	case "${2}" in -*)
+		Q_us=1
+	esac
+
+	case "${3}" in -*)
+		Q_vs=1
+	esac
+
+	__sx_num_divmod_nat0 'Q_q:Q_r:' "${2#[+-]}" "${3#[+-]}"
+
+	case "$((Q_us ^ Q_vs))" in 1)
+		case "${Q_r}" in [!0]*)
+			M_NUM_INCRM1([|Q_q|])
+		esac
+
+		case "${Q_q}" in [!0]*)
+			M_STR_PREPEND([|Q_q|], [|-|])
+		esac
+	esac
+
+	M_VAR_SET([|${1}|], [|${Q_q}|])
+	unset CLEANUP
+}
+|], [|num_divfloor_int|])dnl
 
 ### sx_num_edivmod_int - ユークリッド除算で整数商と余剰を同時に求める
 ##
