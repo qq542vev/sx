@@ -13783,7 +13783,7 @@ M_RENAME_QI([|dnl
 ##   縮小時は前方から後方へ処理して未読のソースを保護する。
 ##   尾部移動後に長さと余剰尾部を確定し、中央の各要素を深く掃除してから代入する。
 
-define([|CLEANUP|], [|Q_arr Q_len Q_n Q_del Q_rest Q_cnt Q_new Q_src Q_end Q_val Q_vn|])dnl
+define([|CLEANUP|], [|Q_arr Q_len Q_n Q_del Q_rest Q_cnt Q_new Q_src Q_end Q_val Q_chain Q_script|])dnl
 
 __sx_arr_splice() {
 	Q_arr="${1}"
@@ -13901,28 +13901,40 @@ __sx_arr_splice() {
 	# 3) 中央の書込み: 尾部移動後、各挿入位置を深く掃除してから
 	#    直ちに代入する。スロットは互いに独立しているため、掃除と代入を
 	#    一周に統合して添字の多倍長インクリメントを重複させない。
+	case "${SX_CFG_ARR_REF}" in ?*)
+		Q_cnt="${Q_n}"
+		Q_chain=
+
+		for Q_val in "${@}"; do
+			case "${Q_val}" in
+				"${SX_CFG_ARR_HOLE}" | "${SX_CFG_ARR_REF}"*[!${SX_STR_WORD}]*) ;;
+				"${SX_CFG_ARR_REF}"[${SX_STR_SWORD}]*) M_STR_APPEND([|Q_chain|], [|" ${Q_val#"${SX_CFG_ARR_REF}"}-${Q_arr}_${Q_cnt}"|]);;
+			esac
+
+			M_NUM_INCRM1([|Q_cnt|])
+		done
+
+		eval __sx_var_copy_script Q_script "${Q_chain}"
+	esac
+
 	for Q_val in "${@}"; do
-		case "${SX_CFG_ARR_HOLE-}" in '') ;; "${Q_val}")
-			__sx_var_unset "${Q_arr}_${Q_n}"
-			M_NUM_INCRM1([|Q_n|])
-			continue
+		case "${Q_val}" in
+			'') ;;
+			"${SX_CFG_ARR_HOLE}")
+				__sx_var_unset "${Q_arr}_${Q_n}"
+				M_NUM_INCRM1([|Q_n|])
+				continue
+				;;
+			"${SX_CFG_ARR_REF:-"${Q_val}"}" | "${SX_CFG_ARR_REF}"*[!${SX_STR_WORD}]*) ;;
+			"${SX_CFG_ARR_REF}"[${SX_STR_SWORD}]*) continue;;
 		esac
 
-		if
-			M_STR_NE([|"${SX_CFG_ARR_REF-}"|], [|''|]) && \
-			M_STR_MATCH([|"${Q_val}"|], [|"${SX_CFG_ARR_REF-}"["${SX_STR_SWORD}"]*|]) && \
-			Q_vn="${Q_val#"${SX_CFG_ARR_REF-}"}" && \
-			sx_var_is_name "${Q_vn}"
-		then
-			__sx_var_copy "${Q_vn}-${Q_arr}_${Q_n}"
-			M_NUM_INCRM1([|Q_n|])
-			continue
-		fi
-
-			__sx_var_unset "${Q_arr}_${Q_n}"
+		__sx_var_unset "${Q_arr}_${Q_n}"
 		eval "${Q_arr}_${Q_n}=\"\${Q_val}\""
 		M_NUM_INCRM1([|Q_n|])
 	done
+
+	eval "${Q_script-}"
 
 	# 4) リビジョン更新。長さは尾部処理の各分岐で確定済みである。
 	case "${SX_CFG_ARR_UPDATE-}" in 1)
