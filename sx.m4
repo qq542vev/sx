@@ -12938,7 +12938,7 @@ M_RENAME_QI([|dnl
 ##   空結果でも成功する。範囲は range 互換（開始含む・終了含まず）で、
 ##   開始が len に等しく step が負の場合は len-1 から開始する。
 
-define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_i Q_blk Q_t Q_c Q_tmp|])dnl
+define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_i Q_t Q_c Q_tmp|])dnl
 
 __sx_arr_get() {
 	__sx_var_to_ebind Q_bind "${1}"
@@ -12982,8 +12982,7 @@ __sx_arr_get() {
 					Q_e=$((Q_e + Q_c + (Q_s - Q_e - Q_c) % Q_t))
 
 					while
-						__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
-						M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
+						__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
 
 						case "${Q_s}" in "${Q_e}")
 							break
@@ -13007,8 +13006,7 @@ __sx_arr_get() {
 					__sx_num_add_int Q_e "${Q_e}" "${Q_tmp}"
 
 					while
-						__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
-						M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
+						__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
 
 						case "${Q_s}" in "${Q_e}")
 							break
@@ -13026,8 +13024,7 @@ __sx_arr_get() {
 					continue
 				esac
 
-				__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_i}" || break
-				M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
+				__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_i}" || break
 				;;
 		esac
 	done
@@ -13338,7 +13335,7 @@ __sx_arr_bind() {
 					# seg: M/vn
 					:*)
 						for Q_arg in "${@}"; do
-							M_STR_APPEND([|Q_chain|], [|"${Q_arg}-${Q_vn}_${Q_cnt}"|], [| |])
+							M_STR_APPEND([|Q_chain|], [|" ${Q_arg}-${Q_vn}_${Q_cnt}"|])
 							M_NUM_INCRM1([|Q_cnt|])
 						done
 
@@ -13359,7 +13356,7 @@ __sx_arr_bind() {
 					*)
 						for Q_arg in "${@}"; do
 							shift
-							M_STR_APPEND([|Q_chain|], [|"${Q_arg}-${Q_vn}_${Q_cnt}"|], [| |])
+							M_STR_APPEND([|Q_chain|], [|" ${Q_arg}-${Q_vn}_${Q_cnt}"|])
 							M_NUM_INCRM1([|Q_cnt|])
 
 							case "${Q_cnt}" in "${Q_lim}")
@@ -13372,7 +13369,7 @@ __sx_arr_bind() {
 
 				Q_bind="${Q_cnt}/${Q_lim}${Q_vn}:${Q_bind#*:}"
 				;;
-			["${SX_STR_SWORD}"]*) M_STR_APPEND([|Q_chain|], [|"${1}-${Q_bind%%:*}"|], [| |]);&
+			["${SX_STR_SWORD}"]*) M_STR_APPEND([|Q_chain|], [|" ${1}-${Q_bind%%:*}"|]);&
 			:*)
 				Q_bind="${Q_bind#*:}"
 				shift
@@ -13382,7 +13379,7 @@ __sx_arr_bind() {
 					M_VAR_SET([|${Q_bres}|], [|${Q_bind}|])
 				esac
 
-				M_VAR_SET([|${Q_cres}|], [|${Q_chain}|])
+				eval "${Q_cres}=\"\${${Q_cres}-}\${Q_chain}\" ${Q_cres}=\"\${${Q_cres}# }\""
 
 				unset CLEANUP
 				return 1
@@ -13394,7 +13391,7 @@ __sx_arr_bind() {
 		M_VAR_SET([|${Q_bres}|], [|${Q_bind%:}|])
 	esac
 
-	M_VAR_SET([|${Q_cres}|], [|${Q_chain}|])
+	eval "${Q_cres}=\"\${${Q_cres}-}\${Q_chain}\" ${Q_cres}=\"\${${Q_cres}# }\""
 
 	unset CLEANUP
 }
@@ -13477,7 +13474,7 @@ M_RENAME_QI([|dnl
 ##   sx_arr_cat の本体実装（chain 構築・一括書き込み・コミット）。
 ##   引数チェック（bind 形式・変数名・配列判定・書き込み権限）は行わない。
 
-define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_arr Q_len Q_i Q_blk|])dnl
+define([|CLEANUP|], [|Q_bind Q_chain Q_borg Q_arr Q_len Q_i|])dnl
 
 __sx_arr_cat() {
 	__sx_var_to_ebind Q_bind "${1}"
@@ -13491,8 +13488,7 @@ __sx_arr_cat() {
 		Q_i=0
 
 		while M_STR_NE([|"${Q_i}"|], [|"${Q_len}"|]); do
-			__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_i}" || break 2
-			M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
+			__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_i}" || break 2
 			M_NUM_INCRM1([|Q_i|])
 		done
 	done
@@ -13653,7 +13649,7 @@ M_RENAME_QI([|dnl
 ##   引数チェック（bind 形式・変数名・配列判定・書き込み権限）は行わない。
 ##   合計スロット数が要素数を超える場合は 1 を返し、何も書き込まない。
 
-define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_unset Q_len Q_blk Q_tmp|])dnl
+define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_unset Q_len Q_tmp|])dnl
 
 __sx_arr_pop() {
 	__sx_var_to_ebind Q_bind "${1}"
@@ -13665,11 +13661,10 @@ __sx_arr_pop() {
 	# 1) 要素ストリームを末尾から1つずつ __sx_arr_bind で処理し、chain を構築する（読み取りのみ）
 	while M_STR_NE([|0|], [|"${Q_len}"|]); do
 		__sx_num_sub1_nat0 Q_tmp "${Q_len}"
-		__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${2}_${Q_tmp}" || break
+		__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${2}_${Q_tmp}" || break
 
 		Q_len="${Q_tmp}"
 
-		M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
 		M_STR_APPEND([|Q_unset|], [|" ${2}_${Q_len}"|])
 	done
 
