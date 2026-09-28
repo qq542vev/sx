@@ -12945,87 +12945,86 @@ __sx_arr_get() {
 	shift 2
 
 	for Q_spec in "${@}"; do
-		case "${Q_spec}" in *:*)
-			__sx_arr_get_end Q_s "${Q_spec%%:*}" "${Q_len}"
+		case "${Q_spec}" in
+			*:*)
+				__sx_arr_get_end Q_s "${Q_spec%%:*}" "${Q_len}"
 
-			Q_e="${Q_spec#*:}"
+				Q_e="${Q_spec#*:}"
 
-			case "${Q_e}" in
-				*:*)
-					Q_t="${Q_e#*:}"
-					Q_e="${Q_e%:*}";;
-				*) Q_t=1;;
-			esac
+				case "${Q_e}" in
+					*:*) Q_t="${Q_e#*:}" Q_e="${Q_e%:*}";;
+					*) Q_t=1;;
+				esac
 
-			__sx_arr_get_end Q_e "${Q_e}" "${Q_len}"
+				__sx_arr_get_end Q_e "${Q_e}" "${Q_len}"
 
-			case "${Q_t}" in -*)
-				case "${Q_s}" in "${Q_len}")
-					case "${Q_len}" in 0)
-						continue;;
+				case "${Q_t}" in -*)
+					case "${Q_s}" in "${Q_len}")
+						case "${Q_len}" in 0)
+							continue;;
+						esac
+
+						M_NUM_DECRM1([|Q_s|])
+					esac
+				esac
+
+				if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
+					case "$((Q_s == Q_e || (Q_s < Q_e && Q_t < 0) || (Q_e < Q_s && 0 < Q_t)))" in 1)
+						continue
 					esac
 
-					M_NUM_DECRM1([|Q_s|])
-				esac
-			esac
+					Q_c=$((Q_t < 0 ? 1 : -1))
+					# 被演算子の順番変更を行わないこと。桁溢れの可能性あり。
+					Q_e=$((Q_e + Q_c + (Q_s - Q_e - Q_c) % Q_t))
 
-			if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
-				case "$((Q_s == Q_e || (Q_s < Q_e && Q_t < 0) || (Q_e < Q_s && 0 < Q_t)))" in 1)
-					continue
-				esac
+					while
+						__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
+						M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
 
-				Q_c=$((Q_t < 0 ? 1 : -1))
-				# 被演算子の順番変更を行わないこと。桁溢れの可能性あり。
-				Q_e=$((Q_e + Q_c + (Q_s - Q_e - Q_c) % Q_t))
+						case "${Q_s}" in "${Q_e}")
+							break
+						esac
 
-				while
-					__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
-					M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
-
-					case "${Q_s}" in "${Q_e}")
-						break
+						Q_s=$((Q_s + Q_t))
+						continue
+					do :; done
+				else
+					__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}${Q_t}" in 1-* | 2* | 3[!-]*)
+						continue
 					esac
 
-					Q_s=$((Q_s + Q_t))
-					continue
-				do :; done
-			else
-				__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}${Q_t}" in 1-* | 2* | 3[!-]*)
-					continue
-				esac
-
-				case "${Q_t}" in
-					-*) M_NUM_INCRM1([|Q_e|]);;
-					*) M_NUM_DECRM1([|Q_e|]);;
-				esac
-
-				__sx_num_sub_int Q_tmp "${Q_s}" "${Q_e}"
-				__sx_num_divmod_int :Q_tmp: "${Q_tmp}" "${Q_t}"
-				__sx_num_add_int Q_e "${Q_e}" "${Q_tmp}"
-
-				while
-					__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
-					M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
-
-					case "${Q_s}" in "${Q_e}")
-						break
+					case "${Q_t}" in
+						-*) M_NUM_INCRM1([|Q_e|]);;
+						*) M_NUM_DECRM1([|Q_e|]);;
 					esac
 
-					__sx_num_add_int Q_s "${Q_s}" "${Q_t}"
+					__sx_num_sub_int Q_tmp "${Q_s}" "${Q_e}"
+					__sx_num_divmod_int :Q_tmp: "${Q_tmp}" "${Q_t}"
+					__sx_num_add_int Q_e "${Q_e}" "${Q_tmp}"
+
+					while
+						__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
+						M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
+
+						case "${Q_s}" in "${Q_e}")
+							break
+						esac
+
+						__sx_num_add_int Q_s "${Q_s}" "${Q_t}"
+						continue
+					do :; done
+				fi
+				;;
+			*)
+				__sx_arr_get_end Q_i "${Q_spec}" "${Q_len}"
+
+				case "${Q_i}" in "${Q_len}")
 					continue
-				do :; done
-			fi
-			;;
-		*)
-			__sx_arr_get_end Q_i "${Q_spec}" "${Q_len}"
+				esac
 
-			case "${Q_i}" in "${Q_len}")
-				continue
-			esac
-
-			__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_i}" || break
-			M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
-			;;
+				__sx_arr_bind Q_bind Q_blk "${Q_bind}" "${Q_arr}_${Q_i}" || break
+				M_STR_APPEND([|Q_chain|], [|" ${Q_blk}"|])
+				;;
 		esac
 	done
 
