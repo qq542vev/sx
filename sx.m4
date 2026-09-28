@@ -8748,7 +8748,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_num_range の内部実装。引数チェックを行わない。
 
-define([|CLEANUP|], [|Q_bind Q_cur Q_tmp Q_end Q_s Q_e Q_t Q_c Q_p Q_e1 Q_diff|])dnl
+define([|CLEANUP|], [|Q_bind Q_tmp Q_s Q_e Q_t Q_c Q_p Q_e1 Q_diff|])dnl
 
 __sx_num_range() {
 	__sx_var_bind_init "${1}"
@@ -8760,12 +8760,10 @@ __sx_num_range() {
 		2) set -- "${1}" "${2}" 1;;
 	esac
 
-	Q_s="${1}" Q_e="${2}" Q_t="${3}"
+	Q_s="${1#+}" Q_e="${2}" Q_t="${3}"
 
-	Q_cur="${1#+}"
-
-	case "${Q_cur}" in -0)
-		Q_cur=0
+	case "${Q_s}" in -0)
+		Q_s=0
 	esac
 
 	# 高速経路: 全入力が設定幅に収まり、増分が最小値でない場合。
@@ -8785,33 +8783,39 @@ __sx_num_range() {
 		Q_e1=$((Q_e + Q_c))
 		Q_diff=$((((Q_s % Q_p) + Q_p * (Q_s < 0)) - ((Q_e1 % Q_p) + Q_p * (Q_e1 < 0))))
 		# 被演算子の順番変更を行わないこと。桁溢れの可能性あり。
-		Q_end=$((Q_diff - Q_t * (Q_c * Q_diff < 0) + Q_e1))
+		Q_e=$((Q_diff - Q_t * (Q_c * Q_diff < 0) + Q_e1))
 
 		while
-			__sx_var_ubind Q_bind "${Q_bind}" "${Q_cur}" || break
+			__sx_var_ubind Q_bind "${Q_bind}" "${Q_s}" || break
 
-			case "${Q_cur}" in "${Q_end}")
+			case "${Q_s}" in "${Q_e}")
 				break
 			esac
 
-			Q_cur=$((Q_cur + Q_t))
+			Q_s=$((Q_s + Q_t))
 			continue
 		do :; done
 	else
-		__sx_num_cmp_fixed "${1}" "${2}" || case "${?}${3}" in 1-* | 2* | 3[!-]*)
+		__sx_num_cmp_fixed "${Q_s}" "${Q_e}" || case "${?}${Q_t}" in 1-* | 2* | 3[!-]*)
 			unset CLEANUP
 			return
 		esac
 
-		__sx_num_sub_int Q_tmp "${2}" "${1}"
-		__sx_num_divceil_int Q_tmp "${Q_tmp}" "${3}"
-		__sx_num_mul_int Q_tmp "${Q_tmp}" "${3}"
-		__sx_num_add_int Q_tmp "${Q_tmp}" "${1}"
+		__sx_num_sub_int Q_e1 "${Q_e}" "${Q_t%%[0-9]*}1"
+		__sx_num_sub_int Q_tmp "${Q_s}" "${Q_e1}"
+		__sx_num_divmod_int :Q_tmp: "${Q_tmp}" "${Q_t}"
+		__sx_num_add_int Q_e "${Q_e1}" "${Q_tmp}"
 
-		while M_STR_NE([|"${Q_cur}"|], [|"${Q_tmp}"|]); do
-			__sx_var_ubind Q_bind "${Q_bind}" "${Q_cur}" || break
-			__sx_num_add_int Q_cur "${Q_cur}" "${3}"
-		done
+		while
+			__sx_var_ubind Q_bind "${Q_bind}" "${Q_s}" || break
+
+			case "${Q_s}" in "${Q_e}")
+				break
+			esac
+
+			__sx_num_add_int Q_s "${Q_s}" "${Q_t}"
+			continue
+		do :; done
 	fi
 
 	unset CLEANUP
