@@ -103,13 +103,19 @@ Describe 'sx_arr_get'
       The variable x_len should equal 0
     End
 
-    It '逆方向範囲は降順で排出すること'
+    It '逆方向の2要素範囲は既定step=1では空であること (range互換)'
       When call sx_arr_get x myarr 3:0
       The status should be success
+      The variable x_len should equal 0
+    End
+
+    It '逆方向範囲は負stepで降順に排出すること'
+      When call sx_arr_get x myarr 3:0:-1
+      The status should be success
       The variable x_len should equal 3
-      The variable x_0 should equal "c"
-      The variable x_1 should equal "b"
-      The variable x_2 should equal "a"
+      The variable x_0 should equal "d"
+      The variable x_1 should equal "c"
+      The variable x_2 should equal "b"
     End
 
     It '負端点の範囲ができること (1:3 と -4:-2 は等価)'
@@ -129,13 +135,19 @@ Describe 'sx_arr_get'
       The variable x_2 should equal "d"
     End
 
-    It '逆方向の正負混在範囲ができること'
+    It '逆方向の正負混在範囲は既定step=1では空であること (range互換)'
       When call sx_arr_get x myarr -1:1
       The status should be success
+      The variable x_len should equal 0
+    End
+
+    It '逆方向の正負混在範囲は負stepで排出できること'
+      When call sx_arr_get x myarr -1:1:-1
+      The status should be success
       The variable x_len should equal 3
-      The variable x_0 should equal "d"
-      The variable x_1 should equal "c"
-      The variable x_2 should equal "b"
+      The variable x_0 should equal "e"
+      The variable x_1 should equal "d"
+      The variable x_2 should equal "c"
     End
 
     It '両端が範囲外の範囲は空であること'
@@ -163,14 +175,19 @@ Describe 'sx_arr_get'
       The variable x_len should equal 0
     End
 
-    It '上側超過の始点は len に丸めること'
+    It '上側超過の始点は既定step=1では空であること (range互換)'
       When call sx_arr_get x myarr 400:1
       The status should be success
-      The variable x_len should equal 4
+      The variable x_len should equal 0
+    End
+
+    It '上側超過の始点は負stepで len-1 から開始すること'
+      When call sx_arr_get x myarr 400:1:-1
+      The status should be success
+      The variable x_len should equal 3
       The variable x_0 should equal "e"
       The variable x_1 should equal "d"
       The variable x_2 should equal "c"
-      The variable x_3 should equal "b"
     End
 
     It '終端 len は全件となること'
@@ -180,12 +197,59 @@ Describe 'sx_arr_get'
       The variable x_4 should equal "e"
     End
 
-    It '逆方向の全件ができること'
+    It '逆方向の全件は既定step=1では空であること (range互換)'
       When call sx_arr_get x myarr 5:0
       The status should be success
-      The variable x_len should equal 5
+      The variable x_len should equal 0
+    End
+
+    It '逆方向の全件は負stepで len-1 から開始すること'
+      When call sx_arr_get x myarr 5:0:-1
+      The status should be success
+      The variable x_len should equal 4
       The variable x_0 should equal "e"
-      The variable x_4 should equal "a"
+      The variable x_1 should equal "d"
+      The variable x_2 should equal "c"
+      The variable x_3 should equal "b"
+    End
+  End
+
+  Context 'step指定 (range互換)'
+    It '正stepで間引いて取得できること'
+      When call sx_arr_get x myarr 0:5:2
+      The status should be success
+      The variable x_len should equal 3
+      The variable x_0 should equal "a"
+      The variable x_1 should equal "c"
+      The variable x_2 should equal "e"
+    End
+
+    It '負stepで間引いて取得できること'
+      When call sx_arr_get x myarr 4:0:-2
+      The status should be success
+      The variable x_len should equal 2
+      The variable x_0 should equal "e"
+      The variable x_1 should equal "c"
+    End
+
+    It '範囲内に収まる大きなstepは先頭のみ取得すること'
+      When call sx_arr_get x myarr 1:2:3
+      The status should be success
+      The variable x_len should equal 1
+      The variable x_0 should equal "b"
+    End
+
+    It '方向とstepの符号が逆の範囲は空であること'
+      When call sx_arr_get x myarr 0:5:-1
+      The status should be success
+      The variable x_len should equal 0
+    End
+
+    It '空配列のstep範囲も空配列で成功すること'
+      sx_arr_gen empty_arr
+      When call sx_arr_get x empty_arr 0:5:2
+      The status should be success
+      The variable x_len should equal 0
     End
   End
 
@@ -248,8 +312,23 @@ Describe 'sx_arr_get'
       The status should equal 64
     End
 
-    It '複数 : は 64 を返すこと'
-      When call sx_arr_get x myarr 1:2:3
+    It 'stepが0の範囲は 64 を返すこと'
+      When call sx_arr_get x myarr 0:5:0
+      The status should equal 64
+    End
+
+    It 'stepが-0の範囲は 64 を返すこと'
+      When call sx_arr_get x myarr 0:5:-0
+      The status should equal 64
+    End
+
+    It 'stepが+0の範囲は 64 を返すこと'
+      When call sx_arr_get x myarr 0:5:+0
+      The status should equal 64
+    End
+
+    It '4要素 (:が3つ) は 64 を返すこと'
+      When call sx_arr_get x myarr 1:2:3:4
       The status should equal 64
     End
 
