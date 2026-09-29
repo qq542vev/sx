@@ -282,6 +282,13 @@ Describe 'sx_arr_get'
       The variable x_len should equal 0
     End
 
+    It '空配列の-0も空配列で成功すること (ガード経路)'
+      sx_arr_gen empty_arr
+      When call sx_arr_get x empty_arr -0
+      The status should be success
+      The variable x_len should equal 0
+    End
+
     It '空配列の範囲も空配列で成功すること'
       sx_arr_gen empty_arr
       When call sx_arr_get x empty_arr 0:5

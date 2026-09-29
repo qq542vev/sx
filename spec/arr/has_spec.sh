@@ -235,6 +235,12 @@ Describe 'sx_arr_has'
       The status should be failure
     End
 
+    It '空の配列に対して -0 は失敗を返すこと (ガード経路)'
+      sx_arr_gen empty_arr
+      When call sx_arr_has empty_arr -0
+      The status should be failure
+    End
+
     It '空の配列に対して範囲は失敗を返すこと'
       sx_arr_gen empty_arr
       When call sx_arr_has empty_arr 0:5 5:0:-1

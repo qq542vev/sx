@@ -12746,7 +12746,7 @@ M_RENAME_QI([|dnl
 ##   各 spec を正確な等差数列と定義域の交叉で評価し（sx_arr_get と同一式）、
 ##   空の spec があれば 1 を返し、完走すれば 0 を返す。書き込みは行わない。
 
-define([|CLEANUP|], [|Q_len Q_spec Q_s Q_e Q_t Q_i Q_c Q_tmp|])dnl
+define([|CLEANUP|], [|Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp|])dnl
 
 __sx_arr_has() {
 	eval "Q_len=\"\${${1}_len}\""
@@ -12780,8 +12780,7 @@ __sx_arr_has() {
 
 				case "${Q_t}" in -*)
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
-						Q_c=$((-Q_t))
-						case "$((Q_s > Q_len - 1))" in 1) Q_s=$((Q_s - ((Q_s - (Q_len - 1) + Q_c - 1) / Q_c) * Q_c));; esac
+						case "$((Q_s > Q_len - 1))" in 1) Q_c=$((-Q_t)); Q_s=$((Q_s - ((Q_s - (Q_len - 1) + Q_c - 1) / Q_c) * Q_c));; esac
 						case "$((Q_s >= Q_e && Q_s >= 0))" in 1) ;; *) unset CLEANUP; return 1;; esac
 					else
 						case "${Q_s}" in -*) unset CLEANUP; return 1;; esac
@@ -12826,12 +12825,8 @@ __sx_arr_has() {
 				esac
 				;;
 			*)
-				__sx_arr_to_int Q_i "${Q_spec}" "${Q_len}"
-
-				case "${Q_i}" in -*) unset CLEANUP; return 1;; esac
-
-				__sx_num_cmp_nat0 "${Q_i}" "${Q_len}" || case "${?}" in
-					1) ;;
+				__sx_num_cmp_nat0 "${Q_spec#[+-]}" "${Q_len}" || case "${?}${Q_spec}" in
+					1[+0-9-]* | 2-*) ;;
 					*) unset CLEANUP; return 1;;
 				esac
 				;;
@@ -12995,9 +12990,8 @@ define([|CLEANUP|], [||])dnl
 
 __sx_arr_to_int() {
 	case "${2}" in
-		-0) M_VAR_SET([|${1}|], [|0|]);;
-		-*) __sx_num_sub_int "${1}" "${3}" "${2#-}";;
-		*) M_VAR_SET([|${1}|], [|${2#+}|]);;
+		-[1-9]*) __sx_num_sub_int "${1}" "${3}" "${2#-}";;
+		*) M_VAR_SET([|${1}|], [|${2#[+-]}|]);;
 	esac
 }
 |], [|arr_to_int|])dnl
@@ -13053,12 +13047,14 @@ __sx_arr_get() {
 
 				case "${Q_t}" in -*)
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
-						Q_c=$((-Q_t))
-						case "$((Q_s > Q_len - 1))" in 1) Q_s=$((Q_s - ((Q_s - (Q_len - 1) + Q_c - 1) / Q_c) * Q_c));; esac
+						case "$((Q_s > Q_len - 1))" in 1) Q_s=$((Q_s - ((Q_s - (Q_len - 1) + (-Q_t) - 1) / (-Q_t)) * (-Q_t)));; esac
+						case "${Q_e}" in -*) Q_e=0;; esac
+						case "$((Q_s >= Q_e))" in 1) ;; *) continue;; esac
+						Q_e=$((Q_s - ((Q_s - Q_e) / (-Q_t)) * (-Q_t)))
 
 						while
-							case "$((Q_s >= Q_e && Q_s >= 0))" in 1) ;; *) break;; esac
 							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
+							case "${Q_s}" in "${Q_e}") break;; esac
 							Q_s=$((Q_s + Q_t))
 							continue
 						do :; done
@@ -13103,10 +13099,13 @@ __sx_arr_get() {
 				*)
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
 						case "$((Q_s < 0))" in 1) Q_s=$((Q_s + ((-Q_s + Q_t - 1) / Q_t) * Q_t));; esac
+						case "$((Q_s < Q_e && Q_s < Q_len))" in 1) ;; *) continue;; esac
+						Q_e=$((Q_e < Q_len ? Q_e : Q_len))
+						Q_e=$((Q_e - 1 - ((Q_e - 1 - Q_s) % Q_t)))
 
 						while
-							case "$((Q_s < Q_e && Q_s < Q_len))" in 1) ;; *) break;; esac
 							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
+							case "${Q_s}" in "${Q_e}") break;; esac
 							Q_s=$((Q_s + Q_t))
 							continue
 						do :; done
@@ -13143,12 +13142,11 @@ __sx_arr_get() {
 				esac
 				;;
 			*)
-				__sx_arr_to_int Q_i "${Q_spec}" "${Q_len}"
 
-				case "${Q_i}" in -*) continue;; esac
+				__sx_num_cmp_nat0 "${Q_spec#[+-]}" "${Q_len}" || case "${?}${Q_spec}" in 1[+0-9-]* | 2-*)
+					__sx_arr_to_int Q_i "${Q_spec}" "${Q_len}"
 
-				__sx_num_cmp_nat0 "${Q_i}" "${Q_len}" || case "${?}" in
-					1) __sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_i}" || break;;
+					__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_i}" || break;;
 				esac
 				;;
 		esac
