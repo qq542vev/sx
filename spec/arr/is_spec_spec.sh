@@ -30,19 +30,24 @@ Describe 'sx_arr_is_spec'
     The status should be success
   End
 
-  It '空の刻みは 1 とみなすこと'
-    When call sx_arr_is_spec "2::" "1:2:"
+  It '始点省略を検証すること'
+    When call sx_arr_is_spec ":5" "::2" "::-1" ":"
     The status should be success
   End
 
-  It '始点の省略を拒否すること'
-    When call sx_arr_is_spec ":2" "::-1"
+  It '空の刻みを拒否すること'
+    When call sx_arr_is_spec "2::" "1:2:"
     The status should be failure
   End
 
-  It '全省略を拒否すること'
-    When call sx_arr_is_spec ":" "::"
-    The status should be failure
+  It '始点のみの省略形を検証すること'
+    When call sx_arr_is_spec ":2" "::-1"
+    The status should be success
+  End
+
+  It '全省略の : を検証すること'
+    When call sx_arr_is_spec ":"
+    The status should be success
   End
 
   It '引数なしで成功すること'
@@ -60,8 +65,13 @@ Describe 'sx_arr_is_spec'
     The status should be failure
   End
 
-  It '端点なしの : を拒否すること'
-    When call sx_arr_is_spec ":"
+  It '第二コロンのみの :: を拒否すること'
+    When call sx_arr_is_spec "::"
+    The status should be failure
+  End
+
+  It ':e: 形式の空の刻みを拒否すること'
+    When call sx_arr_is_spec ":5:" "1::2:3"
     The status should be failure
   End
 

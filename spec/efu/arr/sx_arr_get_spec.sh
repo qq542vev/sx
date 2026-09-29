@@ -8,13 +8,14 @@ Describe 'sx_arr_get -efu 環境検証'
     The status should be success
   End
 
-  It '範囲取得ができること'
+  It '範囲取得ができること (t<0 は終端を含む)'
     sx_arr_gen myarr a b c d e
 
     sx_arr_get x myarr 3:0:-1
-    The variable "x_len" should equal 3
+    The variable "x_len" should equal 4
     The variable "x_0" should equal d
     The variable "x_2" should equal b
+    The variable "x_3" should equal a
   End
 
   It '逆方向の2要素範囲は既定stepでは空であること'

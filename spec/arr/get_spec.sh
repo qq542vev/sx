@@ -108,13 +108,14 @@ Describe 'sx_arr_get'
       The variable x_len should equal 0
     End
 
-    It '逆方向範囲は負stepで降順に排出すること'
+    It '逆方向範囲は負stepで降順に排出すること (t<0 は終端を含む)'
       When call sx_arr_get x myarr 3:0:-1
       The status should be success
-      The variable x_len should equal 3
+      The variable x_len should equal 4
       The variable x_0 should equal "d"
       The variable x_1 should equal "c"
       The variable x_2 should equal "b"
+      The variable x_3 should equal "a"
     End
 
     It '負端点の範囲ができること (1:3 と -4:-2 は等価)'
@@ -140,13 +141,14 @@ Describe 'sx_arr_get'
       The variable x_len should equal 0
     End
 
-    It '逆方向の正負混在範囲は負stepで排出できること'
+    It '逆方向の正負混在範囲は負stepで排出できること (t<0 は終端を含む)'
       When call sx_arr_get x myarr -1:1:-1
       The status should be success
-      The variable x_len should equal 3
+      The variable x_len should equal 4
       The variable x_0 should equal "e"
       The variable x_1 should equal "d"
       The variable x_2 should equal "c"
+      The variable x_3 should equal "b"
     End
 
     It '両端が範囲外の範囲は空であること'
@@ -180,13 +182,14 @@ Describe 'sx_arr_get'
       The variable x_len should equal 0
     End
 
-    It '上側超過の始点は負stepで len-1 から開始すること'
+    It '上側超過の始点は負stepで len-1 から開始すること (t<0 は終端を含む)'
       When call sx_arr_get x myarr 400:1:-1
       The status should be success
-      The variable x_len should equal 3
+      The variable x_len should equal 4
       The variable x_0 should equal "e"
       The variable x_1 should equal "d"
       The variable x_2 should equal "c"
+      The variable x_3 should equal "b"
     End
 
     It '終端 len は全件となること'
@@ -202,14 +205,15 @@ Describe 'sx_arr_get'
       The variable x_len should equal 0
     End
 
-    It '逆方向の全件は負stepで len-1 から開始すること'
+    It '逆方向の全件は負stepで len-1 から開始すること (t<0 は終端を含む)'
       When call sx_arr_get x myarr 5:0:-1
       The status should be success
-      The variable x_len should equal 4
+      The variable x_len should equal 5
       The variable x_0 should equal "e"
       The variable x_1 should equal "d"
       The variable x_2 should equal "c"
       The variable x_3 should equal "b"
+      The variable x_4 should equal "a"
     End
   End
 
@@ -223,12 +227,13 @@ Describe 'sx_arr_get'
       The variable x_2 should equal "e"
     End
 
-    It '負stepで間引いて取得できること'
+    It '負stepで間引いて取得できること (t<0 は終端を含む)'
       When call sx_arr_get x myarr 4:0:-2
       The status should be success
-      The variable x_len should equal 2
+      The variable x_len should equal 3
       The variable x_0 should equal "e"
       The variable x_1 should equal "c"
+      The variable x_2 should equal "a"
     End
 
     It '範囲内に収まる大きなstepは先頭のみ取得すること'
@@ -342,10 +347,11 @@ Describe 'sx_arr_get'
       The variable x_4 should equal "a"
     End
 
-    It '5:3:-2 は空であること'
+    It '5:3:-2 は d のみ取得すること (t<0 は終端を含む)'
       When call sx_arr_get x myarr 5:3:-2
       The status should be success
-      The variable x_len should equal 0
+      The variable x_len should equal 1
+      The variable x_0 should equal "d"
     End
 
     It '巨大な負始点も正確に解決すること'
@@ -355,12 +361,13 @@ Describe 'sx_arr_get'
       The variable x_0 should equal "a"
     End
 
-    It '巨大な正始点の降順も正確に解決すること'
+    It '巨大な正始点の降順も正確に解決すること (t<0 は終端を含む)'
       When call sx_arr_get x myarr 99999999999999999999999:1:-1
       The status should be success
-      The variable x_len should equal 3
+      The variable x_len should equal 4
       The variable x_0 should equal "e"
       The variable x_2 should equal "c"
+      The variable x_3 should equal "b"
     End
 
     It '巨大な刻みでも先頭のみ取得すること'
@@ -378,6 +385,64 @@ Describe 'sx_arr_get'
     End
   End
 
+  Context '始点省略'
+    It ':e は先頭から取得できること'
+      When call sx_arr_get x myarr :3
+      The status should be success
+      The variable x_len should equal 3
+      The variable x_0 should equal "a"
+      The variable x_2 should equal "c"
+    End
+
+    It '::t は全件を間引いて取得できること'
+      When call sx_arr_get x myarr ::2
+      The status should be success
+      The variable x_len should equal 3
+      The variable x_0 should equal "a"
+      The variable x_2 should equal "e"
+    End
+
+    It '::-t は全件を逆順に取得できること'
+      When call sx_arr_get x myarr ::-1
+      The status should be success
+      The variable x_len should equal 5
+      The variable x_0 should equal "e"
+      The variable x_4 should equal "a"
+    End
+
+    It ':e:-t は逆半開区間として取得できること'
+      When call sx_arr_get x myarr :0:-1
+      The status should be success
+      The variable x_len should equal 5
+      The variable x_0 should equal "e"
+      The variable x_4 should equal "a"
+    End
+
+    It ':e:-t は逆半開区間として取得できること'
+      When call sx_arr_get x myarr :0:-1
+      The status should be success
+      The variable x_len should equal 5
+      The variable x_0 should equal "e"
+      The variable x_4 should equal "a"
+    End
+
+    It 's==e の負stepは単要素を取得すること'
+      When call sx_arr_get x myarr 2:2:-1
+      The status should be success
+      The variable x_len should equal 1
+      The variable x_0 should equal "c"
+    End
+
+    It 's:e:-t の終端を含むこと (5:2:-1 は e,d,c)'
+      When call sx_arr_get x myarr 5:2:-1
+      The status should be success
+      The variable x_len should equal 3
+      The variable x_0 should equal "e"
+      The variable x_1 should equal "d"
+      The variable x_2 should equal "c"
+    End
+  End
+
   Context '異常系・エラーハンドリング'
     It '- 区切りは引数不正で 64 を返すこと'
       When call sx_arr_get x myarr 1-2
@@ -389,8 +454,16 @@ Describe 'sx_arr_get'
       The status should equal 64
     End
 
-    It '端点なしの : は 64 を返すこと'
+    It '端点なしの : は全件取得すること'
       When call sx_arr_get x myarr :
+      The status should be success
+      The variable x_len should equal 5
+      The variable x_0 should equal "a"
+      The variable x_4 should equal "e"
+    End
+
+    It '空の刻みは 64 を返すこと'
+      When call sx_arr_get x myarr 1:2: 2::
       The status should equal 64
     End
 

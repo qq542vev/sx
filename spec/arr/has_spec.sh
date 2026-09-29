@@ -109,9 +109,14 @@ Describe 'sx_arr_has'
       The status should be success
     End
 
-    It '5:3:-2 は空であること'
+    It '5:3:-2 は d に一致すること (t<0 は終端を含む)'
       When call sx_arr_has myarr 5:3:-2
-      The status should be failure
+      The status should be success
+    End
+
+    It 's==e の負stepは単要素に一致すること'
+      When call sx_arr_has myarr 2:2:-1
+      The status should be success
     End
   End
 
@@ -138,15 +143,44 @@ Describe 'sx_arr_has'
     End
   End
 
+  Context '始点省略'
+    It ':e は先頭からの一致とすること'
+      When call sx_arr_has myarr :3
+      The status should be success
+    End
+
+    It '::t は全件の一致とすること'
+      When call sx_arr_has myarr ::2
+      The status should be success
+    End
+
+    It '::-t は全件の逆順一致とすること'
+      When call sx_arr_has myarr ::-1
+      The status should be success
+    End
+
+    It ': は全件一致とすること'
+      When call sx_arr_has myarr :
+      The status should be success
+    End
+
+    It '空配列の始点省略は失敗すること'
+      sx_arr_gen empty_arr
+      When call sx_arr_has empty_arr ::-1 :
+      The status should be failure
+    End
+  End
+
   Context 'getとの等価性 (has真 ⟺ get非空)'
     It '代表spec群で一致すること'
       mismatch=0
       for spec in 0 4 5 9 -1 -5 -6 -0 +1 0:3 1:1 4:3 7:8 4:3:1 1:2:-1 \
-          3:0:-1 0:5:2 5:0:-1 5:3:-2 2: 2::-1 4::-2 5::-2 1::2 2:: 1:2: \
+          3:0:-1 0:5:2 5:0:-1 5:3:-2 2: 2::-1 4::-2 5::-2 1::2 \
           -6:5:2 4:-99:-1 100:1:-2 1:10 -10:1 400:1:-1 -4:-2 1:-1 -1:1:-1 \
           6:10 2:2 0:5 400:500 0:5:100000000000000000000000 \
           4:0:-2147483648 -100000000000000000000000:5:1 \
-          99999999999999999999999:1:-1; do
+          99999999999999999999999:1:-1 :5 ::2 ::-1 : 2:2:-1 4:0:-1 4:0:-2 \
+          0:0:-1 5:2:-1 :3 :0:-1 2:0:-2; do
         if sx_arr_has myarr "${spec}"; then hsts=0; else hsts=1; fi
         sx_var_unset x
         sx_arr_get x myarr "${spec}"
@@ -157,7 +191,7 @@ Describe 'sx_arr_has'
         fi
       done
       sx_arr_gen empty_arr
-      for spec in 0 -1 0:5 0:1 5:0:-1 3:0 0:-5:-1 2::-1; do
+      for spec in 0 -1 0:5 0:1 5:0:-1 3:0 0:-5:-1 2::-1 ::-1 :; do
         if sx_arr_has empty_arr "${spec}"; then hsts=0; else hsts=1; fi
         sx_var_unset x
         sx_arr_get x empty_arr "${spec}"
