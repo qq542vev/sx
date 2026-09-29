@@ -12781,13 +12781,12 @@ __sx_arr_has() {
 				case "${Q_t}" in -*)
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
 						case "$((Q_s > Q_len - 1))" in 1) Q_c=$((-Q_t)); Q_s=$((Q_s - ((Q_s - (Q_len - 1) + Q_c - 1) / Q_c) * Q_c));; esac
-						case "$((Q_s >= Q_e && Q_s >= 0))" in 1) ;; *) unset CLEANUP; return 1;; esac
+						case "$((Q_s >= Q_e && Q_s >= 0))" in 0) unset CLEANUP; return 1;; esac
 					else
 						case "${Q_s}" in -*) unset CLEANUP; return 1;; esac
 
 						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in
-							1) ;;
-							*) __sx_num_sub_int Q_c "${Q_len}" 1
+							[23]) __sx_num_sub_int Q_c "${Q_len}" 1
 								__sx_num_add1_nat0 Q_tmp "${Q_s}"
 								__sx_num_sub_nat0 Q_tmp "${Q_tmp}" "${Q_len}"
 								__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
@@ -12800,13 +12799,13 @@ __sx_arr_has() {
 						esac
 
 						case "${Q_s}" in -*) unset CLEANUP; return 1;; esac
-						case "${Q_e}" in -*) ;; *) __sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 3|2) ;; *) unset CLEANUP; return 1;; esac;; esac
+						case "${Q_e}" in -*) ;; *) __sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1) unset CLEANUP; return 1;; esac;; esac
 					fi
 					;;
 				*)
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
 						case "$((Q_s < 0))" in 1) Q_s=$((Q_s + ((-Q_s + Q_t - 1) / Q_t) * Q_t));; esac
-						case "$((Q_s < Q_e && Q_s < Q_len))" in 1) ;; *) unset CLEANUP; return 1;; esac
+						case "$((Q_s < Q_e && Q_s < Q_len))" in 0) unset CLEANUP; return 1;; esac
 					else
 						case "${Q_s}" in -*)
 							__sx_num_divmod_nat0 :Q_tmp: "${Q_s#-}" "${Q_t#+}"
@@ -12818,8 +12817,8 @@ __sx_arr_has() {
 						esac
 
 						case "${Q_e}" in -*) unset CLEANUP; return 1;; esac
-						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1) ;; *) unset CLEANUP; return 1;; esac
-						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in 1) ;; *) unset CLEANUP; return 1;; esac
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in [23]) unset CLEANUP; return 1;; esac
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in [23]) unset CLEANUP; return 1;; esac
 					fi
 					;;
 				esac
@@ -13049,7 +13048,7 @@ __sx_arr_get() {
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
 						case "$((Q_s > Q_len - 1))" in 1) Q_s=$((Q_s - ((Q_s - (Q_len - 1) + (-Q_t) - 1) / (-Q_t)) * (-Q_t)));; esac
 						case "${Q_e}" in -*) Q_e=0;; esac
-						case "$((Q_s >= Q_e))" in 1) ;; *) continue;; esac
+						case "$((Q_s >= Q_e && Q_s >= 0))" in 0) continue;; esac
 						Q_e=$((Q_s - ((Q_s - Q_e) / (-Q_t)) * (-Q_t)))
 
 						while
@@ -13076,7 +13075,7 @@ __sx_arr_get() {
 						esac
 
 						case "${Q_s}" in -*) continue;; esac
-						case "${Q_e}" in -*) ;; *) __sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 3|2) ;; *) continue;; esac;; esac
+						case "${Q_e}" in -*) ;; *) __sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1) continue;; esac;; esac
 
 						case "${Q_e}" in
 							-*) __sx_num_divmod_nat0 :Q_tmp: "${Q_s}" "${Q_t#-}"
@@ -13099,7 +13098,7 @@ __sx_arr_get() {
 				*)
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
 						case "$((Q_s < 0))" in 1) Q_s=$((Q_s + ((-Q_s + Q_t - 1) / Q_t) * Q_t));; esac
-						case "$((Q_s < Q_e && Q_s < Q_len))" in 1) ;; *) continue;; esac
+						case "$((Q_s < Q_e && Q_s < Q_len))" in 0) continue;; esac
 						Q_e=$((Q_e < Q_len ? Q_e : Q_len))
 						Q_e=$((Q_e - 1 - ((Q_e - 1 - Q_s) % Q_t)))
 
@@ -13120,8 +13119,8 @@ __sx_arr_get() {
 						esac
 
 						case "${Q_e}" in -*) continue;; esac
-						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1) ;; *) continue;; esac
-						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in 1) ;; *) continue;; esac
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in [23]) continue;; esac
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in [23]) continue;; esac
 
 						__sx_num_cmp_nat0 "${Q_e}" "${Q_len}" || case "${?}" in
 							1) __sx_num_sub_nat0 Q_c "${Q_e}" 1;;
