@@ -13080,12 +13080,21 @@ __sx_arr_get() {
 						esac
 
 						case "${Q_s}" in -*) continue;; esac
-						case "${Q_e}" in -*) ;; *) __sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 3) ;; *) continue;; esac;; esac
+						case "${Q_e}" in -*) ;; *) __sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 3|2) ;; *) continue;; esac;; esac
+
+						case "${Q_e}" in
+							-*) __sx_num_divmod_nat0 :Q_tmp: "${Q_s}" "${Q_t#-}"
+								M_VAR_SET([|Q_e|], [|${Q_tmp}|])
+								;;
+							*) __sx_num_sub_nat0 Q_tmp "${Q_s}" "${Q_e}"
+								__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
+								__sx_num_add_nat0 Q_e "${Q_e}" "${Q_tmp}"
+								;;
+						esac
 
 						while
-							case "${Q_s}" in -*) break;; esac
-							case "${Q_e}" in -*) ;; *) __sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 3|2) ;; *) break;; esac;; esac
 							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
+							case "${Q_s}" in "${Q_e}") break;; esac
 							__sx_num_add_int Q_s "${Q_s}" "${Q_t}"
 							continue
 						do :; done
@@ -13115,10 +13124,17 @@ __sx_arr_get() {
 						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1) ;; *) continue;; esac
 						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in 1) ;; *) continue;; esac
 
+						__sx_num_cmp_nat0 "${Q_e}" "${Q_len}" || case "${?}" in
+							1) __sx_num_sub_nat0 Q_c "${Q_e}" 1;;
+							*) __sx_num_sub_nat0 Q_c "${Q_len}" 1;;
+						esac
+						__sx_num_sub_nat0 Q_tmp "${Q_c}" "${Q_s}"
+						__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#+}"
+						__sx_num_sub_nat0 Q_e "${Q_c}" "${Q_tmp}"
+
 						while
-							__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1) ;; *) break;; esac
-							__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in 1) ;; *) break;; esac
 							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
+							case "${Q_s}" in "${Q_e}") break;; esac
 							__sx_num_add_int Q_s "${Q_s}" "${Q_t}"
 							continue
 						do :; done

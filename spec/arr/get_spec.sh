@@ -383,6 +383,20 @@ Describe 'sx_arr_get'
       The variable x_len should equal 1
       The variable x_0 should equal "e"
     End
+
+    It '巨大な終端でも末尾要素のみ取得すること'
+      When call sx_arr_get x myarr 4:100000000000000000000000:1
+      The status should be success
+      The variable x_len should equal 1
+      The variable x_0 should equal "e"
+    End
+
+    It '巨大な始点の単一命中も正確に解決すること'
+      When call sx_arr_get x myarr 99999999999999999999999:4:-1
+      The status should be success
+      The variable x_len should equal 1
+      The variable x_0 should equal "e"
+    End
   End
 
   Context '始点省略'
