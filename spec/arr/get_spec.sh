@@ -59,11 +59,10 @@ Describe 'sx_arr_get'
       The variable x_1 should equal "c"
     End
 
-    It '換算後も範囲外の負数は 0 に丸めること'
+    It '換算後も範囲外の負数は空であること'
       When call sx_arr_get x myarr -6
       The status should be success
-      The variable x_len should equal 1
-      The variable x_0 should equal "a"
+      The variable x_len should equal 0
     End
 
     It '-len は先頭要素を示すこと'
@@ -283,6 +282,99 @@ Describe 'sx_arr_get'
       When call sx_arr_get x empty_arr 0:5
       The status should be success
       The variable x_len should equal 0
+    End
+
+    It '空配列の省略終端も空配列で成功すること'
+      sx_arr_gen empty_arr
+      When call sx_arr_get x empty_arr 0:-5:-1 2::-1
+      The status should be success
+      The variable x_len should equal 0
+    End
+  End
+
+  Context '終端省略と正確位相'
+    It 's: は末尾まで取得できること'
+      When call sx_arr_get x myarr 2:
+      The status should be success
+      The variable x_len should equal 3
+      The variable x_0 should equal "c"
+      The variable x_2 should equal "e"
+    End
+
+    It 's::t は末尾まで間引いて取得できること'
+      When call sx_arr_get x myarr 1::2
+      The status should be success
+      The variable x_len should equal 2
+      The variable x_0 should equal "b"
+      The variable x_1 should equal "d"
+    End
+
+    It 's::-1 は先頭まで降順に取得できること'
+      When call sx_arr_get x myarr 2::-1
+      The status should be success
+      The variable x_len should equal 3
+      The variable x_0 should equal "c"
+      The variable x_1 should equal "b"
+      The variable x_2 should equal "a"
+    End
+
+    It '負始点の刻みは位相を保持すること (-6:5:2 は b,d)'
+      When call sx_arr_get x myarr -6:5:2
+      The status should be success
+      The variable x_len should equal 2
+      The variable x_0 should equal "b"
+      The variable x_1 should equal "d"
+    End
+
+    It '上側超過の始点は負stepで len-1 から開始すること (5::-2 は d,b)'
+      When call sx_arr_get x myarr 5::-2
+      The status should be success
+      The variable x_len should equal 2
+      The variable x_0 should equal "d"
+      The variable x_1 should equal "b"
+    End
+
+    It '負終端超過の降順は先頭まで含むこと (4:-99:-1 は全件)'
+      When call sx_arr_get x myarr 4:-99:-1
+      The status should be success
+      The variable x_len should equal 5
+      The variable x_0 should equal "e"
+      The variable x_4 should equal "a"
+    End
+
+    It '5:3:-2 は空であること'
+      When call sx_arr_get x myarr 5:3:-2
+      The status should be success
+      The variable x_len should equal 0
+    End
+
+    It '巨大な負始点も正確に解決すること'
+      When call sx_arr_get x myarr -100000000000000000000000:5:1
+      The status should be success
+      The variable x_len should equal 5
+      The variable x_0 should equal "a"
+    End
+
+    It '巨大な正始点の降順も正確に解決すること'
+      When call sx_arr_get x myarr 99999999999999999999999:1:-1
+      The status should be success
+      The variable x_len should equal 3
+      The variable x_0 should equal "e"
+      The variable x_2 should equal "c"
+    End
+
+    It '巨大な刻みでも先頭のみ取得すること'
+      When call sx_arr_get x myarr 0:5:100000000000000000000000
+      The status should be success
+      The variable x_len should equal 1
+      The variable x_0 should equal "a"
+    End
+
+    It '最小値の刻みでも動作すること'
+      When call sx_arr_get x myarr 4:0:-2147483648
+      The status should be success
+      The variable x_len should equal 1
+      The variable x_0 should equal "e"
     End
   End
 

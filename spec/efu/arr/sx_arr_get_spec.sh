@@ -23,4 +23,13 @@ Describe 'sx_arr_get -efu 環境検証'
     sx_arr_get x myarr 3:0
     The variable "x_len" should equal 0
   End
+
+  It '終端省略の降順ができること'
+    sx_arr_gen myarr a b c d e
+
+    sx_arr_get x myarr 2::-1
+    The variable "x_len" should equal 3
+    The variable "x_0" should equal c
+    The variable "x_2" should equal a
+  End
 End

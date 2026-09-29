@@ -12681,161 +12681,248 @@ __sx_glob_escape() {
 # ========================================
 
 M_RENAME_Q([|dnl
-### sx_arr_at - 配列の要素を取得または存在確認する
+### sx_arr_has - 配列の全 spec が1要素以上に一致するか確認する
 ##
 ## 使い方:
-##   sx_arr_at 配列名 [結果変数名=インデックス | =インデックス | インデックス ...]
+##   sx_arr_has 配列名 [spec ...]
+##   spec := 整数 | 始点[:終点[:刻み]]（終点省略可）
+##   整数は符号付き10進整数（+1 / -1 の接頭辞可、前ゼロなし、-0 は 0 とみなす）。
+##   第3要素（step）は 0 以外でなければならない。空の刻みは 1 とみなす。
 ##
 ## 説明:
-##   指定された sx 配列から要素を取得または存在確認を行う。
-##   引数の形式によって挙動が異なる：
-##     1. 結果変数名=インデックス : 指定したインデックスの値を結果変数に格納する。
-##     2. インデックス           : そのインデックスが範囲内にあるか確認のみ行う。
-##   複数の引数を指定した場合、それらすべてが有効なインデックスであれば 0 を返し、
-##   代入も行われる。一つでも範囲外があれば 1 を返し、代入は一切行わない。
+##   指定された sx 配列に対し、各 spec を sx_arr_get と同一の解決
+##   （正確な等差数列と定義域 [0, len) の交叉）で評価し、
+##   すべての spec が1要素以上に一致すれば 0 を返す（all 意味論）。
+##   1つでも空の spec があれば 1 を返す。
+##   単体・始点・終点は正確値に換算する（丸めなし）。
+##   終点を省略した場合は t>0 なら末尾まで、t<0 なら先頭まで含む。
+##   spec の形式検査は sx_arr_is_spec と同一である。
+##   spec を指定しない場合は空真で成功する。
 ##
 ## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##    1  一つ以上のインデックスが範囲外
-##   64  引数不正 (SX_EX_USAGE)
+##    0  すべての spec が要素に一致 (SX_EX_OK)
+##    1  1つ以上の spec が空
+##   64  引数不正（配列名無効・spec 形式不正）(SX_EX_USAGE)
 ##   65  対象が sx 配列ではない (SX_EX_DATAERR)
-##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|CLEANUP|], [|Q_arr Q_chk Q_dest Q_err Q_i Q_len Q_pair|])dnl
+define([|CLEANUP|], [|Q_arr|])dnl
 
-sx_arr_at() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_at "${@}" || return; return 0;; esac
+sx_arr_has() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_has "${@}" || return; return 0;; esac
 
-	# 1. 配列の妥当性チェック
-	sx_var_is_arr "${1-}" || case "${?}" in
-		1) return M_EX_DATAERR;;
-		*) return "${?}";;
-	esac
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_arr "${1}" || return M_EX_DATAERR
 
 	Q_arr="${1}"
-	eval "Q_len=\"\${${1}_len}\""
 	shift
 
-	Q_chk=
-	for Q_pair in "${@}"; do
-		Q_dest="${Q_pair%%=*}"
-		Q_i="${Q_pair#*=}"
-
-		__sx_num_is_nat0_base 10 "${Q_i}" || {
-			unset Q_arr Q_len Q_chk Q_pair Q_dest Q_i
-			return M_EX_USAGE
-		}
-
-		# 範囲チェック
-		case "$((Q_i < Q_len))" in 0)
-			Q_err=
-		esac
-
-		case "${Q_pair}" in *?=*)
-			# 変数名としての妥当性、および自己参照（ソース配列内への上書き）の禁止
-			if
-				! sx_var_is_name "${Q_dest}" ||
-				M_STR_MATCH([|"${Q_dest}"|], [|"${Q_arr}"|], [|"${Q_arr}"_*|])
-			then
-				unset Q_arr Q_len Q_chk Q_pair Q_dest Q_i
-				return M_EX_USAGE
-			fi
-
-			# コピー連鎖式の構築 (src-dest)
-			M_STR_APPEND([|Q_chk|], [|" ${Q_arr}_${Q_i}-${Q_dest}"|])
-		esac
-	done
-
-	case "${Q_err+X}" in X)
-		unset Q_arr Q_len Q_chk Q_pair Q_dest Q_i Q_err
-		return 1
-	esac
-
-	eval set -- "${Q_chk}"
-	unset Q_arr Q_len Q_chk Q_pair Q_dest Q_i
-
-	case "${#}" in
-		0) return M_EX_OK;;
-	esac
-
-	# 2. 書き込み可能性（構造を含む）の一括チェック
-	eval __sx_var_is_copyable "${@}" || {
-		return M_EX_NOPERM
+	__sx_arr_is_spec "${@}" || {
+		unset CLEANUP
+		return M_EX_USAGE
 	}
 
-	__sx_var_copy "${@}"
+	set -- "${Q_arr}" "${@}"
+	unset CLEANUP
+
+	__sx_arr_has "${@}" || return
 }
-|], [|arr_at|])dnl
+|], [|arr_has|])dnl
 
 M_RENAME_QI([|dnl
-### __sx_arr_at - 配列の要素を取得または存在確認する（内部用）
+### __sx_arr_has - 配列の全 spec が1要素以上に一致するか確認する（内部用）
 ##
 ## 使い方:
-##   __sx_arr_at 配列名 [結果変数名=インデックス | =インデックス | インデックス ...]
+##   __sx_arr_has 配列名 [spec ...]
 ##
 ## 説明:
-##   sx_arr_at の内部実装。
+##   sx_arr_has の内部実装。
 ##   引数チェックは行わない。
+##   各 spec を正確な等差数列と定義域の交叉で評価し（sx_arr_get と同一式）、
+##   空の spec があれば 1 を返し、完走すれば 0 を返す。書き込みは行わない。
 
-define([|CLEANUP|], [|Q_chk Q_arr Q_len Q_pair Q_i|])dnl
+define([|CLEANUP|], [|Q_len Q_spec Q_s Q_e Q_t Q_i Q_c Q_tmp|])dnl
 
-__sx_arr_at() {
-	Q_chk=
-	Q_arr="${1}"
+__sx_arr_has() {
 	eval "Q_len=\"\${${1}_len}\""
 	shift
 
-	for Q_pair in "${@}"; do
-		Q_i="${Q_pair#*=}"
+	for Q_spec in "${@}"; do
+		case "${Q_spec}" in
+			*:*)
+				Q_e="${Q_spec#*:}"
 
-		# 範囲チェック
-		case "$((Q_i < Q_len))" in 0)
-			unset CLEANUP
-			return 1
-		esac
+				case "${Q_e}" in
+					*:*) Q_t="${Q_e#*:}" Q_e="${Q_e%:*}";;
+					*) Q_t=1;;
+				esac
 
-		case "${Q_pair}" in *?=*)
-			M_STR_APPEND([|Q_chk|], [|" ${Q_arr}_${Q_i}-${Q_pair%%=*}"|])
+				case "${Q_t}" in '') Q_t=1;; esac
+
+				__sx_arr_to_int Q_s "${Q_spec%%:*}" "${Q_len}"
+
+				case "${Q_e}" in
+					'') case "${Q_t}" in -*) Q_e=-1;; *) Q_e="${Q_len}";; esac;;
+					*) __sx_arr_to_int Q_e "${Q_e}" "${Q_len}";;
+				esac
+
+				case "${Q_t}" in -*)
+					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
+						Q_c=$((-Q_t))
+						case "$((Q_s > Q_len - 1))" in 1) Q_s=$((Q_s - ((Q_s - (Q_len - 1) + Q_c - 1) / Q_c) * Q_c));; esac
+						case "$((Q_s > Q_e && Q_s >= 0))" in 1) ;; *) unset CLEANUP; return 1;; esac
+					else
+						case "${Q_s}" in -*) unset CLEANUP; return 1;; esac
+
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in
+							1) ;;
+							*) __sx_num_sub_int Q_c "${Q_len}" 1
+								__sx_num_add1_nat0 Q_tmp "${Q_s}"
+								__sx_num_sub_nat0 Q_tmp "${Q_tmp}" "${Q_len}"
+								__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
+
+								case "${Q_tmp}" in
+									0) M_VAR_SET([|Q_s|], [|${Q_c}|]);;
+									*) __sx_num_sub_nat0 Q_tmp "${Q_t#-}" "${Q_tmp}"
+										__sx_num_sub_int Q_s "${Q_c}" "${Q_tmp}"
+								esac
+						esac
+
+						case "${Q_s}" in -*) unset CLEANUP; return 1;; esac
+						case "${Q_e}" in -*) ;; *) __sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 3) ;; *) unset CLEANUP; return 1;; esac;; esac
+					fi
+					;;
+				*)
+					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
+						case "$((Q_s < 0))" in 1) Q_s=$((Q_s + ((-Q_s + Q_t - 1) / Q_t) * Q_t));; esac
+						case "$((Q_s < Q_e && Q_s < Q_len))" in 1) ;; *) unset CLEANUP; return 1;; esac
+					else
+						case "${Q_s}" in -*)
+							__sx_num_divmod_nat0 :Q_tmp: "${Q_s#-}" "${Q_t#+}"
+
+							case "${Q_tmp}" in
+								0) M_VAR_SET([|Q_s|], [|0|]);;
+								*) __sx_num_sub_nat0 Q_s "${Q_t#+}" "${Q_tmp}";;
+							esac
+						esac
+
+						case "${Q_e}" in -*) unset CLEANUP; return 1;; esac
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1) ;; *) unset CLEANUP; return 1;; esac
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in 1) ;; *) unset CLEANUP; return 1;; esac
+					fi
+					;;
+				esac
+				;;
+			*)
+				__sx_arr_to_int Q_i "${Q_spec}" "${Q_len}"
+
+				case "${Q_i}" in -*) unset CLEANUP; return 1;; esac
+
+				__sx_num_cmp_nat0 "${Q_i}" "${Q_len}" || case "${?}" in
+					1) ;;
+					*) unset CLEANUP; return 1;;
+				esac
+				;;
 		esac
 	done
 
-	case "${Q_chk}" in
-		'')
-			unset CLEANUP
-			return M_EX_OK
-		;;
-	esac
-
-	eval __sx_var_copy "${Q_chk}"
 	unset CLEANUP
 }
-|], [|arr_at|])dnl
+|], [|arr_has|])dnl
+
+M_RENAME_Q([|dnl
+### sx_arr_is_spec - 文字列が配列要素指定 spec として有効か確認する
+##
+## 使い方:
+##   sx_arr_is_spec [spec1 [spec2 ...]]
+##
+## 説明:
+##   引数で指定されたすべての文字列が、sx_arr_get の spec
+##   （整数 | 始点[:終点[:刻み]]）として有効かを確認する。
+##   整数は符号付き10進整数（+1 / -1 の接頭辞可、前ゼロなし、-0 は 0 とみなす）。
+##   第3要素（step）は 0 以外でなければならない。
+##   終点のみ省略できる（s: / s::t 形式）。空の刻みは 1 とみなす。
+##   始点の省略（:e 系）・全省略（:）は無効である。
+##   範囲の意味的妥当性（空範囲等）は問わず、形式のみを検査する。
+##
+## 終了ステータス:
+##    0  すべて有効な形式である (SX_EX_OK)
+##    1  無効な形式が含まれる
+
+sx_arr_is_spec() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_spec "${@}" || return; return 0;; esac
+
+	__sx_arr_is_spec "${@}" || return
+}
+|], [|arr_is_spec|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_arr_is_spec - 文字列が配列要素指定 spec として有効か確認する（内部用）
+##
+## 使い方:
+##   __sx_arr_is_spec [spec1 [spec2 ...]]
+##
+## 説明:
+##   sx_arr_is_spec の内部実装。
+##   引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_spec Q_rest|])dnl
+
+__sx_arr_is_spec() {
+	for Q_spec in "${@}"; do
+		case "${Q_spec}" in
+			*:*:*)
+				Q_rest="${Q_spec#*:}"
+				Q_rest="${Q_rest%:*}"
+				__sx_num_is_int_base 10 "${Q_spec%%:*}" \
+					&& case "${Q_rest}" in '') ;; *) __sx_num_is_int_base 10 "${Q_rest}";; esac \
+					&& case "${Q_spec##*:}" in '') ;; *) __sx_num_is_nzint_base 10 "${Q_spec##*:}";; esac
+				;;
+			*:*)
+				__sx_num_is_int_base 10 "${Q_spec%:*}" \
+					&& case "${Q_spec#*:}" in '') ;; *) __sx_num_is_int_base 10 "${Q_spec#*:}";; esac
+				;;
+			*) __sx_num_is_int_base 10 "${Q_spec}";;
+		esac || {
+			unset CLEANUP
+			return 1
+		}
+	done
+
+	unset CLEANUP
+}
+|], [|arr_is_spec|])dnl
 
 M_RENAME_Q([|dnl
 ### sx_arr_get - 配列から指定要素を順序保持で切り出して分配する
 ##
 ## 使い方:
 ##   sx_arr_get bind 配列名 [spec ...]
-##   spec := 整数 | 整数:整数[:整数]
+##   spec := 整数 | 始点[:終点[:刻み]]（終点省略可）
 ##   整数は符号付き10進整数（+1 / -1 の接頭辞可、前ゼロなし、-0 は 0 とみなす）。
-##   第3要素（step）は 0 以外でなければならない。
+##   第3要素（step）は 0 以外でなければならない。空の刻みは 1 とみなす。
 ##
 ## 説明:
 ##   指定された sx 配列から spec の順に要素を取り出し、要素ストリームを
 ##   bind（sx_arr_cat と同一の配列分配形式。例: x, 2a:x）へ分配する（get = 取得）。
-##   sx_arr_at（厳密: 範囲外で 1 を返し代入しない）とは異なり、範囲外の単体は
-##   スキップし、範囲端点は丸める寛容系であり、結果が空でも 0 を返して空配列を確定する。
+##   sx_arr_has（全 spec が1要素以上に一致すれば 0 を返す）とは異なり、
+##   空の spec はスキップし、結果が空でも 0 を返して空配列を確定する。
 ##   spec なしの場合も空配列を確定して成功する。
 ##   単体指定:
-##     n が負の場合は len+n に換算した上で [0, len] に丸める。
-##     丸め結果が len に等しい場合（正方向の範囲外）はその spec をスキップする。
-##   範囲指定 s:e[:t]（: のみ。- / ~ 区切りは不可）:
+##     正確値に換算する（負は len+n、そのまま負に落ちれば空）。
+##     換算値が [0, len) に収まる場合のみ取り出す。
+##   範囲指定 s:e[:t]（終点省略可。: のみ。- / ~ 区切りは不可）:
+##     正確な等差数列と定義域 [0, len) の交叉を順に取り出す。
+##     始点・終点は負なら len+n に換算する（丸めなし。負に落ちてもよい）。
 ##     Python の range と同様に開始を含み終了を含まない（exclusive）。
-##     t を省略した場合は 1 となる。s==e は空、s<e かつ t<0 は空、
-##     e<s かつ 0<t は空である。各端点は負なら len+n 換算の上で [0, len] に丸める
-##     （下側は 0、上側は len）。開始が len に等しく t が負の場合は len-1 から開始する
-##     （空配列では空）。例: arr=[a,b,c,d,e] なら 0:3→a,b,c、0:5:2→a,c,e、
-##     3:0→空（逆方向は 3:0:-1→d,c,b）、5:0:-1→e,d,c,b、6:10→空。
+##     t を省略した場合は 1、空の刻みも 1 となる。s==e は空、s<e かつ t<0 は空、
+##     e<s かつ 0<t は空である。
+##     終点を省略した場合は t>0 なら末尾まで、t<0 なら先頭まで含む。
+##     例: arr=[a,b,c,d,e] なら 0:3→a,b,c、0:5:2→a,c,e、
+##     3:0→空（逆方向は 3:0:-1→d,c,b）、2::-1→c,b,a、-6:5:2→b,d、6:10→空。
 ##
 ## 注意:
 ##   分配先に既存配列を使う場合は、事前に sx_var_unset を明示的に呼び出してから呼び出すこと。
@@ -12848,7 +12935,7 @@ M_RENAME_Q([|dnl
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|CLEANUP|], [|Q_bind Q_arr Q_spec Q_rest|])dnl
+define([|CLEANUP|], [|Q_bind Q_arr|])dnl
 
 sx_arr_get() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_get "${@}" || return; return 0;; esac
@@ -12867,19 +12954,10 @@ sx_arr_get() {
 	Q_arr="${2}"
 	shift 2
 
-	for Q_spec in "${@}"; do
-		case "${Q_spec}" in
-			*:*:*)
-				Q_rest="${Q_spec#*:}"
-			__sx_num_is_int_base 10 "${Q_spec%%:*}" "${Q_rest%:*}" && __sx_num_is_nzint_base 10 "${Q_rest##*:}"
-				;;
-			*:*) __sx_num_is_int_base 10 "${Q_spec%:*}" "${Q_spec#*:}";;
-			*) __sx_num_is_int_base 10 "${Q_spec}";;
-		esac || {
-			unset CLEANUP
-			return M_EX_USAGE
-		}
-	done
+	__sx_arr_is_spec "${@}" || {
+		unset CLEANUP
+		return M_EX_USAGE
+	}
 
 	__sx_arr_get "${Q_bind}" "${Q_arr}" "${@}"
 	unset CLEANUP
@@ -12887,42 +12965,29 @@ sx_arr_get() {
 |], [|arr_get|])dnl
 
 M_RENAME_QI([|dnl
-### __sx_arr_get_end - 区間端点を [0, len] に正規化する（内部用）
+### __sx_arr_to_int - 符号付き整数を配列長基準で正確値に換算する（内部用）
 ##
 ## 使い方:
-##   __sx_arr_get_end 結果変数名 整数文字列 長さ
+##   __sx_arr_to_int 結果変数名 整数文字列 長さ
 ##
 ## 説明:
-##   sx_arr_get の内部実装。
+##   sx_arr_get / sx_arr_has の内部実装。
 ##   引数チェックは行わない。
 ##   整数文字列は検証済み（符号付き10進、前ゼロなし）を前提とする。
-##   負の場合は len+n に換算し、超過分は 0 に丸める。
-##   非負の場合は len を超える分を len に丸める。
-##   -0 は 0 とみなす。
+##   -0 は 0 に、+m/m は m に、-m は len-m に換算する。
+##   丸めは行わず、結果は負値・len 超過値を取り得る。
+##   常に成功する。
 
 define([|CLEANUP|], [||])dnl
 
-__sx_arr_get_end() {
+__sx_arr_to_int() {
 	case "${2}" in
 		-0) M_VAR_SET([|${1}|], [|0|]);;
-		-*)
-			set -- "${1}" "${2#-}" "${3}"
-
-			__sx_num_cmp_nat0 "${2}" "${3}" || case "${?}" in
-				3) M_VAR_SET([|${1}|], [|0|]);;
-				*) __sx_num_sub_nat0 "${1}" "${3}" "${2}";;
-			esac
-			;;
-		+*) set -- "${1}" "${2#+}" "${3}";&
-		*)
-			__sx_num_cmp_nat0 "${2}" "${3}" || case "${?}" in
-				3) M_VAR_SET([|${1}|], [|${3}|]);;
-				*) M_VAR_SET([|${1}|], [|${2}|]);;
-			esac
-			;;
+		-*) __sx_num_sub_int "${1}" "${3}" "${2#-}";;
+		*) M_VAR_SET([|${1}|], [|${2#+}|]);;
 	esac
 }
-|], [|arr_get_end|])dnl
+|], [|arr_to_int|])dnl
 
 M_RENAME_QI([|dnl
 ### __sx_arr_get - 配列から指定要素を順序保持で切り出す（内部用）
@@ -12934,9 +12999,8 @@ M_RENAME_QI([|dnl
 ##   sx_arr_get の本体実装（要素ストリーム構築・一括書き込み・コミット）。
 ##   引数チェック（bind 形式・変数名・配列判定・書き込み権限・spec 形式）は行わない。
 ##   spec の順に単体・範囲を解決し、__sx_arr_bind で chain を構築した後、
-##   __sx_arr_bind_commit で確定する。単体は [0, len] に丸め、len はスキップし、
-##   空結果でも成功する。範囲は range 互換（開始含む・終了含まず）で、
-##   開始が len に等しく step が負の場合は len-1 から開始する。
+##   __sx_arr_bind_commit で確定する。正確な等差数列と定義域 [0, len) の交叉を
+##   列挙する（初項計算＋定義域有界ループ）。空結果でも成功する。
 
 define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_i Q_t Q_c Q_tmp|])dnl
 
@@ -12951,8 +13015,6 @@ __sx_arr_get() {
 	for Q_spec in "${@}"; do
 		case "${Q_spec}" in
 			*:*)
-				__sx_arr_get_end Q_s "${Q_spec%%:*}" "${Q_len}"
-
 				Q_e="${Q_spec#*:}"
 
 				case "${Q_e}" in
@@ -12960,71 +13022,98 @@ __sx_arr_get() {
 					*) Q_t=1;;
 				esac
 
-				__sx_arr_get_end Q_e "${Q_e}" "${Q_len}"
+				case "${Q_t}" in '') Q_t=1;; esac
+
+				__sx_arr_to_int Q_s "${Q_spec%%:*}" "${Q_len}"
+
+				case "${Q_e}" in
+					'') case "${Q_t}" in -*) Q_e=-1;; *) Q_e="${Q_len}";; esac;;
+					*) __sx_arr_to_int Q_e "${Q_e}" "${Q_len}";;
+				esac
 
 				case "${Q_t}" in -*)
-					case "${Q_s}" in "${Q_len}")
-						case "${Q_len}" in 0)
-							continue;;
+					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
+						Q_c=$((-Q_t))
+						case "$((Q_s > Q_len - 1))" in 1) Q_s=$((Q_s - ((Q_s - (Q_len - 1) + Q_c - 1) / Q_c) * Q_c));; esac
+
+						while
+							case "$((Q_s > Q_e && Q_s >= 0))" in 1) ;; *) break;; esac
+							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
+							Q_s=$((Q_s + Q_t))
+							continue
+						do :; done
+					else
+						case "${Q_s}" in -*) continue;; esac
+
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in
+							1) ;;
+							*) __sx_num_sub_int Q_c "${Q_len}" 1
+								__sx_num_add1_nat0 Q_tmp "${Q_s}"
+								__sx_num_sub_nat0 Q_tmp "${Q_tmp}" "${Q_len}"
+								__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
+
+								case "${Q_tmp}" in
+									0) M_VAR_SET([|Q_s|], [|${Q_c}|]);;
+									*) __sx_num_sub_nat0 Q_tmp "${Q_t#-}" "${Q_tmp}"
+										__sx_num_sub_int Q_s "${Q_c}" "${Q_tmp}"
+								esac
 						esac
 
-						M_NUM_DECRM1([|Q_s|])
-					esac
+						case "${Q_s}" in -*) continue;; esac
+						case "${Q_e}" in -*) ;; *) __sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 3) ;; *) continue;; esac;; esac
+
+						while
+							case "${Q_s}" in -*) break;; esac
+							case "${Q_e}" in -*) ;; *) __sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 3) ;; *) break;; esac;; esac
+							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
+							__sx_num_add_int Q_s "${Q_s}" "${Q_t}"
+							continue
+						do :; done
+					fi
+					;;
+				*)
+					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
+						case "$((Q_s < 0))" in 1) Q_s=$((Q_s + ((-Q_s + Q_t - 1) / Q_t) * Q_t));; esac
+
+						while
+							case "$((Q_s < Q_e && Q_s < Q_len))" in 1) ;; *) break;; esac
+							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
+							Q_s=$((Q_s + Q_t))
+							continue
+						do :; done
+					else
+						case "${Q_s}" in -*)
+							__sx_num_divmod_nat0 :Q_tmp: "${Q_s#-}" "${Q_t#+}"
+
+							case "${Q_tmp}" in
+								0) M_VAR_SET([|Q_s|], [|0|]);;
+								*) __sx_num_sub_nat0 Q_s "${Q_t#+}" "${Q_tmp}";;
+							esac
+						esac
+
+						case "${Q_e}" in -*) continue;; esac
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1) ;; *) continue;; esac
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in 1) ;; *) continue;; esac
+
+						while
+							__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1) ;; *) break;; esac
+							__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in 1) ;; *) break;; esac
+							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
+							__sx_num_add_int Q_s "${Q_s}" "${Q_t}"
+							continue
+						do :; done
+					fi
+					;;
 				esac
-
-				if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
-					case "$((Q_s == Q_e || (Q_s < Q_e && Q_t < 0) || (Q_e < Q_s && 0 < Q_t)))" in 1)
-						continue
-					esac
-
-					Q_c=$((Q_t < 0 ? 1 : -1))
-					# 被演算子の順番変更を行わないこと。桁溢れの可能性あり。
-					Q_e=$((Q_e + Q_c + (Q_s - Q_e - Q_c) % Q_t))
-
-					while
-						__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
-
-						case "${Q_s}" in "${Q_e}")
-							break
-						esac
-
-						Q_s=$((Q_s + Q_t))
-						continue
-					do :; done
-				else
-					__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}${Q_t}" in 1-* | 2* | 3[!-]*)
-						continue
-					esac
-
-					case "${Q_t}" in
-						-*) M_NUM_INCRM1([|Q_e|]);;
-						*) M_NUM_DECRM1([|Q_e|]);;
-					esac
-
-					__sx_num_sub_int Q_tmp "${Q_s}" "${Q_e}"
-					__sx_num_divmod_int :Q_tmp: "${Q_tmp}" "${Q_t}"
-					__sx_num_add_int Q_e "${Q_e}" "${Q_tmp}"
-
-					while
-						__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
-
-						case "${Q_s}" in "${Q_e}")
-							break
-						esac
-
-						__sx_num_add_int Q_s "${Q_s}" "${Q_t}"
-						continue
-					do :; done
-				fi
 				;;
 			*)
-				__sx_arr_get_end Q_i "${Q_spec}" "${Q_len}"
+				__sx_arr_to_int Q_i "${Q_spec}" "${Q_len}"
 
-				case "${Q_i}" in "${Q_len}")
-					continue
+				case "${Q_i}" in -*) continue;; esac
+
+				__sx_num_cmp_nat0 "${Q_i}" "${Q_len}" || case "${?}" in
+					1) __sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_i}" || break;;
 				esac
-
-				__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_i}" || break
 				;;
 		esac
 	done
