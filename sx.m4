@@ -5241,7 +5241,7 @@ M_RENAME_QI([|dnl
 ##   __sx_num_add_nat0 で絶対値加算を行い、最後に絶対値を比較し
 ##   減算して符号を決定する。
 
-define([|CLEANUP|], [|Q_res Q_pos Q_neg Q_pos_sum Q_neg_sum Q_arg Q_acc|])dnl
+define([|CLEANUP|], [|Q_res Q_pos Q_neg Q_arg Q_acc|])dnl
 
 __sx_num_add_int() {
 	Q_res="${1}"
@@ -5253,28 +5253,30 @@ __sx_num_add_int() {
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			-*) M_STR_APPEND([|Q_neg|], [|" ${Q_arg#-}"|]);;
-			*)  M_STR_APPEND([|Q_pos|], [|" ${Q_arg#+}"|]);;
+			-[1-9]*) M_STR_APPEND([|Q_neg|], [|" ${Q_arg#-}"|]);;
+			*[1-9]*) M_STR_APPEND([|Q_pos|], [|" ${Q_arg#+}"|]);;
 		esac
 	done
 
 	# Step 2: 正数の合計
-	eval __sx_num_add_nat0 Q_pos_sum "${Q_pos}"
-
-	# Step 3: 負数（絶対値）の合計
-	eval __sx_num_add_nat0 Q_neg_sum "${Q_neg}"
-
-	# Step 4: 絶対値を比較して最終結果を決定
-	__sx_num_cmp_nat0 "${Q_pos_sum}" "${Q_neg_sum}" || case "${?}" in
-		1)
-			__sx_num_sub_nat0 Q_acc "${Q_neg_sum}" "${Q_pos_sum}"
-			M_STR_PREPEND([|Q_acc|], [|-|])
-			;;
-		2) Q_acc=0;;
-		3) __sx_num_sub_nat0 Q_acc "${Q_pos_sum}" "${Q_neg_sum}";;
+	case "${Q_pos:+X}" in X)
+		eval __sx_num_add_nat0 Q_pos "${Q_pos}"
 	esac
 
-	M_VAR_SET([|${Q_res}|], [|${Q_acc}|])
+	# Step 3: 負数（絶対値）の合計
+	case "${Q_neg:+X}" in X)
+		eval __sx_num_add_nat0 Q_neg "${Q_neg}"
+	esac
+
+	# Step 4: 絶対値を比較して最終結果を決定
+	__sx_num_cmp_nat0 "${Q_pos:-0}" "${Q_neg:-0}" || case "${?}" in
+		1)
+			__sx_num_sub_nat0 Q_acc "${Q_neg}" ${Q_pos:+"${Q_pos}"}
+			M_VAR_SET([|${Q_res}|], [|-${Q_acc}|])
+			;;
+		2) M_VAR_SET([|${Q_res}|], [|0|]);;
+		3) __sx_num_sub_nat0 "${Q_res}" "${Q_pos}" ${Q_neg:+"${Q_neg}"};;
+	esac
 
 	unset CLEANUP
 }
