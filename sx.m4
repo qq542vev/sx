@@ -7191,74 +7191,69 @@ M_RENAME_QI([|dnl
 ##   sx_num_is_int_fit_dec の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_bit Q_arg Q_e|])dnl
+define([|CLEANUP|], [|Q_bit Q_arg Q_n|])dnl
 
 __sx_num_is_int_fit_dec() {
 	Q_bit="${1}"
 	shift
 
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in
-			-*) Q_e=8;;
-			*) Q_e=7;;
-		esac
-
-		Q_arg=${Q_arg#[+-]}
+		Q_n=${Q_arg#[+-]}
 
 		case "${Q_bit}" in
 			8)
-				case "${#Q_arg}" in
+				case "${#Q_n}" in
 					[12]) continue;;
 					3)
-						case "${Q_arg}" in
-							1[01]* | 12[0-${Q_e}]) continue;;
+						case "${Q_n}" in
+							1[01]* | 12[0-$((${Q_arg%"${Q_n}"}1 == 1 ? 7 : 8))]) continue;;
 						esac
 						;;
 				esac
 				;;
 			16)
-				case "${#Q_arg}" in
+				case "${#Q_n}" in
 					[1-4]) continue;;
 					5)
-						case "${Q_arg}" in
+						case "${Q_n}" in
 							[12]* | 3[01]* | 32[0-6]* | 327[0-5]* | \
-							3276[0-${Q_e}]) continue;;
+							3276[0-$((${Q_arg%"${Q_n}"}1 == 1 ? 7 : 8))]) continue;;
 						esac
 						;;
 				esac
 				;;
 			32)
-				case "${#Q_arg}" in
+				case "${#Q_n}" in
 					[1-9]) continue;;
 					10)
-						case "${Q_arg}" in
+						case "${Q_n}" in
 							1* | 20* | 21[0-3]* | 214[0-6]* | 2147[0-3]* | 21474[0-7]* | \
 							214748[0-2]* | 2147483[0-5]* | 21474836[0-3]* | \
-							214748364[0-${Q_e}]) continue;;
+							214748364[0-$((${Q_arg%"${Q_n}"}1 == 1 ? 7 : 8))]) continue;;
 						esac
 						;;
 				esac
 				;;
 			64)
-				case "${#Q_arg}" in
+				case "${#Q_n}" in
 					[1-9] | 1[0-8]) continue;;
 					19)
-						case "${Q_arg}" in
+						case "${Q_n}" in
 							[1-8]* | 9[01]* | 92[01]* | 922[0-2]* | 9223[0-2]* | \
 							92233[0-6]* | 922337[01]* | 92233720[0-2]* | 922337203[0-5]* |\
 							9223372036[0-7]* | 92233720368[0-4]* | 922337203685[0-3]* | \
 							9223372036854[0-6]* | 92233720368547[0-6]* | \
 							922337203685477[0-4]* | 9223372036854775[0-7]* | \
-							922337203685477580[0-${Q_e}]) continue;;
+							922337203685477580[0-$((${Q_arg%"${Q_n}"}1 == 1 ? 7 : 8))]) continue;;
 						esac
 						;;
 				esac
 				;;
 			128)
-				case "${#Q_arg}" in
+				case "${#Q_n}" in
 					[1-9] | [12][0-9] | 3[0-8]) continue;;
 					39)
-						case "${Q_arg}" in
+						case "${Q_n}" in
 							1[0-6]* | 1700* | 1701[0-3]* | 170140* | 1701410* | \
 							1701411[0-7]* | 17014118[0-2]* | 170141183[0-3]* | \
 							1701411834[0-5]* | 170141183460[0-3]* | 1701411834604[0-5]* | \
@@ -7279,7 +7274,7 @@ __sx_num_is_int_fit_dec() {
 							17014118346046923173168730371588410[0-4]* | \
 							170141183460469231731687303715884105[0-6]* | \
 							1701411834604692317316873037158841057[01]* | \
-							17014118346046923173168730371588410572[0-${Q_e}]) continue;;
+							17014118346046923173168730371588410572[0-$((${Q_arg%"${Q_n}"}1 == 1 ? 7 : 8))]) continue;;
 						esac
 						;;
 				esac
@@ -12769,7 +12764,7 @@ __sx_arr_has() {
 				esac
 
 				case "${Q_spec%%:*}" in
-					'') case "${Q_t}" in -*) __sx_num_sub_int Q_s "${Q_len}" 1;; *) Q_s=0;; esac;;
+					'') case "${Q_t}" in -*) __sx_num_sub1_nat0 Q_s "${Q_len}";; *) Q_s=0;; esac;;
 					*) __sx_arr_to_int Q_s "${Q_spec%%:*}" "${Q_len}";;
 				esac
 
@@ -12786,7 +12781,7 @@ __sx_arr_has() {
 						case "${Q_s}" in -*) unset CLEANUP; return 1;; esac
 
 						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in
-							[23]) __sx_num_sub_int Q_c "${Q_len}" 1
+							[23]) __sx_num_sub1_nat0 Q_c "${Q_len}"
 								__sx_num_add1_nat0 Q_tmp "${Q_s}"
 								__sx_num_sub_nat0 Q_tmp "${Q_tmp}" "${Q_len}"
 								__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
@@ -13008,7 +13003,7 @@ M_RENAME_QI([|dnl
 ##   __sx_arr_bind_commit で確定する。正確な等差数列と定義域 [0, len) の交叉を
 ##   列挙する（初項計算＋定義域有界ループ）。空結果でも成功する。
 
-define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_i Q_t Q_c Q_tmp|])dnl
+define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp|])dnl
 
 __sx_arr_get() {
 	__sx_var_to_ebind Q_bind "${1}"
@@ -13035,7 +13030,7 @@ __sx_arr_get() {
 				esac
 
 				case "${Q_spec%%:*}" in
-					'') case "${Q_t}" in -*) __sx_num_sub_int Q_s "${Q_len}" 1;; *) Q_s=0;; esac;;
+					'') case "${Q_t}" in -*) __sx_num_sub1_nat0 Q_s "${Q_len}";; *) Q_s=0;; esac;;
 					*) __sx_arr_to_int Q_s "${Q_spec%%:*}" "${Q_len}";;
 				esac
 
@@ -13046,10 +13041,11 @@ __sx_arr_get() {
 
 				case "${Q_t}" in -*)
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
-						case "$((Q_s > Q_len - 1))" in 1) Q_s=$((Q_s - ((Q_s - (Q_len - 1) + (-Q_t) - 1) / (-Q_t)) * (-Q_t)));; esac
+						Q_c=$((-Q_t))
+						case "$((Q_s > Q_len - 1))" in 1) Q_s=$((Q_s - ((Q_s - (Q_len - 1) + Q_c - 1) / Q_c) * Q_c));; esac
 						case "${Q_e}" in -*) Q_e=0;; esac
 						case "$((Q_s >= Q_e && Q_s >= 0))" in 0) continue;; esac
-						Q_e=$((Q_s - ((Q_s - Q_e) / (-Q_t)) * (-Q_t)))
+						Q_e=$((Q_s - (Q_s - Q_e) / Q_c * Q_c))
 
 						while
 							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
@@ -13061,8 +13057,7 @@ __sx_arr_get() {
 						case "${Q_s}" in -*) continue;; esac
 
 						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in
-							1) ;;
-							*) __sx_num_sub_int Q_c "${Q_len}" 1
+							[23]) __sx_num_sub1_nat0 Q_c "${Q_len}"
 								__sx_num_add1_nat0 Q_tmp "${Q_s}"
 								__sx_num_sub_nat0 Q_tmp "${Q_tmp}" "${Q_len}"
 								__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
@@ -13096,6 +13091,10 @@ __sx_arr_get() {
 					fi
 					;;
 				*)
+					case "${Q_e}" in [-0]*)
+						continue
+					esac
+
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
 						case "$((Q_s < 0))" in 1) Q_s=$((Q_s + ((-Q_s + Q_t - 1) / Q_t) * Q_t));; esac
 						case "$((Q_s < Q_e && Q_s < Q_len))" in 0) continue;; esac
@@ -13118,7 +13117,6 @@ __sx_arr_get() {
 							esac
 						esac
 
-						case "${Q_e}" in -*) continue;; esac
 						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in [23]) continue;; esac
 						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in [23]) continue;; esac
 
@@ -13143,9 +13141,9 @@ __sx_arr_get() {
 			*)
 
 				__sx_num_cmp_nat0 "${Q_spec#[+-]}" "${Q_len}" || case "${?}${Q_spec}" in 1[+0-9-]* | 2-*)
-					__sx_arr_to_int Q_i "${Q_spec}" "${Q_len}"
+					__sx_arr_to_int Q_s "${Q_spec}" "${Q_len}"
 
-					__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_i}" || break;;
+					__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break;;
 				esac
 				;;
 		esac
