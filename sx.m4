@@ -13067,15 +13067,17 @@ __sx_arr_get() {
 
 				# 始点: 省略（先頭がコロン）なら減少方向は末尾から、増加方向は先頭から。
 				# 明示された場合は負値を len 基準で換算する。丸めはしないので負値・len 超過が残り得る。
-				case "${Q_spec%%:*}" in
-					'') case "${Q_t}" in -*) __sx_num_sub1_nat0 Q_s "${Q_len}";; *) Q_s=0;; esac;;
+				case "${Q_spec%%:*}:${Q_t}" in
+					:-*) __sx_num_sub1_nat0 Q_s "${Q_len}";;
+					:*) Q_s=0;;
 					*) __sx_arr_to_int Q_s "${Q_spec%%:*}" "${Q_len}";;
 				esac
 
 				# 終点: 省略（末尾がコロン）なら減少方向は 0 まで、増加方向は len まで。
 				# 明示された場合は始点と同じく len 基準で換算する。
-				case "${Q_e}" in
-					'') case "${Q_t}" in -*) Q_e=0;; *) Q_e="${Q_len}";; esac;;
+				case "${Q_e}:${Q_t}" in
+					:-*) Q_e=0;;
+					:*) Q_e="${Q_len}";;
 					*) __sx_arr_to_int Q_e "${Q_e}" "${Q_len}";;
 				esac
 
@@ -13177,16 +13179,16 @@ __sx_arr_get() {
 						# 始点が負なら、0 以上で始点と等しい剰余を持つ最小の値へ引き戻す。
 						# クランプは始点の絶対値が MIN で反転できないよう、先に 1 を足して正化してから
 						# 絶対値を取る（中間溢れ防止）。
-						case "$((Q_s < 0))" in
-							1) Q_r=$((Q_s + 1))
-								Q_r=$((-Q_r))
-								Q_r=$((Q_r % Q_t))
-								Q_s=$((Q_t - 1 - Q_r))
-							;;
+						case "$((Q_s < 0))" in 1)
+							Q_s=$((Q_t - 1 - (-(Q_s + 1) % Q_t)))
 						esac
+
 						# 始点が終点と等しいかそれより大きい（終端を先に越える）、
 						# もしくは始点が len 以上（定義域外）なら区間は空。
-						case "$((Q_s < Q_e && Q_s < Q_len))" in 0) continue;; esac
+						case "$((Q_s < Q_e && Q_s < Q_len))" in 0)
+							continue
+						esac
+
 						# 終点を min(終点, len) へ丸め、1 を引いた位置（取り出せる上限）から
 						# 刻みで割り切れる最大値まで戻す。
 						Q_e=$((Q_e < Q_len ? Q_e : Q_len))
@@ -13195,7 +13197,11 @@ __sx_arr_get() {
 						# 始点から終端まで刻み刻みに積む。終端に到達したら停止。
 						while
 							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
-							case "${Q_s}" in "${Q_e}") break;; esac
+
+							case "${Q_s}" in "${Q_e}")
+								break
+							esac
+
 							Q_s=$((Q_s + Q_t))
 							continue
 						do :; done
@@ -13211,17 +13217,19 @@ __sx_arr_get() {
 							esac
 						esac
 
-						# 始点が終点と等しいかそれより大きい（終端を先に越える）、
-						# もしくは始点が len 以上（定義域外）なら区間は空。
-						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in [23]) continue;; esac
-						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in [23]) continue;; esac
-
 						# 終点の上限を len-1 へ丸める。終点が len 以上なら上限は len-1、
 						# そうでなければ終点が上限になる。そこから刻みで割り切れる最大値まで戻す。
 						__sx_num_cmp_nat0 "${Q_e}" "${Q_len}" || case "${?}" in
 							1) __sx_num_sub_nat0 Q_c "${Q_e}" 1;;
 							*) __sx_num_sub_nat0 Q_c "${Q_len}" 1;;
 						esac
+
+						# 始点が終点と等しいかそれより大きい（終端を先に越える）、
+						# もしくは始点が len 以上（定義域外）なら区間は空。
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_c}" || case "${?}" in 3)
+							continue
+						esac
+
 						__sx_num_sub_nat0 Q_tmp "${Q_c}" "${Q_s}"
 						__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#+}"
 						__sx_num_sub_nat0 Q_e "${Q_c}" "${Q_tmp}"
@@ -13229,7 +13237,11 @@ __sx_arr_get() {
 						# 始点から終端まで刻み刻みに積む。終端に到達したら停止。
 						while
 							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
-							case "${Q_s}" in "${Q_e}") break;; esac
+
+							case "${Q_s}" in "${Q_e}")
+								break
+							esac
+
 							__sx_num_add_int Q_s "${Q_s}" "${Q_t}"
 							continue
 						do :; done
