@@ -12743,7 +12743,7 @@ M_RENAME_QI([|dnl
 ##   各 spec を正確な等差数列と定義域の交叉で評価し（sx_arr_get と同一式）、
 ##   空の spec があれば 1 を返し、完走すれば 0 を返す。書き込みは行わない。
 
-define([|CLEANUP|], [|Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp|])dnl
+define([|CLEANUP|], [|Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp Q_d Q_r|])dnl
 
 __sx_arr_has() {
 	eval "Q_len=\"\${${1}_len}\""
@@ -12777,7 +12777,14 @@ __sx_arr_has() {
 
 				case "${Q_t}" in -*)
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
-						case "$((Q_s > Q_len - 1))" in 1) Q_c=$((-Q_t)); Q_s=$((Q_s - ((Q_s - (Q_len - 1) + Q_c - 1) / Q_c) * Q_c));; esac
+						# クランプは除算前の加算・乗算を避け、剰余と小さな加減算のみで求める（中間溢れ防止）。
+						case "$((Q_s > Q_len - 1))" in
+							1) Q_c=$((-Q_t))
+								Q_d=$((Q_s - (Q_len - 1)))
+								Q_r=$((Q_d % Q_c))
+								case "${Q_r}" in 0) Q_s=$((Q_len - 1));; *) Q_s=$((Q_len - 1 - (Q_c - Q_r)));; esac
+							;;
+						esac
 						case "$((Q_s >= Q_e && Q_s >= 0))" in 0) unset CLEANUP; return 1;; esac
 					else
 						case "${Q_s}" in -*) unset CLEANUP; return 1;; esac
@@ -12801,7 +12808,14 @@ __sx_arr_has() {
 					;;
 				*)
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
-						case "$((Q_s < 0))" in 1) Q_s=$((Q_s + ((-Q_s + Q_t - 1) / Q_t) * Q_t));; esac
+						# クランプは -Q_s が MIN で反転できないよう Q_s+1 を先に正化する（中間溢れ防止）。
+						case "$((Q_s < 0))" in
+							1) Q_r=$((Q_s + 1))
+								Q_r=$((-Q_r))
+								Q_r=$((Q_r % Q_t))
+								Q_s=$((Q_t - 1 - Q_r))
+							;;
+						esac
 						case "$((Q_s < Q_e && Q_s < Q_len))" in 0) unset CLEANUP; return 1;; esac
 					else
 						case "${Q_s}" in -*)
@@ -13005,7 +13019,7 @@ M_RENAME_QI([|dnl
 ##   __sx_arr_bind_commit で確定する。正確な等差数列と定義域 [0, len) の交叉を
 ##   列挙する（初項計算＋定義域有界ループ）。空結果でも成功する。
 
-define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp|])dnl
+define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp Q_a Q_b Q_d Q_r|])dnl
 
 __sx_arr_get() {
 	__sx_var_to_ebind Q_bind "${1}"
@@ -13016,9 +13030,7 @@ __sx_arr_get() {
 	shift 2
 
 	case "${Q_len}" in 0)
-		eval __sx_arr_bind_commit '"${Q_borg}"' '"${Q_bind}"' "${Q_chain}"
-		unset CLEANUP
-		return M_EX_OK
+		set --
 	esac
 
 	for Q_spec in "${@}"; do
@@ -13044,10 +13056,21 @@ __sx_arr_get() {
 				case "${Q_t}" in -*)
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
 						Q_c=$((-Q_t))
-						case "$((Q_s > Q_len - 1))" in 1) Q_s=$((Q_s - ((Q_s - (Q_len - 1) + Q_c - 1) / Q_c) * Q_c));; esac
+						# クランプは除算前の加算・乗算を避け、剰余と小さな加減算のみで求める（中間溢れ防止）。
+						case "$((Q_s > Q_len - 1))" in
+							1) Q_d=$((Q_s - (Q_len - 1)))
+								Q_r=$((Q_d % Q_c))
+								case "${Q_r}" in 0) Q_s=$((Q_len - 1));; *) Q_s=$((Q_len - 1 - (Q_c - Q_r)));; esac
+							;;
+						esac
 						case "${Q_e}" in -*) Q_e=0;; esac
 						case "$((Q_s >= Q_e && Q_s >= 0))" in 0) continue;; esac
-						Q_e=$((Q_s - (Q_s - Q_e) / Q_c * Q_c))
+						# 終端は Q_s-Q_e を直接計算せず剰余差で求め、結果が [Q_e, Q_s] に収まるよう保つ。
+						Q_a=$((Q_s % Q_c))
+						Q_b=$((Q_e % Q_c))
+						case "${Q_b}" in -*) Q_b=$((Q_b + Q_c));; esac
+						case "$((Q_a >= Q_b))" in 1) Q_r=$((Q_a - Q_b));; *) Q_r=$((Q_a - Q_b + Q_c));; esac
+						Q_e=$((Q_e + Q_r))
 
 						while
 							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
@@ -13098,7 +13121,14 @@ __sx_arr_get() {
 					esac
 
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
-						case "$((Q_s < 0))" in 1) Q_s=$((Q_s + ((-Q_s + Q_t - 1) / Q_t) * Q_t));; esac
+						# クランプは -Q_s が MIN で反転できないよう Q_s+1 を先に正化する（中間溢れ防止）。
+						case "$((Q_s < 0))" in
+							1) Q_r=$((Q_s + 1))
+								Q_r=$((-Q_r))
+								Q_r=$((Q_r % Q_t))
+								Q_s=$((Q_t - 1 - Q_r))
+							;;
+						esac
 						case "$((Q_s < Q_e && Q_s < Q_len))" in 0) continue;; esac
 						Q_e=$((Q_e < Q_len ? Q_e : Q_len))
 						Q_e=$((Q_e - 1 - ((Q_e - 1 - Q_s) % Q_t)))
