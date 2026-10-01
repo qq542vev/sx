@@ -13091,11 +13091,14 @@ __sx_arr_get() {
 						# 始点が len-1 より大きい（定義域より手前）なら、定義域内で
 						# 始点と等しい剰余を持つ最大の値へ引き戻す。
 						# クランプは除算前の加算・乗算を避け、剰余と小さな加減算のみで求める（中間溢れ防止）。
-						case "$((Q_s > Q_len - 1))" in
-							1) Q_d=$((Q_s - (Q_len - 1)))
+						case "$((Q_s > Q_len - 1))" in 1)
+								Q_d=$((Q_s - (Q_len - 1)))
 								Q_r=$((Q_d % Q_c))
-								case "${Q_r}" in 0) Q_s=$((Q_len - 1));; *) Q_s=$((Q_len - 1 - (Q_c - Q_r)));; esac
-							;;
+
+								case "${Q_r}" in
+									0) Q_s=$((Q_len - 1));;
+									*) Q_s=$((Q_len - 1 - (Q_c - Q_r)));;
+								esac
 						esac
 						# 終点が負なら 0（先頭）へクランプする。
 						# 減少方向では終点まで取り出す（逆半開区間）ため、上限は 0 になる。
@@ -13115,7 +13118,11 @@ __sx_arr_get() {
 						# bind が枯渇（1）したらこの while と外側の for を同時に抜ける。
 						while
 							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
-							case "${Q_s}" in "${Q_e}") break;; esac
+
+							case "${Q_s}" in "${Q_e}")
+								break
+							esac
+
 							Q_s=$((Q_s + Q_t))
 							continue
 						do :; done
@@ -13161,7 +13168,11 @@ __sx_arr_get() {
 						# 始点から終端まで刻み刻みに積む。終端に到達したら停止。
 						while
 							__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break 2
-							case "${Q_s}" in "${Q_e}") break;; esac
+
+							case "${Q_s}" in "${Q_e}")
+								break
+							esac
+
 							__sx_num_add_int Q_s "${Q_s}" "${Q_t}"
 							continue
 						do :; done
@@ -13177,14 +13188,14 @@ __sx_arr_get() {
 					# 増加方向（t>0）。3 値が算術域に収まる場合だけ高速経路を使う。
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
 						# 始点が負なら、0 以上で始点と等しい剰余を持つ最小の値へ引き戻す。
-						# クランプは始点の絶対値が MIN で反転できないよう、先に 1 を足して正化してから
-						# 絶対値を取る（中間溢れ防止）。
+						# クランプは始点の絶対値が MIN で反転できないよう、先に 1 を足してから
+						# 負剰余を加算する（中間溢れ防止）。
 						case "$((Q_s < 0))" in 1)
-							Q_s=$((Q_t - 1 - (-(Q_s + 1) % Q_t)))
+							Q_s=$((Q_t - 1 + ((Q_s + 1) % Q_t)))
 						esac
 
 						# 終点の上限を min(終点, len)-1（取り出せる上限）へ丸める。
-						Q_e=$(( (Q_e < Q_len ? Q_e : Q_len) - 1 ))
+						Q_e=$(((Q_e < Q_len ? Q_e : Q_len) - 1))
 
 						# 始点が上限より大きい（終端を先に越える、もしくは定義域外）なら区間は空。
 						case "$((Q_e < Q_s))" in 1)
