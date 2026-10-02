@@ -13032,7 +13032,7 @@ M_RENAME_QI([|dnl
 ##      閉区間（始点から終点まで刻み間隔）を求め、その区間を __sx_arr_bind で積み上げる。
 ##   6. 全 spec の処理後、__sx_arr_bind_commit でチェーンをまとめて 1 度に確定する。
 
-define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp Q_a Q_b Q_r|])dnl
+define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp Q_r|])dnl
 
 __sx_arr_get() {
 	# 分配 bind を ebind（要素名を分解して名前へ書き戻せる形式）へ変換する。
@@ -13082,7 +13082,8 @@ __sx_arr_get() {
 				esac
 
 				# 刻みの符号で方向を決める。負なら減少方向（t<0）として扱う。
-				case "${Q_t}" in -*)
+				case "${Q_t}" in
+					-*)
 						# 始点が負（定義域より手前）なら空。
 						case "${Q_s}" in -*)
 							continue
@@ -13117,11 +13118,9 @@ __sx_arr_get() {
 						case "$((Q_s < Q_e))" in 1)
 							continue
 						esac
-						# 終端 = 始点以下・終点以上で、始点と等しい剰余を持つ最大の値。
-						# 始点と終点の差は直接計算せず剰余の差で求め、結果が終点〜始点に収まるよう保つ。
-						Q_a=$((Q_s % Q_t))
-						Q_b=$((Q_e % Q_t))
-						Q_e=$((Q_e + (Q_a - Q_b + (Q_t * (Q_a < Q_b)))))
+						# 終端 = 始点以下・終点以上で、始点と等しい剰余を持つ最小の値。
+						# 0 <= 終点 <= 始点なので差分は算術域内に収まり、加算結果も始点以下になる。
+						Q_e=$((Q_e + ((Q_s - Q_e) % Q_t)))
 
 						# 始点から終端まで刻み刻みに積む。終端に到達したら停止。
 						# bind が枯渇（1）したらこの while と外側の for を同時に抜ける。
@@ -13138,13 +13137,12 @@ __sx_arr_get() {
 					else
 						# 低速経路: 算術域に収まらないため多倍長演算 API で同じ結果を出す。
 						# 始点が定義域を超える（len 以上）なら、定義域内で始点と等しい剰余を
-						# 持つ最大の値へ引き戻す。剰余は「始点+1 の定義域内距離」から求め、
+						# 持つ最大の値へ引き戻す。剰余は「始点と len-1 の距離」から求め、
 						# 余り 0 ならそのまま len-1、そうでなければ len-1 から
 						# 「絶対刻み − 余り」だけ戻す。
 						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in [23])
 							__sx_num_sub1_nat0 Q_c "${Q_len}"
-							__sx_num_add1_nat0 Q_tmp "${Q_s}"
-							__sx_num_sub_nat0 Q_tmp "${Q_tmp}" "${Q_len}"
+							__sx_num_sub_nat0 Q_tmp "${Q_s}" "${Q_c}"
 							__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t}"
 
 							case "${Q_tmp}" in
