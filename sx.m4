@@ -13083,6 +13083,17 @@ __sx_arr_get() {
 
 				# 刻みの符号で方向を決める。負なら減少方向（t<0）として扱う。
 				case "${Q_t}" in -*)
+						# 始点が負（定義域より手前）なら空。
+						case "${Q_s}" in -*)
+							continue
+						esac
+
+						# 終点が負なら 0（先頭）へクランプする。
+						# 減少方向では終点まで取り出す（逆半開区間）ため、上限は 0 になる。
+						case "${Q_e}" in -*)
+							Q_e=0
+						esac
+
 					# 高速経路は「始点・終点・刻みの 3 値がすべて算術域に収まる」場合だけ使える。
 					# 刻みが最小値で符号反転できない場合も、負の反転を避けるため低速へ回す。
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
@@ -13092,20 +13103,19 @@ __sx_arr_get() {
 						# 始点と等しい剰余を持つ最大の値へ引き戻す。
 						# クランプは除算前の加算・乗算を避け、剰余と小さな加減算のみで求める（中間溢れ防止）。
 						case "$((Q_s > Q_len - 1))" in 1)
-								Q_d=$((Q_s - (Q_len - 1)))
-								Q_r=$((Q_d % Q_c))
+							Q_d=$((Q_s - (Q_len - 1)))
+							Q_r=$((Q_d % Q_c))
 
-								case "${Q_r}" in
-									0) Q_s=$((Q_len - 1));;
-									*) Q_s=$((Q_len - 1 - (Q_c - Q_r)));;
-								esac
+							case "${Q_r}" in
+								0) Q_s=$((Q_len - 1));;
+								*) Q_s=$((Q_len - 1 - (Q_c - Q_r)));;
+							esac
 						esac
-						# 終点が負なら 0（先頭）へクランプする。
-						# 減少方向では終点まで取り出す（逆半開区間）ため、上限は 0 になる。
-						case "${Q_e}" in -*) Q_e=0;; esac
-						# 始点が終点と等しいかそれより大きい（終端を先に 지나る）、
-						# もしくは始点が負（定義域より手前）なら区間は空。
-						case "$((Q_s >= Q_e && Q_s >= 0))" in 0) continue;; esac
+						# 始点が終点より小さい（終端を先に過ぎる）なら区間は空。
+						# s==e は単要素で残す。前段で負始点・負終点は解消済みで、引き戻し後の負化もここで空になる。
+						case "$((Q_s < Q_e))" in 1)
+							continue
+						esac
 						# 終端 = 始点以下・終点以上で、始点と等しい剰余を持つ最大の値。
 						# 始点と終点の差は直接計算せず剰余の差で求め、結果が終点〜始点に収まるよう保つ。
 						Q_a=$((Q_s % Q_c))
@@ -13128,42 +13138,38 @@ __sx_arr_get() {
 						do :; done
 					else
 						# 低速経路: 算術域に収まらないため多倍長演算 API で同じ結果を出す。
-						# 始点が負（定義域より手前）なら空。
-						case "${Q_s}" in -*) continue;; esac
-
 						# 始点が定義域を超える（len 以上）なら、定義域内で始点と等しい剰余を
 						# 持つ最大の値へ引き戻す。剰余は「始点+1 の定義域内距離」から求め、
 						# 余り 0 ならそのまま len-1、そうでなければ len-1 から
 						# 「絶対刻み − 余り」だけ戻す。
-						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in
-							[23]) __sx_num_sub1_nat0 Q_c "${Q_len}"
-								__sx_num_add1_nat0 Q_tmp "${Q_s}"
-								__sx_num_sub_nat0 Q_tmp "${Q_tmp}" "${Q_len}"
-								__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in [23])
+							__sx_num_sub1_nat0 Q_c "${Q_len}"
+							__sx_num_add1_nat0 Q_tmp "${Q_s}"
+							__sx_num_sub_nat0 Q_tmp "${Q_tmp}" "${Q_len}"
+							__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
 
-								case "${Q_tmp}" in
-									0) M_VAR_SET([|Q_s|], [|${Q_c}|]);;
-									*) __sx_num_sub_nat0 Q_tmp "${Q_t#-}" "${Q_tmp}"
-										__sx_num_sub_int Q_s "${Q_c}" "${Q_tmp}"
-								esac
+							case "${Q_tmp}" in
+								0) M_VAR_SET([|Q_s|], [|${Q_c}|]);;
+								*)
+									__sx_num_sub_nat0 Q_tmp "${Q_t#-}" "${Q_tmp}"
+									__sx_num_sub_int Q_s "${Q_c}" "${Q_tmp}"
+									;;
+							esac
 						esac
 
-						# クランプ後も始点が負なら空。終点が負なら終端は 0 側へ寄せられるので、
-						# 終点との大小判定は不要になる。
+						# 引き戻しで負に振れた（定義域より手前）なら空。
+						# 負値を cmp_nat0 に渡さないための guard。
 						case "${Q_s}" in -*) continue;; esac
-						case "${Q_e}" in -*) ;; *) __sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1) continue;; esac;; esac
+
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1)
+							continue
+						esac
 
 						# 終端 = 始点以下・終点以上で、始点と等しい剰余を持つ最大の値。
-						# 終点が負なら終端は「始点の剰余そのもの」になる。
-						case "${Q_e}" in
-							-*) __sx_num_divmod_nat0 :Q_tmp: "${Q_s}" "${Q_t#-}"
-								M_VAR_SET([|Q_e|], [|${Q_tmp}|])
-								;;
-							*) __sx_num_sub_nat0 Q_tmp "${Q_s}" "${Q_e}"
-								__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
-								__sx_num_add_nat0 Q_e "${Q_e}" "${Q_tmp}"
-								;;
-						esac
+						# 前段で終点の負は 0 に寄せ済みのため直接差分で求める。
+						__sx_num_sub_nat0 Q_tmp "${Q_s}" "${Q_e}"
+						__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
+						__sx_num_add_nat0 Q_e "${Q_e}" "${Q_tmp}"
 
 						# 始点から終端まで刻み刻みに積む。終端に到達したら停止。
 						while
