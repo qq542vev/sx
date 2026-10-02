@@ -13229,19 +13229,19 @@ __sx_arr_get() {
 
 						# 終点の上限を min(終点, len)-1（取り出せる上限）へ丸める。
 						__sx_num_cmp_nat0 "${Q_e}" "${Q_len}" || case "${?}" in
-							1) __sx_num_sub1_nat0 Q_c "${Q_e}";;
-							*) __sx_num_sub1_nat0 Q_c "${Q_len}";;
+							1) __sx_num_sub1_nat0 Q_e "${Q_e}";;
+							*) __sx_num_sub1_nat0 Q_e "${Q_len}";;
 						esac
 
 						# 始点が上限より大きい（終端を先に越える、もしくは定義域外）なら区間は空。
-						__sx_num_cmp_nat0 "${Q_s}" "${Q_c}" || case "${?}" in 3)
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 3)
 							continue
 						esac
 
 						# 上限から刻みで割り切れる最大値（終端）まで戻す。
-						__sx_num_sub_nat0 Q_tmp "${Q_c}" "${Q_s}"
+						__sx_num_sub_nat0 Q_tmp "${Q_e}" "${Q_s}"
 						__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t}"
-						__sx_num_sub_nat0 Q_e "${Q_c}" "${Q_tmp}"
+						__sx_num_sub_nat0 Q_e "${Q_e}" "${Q_tmp}"
 
 						# 始点から終端まで刻み刻みに積む。終端に到達したら停止。
 						while
@@ -13263,7 +13263,7 @@ __sx_arr_get() {
 				# 単体指定: 絶対値が len 未満、または絶対値が len ちょうどで符号が負
 				# （len 基準の換算で 0 に落ちる）なら 1 要素として積む。
 				# 絶対値が len 以上の非負値は定義域外なので取り出さない。
-				__sx_num_cmp_nat0 "${Q_spec#[+-]}" "${Q_len}" || case "${?}${Q_spec}" in 1[+0-9-]* | 2-*)
+				__sx_num_cmp_nat0 "${Q_spec#[+-]}" "${Q_len}" || case "${?}${Q_spec}" in 1* | 2-*)
 					__sx_arr_to_int Q_s "${Q_spec}" "${Q_len}"
 
 					__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${Q_arr}_${Q_s}" || break;;
