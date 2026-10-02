@@ -23,6 +23,12 @@ Describe 'sx_num_min'
     The variable result should equal "017"
   End
 
+  It 'e を含む16進数から最小値を選べること'
+    When call sx_num_min result 0x1e 29
+    The status should be success
+    The variable result should equal 29
+  End
+
   It '指数表記を含む場合に正しく最小値を求めること'
     When call sx_num_min result 1.5 1e2 0.12
     The status should be success

@@ -20,6 +20,11 @@ Describe 'sx_num_rel'
     The status should be success
   End
 
+  It 'e と E を含む16進数を整数として比較できること'
+    When call sx_num_rel 0x1e '==' 30 '<' 0X2E
+    The status should be success
+  End
+
   It '不等号（!=）で成功を返すこと'
     When call sx_num_rel 10 '!=' 20
     The status should be success

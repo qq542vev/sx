@@ -8643,6 +8643,7 @@ __sx_num_norm() {
 		Q_in="${Q_arg#[+-]}"
 
 		case "${Q_in}" in
+			0[Xx]* | 0[0-9]*) Q_in=$((Q_in));;
 			*[Ee]*)
 				# 指数表記の展開
 				Q_mnt="${Q_in%%[Ee]*}"
@@ -8678,7 +8679,6 @@ __sx_num_norm() {
 					M_STR_PREPEND([|Q_in|], [|0|])
 				esac
 				;;
-			*[Xx]* | 0[0-9]*) Q_in=$((Q_in));;
 		esac
 
 		# 小数点以下のクリーンアップ
@@ -8931,8 +8931,8 @@ __sx_num_rel() {
 ##   3  norm  (正規化数値比較)
 __sx_num_rel_classify() {
 	case "${1}" in
-		*.* | *[Ee]*) return 3;;
 		*0[Xx]* | 0[0-9]* | [+-]0[0-9]*) return 1;;
+		*.* | *[Ee]*) return 3;;
 	esac
 
 	__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${1}" || return 2

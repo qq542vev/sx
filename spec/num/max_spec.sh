@@ -23,6 +23,12 @@ Describe 'sx_num_max'
     The variable result should equal "0x10"
   End
 
+  It 'e を含む16進数から最大値を選べること'
+    When call sx_num_max result 0x1e 29
+    The status should be success
+    The variable result should equal "0x1e"
+  End
+
   It '指数表記を含む場合に正しく最大値を求めること'
     When call sx_num_max result 1.5 1e2 0.12
     The status should be success

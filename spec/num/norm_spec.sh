@@ -17,6 +17,13 @@ Describe 'sx_num_norm'
     The variable res should equal 16
   End
 
+  It '16進数の桁に e または E が含まれていても指数として扱わないこと'
+    When call sx_num_norm a:b: 0x1e -0X2E
+    The status should be success
+    The variable a should equal 30
+    The variable b should equal -46
+  End
+
   It '8進整数を10進数に変換すること'
     When call sx_num_norm res 010
     The status should be success
