@@ -13032,7 +13032,7 @@ M_RENAME_QI([|dnl
 ##      閉区間（始点から終点まで刻み間隔）を求め、その区間を __sx_arr_bind で積み上げる。
 ##   6. 全 spec の処理後、__sx_arr_bind_commit でチェーンをまとめて 1 度に確定する。
 
-define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp Q_r|])dnl
+define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp|])dnl
 
 __sx_arr_get() {
 	# 分配 bind を ebind（要素名を分解して名前へ書き戻せる形式）へ変換する。
@@ -13104,15 +13104,10 @@ __sx_arr_get() {
 					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}"; then
 						# 始点が len-1 より大きい（定義域より手前）なら、定義域内で
 						# 始点と等しい剰余を持つ最大の値へ引き戻す。
-						# クランプは除算前の加算・乗算を避け、剰余と小さな加減算のみで求める（中間溢れ防止）。
+						# 差分・剰余・加算はいずれも算術域内に収まる。
 						case "$((Q_len <= Q_s))" in 1)
-							Q_r=$(((Q_s - (Q_len - 1)) % Q_t))
-
-							case "${Q_r}" in
-								0) Q_s=$((Q_len - 1));;
-								*) Q_s=$((Q_len - 1 - (Q_t - Q_r)));;
-							esac
-						esac
+							Q_s=$((Q_len - Q_t + ((Q_s - Q_len) % Q_t)))
+					esac
 						# 始点が終点より小さい（終端を先に過ぎる）なら区間は空。
 						# s==e は単要素で残す。前段で負始点・負終点は解消済みで、引き戻し後の負化もここで空になる。
 						case "$((Q_s < Q_e))" in 1)
@@ -13255,7 +13250,7 @@ __sx_arr_get() {
 								break
 							esac
 
-							__sx_num_add_int Q_s "${Q_s}" "${Q_t}"
+							__sx_num_add_nat0 Q_s "${Q_s}" "${Q_t#+}"
 							continue
 						do :; done
 					fi
