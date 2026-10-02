@@ -6,7 +6,7 @@ Describe 'sx_arr_has'
   Include ./sx.sh
   BeforeEach 'sx_arr_gen myarr "a" "b" "c" "d" "e"'
 
-  Context '単体指定 (any 意味論)'
+  Context '単体指定'
     It '存在するインデックスに対して成功を返すこと'
       When call sx_arr_has myarr 0
       The status should be success
@@ -207,6 +207,11 @@ Describe 'sx_arr_has'
   End
 
   Context '複数spec (すべて一致すれば成功)'
+    It 'すべて一致する複数specは成功すること'
+      When call sx_arr_has myarr 1 3:0:-2 -1
+      The status should be success
+    End
+
     It '一部が空なら失敗すること'
       When call sx_arr_has myarr 1 9
       The status should be failure
@@ -364,6 +369,21 @@ Describe 'sx_arr_has'
     It '負始点と巨大正stepの正規化が溢れず空で終えること'
       When call sx_arr_has myarr -9000000000000000000:10:9000000000000000000
       The status should equal 1
+    End
+
+    It '多倍長減算の結果が短い正数になる範囲に一致すること'
+      When call sx_arr_has myarr -9223372036854775809:5:+9223372036854775808
+      The status should be success
+    End
+
+    It '最小値の負stepは低速経路で一致すること'
+      When call sx_arr_has myarr 4:0:-9223372036854775808
+      The status should be success
+    End
+
+    It '算術域外の正stepでも先頭に一致すること'
+      When call sx_arr_has myarr 0:5:+9223372036854775808
+      The status should be success
     End
   End
 End

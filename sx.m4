@@ -9147,11 +9147,8 @@ __sx_num_sub_nat0() {
 
 		case "${Q_borrow}:${Q_rem1}:${Q_rem2}" in
 			0::)
-				# 両方の剰余が枯渇 → tmp_ が最上位桁、先頭ゼロ除去のみでゼロ埋め不要
-				case "${Q_tmp}" in [!0]*)
-					M_STR_PREPEND([|Q_out|], [|"${Q_tmp}"|])
-				esac
-
+				# 両方の剰余が枯渇 → 最上位チャンクはゼロ埋めせず前置する
+				M_STR_PREPEND([|Q_out|], [|"${Q_tmp}"|])
 				break
 				;;
 			0:*:)
@@ -9180,6 +9177,11 @@ __sx_num_sub_nat0() {
 
 		continue
 	do :; done
+
+	# 最上位チャンクの0や下位チャンクの桁揃え用ゼロを除去する
+	case "${Q_out}" in 0*)
+		Q_out="M_STR_LTRIM([|Q_out|], [|[!0]|])"
+	esac
 
 	M_VAR_SET([|${Q_res}|], [|${Q_out:-0}|])
 
@@ -12741,9 +12743,10 @@ M_RENAME_QI([|dnl
 ##   sx_arr_has の内部実装。
 ##   引数チェックは行わない。
 ##   各 spec を正確な等差数列と定義域の交叉で評価し（sx_arr_get と同一式）、
+##   始点を定義域へ寄せた後、最初の有効な添字の有無だけを判定する。
 ##   空の spec があれば 1 を返し、完走すれば 0 を返す。書き込みは行わない。
 
-define([|CLEANUP|], [|Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp Q_d Q_r|])dnl
+define([|CLEANUP|], [|Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp|])dnl
 
 __sx_arr_has() {
 	eval "Q_len=\"\${${1}_len}\""
@@ -12765,69 +12768,72 @@ __sx_arr_has() {
 					*) Q_t=1;;
 				esac
 
-				case "${Q_spec%%:*}" in
-					'') case "${Q_t}" in -*) __sx_num_sub1_nat0 Q_s "${Q_len}";; *) Q_s=0;; esac;;
-					*) __sx_arr_to_int Q_s "${Q_spec%%:*}" "${Q_len}";;
-				esac
+			case "${Q_spec%%:*}:${Q_t}" in
+				:-*) __sx_num_sub1_nat0 Q_s "${Q_len}";;
+				:*) Q_s=0;;
+				*) __sx_arr_to_int Q_s "${Q_spec%%:*}" "${Q_len}";;
+			esac
 
-				case "${Q_e}" in
-					'') case "${Q_t}" in -*) Q_e=0;; *) Q_e="${Q_len}";; esac;;
-					*) __sx_arr_to_int Q_e "${Q_e}" "${Q_len}";;
-				esac
+			case "${Q_e}:${Q_t}" in
+				:-*) Q_e=0;;
+				:*) Q_e="${Q_len}";;
+				*) __sx_arr_to_int Q_e "${Q_e}" "${Q_len}";;
+			esac
 
-				case "${Q_t}" in -*)
-					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
-						# クランプは除算前の加算・乗算を避け、剰余と小さな加減算のみで求める（中間溢れ防止）。
-						case "$((Q_s > Q_len - 1))" in
-							1) Q_c=$((-Q_t))
-								Q_d=$((Q_s - (Q_len - 1)))
-								Q_r=$((Q_d % Q_c))
-								case "${Q_r}" in 0) Q_s=$((Q_len - 1));; *) Q_s=$((Q_len - 1 - (Q_c - Q_r)));; esac
-							;;
+			case "${Q_t}" in
+				-*)
+					case "${Q_s}" in -*) unset CLEANUP; return 1;; esac
+					case "${Q_e}" in -*) Q_e=0;; esac
+					Q_t="${Q_t#-}"
+
+					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}"; then
+						# 定義域内の元の始点と同じ剰余を持つ最大の値へ寄せる。
+						case "$((Q_len <= Q_s))" in 1)
+							Q_s=$((Q_len - Q_t + ((Q_s - Q_len) % Q_t)))
 						esac
-						case "$((Q_s >= Q_e && Q_s >= 0))" in 0) unset CLEANUP; return 1;; esac
+						case "$((Q_s < Q_e))" in 1) unset CLEANUP; return 1;; esac
 					else
-						case "${Q_s}" in -*) unset CLEANUP; return 1;; esac
-
-						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in
-							[23]) __sx_num_sub1_nat0 Q_c "${Q_len}"
-								__sx_num_add1_nat0 Q_tmp "${Q_s}"
-								__sx_num_sub_nat0 Q_tmp "${Q_tmp}" "${Q_len}"
-								__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
-
-								case "${Q_tmp}" in
-									0) M_VAR_SET([|Q_s|], [|${Q_c}|]);;
-									*) __sx_num_sub_nat0 Q_tmp "${Q_t#-}" "${Q_tmp}"
-										__sx_num_sub_int Q_s "${Q_c}" "${Q_tmp}"
-								esac
-						esac
-
-						case "${Q_s}" in -*) unset CLEANUP; return 1;; esac
-						case "${Q_e}" in -*) ;; *) __sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1) unset CLEANUP; return 1;; esac;; esac
-					fi
-					;;
-				*)
-					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
-						# クランプは -Q_s が MIN で反転できないよう Q_s+1 を先に正化する（中間溢れ防止）。
-						case "$((Q_s < 0))" in
-							1) Q_r=$((Q_s + 1))
-								Q_r=$((-Q_r))
-								Q_r=$((Q_r % Q_t))
-								Q_s=$((Q_t - 1 - Q_r))
-							;;
-						esac
-						case "$((Q_s < Q_e && Q_s < Q_len))" in 0) unset CLEANUP; return 1;; esac
-					else
-						case "${Q_s}" in -*)
-							__sx_num_divmod_nat0 :Q_tmp: "${Q_s#-}" "${Q_t#+}"
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in [23])
+							__sx_num_sub1_nat0 Q_c "${Q_len}"
+							__sx_num_sub_nat0 Q_tmp "${Q_s}" "${Q_c}"
+							__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t}"
 
 							case "${Q_tmp}" in
-								0) M_VAR_SET([|Q_s|], [|0|]);;
-								*) __sx_num_sub_nat0 Q_s "${Q_t#+}" "${Q_tmp}";;
+								0) Q_s="${Q_c}";;
+								*) __sx_num_sub_nat0 Q_tmp "${Q_t}" "${Q_tmp}"
+									__sx_num_sub_int Q_s "${Q_c}" "${Q_tmp}"
+									;;
 							esac
 						esac
 
-						case "${Q_e}" in -*) unset CLEANUP; return 1;; esac
+						case "${Q_s}" in -*) unset CLEANUP; return 1;; esac
+						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in 1)
+							unset CLEANUP
+							return 1
+						esac
+					fi
+					;;
+				*)
+					# 正方向の終点は排他的。0 以下なら必ず空となる。
+					case "${Q_e}" in [-0]*) unset CLEANUP; return 1;; esac
+
+					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}"; then
+						# 負の始点を位相を保って 0 以上へ寄せる。MIN の反転を避ける。
+						case "${Q_s}" in -*)
+							Q_s=$((Q_t - 1 + ((Q_s + 1) % Q_t)))
+						esac
+						case "$((Q_s < Q_e && Q_s < Q_len))" in 0) unset CLEANUP; return 1;; esac
+					else
+						Q_t="${Q_t#+}"
+						case "${Q_s}" in -*)
+							__sx_num_divmod_nat0 :Q_tmp: "${Q_s#-}" "${Q_t}"
+
+							case "${Q_tmp}" in
+								0) Q_s=0;;
+								*) __sx_num_sub_nat0 Q_s "${Q_t}" "${Q_tmp}";;
+							esac
+							esac
+
 						__sx_num_cmp_nat0 "${Q_s}" "${Q_e}" || case "${?}" in [23]) unset CLEANUP; return 1;; esac
 						__sx_num_cmp_nat0 "${Q_s}" "${Q_len}" || case "${?}" in [23]) unset CLEANUP; return 1;; esac
 					fi
@@ -12836,7 +12842,7 @@ __sx_arr_has() {
 				;;
 			*)
 				__sx_num_cmp_nat0 "${Q_spec#[+-]}" "${Q_len}" || case "${?}${Q_spec}" in
-					1[+0-9-]* | 2-*) ;;
+					1* | 2-*) ;;
 					*) unset CLEANUP; return 1;;
 				esac
 				;;
@@ -13107,7 +13113,8 @@ __sx_arr_get() {
 						# 差分・剰余・加算はいずれも算術域内に収まる。
 						case "$((Q_len <= Q_s))" in 1)
 							Q_s=$((Q_len - Q_t + ((Q_s - Q_len) % Q_t)))
-					esac
+						esac
+
 						# 始点が終点より小さい（終端を先に過ぎる）なら区間は空。
 						# s==e は単要素で残す。前段で負始点・負終点は解消済みで、引き戻し後の負化もここで空になる。
 						case "$((Q_s < Q_e))" in 1)
@@ -13259,7 +13266,6 @@ __sx_arr_get() {
 				esac
 				;;
 			*)
-
 				# 単体指定: 絶対値が len 未満、または絶対値が len ちょうどで符号が負
 				# （len 基準の換算で 0 に落ちる）なら 1 要素として積む。
 				# 絶対値が len 以上の非負値は定義域外なので取り出さない。

@@ -53,6 +53,12 @@ Describe 'sx_num_sub_nat0'
     The variable result should equal "999999999"
   End
 
+  It '既定の算術域でも最上位チャンクの差が0なら先頭ゼロを残さないこと'
+    When call sx_num_sub_nat0 result 1000000000 999999999
+    The status should be success
+    The variable result should equal "1"
+  End
+
   It '窓幅を超える多倍長整数の減算ができること(18桁境界)'
     When call sx_num_sub_nat0 result 1000000000000000000 1
     The status should be success
@@ -69,6 +75,24 @@ Describe 'sx_num_sub_nat0'
     When call sx_num_sub_nat0 result 100000000000000000000 1
     The status should be success
     The variable result should equal "99999999999999999999"
+  End
+
+  Context '算術域境界 (NUM_RANGE=64)'
+    arith_lt64() { ( : $(( 0x7FFFFFFF + 1 )) ) 2>&- || return 0; return 1; }
+    Before 'sx_cfg_set NUM_RANGE=64'
+    Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
+
+    It '最上位チャンクの差が0でも先頭ゼロを残さないこと'
+      When call sx_num_sub_nat0 result 9223372036854775808 9223372036854775804
+      The status should be success
+      The variable result should equal "4"
+    End
+
+    It '複数チャンクの同値減算を0に正規化すること'
+      When call sx_num_sub_nat0 result 9223372036854775808 9223372036854775808
+      The status should be success
+      The variable result should equal "0"
+    End
   End
 
   It '負数を含む場合はエラーになること'

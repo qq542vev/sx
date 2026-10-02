@@ -612,5 +612,12 @@ Describe 'sx_arr_get'
       The status should be success
       The variable x_len should equal 0
     End
+
+    It '多倍長減算の結果が短い正数になる範囲を取得できること'
+      When call sx_arr_get x myarr -9223372036854775809:5:+9223372036854775808
+      The status should be success
+      The variable x_len should equal 1
+      The variable x_0 should equal "e"
+    End
   End
 End
