@@ -13141,7 +13141,7 @@ __sx_arr_get() {
 							__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t}"
 
 							case "${Q_tmp}" in
-								0) M_VAR_SET([|Q_s|], [|${Q_c}|]);;
+								0) Q_s="${Q_c}";;
 								*)
 									__sx_num_sub_nat0 Q_tmp "${Q_t}" "${Q_tmp}"
 									__sx_num_sub_int Q_s "${Q_c}" "${Q_tmp}"
@@ -13217,19 +13217,20 @@ __sx_arr_get() {
 					else
 						# 低速経路: 始点が負なら、0 以上で始点と等しい剰余を持つ最小の値へ引き戻す。
 						# 絶対値の剰余から逆算するので、始点の絶対値が MIN でも反転しない。
+						Q_t="${Q_t#+}"
 						case "${Q_s}" in -*)
-							__sx_num_divmod_nat0 :Q_tmp: "${Q_s#-}" "${Q_t#+}"
+							__sx_num_divmod_nat0 :Q_tmp: "${Q_s#-}" "${Q_t}"
 
 							case "${Q_tmp}" in
-								0) M_VAR_SET([|Q_s|], [|0|]);;
-								*) __sx_num_sub_nat0 Q_s "${Q_t#+}" "${Q_tmp}";;
+								0) Q_s=0;;
+								*) __sx_num_sub_nat0 Q_s "${Q_t}" "${Q_tmp}";;
 							esac
 						esac
 
 						# 終点の上限を min(終点, len)-1（取り出せる上限）へ丸める。
 						__sx_num_cmp_nat0 "${Q_e}" "${Q_len}" || case "${?}" in
-							1) __sx_num_sub_nat0 Q_c "${Q_e}" 1;;
-							*) __sx_num_sub_nat0 Q_c "${Q_len}" 1;;
+							1) __sx_num_sub1_nat0 Q_c "${Q_e}";;
+							*) __sx_num_sub1_nat0 Q_c "${Q_len}";;
 						esac
 
 						# 始点が上限より大きい（終端を先に越える、もしくは定義域外）なら区間は空。
@@ -13239,7 +13240,7 @@ __sx_arr_get() {
 
 						# 上限から刻みで割り切れる最大値（終端）まで戻す。
 						__sx_num_sub_nat0 Q_tmp "${Q_c}" "${Q_s}"
-						__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#+}"
+						__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t}"
 						__sx_num_sub_nat0 Q_e "${Q_c}" "${Q_tmp}"
 
 						# 始点から終端まで刻み刻みに積む。終端に到達したら停止。
@@ -13250,7 +13251,7 @@ __sx_arr_get() {
 								break
 							esac
 
-							__sx_num_add_nat0 Q_s "${Q_s}" "${Q_t#+}"
+							__sx_num_add_nat0 Q_s "${Q_s}" "${Q_t}"
 							continue
 						do :; done
 					fi
