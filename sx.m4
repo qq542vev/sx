@@ -13032,7 +13032,7 @@ M_RENAME_QI([|dnl
 ##      閉区間（始点から終点まで刻み間隔）を求め、その区間を __sx_arr_bind で積み上げる。
 ##   6. 全 spec の処理後、__sx_arr_bind_commit でチェーンをまとめて 1 度に確定する。
 
-define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp Q_a Q_b Q_d Q_r|])dnl
+define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_arr Q_len Q_spec Q_s Q_e Q_t Q_c Q_tmp Q_a Q_b Q_r|])dnl
 
 __sx_arr_get() {
 	# 分配 bind を ebind（要素名を分解して名前へ書き戻せる形式）へ変換する。
@@ -13102,9 +13102,8 @@ __sx_arr_get() {
 						# 始点が len-1 より大きい（定義域より手前）なら、定義域内で
 						# 始点と等しい剰余を持つ最大の値へ引き戻す。
 						# クランプは除算前の加算・乗算を避け、剰余と小さな加減算のみで求める（中間溢れ防止）。
-						case "$((Q_s > Q_len - 1))" in 1)
-							Q_d=$((Q_s - (Q_len - 1)))
-							Q_r=$((Q_d % Q_c))
+						case "$((Q_len - 1 < Q_s))" in 1)
+							Q_r=$(((Q_s - (Q_len - 1)) % Q_c))
 
 							case "${Q_r}" in
 								0) Q_s=$((Q_len - 1));;
@@ -13120,9 +13119,7 @@ __sx_arr_get() {
 						# 始点と終点の差は直接計算せず剰余の差で求め、結果が終点〜始点に収まるよう保つ。
 						Q_a=$((Q_s % Q_c))
 						Q_b=$((Q_e % Q_c))
-						case "${Q_b}" in -*) Q_b=$((Q_b + Q_c));; esac
-						case "$((Q_a >= Q_b))" in 1) Q_r=$((Q_a - Q_b));; *) Q_r=$((Q_a - Q_b + Q_c));; esac
-						Q_e=$((Q_e + Q_r))
+						Q_e=$((Q_e + (Q_a - Q_b + (Q_c * (Q_a < Q_b)))))
 
 						# 始点から終端まで刻み刻みに積む。終端に到達したら停止。
 						# bind が枯渇（1）したらこの while と外側の for を同時に抜ける。
