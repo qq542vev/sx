@@ -13094,20 +13094,22 @@ __sx_arr_get() {
 							Q_e=0
 						esac
 
+						# 絶対刻みを求める。以後は絶対刻みで統一する。
+						# 文字列除去のため MIN でも算術溢れしない。
+						Q_t="${Q_t#-}"
+
 					# 高速経路は「始点・終点・刻みの 3 値がすべて算術域に収まる」場合だけ使える。
-					# 刻みが最小値で符号反転できない場合も、負の反転を避けるため低速へ回す。
-					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
-						# 絶対刻みを求める。以後の移動は「絶対刻みの減算/加算」で表す。
-						Q_c=$((-Q_t))
+					# MIN の絶対値は算術域外のため fit 不適合で低速へ回る。
+					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}"; then
 						# 始点が len-1 より大きい（定義域より手前）なら、定義域内で
 						# 始点と等しい剰余を持つ最大の値へ引き戻す。
 						# クランプは除算前の加算・乗算を避け、剰余と小さな加減算のみで求める（中間溢れ防止）。
-						case "$((Q_len - 1 < Q_s))" in 1)
-							Q_r=$(((Q_s - (Q_len - 1)) % Q_c))
+						case "$((Q_len <= Q_s))" in 1)
+							Q_r=$(((Q_s - (Q_len - 1)) % Q_t))
 
 							case "${Q_r}" in
 								0) Q_s=$((Q_len - 1));;
-								*) Q_s=$((Q_len - 1 - (Q_c - Q_r)));;
+								*) Q_s=$((Q_len - 1 - (Q_t - Q_r)));;
 							esac
 						esac
 						# 始点が終点より小さい（終端を先に過ぎる）なら区間は空。
@@ -13117,9 +13119,9 @@ __sx_arr_get() {
 						esac
 						# 終端 = 始点以下・終点以上で、始点と等しい剰余を持つ最大の値。
 						# 始点と終点の差は直接計算せず剰余の差で求め、結果が終点〜始点に収まるよう保つ。
-						Q_a=$((Q_s % Q_c))
-						Q_b=$((Q_e % Q_c))
-						Q_e=$((Q_e + (Q_a - Q_b + (Q_c * (Q_a < Q_b)))))
+						Q_a=$((Q_s % Q_t))
+						Q_b=$((Q_e % Q_t))
+						Q_e=$((Q_e + (Q_a - Q_b + (Q_t * (Q_a < Q_b)))))
 
 						# 始点から終端まで刻み刻みに積む。終端に到達したら停止。
 						# bind が枯渇（1）したらこの while と外側の for を同時に抜ける。
@@ -13130,7 +13132,7 @@ __sx_arr_get() {
 								break
 							esac
 
-							Q_s=$((Q_s + Q_t))
+							Q_s=$((Q_s - Q_t))
 							continue
 						do :; done
 					else
@@ -13143,12 +13145,12 @@ __sx_arr_get() {
 							__sx_num_sub1_nat0 Q_c "${Q_len}"
 							__sx_num_add1_nat0 Q_tmp "${Q_s}"
 							__sx_num_sub_nat0 Q_tmp "${Q_tmp}" "${Q_len}"
-							__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
+							__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t}"
 
 							case "${Q_tmp}" in
 								0) M_VAR_SET([|Q_s|], [|${Q_c}|]);;
 								*)
-									__sx_num_sub_nat0 Q_tmp "${Q_t#-}" "${Q_tmp}"
+									__sx_num_sub_nat0 Q_tmp "${Q_t}" "${Q_tmp}"
 									__sx_num_sub_int Q_s "${Q_c}" "${Q_tmp}"
 									;;
 							esac
@@ -13165,7 +13167,7 @@ __sx_arr_get() {
 						# 終端 = 始点以下・終点以上で、始点と等しい剰余を持つ最大の値。
 						# 前段で終点の負は 0 に寄せ済みのため直接差分で求める。
 						__sx_num_sub_nat0 Q_tmp "${Q_s}" "${Q_e}"
-						__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t#-}"
+						__sx_num_divmod_nat0 :Q_tmp: "${Q_tmp}" "${Q_t}"
 						__sx_num_add_nat0 Q_e "${Q_e}" "${Q_tmp}"
 
 						# 始点から終端まで刻み刻みに積む。終端に到達したら停止。
@@ -13176,7 +13178,7 @@ __sx_arr_get() {
 								break
 							esac
 
-							__sx_num_add_int Q_s "${Q_s}" "${Q_t}"
+							__sx_num_sub_nat0 Q_s "${Q_s}" "${Q_t}"
 							continue
 						do :; done
 					fi
@@ -13189,7 +13191,7 @@ __sx_arr_get() {
 					esac
 
 					# 増加方向（t>0）。3 値が算術域に収まる場合だけ高速経路を使う。
-					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}" && M_STR_NE([|"${Q_t}"|], [|"${SX_SYS_NUM_MIN}"|]); then
+					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}"; then
 						# 始点が負なら、0 以上で始点と等しい剰余を持つ最小の値へ引き戻す。
 						# クランプは始点の絶対値が MIN で反転できないよう、先に 1 を足してから
 						# 負剰余を加算する（中間溢れ防止）。
