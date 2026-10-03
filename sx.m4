@@ -9067,6 +9067,27 @@ __sx_num_sub_nat0() {
 	Q_res="${1}"
 	Q_rem1="${2-0}"
 	Q_rem2="${3-0}"
+
+	# 自明なケースと、両入力が語幅以内のケースを先に確定する
+	case "${Q_rem1}:${Q_rem2}" in
+		*:0)
+			M_VAR_SET([|${Q_res}|], [|${Q_rem1}|])
+			unset CLEANUP
+			return
+			;;
+		"${Q_rem2}:${Q_rem2}")
+			M_VAR_SET([|${Q_res}|], [|0|])
+			unset CLEANUP
+			return
+			;;
+		${SX_SYS_NUM_QM}?*:*) ;;
+		*)
+			M_VAR_SET([|${Q_res}|], [|$((Q_rem1 - Q_rem2))|])
+			unset CLEANUP
+			return
+			;;
+	esac
+
 	Q_borrow=0
 	Q_out=
 
