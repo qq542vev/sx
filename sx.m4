@@ -5710,7 +5710,7 @@ M_RENAME_QI([|dnl
 ##   2  左辺 = 右辺
 ##   3  左辺 > 右辺
 
-define([|CLEANUP|], [|Q_l Q_r Q_qm|])dnl
+define([|CLEANUP|], [|Q_l Q_r|])dnl
 
 __sx_num_cmp_nat0() {
 	case "${1}" in "${2}")
@@ -8203,7 +8203,7 @@ M_RENAME_QI([|dnl
 ##   引数はすべて検証済みの正しい10進整数であることを前提とする。
 ##   逐次方式でアキュムレータに各数値を順次乗算する。
 
-define([|CLEANUP|], [|Q_res Q_a Q_b Q_endz Q_qm Q_shift Q_tmp Q_ch_a Q_ch_b Q_wlen_mul Q_max_ops Q_a_len Q_b_len Q_max_x Q_min_ops Q_opt_x Q_opt_y Q_x Q_y Q_ops Q_qchunk_a Q_qchunk_b Q_zchunk_a Q_zchunk_b Q_carry Q_g Q_fit Q_safe|])dnl
+define([|CLEANUP|], [|Q_res Q_a Q_b Q_endz Q_shift Q_tmp Q_ch_a Q_ch_b Q_a_len Q_b_len Q_max_x Q_min_ops Q_opt_x Q_opt_y Q_x Q_y Q_ops Q_qchunk_a Q_qchunk_b Q_zchunk_a Q_zchunk_b Q_carry Q_g Q_fit Q_safe|])dnl
 
 __sx_num_mul_nat0() {
 	Q_res="${1}"
