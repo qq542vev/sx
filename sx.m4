@@ -5473,25 +5473,11 @@ M_RENAME_QI([|dnl
 ##   SX_CFG_NUM_RANGE に応じて、ネイティブ算術または __sx_num_add_nat0 に委譲する。
 
 __sx_num_add1_nat0() {
-	case "${SX_CFG_NUM_RANGE}" in
-		32)
-			case "$2" in
-				?????????*) __sx_num_add_nat0 "$1" "$2" 1;;
-				*) : "$(($1 = $2 + 1))";;
-			esac
+	case "${SX_CFG_NUM_RANGE}:${2}" in
+		32:?????????* | 64:??????????????????* | 128:??????????????????????????????????????*)
+			__sx_num_add_nat0 "${1}" "${2}" 1
 			;;
-		64)
-			case "$2" in
-				??????????????????*) __sx_num_add_nat0 "$1" "$2" 1;;
-				*) : "$(($1 = $2 + 1))";;
-			esac
-			;;
-		128)
-			case "$2" in
-				??????????????????????????????????????*) __sx_num_add_nat0 "$1" "$2" 1;;
-				*) : "$(($1 = $2 + 1))";;
-			esac
-			;;
+		32:* | 64:* | 128:*) : "$((${1} = ${2} + 1))";;
 	esac
 }
 |], [|num_add1_nat0|])dnl
@@ -6683,24 +6669,18 @@ M_RENAME_QI([|dnl
 ##   - r0 ≠ 0 かつ同符号のとき: q = ±(q0 + 1)（負どうしなら正）
 ##   - r0 ≠ 0 かつ異符号のとき: q = ±q0（打ち切りがそのまま ceil になる）
 
-define([|CLEANUP|], [|Q_q Q_r Q_us Q_vs|])dnl
+define([|CLEANUP|], [|Q_q Q_r Q_neg|])dnl
 
 __sx_num_divceil_int() {
 	set -- "${1}" "${2:-0}" "${3:-1}"
-	Q_us=0
-	Q_vs=0
-
-	case "${2}" in -*)
-		Q_us=1
-	esac
-
-	case "${3}" in -*)
-		Q_vs=1
+	case "${2}:${3}" in
+		-*:[!-]* | [!-]*:-*) Q_neg=1;;
+		*) Q_neg=0;;
 	esac
 
 	__sx_num_divmod_nat0 'Q_q:Q_r:' "${2#[+-]}" "${3#[+-]}"
 
-	case "$((Q_us ^ Q_vs)):${Q_q}:${Q_r}" in
+	case "${Q_neg}:${Q_q}:${Q_r}" in
 		0:*:[!0]*) M_NUM_INCRM1([|Q_q|]);;
 		1:[!0]*:*) M_STR_PREPEND([|Q_q|], [|-|]);;
 	esac
@@ -6765,24 +6745,18 @@ M_RENAME_QI([|dnl
 ##   加算は増分前の値で判定し、符号付与は増分後の値で判定することで、
 ##   q0 = 0 のときの -1 と r0 = 0 のときの -0 回避を両立する。
 
-define([|CLEANUP|], [|Q_q Q_r Q_us Q_vs|])dnl
+define([|CLEANUP|], [|Q_q Q_r Q_neg|])dnl
 
 __sx_num_divfloor_int() {
 	set -- "${1}" "${2:-0}" "${3:-1}"
-	Q_us=0
-	Q_vs=0
-
-	case "${2}" in -*)
-		Q_us=1
-	esac
-
-	case "${3}" in -*)
-		Q_vs=1
+	case "${2}:${3}" in
+		-*:[!-]* | [!-]*:-*) Q_neg=1;;
+		*) Q_neg=0;;
 	esac
 
 	__sx_num_divmod_nat0 'Q_q:Q_r:' "${2#[+-]}" "${3#[+-]}"
 
-	case "$((Q_us ^ Q_vs))" in 1)
+	case "${Q_neg}" in 1)
 		case "${Q_r}" in [!0]*)
 			M_NUM_INCRM1([|Q_q|])
 		esac
@@ -9231,25 +9205,11 @@ M_RENAME_QI([|dnl
 ##   SX_CFG_NUM_RANGE に応じて、ネイティブ算術または __sx_num_sub_nat0 に委譲する。
 
 __sx_num_sub1_nat0() {
-	case "${SX_CFG_NUM_RANGE}" in
-		32)
-			case "$2" in
-				?????????*) __sx_num_sub_nat0 "$1" "$2" 1;;
-				*) : "$(($1 = $2 - 1))";;
-			esac
+	case "${SX_CFG_NUM_RANGE}:${2}" in
+		32:?????????* | 64:??????????????????* | 128:??????????????????????????????????????*)
+			__sx_num_sub_nat0 "${1}" "${2}" 1
 			;;
-		64)
-			case "$2" in
-				??????????????????*) __sx_num_sub_nat0 "$1" "$2" 1;;
-				*) : "$(($1 = $2 - 1))";;
-			esac
-			;;
-		128)
-			case "$2" in
-				??????????????????????????????????????*) __sx_num_sub_nat0 "$1" "$2" 1;;
-				*) : "$(($1 = $2 - 1))";;
-			esac
-			;;
+		32:* | 64:* | 128:*) : "$((${1} = ${2} - 1))";;
 	esac
 }
 |], [|num_sub1_nat0|])dnl
