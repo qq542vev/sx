@@ -944,7 +944,7 @@ __sx_fn_with() {
 	eval "unset CLEANUP; \"\${@:-:}\" && set -- '${Q_fns}' 0 || set -- '${Q_fns}' \"\${?}\""
 
 	# 4. 後始末
-	case "${1}" in ?*)
+	case "${1:+X}" in X)
 		eval "unset -f ${1}"
 	esac
 
@@ -1434,7 +1434,7 @@ __sx_arg_find_cb() {
 
 		unset CLEANUP
 
-		case "${4}" in '')
+		case "${4:+X}" in '')
 			break
 		esac
 
@@ -1477,7 +1477,7 @@ __sx_arg_find_lit() {
 	shift 3
 
 	for Q_arg in "${@}"; do
-		case "${Q_bind}" in '')
+		case "${Q_bind:+X}" in '')
 			break
 		esac
 
@@ -1726,7 +1726,7 @@ __sx_arg_isep_cb() {
 		# 状態レイアウトに再構築: $1=sep_cnt $2=skip $3=stat $4=i $5=bind $6=cb $7=int $8=lim $9=flags
 		set -- 0 0 0 -10 "${@}"
 
-		case "${5}" in '')
+		case "${5:+X}" in '')
 			return "${3}"
 		esac
 
@@ -1756,7 +1756,7 @@ __sx_arg_isep_cb() {
 
 			unset Q_arg
 
-			case "${5}" in '')
+			case "${5:+X}" in '')
 				return "${3}"
 			esac
 
@@ -1780,7 +1780,7 @@ __sx_arg_isep_cb() {
 			unset Q_ret Q_bind
 		done
 
-		case "${5}" in '')
+		case "${5:+X}" in '')
 			unset Q_arg
 			return "${3}"
 		esac
@@ -2185,7 +2185,7 @@ __sx_arg_map() {
 			continue
 		esac
 
-		case "${3}" in '')
+		case "${3:+X}" in '')
 			break
 		esac
 
@@ -2736,7 +2736,7 @@ __sx_arg_range() {
 	shift
 	__sx_num_range Q_idxs "${@}"
 
-	case "${Q_idxs}" in
+	case "${Q_idxs:+X}" in
 		'') M_VAR_SET([|${Q_res}|], [||]);;
 		*)
 			__sx_str_sub Q_tmp: "${Q_idxs}" ' ' '}" "${'
@@ -3104,7 +3104,7 @@ sx_var_bind() {
 	# 結果変数名自体の妥当性と書き込み権限をチェック
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	case "${1-}" in ?*)
+	case "${1:+X}" in X)
 		sx_var_is_name "${1-}" || return M_EX_USAGE
 
 		__sx_var_is_rw "${1}" || return M_EX_NOPERM
@@ -3251,7 +3251,7 @@ __sx_var_bind0() {
 				break
 				;;
 			*)
-				case "${Q_res}" in ?*)
+				case "${Q_res:+X}" in X)
 					M_VAR_SET([|${Q_res}|], [|${Q_bind}|])
 				esac
 
@@ -3261,7 +3261,7 @@ __sx_var_bind0() {
 		esac
 	done
 
-	case "${Q_res}" in ?*)
+	case "${Q_res:+X}" in X)
 		M_VAR_SET([|${Q_res}|], [|${Q_bind}|])
 	esac
 
@@ -3452,7 +3452,7 @@ __sx_var_copy_script() {
 				*) Q_dest="${Q_chain}" Q_chain=;;
 			esac
 
-			case "${Q_src}" in ?*)
+			case "${Q_src:+X}" in X)
 				Q_expr= Q_unset=
 
 				__sx_var_list_dep Q_dep "${Q_src}"
@@ -3474,7 +3474,7 @@ __sx_var_copy_script() {
 				M_STR_APPEND([|Q_out|], [|"__sx_var_unset ${Q_dest}${SX_STR_LF}${Q_expr}${SX_STR_LF}${Q_unset:+unset -v ${Q_unset}${SX_STR_LF}}"|])
 			esac
 
-			case "${Q_chain}" in '')
+			case "${Q_chain:+X}" in '')
 				break
 			esac
 
@@ -3666,7 +3666,7 @@ __sx_var_is_bind() {
 				*["${SX_STR_SWORD}"]*) Q_vn="M_STR_LTRIM([|Q_seg|], [|[!0-9]|])" Q_type=list;;
 			esac
 
-			case "${Q_vn}" in ?*)
+			case "${Q_vn:+X}" in X)
 				eval "Q_tmp=\"\${Q_v${Q_vn}_=${Q_type}}\""
 				M_STR_APPEND([|Q_mark|], [|"Q_v${Q_vn}_ "|])
 
@@ -4013,7 +4013,7 @@ __sx_var_is_ebind() {
 				*) Q_vn="${Q_seg}" Q_type=scalar;;
 			esac
 
-			case "${Q_vn}" in ?*)
+			case "${Q_vn:+X}" in X)
 				eval "Q_tmp=\"\${Q_v${Q_vn}_=${Q_type}}\""
 				M_STR_APPEND([|Q_mark|], [|"Q_v${Q_vn}_ "|])
 
@@ -4552,7 +4552,7 @@ __sx_var_list_dep() {
 
 		__sx_var_ubind Q_bind "${Q_bind}" "${1}" || break
 
-		case "${Q_mark}" in ?*)
+		case "${Q_mark:+X}" in X)
 			eval "Q_v${1}_="
 			M_STR_APPEND([|Q_mark|], [|"Q_v${1}_ "|])
 		esac
@@ -4624,7 +4624,7 @@ __sx_var_list_ro() {
 		Q_list="${Q_list#*${SX_STR_LF}readonly }"
 
 		case "${Q_list}" in ["${SX_STR_SWORD}"]*)
-			case "${Q_bind}" in '')
+			case "${Q_bind:+X}" in '')
 				break
 			esac
 
@@ -4695,7 +4695,7 @@ __sx_var_list_set() {
 		Q_list="${Q_list#*${SX_STR_LF}}"
 
 		case "${Q_ln}" in ["${SX_STR_SWORD}"]=* | ["${SX_STR_SWORD}"]*["${SX_STR_WORD}"]=*)
-			case "${Q_bind}" in '')
+			case "${Q_bind:+X}" in '')
 				break
 			esac
 
@@ -5025,7 +5025,7 @@ sx_var_ubind() {
 	# 結果変数名自体の妥当性と書き込み権限をチェック
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	case "${1-}" in ?*)
+	case "${1:+X}" in X)
 		sx_var_is_name "${1-}" || return M_EX_USAGE
 
 		__sx_var_is_rw "${1}" || return M_EX_NOPERM
@@ -5961,7 +5961,7 @@ __sx_num_div_nat0() {
 	esac
 
 	# 小数部が空（小数が 0）なら "." を付けず整数商のまま
-	case "${Q_dec}" in ?*)
+	case "${Q_dec:+X}" in X)
 		M_STR_APPEND([|Q_q|], [|".${Q_dec}"|])
 	esac
 
@@ -6356,7 +6356,7 @@ __sx_num_divmod_nat0() {
 				2) Q_v2="${Q_chunk}";;
 			esac
 
-			case "${Q_v}" in '')
+			case "${Q_v:+X}" in '')
 				break
 			esac
 
@@ -9485,7 +9485,7 @@ __sx_str_center() {
 	Q_lpad=$(((Q_needed + (${3} < 0)) / 2))
 	Q_rpad=$((Q_needed - Q_lpad))
 
-	case "${4}" in ?*)
+	case "${4:+X}" in X)
 		__sx_str_rep Q_lrep "${4}" "$((((Q_needed + 1) / 2 - 1) / ${#4} + 1))"
 	esac
 
@@ -9846,7 +9846,7 @@ define([|CLEANUP|], [|Q_gs|])dnl
 __sx_str_escape() {
 	set -- "${1}" "${2-}" "${3-}" "${4:-\\}" "${5:-}"
 
-	case "${3}" in '')
+	case "${3:+X}" in '')
 		M_VAR_SET([|${1}|], [|${2}|])
 		return M_EX_OK
 	esac
@@ -9910,7 +9910,7 @@ sx_str_etrim() {
 __sx_str_etrim() {
 	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
 
-	case "${3}" in '')
+	case "${3:+X}" in '')
 		M_VAR_SET([|${1}|], [|${2}|])
 		return M_EX_OK
 	esac
@@ -11651,7 +11651,7 @@ define([|CLEANUP|], [|Q_str Q_out|])dnl
 __sx_str_squish() {
 	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}" "${4- }"
 
-	case "${3}" in '')
+	case "${3:+X}" in '')
 		M_VAR_SET([|${1}|], [|${2}|])
 		return
 	esac
@@ -11710,7 +11710,7 @@ sx_str_strim() {
 __sx_str_strim() {
 	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
 
-	case "${3}" in '')
+	case "${3:+X}" in '')
 		M_VAR_SET([|${1}|], [|${2}|])
 		return M_EX_OK
 	esac
@@ -12254,7 +12254,7 @@ __sx_str_tr() {
 	Q_lim="${5:-${SX_NUM_I32_MAX}}"
 	Q_cnt=0
 
-	case "${3}" in
+	case "${3:+X}" in
 		'') __sx_var_bind '' "${Q_bind}" "${Q_str}" "${Q_cnt}";;
 		*)
 			__sx_str_chunk Q_to "${4}" 1
@@ -12538,7 +12538,7 @@ sx_glob_bracket() {
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-	case "${2-}" in '')
+	case "${2:+X}" in '')
 		return M_EX_USAGE
 	esac
 
@@ -12850,21 +12850,21 @@ M_RENAME_QI([|dnl
 ##   sx_arr_is_spec の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_spec Q_rest|])dnl
+define([|CLEANUP|], [|Q_spec Q_rest Q_part|])dnl
 
 __sx_arr_is_spec() {
 	for Q_spec in "${@}"; do
 		case "${Q_spec}" in
 			*:*:*)
-				Q_rest="${Q_spec#*:}"
-				Q_rest="${Q_rest%:*}"
-				case "${Q_spec%%:*}" in '') ;; *) __sx_num_is_int_base 10 "${Q_spec%%:*}";; esac \
-					&& case "${Q_rest}" in '') ;; *) __sx_num_is_int_base 10 "${Q_rest}";; esac \
-					&& __sx_num_is_nzint_base 10 "${Q_spec##*:}"
+				Q_part="${Q_spec%%:*}"
+				Q_spec="${Q_spec#*:}"
+				Q_rest="${Q_spec%%:*}"
+				__sx_num_is_int_base 10 ${Q_part:+"${Q_part}"} ${Q_rest:+"${Q_rest}"} && __sx_num_is_nzint_base 10 "${Q_spec#*:}"
 				;;
 			*:*)
-				case "${Q_spec%:*}" in '') ;; *) __sx_num_is_int_base 10 "${Q_spec%:*}";; esac \
-					&& case "${Q_spec#*:}" in '') ;; *) __sx_num_is_int_base 10 "${Q_spec#*:}";; esac
+				Q_part="${Q_spec%:*}"
+				Q_rest="${Q_spec#*:}"
+				__sx_num_is_int_base 10 ${Q_part:+"${Q_part}"} ${Q_rest:+"${Q_rest}"}
 				;;
 			*) __sx_num_is_int_base 10 "${Q_spec}";;
 		esac || {
@@ -13585,7 +13585,7 @@ __sx_arr_bind() {
 				shift
 				;;
 			'')
-				case "${Q_bres}" in ?*)
+				case "${Q_bres:+X}" in X)
 					M_VAR_SET([|${Q_bres}|], [|${Q_bind}|])
 				esac
 
@@ -13597,7 +13597,7 @@ __sx_arr_bind() {
 		esac
 	done
 
-	case "${Q_bres}" in ?*)
+	case "${Q_bres:+X}" in X)
 		M_VAR_SET([|${Q_bres}|], [|${Q_bind%:}|])
 	esac
 
@@ -13761,7 +13761,7 @@ __sx_arr_bind_commit() {
 				Q_frac="${Q_oseg%%[!/0-9]*}"
 				Q_vn="${Q_oseg#"${Q_frac}"}"
 
-				case "${Q_fseg}" in
+				case "${Q_fseg:+X}" in
 					'')
 						if ! __sx_var_is_set "Q_v${Q_vn}_"; then
 							__sx_arr_gen "${Q_vn}"
@@ -13777,7 +13777,7 @@ __sx_arr_bind_commit() {
 				esac
 				;;
 			["${SX_STR_SWORD}"]*)
-				case "${Q_fseg}" in ?*)
+				case "${Q_fseg:+X}" in X)
 					unset "${Q_oseg}"
 				esac
 				;;
@@ -14111,7 +14111,7 @@ __sx_arr_splice() {
 	# 3) 中央の書込み: 尾部移動後、各挿入位置を深く掃除してから
 	#    直ちに代入する。スロットは互いに独立しているため、掃除と代入を
 	#    一周に統合して添字の多倍長インクリメントを重複させない。
-	case "${SX_CFG_ARR_REF}" in ?*)
+	case "${SX_CFG_ARR_REF:+X}" in X)
 		Q_cnt="${Q_n}"
 		Q_chain=
 
