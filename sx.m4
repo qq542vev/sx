@@ -161,7 +161,7 @@ readonly SX_STR_WORD="_${SX_STR_ALNUM}"
 readonly SX_STR_SWORD="_${SX_STR_ALPHA}"
 readonly SX_STR_GRAPH="${SX_STR_PUNCT}${SX_STR_ALNUM}"
 readonly SX_STR_PRINT=" ${SX_STR_GRAPH}"
-readonly SX_STR_ASCII="${SX_STR_CNTRL}${SX_STR_GRAPH}"
+readonly SX_STR_ASCII="${SX_STR_CNTRL}${SX_STR_PRINT}"
 
 # sx_str_split 等で使用するフラグ
 readonly SX_STR_SPLIT_GLOB=1
