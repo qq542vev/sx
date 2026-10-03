@@ -14144,7 +14144,11 @@ __sx_arr_splice() {
 				continue
 				;;
 			"${SX_CFG_ARR_REF:-"${Q_val}"}" | "${SX_CFG_ARR_REF}"*[!${SX_STR_WORD}]*) ;;
-			"${SX_CFG_ARR_REF}"[${SX_STR_SWORD}]*) continue;;
+			"${SX_CFG_ARR_REF}"[${SX_STR_SWORD}]*)
+				# 参照の書込みは一括コピーに任せるが、挿入位置は1要素分進める。
+				M_NUM_INCRM1([|Q_n|])
+				continue
+				;;
 		esac
 
 		__sx_var_unset "${Q_arr}_${Q_n}"

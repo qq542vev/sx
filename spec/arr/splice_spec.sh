@@ -405,6 +405,39 @@ Describe 'sx_arr_splice'
   End
 
   Describe 'SX_CFG_ARR_REF'
+    It '参照値の後のリテラルを次の位置に挿入すること'
+      src="reference"
+      sx_arr_gen myarr head tail
+      sx_cfg_set "ARR_REF=@"
+      When call sx_arr_splice myarr 1 0 "@src" literal
+      The status should be success
+      The variable myarr_len should equal 4
+      The variable myarr_0 should equal "head"
+      The variable myarr_1 should equal "reference"
+      The variable myarr_2 should equal "literal"
+      The variable myarr_3 should equal "tail"
+      sx_cfg_set "ARR_REF"
+      sx_var_unset myarr src
+    End
+
+    It '参照値・空文字列・穴の混在でも各値が1位置を消費すること'
+      src="reference"
+      sx_arr_gen myarr head old0 old1 old2 old3 tail
+      sx_cfg_set "ARR_REF=@" "ARR_HOLE=hole"
+      When call sx_arr_splice myarr 1 4 "@src" "" hole "@src" literal
+      The status should be success
+      The variable myarr_len should equal 7
+      The variable myarr_0 should equal "head"
+      The variable myarr_1 should equal "reference"
+      The variable myarr_2 should equal ""
+      The variable myarr_3 should be undefined
+      The variable myarr_4 should equal "reference"
+      The variable myarr_5 should equal "literal"
+      The variable myarr_6 should equal "tail"
+      sx_cfg_set "ARR_REF" "ARR_HOLE"
+      sx_var_unset myarr src
+    End
+
     It '参照形式（@名前）は変数の値をコピーすること'
       src="hello"
       sx_arr_gen myarr a b

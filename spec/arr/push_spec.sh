@@ -77,4 +77,18 @@ Describe 'sx_arr_push'
     sx_cfg_set "ARR_REF"
     sx_var_unset myarr_push_ref src
   End
+
+  It '参照値とリテラルを指定順に末尾へ追加すること'
+    src="reference"
+    sx_arr_gen myarr_push_mixed head
+    sx_cfg_set "ARR_REF=@"
+    When call sx_arr_push myarr_push_mixed "@src" literal
+    The status should be success
+    The variable myarr_push_mixed_len should equal 3
+    The variable myarr_push_mixed_0 should equal "head"
+    The variable myarr_push_mixed_1 should equal "reference"
+    The variable myarr_push_mixed_2 should equal "literal"
+    sx_cfg_set "ARR_REF"
+    sx_var_unset myarr_push_mixed src
+  End
 End
