@@ -60,4 +60,42 @@ Describe 'sx_num_cmp_arith'
     When call sx_num_cmp_arith "010" "0x8"
     The status should equal 2
   End
+
+  Context '64ビット設定の最小値'
+    # 64bit 未満のホストでは、設定幅が算術域を超えるため検証しない。
+    arith_lt64() { ( : $(( 0x7FFFFFFF + 1 )) ) 2>&- || return 0; return 1; }
+    Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
+    Before 'sx_cfg_set NUM_RANGE=64'
+
+    It 'MIN < 0 の場合に 1 を返すこと'
+      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" 0
+      The status should equal 1
+    End
+
+    It '0 > MIN の場合に 3 を返すこと'
+      When call sx_num_cmp_arith 0 "${SX_SYS_NUM_MIN}"
+      The status should equal 3
+    End
+
+    It 'MIN 同士の比較で 2 を返すこと'
+      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" "${SX_SYS_NUM_MIN}"
+      The status should equal 2
+    End
+
+    It 'MIN < MAX の場合に 1 を返すこと'
+      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" "${SX_SYS_NUM_MAX}"
+      The status should equal 1
+    End
+
+    It 'MIN < MIN + 1 の場合に 1 を返すこと'
+      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" -9223372036854775807
+      The status should equal 1
+    End
+
+    It 'チェックをスキップしても MIN を比較できること'
+      SX_CFG_SKIP_CHK=1
+      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" 0
+      The status should equal 1
+    End
+  End
 End
