@@ -7415,6 +7415,159 @@ __sx_num_is_add_arith_safe() {
 }
 |], [|num_is_add_arith_safe|])dnl
 
+### sx_num_is_sub_arith_safe - 引数順の減算で桁溢れしないか確認する
+##
+## 使い方:
+##   sx_num_is_sub_arith_safe [整数1 [整数2 ...]]
+##
+## 説明:
+##   8・10・16進の符号付き整数について、各入力値が SX_CFG_NUM_RANGE の
+##   範囲内であることを検証し、先頭値から後続値を順に減算できるか確認する。
+##   全中間結果および最終結果が設定幅内に収まる場合のみ成功する。
+##   数値省略時は成功する。SX_CFG_SKIP_CHK=1 では設定・入力検証を省略するが、
+##   桁溢れ判定は行う。SX_CFG_NUM_RANGE は実行シェルの算術域以下を前提とする。
+##
+## 終了ステータス:
+##    0  設定幅内で安全に減算できる (SX_EX_OK)
+##    1  減算途中または最終結果が設定幅の範囲外
+##   64  整数の形式不正または入力値が設定幅の範囲外 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_is_sub_arith_safe() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sub_arith_safe "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	__sx_num_is_int_safe "${@}" || return M_EX_USAGE
+
+	__sx_num_is_sub_arith_safe "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+### __sx_num_is_sub_arith_safe - 引数順の減算で桁溢れしないか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_sub_arith_safe [整数1 [整数2 ...]]
+##
+## 説明:
+##   sx_num_is_sub_arith_safe の内部実装。引数チェックは行わない。
+##   前提: 設定と派生値が有効で、各入力値が設定幅内の整数であること。
+##   正の値を引く前に MIN + 値、負の値を引く前に MAX + 値と累積値を比較する。
+##   符号反転を使わず、範囲内と確認した後に減算する。
+##
+## 終了ステータス:
+##    0  設定幅内で安全に減算できる (SX_EX_OK)
+##    1  減算途中または最終結果が設定幅の範囲外
+
+define([|CLEANUP|], [|Q_acc Q_arg|])dnl
+
+__sx_num_is_sub_arith_safe() {
+	case "${#}" in 0) return 0;; esac
+
+	Q_arg="${1}"
+	shift
+	Q_acc=$((Q_arg))
+
+	for Q_arg in "${@}"; do
+		case "$((Q_arg > 0 ? Q_acc < SX_SYS_NUM_MIN + Q_arg :
+			Q_arg < 0 ? Q_acc > SX_SYS_NUM_MAX + Q_arg : 0))" in 1)
+			unset CLEANUP
+			return 1
+		esac
+
+		Q_acc=$((Q_acc - Q_arg))
+	done
+
+	unset CLEANUP
+}
+|], [|num_is_sub_arith_safe|])dnl
+
+### sx_num_is_mul_arith_safe - 引数順の乗算で桁溢れしないか確認する
+##
+## 使い方:
+##   sx_num_is_mul_arith_safe [整数1 [整数2 ...]]
+##
+## 説明:
+##   8・10・16進の符号付き整数について、各入力値が SX_CFG_NUM_RANGE の
+##   範囲内であることを検証し、引数順の乗算が安全に行えるか確認する。
+##   全中間結果および最終結果が設定幅内に収まる場合のみ成功する。
+##   数値省略時は成功する。SX_CFG_SKIP_CHK=1 では設定・入力検証を省略するが、
+##   桁溢れ判定は行う。SX_CFG_NUM_RANGE は実行シェルの算術域以下を前提とする。
+##
+## 終了ステータス:
+##    0  設定幅内で安全に乗算できる (SX_EX_OK)
+##    1  乗算途中または最終結果が設定幅の範囲外
+##   64  整数の形式不正または入力値が設定幅の範囲外 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_is_mul_arith_safe() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_mul_arith_safe "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	__sx_num_is_int_safe "${@}" || return M_EX_USAGE
+
+	__sx_num_is_mul_arith_safe "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+### __sx_num_is_mul_arith_safe - 引数順の乗算で桁溢れしないか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_mul_arith_safe [整数1 [整数2 ...]]
+##
+## 説明:
+##   sx_num_is_mul_arith_safe の内部実装。引数チェックは行わない。
+##   前提: 設定と派生値が有効で、各入力値が設定幅内の整数であること。
+##   符号別に MAX または MIN を乗数で除した境界と比較し、積が安全な場合のみ乗算する。
+##   ゼロ乗算は常に安全と判定する。
+##
+## 終了ステータス:
+##    0  設定幅内で安全に乗算できる (SX_EX_OK)
+##    1  乗算途中または最終結果が設定幅の範囲外
+
+define([|CLEANUP|], [|Q_acc Q_arg|])dnl
+
+__sx_num_is_mul_arith_safe() {
+	Q_acc=1
+
+	for Q_arg in "${@}"; do
+		case "$((Q_acc == 0 || Q_arg == 0))" in
+			1) Q_acc=0;;
+			*)
+				case "$((Q_acc > 0))$((Q_arg > 0))" in
+					11)
+						case "$((Q_acc > SX_SYS_NUM_MAX / Q_arg))" in 1)
+							unset CLEANUP
+							return 1
+						;; esac
+						;;
+					10)
+						case "$((Q_arg < SX_SYS_NUM_MIN / Q_acc))" in 1)
+							unset CLEANUP
+							return 1
+						;; esac
+						;;
+					01)
+						case "$((Q_acc < SX_SYS_NUM_MIN / Q_arg))" in 1)
+							unset CLEANUP
+							return 1
+						;; esac
+						;;
+					00)
+						case "$((Q_acc < SX_SYS_NUM_MAX / Q_arg))" in 1)
+							unset CLEANUP
+							return 1
+						;; esac
+						;;
+				esac
+				Q_acc=$((Q_acc * Q_arg))
+				;;
+		esac
+	done
+
+	unset CLEANUP
+}
+|], [|num_is_mul_arith_safe|])dnl
+
 ### sx_num_is_int_safe - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
 ##
 ## 使い方:
@@ -8215,6 +8368,81 @@ __sx_num_is_pint_base() {
 	unset CLEANUP
 }
 |], [|num_is_pint_base|])dnl
+
+M_RENAME_Q([|dnl
+### sx_num_mul_arith - 複数の符号付き整数を算術展開で乗算する
+##
+## 使い方:
+##   sx_num_mul_arith 結果変数名 [整数1 [整数2 ...]]
+##
+## 説明:
+##   SX_CFG_NUM_RANGE の符号付き整数範囲に収まる8・10・16進整数を受け付ける。
+##   基数の判定、入力検証、桁溢れの扱いは sx_num_add_arith と同じ。
+##   引数順に算術展開で乗算し、結果を10進表記で格納する。数値省略時は1。
+##   乗算前に全中間結果および最終結果が設定幅内に収まることを検証する。
+##   検証に失敗した場合、結果変数は変更しない。SX_CFG_SKIP_CHK=1 では
+##   すべての引数検証を省略し、範囲内に収める責任は呼び出し側にある。
+##   SX_CFG_NUM_RANGE は実行シェルの算術域以下であることを前提とする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正、整数の形式不正、入力値または積が設定幅の範囲外 (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [|Q_res|])dnl
+
+sx_num_mul_arith() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_arith "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	Q_res="${1}"
+	shift
+
+	__sx_num_is_int_safe "${@}" && __sx_num_is_mul_arith_safe "${@}" || {
+		unset CLEANUP
+		return M_EX_USAGE
+	}
+
+	__sx_num_mul_arith "${Q_res}" "${@}"
+	unset CLEANUP
+}
+|], [|num_mul_arith|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_num_mul_arith - 複数の符号付き整数を算術展開で乗算する（内部用）
+##
+## 使い方:
+##   __sx_num_mul_arith 結果変数名 [整数1 [整数2 ...]]
+##
+## 説明:
+##   sx_num_mul_arith の内部実装。引数チェックは行わない。
+##   有効な整数を引数順に乗算し、結果を10進表記で格納する。数値省略時は1。
+##   計算途中および最終結果の桁溢れは検査しない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+
+define([|CLEANUP|], [|Q_res Q_acc Q_arg|])dnl
+
+__sx_num_mul_arith() {
+	Q_res="${1}"
+	shift
+	Q_acc=1
+
+	for Q_arg in "${@}"; do
+		Q_acc=$((Q_acc * Q_arg))
+	done
+
+	M_VAR_SET([|${Q_res}|], [|${Q_acc}|])
+	unset CLEANUP
+}
+|], [|num_mul_arith|])dnl
 
 M_RENAME_Q([|dnl
 ### sx_num_mul_int - 複数の符号付き整数を乗算する
@@ -9063,6 +9291,90 @@ __sx_num_rel_classify() {
 
 	return 1
 }
+
+M_RENAME_Q([|dnl
+### sx_num_sub_arith - 複数の符号付き整数を算術展開で減算する
+##
+## 使い方:
+##   sx_num_sub_arith 結果変数名 [整数1 [整数2 ...]]
+##
+## 説明:
+##   SX_CFG_NUM_RANGE の符号付き整数範囲に収まる8・10・16進整数を受け付ける。
+##   基数の判定、入力検証、桁溢れの扱いは sx_num_add_arith と同じ。
+##   先頭の数値から後続の数値を引数順に減算し、結果を10進表記で格納する。
+##   数値省略時は0、数値が1個の場合はその値を返す。
+##   減算前に全中間結果および最終結果が設定幅内に収まることを検証する。
+##   検証に失敗した場合、結果変数は変更しない。SX_CFG_SKIP_CHK=1 では
+##   すべての引数検証を省略し、範囲内に収める責任は呼び出し側にある。
+##   SX_CFG_NUM_RANGE は実行シェルの算術域以下であることを前提とする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正、整数の形式不正、入力値または差が設定幅の範囲外 (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [|Q_res|])dnl
+
+sx_num_sub_arith() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub_arith "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	Q_res="${1}"
+	shift
+
+	__sx_num_is_int_safe "${@}" && __sx_num_is_sub_arith_safe "${@}" || {
+		unset CLEANUP
+		return M_EX_USAGE
+	}
+
+	__sx_num_sub_arith "${Q_res}" "${@}"
+	unset CLEANUP
+}
+|], [|num_sub_arith|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_num_sub_arith - 複数の符号付き整数を算術展開で減算する（内部用）
+##
+## 使い方:
+##   __sx_num_sub_arith 結果変数名 [整数1 [整数2 ...]]
+##
+## 説明:
+##   sx_num_sub_arith の内部実装。引数チェックは行わない。
+##   有効な整数を引数順に減算し、結果を10進表記で格納する。
+##   数値省略時は0、数値が1個の場合はその値を返す。
+##   計算途中および最終結果の桁溢れは検査しない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+
+define([|CLEANUP|], [|Q_res Q_acc Q_arg|])dnl
+
+__sx_num_sub_arith() {
+	Q_res="${1}"
+	shift
+	case "${#}" in
+		0) Q_acc=0;;
+		*)
+			Q_arg="${1}"
+			shift
+			Q_acc=$((Q_arg))
+			;;
+	esac
+
+	for Q_arg in "${@}"; do
+		Q_acc=$((Q_acc - Q_arg))
+	done
+
+	M_VAR_SET([|${Q_res}|], [|${Q_acc}|])
+	unset CLEANUP
+}
+|], [|num_sub_arith|])dnl
 
 M_RENAME_Q([|dnl
 ### sx_num_sub_int - 複数の符号付き整数を減算する
