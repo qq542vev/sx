@@ -5163,6 +5163,7 @@ __sx_var_unset() {
 ## 型サフィックス (Type Suffixes)
 ##
 ##   数値演算関数は sx_num_<op>_<型> の形式で命名する。型サフィックスは以下:
+##     arith  設定幅内の符号付き整数 (8・10・16進、算術展開で演算)
 ##     int    符号付き整数 (signed integer)
 ##     nat0   非負整数 (natural number incl. 0)
 ##     nat1   正整数 (natural number excl. 0)
@@ -5176,6 +5177,86 @@ __sx_var_unset() {
 ##   型サフィックスに safe を付加すると、SX_CFG_NUM_RANGE で設定される
 ##   標準的な数値範囲、または安全上の制限（DoS 対策）に基づく検証を行う
 ##   形式になる（例: sx_num_is_int_safe）。
+
+M_RENAME_Q([|dnl
+### sx_num_add_arith - 複数の符号付き整数を算術展開で加算する
+##
+## 使い方:
+##   sx_num_add_arith 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   SX_CFG_NUM_RANGE の符号付き整数範囲に収まる8・10・16進整数を受け付ける。
+##   基数は表記で判別する（8進: 0...、10進: プレフィックスなし、
+##   16進: 0x... または 0X...）。任意で + または - の符号を指定できる。
+##   入力の形式・範囲検証は sx_num_is_int_safe と同じ規則に従う。
+##   引数順に算術展開で加算し、結果を10進表記で格納する。数値省略時は0。
+##   加算前に全中間結果および最終結果が設定幅内に収まることを検証する。
+##   最終結果が範囲内でも、途中で範囲外になる場合は引数不正とする。
+##   検証に失敗した場合、結果変数は変更しない。
+##   SX_CFG_SKIP_CHK=1 では桁溢れ検査を含むすべての引数検証を省略する。
+##   この場合、入力値・全中間結果・最終結果を設定幅内に収めることは
+##   呼び出し側の責任とし、範囲外の動作は保証しない。
+##   SX_CFG_NUM_RANGE は実行シェルの算術域以下であることを前提とする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正、整数の形式不正、入力値または加算結果が設定幅の範囲外 (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [|Q_res|])dnl
+
+sx_num_add_arith() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add_arith "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	Q_res="${1}"
+	shift
+
+	__sx_num_is_int_safe "${@}" && __sx_num_is_add_arith_safe "${@}" || {
+		unset CLEANUP
+		return M_EX_USAGE
+	}
+
+	__sx_num_add_arith "${Q_res}" "${@}"
+	unset CLEANUP
+}
+|], [|num_add_arith|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_num_add_arith - 複数の符号付き整数を算術展開で加算する（内部用）
+##
+## 使い方:
+##   __sx_num_add_arith 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_add_arith の内部実装。引数チェックは行わない。
+##   有効な整数を引数順に加算し、結果を10進表記で格納する。数値省略時は0。
+##   計算途中および最終結果の桁溢れは検査しない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+
+define([|CLEANUP|], [|Q_res Q_acc Q_arg|])dnl
+
+__sx_num_add_arith() {
+	Q_res="${1}"
+	shift
+	Q_acc=0
+
+	for Q_arg in "${@}"; do
+		Q_acc=$((Q_acc + Q_arg))
+	done
+
+	M_VAR_SET([|${Q_res}|], [|${Q_acc}|])
+	unset CLEANUP
+}
+|], [|num_add_arith|])dnl
 
 M_RENAME_Q([|dnl
 ### sx_num_add_int - 複数の符号付き整数を加算する
@@ -7079,7 +7160,7 @@ __sx_num_is_int_fit() {
 	for Q_arg in "${@}"; do
 		# $1: 値（符号正規化）, $2: 数値部分の長さ
 		set -- "${Q_arg#+}" "${#Q_arg}"
-		case "${1}" in +* | -*)
+		case "${Q_arg}" in +* | -*)
 			set -- "${1}" "$((${2} - 1))"
 		esac
 
@@ -7268,6 +7349,71 @@ __sx_num_is_int_fit_dec() {
 	unset CLEANUP
 }
 |], [|num_is_int_fit_dec|])dnl
+
+### sx_num_is_add_arith_safe - 引数列を設定幅内の算術展開で安全に加算できるか確認する
+##
+## 使い方:
+##   sx_num_is_add_arith_safe [整数1 [整数2 ...]]
+##
+## 説明:
+##   8・10・16進の符号付き整数について、各入力値が SX_CFG_NUM_RANGE の
+##   範囲内であることを検証し、引数順の加算が安全に行えるか確認する。
+##   全中間結果および最終結果が設定幅内に収まる場合のみ成功する。
+##   最終結果が範囲内でも、途中で範囲外になる場合は不一致とする。
+##   結果変数は受け取らず、合計値も格納・出力しない。引数省略時は成功する。
+##   SX_CFG_SKIP_CHK=1 では設定・入力の検証を省略するが、桁溢れ判定は行う。
+##   SX_CFG_NUM_RANGE は実行シェルの算術域以下であることを前提とする。
+##
+## 終了ステータス:
+##    0  設定幅内で安全に加算できる (SX_EX_OK)
+##    1  加算途中または最終結果が設定幅の範囲外
+##   64  整数の形式不正または入力値が設定幅の範囲外 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_is_add_arith_safe() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_add_arith_safe "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	__sx_num_is_int_safe "${@}" || return M_EX_USAGE
+
+	__sx_num_is_add_arith_safe "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+### __sx_num_is_add_arith_safe - 引数順の加算で桁溢れしないか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_add_arith_safe [整数1 [整数2 ...]]
+##
+## 説明:
+##   sx_num_is_add_arith_safe の内部実装。引数チェックは行わない。
+##   前提: 設定および派生値が有効で、各入力値が設定幅内の整数であること。
+##   累積値を0から開始し、正の入力では MAX - 入力値、負の入力では
+##   MIN - 入力値との比較で桁溢れを判定する。安全な場合のみ加算する。
+##   判定用の減算は設定幅内に収まり、最小値の符号反転も行わない。
+##
+## 終了ステータス:
+##    0  設定幅内で安全に加算できる (SX_EX_OK)
+##    1  加算途中または最終結果が設定幅の範囲外
+
+define([|CLEANUP|], [|Q_acc Q_arg|])dnl
+
+__sx_num_is_add_arith_safe() {
+	Q_acc=0
+
+	for Q_arg in "${@}"; do
+		case "$((Q_arg > 0 ? Q_acc > SX_SYS_NUM_MAX - Q_arg :
+			Q_arg < 0 ? Q_acc < SX_SYS_NUM_MIN - Q_arg : 0))" in 1)
+			unset CLEANUP
+			return 1
+		esac
+
+		Q_acc=$((Q_acc + Q_arg))
+	done
+
+	unset CLEANUP
+}
+|], [|num_is_add_arith_safe|])dnl
 
 ### sx_num_is_int_safe - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
 ##

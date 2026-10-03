@@ -6,6 +6,21 @@ Describe 'sx_num_is_int_fit'
 	Include ./sx.sh
 
 	Describe '有効な値'
+		Context '正符号付きの境界値'
+			Parameters
+				8 +127 +0177 +0x7F
+				16 +32767 +077777 +0x7FFF
+				32 +2147483647 +017777777777 +0x7FFFFFFF
+				64 +9223372036854775807 +0777777777777777777777 +0x7FFFFFFFFFFFFFFF
+				128 +170141183460469231731687303715884105727 +01777777777777777777777777777777777777777777 +0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+			End
+
+			It "$1 bitの正符号付き境界値を成功させる"
+				When call sx_num_is_int_fit "$1" "$2" "$3" "$4"
+				The status should be success
+			End
+		End
+
 		It '8bit の範囲内の値を成功させる'
 			When call sx_num_is_int_fit 8 "127" "-128" "0177" "-0200" "0x7F" "-0x80"
 			The status should be success
@@ -33,6 +48,26 @@ Describe 'sx_num_is_int_fit'
 	End
 
 	Describe '範囲外の値'
+		Context '正符号付きの範囲外の値'
+			Parameters
+				8 +0200
+				8 +0x80
+				16 +0100000
+				16 +0x8000
+				32 +020000000000
+				32 +0x80000000
+				64 +01000000000000000000000
+				64 +0x8000000000000000
+				128 +02000000000000000000000000000000000000000000
+				128 +0x80000000000000000000000000000000
+			End
+
+			It "$1 bitの範囲外の値 $2 で失敗する"
+				When call sx_num_is_int_fit "$1" "$2"
+				The status should be failure
+			End
+		End
+
 		It '8bit の最大値を超える値で失敗する'
 			When call sx_num_is_int_fit 8 "128"
 			The status should be failure
