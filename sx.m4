@@ -5246,14 +5246,14 @@ define([|CLEANUP|], [|Q_res Q_acc Q_arg|])dnl
 
 __sx_num_add_arith() {
 	Q_res="${1}"
-	shift
 	Q_acc=0
+	shift
 
 	for Q_arg in "${@}"; do
 		Q_acc=$((Q_acc + Q_arg))
 	done
 
-	M_VAR_SET([|${Q_res}|], [|${Q_acc}|])
+	: "$((${Q_res} = Q_acc))"
 	unset CLEANUP
 }
 |], [|num_add_arith|])dnl
@@ -6085,9 +6085,7 @@ sx_num_divmod_arith() {
 
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_int_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
-
-	__sx_num_is_divmod_arith_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
+	__sx_num_is_int_safe ${2:+"${2}"}  ${3:+"${3}"} && __sx_num_is_divmod_arith_safe "${2-}"  "${3-}" || return M_EX_USAGE
 
 	__sx_num_divmod_arith "${@}"
 }
@@ -6795,9 +6793,7 @@ sx_num_divceil_arith() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_int_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
-
-	__sx_num_is_divmod_arith_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
+	__sx_num_is_int_safe ${2:+"${2}"}  ${3:+"${3}"} && __sx_num_is_divmod_arith_safe "${2-}"  "${3-}" || return M_EX_USAGE
 
 	__sx_num_divceil_arith "${@}"
 }
@@ -6822,15 +6818,10 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_q Q_r Q_v|])dnl
 
 __sx_num_divceil_arith() {
-	Q_q='' Q_r=''
 	Q_v="${3:-1}"
 	__sx_num_divmod_arith 'Q_q:Q_r:' "${2:-0}" "${Q_v}"
 
-	case "$((Q_r != 0 && ((Q_r < 0) == (Q_v < 0))))" in 1)
-		M_NUM_INCR([|Q_q|])
-	esac
-
-	M_VAR_SET([|${1}|], [|${Q_q}|])
+	: "$((${1} = Q_q + (Q_r != 0 && ((Q_r < 0) == (Q_v < 0)))))"
 	unset CLEANUP
 }
 |], [|num_divceil_arith|])dnl
@@ -6937,9 +6928,7 @@ sx_num_divfloor_arith() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_int_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
-
-	__sx_num_is_divmod_arith_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
+	__sx_num_is_int_safe ${2:+"${2}"}  ${3:+"${3}"} && __sx_num_is_divmod_arith_safe "${2-}"  "${3-}" || return M_EX_USAGE
 
 	__sx_num_divfloor_arith "${@}"
 }
@@ -6964,15 +6953,10 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_q Q_r Q_v|])dnl
 
 __sx_num_divfloor_arith() {
-	Q_q='' Q_r=''
 	Q_v="${3:-1}"
 	__sx_num_divmod_arith 'Q_q:Q_r:' "${2:-0}" "${Q_v}"
 
-	case "$((Q_r != 0 && ((Q_r < 0) != (Q_v < 0))))" in 1)
-		M_NUM_DECR([|Q_q|])
-	esac
-
-	M_VAR_SET([|${1}|], [|${Q_q}|])
+	: "$((${1} = Q_q - (Q_r != 0 && ((Q_r < 0) != (Q_v < 0)))))"
 	unset CLEANUP
 }
 |], [|num_divfloor_arith|])dnl
@@ -7088,9 +7072,7 @@ sx_num_edivmod_arith() {
 
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_int_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
-
-	__sx_num_is_divmod_arith_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
+	__sx_num_is_int_safe ${2:+"${2}"}  ${3:+"${3}"} && __sx_num_is_divmod_arith_safe "${2-}"  "${3-}" || return M_EX_USAGE
 
 	__sx_num_edivmod_arith "${@}"
 }
@@ -7115,34 +7097,18 @@ M_RENAME_QI([|dnl
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 
-define([|CLEANUP|], [|Q_q Q_r Q_v Q_bind|])dnl
+define([|CLEANUP|], [|Q_q Q_r Q_v|])dnl
 
 __sx_num_edivmod_arith() {
-	Q_q='' Q_r=''
 	Q_v="${3:-1}"
 	__sx_num_divmod_arith 'Q_q:Q_r:' "${2:-0}" "${Q_v}"
+	__sx_var_bind_init "${1}"
 
-	case "$((Q_r < 0))" in 1)
-		case "$((Q_v > 0))" in
-			1)
-				M_NUM_DECR([|Q_q|])
-				M_NUM_INCR([|Q_r|], [|Q_v|])
-				;;
-			*)
-				M_NUM_INCR([|Q_q|])
-				M_NUM_DECR([|Q_r|], [|Q_v|])
-				;;
-		esac
-	esac
-
-	Q_bind="${1}"
-	__sx_var_bind_init "${Q_bind}"
-	__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
-		unset CLEANUP
-		return M_EX_OK
-	}
-
-	__sx_var_ubind Q_bind "${Q_bind}" "${Q_r}" || :
+	case "$(((Q_r < 0) ? (0 < Q_v) : 2))" in
+		2) __sx_var_ubind '' "${1}" "${Q_q}" "${Q_r}";;
+		1) __sx_var_ubind '' "${1}" "$((Q_q - 1))" "$((Q_r + Q_v))";;
+		*) __sx_var_ubind '' "${1}" "$((Q_q + 1))" "$((Q_r - Q_v))";;
+	esac || :
 
 	unset CLEANUP
 }
@@ -7830,27 +7796,28 @@ __sx_num_is_mul_arith_safe() {
 						case "$((Q_acc > SX_SYS_NUM_MAX / Q_arg))" in 1)
 							unset CLEANUP
 							return 1
-						;; esac
+						esac
 						;;
 					10)
 						case "$((Q_arg < SX_SYS_NUM_MIN / Q_acc))" in 1)
 							unset CLEANUP
 							return 1
-						;; esac
+						esac
 						;;
 					01)
 						case "$((Q_acc < SX_SYS_NUM_MIN / Q_arg))" in 1)
 							unset CLEANUP
 							return 1
-						;; esac
+						esac
 						;;
 					00)
 						case "$((Q_acc < SX_SYS_NUM_MAX / Q_arg))" in 1)
 							unset CLEANUP
 							return 1
-						;; esac
+						esac
 						;;
 				esac
+
 				Q_acc=$((Q_acc * Q_arg))
 				;;
 		esac
@@ -7882,7 +7849,7 @@ sx_num_is_divmod_arith_safe() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	__sx_num_is_int_safe "${1:-0}" "${2:-1}" || return M_EX_USAGE
+	__sx_num_is_int_safe ${1:+"${1}"} ${2:+"${2}"} || return M_EX_USAGE
 
 	__sx_num_is_divmod_arith_safe "${@}" || return
 }
@@ -8782,14 +8749,14 @@ define([|CLEANUP|], [|Q_res Q_acc Q_arg|])dnl
 
 __sx_num_mul_arith() {
 	Q_res="${1}"
-	shift
 	Q_acc=1
+	shift
 
 	for Q_arg in "${@}"; do
 		Q_acc=$((Q_acc * Q_arg))
 	done
 
-	M_VAR_SET([|${Q_res}|], [|${Q_acc}|])
+	: "$((${Q_res} = Q_acc))"
 	unset CLEANUP
 }
 |], [|num_mul_arith|])dnl
@@ -9707,21 +9674,14 @@ define([|CLEANUP|], [|Q_res Q_acc Q_arg|])dnl
 
 __sx_num_sub_arith() {
 	Q_res="${1}"
-	shift
-	case "${#}" in
-		0) Q_acc=0;;
-		*)
-			Q_arg="${1}"
-			shift
-			Q_acc=$((Q_arg))
-			;;
-	esac
+	Q_acc="${2-0}"
+	shift ${2+'2'}
 
 	for Q_arg in "${@}"; do
 		Q_acc=$((Q_acc - Q_arg))
 	done
 
-	M_VAR_SET([|${Q_res}|], [|${Q_acc}|])
+	: "$((${Q_res} = Q_acc))"
 	unset CLEANUP
 }
 |], [|num_sub_arith|])dnl
