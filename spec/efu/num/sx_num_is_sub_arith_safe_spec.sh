@@ -36,8 +36,19 @@ Describe 'sx_num_is_sub_arith_safe -efu 環境検証'
     The status should equal 1
   End
 
+  Context '32bit算術シェル専用の算術域境界'
+    Skip if '32bit算術シェル専用のため' arith_not32
+    Before 'sx_cfg_set NUM_RANGE=32'
+
+    It '0から最小値を引く桁溢れを-e下で判定すること'
+      When run efu_run sx_num_is_sub_arith_safe 0 -2147483648
+      The status should equal 1
+      The stdout should equal ''
+      The stderr should equal ''
+    End
+  End
+
   Context '64ビット設定'
-    arith_lt64() { ( : $(( 0x7FFFFFFF + 1 )) ) 2>&- || return 0; return 1; }
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
     Before 'sx_cfg_set NUM_RANGE=64'
 

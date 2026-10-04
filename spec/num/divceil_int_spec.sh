@@ -5,9 +5,6 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_num_divceil_int'
   Include ./sx.sh
 
-  # ホストの算術展開が 64bit 未満か判定する（32bit ホストでは 2^31 超の演算が致命的 overflow になるため）
-  arith_lt64() { ( : $(( 0x7FFFFFFF + 1 )) ) 2>&- || return 0; return 1; }
-
   It '小さな数の除算ができること（あまりなし）'
     When call sx_num_divceil_int q 100 4
     The status should be success
@@ -249,7 +246,7 @@ Describe 'sx_num_divceil_int'
   End
 
   Context '64ビット設定'
-    Before 'SX_CFG_NUM_RANGE=64'
+    Before 'sx_cfg_set NUM_RANGE=64'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
 
     It '一般パス(d>0)の除算ができること'

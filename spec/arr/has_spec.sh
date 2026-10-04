@@ -186,6 +186,8 @@ Describe 'sx_arr_has'
         sx_var_unset x
         sx_arr_get x myarr "${spec}"
         if [ "${hsts}" -eq 0 ]; then
+          # sx_arr_get が参照渡しで x_len を設定する。
+          # shellcheck disable=SC2154
           [ "${x_len}" -gt 0 ] || mismatch=$((mismatch + 1))
         else
           [ "${x_len}" -eq 0 ] || mismatch=$((mismatch + 1))
@@ -197,6 +199,8 @@ Describe 'sx_arr_has'
         sx_var_unset x
         sx_arr_get x empty_arr "${spec}"
         if [ "${hsts}" -eq 0 ]; then
+          # sx_arr_get が参照渡しで x_len を設定する。
+          # shellcheck disable=SC2154
           [ "${x_len}" -gt 0 ] || mismatch=$((mismatch + 1))
         else
           [ "${x_len}" -eq 0 ] || mismatch=$((mismatch + 1))
@@ -341,8 +345,52 @@ Describe 'sx_arr_has'
     End
   End
 
+  Context '32bit算術シェル専用の算術域境界 (NUM_RANGE=32)'
+    Before 'sx_cfg_set NUM_RANGE=32'
+    Skip if '32bit算術シェル専用のため' arith_not32
+
+    It 't<0 クランプの中間値が溢れないこと (始点D・step-5・境界)'
+      When call sx_arr_has myarr 2147483647:0:-5
+      The status should be success
+    End
+
+    It 't<0 クランプの中間値が溢れないこと (始点D・step-6)'
+      When call sx_arr_has myarr 2147483647:0:-6
+      The status should be success
+    End
+
+    It 't<0 クランプ境界 (|t|=4) は溢れずに解決すること'
+      When call sx_arr_has myarr 2147483647:0:-4
+      The status should be success
+    End
+
+    It '開始値が算術最小値でも正規化が溢れず全件を解決すること'
+      When call sx_arr_has myarr -2147483653:10:1
+      The status should be success
+    End
+
+    It '負始点と巨大正stepの正規化が溢れず空で終えること'
+      When call sx_arr_has myarr -2000000000:10:2000000000
+      The status should equal 1
+    End
+
+    It '多倍長減算の結果が短い正数になる範囲に一致すること'
+      When call sx_arr_has myarr -2147483649:5:+2147483648
+      The status should be success
+    End
+
+    It '最小値の負stepは低速経路で一致すること'
+      When call sx_arr_has myarr 4:0:-2147483648
+      The status should be success
+    End
+
+    It '算術域外の正stepでも先頭に一致すること'
+      When call sx_arr_has myarr 0:5:+2147483648
+      The status should be success
+    End
+  End
+
   Context '算術域境界 (NUM_RANGE=64)'
-    arith_lt64() { ( : $(( 0x7FFFFFFF + 1 )) ) 2>&- || return 0; return 1; }
     Before 'sx_cfg_set NUM_RANGE=64'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
 

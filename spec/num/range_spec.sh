@@ -5,9 +5,6 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_num_range'
   Include ./sx.sh
 
-  # ホストの算術展開が 64bit 未満か判定する（32bit ホストでは 2^31 超の演算が致命的 overflow になるため）
-  arith_lt64() { ( : $(( 0x7FFFFFFF + 1 )) ) 2>&- || return 0; return 1; }
-
   It '0からN-1までの範囲を生成すること (Python方式: range(stop))'
     When call sx_num_range result 5
     The status should be success
@@ -101,6 +98,44 @@ Describe 'sx_num_range'
       The variable i should equal 5
       The variable j should equal 4
       The variable k should equal 3
+    End
+  End
+
+  Context '32bit算術シェル専用の算術域境界'
+    Before 'sx_cfg_set NUM_RANGE=32'
+    Skip if '32bit算術シェル専用のため' arith_not32
+
+    It 'INT32_MINを開始値とする範囲の先頭2要素を取得すること'
+      When call sx_num_range "i:j:" "-2147483648" "2147483647" 1
+      The status should be success
+      The variable i should equal "-2147483648"
+      The variable j should equal "-2147483647"
+    End
+
+    It '32bit全域spanの範囲の先頭2要素を取得すること'
+      When call sx_num_range "i:j:" "-2147483647" "2147483647" 1
+      The status should be success
+      The variable i should equal "-2147483647"
+      The variable j should equal "-2147483646"
+    End
+
+    It '終了値がINT32_MINの逆順範囲の先頭2要素を取得すること'
+      When call sx_num_range "i:j:" "5" "-2147483648" -1
+      The status should be success
+      The variable i should equal "5"
+      The variable j should equal "4"
+    End
+
+    It '増分がINT32_MINの範囲を取得すること (要素1件)'
+      When call sx_num_range r 5 0 -2147483648
+      The status should be success
+      The variable r should equal "5"
+    End
+
+    It '増分がINT32_MINの範囲を取得すること (要素2件)'
+      When call sx_num_range r 5 -2147483648 -2147483648
+      The status should be success
+      The variable r should equal "5 -2147483643"
     End
   End
 

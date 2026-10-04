@@ -50,8 +50,32 @@ Describe 'sx_num_add_arith -efu 環境検証'
     The status should be success
   End
 
+  add_min_check_value() {
+    result=old
+    sx_num_add_arith result "$1" 1
+    case "$result" in -2147483647) ;; *) return 1;; esac
+    check_no_leak
+  }
+
+  Context '32bit算術シェル専用の算術域境界'
+    Skip if '32bit算術シェル専用のため' arith_not32
+    Before 'sx_cfg_set NUM_RANGE=32'
+
+    Parameters
+      -2147483648
+      -020000000000
+      -0x80000000
+    End
+
+    It "最小値 $1 に1を加算して-e下で結果を検証すること"
+      When run efu_run add_min_check_value "$1"
+      The status should be success
+      The stdout should equal ''
+      The stderr should equal ''
+    End
+  End
+
   Context '64ビット設定の最小値'
-    arith_lt64() { ( : $(( 0x7FFFFFFF + 1 )) ) 2>&- || return 0; return 1; }
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
     Before 'sx_cfg_set NUM_RANGE=64'
 

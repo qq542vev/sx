@@ -18,7 +18,8 @@ Describe 'sx_num_is_int_safe'
   End
 
   Context '64ビット設定'
-    Before 'SX_CFG_NUM_RANGE=64'
+    Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
+    Before 'sx_cfg_set NUM_RANGE=64'
     It '64ビットの境界値を検証すること'
       When call sx_num_is_int_safe "9223372036854775807" "-9223372036854775808"
       The status should be success

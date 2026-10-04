@@ -1,3 +1,7 @@
+# shellcheck shell=sh
+# ShellSpecのParameters内の負数・範囲指定の診断を抑制する。
+# shellcheck disable=SC2215,SC2288
+
 Describe 'sx_arr_get -efu 環境検証'
   Include ./sx.sh
 
@@ -34,8 +38,38 @@ Describe 'sx_arr_get -efu 環境検証'
     The variable "x_2" should equal a
   End
 
+  arr_get_check_values() {
+    expected="$1"
+    shift
+    x_len=old
+    sx_arr_get x myarr "$@"
+    case "${x_len}:${x_0-}:${x_4-}" in "$expected") ;; *) return 1;; esac
+    check_no_leak
+  }
+
+  Context '32bit算術シェル専用の算術域境界 (NUM_RANGE=32)'
+    Skip if '32bit算術シェル専用のため' arith_not32
+    Before 'sx_cfg_set NUM_RANGE=32'
+    BeforeEach 'sx_arr_gen myarr a b c d e'
+
+    Parameters
+      '1:c:' 2147483647:0:-5
+      '1:b:' 2147483647:0:-6
+      '1:d:' 2147483647:0:-4
+      '5:a:e' -2147483653:10:1
+      '0::' -2000000000:10:2000000000
+      '1:e:' -2147483649:5:+2147483648
+    End
+
+    It "範囲 $2 の要素と内部変数の解放を-e下で検証すること"
+      When run efu_run arr_get_check_values "$@"
+      The status should be success
+      The stdout should equal ''
+      The stderr should equal ''
+    End
+  End
+
   Context '算術域境界 (NUM_RANGE=64)'
-    arith_lt64() { ( : $(( 0x7FFFFFFF + 1 )) ) 2>&- || return 0; return 1; }
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
 
     It 't<0 クランプの中間値が溢れないこと (始点D・step-5・境界)'

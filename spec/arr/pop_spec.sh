@@ -131,9 +131,10 @@ Describe 'sx_arr_pop'
   End
 
   Describe '64ビット設定'
+    Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
     It '数値プレフィックスの割り当てが正しく動作すること'
       sx_arr_gen myarr a b c d e
-      SX_CFG_NUM_RANGE=64
+      sx_cfg_set NUM_RANGE=64
 
       When call sx_arr_pop 3v: myarr
       The status should be success

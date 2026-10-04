@@ -16,10 +16,11 @@ Describe 'sx_arr_bind -efu 環境検証'
   End
 
   It '64ビットレンジでの正常動作'
+    Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
     br=
     cr=
     run64() {
-      SX_CFG_NUM_RANGE=64
+      sx_cfg_set NUM_RANGE=64
       sx_arr_bind br cr "0/a" p1 p2
     }
     When run efu_run run64

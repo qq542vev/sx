@@ -35,8 +35,26 @@ Describe 'sx_num_mul_arith -efu 環境検証'
     The status should be success
   End
 
+  mul_boundary_check_value() {
+    result=old
+    sx_num_mul_arith result -46340 46340
+    case "$result" in -2147395600) ;; *) return 1;; esac
+    check_no_leak
+  }
+
+  Context '32bit算術シェル専用の算術域境界'
+    Skip if '32bit算術シェル専用のため' arith_not32
+    Before 'sx_cfg_set NUM_RANGE=32'
+
+    It '負数を含む最大値付近の積と内部変数の解放を-e下で検証すること'
+      When run efu_run mul_boundary_check_value
+      The status should be success
+      The stdout should equal ''
+      The stderr should equal ''
+    End
+  End
+
   Context '64ビット設定'
-    arith_lt64() { ( : $(( 0x7FFFFFFF + 1 )) ) 2>&- || return 0; return 1; }
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
     Before 'sx_cfg_set NUM_RANGE=64'
 

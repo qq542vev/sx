@@ -166,9 +166,10 @@ Describe 'sx_arr_bind'
     End
 
     Context 'SX_CFG_NUM_RANGE が 64 のとき'
+        Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
         It 'M/vn 無限累積の残り bind が NUM_RANGE 非依存であること'
             unset br cr
-            SX_CFG_NUM_RANGE=64
+            sx_cfg_set NUM_RANGE=64
             When call sx_arr_bind br cr "0/a" p1 p2
             The status should be success
             The variable br should equal "2/a"
@@ -177,7 +178,7 @@ Describe 'sx_arr_bind'
 
         It '通常のバインドで chain と残り bind を生成すること'
             unset br cr
-            SX_CFG_NUM_RANGE=64
+            sx_cfg_set NUM_RANGE=64
             When call sx_arr_bind br cr "a:b:c" v1 v2
             The status should be success
             The variable br should equal "c"

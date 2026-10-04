@@ -31,6 +31,32 @@ spec_helper_configure() {
   : import 'support/custom_matcher'
 }
 
+# 算術域を設定値に依存せず検査する。致命的な算術エラーはサブシェルに閉じ込め、
+# ラップするシェルでも最大値・最小値の結果が一致しなければ64bit未満と判定する。
+arith_lt64() {
+  (
+    case "$((0x7fffffffffffffff)):$((-0x7fffffffffffffff - 1))" in
+      9223372036854775807:-9223372036854775808) exit 0;;
+      *) exit 1;;
+    esac
+  ) 2>&- && return 1
+  return 0
+}
+
+# 新設の境界ケースを32bit算術環境だけで実行するための判定。
+arith_is32() {
+  (
+    case "$((0x7fffffff)):$((-0x7fffffff - 1))" in
+      2147483647:-2147483648) exit 0;;
+      *) exit 1;;
+    esac
+  ) 2>&- || return 1
+  arith_lt64
+}
+
+# ShellSpec の Skip if に渡す否定条件。
+arith_not32() { ! arith_is32; }
+
 # 内部変数の漏洩をチェックする関数
 # __で始まる変数がsetの結果に残っているかを確認します。
 check_no_leak() {

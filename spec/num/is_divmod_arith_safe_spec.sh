@@ -87,7 +87,6 @@ Describe 'sx_num_is_divmod_arith_safe'
   End
 
   Context '64ビット設定'
-    arith_lt64() { ( : $(( 0x7FFFFFFF + 1 )) ) 2>&- || return 0; return 1; }
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
     Before 'sx_cfg_set NUM_RANGE=64'
 

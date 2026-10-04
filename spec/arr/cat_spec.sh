@@ -153,10 +153,11 @@ Describe 'sx_arr_cat'
   End
 
   Describe '64ビット設定'
+    Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
     It '複数の配列を1つの末尾配列へ順に連結すること'
       sx_arr_gen a1 a b c
       sx_arr_gen a2 d e
-      SX_CFG_NUM_RANGE=64
+      sx_cfg_set NUM_RANGE=64
 
       When call sx_arr_cat x a1 a2
       The status should be success
@@ -168,7 +169,7 @@ Describe 'sx_arr_cat'
     It '数値先行セグメントと末尾セグメントへ分配すること'
       sx_arr_gen a1 a b c
       sx_arr_gen a2 d e
-      SX_CFG_NUM_RANGE=64
+      sx_cfg_set NUM_RANGE=64
 
       When call sx_arr_cat 2a:x a1 a2
       The status should be success
@@ -180,7 +181,7 @@ Describe 'sx_arr_cat'
 
     It '源配列が空の場合は空配列を生成すること'
       sx_arr_gen a1
-      SX_CFG_NUM_RANGE=64
+      sx_cfg_set NUM_RANGE=64
 
       When call sx_arr_cat x a1
       The status should be success

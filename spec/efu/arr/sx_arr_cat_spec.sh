@@ -73,8 +73,9 @@ Describe 'sx_arr_cat -efu 環境検証'
   End
 
   Describe '64ビット設定'
+    Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
     It '64ビットレンジで連結と分配が成功する'
-      SX_CFG_NUM_RANGE=64
+      sx_cfg_set NUM_RANGE=64
       sx_arr_gen a1 a b c
       sx_arr_gen a2 d e
 
