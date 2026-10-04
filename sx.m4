@@ -6055,6 +6055,80 @@ __sx_num_div_nat0() {
 }
 |], [|num_div_nat0|])dnl
 
+### sx_num_divmod_arith - 算術展開で符号付き整数の商と余剰を求める
+##
+## 使い方:
+##   sx_num_divmod_arith バインド形式 [被除数 [除数]]
+##
+## 説明:
+##   SX_CFG_NUM_RANGE 内の符号付き8・10・16進整数を算術展開で除算する。
+##   商はゼロ方向へ丸め、余剰は0または被除数と同じ符号になる。
+##   結果は10進表記で、バインド形式（例: "q:r:"）へ商・余剰の順に渡す。
+##   sx_num_divmod_int と同様、省略・空文字列の被除数は0、除数は1とし、
+##   余分な引数は無視する。除数が0、または被除数がMINで除数が-1の場合は拒否する。
+##   検証失敗時はバインド先を変更しない。
+##   SX_CFG_SKIP_CHK=1 では安全判定を含むすべての引数検証を省略し、
+##   正しい入力・非ゼロの除数・範囲内の商を保証する責任は呼び出し側にある。
+##   SX_CFG_NUM_RANGE は実行シェルの算術域以下であることを前提とする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  バインド・整数の形式不正、入力値が範囲外、ゼロ除算または商の桁溢れ (SX_EX_USAGE)
+##   77  バインド先が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+sx_num_divmod_arith() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_divmod_arith "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
+
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
+
+	__sx_num_is_int_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
+
+	__sx_num_is_divmod_arith_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
+
+	__sx_num_divmod_arith "${@}"
+}
+
+M_RENAME_QI([|dnl
+### __sx_num_divmod_arith - 算術展開で符号付き整数の商と余剰を求める（内部用）
+##
+## 使い方:
+##   __sx_num_divmod_arith バインド形式 [被除数 [除数]]
+##
+## 説明:
+##   sx_num_divmod_arith の内部実装。引数チェックは行わない。
+##   前提: 設定と入力が有効で、除数は非ゼロ、商は設定幅内に収まること。
+##   省略・空文字列の被除数は0、除数は1とし、余分な引数は無視する。
+##   バインド先の初期化前に、名前参照の / と % で商・余剰を計算する。
+##   バインド先が枯渇した場合も成功とする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+
+define([|CLEANUP|], [|Q_u Q_v Q_q Q_r Q_bind|])dnl
+
+__sx_num_divmod_arith() {
+	Q_bind="${1}"
+	Q_u="${2:-0}"
+	Q_v="${3:-1}"
+	Q_q=$((Q_u / Q_v))
+	Q_r=$((Q_u % Q_v))
+
+	__sx_var_bind_init "${Q_bind}"
+	__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
+		unset CLEANUP
+		return M_EX_OK
+	}
+
+	__sx_var_ubind Q_bind "${Q_bind}" "${Q_r}" || :
+
+	unset CLEANUP
+}
+|], [|num_divmod_arith|])dnl
+
 ### sx_num_divmod_int - 符号付き整数の除算で整数商と余剰を同時に求める（Truncated）
 ##
 ## 使い方:
@@ -6701,6 +6775,74 @@ __sx_num_divceil_nat0() {
 }
 |], [|num_divceil_nat0|])dnl
 
+### sx_num_divceil_arith - 算術展開で符号付き整数の切り上げ商を求める
+##
+## 使い方:
+##   sx_num_divceil_arith 結果変数名 [被除数 [除数]]
+##
+## 説明:
+##   SX_CFG_NUM_RANGE 内の符号付き8・10・16進整数を除算し、
+##   正の無限大方向へ丸めた整数商を10進表記で結果変数に格納する。
+##   省略・空文字列の被除数は0、除数は1とし、余分な引数は無視する。
+##   除数が0、または被除数がMINで除数が-1の場合は拒否する。
+##   divmod_arith の安全判定を共用し、検証失敗時は結果変数を変更しない。
+##   SX_CFG_SKIP_CHK=1 ではすべての引数検証を省略し、安全な入力を
+##   保証する責任は呼び出し側にある。SX_CFG_NUM_RANGE は実行シェルの算術域以下を前提とする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正、整数の形式不正、入力範囲外、ゼロ除算または商の桁溢れ (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+sx_num_divceil_arith() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_divceil_arith "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	__sx_num_is_int_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
+
+	__sx_num_is_divmod_arith_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
+
+	__sx_num_divceil_arith "${@}"
+}
+
+M_RENAME_QI([|dnl
+### __sx_num_divceil_arith - 算術展開で符号付き整数の切り上げ商を求める（内部用）
+##
+## 使い方:
+##   __sx_num_divceil_arith 結果変数名 [被除数 [除数]]
+##
+## 説明:
+##   sx_num_divceil_arith の内部実装。引数チェックは行わない。
+##   前提: 結果変数は書き込み可能で、設定・入力が有効かつ除算が安全であること。
+##   省略・空文字列の被除数は0、除数は1とし、余分な引数は無視する。
+##   __sx_num_divmod_arith の商に、余りが非ゼロで余りと除数が同符号の場合のみ1を加算する。
+##   補正時の商は設定幅の端に達しないため、補正による桁溢れは起きない。
+##   符号は数値比較で判定し、入力の絶対値・符号反転・積は求めない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+
+define([|CLEANUP|], [|Q_q Q_r Q_v|])dnl
+
+__sx_num_divceil_arith() {
+	Q_q='' Q_r=''
+	Q_v="${3:-1}"
+	__sx_num_divmod_arith 'Q_q:Q_r:' "${2:-0}" "${Q_v}"
+
+	case "$((Q_r != 0 && ((Q_r < 0) == (Q_v < 0))))" in 1)
+		M_NUM_INCR([|Q_q|])
+	esac
+
+	M_VAR_SET([|${1}|], [|${Q_q}|])
+	unset CLEANUP
+}
+|], [|num_divceil_arith|])dnl
+
 M_RENAME_Q([|dnl
 ### sx_num_divceil_int - 符号付き整数の除算で切り上げ商を求める
 ##
@@ -6774,6 +6916,74 @@ __sx_num_divceil_int() {
 	unset CLEANUP
 }
 |], [|num_divceil_int|])dnl
+
+### sx_num_divfloor_arith - 算術展開で符号付き整数の切り捨て商を求める
+##
+## 使い方:
+##   sx_num_divfloor_arith 結果変数名 [被除数 [除数]]
+##
+## 説明:
+##   SX_CFG_NUM_RANGE 内の符号付き8・10・16進整数を除算し、
+##   負の無限大方向へ丸めた整数商を10進表記で結果変数に格納する。
+##   省略・空文字列の被除数は0、除数は1とし、余分な引数は無視する。
+##   除数が0、または被除数がMINで除数が-1の場合は拒否する。
+##   divmod_arith の安全判定を共用し、検証失敗時は結果変数を変更しない。
+##   SX_CFG_SKIP_CHK=1 ではすべての引数検証を省略し、安全な入力を
+##   保証する責任は呼び出し側にある。SX_CFG_NUM_RANGE は実行シェルの算術域以下を前提とする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正、整数の形式不正、入力範囲外、ゼロ除算または商の桁溢れ (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+sx_num_divfloor_arith() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_divfloor_arith "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	__sx_num_is_int_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
+
+	__sx_num_is_divmod_arith_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
+
+	__sx_num_divfloor_arith "${@}"
+}
+
+M_RENAME_QI([|dnl
+### __sx_num_divfloor_arith - 算術展開で符号付き整数の切り捨て商を求める（内部用）
+##
+## 使い方:
+##   __sx_num_divfloor_arith 結果変数名 [被除数 [除数]]
+##
+## 説明:
+##   sx_num_divfloor_arith の内部実装。引数チェックは行わない。
+##   前提: 結果変数は書き込み可能で、設定・入力が有効かつ除算が安全であること。
+##   省略・空文字列の被除数は0、除数は1とし、余分な引数は無視する。
+##   __sx_num_divmod_arith の商から、余りが非ゼロで余りと除数が異符号の場合のみ1を減算する。
+##   補正時の商は設定幅の端に達しないため、補正による桁溢れは起きない。
+##   符号は数値比較で判定し、入力の絶対値・符号反転・積は求めない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+
+define([|CLEANUP|], [|Q_q Q_r Q_v|])dnl
+
+__sx_num_divfloor_arith() {
+	Q_q='' Q_r=''
+	Q_v="${3:-1}"
+	__sx_num_divmod_arith 'Q_q:Q_r:' "${2:-0}" "${Q_v}"
+
+	case "$((Q_r != 0 && ((Q_r < 0) != (Q_v < 0))))" in 1)
+		M_NUM_DECR([|Q_q|])
+	esac
+
+	M_VAR_SET([|${1}|], [|${Q_q}|])
+	unset CLEANUP
+}
+|], [|num_divfloor_arith|])dnl
 
 M_RENAME_Q([|dnl
 ### sx_num_divfloor_int - 符号付き整数の除算で切り捨て商を求める
@@ -7567,6 +7777,64 @@ __sx_num_is_mul_arith_safe() {
 	unset CLEANUP
 }
 |], [|num_is_mul_arith_safe|])dnl
+
+### sx_num_is_divmod_arith_safe - 算術展開で安全に商と余剰を計算できるか確認する
+##
+## 使い方:
+##   sx_num_is_divmod_arith_safe [被除数 [除数]]
+##
+## 説明:
+##   符号付き8・10・16進整数の形式と SX_CFG_NUM_RANGE 内の入力範囲を検証し、
+##   ゼロ除算・商の桁溢れを起こさず / と % を実行できるか確認する。
+##   省略・空文字列の被除数は0、除数は1とし、余分な引数は無視する。
+##   SX_CFG_SKIP_CHK=1 では設定・入力検証を省略するが、安全判定は行う。
+##   SX_CFG_NUM_RANGE は実行シェルの算術域以下であることを前提とする。
+##
+## 終了ステータス:
+##    0  設定幅内で安全に商と余剰を計算できる (SX_EX_OK)
+##    1  ゼロ除算、または被除数がMINで除数が-1
+##   64  整数の形式不正または入力値が設定幅の範囲外 (SX_EX_USAGE)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+sx_num_is_divmod_arith_safe() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_divmod_arith_safe "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	__sx_num_is_int_safe "${1:-0}" "${2:-1}" || return M_EX_USAGE
+
+	__sx_num_is_divmod_arith_safe "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+### __sx_num_is_divmod_arith_safe - 算術展開で安全に商と余剰を計算できるか確認する（内部用）
+##
+## 使い方:
+##   __sx_num_is_divmod_arith_safe [被除数 [除数]]
+##
+## 説明:
+##   sx_num_is_divmod_arith_safe の内部実装。引数チェックは行わない。
+##   前提: 設定と派生値が有効で、各入力値が設定幅内の整数であること。
+##   省略・空文字列の被除数は0、除数は1とし、余分な引数は無視する。
+##   数値比較のみで除数0と MIN / -1 の組み合わせを検出し、除算・剰余演算は行わない。
+##
+## 終了ステータス:
+##    0  設定幅内で安全に商と余剰を計算できる (SX_EX_OK)
+##    1  ゼロ除算、または被除数がMINで除数が-1
+
+define([|CLEANUP|], [|Q_u Q_v|])dnl
+
+__sx_num_is_divmod_arith_safe() {
+	Q_u="${1:-0}"
+	Q_v="${2:-1}"
+
+	case "$((Q_v == 0 || (Q_u == SX_SYS_NUM_MIN && Q_v == -1)))" in 1)
+		unset CLEANUP
+		return 1
+	esac
+
+	unset CLEANUP
+}
+|], [|num_is_divmod_arith_safe|])dnl
 
 ### sx_num_is_int_safe - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）の整数か確認する
 ##
