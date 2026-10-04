@@ -6102,28 +6102,20 @@ M_RENAME_QI([|dnl
 ##   sx_num_divmod_arith の内部実装。引数チェックは行わない。
 ##   前提: 設定と入力が有効で、除数は非ゼロ、商は設定幅内に収まること。
 ##   省略・空文字列の被除数は0、除数は1とし、余分な引数は無視する。
-##   バインド先の初期化前に、名前参照の / と % で商・余剰を計算する。
+##   バインド先の初期化後に、名前参照の / と % で商・余剰を計算する。
 ##   バインド先が枯渇した場合も成功とする。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 
-define([|CLEANUP|], [|Q_u Q_v Q_q Q_r Q_bind|])dnl
+define([|CLEANUP|], [|Q_u Q_v|])dnl
 
 __sx_num_divmod_arith() {
-	Q_bind="${1}"
 	Q_u="${2:-0}"
 	Q_v="${3:-1}"
-	Q_q=$((Q_u / Q_v))
-	Q_r=$((Q_u % Q_v))
 
-	__sx_var_bind_init "${Q_bind}"
-	__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
-		unset CLEANUP
-		return M_EX_OK
-	}
-
-	__sx_var_ubind Q_bind "${Q_bind}" "${Q_r}" || :
+	__sx_var_bind_init "${1}"
+	__sx_var_ubind '' "${1}" "$((Q_u / Q_v))" "$((Q_u % Q_v))" || :
 
 	unset CLEANUP
 }
