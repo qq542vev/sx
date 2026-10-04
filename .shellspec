@@ -1,4 +1,3 @@
 --shell sh
 --warning-as-failure
 --require spec_helper
---random specfiles
