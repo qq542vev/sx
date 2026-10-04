@@ -7066,6 +7066,96 @@ __sx_num_divfloor_int() {
 }
 |], [|num_divfloor_int|])dnl
 
+### sx_num_edivmod_arith - 算術展開でユークリッド除算の商と余剰を求める
+##
+## 使い方:
+##   sx_num_edivmod_arith バインド形式 [被除数 [除数]]
+##
+## 説明:
+##   SX_CFG_NUM_RANGE 内の符号付き8・10・16進整数をユークリッド除算する。
+##   a = b×q + r（0 ≤ r < |b|）を満たす商・余剰を10進表記で、
+##   バインド形式（例: "q:r:"）へ商・余剰の順に渡す。
+##   省略・空文字列の被除数は0、除数は1とし、余分な引数は無視する。
+##   除数が0、または被除数がMINで除数が-1の場合は拒否する。
+##   divmod_arith の安全判定を共用し、検証失敗時はバインド先を変更しない。
+##   SX_CFG_SKIP_CHK=1 では安全判定を含むすべての引数検証を省略し、
+##   正しい入力・非ゼロの除数・範囲内の商を保証する責任は呼び出し側にある。
+##   SX_CFG_NUM_RANGE は実行シェルの算術域以下であることを前提とする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  バインド・整数の形式不正、入力範囲外、ゼロ除算または商の桁溢れ (SX_EX_USAGE)
+##   77  バインド先が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+sx_num_edivmod_arith() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_edivmod_arith "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
+
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
+
+	__sx_num_is_int_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
+
+	__sx_num_is_divmod_arith_safe "${2:-0}" "${3:-1}" || return M_EX_USAGE
+
+	__sx_num_edivmod_arith "${@}"
+}
+
+M_RENAME_QI([|dnl
+### __sx_num_edivmod_arith - 算術展開でユークリッド除算の商と余剰を求める（内部用）
+##
+## 使い方:
+##   __sx_num_edivmod_arith バインド形式 [被除数 [除数]]
+##
+## 説明:
+##   sx_num_edivmod_arith の内部実装。引数チェックは行わない。
+##   前提: 設定と入力が有効で、除数は非ゼロ、商は設定幅内に収まること。
+##   省略・空文字列の被除数は0、除数は1とし、余分な引数は無視する。
+##   __sx_num_divmod_arith の余剰が負の場合のみ、除数の符号に応じて補正する。
+##   正の除数なら q -= 1、r += v、負の除数なら q += 1、r -= v とする。
+##   補正時は |v| >= 2 で商に増減の余地があり、補正後の余剰は 0 < r < |v|。
+##   余剰は最大でもMAXとなり、補正による桁溢れは起きない。
+##   全算術は名前参照で行い、MINの絶対値・符号反転・積は求めない。
+##   最終バインド先は計算・補正後に初期化し、バインド枯渇は成功とする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+
+define([|CLEANUP|], [|Q_q Q_r Q_v Q_bind|])dnl
+
+__sx_num_edivmod_arith() {
+	Q_q='' Q_r=''
+	Q_v="${3:-1}"
+	__sx_num_divmod_arith 'Q_q:Q_r:' "${2:-0}" "${Q_v}"
+
+	case "$((Q_r < 0))" in 1)
+		case "$((Q_v > 0))" in
+			1)
+				M_NUM_DECR([|Q_q|])
+				M_NUM_INCR([|Q_r|], [|Q_v|])
+				;;
+			*)
+				M_NUM_INCR([|Q_q|])
+				M_NUM_DECR([|Q_r|], [|Q_v|])
+				;;
+		esac
+	esac
+
+	Q_bind="${1}"
+	__sx_var_bind_init "${Q_bind}"
+	__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
+		unset CLEANUP
+		return M_EX_OK
+	}
+
+	__sx_var_ubind Q_bind "${Q_bind}" "${Q_r}" || :
+
+	unset CLEANUP
+}
+|], [|num_edivmod_arith|])dnl
+
 ### sx_num_edivmod_int - ユークリッド除算で整数商と余剰を同時に求める
 ##
 ## 使い方:
