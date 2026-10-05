@@ -5538,14 +5538,12 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   sx_num_add1_nat0 の内部実装。引数の検証を行わない。
-##   SX_CFG_NUM_RANGE に応じて、ネイティブ算術または __sx_num_add_nat0 に委譲する。
+##   SX_SYS_NUM_QM に応じて、ネイティブ算術または __sx_num_add_nat0 に委譲する。
 
 __sx_num_add1_nat0() {
-	case "${SX_CFG_NUM_RANGE}:${2}" in
-		32:?????????* | 64:??????????????????* | 128:??????????????????????????????????????*)
-			__sx_num_add_nat0 "${1}" "${2}" 1
-			;;
-		32:* | 64:* | 128:*) : "$((${1} = ${2} + 1))";;
+	case "${2}" in
+		${SX_SYS_NUM_QM}?*) __sx_num_add_nat0 "${1}" "${2}" 1;;
+		*) : "$((${1} = ${2} + 1))";;
 	esac
 }
 |], [|num_add1_nat0|])dnl
@@ -9983,7 +9981,7 @@ sx_num_sub1_nat0() {
 
 	__sx_num_is_nat1_base 10 "${2-}" || return M_EX_USAGE
 
-	__sx_num_sub1_nat0 "$1" "$2"
+	__sx_num_sub1_nat0 "${1}" "${2}"
 }
 |], [|num_sub1_nat0|])dnl
 
@@ -9995,14 +9993,12 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   sx_num_sub1_nat0 の内部実装。引数の検証を行わない。
-##   SX_CFG_NUM_RANGE に応じて、ネイティブ算術または __sx_num_sub_nat0 に委譲する。
+##   SX_SYS_NUM_QM に応じて、ネイティブ算術または __sx_num_sub_nat0 に委譲する。
 
 __sx_num_sub1_nat0() {
-	case "${SX_CFG_NUM_RANGE}:${2}" in
-		32:?????????* | 64:??????????????????* | 128:??????????????????????????????????????*)
-			__sx_num_sub_nat0 "${1}" "${2}" 1
-			;;
-		32:* | 64:* | 128:*) : "$((${1} = ${2} - 1))";;
+	case "${2}" in
+		${SX_SYS_NUM_QM}*) __sx_num_sub_nat0 "${1}" "${2}" 1;;
+		*) : "$((${1} = ${2} - 1))";;
 	esac
 }
 |], [|num_sub1_nat0|])dnl
@@ -10686,8 +10682,6 @@ sx_str_etrim() {
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
 	__sx_str_etrim "${@}"
 }
@@ -11705,12 +11699,13 @@ __sx_str_quote() {
 ##
 ## 説明:
 ##   元文字列を指定された回数だけ繰り返して、結果変数に格納する。
-##   省略された引数は、元文字列が空文字列、繰り返し回数が 1 として扱われる。
+##   繰り返し回数は、符号なし・先行する 0 のない10進整数（0 は可）とする。
+##   8進・16進表記は受け付けない。回数には SX_CFG_NUM_RANGE の上限を適用しない。
+##   元文字列の省略時は空文字列、繰り返し回数の省略時・空文字列時は 1 とする。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_rep() {
@@ -11722,9 +11717,7 @@ sx_str_rep() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
-	__sx_num_is_nat0_safe ${3+"${3}"} || return M_EX_USAGE
+	__sx_num_is_nat0_base 10 ${3:+"${3}"} || return M_EX_USAGE
 
 	__sx_str_rep "${@}"
 }
@@ -11738,23 +11731,32 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_str_rep の内部実装。
 ##   引数チェックは行わない。
+##   繰り返し回数は、符号なし・先行する 0 のない10進整数（0 は可）を前提とする。
 
-define([|CLEANUP|], [|Q_out|])dnl
+define([|CLEANUP|], [|Q_str Q_cnt Q_out|])dnl
 
 __sx_str_rep() {
-	set -- "${1}" "${2-}" "$((${3-1}))"
-
+	Q_str="${2-}"
+	Q_cnt="${3:-1}"
 	Q_out=
 
-	while :; do
-		case "$((${3} % 2))" in 1)
-			M_STR_APPEND([|Q_out|], [|"${2}"|])
+	while
+		case "${Q_cnt}" in *[13579])
+			M_STR_APPEND([|Q_out|], [|"${Q_str}"|])
 		esac
 
-		set -- "${1}" "${2}" "$((${3} / 2))"
-		M_STR_NE([|"${3}"|], [|0|]) || break
-		set -- "${1}" "${2}${2}" "${3}"
-	done
+		case "${Q_cnt}" in
+			${SX_SYS_NUM_QM}?*) __sx_num_divmod_nat0 Q_cnt: "${Q_cnt}" 2;;
+			*) Q_cnt=$((Q_cnt / 2));;
+		esac
+
+		case "${Q_cnt}" in 0)
+			break
+		esac
+
+		M_STR_APPEND([|Q_str|], [|"${Q_str}"|])
+		continue
+	do :; done
 
 	M_VAR_SET([|${1}|], [|${Q_out}|])
 	unset CLEANUP
@@ -12363,8 +12365,6 @@ sx_str_split_ifs() {
 
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
 	__sx_str_split_ifs "${@}" || return
 }
 
@@ -12423,8 +12423,6 @@ sx_str_squish() {
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
 	__sx_str_squish "${@}"
 }
@@ -12486,8 +12484,6 @@ sx_str_strim() {
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
 	__sx_str_strim "${@}"
 }
@@ -13122,8 +13118,6 @@ sx_str_trim() {
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
 	__sx_str_trim "${@}"
 }
