@@ -127,4 +127,126 @@ a"
     When call sx_str_rev res "abcdefghi" -1
     The variable res should equal "ihgfedcba"
   End
+
+  It '空のチャンクサイズで文字単位の反転を行うこと'
+    When call sx_str_rev res "abc" ""
+    The status should be success
+    The variable res should equal "cba"
+  End
+
+  It '+1 で文字単位の反転を行うこと'
+    When call sx_str_rev res "abc" +1
+    The status should be success
+    The variable res should equal "cba"
+  End
+
+  It '+ 付きのチャンクサイズで先頭基準の反転を行うこと'
+    When call sx_str_rev res "abcdefgh" +3
+    The status should be success
+    The variable res should equal "ghdefabc"
+  End
+
+  It '呼び出し側で16進数を10進表記に変換すれば受理すること'
+    When call sx_str_rev res "abcdefgh" "$((0x3))"
+    The status should be success
+    The variable res should equal "ghdefabc"
+  End
+
+  It '負方向のチャンク反転でメタ文字をリテラルとして扱うこと'
+    When call sx_str_rev res "a*b?c[d]" -6
+    The status should be success
+    The variable res should equal "b?c[d]a*"
+  End
+
+  It '正方向のチャンク反転でメタ文字をリテラルとして扱うこと'
+    When call sx_str_rev res "a*b?c[d]" +3
+    The status should be success
+    The variable res should equal "d]?c[a*b"
+  End
+
+  Context '文字列長以上のチャンクサイズ'
+    Before 'sx_cfg_set NUM_RANGE=32'
+
+    Parameters
+      '3'
+      '+3'
+      '-3'
+      '4'
+      '+4'
+      '-4'
+      '2147483648'
+      '+2147483648'
+      '-2147483648'
+      '9223372036854775809'
+      '+9223372036854775809'
+      '-9223372036854775809'
+      '1000000000000000000000000000000'
+      '+1000000000000000000000000000000'
+      '-1000000000000000000000000000000'
+    End
+
+    It "サイズ $1 でパターンを生成せず元文字列を返すこと"
+      rev_pattern_generated=0
+      # 回帰時にも巨大なパターンを割り当てず、生成の有無を検出する。
+      __sx_str_qm() {
+        rev_pattern_generated=1
+        eval "${1}='?'"
+      }
+
+      When call sx_str_rev res "abc" "$1"
+      The status should be success
+      The variable res should equal "abc"
+      The variable rev_pattern_generated should equal 0
+      The stdout should equal ''
+      The stderr should equal ''
+    End
+  End
+
+  Context '空文字列と巨大なチャンクサイズ'
+    Before 'sx_cfg_set NUM_RANGE=32'
+
+    Parameters
+      '1000000000000000000000000000000'
+      '+1000000000000000000000000000000'
+      '-1000000000000000000000000000000'
+    End
+
+    It "サイズ $1 を受理して空文字列を返すこと"
+      When call sx_str_rev res "" "$1"
+      The status should be success
+      The variable res should equal ""
+      The stdout should equal ''
+      The stderr should equal ''
+    End
+  End
+
+  Context '10進表記以外または不正なチャンクサイズ'
+    Parameters
+      '+0'
+      '-0'
+      '00'
+      '010'
+      '08'
+      '+010'
+      '-010'
+      '0xb'
+      '0XB'
+      '+0xb'
+      '-0xb'
+      '1.5'
+      '1e2'
+      '2+1'
+      ' 3'
+      'abc'
+    End
+
+    It "サイズ <$1> を64で拒否して結果変数を変更しないこと"
+      res=before
+      When call sx_str_rev res "abc" "$1"
+      The status should equal 64
+      The variable res should equal "before"
+      The stdout should equal ''
+      The stderr should equal ''
+    End
+  End
 End

@@ -11826,12 +11826,14 @@ __sx_m4_gen_zr_case(1)
 ##   指定された文字列を反転（逆順）して結果変数に格納する。
 ##   空文字列が渡された場合は空文字列を格納する。
 ##   チャンクサイズが正の場合は先頭基準、負の場合は末尾基準でチャンク単位の反転を行う。
-##   チャンクサイズが 1 または省略された場合は従来通りの文字単位の反転を行う。
+##   チャンクサイズは 0 以外の10進整数表記に限る。符号（+ または -）は任意で、先行する 0 は認めない。
+##   チャンクサイズが 1、省略、または空の場合は文字単位の反転を行う。
+##   元文字列の長さとチャンクサイズに SX_CFG_NUM_RANGE による上限は設けない。
+##   チャンクサイズの絶対値が文字列長以上の場合は、パターンを生成せず元文字列をそのまま格納する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_rev() {
@@ -11843,12 +11845,7 @@ sx_str_rev() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
-	__sx_num_is_int_safe_inv ${3:+"${3}"} || return M_EX_USAGE
-	case "$((${3:-1}))" in 0)
-		return M_EX_USAGE
-	esac
+	__sx_num_is_nzint_base 10 ${3:+"${3}"} || return M_EX_USAGE
 
 	__sx_str_rev "${@}"
 }
@@ -11861,36 +11858,44 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   sx_str_rev の内部実装。引数チェックは行わない。
+##   チャンクサイズは 0 以外の10進整数表記（任意の符号付き、先行する 0 なし）を前提とする。
 ##   チャンクサイズが正の場合は先頭基準、負の場合は末尾基準でチャンク単位の反転を行う。
 
-define([|CLEANUP|], [|Q_src Q_out Q_pat Q_tmp|])dnl
+define([|CLEANUP|], [|Q_src Q_size Q_out Q_pat Q_tmp|])dnl
 
 __sx_str_rev() {
-	set -- "${1}" "${2-}" "${3:-1}"
-
 	Q_src="${2-}"
+	Q_size="${3:-1}"
 	Q_out=
-	__sx_str_qm Q_pat "${3#-}"
 
-	if M_NUM_LT([|${3}|], [|0|]); then
-		set -- "${1}" "${2}" "${3#-}"
+	__sx_num_cmp_nat0 "${#Q_src}" "${Q_size#[+-]}" || case "${?}" in [12])
+		M_VAR_SET([|${1}|], [|${Q_src}|])
+		unset CLEANUP
+		return
+	esac
 
-		while M_NUM_BOOL([|${3} < ${#Q_src}|]); do
-			Q_tmp="${Q_src%${Q_pat}}"
-			M_STR_APPEND([|Q_out|], [|"${Q_src#${Q_tmp}}"|])
-			Q_src="${Q_tmp}"
-		done
+	__sx_str_qm Q_pat "${Q_size#[+-]}"
 
-		M_VAR_SET([|${1}|], [|${Q_out}${Q_src}|])
-	else
-		while M_NUM_BOOL([|${3} < ${#Q_src}|]); do
-			Q_tmp="${Q_src#${Q_pat}}"
-			M_STR_PREPEND([|Q_out|], [|"${Q_src%"${Q_tmp}"}"|])
-			Q_src="${Q_tmp}"
-		done
+	case "${Q_size}" in
+		-*)
+			while M_STR_MATCH([|"${Q_src}"|], [|${Q_pat}?*|]); do
+				Q_tmp="${Q_src%${Q_pat}}"
+				M_STR_APPEND([|Q_out|], [|"${Q_src#"${Q_tmp}"}"|])
+				Q_src="${Q_tmp}"
+			done
 
-		M_VAR_SET([|${1}|], [|${Q_src}${Q_out}|])
-	fi
+			M_VAR_SET([|${1}|], [|${Q_out}${Q_src}|])
+			;;
+		*)
+			while M_STR_MATCH([|"${Q_src}"|], [|${Q_pat}?*|]); do
+				Q_tmp="${Q_src#${Q_pat}}"
+				M_STR_PREPEND([|Q_out|], [|"${Q_src%"${Q_tmp}"}"|])
+				Q_src="${Q_tmp}"
+			done
+
+			M_VAR_SET([|${1}|], [|${Q_src}${Q_out}|])
+			;;
+	esac
 
 	unset CLEANUP
 }
