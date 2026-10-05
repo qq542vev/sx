@@ -6,5 +6,7 @@
 !sx.m4
 !.shellcheckrc
 !.shellspec
+!tools/
+!tools/compact.awk
 !spec/
 !spec/**

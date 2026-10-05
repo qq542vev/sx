@@ -13,7 +13,7 @@
 ##   modified - 2026-05-08
 ##   copyright - Copyright (C) 2026-2026 qq542vev. All rights reserved.
 ##   license - <GPL-3.0-only at https://www.gnu.org/licenses/gpl-3.0.txt>
-##   depends - chmod, echo, m4, rm, sed, shellspec
+##   depends - awk, chmod, echo, m4, mv, rm, shellspec
 ##
 ## See Also:
 ##
@@ -36,15 +36,16 @@ VERSION = 0.0.1
 
 TARGET = sx.sh
 SOURCE = sx.m4
+COMPACT = tools/compact.awk
 
 # Build
 # =====
 
 all: $(TARGET)
 
-$(TARGET): $(SOURCE)
+$(TARGET): $(SOURCE) $(COMPACT) Makefile
 	m4 -- $(SOURCE) >$@.tmp
-	sed -E '/^[[:space:]]*#([^!]|$$)/d' -- $@.tmp >$@.tmp2
+	LC_ALL=C awk -f $(COMPACT) $@.tmp >$@.tmp2
 	chmod 755 -- $@.tmp2
 	mv -f -- $@.tmp2 $@
 	rm -f -- $@.tmp
