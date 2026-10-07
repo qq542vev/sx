@@ -10224,11 +10224,13 @@ __sx_str_capital() {
 ##   右埋め文字列が明示的に空の場合は右側に何も埋めない。
 ##   両方とも明示的に空の場合は何もせずそのまま返す。
 ##   元の文字列が既に指定された幅以上の場合は、そのまま返す。
+##   幅は10進整数表記に限る。符号（+ または -）は任意で、先行する 0 は認めない。
+##   幅の省略時は 0 とする。空文字列を明示した場合は引数不正とする。
+##   元文字列・左右の埋め文字列の長さと幅に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_center() {
@@ -10240,9 +10242,7 @@ sx_str_center() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${#4}"} ${5+"${#5}"} || return M_EX_DATAERR
-
-	__sx_num_is_int_safe_inv ${3+"${3}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 ${3+"${3}"} || return M_EX_USAGE
 
 	__sx_str_center "${@}"
 }
@@ -10254,33 +10254,65 @@ M_RENAME_QI([|dnl
 ##   __sx_str_center 結果変数名 文字列 幅 [左埋め文字列 [右埋め文字列]]
 ##
 ## 説明:
-##   sx_str_center の内部実装。
-##   引数チェックは行わないが、左右の埋め文字が両方とも空の場合は何もせず成功を返す。
-##   $5 が未指定の場合、最適化パス（左と同じfillで1回のstr_rep）を使用する。
+##   sx_str_center の内部実装。引数チェックは行わない。
+##   幅は10進整数表記（任意の符号付き、先行する 0 なし）を前提とする。
+##   左右の埋め文字列が両方とも空の場合は何もせず成功を返す。
+##   文字列長と幅の絶対値が数値範囲内なら算術、それ以外は多倍長で処理する。
+##   左右の埋め文字列が等しい場合、長い側に合わせて1回だけ str_rep を呼ぶ。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
 
-define([|CLEANUP|], [|Q_needed Q_lpad Q_rpad Q_lrep Q_rrep Q_spad Q_epad|])dnl
+define([|CLEANUP|], [|Q_slen Q_llen Q_rlen Q_needed Q_cnt Q_lpad Q_rpad Q_lrep Q_rrep Q_spad Q_epad Q_type|])dnl
 
 __sx_str_center() {
 	set -- "${1}" "${2-}" "${3-0}" "${4- }" "${5-${4- }}"
 
-	Q_needed=$((${3#-} - ${#2}))
-
-	case "$((0 < Q_needed))${4}${5}" in 0* | 1)
+	case "${3}:${4:+X}${5:+X}" in 0* | [+-]0* | *:)
 		M_VAR_SET([|${1}|], [|${2}|])
-		unset Q_needed
-		return M_EX_OK
+		return
 	esac
 
-	Q_lpad=$(((Q_needed + (${3} < 0)) / 2))
-	Q_rpad=$((Q_needed - Q_lpad))
+	Q_slen="${#2}"
+	Q_llen="${#4}"
+	Q_rlen="${#5}"
+	Q_needed="${3#[+-]}"
+
+	# 絶対値で判定し、負の最小値も多倍長演算に回す。
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_slen}" "${Q_llen}" "${Q_rlen}" "${Q_needed}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+
+	__sx_num_cmp_${Q_type} "${Q_needed}" "${Q_slen}" || case "${?}" in [12])
+		M_VAR_SET([|${1}|], [|${2}|])
+		unset CLEANUP
+		return
+	esac
+
+	__sx_num_sub_${Q_type} Q_needed "${Q_needed}" "${Q_slen}"
+	# Q_cnt は長い側の文字数。先に1を加算せず、切り上げ除算で求める。
+	__sx_num_divceil_${Q_type} Q_cnt "${Q_needed}" 2
+
+	case "${3}" in
+		-*) Q_lpad="${Q_cnt}";;
+		*) __sx_num_sub_${Q_type} Q_lpad "${Q_needed}" "${Q_cnt}";;
+	esac
+
+	__sx_num_sub_${Q_type} Q_rpad "${Q_needed}" "${Q_lpad}"
 
 	case "${4:+X}" in X)
-		__sx_str_rep Q_lrep "${4}" "$((((Q_needed + 1) / 2 - 1) / ${#4} + 1))"
+		__sx_num_divceil_${Q_type} Q_cnt "${Q_cnt}" "${Q_llen}"
+		__sx_str_rep Q_lrep "${4}" "${Q_cnt}"
 	esac
 
 	case "${5}" in
 		"${4}") Q_rrep="${Q_lrep}";;
-		?*) __sx_str_rep Q_rrep "${5}" "$(((Q_rpad - 1) / ${#5} + 1))";;
+		?*)
+			__sx_num_divceil_${Q_type} Q_cnt "${Q_rpad}" "${Q_rlen}"
+			__sx_str_rep Q_rrep "${5}" "${Q_cnt}"
+			;;
 	esac
 
 	__sx_str_substr Q_spad "${Q_lrep-}" 0 "${Q_lpad}"
