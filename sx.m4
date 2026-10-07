@@ -11523,11 +11523,13 @@ sx_str_match() {
 ##   埋め込み文字列が明示的に空の場合は何もせずそのまま返す。
 ##   埋め込み文字列が複数文字の場合、必要な長さ分だけ使用される。
 ##   元の文字列が既に指定された長さ以上の場合は、そのまま返す。
+##   長さは10進整数表記に限る。符号（+ または -）は任意で、先行する 0 は認めない。
+##   長さの省略時は 0 とする。空文字列を明示した場合は引数不正とする。
+##   元文字列・埋め込み文字列の長さと数値引数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_pad() {
@@ -11539,9 +11541,7 @@ sx_str_pad() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} ${4+"${#4}"} || return M_EX_DATAERR
-
-	__sx_num_is_int_safe_inv ${3+"${3}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 ${3+"${3}"} || return M_EX_USAGE
 
 	__sx_str_pad "${@}"
 }
@@ -11553,23 +11553,45 @@ M_RENAME_QI([|dnl
 ##   __sx_str_pad 結果変数名 文字列 長さ [埋め込み文字列]
 ##
 ## 説明:
-##   sx_str_pad の内部実装。
-##   引数チェックは行わないが、埋め込み文字列が空の場合は何もせず成功を返す。
+##   sx_str_pad の内部実装。引数チェックは行わない。
+##   長さは10進整数表記（任意の符号付き、先行する 0 なし）を前提とする。
+##   埋め込み文字列が空の場合は何もせず成功を返す。
+##   文字列長と数値引数の絶対値が数値範囲内なら算術、それ以外は多倍長で処理する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
 
-define([|CLEANUP|], [|Q_needed Q_rep Q_fill|])dnl
+define([|CLEANUP|], [|Q_slen Q_plen Q_needed Q_cnt Q_rep Q_fill Q_type|])dnl
 
 __sx_str_pad() {
 	set -- "${1}" "${2-}" "${3-0}" "${4- }"
 
-	Q_needed=$((${3#-} - ${#2}))
-
-	M_NUM_LT([|0|], [|Q_needed|]) && M_STR_NE([|"${4}"|], [|''|]) || {
+	case "${3}:${4:+X}" in 0* | [+-]0* | *:)
 		M_VAR_SET([|${1}|], [|${2}|])
-		unset Q_needed
-		return M_EX_OK
-	}
+		return
+	esac
 
-	__sx_str_rep Q_rep "${4}" "$(((Q_needed - 1) / ${#4} + 1))"
+	Q_slen="${#2}"
+	Q_plen="${#4}"
+	Q_needed="${3#[+-]}"
+
+	# 絶対値で判定し、負の最小値も多倍長演算に回す。
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_slen}" "${Q_plen}" "${Q_needed}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+
+	# 減算前に比較し、被減数が減数未満になる場合はそのまま返す。
+	__sx_num_cmp_${Q_type} "${Q_needed}" "${Q_slen}" || case "${?}" in [12])
+		M_VAR_SET([|${1}|], [|${2}|])
+		unset CLEANUP
+		return
+	esac
+
+	__sx_num_sub_${Q_type} Q_needed "${Q_needed}" "${Q_slen}"
+	__sx_num_divceil_${Q_type} Q_cnt "${Q_needed}" "${Q_plen}"
+	__sx_str_rep Q_rep "${4}" "${Q_cnt}"
 	__sx_str_substr Q_fill "${Q_rep}" 0 "${Q_needed}"
 
 	case "${3}" in
