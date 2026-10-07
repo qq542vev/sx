@@ -12085,16 +12085,22 @@ __sx_str_rot() {
 ### sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する
 ##
 ## 使い方:
-##   sx_str_splice 結果変数名 文字列 開始位置 削除数 挿入文字列
+##   sx_str_splice 結果変数名 [文字列 [開始位置 [削除数 [挿入文字列]]]]
 ##
 ## 説明:
 ##   文字列の「開始位置」（0開始）から「削除数」分の文字を取り除き、
 ##   そこに「挿入文字列」を挿入した結果を結果変数に格納する。
+##   削除対象は sx_str_substr 文字列 開始位置 削除数 と同じ範囲とする。
+##   負の開始位置は末尾から数え、先頭より前の部分は削除数から差し引く。
+##   負の削除数は末尾から除外する文字数とし、省略時または空文字列の場合は末尾まで削除する。
+##   挿入位置は文字列の先頭から末尾の範囲に収める。削除対象が空でも挿入する。
+##   開始位置は省略時または空文字列の場合に 0、文字列と挿入文字列は省略時に空文字列とする。
+##   空文字列以外の数値引数は任意の符号付き10進整数（先行する 0 なし）に限る。
+##   文字列長と数値引数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_splice() {
@@ -12106,9 +12112,7 @@ sx_str_splice() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
-	__sx_num_is_int_safe_inv ${3+"${3}"} ${4+"${4}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 ${3:+"${3}"} ${4:+"${4}"} || return M_EX_USAGE
 
 	__sx_str_splice "${@}"
 }
@@ -12117,37 +12121,26 @@ M_RENAME_QI([|dnl
 ### __sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する（内部用）
 ##
 ## 使い方:
-##   __sx_str_splice 結果変数名 文字列 開始位置 削除数 挿入文字列
+##   __sx_str_splice 結果変数名 [文字列 [開始位置 [削除数 [挿入文字列]]]]
 ##
 ## 説明:
 ##   sx_str_splice の内部実装。引数チェックは行わない。
+##   数値引数は sx_str_substr と同じ10進整数表記を前提とする。
+##   空の開始位置は 0、空の削除数は末尾までの削除として扱う。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
 
-define([|CLEANUP|], [|Q_res Q_str Q_off Q_len Q_add Q_left Q_right Q_suffix Q_del|])dnl
+define([|CLEANUP|], [|Q_left Q_suffix Q_del|])dnl
 
 __sx_str_splice() {
-	Q_res="${1}"
-	Q_str="${2-}"
-	Q_off="${3-0}"
-	Q_len="${4-${SX_NUM_I32_MAX}}"
-	Q_add="${5-}"
-	# 検証済みの算術範囲内の数値を、substr の内部契約である10進表記に正規化する。
-	Q_off=$((Q_off))
-	Q_len=$((Q_len))
+	# 開始位置を先頭・末尾に収めた前半を取得する。
+	__sx_str_substr Q_left "${2-}" 0 "${3:-0}"
+	Q_suffix="${2:+"${2#"${Q_left}"}"}"
 
-	# 1. 前半部分を取得 (sx_str_substr は負数 off をサポート済み)
-	__sx_str_substr Q_left "${Q_str}" 0 "${Q_off}"
-
-	# 2. 残りの部分（suffix）を抽出
-	Q_suffix="${Q_str#"${Q_left}"}"
-
-	# 3. 削除される部分を取得（sx_str_substr の負数 len を利用）
-	__sx_str_substr Q_del "${Q_suffix}" 0 "${Q_len}"
-
-	# 4. 後半部分（削除範囲より後ろ）を抽出
-	Q_right="${Q_suffix#"${Q_del}"}"
-
-	# 5. 結合して格納
-	M_VAR_SET([|${Q_res}|], [|${Q_left}${Q_add}${Q_right}|])
+	# 元文字列を基準に削除範囲を求め、先頭より前の分も長さに反映する。
+	__sx_str_substr Q_del "${2-}" "${3:-0}" ${4:+"${4}"}
+	M_VAR_SET([|${1}|], [|${Q_left}${5-}${Q_suffix#"${Q_del}"}|])
 
 	unset CLEANUP
 }

@@ -43,9 +43,9 @@ Describe 'sx_str_splice'
     The variable res should equal "abcXe"
   End
 
-  It '文字列長を超える負数の開始位置を 0 にクランプすること'
+  It '先頭より前だけの削除範囲では先頭に挿入すること'
     sx_str_splice res "abcde" -10 1 "X"
-    The variable res should equal "Xbcde"
+    The variable res should equal "Xabcde"
   End
 
   It '負数の削除数（末尾からの除外）をサポートすること'
@@ -73,18 +73,6 @@ Describe 'sx_str_splice'
     The status should equal 64
   End
 
-  It '8進表記の開始位置と削除数をsubstrに10進表記で渡せること'
-    When call sx_str_splice res "abcde" 02 01 "X"
-    The status should be success
-    The variable res should equal "abXde"
-  End
-
-  It '16進表記の開始位置と削除数をsubstrに10進表記で渡せること'
-    When call sx_str_splice res "abcde" 0x2 0x1 "X"
-    The status should be success
-    The variable res should equal "abXde"
-  End
-
   It '元文字列にメタ文字（* ? [）が含まれる場合も正しくスプライスできること'
     When call sx_str_splice res "a*b?c[d" 2 1 "X"
     The variable res should equal "a*X?c[d"
@@ -99,5 +87,118 @@ Describe 'sx_str_splice'
     long_spl=$(printf 'a%.0s' $(seq 1 1000))
     When call sx_str_splice res "${long_spl}" 500 10 "X"
     The length of variable res should equal 991
+  End
+  Context 'substr と同じ削除範囲と多倍長引数'
+    Parameters
+      '-5' '2' 'Xbcd'
+      '-5' '1' 'Xabcd'
+      '-5' '6' 'X'
+      '-5' '-1' 'Xd'
+      '-4' '2' 'Xcd'
+      '+0' '-0' 'Xabcd'
+      '-0' '+2' 'Xcd'
+      '4' '2' 'abcdX'
+      '1000000000000000000000000000000' '2' 'abcdX'
+      '-1000000000000000000000000000000' '999999999999999999999999999997' 'Xbcd'
+      '-1000000000000000000000000000000' '999999999999999999999999999996' 'Xabcd'
+      '-1000000000000000000000000000000' '1000000000000000000000000000000' 'X'
+      '1' '1000000000000000000000000000000' 'aX'
+      '1' '-1000000000000000000000000000000' 'aXbcd'
+      '-2147483648' '2147483647' 'Xd'
+    End
+
+    It "開始位置 $1、削除数 $2 を処理すること"
+      sx_cfg_set NUM_RANGE=32
+      When call sx_str_splice res 'abcd' "$1" "$2" 'X'
+      The status should be success
+      The variable res should equal "$3"
+      The stderr should equal ''
+    End
+  End
+
+  It '先頭より前からの削除範囲の交差部分だけ削除すること'
+    When call sx_str_splice res 'abcd' -5 2
+    The status should be success
+    The variable res should equal 'bcd'
+  End
+
+  It '削除数の省略で末尾まで削除すること'
+    When call sx_str_splice res 'abcd' -2
+    The status should be success
+    The variable res should equal 'ab'
+  End
+
+  It '巨大な負の開始位置でも削除数の省略で全削除すること'
+    When call sx_str_splice res 'abcd' -1000000000000000000000000000000
+    The status should be success
+    The variable res should equal ''
+  End
+
+  It '結果変数だけでも成功すること'
+    When call sx_str_splice res
+    The status should be success
+    The variable res should equal ''
+  End
+
+  It '空文字列にも挿入できること'
+    When call sx_str_splice res '' -5 2 X
+    The status should be success
+    The variable res should equal 'X'
+  End
+
+  It '検証省略時にも多倍長の範囲を扱うこと'
+    sx_cfg_set SKIP_CHK=1
+    res=abcd
+    When call sx_str_splice res "$res" -1000000000000000000000000000000 999999999999999999999999999997
+    The status should be success
+    The variable res should equal 'bcd'
+  End
+
+  Context '空の数値引数は既定値として扱う'
+    Parameters
+      '' '2' 'Xcd'
+      '' '0' 'Xabcd'
+      '' '-1' 'Xd'
+      '2' '' 'abX'
+      '' '' 'X'
+      '-5' '' 'X'
+    End
+
+    It '開始位置と削除数の引数位置を維持すること'
+      When call sx_str_splice res abcd "$1" "$2" X
+      The status should be success
+      The variable res should equal "$3"
+    End
+
+    It '検証を省略しても同じ既定値で処理すること'
+      sx_cfg_set SKIP_CHK=1
+      When call sx_str_splice res abcd "$1" "$2" X
+      The status should be success
+      The variable res should equal "$3"
+    End
+  End
+
+  Context '不正な数値表記'
+    Parameters
+      '02'
+      '0x2'
+      '+01'
+      '-01'
+      '1+1'
+    End
+
+    It '開始位置を拒否し結果を保持すること'
+      res=before
+      When call sx_str_splice res abcd "$1" 2
+      The status should equal 64
+      The variable res should equal before
+    End
+
+    It '削除数を拒否し結果を保持すること'
+      res=before
+      When call sx_str_splice res abcd 2 "$1"
+      The status should equal 64
+      The variable res should equal before
+    End
   End
 End
