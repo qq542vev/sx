@@ -12122,7 +12122,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_str_splice の内部実装。引数チェックは行わない。
 
-define([|CLEANUP|], [|unset Q_res Q_str Q_off Q_len Q_add Q_left Q_right Q_suffix Q_del|])dnl
+define([|CLEANUP|], [|Q_res Q_str Q_off Q_len Q_add Q_left Q_right Q_suffix Q_del|])dnl
 
 __sx_str_splice() {
 	Q_res="${1}"
@@ -12130,6 +12130,9 @@ __sx_str_splice() {
 	Q_off="${3-0}"
 	Q_len="${4-${SX_NUM_I32_MAX}}"
 	Q_add="${5-}"
+	# 検証済みの算術範囲内の数値を、substr の内部契約である10進表記に正規化する。
+	Q_off=$((Q_off))
+	Q_len=$((Q_len))
 
 	# 1. 前半部分を取得 (sx_str_substr は負数 off をサポート済み)
 	__sx_str_substr Q_left "${Q_str}" 0 "${Q_off}"
@@ -12146,7 +12149,7 @@ __sx_str_splice() {
 	# 5. 結合して格納
 	M_VAR_SET([|${Q_res}|], [|${Q_left}${Q_add}${Q_right}|])
 
-	CLEANUP
+	unset CLEANUP
 }
 |], [|str_splice|])dnl
 
@@ -12759,15 +12762,19 @@ __sx_str_sub_lit() {
 ## 説明:
 ##   元文字列のオフセット（0開始）から指定された長さ分だけ抽出し、結果変数に格納する。
 ##   オフセットが負の場合は、文字列末尾からの位置として扱う。
-##   負のオフセットが文字列長を超える場合は先頭から抽出する。
+##   負のオフセットが先頭を越える場合も、指定範囲のうち文字列と重なる部分だけ抽出する。
 ##   長さが省略された場合、または末尾を超える場合は末尾まで抽出する。
 ##   長さが負の場合は、抽出対象の末尾から指定文字数を除外する。
 ##   オフセットが文字列長以上の場合は空文字列を返す。
+##   Perl の substr が undef を返す範囲外の指定も、警告なしで空文字列を格納して成功する。
+##   オフセットと長さは10進整数表記に限る。符号（+ または -）は任意で、先行する 0 は認めない。
+##   オフセットは省略時に 0 とする。数値引数に空文字列を明示した場合は引数不正とする。
+##   元文字列の長さ、オフセット、長さに SX_CFG_NUM_RANGE による上限は設けない。
+##   元文字列の長さとの比較後、必要な範囲だけパターンを生成して抽出する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_substr() {
@@ -12779,9 +12786,7 @@ sx_str_substr() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
-	__sx_num_is_int_safe_inv ${3+"${3}"} ${4+"${4}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 ${3+"${3}"} ${4+"${4}"} || return M_EX_USAGE
 
 	__sx_str_substr "${@}"
 }
@@ -12793,49 +12798,85 @@ M_RENAME_QI([|dnl
 ##   __sx_str_substr 結果変数名 [元文字列 [オフセット [長さ]]]
 ##
 ## 説明:
-##   sx_str_substr の内部実装。
-##   引数チェックは行わない。
+##   sx_str_substr の内部実装。引数チェックは行わない。
+##   オフセットと長さは10進整数表記（任意の符号付き、先行する 0 なし）を前提とする。
+##   負のオフセットは末尾から抽出し、長さの省略は末尾までの抽出として扱う。
+##   文字列長と数値引数の絶対値が数値範囲内なら算術、それ以外は多倍長で比較・減算する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
 
-define([|CLEANUP|], [|unset Q_res Q_str Q_off Q_len Q_total Q_drop Q_qm|])dnl
+define([|CLEANUP|], [|Q_str Q_off Q_len Q_off_abs Q_len_abs Q_qm Q_type|])dnl
 
 __sx_str_substr() {
-	Q_res="${1}"
-	Q_str="${2-}"
-	Q_off=$((${3-0}))
-	Q_len=$((${4-${SX_NUM_I32_MAX}}))
-	Q_total="${#Q_str}"
-
-	# オフセットの正規化 (負数は末尾から)
-	case "$((Q_off < 0))" in 1)
-		Q_off=$(((Q_off * -1) < Q_total ? Q_total + Q_off : 0))
+	case "${2-}" in '')
+		M_VAR_SET([|${1}|])
+		return
 	esac
 
-	# 1. オフセット分をスキップ
-	if M_NUM_LE([|Q_total|], [|Q_off|]); then
-		Q_str=
+	case "${4-}" in 0 | [+-]0)
+		M_VAR_SET([|${1}|])
+		return
+	esac
+
+	Q_str="${2-}"
+	Q_off="${3:-0}"
+	Q_len="${4:-${#Q_str}}"
+
+	# 元の符号は保持し、絶対値と補正後の文字数は _abs 側で管理する。
+	Q_off_abs="${Q_off#[+-]}"
+	Q_len_abs="${Q_len#[+-]}"
+
+	# 絶対値で判定し、負の最小値も多倍長演算に回す。
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#Q_str}" "${Q_off_abs}" "${Q_len_abs}"; then
+		Q_type=arith
 	else
-		__sx_str_qm Q_qm "${Q_off}"
-		Q_str="${Q_str#${Q_qm}}"
+		Q_type=nat0
 	fi
 
-	# 長さの正規化 (負数は末尾から削る)
-	Q_total="${#Q_str}"
-	if M_NUM_LE([|0|], [|Q_len|]); then
-		Q_drop=$((Q_len < Q_total ? Q_total - Q_len : 0))
-	else
-		Q_drop=$((Q_len * -1))
-	fi
+	case "${Q_off}" in
+		0 | [+-]0) ;;
+		-*)
+			__sx_num_cmp_${Q_type} "${Q_off_abs}" "${#Q_str}" || case "${?}${4-}" in
+				1*)
+					__sx_str_qm Q_qm "${Q_off_abs}"
+					Q_str="${Q_str#"${Q_str%${Q_qm}}"}"
+					;;
+				3[!-]*)
+					# 先頭より前の文字数を、明示された非負の長さから除く。
+					__sx_num_sub_${Q_type} Q_off_abs "${Q_off_abs}" "${#Q_str}"
+					__sx_num_cmp_${Q_type} "${Q_len_abs}" "${Q_off_abs}" || case "${?}" in
+						3) __sx_num_sub_${Q_type} Q_len_abs "${Q_len_abs}" "${Q_off_abs}";;
+						*) Q_len_abs=0;;
+					esac
+					;;
+			esac
+			;;
+		*)
+			__sx_num_cmp_${Q_type} "${Q_off_abs}" "${#Q_str}" || case "${?}" in
+				1)
+					__sx_str_qm Q_qm "${Q_off_abs}"
+					Q_str="${Q_str#${Q_qm}}"
+					;;
+				*) Q_str=;;
+			esac
+			;;
+	esac
 
-	# 2. 指定長に切り詰め
-	if M_NUM_LT([|Q_drop|], [|Q_total|]); then
-		__sx_str_qm Q_qm "${Q_drop}"
-		Q_str="${Q_str%${Q_qm}}"
-	else
-		Q_str=
-	fi
+	__sx_num_cmp_${Q_type} "${Q_len_abs}" "${#Q_str}" || case "${?}${Q_len}" in
+		1-*)
+			__sx_str_qm Q_qm "${Q_len_abs}"
+			Q_str="${Q_str%${Q_qm}}"
+			;;
+		?-*) Q_str=;;
+		1*)
+			__sx_str_qm Q_qm "${Q_len_abs}"
+			Q_str="${Q_str%"${Q_str#${Q_qm}}"}"
+			;;
+	esac
 
-	M_VAR_SET([|${Q_res}|], [|${Q_str}|])
-	CLEANUP
+	M_VAR_SET([|${1}|], [|${Q_str}|])
+	unset CLEANUP
 }
 |], [|str_substr|])dnl
 

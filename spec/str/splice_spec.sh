@@ -73,6 +73,18 @@ Describe 'sx_str_splice'
     The status should equal 64
   End
 
+  It '8進表記の開始位置と削除数をsubstrに10進表記で渡せること'
+    When call sx_str_splice res "abcde" 02 01 "X"
+    The status should be success
+    The variable res should equal "abXde"
+  End
+
+  It '16進表記の開始位置と削除数をsubstrに10進表記で渡せること'
+    When call sx_str_splice res "abcde" 0x2 0x1 "X"
+    The status should be success
+    The variable res should equal "abXde"
+  End
+
   It '元文字列にメタ文字（* ? [）が含まれる場合も正しくスプライスできること'
     When call sx_str_splice res "a*b?c[d" 2 1 "X"
     The variable res should equal "a*X?c[d"
