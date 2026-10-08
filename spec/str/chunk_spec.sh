@@ -352,4 +352,197 @@ Describe "sx_str_chunk"
       The variable res should equal "'a' 'bc' 'de'"
     End
   End
+
+  Describe "周期リストと後方チャンクの保留"
+    It "長さ省略時は1文字ずつ分割すること"
+      When call sx_str_chunk res abc
+      The status should be success
+      The variable res should equal "'a' 'b' 'c'"
+    End
+
+    It "長さが空の場合は1文字ずつ分割すること"
+      When call sx_str_chunk res abc ''
+      The status should be success
+      The variable res should equal "'a' 'b' 'c'"
+    End
+
+    It "複数周期の後方チャンクと空チャンクを元の順序で返すこと"
+      When call sx_str_chunk res "abcdef" "0:-1:2"
+      The status should be success
+      The variable res should equal "'' 'ab' '' 'cd' '' 'e' 'f'"
+    End
+
+    It "後方チャンクの空白とメタ文字を展開せずに保持すること"
+      When call sx_str_chunk "v1:v2:v3:v4:" 'ab *?$()' -2
+      The status should be success
+      The variable v1 should equal 'ab'
+      The variable v2 should equal ' *'
+      The variable v3 should equal '?$'
+      The variable v4 should equal '()'
+    End
+
+    It "後方チャンク内の改行を保持すること"
+      input="ab
+c"
+      tail="
+c"
+      When call sx_str_chunk "v1:v2:" "$input" -2
+      The status should be success
+      The variable v1 should equal 'ab'
+      The variable v2 should equal "$tail"
+    End
+
+    Parameters
+      '2147483647'
+      '-2147483647'
+    End
+
+    It "元文字列より長い指定 $1 のパターンを生成しないこと"
+      # 回帰時にも巨大なパターンを割り当てず、不要な生成呼び出しを検出する。
+      __sx_str_qm() { echo '不要なパターン生成'; }
+      When call sx_str_chunk res abc "$1"
+      The status should be success
+      The output should equal ''
+      The variable res should equal "'abc'"
+    End
+  End
+
+
+  Describe '多倍長の長さと分割回数'
+    Before 'sx_cfg_set NUM_RANGE=32'
+
+    Context '入力別の検証'
+      Parameters
+        '9223372036854775808'
+        '+9223372036854775808'
+        '-9223372036854775808'
+        '99999999999999999999999999999999999999999999999999'
+      End
+
+      It '巨大な長さ $1 のパターンを生成せず全文を返すこと'
+        __sx_str_qm() { echo '不要なパターン生成'; }
+        When call sx_str_chunk res abc "$1"
+        The status should be success
+        The output should equal ''
+        The variable res should equal "'abc'"
+      End
+    End
+
+    Context '入力別の検証'
+      Parameters
+        '2:-1:9223372036854775808' 'ab' 'cdef' "'g'"
+        '-2:+1:-9223372036854775808' 'a' 'bcde' "'fg'"
+      End
+
+      It '巨大な値を含む周期をバインドできること'
+        When call sx_str_chunk 'v1:v2:rest' abcdefg "$1"
+        The status should be success
+        The variable v1 should equal "$2"
+        The variable v2 should equal "$3"
+        The variable rest should equal "$4"
+      End
+    End
+
+    Context '入力別の検証'
+      Parameters
+        '0:+1:-2' "'' 'a' '' 'b' '' 'cd' 'ef'"
+        '-0:+1:-2' "'' 'a' '' 'b' '' 'cd' 'ef'"
+        '-2:-1' "'a' 'bc' 'd' 'ef'"
+      End
+
+      It '巨大な回数でゼロ長と後方分割を処理すること'
+        When call sx_str_chunk res abcdef "$1" 9999999999999999999999999999999999999999
+        The status should be success
+        The variable res should equal "$2"
+      End
+    End
+
+    It '巨大な次の長さに対する短い余りをスキップすること'
+      When call sx_str_chunk res abcdefg '2:-1:9223372036854775808' '' "$SX_STR_CHUNK_SKIP_SHORT"
+      The status should be success
+      The variable res should equal "'ab' 'g'"
+    End
+
+    It '巨大な回数でもバインド枯渇で早期終了すること'
+      When call sx_str_chunk 'v1:v2:' abcdefg '1:-1' 999999999999999999999999
+      The status should be success
+      The variable v1 should equal a
+      The variable v2 should equal b
+    End
+
+    It '検証省略時にも巨大な長さと回数を処理すること'
+      sx_cfg_set SKIP_CHK=1
+      When call sx_str_chunk res abc '1:-9223372036854775808' 999999999999999999999999
+      The status should be success
+      The variable res should equal "'a' 'bc'"
+    End
+
+    Context '入力別の検証'
+      Parameters
+        '01' '1'
+        '0x2' '1'
+        '1::2' '1'
+        '1:' '1'
+        ':1' '1'
+        '0:-0:+0' '1'
+        '1:$(exit 99)' '1'
+        '1' '01'
+        '1' '0x2'
+        '1' '+1'
+        '1' '-1'
+      End
+
+      It '不正な長さ・回数を拒否し結果を変更しないこと'
+        res=original
+        When call sx_str_chunk res abc "$1" "$2"
+        The status should equal 64
+        The variable res should equal original
+      End
+    End
+  End
+
+  Context '文字列長を多倍長演算で処理する経路'
+    Before 'sx_cfg_set NUM_RANGE=32'
+
+    Parameters
+      '2:-1:3' 0 "'ab' 'cde' 'f' 'g'"
+      '-2:-3' 0 "'ab' 'cde' 'fg'"
+      '0:-1:2' 0 "'' 'ab' '' 'cd' '' 'e' 'f' 'g'"
+      '3:-2' 1 "'abc' 'fg'"
+    End
+
+    It '小さな文字列で多倍長の比較・減算・余り処理を検証すること'
+      # 初期の文字列長と回数だけを範囲外とし、下位演算は通常の小整数で処理する。
+      __sx_num_is_int_fit_dec() {
+        case "${2-}:${3-}" in 7:20) return 1;; esac
+        return 0
+      }
+      When call sx_str_chunk res abcdefg "$1" 20 "$2"
+      The status should be success
+      The variable res should equal "$3"
+    End
+  End
+
+
+  Context '後方予約の遅延切り取り'
+    Parameters
+      '-2:-1' 1 2 "'fg'"
+      '-2:-1' 2 2 "'e' 'fg'"
+      '-2:-1' 2 0 "'abcd' 'e' 'fg'"
+      '-2:-3' 2 3 "'ab' 'cde' 'fg'"
+    End
+
+    It '回数制限後の余りを処理してから予約分を切り取ること'
+      When call sx_str_chunk res abcdefg "$1" "$2" "$3"
+      The status should be success
+      The variable res should equal "$4"
+    End
+  End
+
+  It '中央の余りを除外してから後方予約のバインド枯渇で終了すること'
+    When call sx_str_chunk 'v1:' abcdefg '-2:-1' 2 "$SX_STR_CHUNK_SKIP_LONG"
+    The status should be success
+    The variable v1 should equal e
+  End
+
 End

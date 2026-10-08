@@ -10324,6 +10324,7 @@ __sx_str_center() {
 }
 |], [|str_center|])dnl
 
+M_RENAME_Q([|dnl
 ### sx_str_chunk - 文字列を一定の長さで区切って結果変数（またはバインドチェーン）に格納する
 ##
 ## 使い方:
@@ -10333,7 +10334,11 @@ __sx_str_center() {
 ##   指定された文字列を、指定された長さ（文字数）ごとに区切る。
 ##   長さが正の場合は前方から、負の場合は後方から区切る。
 ##   分割回数が指定された場合、最大でその回数分だけ分割を行う。
-##   長さが 0 または省略された場合は、エラー (SX_EX_USAGE) となる。
+##   長さの省略時または空文字列指定時は 1 とする。単独の 0 はエラー (SX_EX_USAGE)。
+##   長さは 1:-2:3 のようにコロン区切りで指定でき、順番に繰り返す。
+##   周期内の 0 は空チャンクを生成するが、全項目が 0 の指定はできない。
+##   長さは任意桁の符号付き10進整数、分割回数は任意桁の符号なし10進整数。
+##   先行する 0、8進・16進表記は受け付けない。回数の省略時・空指定時は SX_NUM_I32_MAX。
 ##
 ##   スキーマ (第一引数) には、単一の変数名またはバインドチェーン (v1:v2:rest) を指定できる。
 ##   - 単一変数名: 各要素をシングルクォートで囲み、スペース区切りで結合した文字列を格納する。
@@ -10353,9 +10358,10 @@ __sx_str_center() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  スキーマに含まれる変数が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+define([|CLEANUP|], [|Q_cycle Q_cur|])dnl
+
 sx_str_chunk() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_chunk "${@}" || return; return 0;; esac
 
@@ -10365,111 +10371,154 @@ sx_str_chunk() {
 
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
-	__sx_num_is_nat0_safe ${4:+"${4}"} ${5:+"${5}"} || return M_EX_USAGE
+	__sx_num_is_nat0_base 10 ${4:+"${4}"} || return M_EX_USAGE
+	__sx_num_is_nat0_safe ${5:+"${5}"} || return M_EX_USAGE
 
 	case "${3:-1}" in
-		*[1-9ABCDEFabcdef]*) ;;
+		*[1-9]*) ;;
 		*) return M_EX_USAGE;;
 	esac
 
-	__sx_str_split __sx_str_chunk_ints "${3:-1}" :
-	if ! eval __sx_num_is_int_safe_inv "${__sx_str_chunk_ints}"; then
-		unset __sx_str_chunk_ints
-		return M_EX_USAGE
-	fi
-
-	unset __sx_str_chunk_ints
+	# split の文字列長制限に依存せず、周期の各項目を検証する。
+	Q_cycle="${3:-1}:"
+	while M_STR_HAS([|"${Q_cycle}"|], [|:|]); do
+		Q_cur="${Q_cycle%%:*}"
+		Q_cycle="${Q_cycle#*:}"
+		__sx_num_is_int_base 10 "${Q_cur}" || {
+			unset CLEANUP
+			return M_EX_USAGE
+		}
+	done
+	unset CLEANUP
 
 	__sx_str_chunk "${@}"
 }
+
+|], [|str_chunk|])dnl
 
 M_RENAME_QI([|dnl
 ### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
 ##
 ## 使い方:
-##   __sx_str_chunk 結果変数名 [文字列 [長さ [分割回数]]]
+##   __sx_str_chunk 結果変数名 [文字列 [長さ [分割回数 [フラグ]]]]
 ##
 ## 説明:
-##   sx_str_chunk の内部実装。
-##   引数チェックは行わない。
+##   sx_str_chunk の内部実装。引数チェックは行わない。
+##   長さと ? パターンの交互リストを一度だけ構築し、周期的に反復する。
+##   前方チャンクは即座にバインドし、後方分は ? パターンを位置パラメータに逆順で予約する。
+##   Q_str は未切り取りの文字列、Q_len は後方の予約分を除いた未割り当て文字数。
+##   終了後に中央の余りを処理し、予約したパターンで左から順に切り取る。
+##   長さは符号付き、回数は符号なしの10進整数（先行ゼロなし）を前提とする。
+##   文字列長・回数・各指定長の絶対値が算術域内なら高速経路、それ以外は多倍長で処理する。
+##
+## 終了ステータス:
+##   0  成功（バインド枯渇による早期終了を含む）。
 
-define([|CLEANUP|], [|Q_bind Q_str Q_cycle Q_lim Q_len Q_bwd Q_newcycle Q_cur Q_qm Q_abs Q_next Q_chunk|])dnl
+define([|CLEANUP|], [|Q_bind Q_str Q_cycle Q_lim Q_len Q_flg Q_qms Q_cur Q_qm Q_abs Q_arg Q_prev Q_next Q_chunk Q_type Q_cmp|])dnl
 
 __sx_str_chunk() {
-	set -- "${1}" "${2-}" "${3-1}" "${4:-${SX_NUM_I32_MAX}}" "${5:-0}"
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
 	Q_str="${2-}"
-	Q_cycle="${3}:"
-	Q_lim="${4}"
+	Q_cycle="${3:-1}:"
+	Q_lim="${4:-${SX_NUM_I32_MAX}}"
+	Q_flg="${5:-0}"
 	Q_len="${#Q_str}"
-	Q_bwd=
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len}" "${Q_lim}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
 
-	# プリパス: interval に ? パターンを埋め込む (1:-2:3 → 1?:-2??:3???:)
-	Q_newcycle=
+	# eval に埋め込むのは検証済みの10進整数と生成した ? だけとする。
+	# 元文字列より長い項目は必ず停止するため、パターンを生成しない。
+	Q_qms=
 	while M_STR_HAS([|"${Q_cycle}"|], [|:|]); do
 		Q_cur="${Q_cycle%%:*}"
 		Q_cycle="${Q_cycle#*:}"
+		Q_abs="${Q_cur#[+-]}"
 
-		__sx_str_qm Q_qm "${Q_cur#-}"
-		M_STR_APPEND([|Q_newcycle|], [|"$((0 <= Q_cur))${Q_qm}:"|])
-	done
-
-	Q_cycle="${Q_newcycle}"
-
-	# 第1パス: 文字列長・limit から切り取りサイズリストを構築
-	while
-		Q_cur="${Q_cycle%%:*}" &&
-		Q_qm="${Q_cur#?}" &&
-		Q_abs="${#Q_qm}" &&
-		M_NUM_BOOL([|Q_abs <= Q_len && 0 < Q_lim|])
-	do
-		Q_cycle="${Q_cycle#*:}${Q_cur}:"
-		: $((Q_len -= Q_abs))
-		M_NUM_DECR([|Q_lim|])
-
-		case "${Q_cur}" in 0*)
-			M_STR_PREPEND([|Q_bwd|], [|"'${Q_qm}' "|])
-			continue
+		case "${Q_cur}" in [+-]0)
+			Q_cur=0
 		esac
 
-		Q_next="${Q_str#${Q_qm}}"
+		case "${Q_type}" in arith)
+			__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_abs}" || Q_type=nat0
+		esac
 
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_str%"${Q_next}"}" || {
-			unset CLEANUP
-			return M_EX_OK
-		}
+		Q_qm=
+		__sx_num_cmp_${Q_type} "${Q_abs}" "${Q_len}" || case "${?}" in [12])
+			__sx_str_qm Q_qm "${Q_abs}"
+		esac
 
+		M_STR_APPEND([|Q_qms|], [|" ${Q_cur} '${Q_qm}'"|])
+	done
+
+	# for の明示的な反復リストと、後方の予約パターン用の位置パラメータは独立する。
+	set --
+	eval 'while :; do
+		for Q_arg in '"${Q_qms}"'; do
+			case "${Q_arg}" in
+				"" | \?*)
+					Q_qm="${Q_arg}"
+					__sx_num_sub_${Q_type} Q_len "${Q_len}" "${Q_abs}"
+					__sx_num_sub_${Q_type} Q_lim "${Q_lim}" 1
+
+					case "${Q_prev}" in
+						-*)
+							set -- "${Q_qm}" "${@}"
+							continue
+							;;
+						*)
+							Q_next="${Q_str#${Q_qm}}"
+							__sx_var_bind Q_bind "${Q_bind}" "${Q_str%"${Q_next}"}" || {
+								unset CLEANUP
+								return
+							}
+							;;
+					esac
+					Q_str="${Q_next}"
+					;;
+				*)
+					Q_prev="${Q_arg}"
+					Q_abs="${Q_prev#[+-]}"
+					# 長さ 0 は、文字列が空でも空チャンクを生成する。
+					__sx_num_cmp_${Q_type} "${Q_len}" "${Q_abs}" || Q_cmp="${?}"
+
+					case "${Q_cmp}:${Q_lim}" in 1:* | *:0)
+						break 2
+					esac
+					;;
+			esac
+		done
+	done'
+
+	# 中央の余りを先に取り出す。予約がなければ Q_str 全体が余りである。
+	case "${Q_len}" in [1-9]*)
+		case "${#}" in
+			0) Q_next='' Q_chunk="${Q_str}";;
+			*)
+				__sx_str_qm Q_qm "${Q_len}"
+				Q_next="${Q_str#${Q_qm}}"
+				Q_chunk="${Q_str%"${Q_next}"}"
+				;;
+		esac
+
+		case "${Q_cmp}:$((Q_flg & SX_STR_CHUNK_SKIP_SHORT)):$((Q_flg & SX_STR_CHUNK_SKIP_LONG))" in
+			1:0:* | 2:* | 3:*:0)
+				__sx_var_bind Q_bind "${Q_bind}" "${Q_chunk}" || {
+					unset CLEANUP
+					return
+				}
+				;;
+		esac
+		# 余りをスキップした場合も、予約分の先頭まで進める。
 		Q_str="${Q_next}"
-	done
+	esac
 
-	# 余り処理: limit 到達 or 文字列不足
-	if M_NUM_LT([|0|], [|Q_len|]); then
-		__sx_str_qm Q_qm "${Q_len}"
-
-		case "$((
-			(Q_len < Q_abs && ${5} & SX_STR_CHUNK_SKIP_SHORT) ||
-			(Q_abs < Q_len && ${5} & SX_STR_CHUNK_SKIP_LONG)
-		))" in
-			0) eval set -- '"${Q_qm}"' "${Q_bwd}";;
-		*)
-			Q_str="${Q_str#${Q_qm}}"
-			eval set -- "${Q_bwd}"
-			;;
-		esac
-	else
-		eval set -- "${Q_bwd}"
-	fi
-
-	# 第2パス: 切り取りリストを左から処理
 	for Q_qm in "${@}"; do
 		Q_next="${Q_str#${Q_qm}}"
-		Q_chunk=
-
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_str%"${Q_next}"}" || :
-
+		__sx_var_bind Q_bind "${Q_bind}" "${Q_str%"${Q_next}"}" || break
 		Q_str="${Q_next}"
 	done
 
