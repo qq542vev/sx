@@ -10728,11 +10728,11 @@ __sx_str_cycle() {
 		return
 	esac
 
-	case "${Q_shift}" in -*)
-		__sx_num_sub_nat0 Q_mod "${Q_len}" "${Q_mod}"
+	case "${Q_shift}" in
+		-*) __sx_str_chunk Q_tail:Q_head: "${2}" "${Q_mod}" 1 "${SX_STR_CHUNK_REVERSE}";;
+		*) __sx_str_chunk Q_head:Q_tail: "${2}" "${Q_mod}" 1;;
 	esac
 
-	__sx_str_chunk Q_head:Q_tail: "${2}" "${Q_mod}" 1
 	M_VAR_SET([|${1}|], [|${Q_tail}${Q_head}|])
 
 	unset CLEANUP
