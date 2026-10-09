@@ -12228,6 +12228,9 @@ __sx_str_rfind() {
 ##   指定された文字セット内で各文字をシフト量だけ移動させる暗号変換を行う。
 ##   デフォルトは ROT13（SX_STR_ALPHA を13シフト）。
 ##   シフト量が正の場合は前方に、負の場合は後方に移動する。
+##   空文字列以外のシフト量は先行ゼロなしの符号付き10進整数に限る。
+##   シフト量が省略された場合または空文字列の場合は 13 とする。
+##   元文字列長・文字セット長・シフト量に SX_CFG_NUM_RANGE による上限は設けない。
 ##   文字セットに含まれない文字はそのまま保持される。
 ##
 ##   使用例:
@@ -12238,7 +12241,6 @@ __sx_str_rfind() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_rot() {
@@ -12250,9 +12252,7 @@ sx_str_rot() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
-	__sx_num_is_int_safe_inv ${4:+"${4}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 ${4:+"${4}"} || return M_EX_USAGE
 
 	__sx_str_rot "${@}"
 }
@@ -12273,7 +12273,7 @@ __sx_str_rot() {
 
 	case '' in "${2}" | "${3}")
 		M_VAR_SET([|${1}|], [|${2}|])
-		return M_EX_OK
+		return
 	esac
 
 	__sx_str_cycle Q_rotated "${3}" "${4}"
