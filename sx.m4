@@ -10063,7 +10063,7 @@ define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 
 sx_str_any() {
 	Q_tgt="${1-}"
-	shift "$((0 < ${#}))"
+	${1+'shift'}
 
 	for Q_arg in "${@}"; do
 		case "${Q_tgt}" in "${Q_arg}")
@@ -10753,7 +10753,7 @@ define([|CLEANUP|], [|Q_first Q_arg|])dnl
 
 sx_str_eq() {
 	Q_first="${1-}"
-	shift "$((0 < ${#}))"
+	${1+'shift'}
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
@@ -10907,7 +10907,7 @@ define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 
 sx_str_ew() {
 	Q_tgt="${1-}"
-	shift "$((0 < ${#}))"
+	${1+'shift'}
 
 	for Q_arg in "${@}"; do
 		case "${Q_tgt}" in *"${Q_arg}")
@@ -11090,7 +11090,7 @@ define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 
 sx_str_has() {
 	Q_tgt="${1-}"
-	shift "$((0 < ${#}))"
+	${1+'shift'}
 
 	for Q_arg in "${@}"; do
 		case "${Q_tgt}" in *"${Q_arg}"*)
@@ -11677,7 +11677,7 @@ define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 
 sx_str_match() {
 	Q_tgt="${1-}"
-	shift "$((0 < ${#}))"
+	${1+'shift'}
 
 	for Q_arg in "${@}"; do
 		case "${Q_tgt}" in ${Q_arg})
@@ -13097,7 +13097,7 @@ define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
 
 sx_str_sw() {
 	Q_tgt="${1-}"
-	shift "$((0 < ${#}))"
+	${1+'shift'}
 
 	for Q_arg in "${@}"; do
 		case "${Q_tgt}" in "${Q_arg}"*)
