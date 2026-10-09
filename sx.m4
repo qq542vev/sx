@@ -10588,12 +10588,12 @@ __sx_str_count() {
 ##   元文字列を指定されたシフト量だけ左方向に循環シフトする。
 ##   シフト量が負の場合は右方向に循環シフトする。
 ##   例えば "ABCDE" を 2 シフトすると "CDEAB"、-1 シフトすると "EABCD" となる。
+##   シフト量は先行ゼロなしの符号付き10進整数で、算術域を超える値も扱う。
 ##   シフト量が文字列長を超える場合は、文字列長で割った余りを使用する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_cycle() {
@@ -10605,9 +10605,7 @@ sx_str_cycle() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
-	__sx_num_is_int_safe_inv ${3:+"${3}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 ${3:+"${3}"} || return M_EX_USAGE
 
 	__sx_str_cycle "${@}"
 }
@@ -10621,19 +10619,33 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_str_cycle の内部実装。引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_head Q_tail|])dnl
+define([|CLEANUP|], [|Q_head Q_tail Q_str Q_len Q_shift Q_mod|])dnl
 
 __sx_str_cycle() {
 	set -- "${1}" "${2-}" "${3:-1}"
-	set -- "${@}" "${#2}"
-	set -- "${1}" "${2}" "$((${3} % (${4} ? ${4} : 1)))" "${4}"
+	Q_str="${2-}"
+	Q_len="${#Q_str}"
+	Q_shift="${3:-1}"
 
-	case ${3} in 0)
+	case "${Q_str:+X}:${Q_shift}" in :* | *:0 | *:[+-]0)
 		M_VAR_SET([|${1}|], [|${2}|])
-		return M_EX_OK
+		unset CLEANUP
+		return
 	esac
 
-	__sx_str_chunk Q_head:Q_tail: "${2}" "$((0 < ${3} ? ${3} : ${3} + ${4}))" 1
+	__sx_num_divmod_nat0 :Q_mod: "${Q_shift#[+-]}" "${Q_len}"
+
+	case "${Q_mod}" in 0)
+		M_VAR_SET([|${1}|], [|${2}|])
+		unset CLEANUP
+		return
+	esac
+
+	case "${Q_shift}" in -*)
+		__sx_num_sub_nat0 Q_mod "${Q_len}" "${Q_mod}"
+	esac
+
+	__sx_str_chunk Q_head:Q_tail: "${2}" "${Q_mod}" 1
 	M_VAR_SET([|${1}|], [|${Q_tail}${Q_head}|])
 
 	unset CLEANUP

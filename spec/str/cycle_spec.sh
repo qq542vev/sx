@@ -25,6 +25,25 @@ Describe 'sx_str_cycle()'
         The variable res should equal "ABC"
     End
 
+    Context 'シフト量の境界値'
+        Parameters
+            '+0' 'ABCDE'
+            '-0' 'ABCDE'
+            '+2' 'CDEAB'
+            '-7' 'DEABC'
+            '10' 'ABCDE'
+            '-10' 'ABCDE'
+            '100000000000000000000000000000000000002' 'CDEAB'
+            '-100000000000000000000000000000000000002' 'DEABC'
+        End
+
+        It '符号付きゼロ・負数・算術域を超えるシフト量を処理する'
+            When call sx_str_cycle res 'ABCDE' "$1"
+            The status should be success
+            The variable res should equal "$2"
+        End
+    End
+
     It '1文字の文字列は変化しない'
         When call sx_str_cycle res "A" 3
         The variable res should equal "A"
