@@ -11612,9 +11612,7 @@ sx_str_lower() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
-	__sx_num_is_int_safe_inv ${3:+"${3}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 ${3:+"${3}"} || return M_EX_USAGE
 
 	__sx_str_lower "${@}"
 }
@@ -11627,7 +11625,7 @@ sx_str_lower() {
 ## 説明:
 ##   sx_str_lower の内部実装。引数チェックは行わない。
 __sx_str_lower() {
-	__sx_str_tr "${1}:" "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${3:-${SX_NUM_I32_MAX}}"
+	__sx_str_tr "${1}:" "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" ${3+"${3}"}
 }
 
 ### __sx_str_lower_cb - sx_str_lower 用コールバック（内部用）
@@ -13138,9 +13136,7 @@ sx_str_swapcase() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
-	__sx_num_is_int_safe_inv ${3:+"${3}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 ${3:+"${3}"} || return M_EX_USAGE
 
 	__sx_str_swapcase "${@}"
 }
@@ -13153,7 +13149,7 @@ sx_str_swapcase() {
 ## 説明:
 ##   sx_str_swapcase の内部実装。引数チェックは行わない。
 __sx_str_swapcase() {
-	__sx_str_tr "${1}:" "${2-}" "${SX_STR_UPPER}${SX_STR_LOWER}" "${SX_STR_LOWER}${SX_STR_UPPER}" "${3:-${SX_NUM_I32_MAX}}"
+	__sx_str_tr "${1}:" "${2-}" "${SX_STR_UPPER}${SX_STR_LOWER}" "${SX_STR_LOWER}${SX_STR_UPPER}" ${3+"${3}"}
 }
 
 ### sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する
@@ -13430,9 +13426,7 @@ sx_str_upper() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
-	__sx_num_is_int_safe_inv ${3:+"${3}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 ${3:+"${3}"} || return M_EX_USAGE
 
 	__sx_str_upper "${@}"
 }
@@ -13445,7 +13439,7 @@ sx_str_upper() {
 ## 説明:
 ##   sx_str_upper の内部実装。引数チェックは行わない。
 __sx_str_upper() {
-	__sx_str_tr "${1}:" "${2-}" "${SX_STR_LOWER}" "${SX_STR_UPPER}" "${3:-${SX_NUM_I32_MAX}}"
+	__sx_str_tr "${1}:" "${2-}" "${SX_STR_LOWER}" "${SX_STR_UPPER}" ${3+"${3}"}
 }
 
 ### __sx_str_upper_cb - sx_str_upper 用コールバック（内部用）
