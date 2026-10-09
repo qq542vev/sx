@@ -10338,7 +10338,7 @@ M_RENAME_Q([|dnl
 ##   長さは 1:-2:3 のようにコロン区切りで指定でき、順番に繰り返す。
 ##   周期内の 0 は空チャンクを生成するが、全項目が 0 の指定はできない。
 ##   長さは任意桁の符号付き10進整数、分割回数は任意桁の符号なし10進整数。
-##   先行する 0、8進・16進表記は受け付けない。回数の省略時・空指定時は SX_NUM_I32_MAX。
+##   先行する 0、8進・16進表記は受け付けない。回数の省略時・空指定時は回数制限なし。
 ##
 ##   スキーマ (第一引数) には、単一の変数名またはバインドチェーン (v1:v2:rest) を指定できる。
 ##   - 単一変数名: 各要素をシングルクォートで囲み、スペース区切りで結合した文字列を格納する。
@@ -10420,11 +10420,12 @@ __sx_str_chunk() {
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
 	Q_str="${2-}"
-	Q_cycle="${3:-1}:"
-	Q_lim="${4:-${SX_NUM_I32_MAX}}"
-	Q_flg="${5:-0}"
 	Q_len="${#Q_str}"
-	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len}" "${Q_lim}"; then
+	Q_cycle="${3:-1}:"
+	Q_lim="${4-}"
+	Q_flg="${5:-0}"
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len}" ${Q_lim:+"${Q_lim}"}; then
 		Q_type=arith
 	else
 		Q_type=nat0
@@ -10468,10 +10469,13 @@ __sx_str_chunk() {
 					case "${Q_cmp}:${Q_lim}" in 1:* | *:0)
 						break 2
 					esac
+
+					case "${Q_lim:+X}" in X)
+						"__sx_num_sub_${Q_type}" Q_lim "${Q_lim}" 1
+					esac
 					;;
 				*)
 					"__sx_num_sub_${Q_type}" Q_len "${Q_len}" "${Q_abs}"
-					"__sx_num_sub_${Q_type}" Q_lim "${Q_lim}" 1
 
 					case "${Q_prev}" in
 						-*)
@@ -13148,14 +13152,13 @@ __sx_str_title_cb() {
 ##   to に含まれない位置の文字（from が to より長い場合の超過分）は削除する。
 ##   to が from より長い場合、余剰の to の文字は無視される。
 ##   from に同一文字が複数ある場合、最初の出現位置が使用される。
-##   limit で最大置換回数を指定できる。デフォルトは SX_NUM_I32_MAX（無制限）。
+##   limit で最大置換回数を指定できる。省略時は元文字列長（全置換）。
 ##   0 を指定すると置換を行わない。
 ##   負の値を指定すると末尾から置換する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_tr() {
@@ -13167,9 +13170,7 @@ sx_str_tr() {
 
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
-	__sx_num_is_int_safe_inv ${5:+"${5}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 ${5:+"${5}"} || return M_EX_USAGE
 
 	__sx_str_tr "${@}"
 }
@@ -13184,65 +13185,85 @@ M_RENAME_QI([|dnl
 ##   sx_str_tr の内部実装。引数チェックは行わない。
 ##   バインド形式で置換結果と置換回数を取得できる。
 ##   例: res:（結果のみ）、res:cnt:（結果と回数）
+##   limit は符号付き10進整数（先行ゼロなし）を前提とする。
+##   文字列長・from/to の長さ・limit の絶対値が算術域内なら算術、
+##   それ以外は多倍長で回数と添字を処理する。
+##
+## 終了ステータス:
+##   0  成功 (SX_EX_OK)
 
-define([|CLEANUP|], [|Q_bind Q_str Q_from Q_to Q_out Q_lim Q_cnt Q_pre Q_suf Q_from_pre Q_idx|])dnl
+define([|CLEANUP|], [|Q_bind Q_str Q_from Q_to Q_out Q_lim Q_cnt Q_pre Q_suf Q_from_pre Q_idx Q_type Q_abs Q_n|])dnl
 
 __sx_str_tr() {
-	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}"
-
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
-	Q_str="${2}"
-	Q_from="${3}"
+	Q_str="${2-}"
+	Q_from="${3-}"
 	Q_out=
-	Q_lim="${5:-${SX_NUM_I32_MAX}}"
+	Q_lim="${5:-${#Q_str}}"
+	Q_abs="${Q_lim#[+-]}"
 	Q_cnt=0
 
-	case "${3:+X}" in
-		'') __sx_var_bind '' "${Q_bind}" "${Q_str}" "${Q_cnt}";;
+	case "${Q_str:+X}${Q_from:+X}" in '' | X)
+		__sx_var_bind '' "${Q_bind}" "${Q_str}" "${Q_cnt}" || :
+		unset CLEANUP
+		return
+	esac
+
+	__sx_str_chunk Q_to "${4-}" 1
+	eval set -- "${Q_to}"
+	Q_n="${#}"
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#Q_str}" "${#Q_from}" "${Q_n}" "${Q_abs}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+
+	case "${Q_lim}" in
+		-*)
+			while M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_abs}"|]); do
+				Q_suf="${Q_str##*["${Q_from}"]}"
+				Q_str="${Q_str%"${Q_suf}"}"
+				Q_pre="${Q_str%?}"
+				Q_from_pre="${Q_from%%"${Q_str#"${Q_pre}"}"*}"
+				Q_idx="${#Q_from_pre}"
+
+				"__sx_num_cmp_${Q_type}" "${Q_idx}" "${Q_n}" || case "${?}" in
+					1)
+						"__sx_num_add_${Q_type}" Q_idx "${Q_idx}" 1
+						eval "Q_out=\"\${${Q_idx}}\${Q_suf}\${Q_out}\""
+						;;
+					*) M_STR_PREPEND([|Q_out|], [|"${Q_suf}"|]);;
+				esac
+
+				Q_str="${Q_pre}"
+				"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
+			done
+
+			__sx_var_bind '' "${Q_bind}" "${Q_str}${Q_out}" "${Q_cnt}"
+			;;
 		*)
-			__sx_str_chunk Q_to "${4}" 1
-			eval set -- "${Q_to}"
+			while M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_abs}"|]); do
+				Q_pre="${Q_str%%["${Q_from}"]*}"
+				Q_str="${Q_str#"${Q_pre}"}"
+				Q_suf="${Q_str#?}"
+				Q_from_pre="${Q_from%%"${Q_str%"${Q_suf}"}"*}"
+				Q_idx="${#Q_from_pre}"
 
-			if M_NUM_LT([|Q_lim|], [|0|]); then
-				Q_lim="${Q_lim#-}"
+				"__sx_num_cmp_${Q_type}" "${Q_idx}" "${Q_n}" || case "${?}" in
+					1)
+						"__sx_num_add_${Q_type}" Q_idx "${Q_idx}" 1
+						eval "Q_out=\"\${Q_out}\${Q_pre}\${${Q_idx}}\""
+						;;
+					*) M_STR_APPEND([|Q_out|], [|"${Q_pre}"|]);;
+				esac
 
-				while M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
-					Q_suf="${Q_str##*["${Q_from}"]}"
-					Q_str="${Q_str%"${Q_suf}"}"
-					Q_pre="${Q_str%?}"
-					Q_from_pre="${Q_from%%"${Q_str#"${Q_pre}"}"*}"
-					Q_idx="${#Q_from_pre}"
+				Q_str="${Q_suf}"
+				"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
+			done
 
-					case "$((Q_idx < ${#}))" in
-						1) eval "Q_out=\"\${$((${Q_idx} + 1))}\${Q_suf}\${Q_out}\"";;
-						*) M_STR_PREPEND([|Q_out|], [|"${Q_suf}"|]);;
-					esac
-
-					Q_str="${Q_pre}"
-					M_NUM_INCR([|Q_cnt|])
-				done
-
-				__sx_var_bind '' "${Q_bind}" "${Q_str}${Q_out}" "${Q_cnt}"
-			else
-				while M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
-					Q_pre="${Q_str%%["${Q_from}"]*}"
-					Q_str="${Q_str#"${Q_pre}"}"
-					Q_suf="${Q_str#?}"
-					Q_from_pre="${Q_from%%"${Q_str%"${Q_suf}"}"*}"
-					Q_idx="${#Q_from_pre}"
-
-					case "$((Q_idx < ${#}))" in
-						1) eval "Q_out=\"\${Q_out}\${Q_pre}\${$((${Q_idx} + 1))}\"";;
-						*) M_STR_APPEND([|Q_out|], [|"${Q_pre}"|]);;
-					esac
-
-					Q_str="${Q_suf}"
-					M_NUM_INCR([|Q_cnt|])
-				done
-
-				__sx_var_bind '' "${Q_bind}" "${Q_out}${Q_str}" "${Q_cnt}"
-			fi
+			__sx_var_bind '' "${Q_bind}" "${Q_out}${Q_str}" "${Q_cnt}"
 			;;
 	esac || :
 
