@@ -10456,30 +10456,10 @@ __sx_str_chunk() {
 
 	# for の明示的な反復リストと、後方の予約パターン用の位置パラメータは独立する。
 	set --
-	eval 'while :; do
+	eval 'while
 		for Q_arg in '"${Q_qms}"'; do
 			case "${Q_arg}" in
-				"" | \?*)
-					Q_qm="${Q_arg}"
-					__sx_num_sub_${Q_type} Q_len "${Q_len}" "${Q_abs}"
-					__sx_num_sub_${Q_type} Q_lim "${Q_lim}" 1
-
-					case "${Q_prev}" in
-						-*)
-							set -- "${Q_qm}" "${@}"
-							continue
-							;;
-						*)
-							Q_next="${Q_str#${Q_qm}}"
-							__sx_var_bind Q_bind "${Q_bind}" "${Q_str%"${Q_next}"}" || {
-								unset CLEANUP
-								return
-							}
-							;;
-					esac
-					Q_str="${Q_next}"
-					;;
-				*)
+				[0-9+-]*)
 					Q_prev="${Q_arg}"
 					Q_abs="${Q_prev#[+-]}"
 					# 長さ 0 は、文字列が空でも空チャンクを生成する。
@@ -10489,9 +10469,31 @@ __sx_str_chunk() {
 						break 2
 					esac
 					;;
+				*)
+					__sx_num_sub_${Q_type} Q_len "${Q_len}" "${Q_abs}"
+					__sx_num_sub_${Q_type} Q_lim "${Q_lim}" 1
+
+					case "${Q_prev}" in
+						-*)
+							set -- "${Q_arg}" "${@}"
+							continue
+							;;
+						*)
+							Q_next="${Q_str#${Q_arg}}"
+							__sx_var_bind Q_bind "${Q_bind}" "${Q_str%%"${Q_next}"}" || {
+								unset CLEANUP
+								return
+							}
+							;;
+					esac
+
+					Q_str="${Q_next}"
+					;;
 			esac
 		done
-	done'
+
+		continue
+	do :; done'
 
 	# 中央の余りを先に取り出す。予約がなければ Q_str 全体が余りである。
 	case "${Q_len}" in [1-9]*)
@@ -10500,25 +10502,24 @@ __sx_str_chunk() {
 			*)
 				__sx_str_qm Q_qm "${Q_len}"
 				Q_next="${Q_str#${Q_qm}}"
-				Q_chunk="${Q_str%"${Q_next}"}"
+				Q_chunk="${Q_str%%"${Q_next}"}"
 				;;
 		esac
 
-		case "${Q_cmp}:$((Q_flg & SX_STR_CHUNK_SKIP_SHORT)):$((Q_flg & SX_STR_CHUNK_SKIP_LONG))" in
-			1:0:* | 2:* | 3:*:0)
-				__sx_var_bind Q_bind "${Q_bind}" "${Q_chunk}" || {
-					unset CLEANUP
-					return
-				}
-				;;
+		case "${Q_cmp}:$((Q_flg & SX_STR_CHUNK_SKIP_SHORT)):$((Q_flg & SX_STR_CHUNK_SKIP_LONG))" in 1:0:* | 2:* | 3:*:0)
+			__sx_var_bind Q_bind "${Q_bind}" "${Q_chunk}" || {
+				unset CLEANUP
+				return
+			}
 		esac
+
 		# 余りをスキップした場合も、予約分の先頭まで進める。
 		Q_str="${Q_next}"
 	esac
 
 	for Q_qm in "${@}"; do
 		Q_next="${Q_str#${Q_qm}}"
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_str%"${Q_next}"}" || break
+		__sx_var_bind Q_bind "${Q_bind}" "${Q_str%%"${Q_next}"}" || break
 		Q_str="${Q_next}"
 	done
 
