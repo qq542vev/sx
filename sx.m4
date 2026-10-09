@@ -196,6 +196,7 @@ readonly SX_STR_COUNT_GLOB=1
 readonly SX_STR_COUNT_OVERLAP=2
 readonly SX_STR_CHUNK_SKIP_SHORT=1
 readonly SX_STR_CHUNK_SKIP_LONG=2
+readonly SX_STR_CHUNK_REVERSE=4
 
 # 数値定数 (8bit / 16bit / 32bit / 64bit / 128bit 整数限界)
 readonly SX_NUM_I8_MAX=127
@@ -10332,7 +10333,10 @@ M_RENAME_Q([|dnl
 ##
 ## 説明:
 ##   指定された文字列を、指定された長さ（文字数）ごとに区切る。
-##   長さが正の場合は前方から、負の場合は後方から区切る。
+##   長さが正の場合は基準方向から、負の場合はその逆方向から区切る。
+##   通常の基準方向は前方で、結果も前方からの順序で格納する。
+##   SX_STR_CHUNK_REVERSE 指定時は基準方向と結果の順序を後方に切り替える。
+##   チャンク内部の文字順は保持する。
 ##   分割回数が指定された場合、最大でその回数分だけ分割を行う。
 ##   長さの省略時または空文字列指定時は 1 とする。単独の 0 はエラー (SX_EX_USAGE)。
 ##   長さは 1:-2:3 のようにコロン区切りで指定でき、順番に繰り返す。
@@ -10351,9 +10355,11 @@ M_RENAME_Q([|dnl
 ##   格納される値およびクォート結合される文字列は、メタ文字が適切にエスケープされており、
 ##   eval 等を用いて安全に位置パラメータとして復元できる。
 ##
-##   フラグ (第五引数) には SX_STR_CHUNK_SKIP_SHORT / SX_STR_CHUNK_SKIP_LONG
-##   をビットマスクで指定する。指定された条件に該当する残余チャンクは
-##   結果に含めずスキップする。
+##   フラグ (第五引数) はビットマスクで指定する。
+##   SX_STR_CHUNK_SKIP_SHORT / SX_STR_CHUNK_SKIP_LONG は、指定された条件に該当する
+##   残余チャンクを結果に含めずスキップする。
+##   SX_STR_CHUNK_REVERSE は基準方向と結果の順序を後方に切り替える。
+##   例: abcde を長さ 2 で分割すると de, bc, a、長さ -2 では e, cd, ab。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -10405,9 +10411,10 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_str_chunk の内部実装。引数チェックは行わない。
 ##   長さと ? パターンの交互リストを一度だけ構築し、周期的に反復する。
-##   前方チャンクは即座にバインドし、後方分は ? パターンを位置パラメータに逆順で予約する。
-##   Q_str は未切り取りの文字列、Q_len は後方の予約分を除いた未割り当て文字数。
-##   終了後に中央の余りを処理し、予約したパターンで左から順に切り取る。
+##   基準方向のチャンクは即座にバインドし、逆方向分は ? パターンを位置パラメータに逆順で予約する。
+##   Q_str は未切り取りの文字列、Q_len は予約分を除いた未割り当て文字数。
+##   終了後に中央の余りを処理し、予約したパターンで基準方向から順に切り取る。
+##   通常と REVERSE はループ・余り・予約分の処理を分岐し、切り取り方向を反転する。
 ##   長さは符号付き、回数は符号なしの10進整数（先行ゼロなし）を前提とする。
 ##   文字列長・回数・各指定長の絶対値が算術域内なら高速経路、それ以外は多倍長で処理する。
 ##
@@ -10455,77 +10462,153 @@ __sx_str_chunk() {
 		M_STR_APPEND([|Q_qms|], [|" ${Q_cur} '${Q_qm}'"|])
 	done
 
-	# for の明示的な反復リストと、後方の予約パターン用の位置パラメータは独立する。
+	# for の明示的な反復リストと、逆方向の予約パターン用の位置パラメータは独立する。
 	set --
-	eval 'while
-		for Q_arg in '"${Q_qms}"'; do
-			case "${Q_arg}" in
-				[0-9+-]*)
-					Q_prev="${Q_arg}"
-					Q_abs="${Q_prev#[+-]}"
-					# 長さ 0 は、文字列が空でも空チャンクを生成する。
-					"__sx_num_cmp_${Q_type}" "${Q_len}" "${Q_abs}" || Q_cmp="${?}"
 
-					case "${Q_cmp}:${Q_lim}" in 1:* | *:0)
-						break 2
-					esac
+	case "$((Q_flg & SX_STR_CHUNK_REVERSE))" in
+		0)
+			eval 'while
+				for Q_arg in '"${Q_qms}"'; do
+					case "${Q_arg}" in
+						[0-9+-]*)
+							Q_prev="${Q_arg}"
+							Q_abs="${Q_prev#[+-]}"
+							# 長さ 0 は、文字列が空でも空チャンクを生成する。
+							"__sx_num_cmp_${Q_type}" "${Q_len}" "${Q_abs}" || Q_cmp="${?}"
 
-					case "${Q_lim:+X}" in X)
-						"__sx_num_sub_${Q_type}" Q_lim "${Q_lim}" 1
-					esac
-					;;
-				*)
-					"__sx_num_sub_${Q_type}" Q_len "${Q_len}" "${Q_abs}"
+							case "${Q_cmp}:${Q_lim}" in 1:* | *:0)
+								break 2
+							esac
 
-					case "${Q_prev}" in
-						-*)
-							set -- "${Q_arg}" "${@}"
-							continue
+							case "${Q_lim:+X}" in X)
+								"__sx_num_sub_${Q_type}" Q_lim "${Q_lim}" 1
+							esac
 							;;
 						*)
-							Q_next="${Q_str#${Q_arg}}"
-							__sx_var_bind Q_bind "${Q_bind}" "${Q_str%%"${Q_next}"}" || {
-								unset CLEANUP
-								return
-							}
+							"__sx_num_sub_${Q_type}" Q_len "${Q_len}" "${Q_abs}"
+
+							case "${Q_prev}" in
+								-*)
+									set -- "${Q_arg}" "${@}"
+									continue
+									;;
+								*)
+									Q_next="${Q_str#${Q_arg}}"
+									__sx_var_bind Q_bind "${Q_bind}" "${Q_str%%"${Q_next}"}" || {
+										unset CLEANUP
+										return
+									}
+									;;
+							esac
+
+							Q_str="${Q_next}"
 							;;
 					esac
+				done
 
-					Q_str="${Q_next}"
-					;;
+				continue
+			do :; done'
+
+			# 中央の余りを先に取り出す。予約がなければ Q_str 全体が余りである。
+			case "${Q_len}" in [1-9]*)
+				case "${#}" in
+					0) Q_next='' Q_chunk="${Q_str}";;
+					*)
+						__sx_str_qm Q_qm "${Q_len}"
+						Q_next="${Q_str#${Q_qm}}"
+						Q_chunk="${Q_str%%"${Q_next}"}"
+						;;
+				esac
+
+				case "${Q_cmp}:$((Q_flg & SX_STR_CHUNK_SKIP_SHORT)):$((Q_flg & SX_STR_CHUNK_SKIP_LONG))" in 1:0:* | 2:* | 3:*:0)
+					__sx_var_bind Q_bind "${Q_bind}" "${Q_chunk}" || {
+						unset CLEANUP
+						return
+					}
+				esac
+
+				# 余りをスキップした場合も、予約分の先頭まで進める。
+				Q_str="${Q_next}"
 			esac
-		done
 
-		continue
-	do :; done'
-
-	# 中央の余りを先に取り出す。予約がなければ Q_str 全体が余りである。
-	case "${Q_len}" in [1-9]*)
-		case "${#}" in
-			0) Q_next='' Q_chunk="${Q_str}";;
-			*)
-				__sx_str_qm Q_qm "${Q_len}"
+			for Q_qm in "${@}"; do
 				Q_next="${Q_str#${Q_qm}}"
-				Q_chunk="${Q_str%%"${Q_next}"}"
-				;;
-		esac
+				__sx_var_bind Q_bind "${Q_bind}" "${Q_str%%"${Q_next}"}" || break
+				Q_str="${Q_next}"
+			done
+			;;
+		*)
+			eval 'while
+				for Q_arg in '"${Q_qms}"'; do
+					case "${Q_arg}" in
+						[0-9+-]*)
+							Q_prev="${Q_arg}"
+							Q_abs="${Q_prev#[+-]}"
+							# 長さ 0 は、文字列が空でも空チャンクを生成する。
+							"__sx_num_cmp_${Q_type}" "${Q_len}" "${Q_abs}" || Q_cmp="${?}"
 
-		case "${Q_cmp}:$((Q_flg & SX_STR_CHUNK_SKIP_SHORT)):$((Q_flg & SX_STR_CHUNK_SKIP_LONG))" in 1:0:* | 2:* | 3:*:0)
-			__sx_var_bind Q_bind "${Q_bind}" "${Q_chunk}" || {
-				unset CLEANUP
-				return
-			}
-		esac
+							case "${Q_cmp}:${Q_lim}" in 1:* | *:0)
+								break 2
+							esac
 
-		# 余りをスキップした場合も、予約分の先頭まで進める。
-		Q_str="${Q_next}"
+							case "${Q_lim:+X}" in X)
+								"__sx_num_sub_${Q_type}" Q_lim "${Q_lim}" 1
+							esac
+							;;
+						*)
+							"__sx_num_sub_${Q_type}" Q_len "${Q_len}" "${Q_abs}"
+
+							case "${Q_prev}" in
+								-*)
+									set -- "${Q_arg}" "${@}"
+									continue
+									;;
+								*)
+									Q_next="${Q_str%${Q_arg}}"
+									__sx_var_bind Q_bind "${Q_bind}" "${Q_str##"${Q_next}"}" || {
+										unset CLEANUP
+										return
+									}
+									;;
+							esac
+
+							Q_str="${Q_next}"
+							;;
+					esac
+				done
+
+				continue
+			do :; done'
+
+			# 中央の余りを先に取り出す。予約がなければ Q_str 全体が余りである。
+			case "${Q_len}" in [1-9]*)
+				case "${#}" in
+					0) Q_next='' Q_chunk="${Q_str}";;
+					*)
+						__sx_str_qm Q_qm "${Q_len}"
+						Q_next="${Q_str%${Q_qm}}"
+						Q_chunk="${Q_str##"${Q_next}"}"
+						;;
+				esac
+
+				case "${Q_cmp}:$((Q_flg & SX_STR_CHUNK_SKIP_SHORT)):$((Q_flg & SX_STR_CHUNK_SKIP_LONG))" in 1:0:* | 2:* | 3:*:0)
+					__sx_var_bind Q_bind "${Q_bind}" "${Q_chunk}" || {
+						unset CLEANUP
+						return
+					}
+				esac
+
+				# 余りをスキップした場合も、予約分の末尾まで進める。
+				Q_str="${Q_next}"
+			esac
+
+			for Q_qm in "${@}"; do
+				Q_next="${Q_str%${Q_qm}}"
+				__sx_var_bind Q_bind "${Q_bind}" "${Q_str##"${Q_next}"}" || break
+				Q_str="${Q_next}"
+			done
+			;;
 	esac
-
-	for Q_qm in "${@}"; do
-		Q_next="${Q_str#${Q_qm}}"
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_str%%"${Q_next}"}" || break
-		Q_str="${Q_next}"
-	done
 
 	unset CLEANUP
 }
