@@ -5,6 +5,25 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_str_substr()'
   Include ./sx.sh
 
+  Context 'IFS=a での動的な数値関数呼び出し'
+    # shellcheck disable=SC2329
+    with_ifs_a() { IFS=a "${@}"; }
+    Before 'sx_cfg_set NUM_RANGE=32'
+
+    Parameters
+      '-8' '5'
+      '-2147483648' '2147483645'
+    End
+
+    It '算術・多倍長経路で負のオフセットと長さを補正できること'
+      When call with_ifs_a sx_str_substr res 'abcdef' "$1" "$2"
+      The status should be success
+      The variable res should equal 'abc'
+      The stderr should equal ''
+    End
+  End
+
+
   BeforeRun 'PATH=""'
 
   It '文字列の中間から部分文字列を抽出すること'

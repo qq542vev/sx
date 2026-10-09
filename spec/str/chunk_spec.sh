@@ -5,6 +5,25 @@ eval "$(shellspec - -c) exit 1"
 Describe "sx_str_chunk"
   Include ./sx.sh
 
+  Context 'IFS=a での動的な数値関数呼び出し'
+    # shellcheck disable=SC2329
+    with_ifs_a() { IFS=a "${@}"; }
+    Before 'sx_cfg_set NUM_RANGE=32'
+
+    Parameters
+      '2' "'ab' 'cdef' 'g'"
+      '2147483648' "'ab' 'cd' 'e' 'f' 'g'"
+    End
+
+    It '算術・多倍長経路で前後のチャンクを分割できること'
+      When call with_ifs_a sx_str_chunk res 'abcdefg' '2:-1' "$1"
+      The status should be success
+      The variable res should equal "$2"
+      The stderr should equal ''
+    End
+  End
+
+
   It "正の長さで文字列を前方から分割すること"
     When call sx_str_chunk res "abcde" 2
     The status should be success

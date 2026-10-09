@@ -19,6 +19,30 @@ Describe 'sx_str_center'
     }
   }
 
+  Context 'IFS=a での動的な数値関数呼び出し'
+    # shellcheck disable=SC2329
+    with_ifs_a() { IFS=a "${@}"; }
+
+    It '算術経路で中央寄せできること'
+      When call with_ifs_a sx_str_center res 'A' 6 'ab' 'xyz'
+      The status should be success
+      The variable res should equal 'abAxyz'
+      The stderr should equal ''
+    End
+
+    It '多倍長経路で幅を配分できること'
+      sx_cfg_set NUM_RANGE=32
+      record_center_sizes
+      When call with_ifs_a sx_str_center res 'A' -2147483648 'ab' 'xyz'
+      The status should be success
+      The variable center_slices should equal '1073741824 1073741823'
+      The variable center_repeats should equal '536870912 357913941'
+      The variable res should equal 'A'
+      The stderr should equal ''
+    End
+  End
+
+
   It '正の長さで中央寄せし、余りを右側に振ること (A 4 = -> =A==)'
     When call sx_str_center res "A" 4 "="
     The variable res should equal "=A=="

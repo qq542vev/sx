@@ -10285,32 +10285,32 @@ __sx_str_center() {
 		Q_type=nat0
 	fi
 
-	__sx_num_cmp_${Q_type} "${Q_needed}" "${Q_slen}" || case "${?}" in [12])
+	"__sx_num_cmp_${Q_type}" "${Q_needed}" "${Q_slen}" || case "${?}" in [12])
 		M_VAR_SET([|${1}|], [|${2}|])
 		unset CLEANUP
 		return
 	esac
 
-	__sx_num_sub_${Q_type} Q_needed "${Q_needed}" "${Q_slen}"
+	"__sx_num_sub_${Q_type}" Q_needed "${Q_needed}" "${Q_slen}"
 	# Q_cnt は長い側の文字数。先に1を加算せず、切り上げ除算で求める。
-	__sx_num_divceil_${Q_type} Q_cnt "${Q_needed}" 2
+	"__sx_num_divceil_${Q_type}" Q_cnt "${Q_needed}" 2
 
 	case "${3}" in
 		-*) Q_lpad="${Q_cnt}";;
-		*) __sx_num_sub_${Q_type} Q_lpad "${Q_needed}" "${Q_cnt}";;
+		*) "__sx_num_sub_${Q_type}" Q_lpad "${Q_needed}" "${Q_cnt}";;
 	esac
 
-	__sx_num_sub_${Q_type} Q_rpad "${Q_needed}" "${Q_lpad}"
+	"__sx_num_sub_${Q_type}" Q_rpad "${Q_needed}" "${Q_lpad}"
 
 	case "${4:+X}" in X)
-		__sx_num_divceil_${Q_type} Q_cnt "${Q_cnt}" "${Q_llen}"
+		"__sx_num_divceil_${Q_type}" Q_cnt "${Q_cnt}" "${Q_llen}"
 		__sx_str_rep Q_lrep "${4}" "${Q_cnt}"
 	esac
 
 	case "${5}" in
 		"${4}") Q_rrep="${Q_lrep}";;
 		?*)
-			__sx_num_divceil_${Q_type} Q_cnt "${Q_rpad}" "${Q_rlen}"
+			"__sx_num_divceil_${Q_type}" Q_cnt "${Q_rpad}" "${Q_rlen}"
 			__sx_str_rep Q_rrep "${5}" "${Q_cnt}"
 			;;
 	esac
@@ -10447,7 +10447,7 @@ __sx_str_chunk() {
 		esac
 
 		Q_qm=
-		__sx_num_cmp_${Q_type} "${Q_abs}" "${Q_len}" || case "${?}" in [12])
+		"__sx_num_cmp_${Q_type}" "${Q_abs}" "${Q_len}" || case "${?}" in [12])
 			__sx_str_qm Q_qm "${Q_abs}"
 		esac
 
@@ -10463,15 +10463,15 @@ __sx_str_chunk() {
 					Q_prev="${Q_arg}"
 					Q_abs="${Q_prev#[+-]}"
 					# 長さ 0 は、文字列が空でも空チャンクを生成する。
-					__sx_num_cmp_${Q_type} "${Q_len}" "${Q_abs}" || Q_cmp="${?}"
+					"__sx_num_cmp_${Q_type}" "${Q_len}" "${Q_abs}" || Q_cmp="${?}"
 
 					case "${Q_cmp}:${Q_lim}" in 1:* | *:0)
 						break 2
 					esac
 					;;
 				*)
-					__sx_num_sub_${Q_type} Q_len "${Q_len}" "${Q_abs}"
-					__sx_num_sub_${Q_type} Q_lim "${Q_lim}" 1
+					"__sx_num_sub_${Q_type}" Q_len "${Q_len}" "${Q_abs}"
+					"__sx_num_sub_${Q_type}" Q_lim "${Q_lim}" 1
 
 					case "${Q_prev}" in
 						-*)
@@ -11677,14 +11677,14 @@ __sx_str_pad() {
 	fi
 
 	# 減算前に比較し、被減数が減数未満になる場合はそのまま返す。
-	__sx_num_cmp_${Q_type} "${Q_needed}" "${Q_slen}" || case "${?}" in [12])
+	"__sx_num_cmp_${Q_type}" "${Q_needed}" "${Q_slen}" || case "${?}" in [12])
 		M_VAR_SET([|${1}|], [|${2}|])
 		unset CLEANUP
 		return
 	esac
 
-	__sx_num_sub_${Q_type} Q_needed "${Q_needed}" "${Q_slen}"
-	__sx_num_divceil_${Q_type} Q_cnt "${Q_needed}" "${Q_plen}"
+	"__sx_num_sub_${Q_type}" Q_needed "${Q_needed}" "${Q_slen}"
+	"__sx_num_divceil_${Q_type}" Q_cnt "${Q_needed}" "${Q_plen}"
 	__sx_str_rep Q_rep "${4}" "${Q_cnt}"
 	__sx_str_substr Q_fill "${Q_rep}" 0 "${Q_needed}"
 
@@ -12946,23 +12946,23 @@ __sx_str_substr() {
 	case "${Q_off}" in
 		0 | [+-]0) ;;
 		-*)
-			__sx_num_cmp_${Q_type} "${Q_off_abs}" "${#Q_str}" || case "${?}${4-}" in
+			"__sx_num_cmp_${Q_type}" "${Q_off_abs}" "${#Q_str}" || case "${?}${4-}" in
 				1*)
 					__sx_str_qm Q_qm "${Q_off_abs}"
 					Q_str="${Q_str#"${Q_str%${Q_qm}}"}"
 					;;
 				3[!-]*)
 					# 先頭より前の文字数を、明示された非負の長さから除く。
-					__sx_num_sub_${Q_type} Q_off_abs "${Q_off_abs}" "${#Q_str}"
-					__sx_num_cmp_${Q_type} "${Q_len_abs}" "${Q_off_abs}" || case "${?}" in
-						3) __sx_num_sub_${Q_type} Q_len_abs "${Q_len_abs}" "${Q_off_abs}";;
+					"__sx_num_sub_${Q_type}" Q_off_abs "${Q_off_abs}" "${#Q_str}"
+					"__sx_num_cmp_${Q_type}" "${Q_len_abs}" "${Q_off_abs}" || case "${?}" in
+						3) "__sx_num_sub_${Q_type}" Q_len_abs "${Q_len_abs}" "${Q_off_abs}";;
 						*) Q_len_abs=0;;
 					esac
 					;;
 			esac
 			;;
 		*)
-			__sx_num_cmp_${Q_type} "${Q_off_abs}" "${#Q_str}" || case "${?}" in
+			"__sx_num_cmp_${Q_type}" "${Q_off_abs}" "${#Q_str}" || case "${?}" in
 				1)
 					__sx_str_qm Q_qm "${Q_off_abs}"
 					Q_str="${Q_str#${Q_qm}}"
@@ -12972,7 +12972,7 @@ __sx_str_substr() {
 			;;
 	esac
 
-	__sx_num_cmp_${Q_type} "${Q_len_abs}" "${#Q_str}" || case "${?}${Q_len}" in
+	"__sx_num_cmp_${Q_type}" "${Q_len_abs}" "${#Q_str}" || case "${?}${Q_len}" in
 		1-*)
 			__sx_str_qm Q_qm "${Q_len_abs}"
 			Q_str="${Q_str%${Q_qm}}"

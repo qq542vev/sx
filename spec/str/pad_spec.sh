@@ -4,6 +4,30 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_str_pad'
   Include ./sx.sh
 
+  Context 'IFS=a での動的な数値関数呼び出し'
+    # shellcheck disable=SC2329
+    with_ifs_a() { IFS=a "${@}"; }
+
+    It '算術経路で文字列を埋められること'
+      When call with_ifs_a sx_str_pad res 'A' 6 'xyz'
+      The status should be success
+      The variable res should equal 'xyzxyA'
+      The stderr should equal ''
+    End
+
+    It '多倍長経路で繰り返し回数を求められること'
+      sx_cfg_set NUM_RANGE=32
+      # 巨大な文字列の生成だけを置き換え、数値演算は実行する。
+      __sx_str_rep() { pad_repeat_count="${3}"; eval "${1}="; }
+      When call with_ifs_a sx_str_pad res 'A' 2147483648 'xyz'
+      The status should be success
+      The variable pad_repeat_count should equal '715827883'
+      The variable res should equal 'A'
+      The stderr should equal ''
+    End
+  End
+
+
   It '正の長さで左側に埋めること (A 3 = -> ==A)'
     When call sx_str_pad res "A" 3 "="
     The variable res should equal "==A"
