@@ -11012,7 +11012,7 @@ __sx_str_find() {
 			case "${Q_text}" in
 				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:0";;
 				*) __sx_var_bind Q_bind "${Q_bind}" '';;
-			esac || :
+			esac || break
 
 			case "${Q_off}" in "${Q_len}")
 				break
@@ -11037,7 +11037,7 @@ __sx_str_find() {
 			case "${Q_text}" in
 				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:${Q_len}";;
 				*) __sx_var_bind Q_bind "${Q_bind}" "${Q_match}";;
-			esac || :
+			esac || break
 
 			case "${Q_overlap}" in
 				0)
@@ -11063,7 +11063,7 @@ __sx_str_find() {
 			case "${Q_text}" in
 				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:${Q_len}";;
 				*) __sx_var_bind Q_bind "${Q_bind}" "${3}";;
-			esac || :
+			esac || break
 
 			case "${Q_overlap}" in
 				0)
