@@ -5,6 +5,64 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_str_rfind'
 	Include ./sx.sh
 
+	Context '多倍長経路の境界位置'
+		Parameters
+			0 '' '3:0 2:0 1:0 0:0'
+			1 '*' '3:0 2:0 1:0 0:0'
+			4 '' "'' '' '' ''"
+			5 '*' "'' '' '' ''"
+		End
+
+		It '算術経路を使わずに末尾から位置0まで検索できること'
+			# 巨大な文字列を作らず、rfind の経路判定を多倍長側に固定する。
+			__sx_num_is_int_fit_dec() {
+				case "${#}:${2-}" in 2:3) return 1;; esac
+				return 0
+			}
+			__sx_num_sub_arith() { return 64; }
+			When call sx_str_rfind res abc "$2" "$1"
+			The status should be success
+			The variable res should equal "$3"
+		End
+	End
+
+	It '多倍長経路でも空文字列の位置0を返すこと'
+		__sx_num_is_int_fit_dec() { return 1; }
+		When call sx_str_rfind res '' ''
+		The status should be success
+		The variable res should equal '0:0'
+	End
+
+	It '元文字列長に安全範囲検査を適用しないこと'
+		__sx_num_is_nat0_safe() {
+			case "${1-}" in 3) return 1;; esac
+			return 0
+		}
+		When call sx_str_rfind res abc b
+		The status should be success
+		The variable res should equal '1:1'
+	End
+
+	Context 'バインド枯渇時の打ち切り'
+		Parameters
+			0 ''
+			0 a
+			1 '?'
+			4 ''
+			4 a
+			5 '?'
+		End
+
+		It '枯渇を検出した後はバインドを繰り返さず成功を返すこと'
+			bind_calls=0
+			__sx_var_ubind() { bind_calls=$((bind_calls + 1)); return 1; }
+			__sx_var_bind() { bind_calls=$((bind_calls + 1)); return 1; }
+			When call sx_str_rfind res aaa "$2" "$1"
+			The status should be success
+			The variable bind_calls should equal 1
+		End
+	End
+
 	It '単一一致で index:len を返すこと'
 		When call sx_str_rfind res "hello world" "world"
 		The status should be success

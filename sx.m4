@@ -12138,12 +12138,12 @@ __sx_str_rev() {
 ##   フラグに SX_STR_RFIND_OVERLAP (2) を指定すると、重なり合う一致も検出する。
 ##   フラグに SX_STR_RFIND_TEXT (4) を指定すると、出力が "index:len" の代わりに
 ##   実際にマッチした文字列になる。
+##   元文字列の長さに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  1件以上一致 (SX_EX_OK)
 ##    1  不一致
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_rfind() {
@@ -12154,8 +12154,6 @@ sx_str_rfind() {
 	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
-
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
 	__sx_num_is_nat0_safe ${4:+"${4}"} || return M_EX_USAGE
 
@@ -12170,8 +12168,10 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   sx_str_rfind の内部実装。引数チェックは行わない。
+##   空検索時の位置の減算は、文字列長が算術域内なら算術、それ以外は多倍長で行う。
+##   リテラル・グロブ検索の位置と一致長はパラメータ展開で取得する。
 
-define([|CLEANUP|], [|Q_bind Q_tgt Q_off Q_pre Q_sts Q_match Q_after Q_text Q_overlap|])dnl
+define([|CLEANUP|], [|Q_bind Q_tgt Q_off Q_pre Q_sts Q_match Q_after Q_text Q_overlap Q_type|])dnl
 
 __sx_str_rfind() {
 	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
@@ -12188,15 +12188,26 @@ __sx_str_rfind() {
 		Q_off="${#Q_tgt}"
 		Q_sts=M_EX_OK
 
+		if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_off}"; then
+			Q_type=arith
+		else
+			Q_type=nat0
+		fi
+
 		# 空 needle: len から 0 へ
-		while M_NUM_LE([|0|], [|Q_off|]); do
+		while
 			case "${Q_text}" in
-				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:0" || :;;
-				*) __sx_var_bind Q_bind "${Q_bind}" '' || :;;
+				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:0";;
+				*) __sx_var_bind Q_bind "${Q_bind}" '';;
+			esac || break
+
+			case "${Q_off}" in 0)
+				break
 			esac
 
-			M_NUM_DECR([|Q_off|])
-		done
+			"__sx_num_sub_${Q_type}" Q_off "${Q_off}" 1
+			continue
+		do :; done
 	elif M_NUM_BOOL([|${4} & SX_STR_RFIND_GLOB|]); then
 		# ==== グロブモード ====
 		while M_STR_HAS([|"${Q_tgt}"|], [|${3}|]); do
@@ -12207,9 +12218,9 @@ __sx_str_rfind() {
 			Q_sts=M_EX_OK
 
 			case "${Q_text}" in
-				0) __sx_var_ubind Q_bind "${Q_bind}" "${#Q_pre}:${#Q_match}" || :;;
-				*) __sx_var_bind Q_bind "${Q_bind}" "${Q_match}" || :;;
-			esac
+				0) __sx_var_ubind Q_bind "${Q_bind}" "${#Q_pre}:${#Q_match}";;
+				*) __sx_var_bind Q_bind "${Q_bind}" "${Q_match}";;
+			esac || break
 
 			case "${Q_overlap}" in
 				0) Q_tgt="${Q_pre}";;
@@ -12223,9 +12234,9 @@ __sx_str_rfind() {
 			Q_sts=M_EX_OK
 
 			case "${Q_text}" in
-				0) __sx_var_ubind Q_bind "${Q_bind}" "${#Q_pre}:${#3}" || :;;
-				*) __sx_var_bind Q_bind "${Q_bind}" "${3}" || :;;
-			esac
+				0) __sx_var_ubind Q_bind "${Q_bind}" "${#Q_pre}:${#3}";;
+				*) __sx_var_bind Q_bind "${Q_bind}" "${3}";;
+			esac || break
 
 			case "${Q_overlap}" in
 				0) Q_tgt="${Q_pre}";;
