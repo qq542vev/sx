@@ -10156,6 +10156,7 @@ __sx_str_camel() {
 ##   指定された文字列のアルファベットを大文字化・小文字化する。
 ##   デフォルトでは、文字列の先頭（インデックス0）がアルファベットの場合のみ
 ##   それを大文字にし、以降のアルファベットをすべて小文字にする。
+##   元文字列の長さに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## フラグ:
 ##   1 (SX_STR_CAPITAL_KEEP):
@@ -10166,7 +10167,6 @@ __sx_str_camel() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_capital() {
@@ -10177,8 +10177,6 @@ sx_str_capital() {
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
 	__sx_num_is_nat0_safe ${3:+"${3}"} || return M_EX_USAGE
 
@@ -11347,6 +11345,9 @@ sx_str_is_word() {
 ##   インターバルが正の場合は前方から、負の場合は後方から数えて挿入する。
 ##   リミットを指定すると、セパレータの挿入回数を制限できる。
 ##   インターバルに 0 は指定できない。デフォルトのインターバルは 1。
+##   インターバルは符号付き、リミットは符号なしの10進整数（先行ゼロなし）とする。
+##   8進・16進表記は受け付けない。リミットの省略時・空指定時は回数制限なし。
+##   元文字列長・インターバル・リミット・挿入回数に SX_CFG_NUM_RANGE による上限は設けない。
 ##   バインド形式で挿入結果と挿入回数を取得できる。
 ##   例: res:（結果のみ）、res:cnt（結果と回数）。
 ##
@@ -11359,12 +11360,13 @@ sx_str_is_word() {
 ##     left: 挿入箇所より左側の文字列 (Left)
 ##     right: 挿入箇所より右側の文字列 (Right)
 ##     count: マッチカウンター (1から始まる)
-##   コールバックが非0を返すと、現在の結果を挿入した後に処理を中断する。
+##   コールバックが非0を返すと、その回の値は挿入せず、以降の挿入も停止する。
+##   未処理の元文字列は保持し、成功した挿入だけを回数に数える。
+##   コールバックの非0終了ステータスをそのまま返す。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_isep() {
@@ -11376,232 +11378,242 @@ sx_str_isep() {
 
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
+	__sx_num_is_int_base 10 ${4:+"${4}"} && __sx_num_is_nat0_base 10 ${5:+"${5}"} || return M_EX_USAGE
+	__sx_num_is_nat0_safe ${6:+"${6}"} || return M_EX_USAGE
 
-	__sx_num_is_int_safe_inv ${4:+"${4}"} && __sx_num_is_nat0_safe ${5:+"${5}"} ${6:+"${6}"} || return M_EX_USAGE
-
-	case "$((${4:-1}))" in 0)
+	case "${4:-1}" in 0 | [+-]0)
 		return M_EX_USAGE
 	esac
 
 	__sx_str_isep "${@}" || return
 }
 
-### __sx_str_isep - 文字列に一定の間隔でセパレータを挿入する（内部用）
+M_RENAME_QI([|dnl
+### __sx_str_isep - 挿入方向・上限・数値経路とパターンを準備する（内部用）
 ##
 ## 使い方:
 ##   __sx_str_isep バインド形式 文字列 セパレータ [インターバル [リミット [フラグ]]]
 ##
 ## 説明:
-##   sx_str_isep の内部実装。
-##   引数チェックは行わない。
-__sx_str_isep() {
-	# 位置パラメータ構成:
-	# ${1}: bind, ${2}: str, ${3}: sep/cb, ${4}: int, ${5}: lim, ${6}: flags
-	# ${7}: out, ${8}: qm, ${9}: count, ${10}: ctx, ${11}: stat
-	# 文字列が空の場合は、重複防止のため POST (int>0) または PRE (int<0) フラグを無効化する
-	set -- "${1}" "${2-}" "${3-}" "${4:-1}" "${5:-${SX_NUM_I32_MAX}}" "$((${6:-0} & (${#2} != 0 ? ~0 : (0 < ${4:-1} ? ~SX_STR_ISEP_POST : ~SX_STR_ISEP_PRE))))" '' '' 0 ''
+##   内部実装。引数チェックは行わない。
+##   インターバルは非0の符号付き、リミットは符号なしの正規化済み10進整数を前提とする。
+##   挿入可能数は高々文字列長+1なので、省略時上限を多倍長で計算する。
+##   内部境界がない間隔では ? パターンを生成しない。
+##   コールバックへ委譲する前に準備用変数を解放する。
+##
+## 終了ステータス:
+##    0  成功
+##   非0  コールバックの終了ステータス
 
-	case "$((${6} & SX_STR_ISEP_CB))" in
+define([|CLEANUP|], [|Q_len Q_abs Q_lim Q_flg Q_type Q_qm Q_dir Q_start Q_end|])dnl
+
+__sx_str_isep() {
+	set -- "${1}" "${2-}" "${3-}" "${4:-1}" "${5-}" "${6:-0}"
+	Q_len="${#2}"
+	Q_abs="${4#[+-]}"
+	Q_lim="${5}"
+	Q_flg="${6}"
+	Q_dir=0
+	case "${4}" in -*) Q_dir=1;; esac
+
+	case "${Q_lim}" in '')
+		__sx_num_add_nat0 Q_lim "${Q_len}" 1
+	esac
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len}" "${Q_abs}" "${Q_lim}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+
+	case "${Q_dir}" in
+		0) Q_start=$((Q_flg & SX_STR_ISEP_PRE)); Q_end=$((Q_flg & SX_STR_ISEP_POST));;
+		1) Q_start=$((Q_flg & SX_STR_ISEP_POST)); Q_end=$((Q_flg & SX_STR_ISEP_PRE));;
+	esac
+	# 空文字列の同一境界を二重に挿入しない。
+	case "${2}" in '') Q_end=0;; esac
+
+	Q_qm=
+	case "${Q_lim}" in 0) ;; *)
+		"__sx_num_cmp_${Q_type}" "${Q_abs}" "${Q_len}" || case "${?}" in 1)
+			__sx_str_qm Q_qm "${Q_abs}"
+		esac
+	esac
+
+	set -- "${1}" "${2}" "${3}" "${Q_abs}" "${Q_lim}" "${Q_type}" "${Q_qm}" "${Q_dir}" "${Q_start}" "${Q_end}" "$((Q_flg & SX_STR_ISEP_CB))"
+	unset CLEANUP
+
+	case "${11}" in
 		0) __sx_str_isep_lit "${@}";;
 		*) __sx_str_isep_cb "${@}";;
 	esac || return
 }
+|], [|str_isep|])dnl
 
 M_RENAME_QI([|dnl
-### __sx_str_isep_cb - 文字列に一定の間隔でセパレータを挿入する（コールバックモード、内部用）
+### __sx_str_isep_cb - 各挿入境界でコールバックを実行する（内部用）
 ##
 ## 使い方:
-##   __sx_str_isep_cb バインド形式 文字列 セパレータ インターバル リミット フラグ out qm count ctx stat
+##   __sx_str_isep_cb bind str cb abs lim type qm dir start end
 ##
 ## 説明:
-##   __sx_str_isep からコールバックモードを抽出した内部関数。
-##   バインド形式で挿入結果と成功挿入回数を取得できる。
+##   内部実装。引数チェックは行わない。
+##   方向は 0（前方）/1（後方）、start/end は走査方向の両端の有効フラグ。
+##   再入呼び出しで状態が上書きされないよう、位置パラメータに保存する。
+##   挿入値と成功回数は、コールバックが成功した場合だけ確定する。
+##   未処理文字列を結合してから結果と成功回数をバインドする。
+##
+## 終了ステータス:
+##    0  成功
+##   非0  コールバックの終了ステータス
 
-define([|CLEANUP|], [|Q_ret|])dnl
+define([|CLEANUP|], [|Q_ret Q_next Q_rest Q_chunk|])dnl
 
 __sx_str_isep_cb() {
-	# 位置パラメータ構成:
-	# ${1}: bind, ${2}: str, ${3}: cb, ${4}: int, ${5}: lim, ${6}: flags
-	# ${7}: out, ${8}: qm, ${9}: count, ${10}: ctx, ${11}: stat
-	#
-	# コールバックモードではセパレータの代わりに $3 をコールバック関数名として扱う。
-	# 各挿入位置で callback "結果変数" left right count を呼び出し、
-	# 戻り値（Q_ret）を挿入文字列として使用する。
-	# コールバックが非0を返した場合、stat=$? に記録し、残リミット(${5})を 0 にして
-	# 以降の挿入を抑止する。挿入回数(${9})は成功数のまま残るため、そのまま bind できる。
+	# 1:bind 2:残り 3:cb 4:間隔絶対値 5:上限 6:数値経路 7:?パターン
+	# 8:方向 9:開始端 10:終了端 11:出力 12:成功回数 13:処理済み元文字列
+	# 14:終了状態 15:処理段階 16:次の回数（呼び出し直前に追加）
+	set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" '' 0 '' 0 start
 
-	if M_NUM_LT([|0|], [|${4}|]); then
-		# === Forward: 先頭から interval 文字ごとに区切る ===
-		# PRE: callback('', str, count+1) → 戻り値を追加
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_PRE && ${9} < ${5}|]); then
-			"${3}" Q_ret '' "${2}" "$((${9} + 1))" && \
-			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${Q_ret-}" "${8}" "$((${9} + 1))" "${10}" || \
-			set -- "${1}" "${2}" "${3}" "${4}" 0 "${6}" "${7}" "${8}" "${9}" "${10}" "${?}"
+	while M_STR_NE([|"${12}"|], [|"${5}"|]); do
+		case "${15}" in
+			start)
+				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${11}" "${12}" "${13}" "${14}" "inner"
+				case "${9}" in 0) continue;; esac
+				;;
+			inner)
+				if M_STR_NE([|"${7}"|], [|''|]) && M_STR_MATCH([|"${2}"|], [|${7}?*|]); then
+					case "${8}" in
+						0)
+							Q_rest="${2#${7}}"
+							Q_chunk="${2%"${Q_rest}"}"
+							set -- "${1}" "${Q_rest}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${11}${Q_chunk}" "${12}" "${13}${Q_chunk}" "${14}" "${15}"
+							;;
+						1)
+							Q_rest="${2%${7}}"
+							Q_chunk="${2#"${Q_rest}"}"
+							set -- "${1}" "${Q_rest}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${Q_chunk}${11}" "${12}" "${Q_chunk}${13}" "${14}" "${15}"
+							;;
+					esac
+				else
+					set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${11}" "${12}" "${13}" "${14}" "end"
+					continue
+				fi
+				;;
+			end)
+				case "${10}" in 0) break;; esac
+				# 上限未到達で内部境界を処理し終えた残余は、0〜間隔文字。
+				# 0 または間隔と等しい場合だけ、反対側の端も挿入境界となる。
+				case "${#2}" in 0 | "${4}") ;; *) break;; esac
+				case "${8}" in
+					0) set -- "${1}" "" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${11}${2}" "${12}" "${13}${2}" "${14}" "done";;
+					1) set -- "${1}" "" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${2}${11}" "${12}" "${2}${13}" "${14}" "done";;
+				esac
+				;;
+			done) break;;
+		esac
 
+		Q_next=
+		"__sx_num_add_${6}" Q_next "${12}" 1
+		set -- "${@}" "${Q_next}"
+		unset CLEANUP
+
+		if case "${8}" in
+			0) "${3}" Q_ret "${13}" "${2}" "${16}";;
+			1) "${3}" Q_ret "${2}" "${13}" "${16}";;
+		esac; then
+			case "${8}" in
+				0) set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${11}${Q_ret-}" "${16}" "${13}" "${14}" "${15}";;
+				1) set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${Q_ret-}${11}" "${16}" "${13}" "${14}" "${15}";;
+			esac
+		else
+			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${11}" "${12}" "${13}" "${?}" "${15}"
 			unset CLEANUP
+			break
 		fi
+		unset CLEANUP
+	done
 
-		# ループ要なら QM を生成してループ実行
-		if M_NUM_LT([|${9}|], [|${5}|]); then
-			__sx_str_qm __sx_str_isep_qm_ "${4}"
-			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${__sx_str_isep_qm_}" "${9}" "${10}"
-			unset __sx_str_isep_qm_
-
-			while M_STR_MATCH([|"${2}"|], [|${8}?*|]) && M_NUM_LT([|${9}|], [|${5}|]); do
-				set -- "${@}" "${2#${8}}"
-				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "$((${9} + 1))" "${10}" "${2%"${11}"}"
-
-				"${3}" Q_ret "${10}${11}" "${2}" "${9}" && \
-				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${11}${Q_ret-}" "${8}" "${9}" "${10}${11}" || \
-				set -- "${1}" "${2}" "${3}" "${4}" 0 "${6}" "${7}${11}" "${8}" "$((${9} - 1))" "${10}${11}" "${?}"
-
-				unset CLEANUP
-			done
-		fi
-
-		# 残り文字列
-		set -- "${1}" '' "${3}" "${4}" "${5}" "${6}" "${7}${2}" "${8}" "${9}" "${10}${2}" ${11+"${11}"}
-
-		# POST: callback(ctx, '', count+1) → 戻り値を追加
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_POST && ${9} < ${5} && (${#10} % ${4}) == 0|]); then
-			"${3}" Q_ret "${10}" '' "$((${9} + 1))" && \
-			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}${Q_ret-}" "${8}" "$((${9} + 1))" "${10}" || \
-			set -- "${1}" "${2}" "${3}" "${4}" 0 "${6}" "${7}" "${8}" "${9}" "${10}" "${?}"
-			unset CLEANUP
-		fi
-	else
-		# === Backward: 末尾から interval 文字ごとに区切る ===
-		# POST: callback(str, '', count+1) → 戻り値を前に追加
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_POST && ${9} < ${5}|]); then
-			"${3}" Q_ret "${2}" '' "$((${9} + 1))" && \
-			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_ret-}${7}" "${8}" "$((${9} + 1))" "${10}" || \
-			set -- "${1}" "${2}" "${3}" "${4}" 0 "${6}" "${7}" "${8}" "${9}" "${10}" "${?}"
-			unset CLEANUP
-		fi
-
-		# ループ要なら QM を生成してループ実行
-		if M_NUM_LT([|${9}|], [|${5}|]); then
-			__sx_str_qm __sx_str_isep_qm_ "${4#-}"
-			set -- "${1}" "${2}" "${3}" "${4#-}" "${5}" "${6}" "${7}" "${__sx_str_isep_qm_}" "${9}" "${10}"
-			unset __sx_str_isep_qm_
-
-			while M_STR_MATCH([|"${2}"|], [|${8}?*|]) && M_NUM_LT([|${9}|], [|${5}|]); do
-				set -- "${@}" "${2%${8}}"
-				set -- "${1}" "${11}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "$((${9} + 1))" "${10}" "${2#"${11}"}"
-
-				"${3}" Q_ret "${2}" "${11}${10}" "${9}" && \
-				set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_ret-}${11}${7}" "${8}" "${9}" "${11}${10}" || \
-				set -- "${1}" "${2}" "${3}" "${4}" 0 "${6}" "${11}${7}" "${8}" "$((${9} - 1))" "${11}${10}" "${?}"
-				unset CLEANUP
-			done
-		fi
-
-		# 残り文字列
-		set -- "${1}" '' "${3}" "${4}" "${5}" "${6}" "${2}${7}" "${8}" "${9}" "${2}${10}" ${11+"${11}"}
-
-		# PRE: callback('', ctx, count+1) → 戻り値を前に追加
-		if M_NUM_BOOL([|${6} & SX_STR_ISEP_PRE && ${9} < ${5} && (${#10} % ${4}) == 0|]); then
-			"${3}" Q_ret '' "${10}" "$((${9} + 1))" && \
-			set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_ret-}${7}" "${8}" "$((${9} + 1))" "${10}" || \
-			set -- "${1}" "${2}" "${3}" "${4}" 0 "${6}" "${7}" "${8}" "${9}" "${10}" "${?}"
-			unset CLEANUP
-		fi
-	fi
-
+	case "${8}" in
+		0) set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${11}${2}" "${12}" "${13}" "${14}" "${15}";;
+		1) set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${2}${11}" "${12}" "${13}" "${14}" "${15}";;
+	esac
+	# 再入呼び出しで同名の結果変数が使われても、外側の結果で初期化する。
 	__sx_var_bind_init "${1}"
-	__sx_var_bind '' "${1}" "${7}" "${9}" || :
-
+	__sx_var_bind '' "${1}" "${11}" "${12}" || :
+	set -- "${14}"
 	unset CLEANUP
-
-	return "${11-0}"
+	return "${1}"
 }
 |], [|str_isep_cb|])dnl
 
 M_RENAME_QI([|dnl
-### __sx_str_isep_lit - 文字列に一定の間隔でセパレータを挿入する（リテラルモード、内部用）
+### __sx_str_isep_lit - 指定境界にリテラルを挿入する（内部用）
 ##
 ## 使い方:
-##   __sx_str_isep_lit バインド形式 文字列 セパレータ インターバル リミット フラグ out qm
+##   __sx_str_isep_lit bind str sep abs lim type qm dir start end
 ##
 ## 説明:
-##   __sx_str_isep からリテラルモードを抽出した内部関数。
-##   バインド形式で挿入結果と挿入回数を取得できる。
+##   内部実装。引数チェックは行わない。
+##   コールバックを呼ばないため、名前付き変数で状態を保持する。
+##   回数は上限に達するまで1ずつ増えるので、上限判定は文字列一致で行う。
+##   反対側の端の境界は、残余長が0または間隔と等しいかで判定する。
+##
+## 終了ステータス:
+##    0  成功
 
-define([|CLEANUP|], [|Q_bind Q_str Q_sep Q_int Q_lim Q_flg Q_out Q_qm Q_cnt|])dnl
+define([|CLEANUP|], [|Q_bind Q_str Q_sep Q_abs Q_lim Q_type Q_qm Q_dir Q_start Q_end Q_out Q_cnt|])dnl
 
 __sx_str_isep_lit() {
-	# 名前付き変数で状態を管理する（速度優先）。
-	# __sx_str_isep_cb とは対照的に位置パラメータを使わない。
-
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
 	Q_str="${2}"
 	Q_sep="${3}"
-	Q_int="${4}"
+	Q_abs="${4}"
 	Q_lim="${5}"
-	Q_flg="${6}"
+	Q_type="${6}"
+	Q_qm="${7}"
+	Q_dir="${8}"
+	Q_start="${9}"
+	Q_end="${10}"
 	Q_out=
 	Q_cnt=0
 
-	if M_NUM_LT([|0|], [|Q_int|]); then
-		# === Forward: 先頭から interval 文字ごとに区切る ===
-		# PRE: 先頭の境界
-		if M_NUM_BOOL([|Q_flg & SX_STR_ISEP_PRE && Q_cnt < Q_lim|]); then
-			Q_out="${Q_sep}"
-			M_NUM_INCR([|Q_cnt|])
-		fi
+	if M_STR_NE([|"${Q_start}"|], [|0|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]); then
+		Q_out="${Q_sep}"
+		"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
+	fi
 
-		# ループ要なら QM を生成してループ実行
-		if M_NUM_LT([|Q_cnt|], [|Q_lim|]); then
-			__sx_str_qm Q_qm "${Q_int}"
-
-			while M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
+	case "${Q_dir}" in
+		0)
+			while M_STR_NE([|"${Q_qm}"|], [|''|]) && M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]); do
 				M_STR_APPEND([|Q_out|], [|"${Q_str%"${Q_str#${Q_qm}}"}${Q_sep}"|])
 				Q_str="${Q_str#${Q_qm}}"
-				M_NUM_INCR([|Q_cnt|])
+				"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
 			done
-		fi
-
-		# 残り文字列を末尾に追加
-		M_STR_APPEND([|Q_out|], [|"${Q_str}"|])
-
-		# POST: 末尾の境界（count < lim かつ 残り文字列長 % interval == 0）
-		if M_NUM_BOOL([|Q_flg & SX_STR_ISEP_POST && Q_cnt < Q_lim && (${#Q_str} % Q_int) == 0|]); then
-			M_STR_APPEND([|Q_out|], [|"${Q_sep}"|])
-			M_NUM_INCR([|Q_cnt|])
-		fi
-	else
-		# === Backward: 末尾から interval 文字ごとに区切る ===
-		# POST: 末尾の境界（後方処理では最初に処理する境界）
-		if M_NUM_BOOL([|Q_flg & SX_STR_ISEP_POST && Q_cnt < Q_lim|]); then
-			Q_out="${Q_sep}"
-			M_NUM_INCR([|Q_cnt|])
-		fi
-
-		# ループ要なら QM を生成してループ実行
-		if M_NUM_LT([|Q_cnt|], [|Q_lim|]); then
-			__sx_str_qm Q_qm "${Q_int#-}"
-
-			while M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]) && M_NUM_LT([|Q_cnt|], [|Q_lim|]); do
+			M_STR_APPEND([|Q_out|], [|"${Q_str}"|])
+			;;
+		1)
+			while M_STR_NE([|"${Q_qm}"|], [|''|]) && M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]); do
 				M_STR_PREPEND([|Q_out|], [|"${Q_sep}${Q_str#"${Q_str%${Q_qm}}"}"|])
 				Q_str="${Q_str%${Q_qm}}"
-				M_NUM_INCR([|Q_cnt|])
+				"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
 			done
-		fi
+			M_STR_PREPEND([|Q_out|], [|"${Q_str}"|])
+			;;
+	esac
 
-		# 残り文字列を先頭に追加
-		M_STR_PREPEND([|Q_out|], [|"${Q_str}"|])
-
-		# PRE: 先頭の境界（後方処理では最後に処理する境界）
-		if M_NUM_BOOL([|Q_flg & SX_STR_ISEP_PRE && Q_cnt < Q_lim && (${#Q_str} % Q_int) == 0|]); then
-			M_STR_PREPEND([|Q_out|], [|"${Q_sep}"|])
-			M_NUM_INCR([|Q_cnt|])
-		fi
+	if M_STR_NE([|"${Q_end}"|], [|0|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]); then
+		case "${#Q_str}" in 0 | "${Q_abs}")
+			case "${Q_dir}" in
+				0) M_STR_APPEND([|Q_out|], [|"${Q_sep}"|]);;
+				1) M_STR_PREPEND([|Q_out|], [|"${Q_sep}"|]);;
+			esac
+			"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
+		esac
 	fi
 
 	__sx_var_bind '' "${Q_bind}" "${Q_out}" "${Q_cnt}" || :
-
 	unset CLEANUP
 }
 |], [|str_isep_lit|])dnl

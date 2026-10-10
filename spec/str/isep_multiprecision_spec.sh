@@ -1,0 +1,258 @@
+#!/bin/sh
+
+eval "$(shellspec - -c) exit 1"
+
+Describe 'sx_str_isep 多倍長対応'
+  Include ./sx.sh
+
+  It '巨大な間隔 999999999999999999999999999999 では内部境界のパターンを生成しないこと'
+    __sx_str_qm() { return 64; }
+    When call sx_str_isep res:cnt abc - 999999999999999999999999999999 '' 6
+    The status should be success
+    The variable res should equal "-abc"
+    The variable cnt should equal "'1'"
+  End
+
+  It '巨大な間隔 -999999999999999999999999999999 では内部境界のパターンを生成しないこと'
+    __sx_str_qm() { return 64; }
+    When call sx_str_isep res:cnt abc - -999999999999999999999999999999 '' 6
+    The status should be success
+    The variable res should equal "abc-"
+    The variable cnt should equal "'1'"
+  End
+
+  It '巨大な間隔 -9223372036854775808 では内部境界のパターンを生成しないこと'
+    __sx_str_qm() { return 64; }
+    When call sx_str_isep res:cnt abc - -9223372036854775808 '' 6
+    The status should be success
+    The variable res should equal "abc-"
+    The variable cnt should equal "'1'"
+  End
+
+  It '巨大な上限でも両端と内部境界を処理できること 2'
+    When call sx_str_isep res:cnt abcdef - 2 999999999999999999999999999999 6
+    The status should be success
+    The variable res should equal "-ab-cd-ef-"
+    The variable cnt should equal "'4'"
+  End
+
+  It '巨大な上限でも両端と内部境界を処理できること -2'
+    When call sx_str_isep res:cnt abcdef - -2 999999999999999999999999999999 6
+    The status should be success
+    The variable res should equal "-ab-cd-ef-"
+    The variable cnt should equal "'4'"
+  End
+
+  It '多倍長経路でも非整除の反対端には挿入しないこと 2'
+    When call sx_str_isep res:cnt abcde - 2 999999999999999999999999999999 6
+    The status should be success
+    The variable res should equal "-ab-cd-e"
+    The variable cnt should equal "'3'"
+  End
+
+  It '多倍長経路でも非整除の反対端には挿入しないこと -2'
+    When call sx_str_isep res:cnt abcde - -2 999999999999999999999999999999 6
+    The status should be success
+    The variable res should equal "a-bc-de-"
+    The variable cnt should equal "'3'"
+  End
+
+  It '上限0ではパターンもコールバックも呼ばないこと 2'
+    __sx_str_qm() { return 64; }
+    cb() { return 77; }
+    When call sx_str_isep res:cnt abcdef cb 2 0 7
+    The status should be success
+    The variable res should equal abcdef
+    The variable cnt should equal "'0'"
+  End
+
+  It '上限0ではパターンもコールバックも呼ばないこと -2'
+    __sx_str_qm() { return 64; }
+    cb() { return 77; }
+    When call sx_str_isep res:cnt abcdef cb -2 0 7
+    The status should be success
+    The variable res should equal abcdef
+    The variable cnt should equal "'0'"
+  End
+
+  It '多倍長経路で再入呼び出し後もコールバックの文脈と回数を保持すること 2'
+    inner() { __sx_var_set "${1}=-"; }
+    cb() {
+      sx_str_isep nested: abc inner 1 '' 1
+      __sx_var_set "${1}=<${2}:${3}:${4}>"
+    }
+    When call sx_str_isep res:cnt abcdef cb 2 999999999999999999999999999999 7
+    The status should be success
+    The variable res should equal "<:abcdef:1>ab<ab:cdef:2>cd<abcd:ef:3>ef<abcdef::4>"
+    The variable cnt should equal "'4'"
+  End
+
+  It '多倍長経路で再入呼び出し後もコールバックの文脈と回数を保持すること -2'
+    inner() { __sx_var_set "${1}=-"; }
+    cb() {
+      sx_str_isep nested: abc inner 1 '' 1
+      __sx_var_set "${1}=<${2}:${3}:${4}>"
+    }
+    When call sx_str_isep res:cnt abcdef cb -2 999999999999999999999999999999 7
+    The status should be success
+    The variable res should equal "<:abcdef:4>ab<ab:cdef:3>cd<abcd:ef:2>ef<abcdef::1>"
+    The variable cnt should equal "'4'"
+  End
+
+  It '多倍長経路で非0終了の値を破棄すること 2 回数1'
+    cb() {
+      __sx_var_set "${1}=-"
+      case "${4}" in 1) return 77;; esac
+    }
+    When call sx_str_isep res:cnt abcdef cb 2 999999999999999999999999999999 7
+    The status should equal 77
+    The variable res should equal "abcdef"
+    The variable cnt should equal "'0'"
+  End
+
+  It '多倍長経路で非0終了の値を破棄すること 2 回数2'
+    cb() {
+      __sx_var_set "${1}=-"
+      case "${4}" in 2) return 77;; esac
+    }
+    When call sx_str_isep res:cnt abcdef cb 2 999999999999999999999999999999 7
+    The status should equal 77
+    The variable res should equal "-abcdef"
+    The variable cnt should equal "'1'"
+  End
+
+  It '多倍長経路で非0終了の値を破棄すること 2 回数4'
+    cb() {
+      __sx_var_set "${1}=-"
+      case "${4}" in 4) return 77;; esac
+    }
+    When call sx_str_isep res:cnt abcdef cb 2 999999999999999999999999999999 7
+    The status should equal 77
+    The variable res should equal "-ab-cd-ef"
+    The variable cnt should equal "'3'"
+  End
+
+  It '多倍長経路で非0終了の値を破棄すること -2 回数1'
+    cb() {
+      __sx_var_set "${1}=-"
+      case "${4}" in 1) return 77;; esac
+    }
+    When call sx_str_isep res:cnt abcdef cb -2 999999999999999999999999999999 7
+    The status should equal 77
+    The variable res should equal "abcdef"
+    The variable cnt should equal "'0'"
+  End
+
+  It '多倍長経路で非0終了の値を破棄すること -2 回数2'
+    cb() {
+      __sx_var_set "${1}=-"
+      case "${4}" in 2) return 77;; esac
+    }
+    When call sx_str_isep res:cnt abcdef cb -2 999999999999999999999999999999 7
+    The status should equal 77
+    The variable res should equal "abcdef-"
+    The variable cnt should equal "'1'"
+  End
+
+  It '多倍長経路で非0終了の値を破棄すること -2 回数4'
+    cb() {
+      __sx_var_set "${1}=-"
+      case "${4}" in 4) return 77;; esac
+    }
+    When call sx_str_isep res:cnt abcdef cb -2 999999999999999999999999999999 7
+    The status should equal 77
+    The variable res should equal "ab-cd-ef-"
+    The variable cnt should equal "'3'"
+  End
+
+  It '不正な間隔 0 を拒否すること'
+    When call sx_str_isep res: abc - 0
+    The status should equal 64
+  End
+
+  It '不正な間隔 +0 を拒否すること'
+    When call sx_str_isep res: abc - +0
+    The status should equal 64
+  End
+
+  It '不正な間隔 -0 を拒否すること'
+    When call sx_str_isep res: abc - -0
+    The status should equal 64
+  End
+
+  It '不正な間隔 01 を拒否すること'
+    When call sx_str_isep res: abc - 01
+    The status should equal 64
+  End
+
+  It '不正な間隔 0x10 を拒否すること'
+    When call sx_str_isep res: abc - 0x10
+    The status should equal 64
+  End
+
+  It '不正な間隔 abc を拒否すること'
+    When call sx_str_isep res: abc - abc
+    The status should equal 64
+  End
+
+  It '不正な上限 -1 を拒否すること'
+    When call sx_str_isep res: abc - 1 -1
+    The status should equal 64
+  End
+
+  It '不正な上限 01 を拒否すること'
+    When call sx_str_isep res: abc - 1 01
+    The status should equal 64
+  End
+
+  It '不正な上限 0x10 を拒否すること'
+    When call sx_str_isep res: abc - 1 0x10
+    The status should equal 64
+  End
+
+  It '空文字列の同一境界を多倍長経路で二重挿入しないこと 1'
+    When call sx_str_isep res:cnt '' - 1 999999999999999999999999999999 6
+    The status should be success
+    The variable res should equal '-'
+    The variable cnt should equal "'1'"
+  End
+
+  It '空文字列の同一境界を多倍長経路で二重挿入しないこと -1'
+    When call sx_str_isep res:cnt '' - -1 999999999999999999999999999999 6
+    The status should be success
+    The variable res should equal '-'
+    The variable cnt should equal "'1'"
+  End
+
+  Context '短い文字列で多倍長経路の有限上限・省略上限を検証'
+    Parameters
+      2 2 6 '-ab-cdef' "'2'"
+      -2 2 6 'abcd-ef-' "'2'"
+      1 '' 6 '-a-b-c-d-e-f-' "'7'"
+      -1 '' 6 '-a-b-c-d-e-f-' "'7'"
+    End
+
+    It '経路を多倍長側に固定しても上限を守ること'
+      __sx_num_is_int_fit_dec() {
+        case "${#}:${2-}" in 4:6) return 1;; esac
+        return 0
+      }
+      __sx_num_add_arith() { return 64; }
+      When call sx_str_isep res:cnt abcdef - "$1" "$2" "$3"
+      The status should be success
+      The variable res should equal "$4"
+      The variable cnt should equal "$5"
+    End
+  End
+
+  It '元文字列長に安全範囲検査を適用しないこと'
+    __sx_num_is_nat0_safe() {
+      case "${1-}" in 3) return 1;; esac
+      return 0
+    }
+    When call sx_str_isep res:cnt abc -
+    The status should be success
+    The variable res should equal a-b-c
+    The variable cnt should equal "'2'"
+  End
+End
