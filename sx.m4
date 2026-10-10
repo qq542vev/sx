@@ -2078,17 +2078,17 @@ __sx_arg_join() {
 ##
 ## 説明:
 ##   第2引数以降に渡された引数の個数を数え、その結果を結果変数に格納する。
+##   引数個数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_len() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_len "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
@@ -2097,6 +2097,7 @@ sx_arg_len() {
 	__sx_arg_len "${@}"
 }
 
+M_RENAME_QI([|dnl
 ### __sx_arg_len - 引数の個数を取得する（内部用）
 ##
 ## 使い方:
@@ -2104,9 +2105,16 @@ sx_arg_len() {
 ##
 ## 説明:
 ##   引数チェックを行わずに個数の取得を行う。
+
+define([|CLEANUP|], [|Q_res|])dnl
+
 __sx_arg_len() {
-	M_VAR_SET([|${1}|], [|$((${#} - 1))|])
+	Q_res="${1}"
+	shift
+	M_VAR_SET([|${Q_res}|], [|${#}|])
+	unset CLEANUP
 }
+|], [|arg_len|])dnl
 
 ### sx_arg_map - 引数リストの各要素にコールバック関数を適用する
 ##
@@ -10623,13 +10631,13 @@ __sx_str_chunk() {
 ##   元文字列から検索文字列の出現回数を数え、結果変数に非負整数で格納する。
 ##   フラグの意味は sx_str_find と同一（SX_STR_COUNT_GLOB / SX_STR_COUNT_OVERLAP）。
 ##   実質的に __sx_str_find に委譲し、結果のスペース区切り件数を __sx_arg_len で取得する。
+##   元文字列の長さと出現回数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ##   バインド形式はサポートしない。結果変数名には単一の変数名のみ指定可能。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_count() {
@@ -10640,8 +10648,6 @@ sx_str_count() {
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
 	__sx_num_is_nat0_safe ${4:+"${4}"} || return M_EX_USAGE
 
