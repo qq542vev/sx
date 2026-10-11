@@ -11078,7 +11078,7 @@ __sx_str_find() {
 				break
 			esac
 
-			"__sx_num_add_${Q_type}" Q_off "${Q_off}" 1
+			"__sx_num_add1_${Q_type}" Q_off "${Q_off}"
 			continue
 		do :; done
 	elif M_NUM_BOOL([|${4} & SX_STR_FIND_GLOB|]); then
@@ -11105,7 +11105,7 @@ __sx_str_find() {
 					Q_tgt="${Q_tgt#"${Q_pre}${Q_match}"}"
 					;;
 				*)
-					"__sx_num_add_${Q_type}" Q_off "${Q_off}" 1
+					"__sx_num_add1_${Q_type}" Q_off "${Q_off}"
 					Q_tgt="${Q_tgt#"${Q_pre}"?}"
 					;;
 			esac
@@ -11131,7 +11131,7 @@ __sx_str_find() {
 					Q_tgt="${Q_tgt#*"${3}"}"
 					;;
 				*)
-					"__sx_num_add_${Q_type}" Q_off "${Q_off}" 1
+					"__sx_num_add1_${Q_type}" Q_off "${Q_off}"
 					Q_tgt="${Q_tgt#"${Q_pre}"?}"
 					;;
 			esac
@@ -11565,7 +11565,7 @@ __sx_str_isep_cb() {
 				;;
 		esac
 
-		"__sx_num_add_${6}" Q_next "${12}" 1
+		"__sx_num_add1_${6}" Q_next "${12}"
 		set -- "${@}" "${Q_next}"
 		unset CLEANUP
 
@@ -11630,7 +11630,7 @@ __sx_str_isep_lit() {
 			while M_STR_NE([|"${Q_cnt}"|], [|"${5}"|]) && M_STR_MATCH([|"${Q_str}"|], [|${7}?*|]); do
 				M_STR_APPEND([|Q_out|], [|"${Q_str%"${Q_str#${7}}"}${3}"|])
 				Q_str="${Q_str#${7}}"
-				"__sx_num_add_${6}" Q_cnt "${Q_cnt}" 1
+				"__sx_num_add1_${6}" Q_cnt "${Q_cnt}"
 			done
 			;&
 		0) M_STR_APPEND([|Q_out|], [|"${Q_str}"|]);;
@@ -11638,7 +11638,7 @@ __sx_str_isep_lit() {
 			while M_STR_NE([|"${Q_cnt}"|], [|"${5}"|]) && M_STR_MATCH([|"${Q_str}"|], [|${7}?*|]); do
 				M_STR_PREPEND([|Q_out|], [|"${3}${Q_str#"${Q_str%${7}}"}"|])
 				Q_str="${Q_str%${7}}"
-				"__sx_num_add_${6}" Q_cnt "${Q_cnt}" 1
+				"__sx_num_add1_${6}" Q_cnt "${Q_cnt}"
 			done
 			;&
 		1) M_STR_PREPEND([|Q_out|], [|"${Q_str}"|]);;
@@ -11647,7 +11647,7 @@ __sx_str_isep_lit() {
 	case "${10}${Q_cnt}:${4}" in
 		0* | ?${5}:*) __sx_var_bind '' "${1}" "${Q_out}" "${Q_cnt}";;
 		*:${#Q_str})
-			"__sx_num_add_${6}" Q_cnt "${Q_cnt}" 1
+			"__sx_num_add1_${6}" Q_cnt "${Q_cnt}"
 
 			case "${8}" in
 				0) __sx_var_bind '' "${1}" "${Q_out}${3}" "${Q_cnt}";;
@@ -13397,14 +13397,14 @@ __sx_str_tr() {
 
 				"__sx_num_cmp_${Q_type}" "${Q_idx}" "${Q_n}" || case "${?}" in
 					1)
-						"__sx_num_add_${Q_type}" Q_idx "${Q_idx}" 1
+						"__sx_num_add1_${Q_type}" Q_idx "${Q_idx}"
 						eval "Q_out=\"\${${Q_idx}}\${Q_suf}\${Q_out}\""
 						;;
 					*) M_STR_PREPEND([|Q_out|], [|"${Q_suf}"|]);;
 				esac
 
 				Q_str="${Q_pre}"
-				"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
+				"__sx_num_add1_${Q_type}" Q_cnt "${Q_cnt}"
 			done
 
 			__sx_var_bind '' "${Q_bind}" "${Q_str}${Q_out}" "${Q_cnt}"
@@ -13419,14 +13419,14 @@ __sx_str_tr() {
 
 				"__sx_num_cmp_${Q_type}" "${Q_idx}" "${Q_n}" || case "${?}" in
 					1)
-						"__sx_num_add_${Q_type}" Q_idx "${Q_idx}" 1
+						"__sx_num_add1_${Q_type}" Q_idx "${Q_idx}"
 						eval "Q_out=\"\${Q_out}\${Q_pre}\${${Q_idx}}\""
 						;;
 					*) M_STR_APPEND([|Q_out|], [|"${Q_pre}"|]);;
 				esac
 
 				Q_str="${Q_suf}"
-				"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
+				"__sx_num_add1_${Q_type}" Q_cnt "${Q_cnt}"
 			done
 
 			__sx_var_bind '' "${Q_bind}" "${Q_out}${Q_str}" "${Q_cnt}"
