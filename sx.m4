@@ -5557,6 +5557,62 @@ __sx_num_add1_nat0() {
 }
 |], [|num_add1_nat0|])dnl
 
+### sx_num_add1_arith - 符号付き整数に算術展開で1を加算する
+##
+## 使い方:
+##   sx_num_add1_arith 結果変数名 数値
+##
+## 説明:
+##   SX_CFG_NUM_RANGE の符号付き整数範囲に収まる8・10・16進整数を受け付ける。
+##   任意の + または - の符号を許可し、結果を10進表記で格納する。
+##   最小値も受理する。入力値と加算結果の範囲を検証し、最大値への加算は拒否する。
+##   検証に失敗した場合、結果変数は変更しない。
+##   SX_CFG_SKIP_CHK=1 ではすべての引数検証を省略する。
+##   この場合、入力値・加算結果を設定幅内に収めることは呼び出し側の責任とする。
+##   SX_CFG_NUM_RANGE は実行シェルの算術域以下であることを前提とする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正、整数の形式不正、入力値または加算結果が設定幅の範囲外 (SX_EX_USAGE)
+##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+sx_num_add1_arith() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add1_arith "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	__sx_num_is_int_safe "${2-}" && __sx_num_is_add_arith_safe "${2}" 1 || return M_EX_USAGE
+
+	__sx_num_add1_arith "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+### __sx_num_add1_arith - 符号付き整数に算術展開で1を加算する（内部用）
+##
+## 使い方:
+##   __sx_num_add1_arith 結果変数名 数値
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   入力値と加算結果が実行シェルの算術範囲内に収まることを前提とする。
+##   最小値の絶対値を整数定数として展開しないよう、算術は名前参照で行う。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+
+define([|CLEANUP|], [|Q_num|])dnl
+
+__sx_num_add1_arith() {
+	Q_num="${2}"
+	: "$((${1} = Q_num + 1))"
+	unset CLEANUP
+}
+|], [|num_add1_arith|])dnl
+
 ### sx_num_cmp_arith - 2つの数値を算術展開で比較する
 ##
 ## 使い方:
@@ -11527,6 +11583,7 @@ __sx_str_isep_cb() {
 
 	# 再入呼び出しで同名の結果変数が使われても、外側の結果で初期化する。
 	__sx_var_bind_init "${1}"
+
 	case "${8}" in
 		0) __sx_var_bind '' "${1}" "${11}${2}" "${12}";;
 		1) __sx_var_bind '' "${1}" "${2}${11}" "${12}";;

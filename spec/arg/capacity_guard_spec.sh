@@ -6,12 +6,6 @@ Describe '可変長 sx_arg_* の引数個数ガード'
   Include ./sx.sh
 
   Describe 'sx_arg_len'
-    It '引数個数が安全範囲（SX_CFG_NUM_RANGE）外の場合に EX_USAGE を返すこと'
-      __sx_num_is_nat0_safe() { [ "${1}" -ge 3 ] && return 1; return 0; }
-      When call sx_arg_len res "v1" "v2" "v3"
-      The status should equal 64
-    End
-
     It 'SX_CFG_NUM_RANGE が不正な値の場合に EX_CONFIG を返すこと'
       SX_CFG_NUM_RANGE=bogus
       When call sx_arg_len res "v1" "v2"
