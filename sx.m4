@@ -11598,18 +11598,19 @@ __sx_str_isep_lit() {
 	  1) M_STR_PREPEND([|Q_out|], [|"${Q_str}"|]);;
 	esac
 
-	if M_STR_NE([|"${Q_end}"|], [|0|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]); then
-		case "${#Q_str}" in 0 | "${Q_abs}")
-			case "${Q_dir}" in
-				0) M_STR_APPEND([|Q_out|], [|"${Q_sep}"|]);;
-				1) M_STR_PREPEND([|Q_out|], [|"${Q_sep}"|]);;
-			esac
-
+	case "${Q_end}${Q_cnt}:${Q_abs}" in
+		0* | 1${Q_lim}:*) __sx_var_bind '' "${Q_bind}" "${Q_out}" "${Q_cnt}";;
+		*:${#Q_str})
 			"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
-		esac
-	fi
 
-	__sx_var_bind '' "${Q_bind}" "${Q_out}" "${Q_cnt}" || :
+			case "${Q_dir}" in
+				0) __sx_var_bind '' "${Q_bind}" "${Q_out}${Q_sep}" "${Q_cnt}";;
+				1) __sx_var_bind '' "${Q_bind}" "${Q_sep}${Q_out}" "${Q_cnt}";;
+			esac
+			;;
+		*) __sx_var_bind '' "${Q_bind}" "${Q_out}" "${Q_cnt}";;
+	esac || :
+
 	unset CLEANUP
 }
 |], [|str_isep_lit|])dnl
