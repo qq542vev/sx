@@ -11428,8 +11428,8 @@ __sx_str_isep() {
 	fi
 
 	case "${Q_dir}" in
-		0) Q_start=$((${6} & SX_STR_ISEP_PRE)); Q_end=$(((${6} & SX_STR_ISEP_POST) && 0${2:+1}));;
-		1) Q_start=$((${6} & SX_STR_ISEP_POST)); Q_end=$(((${6} & SX_STR_ISEP_PRE) && 0${2:+1}));;
+		0) Q_start=$((${6} & SX_STR_ISEP_PRE)) Q_end=$(((${6} & SX_STR_ISEP_POST) && 0${2:+1}));;
+		1) Q_start=$((${6} & SX_STR_ISEP_POST)) Q_end=$(((${6} & SX_STR_ISEP_PRE) && 0${2:+1}));;
 	esac
 
 	"__sx_num_cmp_${Q_type}" "${Q_abs}" "${Q_len}" || case "${?}" in 1)
@@ -11575,31 +11575,27 @@ __sx_str_isep_lit() {
 	Q_end="${10}"
 
 	case "${9}" in
-		0) Q_out=; Q_cnt=0;;
-		*) Q_out="${Q_sep}"; Q_cnt=1;;
+		0) Q_out= Q_cnt=0;;
+		*) Q_out="${Q_sep}" Q_cnt=1;;
 	esac
 
-	case "${Q_dir}" in
-		0)
-			if M_STR_NE([|"${Q_qm}"|], [|''|]); then
-				while M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]) && M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]); do
-					M_STR_APPEND([|Q_out|], [|"${Q_str%"${Q_str#${Q_qm}}"}${Q_sep}"|])
-					Q_str="${Q_str#${Q_qm}}"
-					"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
-				done
-			fi
-			M_STR_APPEND([|Q_out|], [|"${Q_str}"|])
-			;;
-		1)
-			if M_STR_NE([|"${Q_qm}"|], [|''|]); then
-				while M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]) && M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]); do
-					M_STR_PREPEND([|Q_out|], [|"${Q_sep}${Q_str#"${Q_str%${Q_qm}}"}"|])
-					Q_str="${Q_str%${Q_qm}}"
-					"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
-				done
-			fi
-			M_STR_PREPEND([|Q_out|], [|"${Q_str}"|])
-			;;
+	case "${Q_dir}${Q_qm}" in
+		0?*)
+			while M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]) && M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]); do
+				M_STR_APPEND([|Q_out|], [|"${Q_str%"${Q_str#${Q_qm}}"}${Q_sep}"|])
+				Q_str="${Q_str#${Q_qm}}"
+				"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
+			done
+			;&
+		0) M_STR_APPEND([|Q_out|], [|"${Q_str}"|]);;
+		1?*)
+			while M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]) && M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]); do
+				M_STR_PREPEND([|Q_out|], [|"${Q_sep}${Q_str#"${Q_str%${Q_qm}}"}"|])
+				Q_str="${Q_str%${Q_qm}}"
+				"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
+			done
+			;&
+	  1) M_STR_PREPEND([|Q_out|], [|"${Q_str}"|]);;
 	esac
 
 	if M_STR_NE([|"${Q_end}"|], [|0|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]); then
@@ -11608,6 +11604,7 @@ __sx_str_isep_lit() {
 				0) M_STR_APPEND([|Q_out|], [|"${Q_sep}"|]);;
 				1) M_STR_PREPEND([|Q_out|], [|"${Q_sep}"|]);;
 			esac
+
 			"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
 		esac
 	fi
