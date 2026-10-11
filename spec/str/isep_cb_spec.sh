@@ -151,6 +151,59 @@ Describe 'sx_str_isep (callback)'
     End
   End
 
+  Context '内部境界がない場合の開始端と終了端'
+    Parameters
+      1 '' 1 '' 0
+      1 '' 3 '-' 1
+      1 '' 5 '' 0
+      -1 '' 3 '' 0
+      -1 '' 5 '-' 1
+      3 abc 5 'abc-' 1
+      -3 abc 3 '-abc' 1
+      5 'abc:' 7 '-abc:' 1
+      -5 'abc:' 7 'abc:-' 1
+      5 abc 1 abc 0
+    End
+
+    It '有効な境界だけを処理して元文字列を保持すること'
+      cb() { __sx_var_set "${1}=-"; }
+      When call sx_str_isep res:cnt "$2" cb "$1" '' "$3"
+      The status should be success
+      The variable res should equal "$4"
+      The variable cnt should equal "'$5'"
+    End
+  End
+
+  It '値を設定しないコールバックが前回の値を再利用しないこと'
+    cb() {
+      case "${4}" in 1) __sx_var_set "${1}=-";; esac
+    }
+    When call sx_str_isep res:cnt abc cb 1 '' 7
+    The status should be success
+    The variable res should equal '-abc'
+    The variable cnt should equal "'4'"
+  End
+
+  Context '終了端の再入呼び出しが失敗する場合'
+    Parameters
+      3 '-abc'
+      -3 'abc-'
+    End
+
+    It '外側の結果と成功回数を復元して失敗した挿入を破棄すること'
+      inner() { __sx_var_set "${1}=!"; }
+      cb() {
+        sx_str_isep res:cnt ab inner 1 '' 7
+        __sx_var_set "${1}=-"
+        case "${4}" in 2) return 77;; esac
+      }
+      When call sx_str_isep res:cnt abc cb "$1" '' 7
+      The status should equal 77
+      The variable res should equal "$2"
+      The variable cnt should equal "'1'"
+    End
+  End
+
   Context '再入呼び出し (コールバック内で sx_str_isep を呼ぶ場合)'
     It 'コールバック内のリテラル挿入が外側の結果・回数を壊さないこと'
       cb() {
