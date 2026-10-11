@@ -234,7 +234,7 @@ Describe 'sx_str_isep 多倍長対応'
 
     It '経路を多倍長側に固定しても上限を守ること'
       __sx_num_is_int_fit_dec() {
-        case "${#}:${2-}" in 4:6) return 1;; esac
+        case "${#}:${2-}" in 3:6) return 1;; esac
         return 0
       }
       __sx_num_add_arith() { return 64; }
@@ -242,6 +242,32 @@ Describe 'sx_str_isep 多倍長対応'
       The status should be success
       The variable res should equal "$4"
       The variable cnt should equal "$5"
+    End
+  End
+
+  Context '8bit範囲の最大文字列長の前後で上限省略を検証'
+    Parameters
+      126 127 6
+      127 128 6
+      128 129 6
+      126 127 7
+      127 128 7
+      128 129 7
+    End
+
+    It '両端を含めて文字列長+1回挿入できること'
+      str=
+      sx_str_rep str a "$1"
+      sx_str_rep expected a- "$1"
+      expected="-${expected}"
+      # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
+      __sx_cfg_set NUM_RANGE=8
+      cb() { __sx_var_set "${1}=-"; }
+      case "$3" in 6) sep=-;; 7) sep=cb;; esac
+      When call __sx_str_isep res:cnt "$str" "$sep" 1 '' "$3"
+      The status should be success
+      The variable res should equal "$expected"
+      The variable cnt should equal "'$2'"
     End
   End
 

@@ -11397,7 +11397,8 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   内部実装。引数チェックは行わない。
 ##   インターバルは非0の符号付き、リミットは符号なしの正規化済み10進整数を前提とする。
-##   挿入可能数は高々文字列長+1なので、省略時上限を多倍長で計算する。
+##   上限の省略は空文字列のまま保持し、回数との文字列一致で判定する。
+##   回数は高々文字列長+1なので、文字列長が数値範囲の最大値なら多倍長経路へ回す。
 ##   内部境界がない間隔では ? パターンを生成しない。
 ##   コールバックへ委譲する前に準備用変数を解放する。
 ##
@@ -11405,42 +11406,37 @@ M_RENAME_QI([|dnl
 ##    0  成功
 ##   非0  コールバックの終了ステータス
 
-define([|CLEANUP|], [|Q_len Q_abs Q_lim Q_flg Q_type Q_qm Q_dir Q_start Q_end|])dnl
+define([|CLEANUP|], [|Q_len Q_abs Q_type Q_qm Q_dir Q_start Q_end|])dnl
 
 __sx_str_isep() {
 	set -- "${1}" "${2-}" "${3-}" "${4:-1}" "${5-}" "${6:-0}"
-	Q_len="${#2}"
-	Q_abs="${4#[+-]}"
-	Q_lim="${5}"
-	Q_flg="${6}"
-	Q_dir=0
-	case "${4}" in -*) Q_dir=1;; esac
 
-	case "${Q_lim}" in '')
-		__sx_num_add_nat0 Q_lim "${Q_len}" 1
+	case "${5}" in 0)
+		__sx_var_bind_init "${1}"
+		__sx_var_bind '' "${1}" "${2}" 0 || :
+		return
 	esac
 
-	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len}" "${Q_abs}" "${Q_lim}"; then
+	Q_len="${#2}"
+	Q_abs="${4#[+-]}"
+	Q_dir=$((${4%%"${Q_abs}"}1 < 0))
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len}" "${Q_abs}" && M_STR_NE([|"${Q_len}"|], [|"${SX_SYS_NUM_MAX}"|]); then
 		Q_type=arith
 	else
 		Q_type=nat0
 	fi
 
 	case "${Q_dir}" in
-		0) Q_start=$((Q_flg & SX_STR_ISEP_PRE)); Q_end=$((Q_flg & SX_STR_ISEP_POST));;
-		1) Q_start=$((Q_flg & SX_STR_ISEP_POST)); Q_end=$((Q_flg & SX_STR_ISEP_PRE));;
-	esac
-	# 空文字列の同一境界を二重に挿入しない。
-	case "${2}" in '') Q_end=0;; esac
-
-	Q_qm=
-	case "${Q_lim}" in 0) ;; *)
-		"__sx_num_cmp_${Q_type}" "${Q_abs}" "${Q_len}" || case "${?}" in 1)
-			__sx_str_qm Q_qm "${Q_abs}"
-		esac
+		0) Q_start=$((${6} & SX_STR_ISEP_PRE)); Q_end=$(((${6} & SX_STR_ISEP_POST) && 0${2:+1}));;
+		1) Q_start=$((${6} & SX_STR_ISEP_POST)); Q_end=$(((${6} & SX_STR_ISEP_PRE) && 0${2:+1}));;
 	esac
 
-	set -- "${1}" "${2}" "${3}" "${Q_abs}" "${Q_lim}" "${Q_type}" "${Q_qm}" "${Q_dir}" "${Q_start}" "${Q_end}" "$((Q_flg & SX_STR_ISEP_CB))"
+	"__sx_num_cmp_${Q_type}" "${Q_abs}" "${Q_len}" || case "${?}" in 1)
+		__sx_str_qm Q_qm "${Q_abs}"
+	esac
+
+	set -- "${1}" "${2}" "${3}" "${Q_abs}" "${5}" "${Q_type}" "${Q_qm-}" "${Q_dir}" "${Q_start}" "${Q_end}" "$((${6} & SX_STR_ISEP_CB))"
 	unset CLEANUP
 
 	case "${11}" in
@@ -11556,13 +11552,15 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   内部実装。引数チェックは行わない。
 ##   コールバックを呼ばないため、名前付き変数で状態を保持する。
+##   上限0は呼び出し元で処理済みなので、開始端では上限判定をせず回数を1にする。
 ##   回数は上限に達するまで1ずつ増えるので、上限判定は文字列一致で行う。
+##   パターンの空判定はループ前に一度だけ行い、上限到達時はパターン照合を省く。
 ##   反対側の端の境界は、残余長が0または間隔と等しいかで判定する。
 ##
 ## 終了ステータス:
 ##    0  成功
 
-define([|CLEANUP|], [|Q_bind Q_str Q_sep Q_abs Q_lim Q_type Q_qm Q_dir Q_start Q_end Q_out Q_cnt|])dnl
+define([|CLEANUP|], [|Q_bind Q_str Q_sep Q_abs Q_lim Q_type Q_qm Q_dir Q_end Q_out Q_cnt|])dnl
 
 __sx_str_isep_lit() {
 	__sx_var_bind_init "${1}"
@@ -11574,31 +11572,32 @@ __sx_str_isep_lit() {
 	Q_type="${6}"
 	Q_qm="${7}"
 	Q_dir="${8}"
-	Q_start="${9}"
 	Q_end="${10}"
-	Q_out=
-	Q_cnt=0
 
-	if M_STR_NE([|"${Q_start}"|], [|0|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]); then
-		Q_out="${Q_sep}"
-		"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
-	fi
+	case "${9}" in
+		0) Q_out=; Q_cnt=0;;
+		*) Q_out="${Q_sep}"; Q_cnt=1;;
+	esac
 
 	case "${Q_dir}" in
 		0)
-			while M_STR_NE([|"${Q_qm}"|], [|''|]) && M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]); do
-				M_STR_APPEND([|Q_out|], [|"${Q_str%"${Q_str#${Q_qm}}"}${Q_sep}"|])
-				Q_str="${Q_str#${Q_qm}}"
-				"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
-			done
+			if M_STR_NE([|"${Q_qm}"|], [|''|]); then
+				while M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]) && M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]); do
+					M_STR_APPEND([|Q_out|], [|"${Q_str%"${Q_str#${Q_qm}}"}${Q_sep}"|])
+					Q_str="${Q_str#${Q_qm}}"
+					"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
+				done
+			fi
 			M_STR_APPEND([|Q_out|], [|"${Q_str}"|])
 			;;
 		1)
-			while M_STR_NE([|"${Q_qm}"|], [|''|]) && M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]); do
-				M_STR_PREPEND([|Q_out|], [|"${Q_sep}${Q_str#"${Q_str%${Q_qm}}"}"|])
-				Q_str="${Q_str%${Q_qm}}"
-				"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
-			done
+			if M_STR_NE([|"${Q_qm}"|], [|''|]); then
+				while M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]) && M_STR_MATCH([|"${Q_str}"|], [|${Q_qm}?*|]); do
+					M_STR_PREPEND([|Q_out|], [|"${Q_sep}${Q_str#"${Q_str%${Q_qm}}"}"|])
+					Q_str="${Q_str%${Q_qm}}"
+					"__sx_num_add_${Q_type}" Q_cnt "${Q_cnt}" 1
+				done
+			fi
 			M_STR_PREPEND([|Q_out|], [|"${Q_str}"|])
 			;;
 	esac
