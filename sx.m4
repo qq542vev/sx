@@ -10838,6 +10838,7 @@ sx_str_eq() {
 ##   元文字列の中に含まれるエスケープ対象文字の各文字を、
 ##   開始エスケープ文字列 + その文字 + 終了エスケープ文字列 で置換する。
 ##   エスケープ対象文字集合が空の場合は、元の文字列をそのまま結果変数に格納する。
+##   元文字列の長さに SX_CFG_NUM_RANGE による上限は設けない。
 ##   s=\, e=空 の場合はバックスラッシュエスケープ（シェルエスケープ）として動作する。
 ##   s=[, e=] の場合は glob ブラケット式による quoting として動作する。
 ##   s=', e=' の場合は SQL LIKE エスケープとして動作する。
@@ -10845,7 +10846,6 @@ sx_str_eq() {
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_escape() {
@@ -10856,8 +10856,6 @@ sx_str_escape() {
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
 	__sx_str_escape "${@}"
 }
@@ -10876,9 +10874,9 @@ define([|CLEANUP|], [|Q_gs|])dnl
 __sx_str_escape() {
 	set -- "${1}" "${2-}" "${3-}" "${4:-\\}" "${5:-}"
 
-	case "${3:+X}" in '')
+	case "${2:+X}${3:+X}" in '' | X)
 		M_VAR_SET([|${1}|], [|${2}|])
-		return M_EX_OK
+		return
 	esac
 
 	__sx_glob_bracket Q_gs "${3}"
@@ -10897,7 +10895,7 @@ __sx_str_escape() {
 ## 説明:
 ##   sx_str_sub のコールバックモードから呼び出される。
 __sx_str_escape_cb() {
-	eval "${1}=\"\${__sx_str_escape_cb_se_}\${2}\${__sx_str_escape_cb_ee_}\""
+	M_VAR_SET([|${1}|], [|${__sx_str_escape_cb_se_}${2}${__sx_str_escape_cb_ee_}|])
 }
 
 ### sx_str_etrim - 文字列の末尾から指定された文字セットを削除する
@@ -10908,11 +10906,11 @@ __sx_str_escape_cb() {
 ## 説明:
 ##   文字列の末尾にある、指定された文字セットに含まれる文字をすべて削除して結果変数に格納する。
 ##   文字セットが省略された場合は、SX_STR_SPACE（空白文字すべて）が使用される。
+##   元文字列の長さに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_etrim() {
@@ -11665,11 +11663,12 @@ __sx_str_isep_lit() {
 ##   そのまま保持される。
 ##   回数制限が正の値の場合は前方から、負の値の場合は後方から
 ##   指定された回数分だけ変換を行う。省略時は無制限。
+##   空文字列以外の回数制限は先行ゼロなしの符号付き10進整数に限る。
+##   元文字列の長さと回数制限に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  設定値不正 (SX_EX_CONFIG)
 sx_str_lower() {
@@ -12631,11 +12630,11 @@ __sx_str_split() {
 ##   単語分割（Word Splitting）し、各単語をシングルクォートで囲み、
 ##   スペース区切りで結合した文字列として結果変数に格納する。
 ##   第一引数にはバインド形式を指定して分配代入を行うことも可能。
+##   元文字列の長さに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_split_ifs() {
@@ -12690,11 +12689,11 @@ __sx_str_split_ifs() {
 ##   文字セット省略時は SX_STR_SPACE（空白文字すべて）、
 ##   区切り文字省略時は半角スペース。
 ##   XSLT/XPath の normalize-space() 相当の機能。
+##   元文字列の長さに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_squish() {
@@ -12751,11 +12750,11 @@ __sx_str_squish() {
 ## 説明:
 ##   文字列の先頭にある、指定された文字セットに含まれる文字をすべて削除して結果変数に格納する。
 ##   文字セットが省略された場合は、SX_STR_SPACE（空白文字すべて）が使用される。
+##   元文字列の長さに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_strim() {
@@ -13221,11 +13220,12 @@ sx_str_sw() {
 ##   結果を結果変数に格納する。アルファベット以外の文字はそのまま保持される。
 ##   回数制限が正の値の場合は前方から、負の値の場合は後方から
 ##   指定された回数分だけ変換を行う。省略時は無制限。
+##   空文字列以外の回数制限は先行ゼロなしの符号付き10進整数に限る。
+##   元文字列の長さと回数制限に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  設定値不正 (SX_EX_CONFIG)
 sx_str_swapcase() {
@@ -13459,11 +13459,11 @@ __sx_str_tr() {
 ## 説明:
 ##   文字列の前後にある、指定された文字セットに含まれる文字をすべて削除して結果変数に格納する。
 ##   文字セットが省略された場合は、SX_STR_SPACE（空白文字すべて）が使用される。
+##   元文字列の長さに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_trim() {
@@ -13511,11 +13511,12 @@ __sx_str_trim() {
 ##   そのまま保持される。
 ##   回数制限が正の値の場合は前方から、負の値の場合は後方から
 ##   指定された回数分だけ変換を行う。省略時は無制限。
+##   空文字列以外の回数制限は先行ゼロなしの符号付き10進整数に限る。
+##   元文字列の長さと回数制限に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  設定値不正 (SX_EX_CONFIG)
 sx_str_upper() {
