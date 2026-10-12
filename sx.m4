@@ -12431,17 +12431,23 @@ __sx_str_splice() {
 ##   指定された文字列を区切り文字で分割し、
 ##   各要素をシングルクォートで囲み、スペース区切りで結合した文字列として結果変数に格納する。
 ##   第一引数にはバインド形式を指定して分配代入を行うことも可能。
-##   区切り文字に空文字列を指定した場合は、文字列を一文字ずつに分割する（境界線モデル）。
+##   区切り文字が空の場合は、文字列の両端と文字間の境界で分割する。
+##   空の元文字列では文頭と文末が重なる一つの境界を分割し、空要素を二つ返す。
 ##   分割回数（limit）が指定された場合、最大でその回数分だけ分割を行う。
 ##   分割回数が正の場合は前方から、負の場合は後方から分割する。
+##   回数は任意桁の符号付き10進整数（先行ゼロなし）。8進・16進表記は受け付けない。
+##   回数の省略時・空指定時は前方から無制限。0・+0・-0 は分割しない。
+##   元文字列長・分割回数に SX_CFG_NUM_RANGE による上限は設けない。
 ##   フラグに SX_STR_SPLIT_GLOB を指定すると、区切り文字を glob パターンとして扱う。
 ##   フラグに SX_STR_SPLIT_INC を指定すると、分割に使用した区切り文字を結果に含める。
 ##   SX_STR_SPLIT_GLOB と併用した場合は、glob パターンに一致した実際の文字列を結果に含める。
+##   フラグの形式と範囲は sx_num_is_int_safe_inv に従う。
+##   空区切りと非空区切りの前方分割では、バインド先を使い切った時点で処理を終了する。
+##   互換性: 従来受理した8進・16進の回数指定は拒否し、従来拒否した空指定は無制限とする。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  変数が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_split() {
@@ -12453,168 +12459,213 @@ sx_str_split() {
 
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
-	__sx_num_is_int_safe_inv ${4+"${4}"} ${5+"${5}"} || return M_EX_USAGE
+	__sx_num_is_int_base 10 ${4:+"${4}"} && __sx_num_is_int_safe_inv ${5+"${5}"} || return M_EX_USAGE
 
 	__sx_str_split "${@}"
 }
 
 M_RENAME_QI([|dnl
-### __sx_str_split - 文字列を分割して結果変数に格納する（内部用）
+### __sx_str_split - 方向・回数を準備して文字列を分割する（内部用）
 ##
 ## 使い方:
-##   __sx_str_split 結果変数名 [文字列 [区切り文字 [分割回数 [フラグ]]]]
+##   __sx_str_split バインド形式 [文字列 [区切り文字 [分割回数 [フラグ]]]]
 ##
 ## 説明:
-##   指定された文字列を区切り文字で分割し、結果変数に格納する。
-##   分割回数（limit）が指定された場合、最大でその回数分だけ分割を行う。
-##   分割回数が正の場合は前方から、負の場合は後方から分割する。
-##   この関数は引数の検証や書き込み権限のチェックを行わない。
+##   内部実装。引数チェックは行わない。
+##   回数は符号付き10進整数、または無制限を表す空文字列を前提とする。
+##   符号と絶対値を文字列で分離し、空区切りは専用実装へ委譲する。
+##   非空区切りの分割回数は元文字列長以下なので、文字列長から数値経路を選ぶ。
+##   前方は直接バインドし、後方は位置パラメータに蓄積して前方順にバインドする。
+##   バインドの初期化は一度だけ行う。
+##
+## 終了ステータス:
+##    0  成功（バインド枯渇による早期終了を含む）
 
-define([|CLEANUP|], [|Q_bind Q_str Q_sep Q_lim Q_flg Q_inc Q_out Q_rem Q_mid Q_val|])dnl
+define([|CLEANUP|], [|Q_bind Q_str Q_sep Q_lim Q_dir Q_flg Q_glob Q_inc Q_cnt Q_type Q_rem Q_mid Q_val|])dnl
 
 __sx_str_split() {
 	__sx_var_bind_init "${1}"
-	Q_bind="${1}"
-	Q_str="${2-}"
-	Q_sep="${3-}"
-	Q_lim=$((${4-${SX_NUM_I32_MAX}}))
-	Q_flg=$((${5-0}))
+	case "${1}" in '') return M_EX_OK;; esac
+
+	case "${4-}" in 0 | [+-]0)
+		__sx_var_bind '' "${1}" "${2-}" || :
+		return M_EX_OK
+	esac
+
+	Q_bind="${1}" Q_str="${2-}" Q_sep="${3-}"
+	Q_lim="${4-}"
+	case "${Q_lim}" in
+		-*) Q_dir=-1;;
+		*) Q_dir=1;;
+	esac
+	Q_lim="${Q_lim#[+-]}"
+	Q_flg="${5-0}"
+	Q_glob=$((Q_flg & SX_STR_SPLIT_GLOB))
 	Q_inc=$(((Q_flg & SX_STR_SPLIT_INC) != 0))
 
-	set --
-
-	# 空区切り文字（一文字ずつ分割）の処理
 	if
 		M_STR_EQ([|"${Q_sep}"|], [|''|]) ||
-		{ M_NUM_BOOL([|Q_flg & SX_STR_SPLIT_GLOB|]) && ! M_STR_HAS([|"${Q_sep}"|], [|*[!*]*|]); }
+		{ M_NUM_BOOL([|Q_glob|]) && ! M_STR_HAS([|"${Q_sep}"|], [|*[!*]*|]); }
 	then
-		if M_NUM_LT([|0|], [|Q_lim|]); then
-			# 前方から制限数分だけ分割
-			__sx_str_chunk Q_out "${Q_str}" 1 "$((Q_lim - 1))"
-
-			case "$((${#Q_str} < Q_lim))" in 1)
-				M_STR_APPEND([|Q_out|], [|"''"|], [| |])
-			esac
-
-			M_STR_PREPEND([|Q_out|], [|"''"|], [| |])
-		elif M_NUM_LT([|Q_lim|], [|0|]); then
-			# 後方から制限数分だけ分割
-			: $((Q_lim *= -1))
-			__sx_str_chunk Q_out "${Q_str}" -1 "$((Q_lim - 1))"
-
-			case "$((${#Q_str} < Q_lim))" in 1)
-				M_STR_PREPEND([|Q_out|], [|"''"|], [| |])
-			esac
-
-			M_STR_APPEND([|Q_out|], [|"''"|], [| |])
-		else
-			# 制限なし：文字列全体をクォートして格納
-			__sx_arg_quote Q_out "${Q_str}"
-		fi
-
-		case "${Q_inc}" in 1)
-			eval __sx_arg_isep Q_out '"${SX_CFG_SEP}"' "${Q_out}"
-		esac
-
-		eval __sx_arg_quote '"${Q_bind}"' "${Q_out}"
-	elif M_NUM_LE([|0|], [|Q_lim|]); then
-		# 前方から分割
-		if M_STR_NE([|$((Q_flg & SX_STR_SPLIT_GLOB))|], [|0|]); then
-			# グロブ（パターン）による前方分割
-			while
-				M_STR_HAS([|"${Q_str}"|], [|${Q_sep}|]) &&
-				M_STR_NE([|"${Q_lim}"|], [|0|])
-			do
-				Q_val="${Q_str%%${Q_sep}*}"
-
-				__sx_var_bind Q_bind "${Q_bind}" "${Q_val}" || {
-					unset CLEANUP
-					return M_EX_OK
-				}
-
-				Q_rem="${Q_str#*${Q_sep}}"
-
-				# 区切り文字を含めるフラグがある場合
-				case "${Q_inc}" in 1)
-					Q_mid="${Q_str#${Q_val}}"
-					__sx_var_bind Q_bind "${Q_bind}" "${Q_mid%${Q_rem}}" || {
-						unset CLEANUP
-						return M_EX_OK
-					}
-				esac
-
-				Q_str="${Q_rem}"
-				M_NUM_DECR([|Q_lim|])
-			done
-		else
-			# 通常の文字列による前方分割
-			while
-				M_STR_HAS([|"${Q_str}"|], [|"${Q_sep}"|]) &&
-				M_STR_NE([|"${Q_lim}"|], [|0|])
-			do
-				__sx_var_bind Q_bind "${Q_bind}" "${Q_str%%"${Q_sep}"*}" || {
-					unset CLEANUP
-					return M_EX_OK
-				}
-
-				case "${Q_inc}" in 1)
-					__sx_var_bind Q_bind "${Q_bind}" "${Q_sep}" || {
-						unset CLEANUP
-						return M_EX_OK
-					}
-				esac
-
-				Q_str="${Q_str#*"${Q_sep}"}"
-				M_NUM_DECR([|Q_lim|])
-			done
-		fi
-
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_str}" || :
-	else
-		# 後方から分割
-		if M_STR_NE([|$((Q_flg & SX_STR_SPLIT_GLOB))|], [|0|]); then
-			# グロブ（パターン）による後方分割
-			while
-				M_STR_HAS([|"${Q_str}"|], [|${Q_sep}|]) &&
-				M_STR_NE([|"${Q_lim}"|], [|0|])
-			do
-				set -- "${Q_str##*${Q_sep}}" "${@}"
-				Q_rem="${Q_str%${Q_sep}*}"
-
-				# 区切り文字を含めるフラグがある場合
-				case "${Q_inc}" in 1)
-					Q_mid="${Q_str%${1}}"
-					set -- "${Q_mid#${Q_rem}}" "${@}"
-				esac
-
-				Q_str="${Q_rem}"
-				M_NUM_INCR([|Q_lim|])
-			done
-		else
-			# 通常の文字列による後方分割
-			while
-				M_STR_HAS([|"${Q_str}"|], [|"${Q_sep}"|]) &&
-				M_STR_NE([|"${Q_lim}"|], [|0|])
-			do
-				set -- "${Q_str##*"${Q_sep}"}" "${@}"
-
-				case "${Q_inc}" in 1)
-					set -- "${Q_sep}" "${@}"
-				esac
-
-				Q_str="${Q_str%"${Q_sep}"*}"
-				M_NUM_INCR([|Q_lim|])
-			done
-		fi
-
-		__sx_arg_quote "${Q_bind}" "${Q_str}" "${@}"
+		set -- "${Q_bind}" "${Q_str}" "${Q_lim}" "${Q_dir}" "${Q_inc}"
+		unset CLEANUP
+		__sx_str_split_empty "${@}" || return
+		return M_EX_OK
 	fi
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#Q_str}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+	Q_cnt=0
+	set --
+
+	case "${Q_dir}" in 1)
+		while
+			M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]) &&
+			M_STR_MATCH([|"${Q_glob}${Q_str}"|], [|0*"${Q_sep}"*|], [|[!0]*${Q_sep}*|])
+		do
+			case "${Q_glob}" in
+				0) Q_val="${Q_str%%"${Q_sep}"*}";;
+				*) Q_val="${Q_str%%${Q_sep}*}";;
+			esac
+
+			__sx_var_bind Q_bind "${Q_bind}" "${Q_val}" || break
+			case "${Q_bind}" in '') break;; esac
+
+			case "${Q_glob}" in
+				0) Q_rem="${Q_str#*"${Q_sep}"}";;
+				*) Q_rem="${Q_str#*${Q_sep}}";;
+			esac
+			case "${Q_inc}" in 1)
+				Q_mid="${Q_str#"${Q_val}"}"
+				__sx_var_bind Q_bind "${Q_bind}" "${Q_mid%"${Q_rem}"}" || break
+				case "${Q_bind}" in '') break;; esac
+			esac
+
+			Q_str="${Q_rem}"
+			case "${Q_lim:+X}" in X)
+				"__sx_num_add1_${Q_type}" Q_cnt "${Q_cnt}"
+			esac
+		done
+
+		case "${Q_bind:+X}" in X)
+			__sx_var_bind '' "${Q_bind}" "${Q_str}" || :
+		esac
+		;;
+	*)
+		while
+			M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]) &&
+			M_STR_MATCH([|"${Q_glob}${Q_str}"|], [|0*"${Q_sep}"*|], [|[!0]*${Q_sep}*|])
+		do
+			case "${Q_glob}" in
+				0) Q_val="${Q_str##*"${Q_sep}"}" Q_rem="${Q_str%"${Q_sep}"*}";;
+				*) Q_val="${Q_str##*${Q_sep}}" Q_rem="${Q_str%${Q_sep}*}";;
+			esac
+			set -- "${Q_val}" "${@}"
+			case "${Q_inc}" in 1)
+				Q_mid="${Q_str%"${Q_val}"}"
+				set -- "${Q_mid#"${Q_rem}"}" "${@}"
+			esac
+
+			Q_str="${Q_rem}"
+			"__sx_num_add1_${Q_type}" Q_cnt "${Q_cnt}"
+		done
+
+		__sx_var_bind '' "${Q_bind}" "${Q_str}" "${@}" || :
+		;;
+	esac
 
 	unset CLEANUP
 }
 |], [|str_split|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_str_split_empty - 空区切りの境界を前方順に直接バインドする（内部用）
+##
+## 使い方:
+##   __sx_str_split_empty バインド形式 元文字列 上限絶対値 方向 INC
+##
+## 説明:
+##   内部実装。引数チェックは行わない。バインド形式は初期化済みで非空を前提とする。
+##   上限は正の10進整数または無制限を表す空文字列、方向は1/-1、INCは0/1。
+##   後方分割は上限指定を必須とし、無制限は前方分割として扱う。
+##   後方分割は先頭部分を確定した後、残りを前方順にバインドする。
+##   先頭部分の切り出しは短い側の ? パターンを使い、空側では生成しない。
+##   文頭と文末が重なる空入力の境界は一つだけ処理する。
+##   境界数は元文字列長+1なので、文字列長が算術域の最大値なら多倍長経路を使う。
+##   各バインド直後に残りを確認し、枯渇後の切り取り・回数更新を行わない。
+##
+## 終了ステータス:
+##    0  成功（バインド枯渇による早期終了を含む）
+
+define([|CLEANUP|], [|Q_bind Q_str Q_lim Q_inc Q_cnt Q_len Q_type Q_tail Q_head Q_qm Q_rem Q_val|])dnl
+
+__sx_str_split_empty() {
+	Q_bind="${1}" Q_str="${2}" Q_lim="${3}" Q_inc="${5}"
+	Q_len="${#2}" Q_cnt=0 Q_val='' Q_tail=0 Q_head=0
+
+	if
+		__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len}" &&
+		M_STR_NE([|"${Q_len}"|], [|"${SX_SYS_NUM_MAX}"|])
+	then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+
+	case "${4}" in -1)
+		__sx_num_sub1_nat0 Q_tail "${Q_lim}"
+		__sx_num_cmp_nat0 "${Q_tail}" "${Q_len}" || case "${?}" in 1)
+			case "${Q_tail}" in
+				0) Q_val="${Q_str}" Q_str='';;
+				*)
+					__sx_num_sub_nat0 Q_head "${Q_len}" "${Q_tail}"
+					__sx_num_cmp_nat0 "${Q_head}" "${Q_tail}" || case "${?}" in
+						[12])
+							__sx_str_qm Q_qm "${Q_head}"
+							Q_rem="${Q_str#${Q_qm}}"
+							Q_val="${Q_str%"${Q_rem}"}"
+							Q_str="${Q_rem}"
+							;;
+						*)
+							__sx_str_qm Q_qm "${Q_tail}"
+							Q_val="${Q_str%${Q_qm}}"
+							Q_str="${Q_str#"${Q_val}"}"
+							;;
+					esac
+					;;
+			esac
+		esac
+		Q_lim=''
+		esac
+
+	while :; do
+		__sx_var_bind Q_bind "${Q_bind}" "${Q_val}" || break
+		case "${Q_bind}" in '') break;; esac
+		case "${Q_inc}" in 1)
+			__sx_var_bind Q_bind "${Q_bind}" '' || break
+			case "${Q_bind}" in '') break;; esac
+		esac
+
+		case "${Q_lim:+X}" in X)
+			"__sx_num_add1_${Q_type}" Q_cnt "${Q_cnt}"
+			case "${Q_cnt}" in "${Q_lim}") break;; esac
+		esac
+		case "${Q_str}" in '') break;; esac
+
+		Q_rem="${Q_str#?}"
+		Q_val="${Q_str%"${Q_rem}"}"
+		Q_str="${Q_rem}"
+	done
+
+	case "${Q_bind:+X}" in X)
+		__sx_var_bind '' "${Q_bind}" "${Q_str}" || :
+	esac
+	unset CLEANUP
+}
+|], [|str_split_empty|])dnl
 
 ### sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する
 ##

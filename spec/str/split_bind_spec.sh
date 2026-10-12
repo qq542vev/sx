@@ -52,6 +52,126 @@ Describe 'sx_str_split bind'
     The variable rem should equal ""
   End
 
+  Context 'バインド先をちょうど使い切る場合'
+    Parameters
+      0 'head:' abc '' 3 0 '' 1
+      1 'head:' abc '' 3 0 '' 1
+      0 'head:' abc '' -1 0 abc 1
+      1 'head:' abc '' -3 0 a 1
+      0 '2head:' abc '' 3 0 "'' 'a'" 2
+      1 '2head:' abc '' 3 2 "'' ''" 2
+      0 '2head:' abc '' -2 2 "'ab' ''" 2
+      1 'head:' 'a:b:c' : 2 0 a 1
+      0 '2head:' 'a:b:c' : 2 2 "'a' ':'" 2
+      1 'head:' a1b2c '[0-9]' 2 1 a 1
+      0 '2head:' a1b2c '[0-9]' 2 3 "'a' '1'" 2
+    End
+
+    It '追加のバインド呼び出しを行わず成功終了すること'
+      sx_cfg_set "SKIP_CHK=$1"
+      bind_calls=0
+      # shellcheck disable=SC2329
+      __sx_var_bind() {
+        bind_calls=$((bind_calls + 1))
+        __sx_var_bind0 1 "$@"
+      }
+      __sx_str_chunk() { return 64; }
+      __sx_arg_isep() { return 64; }
+      When call sx_str_split "$2" "$3" "$4" "$5" "$6"
+      The status should be success
+      The variable head should equal "$7"
+      The variable bind_calls should equal "$8"
+    End
+  End
+
+  Context '先頭の一要素だけ取得する場合'
+    Parameters
+      abc '' 3 0 ''
+      abc '' -1 2 abc
+      abc '' -999999999999999999999999 0 ''
+      'a:b:c' : 3 0 a
+      a1b2c '[0-9]' 3 3 a
+    End
+
+    It 'バインド枯渇後に分割回数を更新しないこと'
+      counter_updates=0
+      __sx_num_add1_arith() { counter_updates=$((counter_updates + 1)); return 64; }
+      __sx_num_add1_nat0() { counter_updates=$((counter_updates + 1)); return 64; }
+      When call sx_str_split 'head:' "$1" "$2" "$3" "$4"
+      The status should be success
+      The variable head should equal "$5"
+      The variable counter_updates should equal 0
+    End
+  End
+
+  It '空のバインド指定では切り出しや数値経路の準備を行わないこと'
+    __sx_num_is_int_fit_dec() { return 64; }
+    __sx_str_qm() { return 64; }
+    __sx_var_bind() { return 64; }
+    When call __sx_str_split '' abc '' -2 2
+    The status should be success
+  End
+
+  It '空区切りのINCで空要素をスキップできること'
+    When call sx_str_split '::head:rest' abc '' '' "$SX_STR_SPLIT_INC"
+    The status should be success
+    The variable head should equal a
+    The variable rest should equal "'' 'b' '' 'c' '' ''"
+  End
+
+  It '同名の蓄積先への複数回の割当を保持すること'
+    When call sx_str_split '2v:1v:rest' abc ''
+    The status should be success
+    The variable v should equal "'' 'a' 'b'"
+    The variable rest should equal "'c' ''"
+  End
+
+  It '任意桁のバインド個数を指定して空要素を含めて蓄積できること'
+    When call sx_str_split '999999999999999999999999v:' abc ''
+    The status should be success
+    The variable v should equal "'' 'a' 'b' 'c' ''"
+  End
+
+  It '空区切りの結果を配列と残りのリストに分配できること'
+    When call sx_str_split '2@arr:rest' abc ''
+    The status should be success
+    The variable arr_len should equal 2
+    The variable arr_0 should equal ''
+    The variable arr_1 should equal a
+    The variable rest should equal "'b' 'c' ''"
+  End
+
+  It 'INCの空区切りを配列にも独立した要素として格納すること'
+    When call sx_str_split '2@arr:rest' abc '' '' "$SX_STR_SPLIT_INC"
+    The status should be success
+    The variable arr_len should equal 2
+    The variable arr_0 should equal ''
+    The variable arr_1 should equal ''
+    The variable rest should equal "'a' '' 'b' '' 'c' '' ''"
+  End
+
+  Context '空区切りのメタ文字'
+    Parameters
+      # shellcheck disable=SC2286
+      ''
+      # shellcheck disable=SC2215
+      -999999999999999999999999
+    End
+
+    It '引用符・空白・glob文字・ドル記号を生の値として分配できること'
+      When call sx_str_split 'a:b:c:d:e:f:g:h:' "a' *?$" '' "$1"
+      The status should be success
+      The variable a should equal ''
+      The variable b should equal a
+      The variable c should equal "'"
+      The variable d should equal ' '
+      The variable e should equal '*'
+      The variable f should equal '?'
+      The variable g should equal '$'
+      The variable h should equal ''
+    End
+  End
+
   It 'バインド変数が余る場合、余った変数は空（最後の変数）または未設定になること'
     v1=old v2=old v3=old
     When call sx_str_split "v1:v2:v3" "a" ":"

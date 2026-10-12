@@ -12,7 +12,7 @@ Describe 'sx_str_split (SX_STR_SPLIT_INC)'
   End
 
   It '通常文字での INC 動作確認（後方分割）'
-    When call sx_str_split res "A:B:C" ":" -${SX_NUM_I32_MAX} "${SX_STR_SPLIT_INC}"
+    When call sx_str_split res "A:B:C" ":" "-${SX_NUM_I32_MAX}" "${SX_STR_SPLIT_INC}"
     The status should be success
     The variable res should equal "'A' ':' 'B' ':' 'C'"
   End
@@ -24,7 +24,7 @@ Describe 'sx_str_split (SX_STR_SPLIT_INC)'
   End
 
   It 'GLOB パターンでの INC 動作確認（後方分割）'
-    When call sx_str_split res "A1B2C" "[0-9]" -${SX_NUM_I32_MAX} "$((SX_STR_SPLIT_GLOB | SX_STR_SPLIT_INC))"
+    When call sx_str_split res "A1B2C" "[0-9]" "-${SX_NUM_I32_MAX}" "$((SX_STR_SPLIT_GLOB | SX_STR_SPLIT_INC))"
     The status should be success
     The variable res should equal "'A' '1' 'B' '2' 'C'"
   End
@@ -63,6 +63,29 @@ Describe 'sx_str_split (SX_STR_SPLIT_INC)'
     When call sx_str_split res "" "" 1 "${SX_STR_SPLIT_INC}"
     The status should be success
     The variable res should equal "'' '' ''"
+  End
+
+  Context 'データ中のメタ文字と実区切りの抽出'
+    Parameters
+      'a*1b' 1 "'a*' '1' 'b'"
+      'a*1b' -1 "'a*' '1' 'b'"
+      'a1*b' 1 "'a' '1' '*b'"
+      'a1*b' -1 "'a' '1' '*b'"
+      'a[xy]1b' 1 "'a[xy]' '1' 'b'"
+      'a1[xy]b' -1 "'a' '1' '[xy]b'"
+    End
+
+    It '前後のデータをパターンとして再解釈しないこと'
+      When call sx_str_split res "$1" '[0-9]' "$2" "$((SX_STR_SPLIT_GLOB | SX_STR_SPLIT_INC))"
+      The status should be success
+      The variable res should equal "$3"
+    End
+  End
+
+  It '複数文字のglob一致でも実際の区切りだけを含めること'
+    When call sx_str_split res 'a*12?b' '[0-9][0-9]' -1 "$((SX_STR_SPLIT_GLOB | SX_STR_SPLIT_INC))"
+    The status should be success
+    The variable res should equal "'a*' '12' '?b'"
   End
 
   It '連続する区切り文字の処理確認'
