@@ -10158,11 +10158,11 @@ sx_str_any() {
 ##   - 空白区切り: 空白で分割
 ##   区切り文字セットの各文字は単語区切りとして扱われる。
 ##   デフォルトの区切り文字セットは "_-/.:${SX_STR_SPACE}"。
+##   元文字列・中間文字列の長さと変換回数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_camel() {
@@ -10173,8 +10173,6 @@ sx_str_camel() {
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
 	__sx_str_camel "${@}"
 }
@@ -11867,11 +11865,11 @@ __sx_str_pad() {
 ##   - 空白区切り: 空白で分割
 ##   区切り文字セットの各文字は単語区切りとして扱われる。
 ##   デフォルトの区切り文字セットは "_-/.:${SX_STR_SPACE}"。
+##   元文字列・中間文字列の長さと変換回数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_pascal() {
@@ -11882,8 +11880,6 @@ sx_str_pascal() {
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
 	__sx_str_pascal "${@}"
 }
@@ -13263,11 +13259,11 @@ __sx_str_swapcase() {
 ##   単語の区切りは単語区切り文字セットで判断する。デフォルトは ${SX_STR_SPACE}
 ##   （空白文字すべて）。文字セット内の各文字が単語区切りとして扱われる。
 ##   文字列先頭も単語の先頭として扱う。
+##   元文字列・中間文字列の長さと変換回数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  設定値不正 (SX_EX_CONFIG)
 sx_str_title() {
@@ -13279,8 +13275,6 @@ sx_str_title() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
-
 	__sx_str_title "${@}"
 }
 
@@ -13291,8 +13285,10 @@ M_RENAME_QI([|dnl
 ##   __sx_str_title 結果変数名 [元文字列 [単語区切り文字セット]]
 ##
 ## 説明:
-##   sx_str_title の内部実装。sx_str_tr で一括小文字化した後、
-##   セパレータ+小文字のペアを sx_str_sub のコールバックモードで検出して大文字化する。
+##   sx_str_title の内部実装。引数チェックは行わない。
+##   sx_str_tr で一括小文字化した後、セパレータ+小文字のペアを
+##   sx_str_sub のコールバックモードで検出して大文字化する。
+##   両処理とも固定の回数上限を設けず、委譲先の多倍長対応を利用する。
 
 define([|CLEANUP|], [|Q_tmp Q_gs|])dnl
 
@@ -13300,8 +13296,8 @@ __sx_str_title() {
 	set -- "${1}" "${2-}" "${3:-${SX_STR_SPACE}}"
 
 	__sx_glob_bracket Q_gs "${3}"
-	__sx_str_tr Q_tmp: "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}" "${SX_NUM_I32_MAX}"
-	__sx_str_sub Q_tmp: "${3%"${3#?}"}${Q_tmp}" "${Q_gs}[${SX_STR_LOWER}]" __sx_str_title_cb "${SX_NUM_I32_MAX}" "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+	__sx_str_tr Q_tmp: "${2-}" "${SX_STR_UPPER}" "${SX_STR_LOWER}"
+	__sx_str_sub Q_tmp: "${3%"${3#?}"}${Q_tmp}" "${Q_gs}[${SX_STR_LOWER}]" __sx_str_title_cb '' "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
 
 	M_VAR_SET([|${1}|], [|${Q_tmp#?}|])
 	unset CLEANUP
@@ -13584,11 +13580,11 @@ __sx_str_upper_cb() {
 ##   - kebab-case: - で分割
 ##   - camelCase / PascalCase: 大文字の境界で分割
 ##   - 連続大文字（頭字語）も適切に扱う
+##   元文字列・中間文字列の長さと変換回数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
-##   65  元文字列の長さが安全範囲外 (SX_EX_DATAERR)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_str_words() {
@@ -13599,8 +13595,6 @@ sx_str_words() {
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	__sx_num_is_nat0_safe ${2+"${#2}"} || return M_EX_DATAERR
 
 	__sx_str_words "${@}"
 }
