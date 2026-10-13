@@ -10528,14 +10528,14 @@ sx_str_chunk() {
 ##    0  成功（バインド枯渇による早期終了を含む）
 
 __sx_str_chunk() {
-	__sx_str_chunk_core "${1}" "${2-}" "${3-}" "${4-}" "${5-0}" 1
+	__sx_str_chunk0 "${1}" "${2-}" "${3-}" "${4-}" "${5-0}" 1
 }
 
 M_RENAME_QI([|dnl
-### __sx_str_chunk_core - 基準方向を指定して文字列を一定の長さで区切る（内部用）
+### __sx_str_chunk0 - 基準方向を指定して文字列を一定の長さで区切る（内部用）
 ##
 ## 使い方:
-##   __sx_str_chunk_core スキーマ 文字列 長さ 分割回数 フラグ 基準方向
+##   __sx_str_chunk0 スキーマ 文字列 長さ 分割回数 フラグ 基準方向
 ##
 ## 説明:
 ##   内部実装。引数チェックは行わない。
@@ -10553,7 +10553,7 @@ M_RENAME_QI([|dnl
 
 define([|CLEANUP|], [|Q_bind Q_str Q_cycle Q_lim Q_len Q_flg Q_dir Q_qms Q_cur Q_qm Q_abs Q_arg Q_prev Q_next Q_chunk Q_type Q_cmp|])dnl
 
-__sx_str_chunk_core() {
+__sx_str_chunk0() {
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
 	Q_str="${2-}"
@@ -10743,7 +10743,7 @@ __sx_str_chunk_core() {
 
 	unset CLEANUP
 }
-|], [|str_chunk_core|])dnl
+|], [|str_chunk0|])dnl
 
 ### sx_str_count - 文字列から指定された文字列の出現回数を取得する
 ##
@@ -12103,7 +12103,7 @@ sx_str_rchunk() {
 ##    0  成功（バインド枯渇による早期終了を含む）
 
 __sx_str_rchunk() {
-	__sx_str_chunk_core "${1}" "${2-}" "${3-}" "${4-}" "${5-0}" -1
+	__sx_str_chunk0 "${1}" "${2-}" "${3-}" "${4-}" "${5-0}" -1
 }
 
 ### sx_str_rep - 文字列を繰り返す
