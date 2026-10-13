@@ -10594,7 +10594,7 @@ __sx_str_chunk() {
 							esac
 
 							case "${Q_lim:+X}" in X)
-								"__sx_num_sub_${Q_type}" Q_lim "${Q_lim}" 1
+								"__sx_num_sub1_${Q_type}" Q_lim "${Q_lim}"
 							esac
 							;;
 						*)
@@ -10665,7 +10665,7 @@ __sx_str_chunk() {
 							esac
 
 							case "${Q_lim:+X}" in X)
-								"__sx_num_sub_${Q_type}" Q_lim "${Q_lim}" 1
+								"__sx_num_sub1_${Q_type}" Q_lim "${Q_lim}"
 							esac
 							;;
 						*)
