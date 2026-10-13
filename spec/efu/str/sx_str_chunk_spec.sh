@@ -37,21 +37,4 @@ Describe 'sx_str_chunk -efu 環境検証'
     End
   End
 
-  Context 'REVERSE'
-    Parameters
-      2 '' 0
-      -2 '' 0
-      '0:2:-1' '' 0
-      '-2:-1' 2 2
-      '2:-1:9223372036854775808' '' 1
-      -2 999999999999999999999999999999 0
-    End
-
-    It '後方基準の分割を外部コマンドなしで処理すること'
-      When run efu_run sx_str_chunk res abcdefg "$1" "$2" "$((SX_STR_CHUNK_REVERSE | $3))"
-      The status should be success
-      The output should equal ''
-    End
-  End
-
 End

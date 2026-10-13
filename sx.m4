@@ -196,7 +196,8 @@ readonly SX_STR_COUNT_GLOB=1
 readonly SX_STR_COUNT_OVERLAP=2
 readonly SX_STR_CHUNK_SKIP_SHORT=1
 readonly SX_STR_CHUNK_SKIP_LONG=2
-readonly SX_STR_CHUNK_REVERSE=4
+readonly SX_STR_RCHUNK_SKIP_SHORT=1
+readonly SX_STR_RCHUNK_SKIP_LONG=2
 
 # 数値定数 (8bit / 16bit / 32bit / 64bit / 128bit 整数限界)
 readonly SX_NUM_I8_MAX=127
@@ -10447,8 +10448,8 @@ M_RENAME_Q([|dnl
 ## 説明:
 ##   指定された文字列を、指定された長さ（文字数）ごとに区切る。
 ##   長さが正の場合は基準方向から、負の場合はその逆方向から区切る。
-##   通常の基準方向は前方で、結果も前方からの順序で格納する。
-##   SX_STR_CHUNK_REVERSE 指定時は基準方向と結果の順序を後方に切り替える。
+##   基準方向は前方で、結果も前方からの順序で格納する。
+##   後方基準で結果を返す場合は sx_str_rchunk を使用する。
 ##   チャンク内部の文字順は保持する。
 ##   分割回数が指定された場合、最大でその回数分だけ分割を行う。
 ##   長さの省略時または空文字列指定時は 1 とする。単独の 0 はエラー (SX_EX_USAGE)。
@@ -10471,8 +10472,7 @@ M_RENAME_Q([|dnl
 ##   フラグ (第五引数) はビットマスクで指定する。
 ##   SX_STR_CHUNK_SKIP_SHORT / SX_STR_CHUNK_SKIP_LONG は、指定された条件に該当する
 ##   残余チャンクを結果に含めずスキップする。
-##   SX_STR_CHUNK_REVERSE は基準方向と結果の順序を後方に切り替える。
-##   例: abcde を長さ 2 で分割すると de, bc, a、長さ -2 では e, cd, ab。
+##   例: abcde を長さ 2 で分割すると ab, cd, e、長さ -2 では a, bc, de。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -10515,28 +10515,45 @@ sx_str_chunk() {
 
 |], [|str_chunk|])dnl
 
-M_RENAME_QI([|dnl
 ### __sx_str_chunk - 文字列を一定の長さで区切って結果変数に格納する（内部用）
 ##
 ## 使い方:
 ##   __sx_str_chunk 結果変数名 [文字列 [長さ [分割回数 [フラグ]]]]
 ##
 ## 説明:
-##   sx_str_chunk の内部実装。引数チェックは行わない。
+##   内部実装。引数チェックは行わない。
+##   前方を基準方向として共通実装へ委譲する。
+##
+## 終了ステータス:
+##    0  成功（バインド枯渇による早期終了を含む）
+
+__sx_str_chunk() {
+	__sx_str_chunk_core "${1}" "${2-}" "${3-}" "${4-}" "${5-0}" 1
+}
+
+M_RENAME_QI([|dnl
+### __sx_str_chunk_core - 基準方向を指定して文字列を一定の長さで区切る（内部用）
+##
+## 使い方:
+##   __sx_str_chunk_core スキーマ 文字列 長さ 分割回数 フラグ 基準方向
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   基準方向は 1（前方）/-1（後方）。フラグは残余チャンクの扱いを指定する。
 ##   長さと ? パターンの交互リストを一度だけ構築し、周期的に反復する。
 ##   基準方向のチャンクは即座にバインドし、逆方向分は ? パターンを位置パラメータに逆順で予約する。
 ##   Q_str は未切り取りの文字列、Q_len は予約分を除いた未割り当て文字数。
 ##   終了後に中央の余りを処理し、予約したパターンで基準方向から順に切り取る。
-##   通常と REVERSE はループ・余り・予約分の処理を分岐し、切り取り方向を反転する。
+##   基準方向でループ・余り・予約分の処理を分岐し、切り取り方向を反転する。
 ##   長さは符号付き、回数は符号なしの10進整数（先行ゼロなし）を前提とする。
 ##   文字列長・回数・各指定長の絶対値が算術域内なら高速経路、それ以外は多倍長で処理する。
 ##
 ## 終了ステータス:
 ##   0  成功（バインド枯渇による早期終了を含む）。
 
-define([|CLEANUP|], [|Q_bind Q_str Q_cycle Q_lim Q_len Q_flg Q_qms Q_cur Q_qm Q_abs Q_arg Q_prev Q_next Q_chunk Q_type Q_cmp|])dnl
+define([|CLEANUP|], [|Q_bind Q_str Q_cycle Q_lim Q_len Q_flg Q_dir Q_qms Q_cur Q_qm Q_abs Q_arg Q_prev Q_next Q_chunk Q_type Q_cmp|])dnl
 
-__sx_str_chunk() {
+__sx_str_chunk_core() {
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
 	Q_str="${2-}"
@@ -10544,6 +10561,7 @@ __sx_str_chunk() {
 	Q_cycle="${3:-1}:"
 	Q_lim="${4-}"
 	Q_flg="${5:-0}"
+	Q_dir="${6}"
 
 	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len}" ${Q_lim:+"${Q_lim}"}; then
 		Q_type=arith
@@ -10578,8 +10596,8 @@ __sx_str_chunk() {
 	# for の明示的な反復リストと、逆方向の予約パターン用の位置パラメータは独立する。
 	set --
 
-	case "$((Q_flg & SX_STR_CHUNK_REVERSE))" in
-		0)
+	case "${Q_dir}" in
+		1)
 			eval 'while
 				for Q_arg in '"${Q_qms}"'; do
 					case "${Q_arg}" in
@@ -10725,7 +10743,7 @@ __sx_str_chunk() {
 
 	unset CLEANUP
 }
-|], [|str_chunk|])dnl
+|], [|str_chunk_core|])dnl
 
 ### sx_str_count - 文字列から指定された文字列の出現回数を取得する
 ##
@@ -10840,7 +10858,7 @@ __sx_str_cycle() {
 	esac
 
 	case "${Q_shift}" in
-		-*) __sx_str_chunk Q_tail:Q_head: "${2}" "${Q_mod}" 1 "${SX_STR_CHUNK_REVERSE}";;
+		-*) __sx_str_rchunk Q_tail:Q_head: "${2}" "${Q_mod}" 1;;
 		*) __sx_str_chunk Q_head:Q_tail: "${2}" "${Q_mod}" 1;;
 	esac
 
@@ -12009,6 +12027,84 @@ __sx_str_quote() {
 	unset CLEANUP
 }
 |], [|str_quote|])dnl
+
+M_RENAME_Q([|dnl
+### sx_str_rchunk - 文字列を一定の長さで区切り後方から結果を格納する
+##
+## 使い方:
+##   sx_str_rchunk スキーマ [文字列 [長さ [分割回数 [フラグ]]]]
+##
+## 説明:
+##   指定された文字列を、指定された長さ（文字数）ごとに区切る。
+##   基準方向と結果の格納順は後方とし、チャンク内部の文字順は保持する。
+##   長さが正の場合は後方から、負の場合は前方から切り取る。
+##   例: abcde を長さ 2 で分割すると de, bc, a、長さ -2 では e, cd, ab。
+##   長さの省略時または空指定時は 1 とする。単独の 0 はエラーとする。
+##   長さは 1:-2:3 のような周期で指定でき、周期内の 0 は空チャンクを生成する。
+##   全項目が 0 の周期は指定できない。
+##   長さは任意桁の符号付き10進整数、分割回数は任意桁の符号なし10進整数。
+##   先行する 0、8進・16進表記は受け付けない。
+##   回数の省略時・空指定時は無制限、0 は分割しない。
+##   スキーマの形式と引用規則は sx_str_chunk と同じ。
+##   バインドチェーンには後方からの結果を順に割り当て、末尾がコロンなら枯渇時に終了する。
+##   SX_STR_RCHUNK_SKIP_SHORT / SX_STR_RCHUNK_SKIP_LONG は、指定された条件に該当する
+##   残余チャンクを結果に含めずスキップする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数不正 (SX_EX_USAGE)
+##   77  スキーマに含まれる変数が読み取り専用 (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [|Q_cycle Q_cur|])dnl
+
+sx_str_rchunk() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rchunk "${@}" || return; return 0;; esac
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
+
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
+
+	__sx_num_is_nat0_base 10 ${4:+"${4}"} || return M_EX_USAGE
+	__sx_num_is_nat0_safe ${5:+"${5}"} || return M_EX_USAGE
+
+	case "${3:-1}" in
+		*[1-9]*) ;;
+		*) return M_EX_USAGE;;
+	esac
+
+	Q_cycle="${3:-1}:"
+	while M_STR_HAS([|"${Q_cycle}"|], [|:|]); do
+		Q_cur="${Q_cycle%%:*}"
+		Q_cycle="${Q_cycle#*:}"
+		__sx_num_is_int_base 10 "${Q_cur}" || {
+			unset CLEANUP
+			return M_EX_USAGE
+		}
+	done
+	unset CLEANUP
+
+	__sx_str_rchunk "${@}"
+}
+|], [|str_rchunk|])dnl
+
+### __sx_str_rchunk - 文字列を一定の長さで区切り後方から結果を格納する（内部用）
+##
+## 使い方:
+##   __sx_str_rchunk スキーマ [文字列 [長さ [分割回数 [フラグ]]]]
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   後方を基準方向として共通実装へ委譲する。
+##
+## 終了ステータス:
+##    0  成功（バインド枯渇による早期終了を含む）
+
+__sx_str_rchunk() {
+	__sx_str_chunk_core "${1}" "${2-}" "${3-}" "${4-}" "${5-0}" -1
+}
 
 ### sx_str_rep - 文字列を繰り返す
 ##
