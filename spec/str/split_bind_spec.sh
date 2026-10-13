@@ -56,11 +56,11 @@ Describe 'sx_str_split bind'
     Parameters
       0 'head:' abc '' 3 0 '' 2
       1 'head:' abc '' 3 0 '' 2
-      0 'head:' abc '' -1 0 abc 1
+      0 'head:' abc '' -1 0 abc 2
       1 'head:' abc '' -3 0 a 2
       0 '2head:' abc '' 3 0 "'' 'a'" 3
-      1 '2head:' abc '' 3 2 "'' ''" 3
-      0 '2head:' abc '' -2 2 "'ab' ''" 3
+      1 '2head:' abc '' 3 2 "'' ''" 2
+      0 '2head:' abc '' -2 2 "'ab' ''" 2
       1 'head:' 'a:b:c' : 2 0 a 2
       0 '2head:' 'a:b:c' : 2 2 "'a' ':'" 2
       1 'head:' a1b2c '[0-9]' 2 1 a 2
@@ -87,23 +87,24 @@ Describe 'sx_str_split bind'
   Context '先頭の一要素だけ取得する場合'
     Parameters
       abc '' 3 0 '' 1
-      abc '' -1 2 abc 0
-      abc '' -999999999999999999999999 0 '' 0
+      abc '' -1 2 abc 1
+      abc '' -999999999999999999999999 0 '' 1
       'a:b:c' : 3 0 a 1
       a1b2c '[0-9]' 3 3 a 0
     End
 
-    It 'バインド枯渇後の分割回数更新が最大一回にとどまること'
+    It '先頭の一要素だけ取得する場合に減算回数が最大一回にとどまること'
       counter_updates=0
+      # 後方分割では、先頭部分を確定する準備の減算も一回として数える。
       # shellcheck disable=SC2329
-      __sx_num_add1_arith() {
+      __sx_num_sub1_arith() {
         counter_updates=$((counter_updates + 1))
-        __sx_num_add_nat0 "$1" "$2" 1
+        __sx_num_sub_nat0 "$1" "$2" 1
       }
       # shellcheck disable=SC2329
-      __sx_num_add1_nat0() {
+      __sx_num_sub1_nat0() {
         counter_updates=$((counter_updates + 1))
-        __sx_num_add_nat0 "$1" "$2" 1
+        __sx_num_sub_nat0 "$1" "$2" 1
       }
       When call sx_str_split 'head:' "$1" "$2" "$3" "$4"
       The status should be success

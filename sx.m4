@@ -10068,6 +10068,30 @@ __sx_num_sub1_nat0() {
 }
 |], [|num_sub1_nat0|])dnl
 
+M_RENAME_QI([|dnl
+### __sx_num_sub1_arith - 符号付き整数から算術展開で1を減算する（内部用）
+##
+## 使い方:
+##   __sx_num_sub1_arith 結果変数名 数値
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   入力値と減算結果が実行シェルの算術範囲内に収まることを前提とする。
+##   最小値からの減算は呼び出し側で除外する。
+##   入力値を作業変数へ退避し、算術は名前参照で行う。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+
+define([|CLEANUP|], [|Q_num|])dnl
+
+__sx_num_sub1_arith() {
+	Q_num="${2}"
+	: "$((${1} = Q_num - 1))"
+	unset CLEANUP
+}
+|], [|num_sub1_arith|])dnl
+
 # ========================================
 #  UUID (UUID Operations)
 # ========================================
@@ -12441,8 +12465,10 @@ __sx_str_splice() {
 ##   フラグに SX_STR_SPLIT_GLOB を指定すると、区切り文字を glob パターンとして扱う。
 ##   フラグに SX_STR_SPLIT_INC を指定すると、分割に使用した区切り文字を結果に含める。
 ##   SX_STR_SPLIT_GLOB と併用した場合は、glob パターンに一致した実際の文字列を結果に含める。
+##   INCで追加する区切り要素は、分割回数を増やさない。
 ##   フラグの形式と範囲は sx_num_is_int_safe_inv に従う。
-##   空区切りと非空区切りの前方分割では、次のバインド呼び出しで枯渇を検出して終了する。
+##   空区切りと非空区切りの前方分割では、バインドが枯渇を返すと途中で終了する。
+##   非空区切りの後方分割は、分割位置を確定してから前方順にバインドする。
 ##   互換性: 従来受理した8進・16進の回数指定は拒否し、従来拒否した空指定は無制限とする。
 ##
 ## 終了ステータス:
@@ -12475,15 +12501,18 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   内部実装。引数チェックは行わない。
 ##   回数は符号付き10進整数、または無制限を表す空文字列を前提とする。
-##   符号と絶対値を文字列で分離し、空区切りは専用実装へ委譲する。
-##   非空区切りの分割回数は元文字列長以下なので、文字列長から数値経路を選ぶ。
+##   符号部分から方向を求め、絶対値を残り回数として扱う。空区切りは専用実装へ委譲する。
+##   非空区切りでは、残り回数の範囲から通常の算術または多倍長の減算を選ぶ。
+##   有限の残り回数は一回の分割ごとに1を減らし、無制限の空文字列は更新しない。
+##   方向とリテラル/globの組み合わせでループを分け、ループ内でのglob判定を省く。
 ##   前方は直接バインドし、後方は位置パラメータに蓄積して前方順にバインドする。
-##   バインドの初期化は一度だけ行う。
+##   INCの区切りは要素とまとめて渡す。割当途中の枯渇もバインドの終了ステータスで検出する。
+##   バインドの初期化はここで一度だけ行い、空区切りの専用実装にも初期化済みの形式を渡す。
 ##
 ## 終了ステータス:
 ##    0  成功（バインド枯渇による早期終了を含む）
 
-define([|CLEANUP|], [|Q_bind Q_str Q_sep Q_lim Q_dir Q_flg Q_glob Q_inc Q_cnt Q_type Q_rem Q_mid Q_val|])dnl
+define([|CLEANUP|], [|Q_bind Q_str Q_sep Q_lim Q_dir Q_flg Q_glob Q_inc Q_type Q_rem Q_mid Q_val|])dnl
 
 __sx_str_split() {
 	# 空区切りの専用処理へ渡す場合も含め、バインド先の初期化はここで一度だけ行う。
@@ -12498,6 +12527,8 @@ __sx_str_split() {
 	Q_bind="${1}"
 	Q_str="${2-}"
 	Q_sep="${3-}"
+	# 数字以降を除いた符号部分に1を付けて方向を求め、回数本体からは符号だけを除く。
+	# 巨大な回数全体を算術展開に入れず、Q_limには正の残り回数または無制限の空を保持する。
 	Q_lim="${4-}"
 	Q_dir=$((${Q_lim%%[0-9]*}1))
 	Q_lim="${Q_lim#[+-]}"
@@ -12510,52 +12541,58 @@ __sx_str_split() {
 		M_STR_EQ([|"${Q_sep}"|], [|''|]) ||
 		{ M_NUM_BOOL([|Q_glob|]) && ! M_STR_HAS([|"${Q_sep}"|], [|*[!*]*|]); }
 	then
-		# 引数へ状態を退避してから、この関数の作業変数を破棄して委譲する。
+		# 初期化済みのバインドを渡し、専用実装から戻った後にこの関数の作業変数を破棄する。
 		__sx_str_split_empty "${Q_bind}" "${Q_str}" "${Q_lim}" "${Q_dir}" "${Q_inc}"
 		unset CLEANUP
 		return
 	fi
 
-	# 非空区切りでは一回ごとに一文字以上を消費するため、回数は元の文字数以下。
-	# 上限の桁数ではなく文字数で、通常の算術と多倍長のカウンタを選べる。
+	# 減算対象は残り回数そのもの。文字数が少なくても上限は巨大になり得るので、上限を検査する。
+	# 無制限では : を選び、空のQ_limを更新せずに区切りの有無だけで走査を終える。
 	case "${Q_lim:+X}" in
 		X)
-			if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#Q_str}"; then
-				Q_type=__sx_num_add1_arith
+			if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_lim}"; then
+				Q_type=__sx_num_sub1_arith
 			else
-				Q_type=__sx_num_add1_nat0
+				Q_type=__sx_num_sub1_nat0
 			fi
 			;;
 		*) Q_type=:;;
 	esac
 
-	Q_cnt=0
-
-	# 後方分割で見つけた要素を、先頭に積んで元の文字列順へ戻すために使う。
+	# リテラルのINCでは区切り文字が常に同じなので一度だけ設定する。
+	# INCなしではQ_midを未設定に保ち、後続の ${Q_mid+...} で区切りの引数を省略する。
 	case "${Q_glob}${Q_inc}" in 01)
 		Q_mid="${Q_sep}"
 	esac
 
+	# Q_bindは、各bind呼び出し後に残りのバインド形式へ更新される。
+	# 要素と区切りの割当途中で枯渇すれば同じ呼び出しが1を返す。
+	# 成功してちょうど使い切った場合も、次のbindで枯渇を検出したら正常終了する。
 	case "${Q_dir}${Q_glob}" in
-		# 前方分割は左端の区切りから順に確定できるので、見つけ次第バインドする。
-		# 無制限では Q_lim が空のため回数比較は常に継続し、区切りの有無で停止する。
+		# リテラルの前方分割。左端の区切りより前を、INCの区切りとともに順次渡す。
 		10)
-			while M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]) && M_STR_HAS([|"${Q_str}"|], [|"${Q_sep}"|]); do
+			while M_STR_NE([|"${Q_lim}"|], [|0|]) && M_STR_HAS([|"${Q_str}"|], [|"${Q_sep}"|]); do
 				__sx_var_bind Q_bind "${Q_bind}" "${Q_str%%"${Q_sep}"*}" ${Q_mid+"${Q_mid}"} || {
 					unset CLEANUP
 					return
 				}
 
+				# 割当できた分割の区切りを消費し、選択済みの関数で残り回数を更新する。
 				Q_str="${Q_str#*"${Q_sep}"}"
-				"${Q_type}" Q_cnt "${Q_cnt}"
+				"${Q_type}" Q_lim "${Q_lim}"
 			done
 
+			# 残り回数が0、または区切りなしで終わったら、未分割の残りを最後の要素にする。
 			__sx_var_bind '' "${Q_bind}" "${Q_str}"
 			;;
+		# globの前方分割。左端の一致の前後を取り出し、INCなら実際の一致文字列も渡す。
 		1*)
-			while M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]) && M_STR_MATCH([|"${Q_str}"|], [|*${Q_sep}*|]); do
+			while M_STR_NE([|"${Q_lim}"|], [|0|]) && M_STR_MATCH([|"${Q_str}"|], [|*${Q_sep}*|]); do
 				Q_val="${Q_str%%${Q_sep}*}" Q_rem="${Q_str#*${Q_sep}}"
 
+				# INC用に、前の要素を文字列として除いた部分を保持する。
+				# bind時に後ろの残りも除く。データ側はクォートし、glob文字を再解釈させない。
 				case "${Q_inc}" in 1)
 					Q_mid="${Q_str#"${Q_val}"}"
 				esac
@@ -12566,30 +12603,35 @@ __sx_str_split() {
 				}
 
 				Q_str="${Q_rem}"
-				"${Q_type}" Q_cnt "${Q_cnt}"
+				"${Q_type}" Q_lim "${Q_lim}"
 			done
 
 			__sx_var_bind '' "${Q_bind}" "${Q_str}"
 			;;
+		# リテラルの後方分割。右端から見つけた要素を前方順に戻すため、位置パラメータを空にする。
 		-10)
 			set --
 
-			while M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]) && M_STR_MATCH([|"${Q_str}"|], [|*"${Q_sep}"*|]); do
-			# 最長の接頭部を除いて右端の要素を、最短の接尾部を除いて残りを得る。
+			while M_STR_NE([|"${Q_lim}"|], [|0|]) && M_STR_MATCH([|"${Q_str}"|], [|*"${Q_sep}"*|]); do
+				# 右端の要素を取り出し、INCの区切り・要素の順で位置パラメータの先頭へ積む。
 				set -- ${Q_mid+"${Q_mid}"} "${Q_str##*"${Q_sep}"}" "${@}"
 
 				Q_str="${Q_str%"${Q_sep}"*}"
-				"${Q_type}" Q_cnt "${Q_cnt}"
+				"${Q_type}" Q_lim "${Q_lim}"
 			done
 
+			# 未分割の先頭部分が確定したので、蓄積済みの要素とまとめて前方順に渡す。
 			__sx_var_bind '' "${Q_bind}" "${Q_str}" "${@}"
 			;;
+		# globの後方分割。右端の一致を切り出し、区切り・要素の順で先頭へ積む。
 		-1*)
 			set --
 
-			while M_STR_NE([|"${Q_cnt}"|], [|"${Q_lim}"|]) && M_STR_MATCH([|"${Q_str}"|], [|*${Q_sep}*|]); do
+			while M_STR_NE([|"${Q_lim}"|], [|0|]) && M_STR_MATCH([|"${Q_str}"|], [|*${Q_sep}*|]); do
 				Q_val="${Q_str##*${Q_sep}}" Q_rem="${Q_str%${Q_sep}*}"
 
+				# INC用に、右端の要素を文字列として除いた部分を保持する。
+				# 先頭の残りも文字列として除き、一致した区切りだけを位置パラメータへ積む。
 				case "${Q_inc}" in 1)
 					Q_mid="${Q_str%"${Q_val}"}"
 				esac
@@ -12597,11 +12639,12 @@ __sx_str_split() {
 				set -- ${Q_mid+"${Q_mid#"${Q_rem}"}"} "${Q_val}" "${@}"
 
 				Q_str="${Q_rem}"
-				"${Q_type}" Q_cnt "${Q_cnt}"
+				"${Q_type}" Q_lim "${Q_lim}"
 			done
 
 			__sx_var_bind '' "${Q_bind}" "${Q_str}" "${@}"
 		;;
+	# 最後のbindでの枯渇も成功扱いにし、作業変数の破棄へ進む。
 	esac || :
 
 	unset CLEANUP
@@ -12615,38 +12658,36 @@ M_RENAME_QI([|dnl
 ##   __sx_str_split_empty バインド形式 元文字列 上限絶対値 方向 INC
 ##
 ## 説明:
-##   内部実装。引数チェックは行わない。バインド形式は初期化済みで非空を前提とする。
+##   内部実装。引数チェックは行わない。バインド形式は初期化済みを前提とする。
 ##   上限は正の10進整数または無制限を表す空文字列、方向は1/-1、INCは0/1。
 ##   後方分割は上限指定を必須とし、無制限は前方分割として扱う。
 ##   後方分割は先頭部分を確定した後、残りを前方順にバインドする。
 ##   先頭部分の切り出しは短い側の ? パターンを使い、空側では生成しない。
 ##   文頭と文末が重なる空入力の境界は一つだけ処理する。
-##   境界数は元文字列長+1なので、文字列長が算術域の最大値なら多倍長経路を使う。
+##   前方の上限が元文字列長を超える場合は、残り回数を更新せず全境界を処理する。
+##   残り回数を減らすのは、前方の上限が元文字列長以下の場合だけ。文字列長から数値経路を選ぶ。
+##   INCの空区切りは要素と一度にバインドする。
 ##   バインドの終了ステータスで枯渇を検出する。枯渇後の一回の切り取り・回数更新は許容する。
 ##
 ## 終了ステータス:
 ##    0  成功（バインド枯渇による早期終了を含む）
 
-define([|CLEANUP|], [|Q_bind Q_str Q_lim Q_inc Q_cnt Q_len Q_type Q_tail Q_head Q_qm Q_rem Q_val|])dnl
+define([|CLEANUP|], [|Q_bind Q_str Q_lim Q_sep Q_len Q_type Q_tail Q_head Q_qm Q_rem Q_val|])dnl
 
 __sx_str_split_empty() {
 	# Q_val は次に渡す要素、Q_str はまだ渡していない残り。
 	# 前方分割の最初の要素は文頭の空文字列なので、Q_val を空で開始する。
-	Q_bind="${1}" Q_str="${2}" Q_lim="${3}" Q_inc="${5}"
-	Q_len="${#2}" Q_cnt=0 Q_val='' Q_tail=0 Q_head=0
+	Q_bind="${1}" Q_str="${2}" Q_lim="${3}"
+	# 既定では回数を更新しない。必要な前方分割だけ、後で減算関数へ切り替える。
+	Q_len="${#2}" Q_val= Q_type=:
 
-	# n 文字には n+1 個の境界がある。n が算術域の最大値なら、最後の加算が
-	# あふれるため、文字数自体が範囲内でも多倍長のカウンタを選ぶ。
-	if
-		__sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len}" &&
-		M_STR_NE([|"${Q_len}"|], [|"${SX_SYS_NUM_MAX}"|])
-	then
-		Q_type=arith
-	else
-		Q_type=nat0
-	fi
+	# INCありの場合だけ空の区切りを設定する。未設定ならbindの追加引数を省略できる。
+	case "${5}" in 1)
+		Q_sep=
+	esac
 
 	case "${4}" in -1)
+		# 後方指定ではQ_limは必ず正の回数。無制限の空指定は方向1で渡される。
 		# 後方から k 回切ると、文末境界に一回使い、末尾 k-1 文字が一文字ずつになる。
 		# n=5, k=3 の例: 'abc' 'd' 'e' ''。先頭 'abc' をまず Q_val に確定する。
 		# k-1 >= n なら全境界を切れるため、前方無制限と同じ初期状態でよい。
@@ -12655,20 +12696,20 @@ __sx_str_split_empty() {
 		__sx_num_cmp_nat0 "${Q_tail}" "${Q_len}" || case "${?}" in 1)
 			case "${Q_tail}" in
 				# k=1 では文末だけを切るので、先頭要素は元文字列全体になる。
-				0) Q_val="${Q_str}" Q_str='';;
+				0) Q_val="${Q_str}" Q_str=;;
 				*)
 					__sx_num_sub_nat0 Q_head "${Q_len}" "${Q_tail}"
 					# 切り出すための ? 列は、先頭長と末尾長の短い側だけ生成する。
 					__sx_num_cmp_nat0 "${Q_head}" "${Q_tail}" || case "${?}" in
-						[12])
-							# 先頭長 <= 末尾長: 先頭を除いて残りを得てから、先頭要素を復元する。
+						1)
+							# 先頭長 < 末尾長: 先頭を除いて残りを得てから、先頭要素を復元する。
 							__sx_str_qm Q_qm "${Q_head}"
 							Q_rem="${Q_str#${Q_qm}}"
 							Q_val="${Q_str%"${Q_rem}"}"
 							Q_str="${Q_rem}"
 							;;
 						*)
-							# 末尾長 < 先頭長: 末尾を除いて先頭要素を得てから、残りを求める。
+							# 末尾長 <= 先頭長: 末尾を除いて先頭要素を得てから、残りを求める。
 							__sx_str_qm Q_qm "${Q_tail}"
 							Q_val="${Q_str%${Q_qm}}"
 							Q_str="${Q_str#"${Q_val}"}"
@@ -12678,36 +12719,52 @@ __sx_str_split_empty() {
 			esac
 		esac
 		# 後方の上限は先頭要素の切り出しに反映済み。残りは前方へ最後まで走査する。
-		Q_lim=''
-		esac
+		Q_lim=
+	esac
 
-	# 一周で「要素、その直後の空区切り」を渡す。残りが空でも最初の一周は必要。
+	# n文字にはn+1個の境界がある。前方の上限 > nなら、回数を更新せず残りが空になるまで進める。
+	# Q_limが空なら、比較左辺にはQ_lenの十進表記の先頭へ1を付けた、一桁長い値を使う。
+	# 後方・無制限でもこの値は必ずQ_lenより大きくなり、減算関数の選択を省ける。
+	__sx_num_cmp_nat0 "${Q_lim:-1${Q_len}}" "${Q_len}" || case "${?}" in [12])
+		# この分岐では0 < Q_lim <= Q_len。文字数が算術域内なら、減算対象も安全に扱える。
+		if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len}"; then
+			Q_type=__sx_num_sub1_arith
+		else
+			Q_type=__sx_num_sub1_nat0
+		fi
+	esac
+
+	# 一周で要素と、INC指定時はその直後の空区切りを渡す。残りが空でも最初の一周は必要。
 	# 空入力も一つの境界を切り、最後の残りと合わせて空要素二つ（INC なら三つ）になる。
-	# バインド先を使い切った後は、次の bind の失敗、回数到達、残りが空のいずれかで止まる。
-	while :; do
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_val}" || break
-		case "${Q_inc}" in 1)
-			__sx_var_bind Q_bind "${Q_bind}" '' || break
-		esac
+	# 走査はwhileの条件部で行う。bind枯渇はreturn、残りが空・残り回数0はbreakで終了する。
+	while
+		# 要素とINCの空区切りを順に割り当て、途中で枯渇すればそのまま成功終了する。
+		__sx_var_bind Q_bind "${Q_bind}" "${Q_val}" ${Q_sep+"${Q_sep}"} || {
+			unset CLEANUP
+			return
+		}
 
-		# 今の境界を一回と数える。上限到達なら、残りを一文字ずつ切り出さずに終了する。
-		case "${Q_lim:+X}" in X)
-			"__sx_num_add1_${Q_type}" Q_cnt "${Q_cnt}"
-			case "${Q_cnt}" in "${Q_lim}") break;; esac
+		# この境界で使った一回を減らす。Q_typeが : の場合、空または文字数を超える上限を保つ。
+		"${Q_type}" Q_lim "${Q_lim}"
+
+		# :* は残りが空、X:0 は残りが非空で回数を使い切った場合。
+		# コロンを挟むことで、無制限のQ_limと残りがともに空でも確実に判定できる。
+		case "${Q_str:+X}:${Q_lim}" in :* | X:0)
+			break
 		esac
-		case "${Q_str}" in '') break;; esac
 
 		# 次の要素を一文字だけ取り出す。バインド先が尽きた直後も一回だけ進むことがある。
 		Q_rem="${Q_str#?}"
 		Q_val="${Q_str%"${Q_rem}"}"
 		Q_str="${Q_rem}"
-	done
 
-	# 最後に未分割の残りを渡す。全境界を切った場合は文末の空要素になる。
-	# ループ内で毎回確認する代わりに、最後の要素を渡す前にバインド先の有無を確認する。
-	case "${Q_bind:+X}" in X)
-		__sx_var_bind '' "${Q_bind}" "${Q_str}" || :
-	esac
+		# 条件部の走査処理を繰り返す。do節へは進まず、次の要素のbindへ戻る。
+		continue
+	do :; done
+
+	# 回数を使い切った場合は未分割の残り、全境界を処理した場合は文末の空要素を渡す。
+	# 最後の割当でバインド先を使い切っていた場合も、ここで返る1は正常扱いとする。
+	__sx_var_bind '' "${Q_bind}" "${Q_str}" || :
 	unset CLEANUP
 }
 |], [|str_split_empty|])dnl

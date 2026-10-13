@@ -210,6 +210,7 @@ Describe 'sx_str_split 多倍長対応'
     Parameters
       abc '' 999999999999999999999999 0 "'' 'a' 'b' 'c' ''"
       abc '' -999999999999999999999999 2 "'' '' 'a' '' 'b' '' 'c' '' ''"
+      abcde '' 3 2 "'' '' 'a' '' 'b' '' 'cde'"
       abcde '' -3 0 "'abc' 'd' 'e' ''"
       'a:b:c' ':' 999999999999999999999999 2 "'a' ':' 'b' ':' 'c'"
       'a:b:c' ':' -999999999999999999999999 0 "'a' 'b' 'c'"
@@ -221,11 +222,95 @@ Describe 'sx_str_split 多倍長対応'
       native_calls=0
       __sx_num_is_int_fit_dec() { return 1; }
       # shellcheck disable=SC2329
-      __sx_num_add1_arith() { native_calls=$((native_calls + 1)); return 64; }
+      __sx_num_sub1_arith() { native_calls=$((native_calls + 1)); return 64; }
       When call __sx_str_split res "$1" "$2" "$3" "$4"
       The status should be success
       The variable res should equal "$5"
       The variable native_calls should equal 0
+    End
+  End
+
+  Context '空区切りの減算省略'
+    Parameters
+      abc '' 0 "'' 'a' 'b' 'c' ''"
+      abc '' 2 "'' '' 'a' '' 'b' '' 'c' '' ''"
+      abc 4 0 "'' 'a' 'b' 'c' ''"
+      abc 4 2 "'' '' 'a' '' 'b' '' 'c' '' ''"
+      abc 999999999999999999999999 0 "'' 'a' 'b' 'c' ''"
+      abc 999999999999999999999999 2 "'' '' 'a' '' 'b' '' 'c' '' ''"
+      abc -1 0 "'abc' ''"
+      abc -1 2 "'abc' '' ''"
+      abc -3 0 "'a' 'b' 'c' ''"
+      abc -3 2 "'a' '' 'b' '' 'c' '' ''"
+      abc -999999999999999999999999 2 "'' '' 'a' '' 'b' '' 'c' '' ''"
+      '' 1 0 "'' ''"
+      '' 1 2 "'' '' ''"
+    End
+
+    It '前方の全境界分割では減算せず、後方では先頭準備の一回だけ減算すること'
+      counter_calls=0
+      case "$2" in
+        -*) expected_calls=1;;
+        *) expected_calls=0;;
+      esac
+      # shellcheck disable=SC2329
+      __sx_num_sub1_arith() {
+        counter_calls=$((counter_calls + 1))
+        __sx_num_sub_nat0 "$1" "$2" 1
+      }
+      # shellcheck disable=SC2329
+      __sx_num_sub1_nat0() {
+        counter_calls=$((counter_calls + 1))
+        __sx_num_sub_nat0 "$1" "$2" 1
+      }
+      When call __sx_str_split res "$1" '' "$2" "$3"
+      The status should be success
+      The variable res should equal "$4"
+      The variable counter_calls should equal "$expected_calls"
+    End
+  End
+
+  Context '8bit範囲の空区切りの有限上限'
+    Parameters
+      126 0 126 0
+      127 0 127 0
+      128 0 0 128
+      126 2 126 0
+      127 2 127 0
+      128 2 0 128
+    End
+
+    It '文字数と等しい上限では文末を切らず、最大値までは通常の算術を使うこと'
+      sx_str_rep str A "$1"
+      case "$2" in
+        0)
+          sx_str_rep expected "'A' " "$1"
+          expected="'' ${expected% }"
+          ;;
+        *)
+          count="$1"
+          count=$((count - 1))
+          sx_str_rep expected "'A' '' " "$count"
+          expected="'' '' $expected'A'"
+          ;;
+      esac
+      __sx_cfg_set NUM_RANGE=8
+      native_calls=0 multiprecision_calls=0
+      # shellcheck disable=SC2329
+      __sx_num_sub1_arith() {
+        native_calls=$((native_calls + 1))
+        __sx_num_sub_nat0 "$1" "$2" 1
+      }
+      # shellcheck disable=SC2329
+      __sx_num_sub1_nat0() {
+        multiprecision_calls=$((multiprecision_calls + 1))
+        __sx_num_sub_nat0 "$1" "$2" 1
+      }
+      When call __sx_str_split res "$str" '' "$1" "$2"
+      The status should be success
+      The variable res should equal "$expected"
+      The variable native_calls should equal "$3"
+      The variable multiprecision_calls should equal "$4"
     End
   End
 
@@ -256,7 +341,7 @@ Describe 'sx_str_split 多倍長対応'
       native_calls=0
       case "$1" in 127 | 128)
         # shellcheck disable=SC2329
-        __sx_num_add1_arith() { native_calls=$((native_calls + 1)); return 64; }
+        __sx_num_sub1_arith() { native_calls=$((native_calls + 1)); return 64; }
       esac
       When call __sx_str_split res "$str" '' 999999999999999999999999 "$2"
       The status should be success
@@ -282,7 +367,7 @@ Describe 'sx_str_split 多倍長対応'
       expected="$expected''"
       __sx_cfg_set NUM_RANGE=8
       native_calls=0
-      __sx_num_add1_arith() { native_calls=$((native_calls + 1)); return 64; }
+      __sx_num_sub1_arith() { native_calls=$((native_calls + 1)); return 64; }
       case "$2" in
         1) set -- 999999999999999999999999;;
         *) set -- -999999999999999999999999;;
