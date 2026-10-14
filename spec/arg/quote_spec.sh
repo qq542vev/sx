@@ -5,6 +5,40 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_arg_quote'
   Include ./sx.sh
 
+  Context '引数個数の制限なし'
+    Before 'reject_quote_arg_count'
+
+    # shellcheck disable=SC2329
+    reject_quote_arg_count() {
+      # 巨大な引数リストを作らず、呼び出し時の個数4を範囲外とする。
+      __sx_num_is_nat0_safe() {
+        case "${1-}" in 4) return 1;; esac
+        return 0
+      }
+    }
+
+    It '安全範囲外の個数でも空文字列と引用符を保持して復元できること'
+      When call sx_arg_quote encoded_args 'a b' "c'd" ''
+      The status should be success
+      eval "set -- $encoded_args"
+      The value "$#" should equal 3
+      The value "$1" should equal 'a b'
+      The value "$2" should equal "c'd"
+      The value "$3" should equal ''
+    End
+
+    It '安全範囲外の個数でも分配代入できること'
+      When call sx_arg_quote 'head_arg:tail_args' 'a b' "c'd" ''
+      The status should be success
+      The variable head_arg should equal 'a b'
+      # shellcheck disable=SC2154
+      eval "set -- $tail_args"
+      The value "$#" should equal 2
+      The value "$1" should equal "c'd"
+      The value "$2" should equal ''
+    End
+  End
+
   It '引数を安全にエンコードし、eval で復元できること'
     set -- "hello world" "it's me" 'back\slash' '"double quotes"'
     When call sx_arg_quote encoded_args "$@"

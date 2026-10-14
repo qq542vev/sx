@@ -5,6 +5,17 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_arg_join'
   Include ./sx.sh
 
+  It '引数個数に安全範囲の上限を適用しないこと'
+    # 巨大な引数リストを作らず、呼び出し時の個数5を範囲外とする。
+    __sx_num_is_nat0_safe() {
+      case "${1-}" in 5) return 1;; esac
+      return 0
+    }
+    When call sx_arg_join result : 'a b' '' "c'd"
+    The status should be success
+    The variable result should equal "a b::c'd"
+  End
+
   It '引数を区切り文字で結合すること'
     When call sx_arg_join result ":" "a" "b" "c"
     The status should be success

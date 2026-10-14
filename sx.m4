@@ -2026,17 +2026,17 @@ __sx_arg_isep_lit() {
 ##
 ## 説明:
 ##   指定された値を区切り文字で結合した文字列を作成して結果変数に格納する。
+##   引数個数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_join() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_join "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
@@ -2223,17 +2223,17 @@ __sx_arg_map() {
 ##   スペース区切りで順方向に結合した文字列を作成して結果変数（スキーマ）に格納する。
 ##   スキーマにコロン (:) を含めることで、引数の分配代入（デストラクチャリング）が可能。
 ##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
+##   引数個数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_quote "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	__sx_var_is_bind "${1-}" || return M_EX_USAGE
 
