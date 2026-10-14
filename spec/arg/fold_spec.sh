@@ -1,9 +1,167 @@
-# shellcheck shell=sh
+# shellcheck shell=sh disable=SC2329
+# コールバックと検証用の差し替え関数はShellSpec経由で間接的に呼び出される。
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_fold'
   Include ./sx.sh
+
+  select_fold_path() {
+    case "$1" in
+      arith) __sx_num_add1_nat0() { return 64; };;
+      nat0)
+        __sx_num_is_int_fit_dec() { return 1; }
+        __sx_num_add1_arith() { return 64; }
+        ;;
+    esac
+  }
+
+  It '引数個数に安全範囲の上限を適用しない'
+    __sx_num_is_nat0_safe() { return 1; }
+    cb() { __sx_var_set "${1}=${2}${3}"; }
+    When call sx_arg_fold res cb init a b c
+    The status should be success
+    The variable res should equal initabc
+  End
+
+  Context '算術経路と多倍長経路'
+    Parameters
+      0 arith
+      0 nat0
+      1 arith
+      1 nat0
+    End
+
+    It '検証の有無によらずアキュムレータと値と添字を渡す'
+      sx_cfg_set "SKIP_CHK=$1"
+      select_fold_path "$2"
+      cb() { __sx_var_set "${1}=${2}|${4}:${3}"; }
+      When call sx_arg_fold res cb init 'a b' '' "c'd"
+      The status should be success
+      The variable res should equal "init|1:a b|2:|3:c'd"
+    End
+
+    It 'スキップ時はアキュムレータを保持し添字だけを進める'
+      sx_cfg_set "SKIP_CHK=$1"
+      select_fold_path "$2"
+      cb() {
+        case "$3" in skip) return 0;; esac
+        __sx_var_set "${1}=${2}|${4}:${3}"
+      }
+      When call sx_arg_fold res cb init a skip c
+      The status should be success
+      The variable res should equal 'init|1:a|3:c'
+    End
+
+    It '空文字列の結果も新しいアキュムレータとして採用する'
+      sx_cfg_set "SKIP_CHK=$1"
+      select_fold_path "$2"
+      cb() {
+        case "$3" in empty) __sx_var_set "${1}=";; *) __sx_var_set "${1}=${2}${3}";; esac
+      }
+      When call sx_arg_fold res cb init a empty c
+      The status should be success
+      The variable res should equal c
+    End
+
+    It '失敗時の出力を破棄し直前のアキュムレータと終了状態を返す'
+      sx_cfg_set "SKIP_CHK=$1"
+      select_fold_path "$2"
+      calls=
+      cb() {
+        calls="${calls}${4}:${3};"
+        __sx_var_set "${1}=${2}|${4}:${3}"
+        case "$4" in 2) return 77;; esac
+        return 0
+      }
+      When call sx_arg_fold res cb init a b c
+      The status should equal 77
+      The variable res should equal 'init|1:a'
+      The variable calls should equal '1:a;2:b;'
+    End
+
+    It '結果変数へ再入しても外側のアキュムレータと添字を保持する'
+      sx_cfg_set "SKIP_CHK=$1"
+      select_fold_path "$2"
+      inner_cb() { __sx_var_set "${1}=${2}[${4}:${3}]"; }
+      outer_cb() { sx_arg_fold "$1" inner_cb "${2}|${4}" "${3}x" "${3}y"; }
+      When call sx_arg_fold res outer_cb init a b
+      The status should be success
+      The variable res should equal 'init|1[1:ax][2:ay]|2[1:bx][2:by]'
+    End
+  End
+
+  It '再入呼び出しが別の数値経路を選んでも外側の経路を保持する'
+    # 外側は5引数で多倍長、内側は4引数で算術を選ぶ。
+    __sx_num_is_int_fit_dec() {
+      case "${#}:${2-}" in 2:5) return 1;; esac
+      return 0
+    }
+    inner_cb() { __sx_var_set "${1}=${2}[${4}:${3}]"; }
+    outer_cb() { sx_arg_fold "$1" inner_cb "${2}|${4}" "${3}x"; }
+    When call sx_arg_fold res outer_cb init a b
+    The status should be success
+    The variable res should equal 'init|1[1:ax]|2[1:bx]'
+  End
+
+  It 'コールバックでネイティブ算術域を超える値を加算できる'
+    cb() { sx_num_add_int "$1" "$2" "$3"; }
+    When call sx_arg_fold res cb 9223372036854775807 2 -1
+    The status should be success
+    The variable res should equal 9223372036854775808
+  End
+
+  Context '8bit範囲の境界'
+    Parameters
+      124
+      125
+      127
+      128
+    End
+
+    It '算術域の前後で全要素を畳み込み最後の添字を渡す'
+      expected_idx="$1"
+      args=
+      sx_str_rep args "'x' " "$expected_idx"
+      expected=
+      sx_str_rep expected x "$expected_idx"
+      eval "set -- $args"
+      # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
+      __sx_cfg_set NUM_RANGE=8
+      case "$expected_idx" in
+        124) __sx_num_add1_nat0() { return 64; };;
+        *) __sx_num_add1_arith() { return 64; };;
+      esac
+      last_idx=0
+      cb() { __sx_var_set "${1}=${2}${3}"; last_idx="$4"; }
+      When call __sx_arg_fold res cb '' "$@"
+      The status should be success
+      The variable res should equal "$expected"
+      The variable last_idx should equal "$expected_idx"
+    End
+  End
+
+  Context '空リストと直前の失敗状態'
+    Parameters
+      sx_arg_fold 0
+      sx_arg_fold 1
+      __sx_arg_fold 0
+    End
+
+    It '数値経路を判定せず初期値と終了状態0を返す'
+      sx_cfg_set "SKIP_CHK=$2"
+      fit_called=0 called=0 res=old
+      __sx_num_is_int_fit_dec() { fit_called=1; return 1; }
+      cb() { called=1; }
+      fail() { return 77; }
+      after_failure() { fail || "$@"; }
+      When call after_failure "$1" res cb 'init value'
+      The status should be success
+      The variable res should equal 'init value'
+      The variable fit_called should equal 0
+      The variable called should equal 0
+    End
+  End
 
   Describe '基本畳み込み: 数値の合計'
     It '初期値 0 で合計を計算する'

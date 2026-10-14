@@ -1521,18 +1521,18 @@ __sx_arg_find_lit() {
 ##   コールバックが ret_var を unset した場合、アキュムレータは変更されない。
 ##   コールバックが非0を返した場合、その時点のアキュムレータ値を結果変数に格納し、
 ##   直ちに終了する。
+##   引数個数とインデックスに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##   すべてのコールバックが成功 => 0 (SX_EX_OK)
 ##   コールバックが失敗 => 最初のエラーのステータス
-##   64 => 引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64 => 引数不正 (SX_EX_USAGE)
 ##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78 => SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_fold() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_fold "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
@@ -1550,38 +1550,56 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_arg_fold の内部実装。引数チェックは行わない。
 ##   状態は位置変数で管理し、for ループでイテレートする。
-##   カウンタの初期値を状態変数の個数 * -1 に設定し、
-##   cnt < 0 の間は状態変数領域としてスキップする。
+##   呼び出し時の引数個数が算術域内なら算術、それ以外は多倍長で添字を更新する。
+##   管理用の5項目は負のカウンタを算術で進めてスキップする。
+##   コールバック呼び出し前に一時変数を解放し、再入時も状態を保持する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   非0  最初に失敗したコールバックの終了ステータス
 ##
 
-define([|CLEANUP|], [|Q_arg|])dnl
+define([|CLEANUP|], [|Q_arg Q_next Q_ret|])dnl
 
 __sx_arg_fold() {
-	# $1: count, $2: res, $3: cb, $4: acc, $@: data
-	set -- -4 "${@}"
+	case "${4+X}" in '')
+		M_VAR_SET([|${1}|], [|${3-}|])
+		return
+	esac
+
+	# $1: 添字、$2: 数値経路、$3: 結果変数、$4: コールバック、$5: アキュムレータ
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#}"; then
+		set -- -5 arith "${@}"
+	else
+		set -- -5 nat0 "${@}"
+	fi
 
 	for Q_arg in "${@}"; do
-		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${Q_arg}"
+		case "${1}" in
+			-*) Q_next=$((${1} + 1));;
+			*) "__sx_num_add1_${2}" Q_next "${1}";;
+		esac
 
-		case "$((${1} <= 0))" in 1)
+		set -- "${Q_next}" "${2}" "${3}" "${4}" "${5}" "${Q_arg}"
+
+		case "${1}" in -* | 0)
 			continue
 		esac
 
 		unset CLEANUP
 
-		"${3}" Q_ret "${4}" "${5}" "${1}" || {
+		"${4}" Q_ret "${5}" "${6}" "${1}" || {
 			set -- "${@}" "${?}"
-			M_VAR_SET([|${2}|], [|${4}|])
-			unset Q_ret
-			return "${6}"
+			unset CLEANUP
+			M_VAR_SET([|${3}|], [|${5}|])
+			return "${7}"
 		}
 
-		set -- "${1}" "${2}" "${3}" "${Q_ret-${4}}"
-		unset Q_ret
+		set -- "${1}" "${2}" "${3}" "${4}" "${Q_ret-${5}}"
 	done
 
-	M_VAR_SET([|${2}|], [|${4}|])
 	unset CLEANUP
+	M_VAR_SET([|${3}|], [|${5}|])
 }
 |], [|arg_fold|])dnl
 
