@@ -1156,24 +1156,23 @@ M_RENAME_QI([|dnl
 ##   非0  コールバックの終了ステータス
 ##
 
-define([|CLEANUP|], [|Q_arg Q_next Q_type|])dnl
+define([|CLEANUP|], [|Q_arg Q_next|])dnl
 
 __sx_arg_each() {
-	case "${2+X}" in '') return M_EX_OK;; esac
-
-	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#}"; then
-		Q_type=arith
-	else
-		Q_type=nat0
-	fi
+	case "${2+X}" in '')
+		return M_EX_OK
+	esac
 
 	# $1: 添字、$2: 数値経路、$3: コールバック、$4以降: データ
-	set -- -3 "${Q_type}" "${@}"
-	unset CLEANUP
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#}"; then
+		set -- -3 arith "${@}"
+	else
+		set -- -3 nat0 "${@}"
+	fi
 
 	for Q_arg in "${@}"; do
 		case "${1}" in
-			-*) Q_next="${1}"; Q_next=$((Q_next + 1));;
+			-*) Q_next=$((${1} + 1));;
 			*) "__sx_num_add1_${2}" Q_next "${1}";;
 		esac
 
