@@ -2151,18 +2151,18 @@ __sx_arg_len() {
 ##     - 成功 (0) + 結果変数が unset のまま => その要素をスキップ
 ##     - 失敗 (非0) => 元の値をそのままバインド、終了ステータスに反映
 ##   最初のエラー以降の要素も元の値をバインドする。
+##   引数個数とインデックスに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##   すべてのコールバックが成功 => 0 (SX_EX_OK)
 ##   一部のコールバックが失敗 => 最初の失敗のステータス
-##   64 => 引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64 => 引数不正 (SX_EX_USAGE)
 ##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78 => SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_map() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_map "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	__sx_var_is_bind "${1-}" || return M_EX_USAGE
 
@@ -2180,49 +2180,66 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_arg_map の内部実装。引数チェックは行わない。
 ##   状態は位置変数で管理し、for ループでイテレートする。
-##   カウンタの初期値を状態変数の個数 * -1 に設定し、
-##   cnt < 0 の間は状態変数領域としてスキップする。
+##   呼び出し時の引数個数が算術域内なら算術、それ以外は多倍長で添字を更新する。
+##   管理用の5項目は負のカウンタを算術で進めてスキップする。
+##   コールバック呼び出し前に一時変数を解放し、再入時も状態を保持する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   非0  最初に失敗したコールバックの終了ステータス
 ##
 
-define([|CLEANUP|], [|Q_arg|])dnl
+define([|CLEANUP|], [|Q_arg Q_next Q_ret Q_sts Q_fmt|])dnl
 
 __sx_arg_map() {
 	__sx_var_bind_init "${1}"
 
-	# $1: status, $2: count, $3: callback, $4: bind, $@: 処理対象の引数
-	set -- 0 -4 "${@}"
+	case "${1:+X}${3+X}" in '' | X)
+		return
+	esac
+
+	# $1: 終了状態、$2: 添字、$3: 数値経路、$4: バインド、$5: コールバック
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#}"; then
+		set -- 0 -5 arith "${@}"
+	else
+		set -- 0 -5 nat0 "${@}"
+	fi
 
 	for Q_arg in "${@}"; do
-		set -- "${1}" "$((${2} + 1))" "${3}" "${4}" "${Q_arg}"
+		case "${2}" in
+			-*) Q_next=$((${2} + 1));;
+			*) "__sx_num_add1_${3}" Q_next "${2}";;
+		esac
 
-		case "$((${2} <= 0))" in 1)
+		set -- "${1}" "${Q_next}" "${3}" "${4}" "${5}" "${Q_arg}"
+
+		case "${2}" in -* | 0)
 			continue
 		esac
 
-		case "${3:+X}" in '')
+		case "${4:+X}" in '')
 			break
 		esac
 
 		case "${1}" in
 			0)
 				unset CLEANUP
-				shift
 
-				"${3}" Q_ret "${4}" "${1}" && set -- "${?}" "${@}" || {
-					set -- "${?}" "${@}"
-					Q_ret="${5}"
+				"${5}" Q_ret "${6}" "${2}" || {
+					Q_sts="${?}"
+					Q_ret="${6}"
 				}
 				;;
-			*) Q_ret="${5}";;
+			*) Q_ret="${6}";;
 		esac
 
 		case "${Q_ret+X}" in X)
-			__sx_var_ubind Q_fmt "${3}" "${Q_ret}"
+			__sx_var_ubind Q_fmt "${4}" "${Q_ret}"
 
-			set -- "${1}" "${2}" "${Q_fmt}" "${4}"
+			set -- "${Q_sts-${1}}" "${2}" "${3}" "${Q_fmt}" "${5}"
 		esac
 
-		unset Q_ret Q_fmt
+		unset Q_ret Q_fmt Q_sts
 	done
 
 	unset CLEANUP

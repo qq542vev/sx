@@ -28,10 +28,14 @@ Describe '可変長 sx_arg_* の引数個数ガード'
   End
 
   Describe 'sx_arg_map'
-    It '引数個数が安全範囲外の場合に他のチェックより先に EX_USAGE を返すこと'
+    It '引数個数が安全範囲外でも変換すること'
+      # shellcheck disable=SC2329
       __sx_num_is_nat0_safe() { [ "${1}" -ge 3 ] && return 1; return 0; }
+      # shellcheck disable=SC2329
+      cb() { __sx_var_set "${1}=${3}:${2}"; }
       When call sx_arg_map res cb "v1" "v2"
-      The status should equal 64
+      The status should be success
+      The variable res should equal '1:v1 2:v2'
     End
   End
 
