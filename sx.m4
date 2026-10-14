@@ -1053,20 +1053,21 @@ sx_util_eval() {
 ##   SX_ARG_COUNT_CB (2) を指定すると、検索対象をコールバック関数として扱う。
 ##   コールバックシグネチャ: callback 値 インデックス 一致数
 ##     0 を返すと一致、非0 は不一致としてスキップ。
+##     一致数は現在の要素より前で一致した件数（0開始）。
 ##   実質的に __sx_arg_find に委譲し、結果のスペース区切り件数を __sx_arg_len で取得する。
+##   引数個数・インデックス・一致数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ##   空の検索対象を指定した場合、空文字の値のみが一致とみなされる。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_count() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_count "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
@@ -1319,8 +1320,9 @@ __sx_arg_enough() {
 ##   フラグに SX_ARG_FIND_GLOB (1) を指定すると、検索対象を glob パターンとして扱う。
 ##   フラグに SX_ARG_FIND_TEXT (4) を指定すると、インデックスの代わりにマッチした値を出力する。
 ##   フラグに SX_ARG_FIND_CB (2) を指定すると、検索対象をコールバック関数として扱う。
-##   コールバックシグネチャ: callback value index
+##   コールバックシグネチャ: callback value index count
 ##     0 を返すと一致、非0 は不一致としてスキップ。
+##     count は現在の要素より前で一致した件数（0開始）。
 ##   見つからない場合は空文字列を格納する。
 ##   取得件数はバインド形式によって決まる。
 ##   例: res（全件）、3res:（最大3件）、idx1:idx2（2件を分配）
@@ -1331,18 +1333,18 @@ __sx_arg_enough() {
 ##     2. ::: を使用しない簡易形式。第1引数が bind、
 ##        第2引数以降が検索対象の値となる。
 ##        target・flg は指定不可。
+##   引数個数・インデックス・一致数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
 ##    1  一致項目が見つからなかった (不一致)
-##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_find() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_find "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
@@ -1377,6 +1379,10 @@ M_RENAME_QI([|dnl
 ##   ::: セパレータをパースし、フラグに応じて __sx_arg_find_lit または
 ##   __sx_arg_find_cb にディスパッチする。
 ##   引数チェックは行わない。
+##
+## 終了ステータス:
+##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
+##    1  一致項目が見つからなかった
 
 define([|CLEANUP|], [|Q_bind Q_tgt Q_flg|])dnl
 
@@ -1400,10 +1406,14 @@ __sx_arg_find() {
 			;;
 	esac
 
-		set -- "${Q_bind-}" "${Q_tgt-}" "${Q_flg:-0}" "${@}"
+	set -- "${Q_bind-}" "${Q_tgt-}" "${Q_flg:-0}" "${@}"
 	unset CLEANUP
 
 	__sx_var_bind_init "${1}"
+
+	case "${1:+X}${4+X}" in '' | X)
+		return 1
+	esac
 
 	case "$((${3} & SX_ARG_FIND_CB))" in
 		0) __sx_arg_find_lit "${@}";;
@@ -1424,39 +1434,57 @@ M_RENAME_QI([|dnl
 ##     0 を返すと一致、非0 は不一致としてスキップ。
 ##   引数は正規化済み。引数チェックは行わない。
 ##   状態は位置変数で管理し、__sx_var_bind でバインドする。
+##   正規化後の引数個数が算術域内なら算術、それ以外は多倍長で添字と一致数を更新する。
+##   コールバック呼び出し前に一時変数を解放し、再入時も状態を保持する。
+##
+## 終了ステータス:
+##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
+##    1  一致項目が見つからなかった
 
-define([|CLEANUP|], [|Q_arg Q_bind|])dnl
+define([|CLEANUP|], [|Q_arg Q_bind Q_next|])dnl
 
 __sx_arg_find_cb() {
-	set -- -6 0 "$(((${3} & SX_ARG_FIND_TEXT) != 0))" "${@}"
+	# $1: 添字、$2: 一致数、$3: TEXT、$4: 数値経路、$5: バインド、$6: コールバック
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#}"; then
+		set -- -7 0 "$(((${3} & SX_ARG_FIND_TEXT) != 0))" arith "${@}"
+	else
+		set -- -7 0 "$(((${3} & SX_ARG_FIND_TEXT) != 0))" nat0 "${@}"
+	fi
 
 	for Q_arg in "${@}"; do
-		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${5}" "${Q_arg}"
+		case "${1}" in
+			-*) Q_next=$((${1} + 1));;
+			*) "__sx_num_add1_${4}" Q_next "${1}";;
+		esac
 
-		case "$((${1} <= 0))" in 1)
+		set -- "${Q_next}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_arg}"
+
+		case "${1}" in -* | 0)
 			continue
+		esac
+
+		case "${5:+X}" in '')
+			break
 		esac
 
 		unset CLEANUP
 
-		case "${4:+X}" in '')
-			break
-		esac
-
-		# $1=i, $2=match_cnt, $3=txt_flg, $4=bind, $5=cb, $6=value
-		"${5}" "${6}" "${1}" "${2}" && {
+		if "${6}" "${7}" "${1}" "${2}"; then
 			case "${3}" in
-				0) __sx_var_ubind Q_bind "${4}" "${1}";;
-				*) __sx_var_bind Q_bind "${4}" "${6}";;
+				0) __sx_var_ubind Q_bind "${5}" "${1}";;
+				*) __sx_var_bind Q_bind "${5}" "${7}";;
 			esac
 
-			set -- "${1}" "$((${2} + 1))" "${3}" "${Q_bind}" "${5}"
-		}
+			"__sx_num_add1_${4}" Q_next "${2}"
+			set -- "${1}" "${Q_next}" "${3}" "${4}" "${Q_bind}" "${6}"
+		fi
 	done
 
 	unset CLEANUP
 
-	return "$((!${2}))"
+	case "${2}" in 0)
+		return 1
+	esac
 }
 |], [|arg_find_cb|])dnl
 
@@ -1469,22 +1497,36 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   __sx_arg_find から呼ばれる。先頭から末尾に向かって検索する。
 ##   引数は正規化済み。引数チェックは行わない。
+##   データ個数が算術域内なら算術、それ以外は多倍長で添字を更新する。
+##   添字を0から開始し、各要素の処理前に増やして末尾の余分な加算を避ける。
+##
+## 終了ステータス:
+##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
+##    1  一致項目が見つからなかった
 
-define([|CLEANUP|], [|Q_bind Q_tgt Q_glob Q_text Q_i Q_arg Q_sts|])dnl
+define([|CLEANUP|], [|Q_bind Q_tgt Q_glob Q_text Q_i Q_arg Q_sts Q_type|])dnl
 
 __sx_arg_find_lit() {
 	Q_bind="${1}"
 	Q_tgt="${2}"
 	Q_glob=$(((${3} & SX_ARG_FIND_GLOB) != 0))
 	Q_text=$(((${3} & SX_ARG_FIND_TEXT) != 0))
-	Q_i=1
+	Q_i=0
 
 	shift 3
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
 
 	for Q_arg in "${@}"; do
 		case "${Q_bind:+X}" in '')
 			break
 		esac
+
+		"__sx_num_add1_${Q_type}" Q_i "${Q_i}"
 
 		case "${Q_glob}${Q_arg}" in "0${Q_tgt}" | 1${Q_tgt})
 			case "${Q_text}" in
@@ -1494,8 +1536,6 @@ __sx_arg_find_lit() {
 
 			Q_sts=M_EX_OK
 		esac
-
-		M_NUM_INCR([|Q_i|])
 	done
 
 	set -- "${Q_sts-1}"
