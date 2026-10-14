@@ -1117,6 +1117,7 @@ __sx_arg_count() {
 ## 説明:
 ##   指定された値のリストの各要素に対してコールバック関数を実行する。
 ##   戻り値は収集せず、副作用のみを目的とする。
+##   引数個数とインデックスに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ##   コールバック関数のシグネチャ:
 ##     callback 値 インデックス
@@ -1128,13 +1129,11 @@ __sx_arg_count() {
 ## 終了ステータス:
 ##   すべてのコールバックが成功 => 0 (SX_EX_OK)
 ##   コールバックが失敗 => 最初の失敗のステータス
-##   64 => 引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
 ##   78 => SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_each() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_each "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	__sx_arg_each "${@}" || return
 }
@@ -1148,26 +1147,44 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_arg_each の内部実装。引数チェックは行わない。
 ##   状態は位置変数で管理し、for ループでイテレートする。
-##   カウンタの初期値を状態変数の個数 * -1 に設定し、
-##   cnt < 0 の間は状態変数領域としてスキップする。
+##   呼び出し時の引数個数が算術域内なら算術、それ以外は多倍長で添字を更新する。
+##   管理用の3項目は負のカウンタを算術で進めてスキップする。
+##   コールバック呼び出し前に一時変数を解放し、再入時も状態を保持する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   非0  コールバックの終了ステータス
 ##
 
-define([|CLEANUP|], [|Q_arg|])dnl
+define([|CLEANUP|], [|Q_arg Q_next Q_type|])dnl
 
 __sx_arg_each() {
-	# $1: cnt, $2: cb, $@: data
-	set -- -2 "${@}"
+	case "${2+X}" in '') return M_EX_OK;; esac
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+
+	# $1: 添字、$2: 数値経路、$3: コールバック、$4以降: データ
+	set -- -3 "${Q_type}" "${@}"
+	unset CLEANUP
 
 	for Q_arg in "${@}"; do
-		set -- "$((${1} + 1))" "${2}" "${Q_arg}"
+		case "${1}" in
+			-*) Q_next="${1}"; Q_next=$((Q_next + 1));;
+			*) "__sx_num_add1_${2}" Q_next "${1}";;
+		esac
 
-		case "$((${1} <= 0))" in 1)
+		set -- "${Q_next}" "${2}" "${3}" "${Q_arg}"
+
+		case "${1}" in -* | 0)
 			continue
 		esac
 
 		unset CLEANUP
-
-		"${2}" "${3}" "${1}" || return
+		"${3}" "${4}" "${1}" || return
 	done
 
 	unset CLEANUP
