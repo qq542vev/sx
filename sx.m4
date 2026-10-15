@@ -3103,17 +3103,17 @@ __sx_arg_rfold() {
 ##   指定された値をそれぞれシングルクォートで囲み、
 ##   逆順（最後の引数が先頭）にスペース区切りで結合した文字列を作成して結果変数に格納する。
 ##   第一引数にはバインド形式を指定して分配代入を行うことも可能。
+##   引数個数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_rquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	__sx_var_is_bind "${1-}" || return M_EX_USAGE
 
@@ -3129,23 +3129,42 @@ M_RENAME_QI([|dnl
 ##   __sx_arg_rquote スキーマ [値 ...]
 ##
 ## 説明:
-##   引数チェックを行わずに逆順分配代入およびクォート結合処理を行う。
+##   sx_arg_rquote の内部実装。引数チェックは行わない。
+##   データ個数が算術域内なら算術、それ以外は多倍長で添字を減らす。
+##   添字とバインドの終了判定には算術を使用しない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
 
-define([|CLEANUP|], [|Q_bind Q_i Q_val|])dnl
+define([|CLEANUP|], [|Q_bind Q_i Q_type|])dnl
 
 __sx_arg_rquote() {
 	__sx_var_bind_init "${1}"
+
+	case "${1:+X}${2+X}" in '' | X)
+		return
+	esac
+
 	Q_bind="${1}"
 	shift
 	Q_i="${#}"
 
-	while M_NUM_LT([|0|], [|Q_i|]); do
-		eval "Q_val=\"\${${Q_i}}\""
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_i}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
 
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_val}" || break
+	while
+		eval __sx_var_bind Q_bind '"${Q_bind}"' "\"\${${Q_i}}\""
 
-		M_NUM_DECR([|Q_i|])
-	done
+		case "${Q_i}:${Q_bind:+X}" in 1:* | *:)
+			break
+		esac
+
+		"__sx_num_sub1_${Q_type}" Q_i "${Q_i}"
+		continue
+	do :; done
 
 	unset CLEANUP
 }
