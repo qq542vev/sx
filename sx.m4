@@ -3085,21 +3085,22 @@ __sx_arg_rfold() {
 	# 管理用の6項目を含む最大の位置番号を、算術を使わずに取得する。
 	set -- 0 0 0 "${@}"
 	Q_pos="${#}"
+	shift 3
 
 	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_pos}"; then
 		Q_type=arith
-		Q_i=$((Q_pos - 6))
 	else
 		Q_type=nat0
-		__sx_num_sub_nat0 Q_i "${Q_pos}" 6
 	fi
 
-	shift 3
+	"__sx_num_sub_${Q_type}" Q_i "${Q_pos}" 6
+
 	# $1: 添字、$2: 位置番号、$3: 数値経路、$4: 結果変数、$5: コールバック、$6: アキュムレータ
 	set -- "${Q_i}" "${Q_pos}" "${Q_type}" "${@}"
-	unset CLEANUP
 
 	while M_STR_NE([|"${1}"|], [|0|]); do
+		unset CLEANUP
+
 		eval '"${5}"' Q_ret '"${6}"' "\"\${${2}}\"" "${1}" || {
 			set -- "${?}" "${4}" "${6}"
 			unset CLEANUP
@@ -3108,13 +3109,11 @@ __sx_arg_rfold() {
 		}
 
 		Q_cb="${5}"
-		: "${Q_ret=${6}}"
+		Q_ret="${Q_ret-${6}}"
 		"__sx_num_sub1_${3}" Q_i "${1}"
 		"__sx_num_sub1_${3}" Q_pos "${2}"
 
 		eval 'shift 6;' set -- "${Q_i}" "${Q_pos}" "${3}" "${4}" '"${Q_cb}"' '"${Q_ret}"' '"${@}"'
-
-		unset CLEANUP
 	done
 
 	unset CLEANUP
