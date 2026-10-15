@@ -1,3 +1,5 @@
+# shellcheck shell=sh disable=SC2329
+# コールバックと検証用の差し替え関数は間接的に呼び出される。
 Describe 'sx_arg_rfind -efu 環境検証'
   Include ./sx.sh
 
@@ -5,5 +7,43 @@ Describe 'sx_arg_rfind -efu 環境検証'
 
     When run efu_run sx_arg_rfind res "b" ::: "a" "b" "c"
     The status should be success
+  End
+
+  Context '多倍長経路'
+    Parameters
+      0
+      1
+    End
+
+    It '再入とバインド枯渇時も状態を保持する'
+      sx_cfg_set "SKIP_CHK=$1"
+      __sx_num_is_nat0_safe() { return 0; }
+      __sx_num_is_int_fit_dec() { return 1; }
+      __sx_num_sub1_arith() { return 64; }
+      __sx_num_add1_arith() { return 64; }
+      calls='' res='' nested_result=''
+      inner_cb() { return 0; }
+      cb() {
+        sx_arg_rfind nested_result inner_cb 2 ::: x y
+        calls="${calls}${2}:${3};"
+        case "$1" in b) return 0;; esac
+        return 77
+      }
+      verify() {
+        sx_arg_rfind '2res:' cb 2 ::: a b c b
+        [ "$res" = '4 2' ] && [ "$nested_result" = '2 1' ] && [ "$calls" = '4:0;3:1;2:1;' ]
+      }
+      When run efu_run verify
+      The status should be success
+    End
+
+    It '全件不一致なら終了状態1を返す'
+      sx_cfg_set "SKIP_CHK=$1"
+      __sx_num_is_nat0_safe() { return 0; }
+      __sx_num_is_int_fit_dec() { return 1; }
+      cb() { return 77; }
+      When run efu_run sx_arg_rfind res cb 2 ::: a b
+      The status should equal 1
+    End
   End
 End

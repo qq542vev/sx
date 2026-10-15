@@ -2849,20 +2849,21 @@ __sx_arg_range() {
 ##   フラグに SX_ARG_RFIND_CB (2) を指定すると、検索対象をコールバック関数として扱う。
 ##   コールバックシグネチャ: callback value index count
 ##     0 を返すと一致、非0 は不一致としてスキップ。
+##     count は現在の要素より右側で一致した件数（0開始）。
 ##   取得件数はバインド形式によって決まる。
 ##   呼び出し形式は sx_arg_find に準ずる。
+##   引数個数・インデックス・一致数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
 ##    1  一致項目が見つからなかった (不一致)
-##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_rfind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfind "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
@@ -2897,6 +2898,10 @@ M_RENAME_QI([|dnl
 ##   ::: セパレータをパースし、フラグに応じて __sx_arg_rfind_lit または
 ##   __sx_arg_rfind_cb にディスパッチする。
 ##   引数チェックは行わない。
+##
+## 終了ステータス:
+##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
+##    1  一致項目が見つからなかった
 
 define([|CLEANUP|], [|Q_bind Q_tgt Q_flg|])dnl
 
@@ -2925,6 +2930,10 @@ __sx_arg_rfind() {
 
 	__sx_var_bind_init "${1}"
 
+	case "${1:+X}${4+X}" in '' | X)
+		return 1
+	esac
+
 	case "$((${3} & SX_ARG_RFIND_CB))" in
 		0) __sx_arg_rfind_lit "${@}";;
 		*) __sx_arg_rfind_cb "${@}";;
@@ -2945,36 +2954,60 @@ M_RENAME_QI([|dnl
 ##      0 を返すと一致、非0 は不一致としてスキップ。
 ##    引数は正規化済み。引数チェックは行わない。
 ##    状態は位置変数で管理し、__sx_var_bind でバインドする。
+##    添字と実際の位置番号を保持し、毎回オフセットを加算せず両方を減らす。
+##    最大の位置番号が算術域内なら算術、それ以外は多倍長で添字・位置番号・一致数を更新する。
+##    コールバック呼び出し前には一時変数を解放し、再入時も状態を保持する。
+##
+## 終了ステータス:
+##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
+##    1  一致項目が見つからなかった
 
-define([|CLEANUP|], [|Q_bind|])dnl
+define([|CLEANUP|], [|Q_bind Q_cb Q_text Q_i Q_pos Q_cnt Q_type|])dnl
 
 __sx_arg_rfind_cb() {
-	# 初期状態を設定
-	# $1: 現在のインデックス i (最初は値の個数)
-	# $2: 一致件数 match (最初は 0)
-	# $3: 現在のバインド状態 bind (最初は元の $1 = 結果変数名)
-	# $4: コールバック cb (元の $2)
-	# $5: テキストフラグ txt (元の $3 から計算)
-	# $6以降: 元の引数リスト (結果変数名 コールバック フラグ [値 ...])
-	set -- "$((${#} - 3))" 0 "${1}" "${2}" "$(((${3} & SX_ARG_RFIND_TEXT) != 0))" "${@}"
+	Q_bind="${1}" Q_cb="${2}"
+	Q_text=$(((${3} & SX_ARG_RFIND_TEXT) != 0))
 
-	while M_NUM_LT([|0|], [|${1}|]) && M_STR_NE([|"${3}"|], [|''|]); do
-		# コールバックを実行。一時変数を使わずに、eval で間接参照する。
-		if eval '"${4}"' "\"\${$((${1} + 8))}\"" "${1}" "${2}"; then
-			case "${5}" in
-				0) __sx_var_ubind Q_bind "${3}" "${1}";;
-				*) eval __sx_var_bind Q_bind "${3}" "\"\${$((${1} + 8))}\"";;
+	# 管理用の7項目を含む最大の位置番号を、算術を使わずに取得する。
+	set -- 0 0 0 0 "${@}"
+	Q_pos="${#}"
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_pos}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+
+	shift 7
+	Q_i="${#}"
+
+	# $1: 添字、$2: 位置番号、$3: 一致数、$4: 数値経路、$5: バインド、$6: コールバック、$7: TEXT
+	set -- "${Q_i}" "${Q_pos}" 0 "${Q_type}" "${Q_bind}" "${Q_cb}" "${Q_text}" "${@}"
+
+	while M_STR_NE([|"${1}"|], [|0|]) && M_STR_NE([|"${5}"|], [|''|]); do
+		unset CLEANUP
+
+		if eval '"${6}"' "\"\${${2}}\"" "${1}" "${3}"; then
+			case "${7}" in
+				0) __sx_var_ubind Q_bind "${5}" "${1}";;
+				*) eval __sx_var_bind Q_bind '"${5}"' "\"\${${2}}\"";;
 			esac
 
-			eval 'shift 3;' set -- "$((${1} - 1))" "$((${2} + 1))" '"${Q_bind}"' '"${@}"'
+			"__sx_num_add1_${4}" Q_cnt "${3}"
 		else
-			eval 'shift 1;' set -- "$((${1} - 1))" '"${@}"'
+			Q_bind="${5}" Q_cnt="${3}"
 		fi
 
-		unset CLEANUP
+		"__sx_num_sub1_${4}" Q_i "${1}"
+		"__sx_num_sub1_${4}" Q_pos "${2}"
+		eval 'shift 5;' set -- "${Q_i}" "${Q_pos}" "${Q_cnt}" "${4}" '"${Q_bind}"' '"${@}"'
 	done
 
-	return "$((!${2}))"
+	unset CLEANUP
+
+	case "${3}" in 0)
+		return 1
+	esac
 }
 |], [|arg_rfind_cb|])dnl
 
@@ -2987,8 +3020,13 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_arg_rfind のリテラル/Glob検索実装。末尾から先頭に向かって検索する。
 ##   引数チェックは行わない。
+##   データ個数が算術域内なら算術、それ以外は多倍長で添字を減らす。
+##
+## 終了ステータス:
+##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
+##    1  一致項目が見つからなかった
 
-define([|CLEANUP|], [|Q_bind Q_match Q_glob Q_text Q_i Q_arg Q_sts|])dnl
+define([|CLEANUP|], [|Q_bind Q_match Q_glob Q_text Q_i Q_arg Q_sts Q_type|])dnl
 
 __sx_arg_rfind_lit() {
 	Q_bind="${1}"
@@ -2999,7 +3037,13 @@ __sx_arg_rfind_lit() {
 	shift 3
 	Q_i="${#}"
 
-	while M_NUM_LT([|0|], [|Q_i|]) && M_STR_NE([|"${Q_bind}"|], [|''|]); do
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_i}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+
+	while M_STR_NE([|"${Q_i}"|], [|0|]) && M_STR_NE([|"${Q_bind}"|], [|''|]); do
 		eval Q_arg=\"\${${Q_i}}\"
 
 		case "${Q_glob}${Q_arg}" in "0${Q_match}" | 1${Q_match})
@@ -3011,7 +3055,7 @@ __sx_arg_rfind_lit() {
 			Q_sts=M_EX_OK
 		esac
 
-		M_NUM_DECR([|Q_i|])
+		"__sx_num_sub1_${Q_type}" Q_i "${Q_i}"
 	done
 
 	set -- "${Q_sts-1}"
