@@ -1207,6 +1207,7 @@ __sx_arg_each() {
 ##     ::: で metadata とデータを分離する。
 ##     need を省略すると data の個数がデフォルト値となる。
 ##     need に 0 を指定すると常に成功する（callback は呼ばれない）。
+##     need は符号なし10進整数を受け付ける（0以外は先頭の0を認めない）。
 ##
 ##   第2形式（短縮形式）:
 ##     [cb] [arg ...]
@@ -1220,21 +1221,21 @@ __sx_arg_each() {
 ##   短絡評価:
 ##   - 条件を満たす要素が必要数に達した時点で即座に 0 を返す
 ##   - 残りの要素すべてが条件を満たしても必要数に達しないことが確定した時点で即座に 1 を返す
+##   引数個数・インデックス・必要件数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##    0  条件を満たす要素が必要数以上存在する (SX_EX_OK)
 ##    1  条件を満たす要素が必要数未満
-##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64  引数不正 (SX_EX_USAGE)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_enough() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_enough "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}" | "${2+X${2}}") ;;
-		"${3+X${3}}") __sx_num_is_nat0_safe "${2}" || return M_EX_USAGE;;
+		"${3+X${3}}") __sx_num_is_nat0_base 10 "${2}" || return M_EX_USAGE;;
 	esac
 
 	__sx_arg_enough "${@}" || return
@@ -1249,11 +1250,16 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_arg_enough の内部実装。引数チェックは行わない。
 ##   SX_CFG_SEP を $1/$2/$3 のいずれかから検出し、cb・need を抽出した上で
-##   状態変数（idx, total, cb, need）を設定しループ処理する。
-##   need をカウントダウン方式で管理し、状態変数を 4 個に抑えている。
+##   添字・残件数・必要件数・数値経路・コールバックを位置変数で管理する。
+##   残件数と必要件数が算術域内なら算術、それ以外は多倍長で更新・比較する。
+##   コールバック呼び出し前には一時変数を解放し、再入時も状態を保持する。
+##
+## 終了ステータス:
+##    0  条件を満たす要素が必要数以上存在する (SX_EX_OK)
+##    1  条件を満たす要素が必要数未満
 ##
 
-define([|CLEANUP|], [|Q_arg|])dnl
+define([|CLEANUP|], [|Q_arg Q_cb Q_need Q_left Q_type Q_next|])dnl
 
 __sx_arg_enough() {
 	case "X${SX_CFG_SEP}" in
@@ -1272,34 +1278,60 @@ __sx_arg_enough() {
 			;;
 	esac
 
-	# $1=idx(-4), $2=total, $3=cb, $4=need(count-found)
-	set -- -4 "${#}" "${Q_cb-}" "$((${Q_need:-${#}}))" "${@}"
-	unset Q_cb Q_need
+	Q_left="${#}"
+	Q_need="${Q_need:-${#}}"
 
-	case "${4}" in 0)
-		return M_EX_OK
+	case "${Q_need}" in 0)
+		unset CLEANUP
+		return
 	esac
 
-	for Q_arg in "${@}"; do
-		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${Q_arg}"
+	case "${Q_left}" in 0)
+		unset CLEANUP
+		return 1
+	esac
 
-		case "$((${1} <= 0))" in 1)
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_left}" "${Q_need}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+
+	# $1: 添字、$2: 残件数、$3: 必要件数、$4: 数値経路、$5: コールバック
+	set -- -5 "${Q_left}" "${Q_need}" "${Q_type}" "${Q_cb-}" "${@}"
+
+	for Q_arg in "${@}"; do
+		case "${1}" in
+			-*) Q_next=$((${1} + 1));;
+			*) "__sx_num_add1_${4}" Q_next "${1}";;
+		esac
+
+		set -- "${Q_next}" "${2}" "${3}" "${4}" "${5}" "${Q_arg}"
+
+		case "${1}" in -* | 0)
 			continue
 		esac
 
 		unset CLEANUP
 
 		# 短絡評価: 残りの全要素が成功しても必要数に達しない
-		case "$((${2} - ${1} + 1 < ${4}))" in 1)
+		"__sx_num_cmp_${4}" "${2}" "${3}" || case "${?}" in 1)
 			return 1
 		esac
 
-		"${3}" "${5}" "${1}" && set -- "${1}" "${2}" "${3}" "$((${4} - 1))" || :
+		if "${5}" "${6}" "${1}"; then
+			"__sx_num_sub1_${4}" Q_need "${3}"
+			set -- "${1}" "${2}" "${Q_need}" "${4}" "${5}"
+		fi
 
 		# 短絡評価: 必要数に達した
-		case "${4}" in 0)
-			return M_EX_OK
+		case "${3}" in 0)
+			unset CLEANUP
+			return
 		esac
+
+		"__sx_num_sub1_${4}" Q_left "${2}"
+		set -- "${1}" "${Q_left}" "${3}" "${4}" "${5}"
 	done
 
 	unset CLEANUP
