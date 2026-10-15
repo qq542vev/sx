@@ -3036,18 +3036,18 @@ __sx_arg_rfind_lit() {
 ##   コールバックが ret_var を unset した場合、アキュムレータは変更されない。
 ##   コールバックが非0を返した場合、その時点のアキュムレータ値を結果変数に格納し、
 ##   直ちに終了する。
+##   引数個数とインデックスに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
 ##   すべてのコールバックが成功 => 0 (SX_EX_OK)
 ##   コールバックが失敗 => 最初のエラーのステータス
-##   64 => 引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64 => 引数不正 (SX_EX_USAGE)
 ##   77 => 結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78 => SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_rfold() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rfold "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	sx_var_is_name "${1-}" || return M_EX_USAGE
 
@@ -3064,33 +3064,61 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   sx_arg_rfold の内部実装。引数チェックは行わない。
-##   状態（cnt, res, cb, acc）は位置変数で管理し、eval で後方から間接参照する。
-##   各イテレーション後は shift 4 で状態を退避し、set -- ... "${@}" で
-##   データを保持したまま状態だけを更新する。これにより再帰呼び出しにも安全。
+##   状態は位置変数で管理し、eval で後方から間接参照する。
+##   添字と実際の位置番号を保持し、毎回オフセットを加算せず両方を減らす。
+##   最大の位置番号が算術域内なら算術、それ以外は多倍長で更新する。
+##   コールバック呼び出し前には一時変数を解放し、再入時も状態を保持する。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   非0  最初に失敗したコールバックの終了ステータス
 ##
 
-define([|CLEANUP|], [|Q_ret Q_cb|])dnl
+define([|CLEANUP|], [|Q_ret Q_cb Q_i Q_pos Q_type|])dnl
 
 __sx_arg_rfold() {
-	set -- "$((${#} - 3))" "${@}"
+	case "${4+X}" in '')
+		M_VAR_SET([|${1}|], [|${3-}|])
+		return
+	esac
 
-	while M_NUM_LT([|0|], [|${1}|]); do
-		eval '"${3}"' Q_ret '"${4}"' "\"\${$((${1} + 4))}\"" "${1}" || {
-			set -- "${?}" "${@}"
-			M_VAR_SET([|${3}|], [|${5}|])
-			unset Q_ret
+	# 管理用の6項目を含む最大の位置番号を、算術を使わずに取得する。
+	set -- 0 0 0 "${@}"
+	Q_pos="${#}"
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_pos}"; then
+		Q_type=arith
+		Q_i=$((Q_pos - 6))
+	else
+		Q_type=nat0
+		__sx_num_sub_nat0 Q_i "${Q_pos}" 6
+	fi
+
+	shift 3
+	# $1: 添字、$2: 位置番号、$3: 数値経路、$4: 結果変数、$5: コールバック、$6: アキュムレータ
+	set -- "${Q_i}" "${Q_pos}" "${Q_type}" "${@}"
+	unset CLEANUP
+
+	while M_STR_NE([|"${1}"|], [|0|]); do
+		eval '"${5}"' Q_ret '"${6}"' "\"\${${2}}\"" "${1}" || {
+			set -- "${?}" "${4}" "${6}"
+			unset CLEANUP
+			M_VAR_SET([|${2}|], [|${3}|])
 			return "${1}"
 		}
 
-		Q_cb="${3}"
-		: "${Q_ret=${4}}"
+		Q_cb="${5}"
+		: "${Q_ret=${6}}"
+		"__sx_num_sub1_${3}" Q_i "${1}"
+		"__sx_num_sub1_${3}" Q_pos "${2}"
 
-		eval 'shift 4;' set -- "$((${1} - 1))" "${2}" '"${Q_cb}"' '"${Q_ret}"' '"${@}"'
+		eval 'shift 6;' set -- "${Q_i}" "${Q_pos}" "${3}" "${4}" '"${Q_cb}"' '"${Q_ret}"' '"${@}"'
 
 		unset CLEANUP
 	done
 
-	M_VAR_SET([|${2}|], [|${4}|])
+	unset CLEANUP
+	M_VAR_SET([|${4}|], [|${6}|])
 }
 |], [|arg_rfold|])dnl
 
