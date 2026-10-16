@@ -2398,6 +2398,8 @@ __sx_arg_quote() {
 ##   結果はシングルクォートで囲まれ、スペース区切りで結合された形式で
 ##   結果変数に格納される。
 ##   第一引数にはバインド形式を指定して分配代入を行うことも可能。
+##   len は10進整数表記に限る。符号（+ または -）は任意で、0以外の先行する0は認めない。
+##   引数個数・長さ・コールバックの各カウンタに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ##   2 つの呼び出し形式がある:
 ##     1) ::: 形式: bind/len/val/flg を ::: より前の位置引数で指定し、
@@ -2414,18 +2416,20 @@ __sx_arg_quote() {
 ##       - idx: 1-based 実際の出力位置（skip 考慮済み）
 ##       - cnt: 1-based パディングスロット番号
 ##       - skip: スキップ累計数
+##     コールバックは途中の処理を別変数で行い、末尾で ret_var に単純代入する。
+##     ret_var を他の関数の結果変数・バインド先として渡してはならない。
 ##     callback が非 0 を返した場合、処理を中断する。
+##     左パディングで中断した場合も、元の値はバインドが続く限り末尾に結合する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arg_pad() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_pad "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}") ;;
@@ -2438,9 +2442,9 @@ sx_arg_pad() {
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}" | "${2+X${2}}") ;;
-		"${3+X${3}}" | "${4+X${4}}") __sx_num_is_int_safe_inv "${2}" || return M_EX_USAGE;;
+		"${3+X${3}}" | "${4+X${4}}") __sx_num_is_int_base 10 "${2}" || return M_EX_USAGE;;
 		"${5+X${5}}")
-			__sx_num_is_int_safe_inv "${2}" && __sx_num_is_int_safe_inv "${4}" || return M_EX_USAGE;;
+			__sx_num_is_int_base 10 "${2}" && __sx_num_is_int_safe_inv "${4}" || return M_EX_USAGE;;
 	esac
 
 	__sx_arg_pad "${@}" || return
@@ -2456,6 +2460,10 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_arg_pad の内部実装。
 ##   引数チェックは行わない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   非0  コールバックの終了ステータス
 
 define([|CLEANUP|], [|Q_bind Q_len Q_val Q_flg|])dnl
 
@@ -2485,9 +2493,13 @@ __sx_arg_pad() {
 	esac
 
 	set -- "${Q_bind-}" "${Q_len:-0}" "${Q_val-}" "${Q_flg:-0}" "${@}"
-	unset  CLEANUP
+	unset CLEANUP
 
 	__sx_var_bind_init "${1}"
+
+	case "${1:+X}" in '')
+		return
+	esac
 
 	case "$((${4} & SX_ARG_PAD_CB))" in
 		0) __sx_arg_pad_lit "${@}";;
@@ -2511,76 +2523,98 @@ M_RENAME_QI([|dnl
 ##   コールバックが ret_var を unset した場合、そのスロットはスキップされる。
 ##   コールバックが非0を返した場合、処理を中断する。
 ##
-##   状態レイアウト（位置パラメータ）:
-##     $1: idx, $2: cnt, $3: skip, $4: needed, $5: bind, $6: len, $7: cb, $8: flag
-##     $9+: 元の値
+##   内部実装。引数チェックは行わない。
+##   長さの絶対値と元の個数が算術域内なら算術、それ以外は多倍長で更新する。
+##   出力済み個数・処理済みスロット数を0から管理し、必要なときだけ増やす。
+##   状態は位置変数に保存し、一時変数を解放してからコールバックを呼ぶ。
+##   コールバック結果には固定の Q_ret を使用する。
+##   コールバックは途中の処理を別変数で行い、末尾で結果変数に単純代入する。
+##   結果変数を他の関数の結果変数・バインド先として渡してはならない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   非0  最初に失敗したコールバックの終了ステータス
 
-define([|CLEANUP|], [|Q_ex Q_ret|])dnl
+define([|CLEANUP|], [|Q_bind Q_len Q_cb Q_size Q_type Q_needed Q_phase Q_ret Q_i Q_cnt Q_skip Q_ex Q_arg|])dnl
 
 __sx_arg_pad_cb() {
-	set -- 1 1 0 "$((${2#-} - ${#} + 4))" "${@}"
+	Q_bind="${1}" Q_len="${2}" Q_cb="${3}" Q_needed=0
+	shift 4
+	Q_size="${#}"
 
-	# 左パディング
-	case "$((${6} < 0))" in 1)
-		while M_NUM_LE([|${2}|], [|${4}|]) && M_STR_NE([|"${5}"|], [|''|]); do
-			"${7}" Q_ret "${1}" "${2}" "${3}" || {
-				Q_ex="${?}"
-				break
-			}
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len#[+-]}" "${Q_size}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
 
-			case "${Q_ret+X}" in
-				X)
-					__sx_var_bind Q_bind "${5}" "${Q_ret}"
-					eval 'shift 5;' set -- "$((${1} + 1))" "$((${2} + 1))" "${3}" "${4}" "${Q_bind}" '"${@}"'
-					;;
-				*) eval 'shift 3;' set -- "${1}" "$((${2} + 1))" "$((${3} + 1))" '"${@}"';;
-			esac
-
-			unset Q_ret Q_bind
-		done
+	"__sx_num_cmp_${Q_type}" "${Q_len#[+-]}" "${Q_size}" || case "${?}" in 3)
+		"__sx_num_sub_${Q_type}" Q_needed "${Q_len#[+-]}" "${Q_size}"
 	esac
 
-	# idx は左パディングで消費済み。残り8フィールドを-8カウンタでスキップ
-	shift 1
-	set -- -8 "${@}"
+	case "${Q_len}" in -*) Q_phase=left;; *) Q_phase=rdata;; esac
 
-	for Q_arg in "${@}"; do
-		set -- "$((${1} + 1))" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}"
+	# $1: 出力済み個数、$2: スロット数、$3: skip、$4: 残スロット数、$5: bind
+	# $6: 数値経路、$7: callback、$8: phase、$9以降: 元の値
+	set -- 0 0 0 "${Q_needed}" "${Q_bind}" "${Q_type}" "${Q_cb}" "${Q_phase}" "${@}"
+	while M_STR_NE([|"${5}"|], [|''|]); do
+		case "${8}" in
+			left | right)
+				case "${4}" in 0)
+					case "${8}" in right) break;; esac
+					Q_bind="${5}" Q_cb="${7}"
+					eval 'shift 8;' set -- "${1}" "${2}" "${3}" "${4}" '"${Q_bind}"' "${6}" '"${Q_cb}"' ldata '"${@}"'
+					continue
+				esac
 
-		case "$((${1} <= 0))" in 1)
-			continue
+				"__sx_num_add1_${6}" Q_i "${1}"
+				"__sx_num_add1_${6}" Q_cnt "${2}"
+				set -- "${Q_i}" "${Q_cnt}" "${@}"
+				unset CLEANUP
+				"${9}" Q_ret "${1}" "${2}" "${5}" || {
+					Q_ex="${?}" Q_bind="${7}"
+					shift 10
+					# 左パディングの失敗時も、未処理の元の値は結合する。
+					for Q_arg in "${@}"; do
+						case "${Q_bind:+X}" in '') break;; esac
+						__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || break
+					done
+					set -- "${Q_ex}"
+					unset CLEANUP
+					return "${1}"
+				}
+
+				Q_i="${3}" Q_cnt="${2}" Q_skip="${5}"
+				Q_cb="${9}" Q_phase="${10}"
+				case "${Q_ret+X}" in
+					X)
+						__sx_var_bind Q_bind "${7}" "${Q_ret}"
+						Q_i="${1}"
+						;;
+					*)
+						Q_bind="${7}"
+						"__sx_num_add1_${8}" Q_skip "${5}"
+						;;
+				esac
+				"__sx_num_sub1_${8}" Q_needed "${6}"
+				eval 'shift 10;' set -- "${Q_i}" "${Q_cnt}" "${Q_skip}" "${Q_needed}" '"${Q_bind}"' "${8}" '"${Q_cb}"' "${Q_phase}" '"${@}"'
+				unset Q_ret
+				;;
+			ldata | rdata)
+				case "${9+X}" in '')
+					case "${8}" in ldata) break;; esac
+					Q_bind="${5}" Q_cb="${7}"
+					eval 'shift 8;' set -- "${1}" "${2}" "${3}" "${4}" '"${Q_bind}"' "${6}" '"${Q_cb}"' right '"${@}"'
+					continue
+				esac
+				"__sx_num_add1_${6}" Q_i "${1}"
+				__sx_var_bind Q_bind "${5}" "${9}"
+				Q_cb="${7}"
+				eval 'shift 9;' set -- "${Q_i}" "${2}" "${3}" "${4}" '"${Q_bind}"' "${6}" '"${Q_cb}"' "${8}" '"${@}"'
+				;;
 		esac
-
-		__sx_var_bind Q_bind "${5}" "${Q_arg}" || break
-		eval 'shift 5;' set -- "${1}" "${2}" "${3}" "${4}" "${Q_bind}" '"${@}"'
 	done
-
-	unset Q_arg Q_bind
-
-	eval 'shift;' set -- "$((${1} + 1))" '"${@}"'
-
-	case "$((${6} < 0))" in 0)
-		while M_NUM_LE([|${2}|], [|${4}|]) && M_STR_NE([|"${5}"|], [|''|]); do
-			"${7}" Q_ret "${1}" "${2}" "${3}" || {
-				Q_ex="${?}"
-				break
-			}
-
-			case "${Q_ret+X}" in
-				X)
-					__sx_var_bind Q_bind "${5}" "${Q_ret}"
-					eval 'shift 5;' set -- "$((${1} + 1))" "$((${2} + 1))" "${3}" "${4}" "${Q_bind}" '"${@}"'
-					;;
-				*) eval 'shift 3;' set -- "${1}" "$((${2} + 1))" "$((${3} + 1))" '"${@}"';;
-			esac
-
-			unset Q_ret Q_bind
-		done
-	esac
-
-	set -- "${Q_ex-0}"
 	unset CLEANUP
-	return "${1}"
 }
 |], [|arg_pad_cb|])dnl
 
@@ -2592,43 +2626,57 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   sx_arg_pad の内部実装。引数チェックは行わない。
+##   長さの絶対値と元の個数が算術域内なら算術、それ以外は多倍長で不足件数を計算する。
+##   不足件数は比較後に非負の差として求め、終了判定に算術を使用しない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
 
-define([|CLEANUP|], [|Q_bind Q_len Q_val Q_needed Q_arg|])dnl
+define([|CLEANUP|], [|Q_bind Q_len Q_val Q_needed Q_arg Q_size Q_type|])dnl
 
 __sx_arg_pad_lit() {
 	Q_bind="${1}"
 	Q_len="${2}"
 	Q_val="${3}"
-	shift 4
+	Q_needed=0
 
-	Q_needed=$((${Q_len#-} - ${#}))
+	shift 4
+	Q_size="${#}"
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len#[+-]}" "${Q_size}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+
+	"__sx_num_cmp_${Q_type}" "${Q_len#[+-]}" "${Q_size}" || case "${?}" in 3)
+		"__sx_num_sub_${Q_type}" Q_needed "${Q_len#[+-]}" "${Q_size}"
+	esac
 
 	# 左パディング（needed <= 0 なら何もしない）
 	case "${Q_len}" in -*)
-		while M_NUM_LT([|0|], [|Q_needed|]); do
+		while M_STR_NE([|"${Q_needed}"|], [|0|]) && M_STR_NE([|"${Q_bind}"|], [|''|]); do
 			__sx_var_bind Q_bind "${Q_bind}" "${Q_val}" || {
 				unset CLEANUP
-				return M_EX_OK
+				return
 			}
 
-			M_NUM_DECR([|Q_needed|])
+			"__sx_num_sub1_${Q_type}" Q_needed "${Q_needed}"
 		done
 	esac
 
 	# 入力値を結合
-	for Q_arg in "${@}"; do
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || {
-			unset CLEANUP
-			return M_EX_OK
-		}
-	done
+	__sx_var_bind Q_bind "${Q_bind}" "${@}" || {
+		unset CLEANUP
+		return
+	}
 
 	# 右パディング（needed <= 0 なら何もしない）
 	case "${Q_len}" in [!-]*)
-		while M_NUM_LT([|0|], [|Q_needed|]); do
-			__sx_var_bind Q_bind "${Q_bind}" "${Q_val}" || :
+		while M_STR_NE([|"${Q_needed}"|], [|0|]) && M_STR_NE([|"${Q_bind}"|], [|''|]); do
+			__sx_var_bind Q_bind "${Q_bind}" "${Q_val}" || break
 
-			M_NUM_DECR([|Q_needed|])
+			"__sx_num_sub1_${Q_type}" Q_needed "${Q_needed}"
 		done
 	esac
 

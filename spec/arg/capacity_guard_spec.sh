@@ -40,10 +40,11 @@ Describe '可変長 sx_arg_* の引数個数ガード'
   End
 
   Describe 'sx_arg_pad'
-    It '引数個数が安全範囲外の場合に他のチェックより先に EX_USAGE を返すこと'
+    It '引数個数が安全範囲外でも元の値をクォートすること'
       __sx_num_is_nat0_safe() { [ "${1}" -ge 3 ] && return 1; return 0; }
       When call sx_arg_pad res ::: "v1" "v2"
-      The status should equal 64
+      The status should be success
+      The variable res should equal "'v1' 'v2'"
     End
   End
 
