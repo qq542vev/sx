@@ -16119,9 +16119,11 @@ __sx_arr_rquote() {
 ##
 ## 説明:
 ##   RFC 4180 の引用規則で解析し、res の各要素を行の SX 配列にする。
-##   sep は非空のリテラル文字列（既定はカンマ）、quote は一文字（既定は二重引用符）。
+##   sep は非空のリテラル文字列（既定はカンマ）、quote は引用符に使う文字の集合（既定は二重引用符）。
+##   フィールドの開始に使った一文字で閉じ、同じ文字の二重化でその引用符自体を表す。
+##   引用内では集合内の別の引用符も通常文字として保持する。引用の入れ子は行わない。
 ##   quote の空指定で引用処理を無効にでき、タブ区切りの TSV にも対応する。
-##   sep に CR・LF・有効な quote を含めること、および quote に CR・LF を使うことはできない。
+##   sep に CR・LF・quote 内のいずれかの文字を含めること、および quote に CR・LF を含めることはできない。
 ##   レコード区切りは CRLF または LF。引用内の改行、空白、数値表記は保持する。
 ##   空入力は0行、空行は空フィールド一つ。末尾改行だけでは余分な行を追加しない。
 ##   ヘッダは通常の行として保存し、行ごとの列数の違いを許可する。
@@ -16153,10 +16155,9 @@ sx_csv_parse() {
 
 	set -- "${1}" "${2}" "${3-}" "${4-,}" "${5-\"}"
 	case "${4}" in '' | *"${SX_STR_CR}"* | *"${SX_STR_LF}"*) return M_EX_USAGE;; esac
-	case "${#5}" in 0 | 1) ;; *) return M_EX_USAGE;; esac
-	case "${5}" in "${SX_STR_CR}" | "${SX_STR_LF}") return M_EX_USAGE;; esac
+	case "${5}" in *"${SX_STR_CR}"* | *"${SX_STR_LF}"*) return M_EX_USAGE;; esac
 	case "${5:+X}" in X)
-		case "${4}" in *"${5}"*) return M_EX_USAGE;; esac
+		case "${4}" in *["${5}"]*) return M_EX_USAGE;; esac
 	esac
 	__sx_var_is_rw_deep "${1}" || return M_EX_NOPERM
 
@@ -16173,6 +16174,11 @@ M_RENAME_QI([|dnl
 ##   内部実装。引数チェックは行わない。
 ##   位置パラメータに現在行の完成フィールドを保持し、行が完成してから結果へ書き込む。
 ##   状態は start（先頭）・plain（非引用）・quoted（引用内）・closed（引用終了）。
+##   start からは通常文字で plain、quote 内のいずれかの文字で quoted に移る。
+##   開始に使った一文字を保持し、quoted ではその文字の二重化を一文字に戻し、単独なら closed に移る。
+##   quoted 内の別の引用符は、quote に含まれていても通常文字として保持する。
+##   start・plain・closed では区切り・改行・入力終了でフィールドを確定し、start に戻る。
+##   plain 内の引用符、closed 後の通常文字、quoted のままの入力終了は構文エラーとする。
 ##   通常文字をまとめて消費し、引用内の区切り・改行をそのまま保持する。
 ##   配列の生成は __sx_arr_gen に委譲する。行の生成時だけ参照・穴の解釈を無効にする。
 ##   生成処理で使う配列設定は保存し、成功・エラーのどちらでも通知前に復元する。
@@ -16188,35 +16194,44 @@ M_RENAME_QI([|dnl
 ##    2  非引用フィールド内に引用符が出現
 ##    3  閉じ引用符の後に不正な文字が出現
 
-define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_field Q_state Q_row Q_col Q_err Q_chunk Q_kind Q_ref Q_hole|])dnl
+define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_open Q_field Q_state Q_row Q_col Q_err Q_chunk Q_kind Q_ref Q_hole|])dnl
 
 __sx_csv_parse() {
 	Q_res="${1}" Q_data="${2}" Q_cb="${3-}" Q_sep="${4-,}" Q_quote="${5-\"}"
 	Q_ref="${SX_CFG_ARR_REF}" Q_hole="${SX_CFG_ARR_HOLE}"
+	# Q_data は未消費の入力、Q_field は現在組み立てているフィールド。
+	# Q_row は結果へ保存済みの行数であり、次の行の0始まりの添字でもある。
 	Q_field='' Q_state=start Q_row=0 Q_err=0
 	__sx_arr_gen "${Q_res}"
+	# 元の引数を退避したので、位置パラメータを現在行の完成フィールド一覧に使い直す。
+	# 未完成の Q_field はここへ含めず、区切り・改行・入力終了を確認してから追加する。
 	set --
 
 	while :; do
+		# 引用内は先に処理する。区切り・改行もフィールドの一部なので、行確定へ進めない。
 		case "${Q_state}" in quoted)
 			case "${Q_data}" in
 				'')
+					# 閉じ引用符がない。現在行を保存せず、完成済みの行だけを結果に残す。
 					Q_err=1
 					break
 					;;
-				"${Q_quote}"*)
-					Q_data="${Q_data#"${Q_quote}"}"
+				"${Q_open}"*)
+					Q_data="${Q_data#"${Q_open}"}"
 
+					# 次も開始時と同じ引用符ならエスケープ。二つで一文字とし、quoted を維持する。
+					# 次が同じ引用符でなければ閉じ引用符なので closed に移る。
 					case "${Q_data}" in
-						"${Q_quote}"*)
-							M_STR_APPEND([|Q_field|], [|"${Q_quote}"|])
-							Q_data="${Q_data#"${Q_quote}"}"
+						"${Q_open}"*)
+							M_STR_APPEND([|Q_field|], [|"${Q_open}"|])
+							Q_data="${Q_data#"${Q_open}"}"
 							;;
 						*) Q_state=closed;;
 					esac
 					;;
 				*)
-					Q_chunk="${Q_data%%"${Q_quote}"*}"
+					# 開始時と同じ引用符の直前まで追加する。別の引用符・区切り・改行は探さない。
+					Q_chunk="${Q_data%%"${Q_open}"*}"
 					M_STR_APPEND([|Q_field|], [|"${Q_chunk}"|])
 					Q_data="${Q_data#"${Q_chunk}"}"
 					;;
@@ -16225,8 +16240,13 @@ __sx_csv_parse() {
 			continue
 		esac
 
+		# 引用外では、文字を追加する前にフィールド・行の境界を判定する。
+		# Q_kind は field（列区切り）・row（行区切り）・eof（入力終了）の確定理由。
 		case "${Q_data}" in
 			'')
+				# フィールドを開始しておらず完成フィールドもなければ、保存すべき行はない。
+				# 空入力と末尾改行後が該当する。末尾の列区切り後は完成フィールドがあるため、
+				# この分岐では終了せず、後段で最後の空フィールドを確定する。
 				case "${Q_state}:${#}" in start:0)
 					break
 				esac
@@ -16237,29 +16257,36 @@ __sx_csv_parse() {
 			"${SX_STR_CR}${SX_STR_LF}"*) Q_data="${Q_data#"${SX_STR_CR}${SX_STR_LF}"}" Q_kind=row;;
 			"${SX_STR_LF}"*) Q_data="${Q_data#"${SX_STR_LF}"}" Q_kind=row;;
 			*)
+				# 境界に一致しなかったため、closed の後なら許可されない文字が続いている。
 				case "${Q_state}" in closed)
 					Q_err=3
 					break
 				esac
 
 				case "${Q_quote:+X}" in X)
-					case "${Q_data}" in "${Q_quote}"*)
+					case "${Q_data}" in ["${Q_quote}"]*)
+						# 引用を開始できるのは start だけ。非引用フィールドの途中では拒否する。
 						case "${Q_state}" in plain)
 							Q_err=2
 							break
 						esac
 
-						Q_state=quoted Q_data="${Q_data#"${Q_quote}"}"
+						# Q_quote は候補の集合、Q_open は今回のフィールドを開始した一文字。
+						# quoted の間は Q_open だけを閉じ引用符・エスケープとして認識する。
+						Q_open="${Q_data%"${Q_data#?}"}"
+						Q_state=quoted Q_data="${Q_data#?}"
 						continue
 					esac
 				esac
 
+				# 境界と引用符の直前までを通常文字として消費し、plain に移る。
+				# 境界自体は残し、次の反復で上の判定に処理させる。
 				Q_chunk="${Q_data%%"${Q_sep}"*}"
 				Q_chunk="${Q_chunk%%"${SX_STR_CR}${SX_STR_LF}"*}"
 				Q_chunk="${Q_chunk%%"${SX_STR_LF}"*}"
 
 				case "${Q_quote:+X}" in X)
-					Q_chunk="${Q_chunk%%"${Q_quote}"*}"
+					Q_chunk="${Q_chunk%%["${Q_quote}"]*}"
 				esac
 
 				M_STR_APPEND([|Q_field|], [|"${Q_chunk}"|])
@@ -16268,16 +16295,23 @@ __sx_csv_parse() {
 				;;
 		esac
 
+		# 境界を検出した経路だけがここへ来る。空でも一つのフィールドとして確定する。
+		# 次のフィールドに備えて Q_field と Q_state を戻すが、完成フィールド一覧は保持する。
 		set -- "${@}" "${Q_field}"
 		Q_field='' Q_state=start
 
+		# 列区切りなら同じ行を解析し続ける。改行または入力終了なら行全体を保存する。
 		case "${Q_kind}" in field)
 			continue
 		esac
 
+		# 完成フィールド一覧を一行の配列にし、その行が保存できてから外側の長さを増やす。
+		# 行が完成する前には結果へ書かないため、構文エラー時に未完成の行は残らない。
+		# フィールドを文字列のまま保存するため、行生成時だけ参照・穴の解釈を無効にする。
 		SX_CFG_ARR_REF='' SX_CFG_ARR_HOLE='' __sx_arr_gen "${Q_res}_${Q_row}" "${@}"
 		M_NUM_INCRM1([|Q_row|])
 		M_VAR_SET([|${Q_res}_len|], [|${Q_row}|])
+		# 現在行の一覧を空にして次の行へ。入力終了の場合は、この行を保存してから抜ける。
 		set --
 
 		case "${Q_kind}" in eof)
@@ -16285,10 +16319,14 @@ __sx_csv_parse() {
 		esac
 	done
 
+	# 成功・エラーとも元の設定に戻し、コールバックにも呼び出し時の設定を見せる。
 	SX_CFG_ARR_REF="${Q_ref}" SX_CFG_ARR_HOLE="${Q_hole}"
 
+	# 解析は完了したので、位置パラメータを完成フィールド一覧から最後に実行するコマンドへ変える。
+	# エラーかつコールバック指定ありの場合だけ通知し、それ以外は解析ステータスを返す。
 	case "${Q_cb:+X}${Q_err}" in
 		X[1-9]*)
+			# 保存済み行数 + 1 がエラーの行番号、現在行の完成フィールド数 + 1 が列番号。
 			M_NUM_INCRM1([|Q_row|])
 			__sx_num_add1_nat0 Q_col "${#}"
 			# Q_col は直前の __sx_num_add1_nat0 が参照渡しで設定する。
@@ -16298,6 +16336,8 @@ __sx_csv_parse() {
 		*) set -- return "${Q_err}";;
 	esac
 
+	# 通知引数と終了ステータスは位置パラメータへ移したので、作業変数を先に解放できる。
+	# コールバックから同じ関数へ再入しても干渉せず、コールバックの終了ステータスをそのまま返す。
 	unset CLEANUP
 	"${@}"
 }

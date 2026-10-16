@@ -135,6 +135,95 @@ Describe 'sx_csv_parse'
     The variable res_0_1 should equal 'c*d'
   End
 
+  It '二重引用符と単一引用符をフィールドごとに使い分けられる'
+    When call sx_csv_parse res "\"a,b\",'c,d',plain" '' ',' "\"'"
+    The status should be success
+    The variable res_0_len should equal 3
+    The variable res_0_0 should equal 'a,b'
+    The variable res_0_1 should equal 'c,d'
+    The variable res_0_2 should equal plain
+  End
+
+  It '開始時とは別の引用符と引用内改行を通常文字として保存する'
+    data="'a\"b,${SX_STR_LF}c',\"d'e,f\""
+    When call sx_csv_parse res "$data" '' ',' "\"'"
+    The status should be success
+    The variable res_len should equal 1
+    The variable res_0_0 should equal "a\"b,${SX_STR_LF}c"
+    The variable res_0_1 should equal "d'e,f"
+  End
+
+  It '開始時と同じ引用符だけを二重化で復元する'
+    data="'a\"\"b','it''s',\"c''d\",\"say \"\"hi\"\"\""
+    When call sx_csv_parse res "$data" '' ',' "\"'"
+    The status should be success
+    The variable res_0_len should equal 4
+    The variable res_0_0 should equal 'a""b'
+    The variable res_0_1 should equal "it's"
+    The variable res_0_2 should equal "c''d"
+    The variable res_0_3 should equal 'say "hi"'
+  End
+
+  It '異なる引用符で囲んだ空フィールドと末尾の空フィールドを保存する'
+    When call sx_csv_parse res "'',\"\"," '' ',' "\"'"
+    The status should be success
+    The variable res_0_len should equal 3
+    The variable res_0_0 should equal ''
+    The variable res_0_1 should equal ''
+    The variable res_0_2 should equal ''
+  End
+
+  It '引用符候補の重複は解析結果を変えない'
+    When call sx_csv_parse res "'a',\"b\"" '' ',' "\"''\""
+    The status should be success
+    The variable res_0_0 should equal a
+    The variable res_0_1 should equal b
+  End
+
+  It '英字も引用符の候補として複数指定できる'
+    When call sx_csv_parse res 'aonea,btwob' '' ',' ab
+    The status should be success
+    The variable res_0_0 should equal one
+    The variable res_0_1 should equal two
+  End
+
+  Context '引用符集合の特殊文字'
+    Parameters
+      '['
+      ']'
+      '-'
+      '!'
+      '^'
+      '*'
+      '?'
+      "\\"
+    End
+
+    It '集合内の各文字をリテラルな開始・終了引用符として扱う'
+      data="${1}a,b${1},${1}c${1}${1}d${1}"
+      When call sx_csv_parse res "$data" '' ',' "!^-][*?\\"
+      The status should be success
+      The variable res_0_len should equal 2
+      The variable res_0_0 should equal 'a,b'
+      The variable res_0_1 should equal "c${1}d"
+    End
+  End
+
+  Context '引用符集合のリテラル解釈'
+    Parameters
+      'ahelloamaworlda' m 'a-z' hello world
+      ':a5b:5:c:' 5 '[:digit:]' a5b c
+    End
+
+    It '範囲や文字クラスを作らず区切りの検証にも同じ集合を使う'
+      When call sx_csv_parse res "$1" '' "$2" "$3"
+      The status should be success
+      The variable res_0_len should equal 2
+      The variable res_0_0 should equal "$4"
+      The variable res_0_1 should equal "$5"
+    End
+  End
+
   It '引用処理を無効にした TSV では引用符も通常文字になる'
     data="\"a${SX_STR_HT}b\"${SX_STR_LF}c${SX_STR_HT}${SX_STR_HT}"
     When call sx_csv_parse res "$data" '' "$SX_STR_HT" ''
@@ -234,6 +323,27 @@ Describe 'sx_csv_parse'
     End
   End
 
+  Context '複数の引用符を有効にした場合の構文エラー'
+    Parameters
+      1 "\"bad'"
+      1 "'bad\""
+      1 "'bad''"
+      2 "bad'"
+      2 'bad"'
+      3 "'ok'\""
+      3 "\"ok\"'"
+    End
+
+    It '別の引用符で閉じることや非引用フィールド内の引用符を拒否する'
+      When call sx_csv_parse res "a,b${SX_STR_LF}first,$2" '' ',' "\"'"
+      The status should equal "$1"
+      The variable res_len should equal 1
+      The variable res_0_0 should equal a
+      The variable res_0_1 should equal b
+      The variable res_1 should be undefined
+    End
+  End
+
   It '先頭行でエラーになった場合は空配列を残す'
     When call sx_csv_parse res '"unclosed'
     The status should equal 1
@@ -288,11 +398,11 @@ Describe 'sx_csv_parse'
 
   It 'コールバックから再入しても通知引数と完成行を保持し指定した終了ステータスを返す'
     csv_error() {
-      sx_csv_parse nested 'inner,value'
+      sx_csv_parse nested "'inner',\"value\"" '' ',' "\"'"
       csv_error_args="$*"
       return "$1"
     }
-    When call sx_csv_parse res "a,b${SX_STR_LF}bad\"" csv_error
+    When call sx_csv_parse res "a,b${SX_STR_LF}bad'" csv_error ',' "\"'"
     The status should equal 2
     The variable csv_error_args should equal '2 2 1'
     The variable res_len should equal 1
@@ -330,11 +440,15 @@ Describe 'sx_csv_parse'
   Context '区切りと引用符の検証'
     Parameters
       '' '"'
-      ',' 'ab'
       '||' '|'
+      'xy' 'abx'
+      'xy' 'yab'
+      'xy' 'ayb'
+      'x]y' '[]'
+      'x-y' 'a-z'
     End
 
-    It '空区切り・複数文字の引用符・区切り内の引用符を拒否する'
+    It '空区切りと引用符集合内の文字を含む区切りを拒否する'
       sx_csv_parse res original
       When call sx_csv_parse res a '' "$1" "$2"
       The status should equal 64
@@ -350,6 +464,20 @@ Describe 'sx_csv_parse'
   It '改行を引用符にする指定を拒否する'
     When call sx_csv_parse res a '' ',' "$SX_STR_CR"
     The status should equal 64
+  End
+
+  It '引用符集合の途中に CR があっても解析前に拒否する'
+    res=original
+    When call sx_csv_parse res a '' ',' "'${SX_STR_CR}\""
+    The status should equal 64
+    The variable res should equal original
+  End
+
+  It '引用符集合の途中に LF があっても解析前に拒否する'
+    res=original
+    When call sx_csv_parse res a '' ',' "'${SX_STR_LF}\""
+    The status should equal 64
+    The variable res should equal original
   End
 
   It 'コールバック名が不正なら解析前に拒否する'
@@ -406,6 +534,16 @@ Describe 'sx_csv_parse'
       The variable res_0_len should equal 2
       The variable res_0_0 should equal 'a||b'
       The variable res_0_1 should equal ''
+    End
+
+    It '各経路で開始引用符をフィールドごとに選び直す'
+      sx_cfg_set "SKIP_CHK=$2"
+      When call "$1" res "'a||b'||\"c'd\"||" '' '||' "\"'"
+      The status should be success
+      The variable res_0_len should equal 3
+      The variable res_0_0 should equal 'a||b'
+      The variable res_0_1 should equal "c'd"
+      The variable res_0_2 should equal ''
     End
   End
 End
