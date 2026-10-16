@@ -16219,15 +16219,12 @@ __sx_csv_parse() {
 			Q_data="${Q_data#"${Q_chunk}"}"
 			case "${Q_data}" in
 				'') Q_err=1; break;;
-				*) Q_data="${Q_data#?}";;
-			esac
-			case "${Q_data}" in
-				"${Q_open}"*)
+				?"${Q_open}"*)
 					M_STR_APPEND([|Q_field|], [|"${Q_open}"|])
-					Q_data="${Q_data#?}"
+					Q_data="${Q_data#??}"
 					continue
 					;;
-				*) Q_state=closed;;
+				*) Q_data="${Q_data#?}" Q_state=closed;;
 			esac
 		esac
 
