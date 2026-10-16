@@ -3467,7 +3467,7 @@ __sx_var_bind0() {
 						for Q_val in "${@}"; do
 							shift
 
-							SX_CFG_ARR_UPDATE=0 __sx_arr_push "${Q_tmp}" "${Q_val}"
+							__sx_arr_push_raw "${Q_tmp}" "${Q_val}"
 
 							case "${Q_lim}" in 1)
 								Q_bind="${Q_bind#*:}"
@@ -3512,7 +3512,7 @@ __sx_var_bind0() {
 				shift
 				;;
 			@*)
-				SX_CFG_ARR_UPDATE=0 __sx_arr_push "${Q_bind#@}" "${@}"
+				__sx_arr_push_raw "${Q_bind#@}" "${@}"
 				break
 				;;
 			?*)
@@ -14968,12 +14968,17 @@ sx_arr_gen() {
 ##   __sx_arr_gen 配列名 [値 ...]
 ##
 ## 説明:
-##   指定された配列を新規に作成し、引数で指定された値を要素として追加する。
-##   この関数は引数の検証や書き込み権限のチェックを行わない。
+##   内部実装。引数チェックは行わない。
+##   指定された配列を初期化し、raw 処理で要素を追加した後に必ずリビジョンを更新する。
+##   SX_CFG_ARR_UPDATE 自体は変更しない。
+##
+## 終了ステータス:
+##    0  成功
 __sx_arr_gen() {
 	M_VAR_SET([|${1}|], [|${SX_CFG_SIG_ARR}:|], [|${1}_len|], [|0|])
 
-	SX_CFG_ARR_UPDATE=1 __sx_arr_push "${@}"
+	__sx_arr_push_raw "${@}"
+	__sx_var_touch "${1}"
 }
 
 ### sx_arr_is_bind - 文字列が配列分配用バインド形式として有効か確認する
@@ -15544,20 +15549,45 @@ sx_arr_pop() {
 }
 |], [|arr_pop|])dnl
 
-M_RENAME_QI([|dnl
 ### __sx_arr_pop - 配列から要素を取り出して割り当てる（内部用）
 ##
 ## 使い方:
 ##   __sx_arr_pop bind 配列名
 ##
 ## 説明:
-##   sx_arr_pop の本体実装。取り出し（chain 構築）とコミットを行う。
-##   引数チェック（bind 形式・変数名・配列判定・書き込み権限）は行わない。
+##   内部実装。引数チェックは行わない。
+##   raw 処理が成功した場合だけ、ARR_UPDATE の設定に従って元配列のリビジョンを更新する。
+##
+## 終了ステータス:
+##    0  成功
+##    1  要素不足（無変更）
+__sx_arr_pop() {
+	__sx_arr_pop_raw "${@}" || return
+
+	case "${SX_CFG_ARR_UPDATE-}" in 1)
+		__sx_var_touch "${2}"
+	esac
+}
+
+M_RENAME_QI([|dnl
+### __sx_arr_pop_raw - 元配列のリビジョンを更新せず末尾から取り出す（内部用）
+##
+## 使い方:
+##   __sx_arr_pop_raw bind 配列名
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   取り出し（chain 構築）とコミットを行い、元配列の要素と長さだけを変更する。
+##   分配先に新しく作る配列のリビジョンは通常どおり発行する。
 ##   合計スロット数が要素数を超える場合は 1 を返し、何も書き込まない。
+##
+## 終了ステータス:
+##    0  成功
+##    1  要素不足（無変更）
 
 define([|CLEANUP|], [|Q_bind Q_borg Q_chain Q_unset Q_len Q_tmp|])dnl
 
-__sx_arr_pop() {
+__sx_arr_pop_raw() {
 	__sx_var_to_ebind Q_bind "${1}"
 	Q_borg="${Q_bind}"
 	Q_chain=
@@ -15586,13 +15616,9 @@ __sx_arr_pop() {
 	eval __sx_var_unset "${Q_unset}"
 	eval "${2}_len=${Q_len}"
 
-	case "${SX_CFG_ARR_UPDATE-}" in 1)
-		__sx_var_touch "${2}"
-	esac
-
 	unset CLEANUP
 }
-|], [|arr_pop|])dnl
+|], [|arr_pop_raw|])dnl
 
 ### sx_arr_push - 配列の末尾に要素を追加する
 ##
@@ -15625,15 +15651,37 @@ M_RENAME_QI([|dnl
 ##   __sx_arr_push 配列名 [値 ...]
 ##
 ## 説明:
-##   指定された配列の末尾に一つ以上の値を追加し、長さを更新する。
-##   この関数は引数の検証や書き込み権限のチェックを行わない。
+##   内部実装。引数チェックは行わない。
+##   raw 処理で末尾へ追加し、ARR_UPDATE の設定に従ってリビジョンを一度だけ更新する。
+##
+## 終了ステータス:
+##    0  成功
 
 define([|CLEANUP|], [||])dnl
 
 __sx_arr_push() {
-	eval 'shift;' __sx_arr_splice "${1}" "\"\${${1}_len}\"" 0 '"${@}"'
+	__sx_arr_push_raw "${@}"
+
+	case "${SX_CFG_ARR_UPDATE-}" in 1)
+		__sx_var_touch "${1}"
+	esac
 }
 |], [|arr_push|])dnl
+
+### __sx_arr_push_raw - リビジョンを更新せず配列の末尾へ追加する（内部用）
+##
+## 使い方:
+##   __sx_arr_push_raw 配列名 [値 ...]
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   splice_raw の末尾追加として要素と長さを変更する。参照・穴の解釈は従来どおり行う。
+##
+## 終了ステータス:
+##    0  成功
+__sx_arr_push_raw() {
+	eval 'shift;' __sx_arr_splice_raw "${1}" "\"\${${1}_len}\"" 0 '"${@}"'
+}
 
 M_RENAME_Q([|dnl
 ### sx_arr_splice - 配列の一部を削除し、同位置に値を挿入する
@@ -15674,24 +15722,47 @@ sx_arr_splice() {
 }
 |], [|arr_splice|])dnl
 
-M_RENAME_QI([|dnl
 ### __sx_arr_splice - 配列の一部を削除し、同位置に値を挿入する（内部用）
 ##
 ## 使い方:
 ##   __sx_arr_splice 配列名 n del [値 ...]
 ##
 ## 説明:
-##   sx_arr_splice の本体実装。内部実装。引数チェックは行わない。
+##   内部実装。引数チェックは行わない。
+##   raw 処理で要素と長さを変更し、ARR_UPDATE の設定に従ってリビジョンを一度だけ更新する。
+##
+## 終了ステータス:
+##    0  成功
+__sx_arr_splice() {
+	__sx_arr_splice_raw "${@}"
+
+	case "${SX_CFG_ARR_UPDATE-}" in 1)
+		__sx_var_touch "${1}"
+	esac
+}
+
+M_RENAME_QI([|dnl
+### __sx_arr_splice_raw - リビジョンを更新せず配列要素を挿入・削除する（内部用）
+##
+## 使い方:
+##   __sx_arr_splice_raw 配列名 n del [値 ...]
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   元配列のリビジョンは変更しない。参照・穴の解釈は従来どおり行う。
 ##   長さ・添字・値個数は文字列数値関数で処理し、シェルの算術幅に依存しない。
 ##   負の n は len との和（下限 0）、負の del は残り長との和（下限 0）に丸める。
 ##   n と del を配列範囲に丸めた後、cnt と del の大小に応じて尾部を移動する。
 ##   尾部移動は要素単位の __sx_var_copy で行い、拡大時は後方から前方へ、
 ##   縮小時は前方から後方へ処理して未読のソースを保護する。
 ##   尾部移動後に長さと余剰尾部を確定し、中央の各要素を深く掃除してから代入する。
+##
+## 終了ステータス:
+##    0  成功
 
 define([|CLEANUP|], [|Q_arr Q_len Q_n Q_del Q_rest Q_cnt Q_new Q_src Q_end Q_val Q_chain Q_script|])dnl
 
-__sx_arr_splice() {
+__sx_arr_splice_raw() {
 	Q_arr="${1}"
 	Q_n="${2:-0}"
 	Q_del="${3:-${#}}"
@@ -15846,14 +15917,9 @@ __sx_arr_splice() {
 
 	eval "${Q_script-}"
 
-	# 4) リビジョン更新。長さは尾部処理の各分岐で確定済みである。
-	case "${SX_CFG_ARR_UPDATE-}" in 1)
-		__sx_var_touch "${Q_arr}"
-	esac
-
 	unset CLEANUP
 }
-|], [|arr_splice|])dnl
+|], [|arr_splice_raw|])dnl
 
 M_RENAME_Q([|dnl
 ### sx_arr_quote - 配列要素をシングルクォートで囲み、スペース区切りで結合する
@@ -16105,11 +16171,11 @@ M_RENAME_QI([|dnl
 ##    2  非引用フィールド内に引用符が出現
 ##    3  閉じ引用符の後に不正な文字が出現
 
-define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_field Q_state Q_row Q_col Q_err Q_chunk Q_kind Q_ref Q_hole Q_update|])dnl
+define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_field Q_state Q_row Q_col Q_err Q_chunk Q_kind Q_ref Q_hole|])dnl
 
 __sx_csv_parse() {
 	Q_res="${1}" Q_data="${2}" Q_cb="${3-}" Q_sep="${4-,}" Q_quote="${5-\"}"
-	Q_ref="${SX_CFG_ARR_REF}" Q_hole="${SX_CFG_ARR_HOLE}" Q_update="${SX_CFG_ARR_UPDATE}"
+	Q_ref="${SX_CFG_ARR_REF}" Q_hole="${SX_CFG_ARR_HOLE}"
 	__sx_var_unset "${Q_res}"
 	__sx_arr_gen "${Q_res}"
 	Q_field='' Q_state=start Q_row=0 Q_err=0
@@ -16177,7 +16243,7 @@ __sx_csv_parse() {
 		case "${Q_kind}" in eof) break;; esac
 	done
 
-	SX_CFG_ARR_REF="${Q_ref}" SX_CFG_ARR_HOLE="${Q_hole}" SX_CFG_ARR_UPDATE="${Q_update}"
+	SX_CFG_ARR_REF="${Q_ref}" SX_CFG_ARR_HOLE="${Q_hole}"
 	case "${Q_err}" in 0)
 		unset CLEANUP
 		return M_EX_OK
