@@ -2526,6 +2526,8 @@ M_RENAME_QI([|dnl
 ##   内部実装。引数チェックは行わない。
 ##   長さの絶対値と元の個数が算術域内なら算術、それ以外は多倍長で更新する。
 ##   出力済み個数・処理済みスロット数を0から管理し、必要なときだけ増やす。
+##   必要スロット数は固定し、処理済みスロット数との文字列比較で終了する。
+##   左パディング・元の値の一括結合・右パディングの3段階で処理する。
 ##   状態は位置変数に保存し、一時変数を解放してからコールバックを呼ぶ。
 ##   コールバック結果には固定の Q_ret を使用する。
 ##   コールバックは途中の処理を別変数で行い、末尾で結果変数に単純代入する。
@@ -2535,7 +2537,7 @@ M_RENAME_QI([|dnl
 ##    0  成功 (SX_EX_OK)
 ##   非0  最初に失敗したコールバックの終了ステータス
 
-define([|CLEANUP|], [|Q_bind Q_len Q_cb Q_size Q_type Q_needed Q_phase Q_ret Q_i Q_cnt Q_skip Q_ex Q_arg|])dnl
+define([|CLEANUP|], [|Q_bind Q_len Q_cb Q_size Q_type Q_needed Q_ret Q_i Q_cnt Q_skip Q_ex|])dnl
 
 __sx_arg_pad_cb() {
 	Q_bind="${1}" Q_len="${2}" Q_cb="${3}" Q_needed=0
@@ -2552,68 +2554,87 @@ __sx_arg_pad_cb() {
 		"__sx_num_sub_${Q_type}" Q_needed "${Q_len#[+-]}" "${Q_size}"
 	esac
 
-	case "${Q_len}" in -*) Q_phase=left;; *) Q_phase=rdata;; esac
+	# $1: 出力済み個数、$2: 処理済みスロット数、$3: skip、$4: 必要スロット数（固定）、$5: bind
+	# $6: 数値経路、$7: callback、$8以降: 元の値
+	set -- 0 0 0 "${Q_needed}" "${Q_bind}" "${Q_type}" "${Q_cb}" "${@}"
 
-	# $1: 出力済み個数、$2: スロット数、$3: skip、$4: 残スロット数、$5: bind
-	# $6: 数値経路、$7: callback、$8: phase、$9以降: 元の値
-	set -- 0 0 0 "${Q_needed}" "${Q_bind}" "${Q_type}" "${Q_cb}" "${Q_phase}" "${@}"
-	while M_STR_NE([|"${5}"|], [|''|]); do
-		case "${8}" in
-			left | right)
-				case "${4}" in 0)
-					case "${8}" in right) break;; esac
-					Q_bind="${5}" Q_cb="${7}"
-					eval 'shift 8;' set -- "${1}" "${2}" "${3}" "${4}" '"${Q_bind}"' "${6}" '"${Q_cb}"' ldata '"${@}"'
-					continue
-				esac
+	# 左パディング
+	case "${Q_len}" in -*)
+		while M_STR_NE([|"${2}"|], [|"${4}"|]) && M_STR_NE([|"${5}"|], [|''|]); do
+			"__sx_num_add1_${6}" Q_i "${1}"
+			"__sx_num_add1_${6}" Q_cnt "${2}"
+			set -- "${Q_i}" "${Q_cnt}" "${@}"
+			unset CLEANUP
 
-				"__sx_num_add1_${6}" Q_i "${1}"
-				"__sx_num_add1_${6}" Q_cnt "${2}"
-				set -- "${Q_i}" "${Q_cnt}" "${@}"
+			"${9}" Q_ret "${1}" "${2}" "${5}" || {
+				Q_ex="${?}" Q_bind="${7}"
+				shift 9
+				# 左パディングの失敗時も、元の値はバインドが続く限り結合する。
+				__sx_var_bind '' "${Q_bind}" "${@}" || :
+				set -- "${Q_ex}"
 				unset CLEANUP
-				"${9}" Q_ret "${1}" "${2}" "${5}" || {
-					Q_ex="${?}" Q_bind="${7}"
-					shift 10
-					# 左パディングの失敗時も、未処理の元の値は結合する。
-					for Q_arg in "${@}"; do
-						case "${Q_bind:+X}" in '') break;; esac
-						__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || break
-					done
-					set -- "${Q_ex}"
-					unset CLEANUP
-					return "${1}"
-				}
+				return "${1}"
+			}
 
-				Q_i="${3}" Q_cnt="${2}" Q_skip="${5}"
-				Q_cb="${9}" Q_phase="${10}"
-				case "${Q_ret+X}" in
-					X)
-						__sx_var_bind Q_bind "${7}" "${Q_ret}"
-						Q_i="${1}"
-						;;
-					*)
-						Q_bind="${7}"
-						"__sx_num_add1_${8}" Q_skip "${5}"
-						;;
-				esac
-				"__sx_num_sub1_${8}" Q_needed "${6}"
-				eval 'shift 10;' set -- "${Q_i}" "${Q_cnt}" "${Q_skip}" "${Q_needed}" '"${Q_bind}"' "${8}" '"${Q_cb}"' "${Q_phase}" '"${@}"'
-				unset Q_ret
+			Q_i="${3}" Q_cnt="${2}" Q_skip="${5}" Q_cb="${9}"
+
+			case "${Q_ret+X}" in
+				X)
+					__sx_var_bind Q_bind "${7}" "${Q_ret}"
+					Q_i="${1}"
+					;;
+				*)
+					Q_bind="${7}"
+					"__sx_num_add1_${8}" Q_skip "${5}"
+					;;
+			esac
+
+			eval 'shift 9;' set -- "${Q_i}" "${Q_cnt}" "${Q_skip}" "${6}" '"${Q_bind}"' "${8}" '"${Q_cb}"' '"${@}"'
+		done
+	esac
+
+	# 元の値を一括結合する。バインド枯渇時は後続のコールバックを呼ばない。
+	Q_cnt="${2}" Q_skip="${3}" Q_needed="${4}" Q_bind="${5}" Q_type="${6}" Q_cb="${7}"
+	shift 7
+
+	__sx_var_bind Q_bind "${Q_bind}" "${@}" || {
+		unset CLEANUP
+		return
+	}
+
+	# 左側で完了した場合は処理済み数が必要数と等しいため、右側では実行しない。
+	# 右側の出力済み個数は元の個数そのものなので、要素ごとの加算は不要。
+	set -- "${#}" "${Q_cnt}" "${Q_skip}" "${Q_needed}" "${Q_bind}" "${Q_type}" "${Q_cb}"
+
+	# 右パディング
+	while M_STR_NE([|"${2}"|], [|"${4}"|]) && M_STR_NE([|"${5}"|], [|''|]); do
+		"__sx_num_add1_${6}" Q_i "${1}"
+		"__sx_num_add1_${6}" Q_cnt "${2}"
+		set -- "${Q_i}" "${Q_cnt}" "${@}"
+		unset CLEANUP
+
+		"${9}" Q_ret "${1}" "${2}" "${5}" || {
+			set -- "${?}"
+			unset CLEANUP
+			return "${1}"
+		}
+
+		Q_i="${3}" Q_cnt="${2}" Q_skip="${5}"
+
+		case "${Q_ret+X}" in
+			X)
+				__sx_var_bind Q_bind "${7}" "${Q_ret}"
+				Q_i="${1}"
 				;;
-			ldata | rdata)
-				case "${9+X}" in '')
-					case "${8}" in ldata) break;; esac
-					Q_bind="${5}" Q_cb="${7}"
-					eval 'shift 8;' set -- "${1}" "${2}" "${3}" "${4}" '"${Q_bind}"' "${6}" '"${Q_cb}"' right '"${@}"'
-					continue
-				esac
-				"__sx_num_add1_${6}" Q_i "${1}"
-				__sx_var_bind Q_bind "${5}" "${9}"
-				Q_cb="${7}"
-				eval 'shift 9;' set -- "${Q_i}" "${2}" "${3}" "${4}" '"${Q_bind}"' "${6}" '"${Q_cb}"' "${8}" '"${@}"'
+			*)
+				Q_bind="${7}"
+				"__sx_num_add1_${8}" Q_skip "${5}"
 				;;
 		esac
+
+		set -- "${Q_i}" "${Q_cnt}" "${Q_skip}" "${6}" "${Q_bind}" "${8}" "${9}"
 	done
+
 	unset CLEANUP
 }
 |], [|arg_pad_cb|])dnl
