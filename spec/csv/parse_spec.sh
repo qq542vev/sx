@@ -184,9 +184,10 @@ Describe 'sx_csv_parse'
     The variable SX_CFG_ARR_UPDATE should equal 0
   End
 
-  It '短い結果で置き換える際に古い行とフィールドを再帰削除する'
+  It '呼び出し側で削除してから短い結果を再代入できる'
     sx_csv_parse res "a,b,c${SX_STR_LF}d,e"
     sx_arr_gen res_0_0 nested
+    sx_var_unset res
     When call sx_csv_parse res z
     The status should be success
     The variable res_len should equal 1
@@ -200,8 +201,9 @@ Describe 'sx_csv_parse'
     The variable res_1_0 should be undefined
   End
 
-  It '空入力でも古い結果を削除して空配列にする'
+  It '呼び出し側で削除してから空入力を再代入できる'
     sx_csv_parse res 'a,b'
+    sx_var_unset res
     When call sx_csv_parse res ''
     The status should be success
     The variable res_len should equal 0
@@ -220,6 +222,7 @@ Describe 'sx_csv_parse'
 
     It '完成行だけを残して原因別の終了ステータスを返す'
       sx_csv_parse res 'old,value'
+      sx_var_unset res
       When call sx_csv_parse res "a,b${SX_STR_LF}first,$2"
       The status should equal "$1"
       The variable res_len should equal 1
@@ -238,14 +241,14 @@ Describe 'sx_csv_parse'
     The variable res_0 should be undefined
   End
 
-  It 'エラーコードと論理的な行・列を通知しコールバックの失敗は無視する'
+  It 'エラーコードと論理的な行・列を通知しコールバックの終了ステータスを返す'
     csv_error() {
       csv_error_args="$*"
       csv_error_rows=$res_len
       return 99
     }
     When call sx_csv_parse res "\"a${SX_STR_LF}b\",c${SX_STR_LF}x,y,\"bad\"z" csv_error
-    The status should equal 3
+    The status should equal 99
     The variable csv_error_args should equal '3 2 3'
     The variable csv_error_rows should equal 1
     The variable res_1 should be undefined
@@ -254,7 +257,7 @@ Describe 'sx_csv_parse'
   It '引用エラーの位置を空フィールドも数えて通知する'
     csv_error() { csv_error_args="$*"; }
     When call sx_csv_parse res ',,"bad' csv_error
-    The status should equal 1
+    The status should be success
     The variable csv_error_args should equal '1 1 3'
   End
 
@@ -265,7 +268,7 @@ Describe 'sx_csv_parse'
       csv_error_cfg="${SX_CFG_ARR_REF}:${SX_CFG_ARR_HOLE}:${SX_CFG_ARR_UPDATE}"
     }
     When call sx_csv_parse res "@src,hole${SX_STR_LF}\"bad" csv_error
-    The status should equal 1
+    The status should be success
     The variable res_len should equal 1
     The variable res_0_0 should equal '@src'
     The variable res_0_1 should equal hole
@@ -283,10 +286,11 @@ Describe 'sx_csv_parse'
     The variable csv_error_called should be undefined
   End
 
-  It 'コールバックから再入しても終了状態と完成行が壊れない'
+  It 'コールバックから再入しても通知引数と完成行を保持し指定した終了ステータスを返す'
     csv_error() {
       sx_csv_parse nested 'inner,value'
       csv_error_args="$*"
+      return "$1"
     }
     When call sx_csv_parse res "a,b${SX_STR_LF}bad\"" csv_error
     The status should equal 2

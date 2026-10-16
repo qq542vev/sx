@@ -1,4 +1,5 @@
-# shellcheck shell=sh
+# shellcheck shell=sh disable=SC2329
+# コールバックは ShellSpec 経由で間接的に呼び出す。
 
 Describe 'sx_csv_parse -efu 環境検証'
   Include ./sx.sh
@@ -21,6 +22,20 @@ Describe 'sx_csv_parse -efu 環境検証'
       When run efu_run "$1" res "a${SX_STR_HT}\"b" '' "$SX_STR_HT" ''
       The status should be success
     End
+
+    It '通知コールバックが成功なら -efu 下でも成功を返す'
+      sx_cfg_set "SKIP_CHK=$2"
+      csv_error() { return 0; }
+      When run efu_run "$1" res 'bad"' csv_error
+      The status should be success
+    End
+
+    It '通知コールバックが失敗なら -efu 下でもその終了ステータスを返す'
+      sx_cfg_set "SKIP_CHK=$2"
+      csv_error() { return 99; }
+      When run efu_run "$1" res 'bad"' csv_error
+      The status should equal 99
+    End
   End
 
   Context '構文エラー'
@@ -34,12 +49,6 @@ Describe 'sx_csv_parse -efu 環境検証'
       When run efu_run sx_csv_parse res "$2"
       The status should equal "$1"
     End
-  End
-
-  It '通知コールバックの失敗でパースエラーが変わらない'
-    csv_error() { return 99; }
-    When run efu_run sx_csv_parse res 'bad"' csv_error
-    The status should equal 2
   End
 
   It '引数エラーを -efu 下で返す'

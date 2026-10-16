@@ -16126,13 +16126,16 @@ __sx_arr_rquote() {
 ##   空入力は0行、空行は空フィールド一つ。末尾改行だけでは余分な行を追加しない。
 ##   ヘッダは通常の行として保存し、行ごとの列数の違いを許可する。
 ##   ARR_REF・ARR_HOLE による解釈を行わず、全フィールドを文字列として保存する。
-##   検証成功後に既存の res を削除して初期化する。パースエラーでは完成した行だけを残す。
+##   検証成功後に res を初期化する。配列を再代入する前は呼び出し側で sx_var_unset res を行う。
+##   パースエラーでは完成した行だけを残す。
 ##   errcallback は空または関数名。最初のパースエラーで以下の形式で一度だけ呼ぶ。
 ##     errcallback エラーコード レコード番号 フィールド番号
-##   番号は1始まり。コールバックの戻り値は無視し、修復・解析継続は行わない。
-##   CSV の構文エラーは、形式不正を64とする一般規約の例外として1〜3を返す。
+##   番号は1始まり。コールバックを呼んだ場合は、その終了ステータスをそのまま返す。
+##   修復・解析継続は行わない。
+##   コールバックを呼ばない CSV の構文エラーは、形式不正を64とする一般規約の例外として1〜3を返す。
 ##
 ## 終了ステータス:
+##   コールバックを呼んだ場合はその終了ステータス。それ以外は以下を返す。
 ##    0  成功
 ##    1  引用符が閉じないまま入力終了
 ##    2  非引用フィールド内に引用符が出現
@@ -16174,9 +16177,12 @@ M_RENAME_QI([|dnl
 ##   配列の生成は __sx_arr_gen に委譲する。行の生成時だけ参照・穴の解釈を無効にする。
 ##   生成処理で使う配列設定は保存し、成功・エラーのどちらでも通知前に復元する。
 ##   各行と外側の配列のリビジョンは ARR_UPDATE にかかわらず更新する。
+##   既存配列の削除は行わない。再代入前の削除は呼び出し側の責任とする。
 ##   コールバックの前に作業変数を解放し、同関数への再入を許可する。
+##   コールバックを呼んだ場合は、その終了ステータスをそのまま返す。
 ##
 ## 終了ステータス:
+##   コールバックを呼んだ場合はその終了ステータス。それ以外は以下を返す。
 ##    0  成功
 ##    1  引用符が閉じないまま入力終了
 ##    2  非引用フィールド内に引用符が出現
@@ -16187,17 +16193,20 @@ define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_field Q_state Q_row Q_co
 __sx_csv_parse() {
 	Q_res="${1}" Q_data="${2}" Q_cb="${3-}" Q_sep="${4-,}" Q_quote="${5-\"}"
 	Q_ref="${SX_CFG_ARR_REF}" Q_hole="${SX_CFG_ARR_HOLE}"
-	__sx_var_unset "${Q_res}"
-	__sx_arr_gen "${Q_res}"
 	Q_field='' Q_state=start Q_row=0 Q_err=0
+	__sx_arr_gen "${Q_res}"
 	set --
 
 	while :; do
 		case "${Q_state}" in quoted)
 			case "${Q_data}" in
-				'') Q_err=1; break;;
+				'')
+					Q_err=1
+					break
+					;;
 				"${Q_quote}"*)
 					Q_data="${Q_data#"${Q_quote}"}"
+
 					case "${Q_data}" in
 						"${Q_quote}"*)
 							M_STR_APPEND([|Q_field|], [|"${Q_quote}"|])
@@ -16212,30 +16221,47 @@ __sx_csv_parse() {
 					Q_data="${Q_data#"${Q_chunk}"}"
 					;;
 			esac
+
 			continue
 		esac
 
 		case "${Q_data}" in
 			'')
-				case "${Q_state}:${#}" in start:0) break;; esac
+				case "${Q_state}:${#}" in start:0)
+					break
+				esac
+
 				Q_kind=eof
 				;;
-			"${Q_sep}"*) Q_data="${Q_data#"${Q_sep}"}"; Q_kind=field;;
-			"${SX_STR_CR}${SX_STR_LF}"*) Q_data="${Q_data#"${SX_STR_CR}${SX_STR_LF}"}"; Q_kind=row;;
-			"${SX_STR_LF}"*) Q_data="${Q_data#"${SX_STR_LF}"}"; Q_kind=row;;
+			"${Q_sep}"*) Q_data="${Q_data#"${Q_sep}"}" Q_kind=field;;
+			"${SX_STR_CR}${SX_STR_LF}"*) Q_data="${Q_data#"${SX_STR_CR}${SX_STR_LF}"}" Q_kind=row;;
+			"${SX_STR_LF}"*) Q_data="${Q_data#"${SX_STR_LF}"}" Q_kind=row;;
 			*)
-				case "${Q_state}" in closed) Q_err=3; break;; esac
+				case "${Q_state}" in closed)
+					Q_err=3
+					break
+				esac
+
 				case "${Q_quote:+X}" in X)
 					case "${Q_data}" in "${Q_quote}"*)
-						case "${Q_state}" in plain) Q_err=2; break;; esac
+						case "${Q_state}" in plain)
+							Q_err=2
+							break
+						esac
+
 						Q_state=quoted Q_data="${Q_data#"${Q_quote}"}"
 						continue
 					esac
 				esac
+
 				Q_chunk="${Q_data%%"${Q_sep}"*}"
 				Q_chunk="${Q_chunk%%"${SX_STR_CR}${SX_STR_LF}"*}"
 				Q_chunk="${Q_chunk%%"${SX_STR_LF}"*}"
-				case "${Q_quote:+X}" in X) Q_chunk="${Q_chunk%%"${Q_quote}"*}";; esac
+
+				case "${Q_quote:+X}" in X)
+					Q_chunk="${Q_chunk%%"${Q_quote}"*}"
+				esac
+
 				M_STR_APPEND([|Q_field|], [|"${Q_chunk}"|])
 				Q_state=plain Q_data="${Q_data#"${Q_chunk}"}"
 				continue
@@ -16244,28 +16270,35 @@ __sx_csv_parse() {
 
 		set -- "${@}" "${Q_field}"
 		Q_field='' Q_state=start
-		case "${Q_kind}" in field) continue;; esac
 
-		__sx_var_unset "${Q_res}_${Q_row}"
+		case "${Q_kind}" in field)
+			continue
+		esac
+
 		SX_CFG_ARR_REF='' SX_CFG_ARR_HOLE='' __sx_arr_gen "${Q_res}_${Q_row}" "${@}"
 		M_NUM_INCRM1([|Q_row|])
 		M_VAR_SET([|${Q_res}_len|], [|${Q_row}|])
 		set --
-		case "${Q_kind}" in eof) break;; esac
+
+		case "${Q_kind}" in eof)
+			break
+		esac
 	done
 
 	SX_CFG_ARR_REF="${Q_ref}" SX_CFG_ARR_HOLE="${Q_hole}"
-	case "${Q_err}" in 0)
-		unset CLEANUP
-		return M_EX_OK
+
+	case "${Q_cb:+X}${Q_err}" in
+		X[1-9]*)
+			M_NUM_INCRM1([|Q_row|])
+			__sx_num_add1_nat0 Q_col "${#}"
+			# Q_col は直前の __sx_num_add1_nat0 が参照渡しで設定する。
+			# shellcheck disable=SC2154
+			set -- "${Q_cb}" "${Q_err}" "${Q_row}" "${Q_col}"
+			;;
+		*) set -- return "${Q_err}";;
 	esac
 
-	M_NUM_INCRM1([|Q_row|])
-	Q_col="${#}"
-	M_NUM_INCRM1([|Q_col|])
-	set -- "${Q_cb}" "${Q_err}" "${Q_row}" "${Q_col}"
 	unset CLEANUP
-	case "${1}" in '') ;; *) "${1}" "${2}" "${3}" "${4}" || :;; esac
-	return "${2}"
+	"${@}"
 }
 |], [|csv_parse|])dnl
