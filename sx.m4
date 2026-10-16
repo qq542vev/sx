@@ -16211,7 +16211,7 @@ __sx_csv_parse() {
 	# 未完成の Q_field はここへ含めず、区切り・改行・入力終了を確認してから追加する。
 	set --
 
-	while :; do
+	while
 		# 引用内の通常文字と引用符を一度に消費する。
 		case "${Q_state}" in quoted)
 			Q_chunk="${Q_data%%"${Q_open}"*}"
@@ -16309,7 +16309,9 @@ __sx_csv_parse() {
 		case "${Q_kind}" in eof)
 			break
 		esac
-	done
+
+		continue
+	do :; done
 
 	# 成功・エラーとも元の設定に戻し、コールバックにも呼び出し時の設定を見せる。
 	SX_CFG_ARR_REF="${Q_ref}" SX_CFG_ARR_HOLE="${Q_hole}"
