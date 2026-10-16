@@ -11220,7 +11220,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   sx_str_escape の内部実装。引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_gs|])dnl
+define([|CLEANUP|], [|Q_gs Q_cb_se Q_cb_ee|])dnl
 
 __sx_str_escape() {
 	set -- "${1}" "${2-}" "${3-}" "${4:-\\}" "${5:-}"
@@ -11236,7 +11236,6 @@ __sx_str_escape() {
 
 	unset CLEANUP
 }
-|], [|str_escape|])dnl
 
 ### __sx_str_escape_cb - sx_str_escape 用コールバック（内部用）
 ##
@@ -11246,8 +11245,9 @@ __sx_str_escape() {
 ## 説明:
 ##   sx_str_sub のコールバックモードから呼び出される。
 __sx_str_escape_cb() {
-	M_VAR_SET([|${1}|], [|${__sx_str_escape_cb_se_}${2}${__sx_str_escape_cb_ee_}|])
+	M_VAR_SET([|${1}|], [|${Q_cb_se}${2}${Q_cb_ee}|])
 }
+|], [|str_escape|])dnl
 
 ### sx_str_etrim - 文字列の末尾から指定された文字セットを削除する
 ##
@@ -13411,7 +13411,7 @@ M_RENAME_QI([|dnl
 ##    0  成功
 ##   非0  コールバックの終了ステータス
 
-define([|CLEANUP|], [|Q_abs Q_dir Q_type Q_flags|])dnl
+define([|CLEANUP|], [|Q_abs Q_dir Q_type Q_flags Q_cb|])dnl
 
 __sx_str_sub() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}" "${6:-0}"
@@ -13436,8 +13436,13 @@ __sx_str_sub() {
 		case "${6}" in
 			0) __sx_str_isep "${1}" "${2}" "${3}" "${4}" "${5}" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))";;
 			*) Q_cb="${3}" __sx_str_isep "${1}" "${2}" __sx_str_sub_isep_adapt "${4}" "${5}" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST | SX_STR_ISEP_CB))";;
-		esac || return
+		esac || {
+			set -- "${?}"
+			unset Q_cb
+			return "${1}"
+		}
 
+		unset Q_cb
 		return
 	fi
 
@@ -13469,7 +13474,13 @@ __sx_str_sub() {
 ## 終了ステータス:
 ##   コールバックの終了ステータス
 __sx_str_sub_isep_adapt() {
-	"${Q_cb}" "${1}" '' "${2}" "${3}" "${4}"
+	set -- "${Q_cb}" "${@}"
+	unset Q_cb
+
+	"${1}" "${2}" '' "${3}" "${4}" "${5}" && set -- "${1}" 0 || set -- "${1}" "${?}"
+
+	Q_cb="${1}"
+	return "${2}"
 }
 |], [|str_sub|])dnl
 
@@ -14171,7 +14182,7 @@ M_RENAME_QI([|dnl
 ##   区切り文字セットの先頭文字を挿入した後、小文字化、
 ##   区切り文字セット内の文字を区切り文字に置換する。
 
-define([|CLEANUP|], [|Q_tmp|])dnl
+define([|CLEANUP|], [|Q_tmp Q_cb_c|])dnl
 
 __sx_str_words() {
 	set -- "${1}" "${2-}" "${3:- }" "${4:-"_-/.:${SX_STR_SPACE}"}"
