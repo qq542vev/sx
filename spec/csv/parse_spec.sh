@@ -59,6 +59,19 @@ Describe 'sx_csv_parse'
     The variable res_2 should be undefined
   End
 
+  It 'LF 直前の CR だけを除き区切り前・末尾・連続した CR は保持する'
+    data="a${SX_STR_CR},b${SX_STR_CR}${SX_STR_CR}${SX_STR_LF}c${SX_STR_CR},d${SX_STR_CR}"
+    When call sx_csv_parse res "$data"
+    The status should be success
+    The variable res_len should equal 2
+    The variable res_0_len should equal 2
+    The variable res_0_0 should equal "a${SX_STR_CR}"
+    The variable res_0_1 should equal "b${SX_STR_CR}"
+    The variable res_1_len should equal 2
+    The variable res_1_0 should equal "c${SX_STR_CR}"
+    The variable res_1_1 should equal "d${SX_STR_CR}"
+  End
+
   It '先頭・連続・末尾と引用された空フィールドを保存する'
     When call sx_csv_parse res ',,"",'
     The status should be success
@@ -119,6 +132,111 @@ Describe 'sx_csv_parse'
     The variable res_0_len should equal 2
     The variable res_0_0 should equal x
     The variable res_0_1 should equal 'ay,a'
+  End
+
+  Context '列区切りなし'
+    It 'カンマ・複数文字区切り・タブを分割せず各レコードを一カラムにする'
+      data="a,b||c${SX_STR_HT}d${SX_STR_LF}x,y"
+      When call sx_csv_parse res "$data" '' ''
+      The status should be success
+      The variable res_len should equal 2
+      The variable res_0_len should equal 1
+      The variable res_0_0 should equal "a,b||c${SX_STR_HT}d"
+      The variable res_1_len should equal 1
+      The variable res_1_0 should equal 'x,y'
+    End
+
+    It '空入力は空配列にする'
+      When call sx_csv_parse res '' '' ''
+      The status should be success
+      The variable res_len should equal 0
+      The variable res_0 should be undefined
+    End
+
+    It 'CRLF・LF の空行を保存し末尾改行では行を増やさない'
+      When call sx_csv_parse res "${SX_STR_CR}${SX_STR_LF}${SX_STR_LF}last${SX_STR_LF}" '' ''
+      The status should be success
+      The variable res_len should equal 3
+      The variable res_0_len should equal 1
+      The variable res_0_0 should equal ''
+      The variable res_1_len should equal 1
+      The variable res_1_0 should equal ''
+      The variable res_2_len should equal 1
+      The variable res_2_0 should equal last
+      The variable res_3 should be undefined
+    End
+
+    It '引用内の改行・二重化された引用符・引用された空文字列を処理する'
+      data="\"a,b${SX_STR_LF}c\"${SX_STR_CR}${SX_STR_LF}\"d\"\"e\"${SX_STR_LF}\"\""
+      When call sx_csv_parse res "$data" '' ''
+      The status should be success
+      The variable res_len should equal 3
+      The variable res_0_len should equal 1
+      The variable res_0_0 should equal "a,b${SX_STR_LF}c"
+      The variable res_1_len should equal 1
+      The variable res_1_0 should equal 'd"e'
+      The variable res_2_len should equal 1
+      The variable res_2_0 should equal ''
+    End
+
+    It '複数の引用符候補をレコードごとに使い分けられる'
+      When call sx_csv_parse res "'a,b'${SX_STR_LF}\"c'd\"" '' '' "\"'"
+      The status should be success
+      The variable res_len should equal 2
+      The variable res_0_len should equal 1
+      The variable res_0_0 should equal 'a,b'
+      The variable res_1_len should equal 1
+      The variable res_1_0 should equal "c'd"
+    End
+
+    It '引用処理も無効なら引用符を含む各行をそのまま保存する'
+      data="'a,b\",c${SX_STR_LF}\"d,e'"
+      When call sx_csv_parse res "$data" '' '' ''
+      The status should be success
+      The variable res_len should equal 2
+      The variable res_0_len should equal 1
+      The variable res_0_0 should equal "'a,b\",c"
+      The variable res_1_len should equal 1
+      The variable res_1_0 should equal "\"d,e'"
+    End
+
+    It '入力先頭の X やコロンを列区切り有効の印と混同しない'
+      When call sx_csv_parse res "X:a,b${SX_STR_LF}:c,d${SX_STR_LF}XX:${SX_STR_LF}X:${SX_STR_LF}:" '' ''
+      The status should be success
+      The variable res_len should equal 5
+      The variable res_0_0 should equal 'X:a,b'
+      The variable res_1_0 should equal ':c,d'
+      The variable res_2_0 should equal 'XX:'
+      The variable res_3_0 should equal 'X:'
+      The variable res_4_0 should equal ':'
+    End
+
+    Context '構文エラー'
+      Parameters
+        1 '"bad'
+        2 'bad"'
+        3 '"ok",tail'
+        3 "'ok'\""
+      End
+
+      It '引用規則を維持し完成したレコードだけを残す'
+        When call sx_csv_parse res "first,row${SX_STR_LF}$2" '' '' "\"'"
+        The status should equal "$1"
+        The variable res_len should equal 1
+        The variable res_0_len should equal 1
+        The variable res_0_0 should equal 'first,row'
+        The variable res_1 should be undefined
+      End
+    End
+
+    It '引用エラーを一カラム目として通知しコールバックの終了ステータスを返す'
+      csv_error() { csv_error_args="$*"; return 99; }
+      When call sx_csv_parse res "done${SX_STR_LF}\"bad\"tail" csv_error ''
+      The status should equal 99
+      The variable csv_error_args should equal '3 2 1'
+      The variable res_len should equal 1
+      The variable res_0_0 should equal 'done'
+    End
   End
 
   It '独自の引用符とその二重化に対応する'
@@ -439,7 +557,6 @@ Describe 'sx_csv_parse'
 
   Context '区切りと引用符の検証'
     Parameters
-      '' '"'
       '||' '|'
       'xy' 'abx'
       'xy' 'yab'
@@ -448,7 +565,7 @@ Describe 'sx_csv_parse'
       'x-y' 'a-z'
     End
 
-    It '空区切りと引用符集合内の文字を含む区切りを拒否する'
+    It '引用符集合内の文字を含む区切りを拒否する'
       sx_csv_parse res original
       When call sx_csv_parse res a '' "$1" "$2"
       The status should equal 64
@@ -544,6 +661,26 @@ Describe 'sx_csv_parse'
       The variable res_0_0 should equal 'a||b'
       The variable res_0_1 should equal "c'd"
       The variable res_0_2 should equal ''
+    End
+
+    It '各経路で空の sep を列区切りなしとして扱う'
+      sx_cfg_set "SKIP_CHK=$2"
+      When call "$1" res "\"a,b\"${SX_STR_LF}c,d" '' ''
+      The status should be success
+      The variable res_len should equal 2
+      The variable res_0_len should equal 1
+      The variable res_0_0 should equal 'a,b'
+      The variable res_1_len should equal 1
+      The variable res_1_0 should equal 'c,d'
+    End
+
+    It '各経路で sep と quote の両方を空指定できる'
+      sx_cfg_set "SKIP_CHK=$2"
+      When call "$1" res "a,'b\"" '' '' ''
+      The status should be success
+      The variable res_len should equal 1
+      The variable res_0_len should equal 1
+      The variable res_0_0 should equal "a,'b\""
     End
   End
 End

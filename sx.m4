@@ -16119,7 +16119,8 @@ __sx_arr_rquote() {
 ##
 ## 説明:
 ##   RFC 4180 の引用規則で解析し、res の各要素を行の SX 配列にする。
-##   sep は非空のリテラル文字列（既定はカンマ）、quote は引用符に使う文字の集合（既定は二重引用符）。
+##   sep はリテラル文字列（既定はカンマ）、quote は引用符に使う文字の集合（既定は二重引用符）。
+##   sep の空指定で列区切りを無効にし、各レコードを一つのフィールドとして保存する。
 ##   フィールドの開始に使った一文字で閉じ、同じ文字の二重化でその引用符自体を表す。
 ##   引用内では集合内の別の引用符も通常文字として保持する。引用の入れ子は行わない。
 ##   quote の空指定で引用処理を無効にでき、タブ区切りの TSV にも対応する。
@@ -16154,7 +16155,7 @@ sx_csv_parse() {
 	case "${3-}" in '') ;; *) sx_var_is_name "${3}" || return M_EX_USAGE;; esac
 
 	set -- "${1}" "${2}" "${3-}" "${4-,}" "${5-\"}"
-	case "${4}" in '' | *"${SX_STR_CR}"* | *"${SX_STR_LF}"*) return M_EX_USAGE;; esac
+	case "${4}" in *"${SX_STR_CR}"* | *"${SX_STR_LF}"*) return M_EX_USAGE;; esac
 	case "${5}" in *"${SX_STR_CR}"* | *"${SX_STR_LF}"*) return M_EX_USAGE;; esac
 	case "${5:+X}" in X)
 		case "${4}" in *["${5}"]*) return M_EX_USAGE;; esac
@@ -16178,8 +16179,10 @@ M_RENAME_QI([|dnl
 ##   開始に使った一文字を保持し、quoted ではその文字の二重化を一文字に戻し、単独なら closed に移る。
 ##   quoted 内の別の引用符は、quote に含まれていても通常文字として保持する。
 ##   start・plain・closed では区切り・改行・入力終了でフィールドを確定し、start に戻る。
+##   空の sep は内部で LF に置き換え、行区切りを優先して判定することで列分割を無効にする。
 ##   plain 内の引用符、closed 後の通常文字、quoted のままの入力終了は構文エラーとする。
 ##   通常文字をまとめて消費し、引用内の区切り・改行をそのまま保持する。
+##   引用内の通常文字と直後の引用符を同じ反復で処理し、閉じ引用符なら続けて境界を判定する。
 ##   配列の生成は __sx_arr_gen に委譲する。行の生成時だけ参照・穴の解釈を無効にする。
 ##   生成処理で使う配列設定は保存し、成功・エラーのどちらでも通知前に復元する。
 ##   各行と外側の配列のリビジョンは ARR_UPDATE にかかわらず更新する。
@@ -16199,6 +16202,7 @@ define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_open Q_field Q_state Q_r
 __sx_csv_parse() {
 	Q_res="${1}" Q_data="${2}" Q_cb="${3-}" Q_sep="${4-,}" Q_quote="${5-\"}"
 	Q_ref="${SX_CFG_ARR_REF}" Q_hole="${SX_CFG_ARR_HOLE}"
+	case "${Q_sep}" in '') Q_sep="${SX_STR_LF}";; esac
 	# Q_data は未消費の入力、Q_field は現在組み立てているフィールド。
 	# Q_row は結果へ保存済みの行数であり、次の行の0始まりの添字でもある。
 	Q_field='' Q_state=start Q_row=0 Q_err=0
@@ -16208,40 +16212,28 @@ __sx_csv_parse() {
 	set --
 
 	while :; do
-		# 引用内は先に処理する。区切り・改行もフィールドの一部なので、行確定へ進めない。
+		# 引用内の通常文字と引用符を一度に消費する。
 		case "${Q_state}" in quoted)
+			Q_chunk="${Q_data%%"${Q_open}"*}"
+			M_STR_APPEND([|Q_field|], [|"${Q_chunk}"|])
+			Q_data="${Q_data#"${Q_chunk}"}"
 			case "${Q_data}" in
-				'')
-					# 閉じ引用符がない。現在行を保存せず、完成済みの行だけを結果に残す。
-					Q_err=1
-					break
-					;;
-				"${Q_open}"*)
-					Q_data="${Q_data#"${Q_open}"}"
-
-					# 次も開始時と同じ引用符ならエスケープ。二つで一文字とし、quoted を維持する。
-					# 次が同じ引用符でなければ閉じ引用符なので closed に移る。
-					case "${Q_data}" in
-						"${Q_open}"*)
-							M_STR_APPEND([|Q_field|], [|"${Q_open}"|])
-							Q_data="${Q_data#"${Q_open}"}"
-							;;
-						*) Q_state=closed;;
-					esac
-					;;
-				*)
-					# 開始時と同じ引用符の直前まで追加する。別の引用符・区切り・改行は探さない。
-					Q_chunk="${Q_data%%"${Q_open}"*}"
-					M_STR_APPEND([|Q_field|], [|"${Q_chunk}"|])
-					Q_data="${Q_data#"${Q_chunk}"}"
-					;;
+				'') Q_err=1; break;;
+				*) Q_data="${Q_data#?}";;
 			esac
-
-			continue
+			case "${Q_data}" in
+				"${Q_open}"*)
+					M_STR_APPEND([|Q_field|], [|"${Q_open}"|])
+					Q_data="${Q_data#?}"
+					continue
+					;;
+				*) Q_state=closed;;
+			esac
 		esac
 
 		# 引用外では、文字を追加する前にフィールド・行の境界を判定する。
 		# Q_kind は field（列区切り）・row（行区切り）・eof（入力終了）の確定理由。
+		# 行区切りを先に判定するため、空の sep を置き換えた LF は列区切りにならない。
 		case "${Q_data}" in
 			'')
 				# フィールドを開始しておらず完成フィールドもなければ、保存すべき行はない。
@@ -16253,9 +16245,9 @@ __sx_csv_parse() {
 
 				Q_kind=eof
 				;;
-			"${Q_sep}"*) Q_data="${Q_data#"${Q_sep}"}" Q_kind=field;;
 			"${SX_STR_CR}${SX_STR_LF}"*) Q_data="${Q_data#"${SX_STR_CR}${SX_STR_LF}"}" Q_kind=row;;
-			"${SX_STR_LF}"*) Q_data="${Q_data#"${SX_STR_LF}"}" Q_kind=row;;
+			"${SX_STR_LF}"*) Q_data="${Q_data#?}" Q_kind=row;;
+			"${Q_sep}"*) Q_data="${Q_data#"${Q_sep}"}" Q_kind=field;;
 			*)
 				# 境界に一致しなかったため、closed の後なら許可されない文字が続いている。
 				case "${Q_state}" in closed)
@@ -16281,16 +16273,16 @@ __sx_csv_parse() {
 
 				# 境界と引用符の直前までを通常文字として消費し、plain に移る。
 				# 境界自体は残し、次の反復で上の判定に処理させる。
-				Q_chunk="${Q_data%%"${Q_sep}"*}"
-				Q_chunk="${Q_chunk%%"${SX_STR_CR}${SX_STR_LF}"*}"
-				Q_chunk="${Q_chunk%%"${SX_STR_LF}"*}"
+				# 通常文字の切り出しは一度だけなので、空の Q_field へ直接格納する。
+				Q_field="${Q_data%%"${Q_sep}"*}"
+				Q_field="${Q_field%%"${SX_STR_CR}${SX_STR_LF}"*}"
+				Q_field="${Q_field%%"${SX_STR_LF}"*}"
 
 				case "${Q_quote:+X}" in X)
-					Q_chunk="${Q_chunk%%["${Q_quote}"]*}"
+					Q_field="${Q_field%%["${Q_quote}"]*}"
 				esac
 
-				M_STR_APPEND([|Q_field|], [|"${Q_chunk}"|])
-				Q_state=plain Q_data="${Q_data#"${Q_chunk}"}"
+				Q_state=plain Q_data="${Q_data#"${Q_field}"}"
 				continue
 				;;
 		esac

@@ -35,6 +35,24 @@ Describe 'sx_csv_parse -efu 環境検証'
       The status should equal 1
     End
 
+    It '空の sep でも引用内改行を -efu 下で解析できる'
+      sx_cfg_set "SKIP_CHK=$2"
+      When run efu_run "$1" res "'a,b${SX_STR_LF}c'${SX_STR_LF}\"d'e\"" '' '' "\"'"
+      The status should be success
+    End
+
+    It '空の sep と quote でも -efu 下で解析が完了する'
+      sx_cfg_set "SKIP_CHK=$2"
+      When run efu_run "$1" res "X:a,'b\"${SX_STR_LF}:c,d" '' '' ''
+      The status should be success
+    End
+
+    It '空の sep でも閉じ引用符の後のカンマを -efu 下で拒否する'
+      sx_cfg_set "SKIP_CHK=$2"
+      When run efu_run "$1" res '"ok",tail' '' ''
+      The status should equal 3
+    End
+
     It '通知コールバックが成功なら -efu 下でも成功を返す'
       sx_cfg_set "SKIP_CHK=$2"
       csv_error() { return 0; }
