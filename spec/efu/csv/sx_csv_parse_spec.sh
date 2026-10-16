@@ -23,6 +23,12 @@ Describe 'sx_csv_parse -efu 環境検証'
       The status should be success
     End
 
+    It '単独の CR と引用フィールド末尾の CR を -efu 下で解析できる'
+      sx_cfg_set "SKIP_CHK=$2"
+      When run efu_run "$1" res "${SX_STR_CR},\"a${SX_STR_CR}\"${SX_STR_LF}${SX_STR_CR}"
+      The status should be success
+    End
+
     It '異なる引用符と引用内改行を -efu 下で解析できる'
       sx_cfg_set "SKIP_CHK=$2"
       When run efu_run "$1" res "'a\"${SX_STR_LF}b',\"c'd\"" '' ',' "\"'"

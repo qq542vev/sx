@@ -82,6 +82,43 @@ Describe 'sx_csv_parse'
     The variable res_0_3 should equal ''
   End
 
+  Context '非引用フィールドの CR と行区切り'
+    Parameters
+      ',' '"'
+      ',' ''
+      '' '"'
+      '' ''
+    End
+
+    It '列区切り・引用の有効無効にかかわらず LF 直前の CR 一つだけを除く'
+      data="a${SX_STR_CR}${SX_STR_CR}${SX_STR_LF}b${SX_STR_CR}"
+      When call sx_csv_parse res "$data" '' "$1" "$2"
+      The status should be success
+      The variable res_len should equal 2
+      The variable res_0_len should equal 1
+      The variable res_0_0 should equal "a${SX_STR_CR}"
+      The variable res_1_0 should equal "b${SX_STR_CR}"
+    End
+  End
+
+  It '引用フィールド末尾の CR は後続の LF・CRLF にかかわらず保持する'
+    data="\"a${SX_STR_CR}\"${SX_STR_LF}\"b${SX_STR_CR}\"${SX_STR_CR}${SX_STR_LF}"
+    When call sx_csv_parse res "$data"
+    The status should be success
+    The variable res_len should equal 2
+    The variable res_0_0 should equal "a${SX_STR_CR}"
+    The variable res_1_0 should equal "b${SX_STR_CR}"
+  End
+
+  It 'CR だけの非引用フィールドを区切り前・入力末尾でも保持する'
+    When call sx_csv_parse res "${SX_STR_CR},${SX_STR_CR}"
+    The status should be success
+    The variable res_len should equal 1
+    The variable res_0_len should equal 2
+    The variable res_0_0 should equal "$SX_STR_CR"
+    The variable res_0_1 should equal "$SX_STR_CR"
+  End
+
   It '末尾の空フィールドをレコード区切り前でも保存する'
     When call sx_csv_parse res "a,${SX_STR_LF}"
     The status should be success

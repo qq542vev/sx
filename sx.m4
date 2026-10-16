@@ -16182,6 +16182,7 @@ M_RENAME_QI([|dnl
 ##   空の sep は内部で LF に置き換え、行区切りを優先して判定することで列分割を無効にする。
 ##   plain 内の引用符、closed 後の通常文字、quoted のままの入力終了は構文エラーとする。
 ##   通常文字をまとめて消費し、引用内の区切り・改行をそのまま保持する。
+##   CRLF の CR は、非引用フィールドを LF で確定するときだけ除く。
 ##   引用内の通常文字と直後の引用符を同じ反復で処理し、閉じ引用符なら続けて境界を判定する。
 ##   配列の生成は __sx_arr_gen に委譲する。行の生成時だけ参照・穴の解釈を無効にする。
 ##   生成処理で使う配列設定は保存し、成功・エラーのどちらでも通知前に復元する。
@@ -16242,8 +16243,12 @@ __sx_csv_parse() {
 
 				Q_kind=eof
 				;;
-			"${SX_STR_CR}${SX_STR_LF}"*) Q_data="${Q_data#"${SX_STR_CR}${SX_STR_LF}"}" Q_kind=row;;
-			"${SX_STR_LF}"*) Q_data="${Q_data#?}" Q_kind=row;;
+			"${SX_STR_CR}${SX_STR_LF}"*) Q_data="${Q_data#??}" Q_kind=row;;
+			"${SX_STR_LF}"*)
+				# 非引用フィールドだけ、行区切りに属する末尾の CR を除く。
+				case "${Q_state}" in plain) Q_field="${Q_field%"${SX_STR_CR}"}";; esac
+				Q_data="${Q_data#?}" Q_kind=row
+				;;
 			"${Q_sep}"*) Q_data="${Q_data#"${Q_sep}"}" Q_kind=field;;
 			*)
 				# 境界に一致しなかったため、closed の後なら許可されない文字が続いている。
@@ -16272,7 +16277,6 @@ __sx_csv_parse() {
 				# 境界自体は残し、次の反復で上の判定に処理させる。
 				# 通常文字の切り出しは一度だけなので、空の Q_field へ直接格納する。
 				Q_field="${Q_data%%"${Q_sep}"*}"
-				Q_field="${Q_field%%"${SX_STR_CR}${SX_STR_LF}"*}"
 				Q_field="${Q_field%%"${SX_STR_LF}"*}"
 
 				case "${Q_quote:+X}" in X)
