@@ -16094,7 +16094,8 @@ M_RENAME_QI([|dnl
 ##   位置パラメータに現在行の完成フィールドを保持し、行が完成してから結果へ書き込む。
 ##   状態は start（先頭）・plain（非引用）・quoted（引用内）・closed（引用終了）。
 ##   通常文字をまとめて消費し、引用内の区切り・改行をそのまま保持する。
-##   結果は M_VAR_SET で直接代入し、配列の参照・穴の設定に依存しない。
+##   配列の生成は __sx_arr_gen に委譲する。行の生成時だけ参照・穴の解釈を無効にする。
+##   生成処理で使う配列設定は保存し、成功・エラーのどちらでも通知前に復元する。
 ##   各行と外側の配列のリビジョンは ARR_UPDATE にかかわらず更新する。
 ##   コールバックの前に作業変数を解放し、同関数への再入を許可する。
 ##
@@ -16104,12 +16105,13 @@ M_RENAME_QI([|dnl
 ##    2  非引用フィールド内に引用符が出現
 ##    3  閉じ引用符の後に不正な文字が出現
 
-define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_field Q_state Q_row Q_col Q_err Q_chunk Q_kind Q_name Q_val|])dnl
+define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_field Q_state Q_row Q_col Q_err Q_chunk Q_kind Q_ref Q_hole Q_update|])dnl
 
 __sx_csv_parse() {
 	Q_res="${1}" Q_data="${2}" Q_cb="${3-}" Q_sep="${4-,}" Q_quote="${5-\"}"
+	Q_ref="${SX_CFG_ARR_REF}" Q_hole="${SX_CFG_ARR_HOLE}" Q_update="${SX_CFG_ARR_UPDATE}"
 	__sx_var_unset "${Q_res}"
-	M_VAR_SET([|${Q_res}|], [|${SX_CFG_SIG_ARR}:|], [|${Q_res}_len|], [|0|])
+	__sx_arr_gen "${Q_res}"
 	Q_field='' Q_state=start Q_row=0 Q_err=0
 	set --
 
@@ -16167,30 +16169,23 @@ __sx_csv_parse() {
 		Q_field='' Q_state=start
 		case "${Q_kind}" in field) continue;; esac
 
-		Q_name="${Q_res}_${Q_row}"
-		__sx_var_unset "${Q_name}"
-		M_VAR_SET([|${Q_name}|], [|${SX_CFG_SIG_ARR}:|], [|${Q_name}_len|], [|${#}|])
-		__sx_var_touch "${Q_name}"
-		Q_col=0
-		for Q_val in "${@}"; do
-			__sx_var_unset "${Q_name}_${Q_col}"
-			M_VAR_SET([|${Q_name}_${Q_col}|], [|${Q_val}|])
-			M_NUM_INCRM1([|Q_col|])
-		done
+		__sx_var_unset "${Q_res}_${Q_row}"
+		SX_CFG_ARR_REF='' SX_CFG_ARR_HOLE='' __sx_arr_gen "${Q_res}_${Q_row}" "${@}"
 		M_NUM_INCRM1([|Q_row|])
 		M_VAR_SET([|${Q_res}_len|], [|${Q_row}|])
 		set --
 		case "${Q_kind}" in eof) break;; esac
 	done
 
-	__sx_var_touch "${Q_res}"
+	SX_CFG_ARR_REF="${Q_ref}" SX_CFG_ARR_HOLE="${Q_hole}" SX_CFG_ARR_UPDATE="${Q_update}"
 	case "${Q_err}" in 0)
 		unset CLEANUP
 		return M_EX_OK
 	esac
 
 	M_NUM_INCRM1([|Q_row|])
-	__sx_num_add1_nat0 Q_col "${#}"
+	Q_col="${#}"
+	M_NUM_INCRM1([|Q_col|])
 	set -- "${Q_cb}" "${Q_err}" "${Q_row}" "${Q_col}"
 	unset CLEANUP
 	case "${1}" in '') ;; *) "${1}" "${2}" "${3}" "${4}" || :;; esac

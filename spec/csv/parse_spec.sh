@@ -179,6 +179,9 @@ Describe 'sx_csv_parse'
     Assert sx_var_is_arr res res_0
     The variable SX_SYS_REV should not equal "$before_rev"
     The variable res should not equal "$res_0"
+    The variable SX_CFG_ARR_REF should equal '@'
+    The variable SX_CFG_ARR_HOLE should equal hole
+    The variable SX_CFG_ARR_UPDATE should equal 0
   End
 
   It '短い結果で置き換える際に古い行とフィールドを再帰削除する'
@@ -253,6 +256,24 @@ Describe 'sx_csv_parse'
     When call sx_csv_parse res ',,"bad' csv_error
     The status should equal 1
     The variable csv_error_args should equal '1 1 3'
+  End
+
+  It 'エラーでも配列設定を保持しコールバックにも元の設定を渡す'
+    sx_cfg_set 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
+    src=referenced
+    csv_error() {
+      csv_error_cfg="${SX_CFG_ARR_REF}:${SX_CFG_ARR_HOLE}:${SX_CFG_ARR_UPDATE}"
+    }
+    When call sx_csv_parse res "@src,hole${SX_STR_LF}\"bad" csv_error
+    The status should equal 1
+    The variable res_len should equal 1
+    The variable res_0_0 should equal '@src'
+    The variable res_0_1 should equal hole
+    The variable res_1 should be undefined
+    The variable csv_error_cfg should equal '@:hole:0'
+    The variable SX_CFG_ARR_REF should equal '@'
+    The variable SX_CFG_ARR_HOLE should equal hole
+    The variable SX_CFG_ARR_UPDATE should equal 0
   End
 
   It '成功時にはエラーコールバックを呼ばない'
