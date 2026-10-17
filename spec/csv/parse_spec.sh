@@ -612,8 +612,8 @@ Describe 'sx_csv_parse'
     End
   End
 
-  It '必須引数の省略を拒否する'
-    When call sx_csv_parse res
+  It '結果変数名の省略を拒否する'
+    When call sx_csv_parse
     The status should equal 64
     The variable res should be undefined
   End
@@ -712,6 +712,15 @@ Describe 'sx_csv_parse'
       sx_csv_parse 0
       sx_csv_parse 1
       __sx_csv_parse 0
+    End
+
+    It '各経路で data の省略を空入力として扱う'
+      sx_cfg_set "SKIP_CHK=$2"
+      When call "$1" res
+      The status should be success
+      The variable res_len should equal 0
+      The variable res_0 should be undefined
+      Assert sx_var_is_arr res
     End
 
     It '公開・内部・検証省略の各経路が同じ配列を作る'

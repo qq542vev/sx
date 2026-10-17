@@ -16115,10 +16115,11 @@ __sx_arr_rquote() {
 ### sx_csv_parse - CSV を行ごとの SX 配列に変換する
 ##
 ## 使い方:
-##   sx_csv_parse res data [errcallback [sep [quote]]]
+##   sx_csv_parse res [data [errcallback [sep [quote]]]]
 ##
 ## 説明:
 ##   RFC 4180 の引用規則で解析し、res の各要素を行の SX 配列にする。
+##   data の既定値は空文字列。省略時も空入力として0行の配列を保存する。
 ##   sep はリテラル文字列（既定はカンマ）、quote は引用符に使う文字の集合（既定は二重引用符）。
 ##   sep の空指定で列区切りを無効にし、各レコードを一つのフィールドとして保存する。
 ##   フィールドの開始に使った一文字で閉じ、同じ文字の二重化でその引用符自体を表す。
@@ -16152,18 +16153,22 @@ __sx_arr_rquote() {
 sx_csv_parse() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_csv_parse "${@}" || return; return 0;; esac
 
-	case "${#}" in 2 | 3 | 4 | 5) ;; *) return M_EX_USAGE;; esac
+	case "${#}" in [12345]) ;; *) return M_EX_USAGE;; esac
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
-	sx_var_is_name "${1}" || return M_EX_USAGE
-	case "${3-}" in '') ;; *) sx_var_is_name "${3}" || return M_EX_USAGE;; esac
 
-	set -- "${1}" "${2}" "${3-}" "${4-,}" "${5-\"}"
-	case "${4}" in *"${SX_STR_CR}"* | *"${SX_STR_LF}"*) return M_EX_USAGE;; esac
-	case "${5}" in *"${SX_STR_CR}"* | *"${SX_STR_LF}"*) return M_EX_USAGE;; esac
-	case "${5:+X}" in X)
-		case "${4}" in *["${5}"]*) return M_EX_USAGE;; esac
-	esac
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+	case "${3-}" in '') ;; *) sx_var_is_name "${3}" || return M_EX_USAGE;; esac
 	__sx_var_is_rw_deep "${1}" || return M_EX_NOPERM
+
+	set -- "${1}" "${2-}" "${3-}" "${4-,}" "${5-\"}"
+
+	case "${4}${5}" in *["${SX_STR_CR}${SX_STR_LF}"]*)
+		return M_EX_USAGE
+	esac
+
+	case "${5:+${4}}" in *["${5}"]*)
+		return M_EX_USAGE
+	esac
 
 	__sx_csv_parse "${@}" || return
 }
@@ -16172,10 +16177,11 @@ M_RENAME_QI([|dnl
 ### __sx_csv_parse - CSV を解析し、行ごとの確定フィールドを保存する（内部用）
 ##
 ## 使い方:
-##   __sx_csv_parse res data [errcallback [sep [quote]]]
+##   __sx_csv_parse res [data [errcallback [sep [quote]]]]
 ##
 ## 説明:
 ##   内部実装。引数チェックは行わない。
+##   data の既定値は空文字列。
 ##   位置パラメータに現在行の完成フィールドを保持し、行が完成してから結果へ書き込む。
 ##   構文エラーでは、失敗行も確定済みフィールドだけで保存する。0列の行も保存する。
 ##   状態は start（先頭）・plain（非引用）・quoted（引用内）・closed（引用終了）。
@@ -16205,7 +16211,7 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_open Q_field Q_state Q_row Q_col Q_err Q_chunk Q_kind Q_ref Q_hole|])dnl
 
 __sx_csv_parse() {
-	Q_res="${1}" Q_data="${2}" Q_cb="${3-}" Q_sep="${4:-${4-,}${4+${SX_STR_LF}}}" Q_quote="${5-\"}"
+	Q_res="${1}" Q_data="${2-}" Q_cb="${3-}" Q_sep="${4:-${4-,}${4+${SX_STR_LF}}}" Q_quote="${5-\"}"
 	Q_ref="${SX_CFG_ARR_REF}" Q_hole="${SX_CFG_ARR_HOLE}"
 
 	# Q_data は未消費の入力、Q_field は現在組み立てているフィールド。
@@ -16265,20 +16271,18 @@ __sx_csv_parse() {
 					break
 				esac
 
-				case "${Q_quote:+X}" in X)
-					case "${Q_data}" in ["${Q_quote}"]*)
-						# 引用を開始できるのは start だけ。非引用フィールドの途中では拒否する。
-						case "${Q_state}" in plain)
-							Q_err=2
-							break
-						esac
-
-						# Q_quote は候補の集合、Q_open は今回のフィールドを開始した一文字。
-						# quoted の間は Q_open だけを閉じ引用符・エスケープとして認識する。
-						Q_open="${Q_data%"${Q_data#?}"}"
-						Q_state=quoted Q_data="${Q_data#?}"
-						continue
+				case "${Q_quote:+${Q_data}}" in ["${Q_quote}"]*)
+					# 引用を開始できるのは start だけ。非引用フィールドの途中では拒否する。
+					case "${Q_state}" in plain)
+						Q_err=2
+						break
 					esac
+
+					# Q_quote は候補の集合、Q_open は今回のフィールドを開始した一文字。
+					# quoted の間は Q_open だけを閉じ引用符・エスケープとして認識する。
+					Q_open="${Q_data%"${Q_data#?}"}"
+					Q_state=quoted Q_data="${Q_data#?}"
+					continue
 				esac
 
 				# 境界と引用符の直前までを通常文字として消費し、plain に移る。
@@ -16319,7 +16323,7 @@ __sx_csv_parse() {
 
 	# 失敗したフィールドは Q_field に残したまま、確定済みの列だけで失敗行を保存する。
 	# 第1列で失敗した場合も0列の行を作り、Q_row を1始まりのエラー行番号にする。
-	case "${Q_err}" in [123])
+	case "${Q_err}" in [1-9]*)
 		SX_CFG_ARR_REF='' SX_CFG_ARR_HOLE='' __sx_arr_gen "${Q_res}_${Q_row}" "${@}"
 		M_NUM_INCRM1([|Q_row|])
 		M_VAR_SET([|${Q_res}_len|], [|${Q_row}|])
@@ -16333,10 +16337,10 @@ __sx_csv_parse() {
 	case "${Q_cb:+X}${Q_err}" in
 		X[1-9]*)
 			# 失敗行を含む保存済み行数が行番号、現在行の完成フィールド数 + 1 が列番号。
-			__sx_num_add1_nat0 Q_col "${#}"
+			set -- 0 "${@}"
 			# Q_col は直前の __sx_num_add1_nat0 が参照渡しで設定する。
 			# shellcheck disable=SC2154
-			set -- "${Q_cb}" "${Q_err}" "${Q_row}" "${Q_col}"
+			set -- "${Q_cb}" "${Q_err}" "${Q_row}" "${#}"
 			;;
 		*) set -- return "${Q_err}";;
 	esac

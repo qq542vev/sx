@@ -11,6 +11,12 @@ Describe 'sx_csv_parse -efu 環境検証'
       __sx_csv_parse 0
     End
 
+    It 'data の省略を -efu 下で空入力として扱う'
+      sx_cfg_set "SKIP_CHK=$2"
+      When run efu_run "$1" res
+      The status should be success
+    End
+
     It '引用内改行と空フィールドを -efu 下で解析できる'
       sx_cfg_set "SKIP_CHK=$2"
       When run efu_run "$1" res "\"a${SX_STR_LF}b\",${SX_STR_LF}"
@@ -101,8 +107,8 @@ Describe 'sx_csv_parse -efu 環境検証'
     End
   End
 
-  It '引数エラーを -efu 下で返す'
-    When run efu_run sx_csv_parse res
+  It '結果変数名の省略を -efu 下で拒否する'
+    When run efu_run sx_csv_parse
     The status should equal 64
   End
 End
