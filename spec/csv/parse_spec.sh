@@ -256,13 +256,15 @@ Describe 'sx_csv_parse'
         3 "'ok'\""
       End
 
-      It '引用規則を維持し完成したレコードだけを残す'
+      It '引用規則を維持し失敗したレコードも0列の配列として残す'
         When call sx_csv_parse res "first,row${SX_STR_LF}$2" '' '' "\"'"
         The status should equal "$1"
-        The variable res_len should equal 1
+        The variable res_len should equal 2
         The variable res_0_len should equal 1
         The variable res_0_0 should equal 'first,row'
-        The variable res_1 should be undefined
+        The variable res_1_len should equal 0
+        The variable res_1_0 should be undefined
+        Assert sx_var_is_arr res_1
       End
     End
 
@@ -271,8 +273,10 @@ Describe 'sx_csv_parse'
       When call sx_csv_parse res "done${SX_STR_LF}\"bad\"tail" csv_error ''
       The status should equal 99
       The variable csv_error_args should equal '3 2 1'
-      The variable res_len should equal 1
+      The variable res_len should equal 2
       The variable res_0_0 should equal 'done'
+      The variable res_1_len should equal 0
+      The variable res_1_0 should be undefined
     End
   End
 
@@ -464,17 +468,19 @@ Describe 'sx_csv_parse'
       1 '"""'
     End
 
-    It '完成行だけを残して原因別の終了ステータスを返す'
+    It '完成行と失敗行の確定済みフィールドを残して原因別の終了ステータスを返す'
       sx_csv_parse res 'old,value'
       sx_var_unset res
       When call sx_csv_parse res "a,b${SX_STR_LF}first,$2"
       The status should equal "$1"
-      The variable res_len should equal 1
+      The variable res_len should equal 2
       The variable res_0_0 should equal a
       The variable res_0_1 should equal b
-      The variable res_1 should be undefined
-      The variable res_1_len should be undefined
-      The variable res_1_0 should be undefined
+      The variable res_1_len should equal 1
+      The variable res_1_0 should equal first
+      The variable res_1_1 should be undefined
+      The variable res_2 should be undefined
+      Assert sx_var_is_arr res_1
     End
   End
 
@@ -492,31 +498,50 @@ Describe 'sx_csv_parse'
     It '別の引用符で閉じることや非引用フィールド内の引用符を拒否する'
       When call sx_csv_parse res "a,b${SX_STR_LF}first,$2" '' ',' "\"'"
       The status should equal "$1"
-      The variable res_len should equal 1
+      The variable res_len should equal 2
       The variable res_0_0 should equal a
       The variable res_0_1 should equal b
-      The variable res_1 should be undefined
+      The variable res_1_len should equal 1
+      The variable res_1_0 should equal first
+      The variable res_1_1 should be undefined
     End
   End
 
-  It '先頭行でエラーになった場合は空配列を残す'
-    When call sx_csv_parse res '"unclosed'
-    The status should equal 1
-    The variable res_len should equal 0
-    The variable res_0 should be undefined
+  Context '第1行の第1列での構文エラー'
+    Parameters
+      1 '"unclosed'
+      2 'un"quoted'
+      3 '"closed"suffix'
+    End
+
+    It '失敗した列を含めず0列の行を残す'
+      When call sx_csv_parse res "$2"
+      The status should equal "$1"
+      The variable res_len should equal 1
+      The variable res_0_len should equal 0
+      The variable res_0_0 should be undefined
+      The variable res_1 should be undefined
+      Assert sx_var_is_arr res res_0
+    End
   End
 
   It 'エラーコードと論理的な行・列を通知しコールバックの終了ステータスを返す'
     csv_error() {
       csv_error_args="$*"
       csv_error_rows=$res_len
+      csv_error_fields=$res_1_len
       return 99
     }
     When call sx_csv_parse res "\"a${SX_STR_LF}b\",c${SX_STR_LF}x,y,\"bad\"z" csv_error
     The status should equal 99
     The variable csv_error_args should equal '3 2 3'
-    The variable csv_error_rows should equal 1
-    The variable res_1 should be undefined
+    The variable csv_error_rows should equal 2
+    The variable csv_error_fields should equal 2
+    The variable res_len should equal 2
+    The variable res_1_len should equal 2
+    The variable res_1_0 should equal x
+    The variable res_1_1 should equal y
+    The variable res_1_2 should be undefined
   End
 
   It '引用エラーの位置を空フィールドも数えて通知する'
@@ -524,6 +549,11 @@ Describe 'sx_csv_parse'
     When call sx_csv_parse res ',,"bad' csv_error
     The status should be success
     The variable csv_error_args should equal '1 1 3'
+    The variable res_len should equal 1
+    The variable res_0_len should equal 2
+    The variable res_0_0 should equal ''
+    The variable res_0_1 should equal ''
+    The variable res_0_2 should be undefined
   End
 
   It 'エラーでも配列設定を保持しコールバックにも元の設定を渡す'
@@ -534,10 +564,11 @@ Describe 'sx_csv_parse'
     }
     When call sx_csv_parse res "@src,hole${SX_STR_LF}\"bad" csv_error
     The status should be success
-    The variable res_len should equal 1
+    The variable res_len should equal 2
     The variable res_0_0 should equal '@src'
     The variable res_0_1 should equal hole
-    The variable res_1 should be undefined
+    The variable res_1_len should equal 0
+    The variable res_1_0 should be undefined
     The variable csv_error_cfg should equal '@:hole:0'
     The variable SX_CFG_ARR_REF should equal '@'
     The variable SX_CFG_ARR_HOLE should equal hole
@@ -551,7 +582,7 @@ Describe 'sx_csv_parse'
     The variable csv_error_called should be undefined
   End
 
-  It 'コールバックから再入しても通知引数と完成行を保持し指定した終了ステータスを返す'
+  It 'コールバックから再入しても通知引数と完成行・失敗行を保持する'
     csv_error() {
       sx_csv_parse nested "'inner',\"value\"" '' ',' "\"'"
       csv_error_args="$*"
@@ -560,8 +591,10 @@ Describe 'sx_csv_parse'
     When call sx_csv_parse res "a,b${SX_STR_LF}bad'" csv_error ',' "\"'"
     The status should equal 2
     The variable csv_error_args should equal '2 2 1'
-    The variable res_len should equal 1
+    The variable res_len should equal 2
     The variable res_0_0 should equal a
+    The variable res_1_len should equal 0
+    The variable res_1_0 should be undefined
     The variable nested_0_1 should equal value
   End
 
@@ -688,6 +721,26 @@ Describe 'sx_csv_parse'
       The variable res_0_len should equal 2
       The variable res_0_0 should equal 'a||b'
       The variable res_0_1 should equal ''
+    End
+
+    It '各経路で失敗行の参照・穴・空フィールドを文字列として残しリビジョンを更新する'
+      sx_cfg_set "SKIP_CHK=$2" 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
+      src=referenced
+      before_rev=$SX_SYS_REV
+      When call "$1" res '@src||hole||||"bad' '' '||'
+      The status should equal 1
+      The variable res_len should equal 1
+      The variable res_0_len should equal 3
+      The variable res_0_0 should equal '@src'
+      The variable res_0_1 should equal hole
+      The variable res_0_2 should equal ''
+      The variable res_0_3 should be undefined
+      The variable SX_SYS_REV should not equal "$before_rev"
+      The variable res should not equal "$res_0"
+      The variable SX_CFG_ARR_REF should equal '@'
+      The variable SX_CFG_ARR_HOLE should equal hole
+      The variable SX_CFG_ARR_UPDATE should equal 0
+      Assert sx_var_is_arr res res_0
     End
 
     It '各経路で開始引用符をフィールドごとに選び直す'

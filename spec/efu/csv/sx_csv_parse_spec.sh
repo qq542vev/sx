@@ -66,6 +66,20 @@ Describe 'sx_csv_parse -efu 環境検証'
       The status should be success
     End
 
+    It '失敗行を保存してから -efu 下で通知し確定済みの空フィールドも保持する'
+      sx_cfg_set "SKIP_CHK=$2"
+      csv_error() {
+        # 結果配列は通知前に解析関数が参照渡しで設定する。
+        # shellcheck disable=SC2154
+        case "$1:$2:$3:$res_len:$res_0_len:$res_0_0:$res_0_1:${res_0_2+x}" in
+          '1:1:3:1:2:a::') return 0;;
+          *) return 99;;
+        esac
+      }
+      When run efu_run "$1" res 'a,,"bad' csv_error
+      The status should be success
+    End
+
     It '通知コールバックが失敗なら -efu 下でもその終了ステータスを返す'
       sx_cfg_set "SKIP_CHK=$2"
       csv_error() { return 99; }
