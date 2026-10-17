@@ -16346,3 +16346,84 @@ __sx_csv_parse() {
 	"${@}"
 }
 |], [|csv_parse|])dnl
+
+### sx_uri_enc - URI の構成要素に入れるバイト列をパーセントエンコードする
+##
+## 使い方:
+##   sx_uri_enc 結果変数名 [入力文字列]
+##
+## 説明:
+##   C (POSIX) ロケールで起動したシェルから呼び出すことを前提とする。
+##   入力は NUL を除くバイト列とし、省略時は空文字列として扱う。
+##   ASCII の英数字と - . _ ~ を保持し、その他を大文字の %HH に変換する。
+##   空白は %20、+ は %2B、% は %25 とし、既存の %HH も再エンコードする。
+##   文字コードの変換・検証は行わない。UTF-8 入力はそのバイト列を変換する。
+##   URI 全体の区切り文字を保持する用途ではなく、構成要素の値に使用する。
+##   ロケールの検査・変更は行わない。SX_CFG_NUM_RANGE には依存しない。
+##   結果変数が配列の場合、呼び出し前に sx_var_unset で解放すること。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   64  引数の個数または結果変数名が不正 (SX_EX_USAGE)
+##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
+sx_uri_enc() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_enc "${@}" || return; return 0;; esac
+
+	case "${#}" in 1 | 2) ;; *) return M_EX_USAGE;; esac
+	sx_var_is_name "${1}" || return M_EX_USAGE
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	__sx_uri_enc "${@}"
+}
+
+M_RENAME_QI([|dnl
+# 非予約文字と NUL を除く 189 バイトの分岐を生成する。
+# このブロック内で定義し、生成する作業変数も Q_* の名前変換を通す。
+define([|__sx_m4_gen_uri_enc_case|], [|dnl
+ifelse(eval(($1 >= 48 && $1 <= 57) || ($1 >= 65 && $1 <= 90) || ($1 >= 97 && $1 <= 122) || $1 == 45 || $1 == 46 || $1 == 95 || $1 == 126), 0, [|dnl
+format([|				$'\x%02X') M_STR_APPEND([|Q_out|], [|'%%%02X'|]);;
+|], $1, $1)|])dnl
+ifelse($1, 255, [||], [|__sx_m4_gen_uri_enc_case(incr($1))|])|])dnl
+
+### __sx_uri_enc - バイト列をパーセントエンコードする（内部用）
+##
+## 使い方:
+##   __sx_uri_enc 結果変数名 [入力文字列]
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   C (POSIX) ロケールで、保持区間を一括コピーし変換対象区間だけを走査する。
+##   バイトと %HH の対応はビルド時に生成し、実行時の数値変換は行わない。
+##   結果は最後に一度だけ代入する。
+##
+## 終了ステータス:
+##    0  成功
+define([|CLEANUP|], [|Q_rest Q_out Q_safe Q_chunk|])dnl
+
+__sx_uri_enc() {
+	Q_rest="${2-}" Q_out='' Q_safe="${SX_STR_ALNUM}-._~"
+
+	while M_STR_NE([|"${Q_rest}"|], [|''|]); do
+		# 最初の非予約文字より前にある変換対象区間を切り出す。
+		Q_chunk="${Q_rest%%["${Q_safe}"]*}"
+		Q_rest="${Q_rest#"${Q_chunk}"}"
+
+		while M_STR_NE([|"${Q_chunk}"|], [|''|]); do
+			case "${Q_chunk%"${Q_chunk#?}"}" in
+__sx_m4_gen_uri_enc_case(1)
+			esac
+
+			Q_chunk="${Q_chunk#?}"
+		done
+
+		# 後続の非予約文字は一文字ずつ調べず、まとめて結果へ追加する。
+		Q_chunk="${Q_rest%%[!"${Q_safe}"]*}"
+		M_STR_APPEND([|Q_out|], [|"${Q_chunk}"|])
+		Q_rest="${Q_rest#"${Q_chunk}"}"
+	done
+
+	M_VAR_SET([|${1}|], [|${Q_out}|])
+	unset CLEANUP
+}
+undefine([|__sx_m4_gen_uri_enc_case|])dnl
+|], [|uri_enc|])dnl
