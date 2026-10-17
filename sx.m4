@@ -16201,9 +16201,9 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_open Q_field Q_state Q_row Q_col Q_err Q_chunk Q_kind Q_ref Q_hole|])dnl
 
 __sx_csv_parse() {
-	Q_res="${1}" Q_data="${2}" Q_cb="${3-}" Q_sep="${4-,}" Q_quote="${5-\"}"
+	Q_res="${1}" Q_data="${2}" Q_cb="${3-}" Q_sep="${4:-${4-,}${4+${SX_STR_LF}}}" Q_quote="${5-\"}"
 	Q_ref="${SX_CFG_ARR_REF}" Q_hole="${SX_CFG_ARR_HOLE}"
-	case "${Q_sep}" in '') Q_sep="${SX_STR_LF}";; esac
+
 	# Q_data は未消費の入力、Q_field は現在組み立てているフィールド。
 	# Q_row は結果へ保存済みの行数であり、次の行の0始まりの添字でもある。
 	Q_field='' Q_state=start Q_row=0 Q_err=0
@@ -16246,7 +16246,10 @@ __sx_csv_parse() {
 			"${SX_STR_CR}${SX_STR_LF}"*) Q_data="${Q_data#??}" Q_kind=row;;
 			"${SX_STR_LF}"*)
 				# 非引用フィールドだけ、行区切りに属する末尾の CR を除く。
-				case "${Q_state}" in plain) Q_field="${Q_field%"${SX_STR_CR}"}";; esac
+				case "${Q_state}" in plain)
+					Q_field="${Q_field%"${SX_STR_CR}"}"
+				esac
+
 				Q_data="${Q_data#?}" Q_kind=row
 				;;
 			"${Q_sep}"*) Q_data="${Q_data#"${Q_sep}"}" Q_kind=field;;
@@ -16277,12 +16280,7 @@ __sx_csv_parse() {
 				# 境界自体は残し、次の反復で上の判定に処理させる。
 				# 通常文字の切り出しは一度だけなので、空の Q_field へ直接格納する。
 				Q_field="${Q_data%%"${Q_sep}"*}"
-				Q_field="${Q_field%%"${SX_STR_LF}"*}"
-
-				case "${Q_quote:+X}" in X)
-					Q_field="${Q_field%%["${Q_quote}"]*}"
-				esac
-
+				Q_field="${Q_field%%["${SX_STR_LF}${Q_quote}"]*}"
 				Q_state=plain Q_data="${Q_data#"${Q_field}"}"
 				continue
 				;;
