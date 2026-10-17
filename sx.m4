@@ -16208,15 +16208,15 @@ M_RENAME_QI([|dnl
 ##    2  非引用フィールド内に引用符が出現
 ##    3  閉じ引用符の後に不正な文字が出現
 
-define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_open Q_field Q_state Q_row Q_col Q_err Q_chunk Q_kind Q_ref Q_hole|])dnl
+define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_open Q_field Q_state Q_err Q_chunk Q_kind Q_ref Q_hole|])dnl
 
 __sx_csv_parse() {
 	Q_res="${1}" Q_data="${2-}" Q_cb="${3-}" Q_sep="${4:-${4-,}${4+${SX_STR_LF}}}" Q_quote="${5-\"}"
 	Q_ref="${SX_CFG_ARR_REF}" Q_hole="${SX_CFG_ARR_HOLE}"
 
 	# Q_data は未消費の入力、Q_field は現在組み立てているフィールド。
-	# Q_row は結果へ保存済みの行数であり、次の行の0始まりの添字でもある。
-	Q_field='' Q_state=start Q_row=0 Q_err=0
+	# 結果配列の長さを保存済み行数と次の行の0始まりの添字に使う。
+	Q_field='' Q_state=start Q_err=0
 	__sx_arr_gen "${Q_res}"
 	# 元の引数を退避したので、位置パラメータを現在行の完成フィールド一覧に使い直す。
 	# 未完成の Q_field はここへ含めず、区切り・改行・入力終了を確認してから追加する。
@@ -16308,9 +16308,7 @@ __sx_csv_parse() {
 		# 完成フィールド一覧を一行の配列にし、その行が保存できてから外側の長さを増やす。
 		# 構文エラーによる未完成行はループ終了後に確定済みフィールドだけを保存する。
 		# フィールドを文字列のまま保存するため、行生成時だけ参照・穴の解釈を無効にする。
-		SX_CFG_ARR_REF='' SX_CFG_ARR_HOLE='' __sx_arr_gen "${Q_res}_${Q_row}" "${@}"
-		M_NUM_INCRM1([|Q_row|])
-		M_VAR_SET([|${Q_res}_len|], [|${Q_row}|])
+		eval SX_CFG_ARR_REF= SX_CFG_ARR_HOLE= __sx_arr_gen "${Q_res}_\${${Q_res}_len}" '"${@}"' ';' __sx_num_add1_nat0 "${Q_res}_len" "\"\${${Q_res}_len}\""
 		# 現在行の一覧を空にして次の行へ。入力終了の場合は、この行を保存してから抜ける。
 		set --
 
@@ -16322,11 +16320,9 @@ __sx_csv_parse() {
 	do :; done
 
 	# 失敗したフィールドは Q_field に残したまま、確定済みの列だけで失敗行を保存する。
-	# 第1列で失敗した場合も0列の行を作り、Q_row を1始まりのエラー行番号にする。
+	# 第1列で失敗した場合も0列の行を作り、失敗行も結果配列の長さに含める。
 	case "${Q_err}" in [1-9]*)
-		SX_CFG_ARR_REF='' SX_CFG_ARR_HOLE='' __sx_arr_gen "${Q_res}_${Q_row}" "${@}"
-		M_NUM_INCRM1([|Q_row|])
-		M_VAR_SET([|${Q_res}_len|], [|${Q_row}|])
+		eval SX_CFG_ARR_REF= SX_CFG_ARR_HOLE= __sx_arr_gen "${Q_res}_\${${Q_res}_len}" '"${@}"' ';' __sx_num_add1_nat0 "${Q_res}_len" "\"\${${Q_res}_len}\""
 	esac
 
 	# 成功・エラーとも元の設定に戻し、コールバックにも呼び出し時の設定を見せる。
@@ -16334,13 +16330,12 @@ __sx_csv_parse() {
 
 	# 解析は完了したので、位置パラメータを完成フィールド一覧から最後に実行するコマンドへ変える。
 	# エラーかつコールバック指定ありの場合だけ通知し、それ以外は解析ステータスを返す。
-	case "${Q_cb:+X}${Q_err}" in
-		X[1-9]*)
-			# 失敗行を含む保存済み行数が行番号、現在行の完成フィールド数 + 1 が列番号。
-			set -- 0 "${@}"
-			# Q_col は直前の __sx_num_add1_nat0 が参照渡しで設定する。
-			# shellcheck disable=SC2154
-			set -- "${Q_cb}" "${Q_err}" "${Q_row}" "${#}"
+	case "${Q_cb:+${Q_err}}" in
+		[1-9]*)
+			# 失敗行を含む保存済み行数が1始まりの行番号。
+			# ダミー引数を一つ加え、引数個数を1始まりの列番号にする。
+			set -- "${@}" 0
+			eval set -- '"${Q_cb}"' "${Q_err}" "\"\${${Q_res}_len}\"" "${#}"
 			;;
 		*) set -- return "${Q_err}";;
 	esac
