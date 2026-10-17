@@ -1,4 +1,6 @@
 #!/bin/sh
+# shellcheck shell=sh disable=SC2154,SC2329
+# 結果変数は参照渡しで設定され、コールバックはテスト対象から間接的に呼ばれる。
 
 eval "$(shellspec - -c) exit 1"
 
@@ -49,19 +51,19 @@ Describe 'sx_arg_rfind'
 	Describe 'Callback 検索 (SX_ARG_RFIND_CB)'
 		It 'コールバックの終了ステータスで一致を判定する（後ろ向き）'
 			is_even() { [ $(($2 % 2)) -eq 0 ]; }
-			sx_arg_rfind res is_even $SX_ARG_RFIND_CB ::: 1 2 3 4 5
+			sx_arg_rfind res is_even "$SX_ARG_RFIND_CB" ::: 1 2 3 4 5
 			Assert [ "$res" = "4 2" ]
 		End
 
 		It 'コールバックが 0 を返すと一致とみなす'
 			all_true() { return 0; }
-			sx_arg_rfind res all_true $SX_ARG_RFIND_CB ::: a b c
+			sx_arg_rfind res all_true "$SX_ARG_RFIND_CB" ::: a b c
 			Assert [ "$res" = "3 2 1" ]
 		End
 
 		It 'コールバックが非0を返すと一致しない'
 			all_false() { return 1; }
-			When call sx_arg_rfind res all_false $SX_ARG_RFIND_CB ::: a b c
+			When call sx_arg_rfind res all_false "$SX_ARG_RFIND_CB" ::: a b c
 			The status should be failure
 			The variable res should equal ""
 		End
@@ -75,13 +77,13 @@ Describe 'sx_arg_rfind'
 
 		It 'バインド形式と併用できる'
 			is_even() { [ $(($2 % 2)) -eq 0 ]; }
-			sx_arg_rfind "2res:" is_even $SX_ARG_RFIND_CB ::: 1 2 3 4 5 6
+			sx_arg_rfind "2res:" is_even "$SX_ARG_RFIND_CB" ::: 1 2 3 4 5 6
 			Assert [ "$res" = "6 4" ]
 		End
 
 		It '分配代入と併用できる'
 			is_even() { [ $(($2 % 2)) -eq 0 ]; }
-			sx_arg_rfind "idx1:idx2" is_even $SX_ARG_RFIND_CB ::: 1 2 3 4 5 6
+			sx_arg_rfind "idx1:idx2" is_even "$SX_ARG_RFIND_CB" ::: 1 2 3 4 5 6
 			Assert [ "$idx1" = "6" ]
 			Assert [ "$idx2" = "4 2" ]
 		End
@@ -89,21 +91,21 @@ Describe 'sx_arg_rfind'
 		It 'コールバック内で外部変数を参照できる'
 			min_val=3
 			is_ge_min() { [ "${2}" -ge "${min_val}" ]; }
-			sx_arg_rfind res is_ge_min $SX_ARG_RFIND_CB ::: 1 2 3 4 5
+			sx_arg_rfind res is_ge_min "$SX_ARG_RFIND_CB" ::: 1 2 3 4 5
 			Assert [ "$res" = "5 4 3" ]
 		End
 
 		It 'コールバック内で sx_arg_rfind を再帰呼び出ししても状態が壊れないこと'
 			recursive_cb() {
 				if [ "$1" = "4" ]; then
-					sx_arg_rfind inner_res is_even_rec $SX_ARG_RFIND_CB ::: 1 2 3
+					sx_arg_rfind inner_res is_even_rec "$SX_ARG_RFIND_CB" ::: 1 2 3
 				fi
 				[ $(($1 % 2)) -eq 0 ]
 			}
 			is_even_rec() {
 				[ $(($1 % 2)) -eq 0 ]
 			}
-			sx_arg_rfind res recursive_cb $SX_ARG_RFIND_CB ::: 1 2 3 4 5
+			sx_arg_rfind res recursive_cb "$SX_ARG_RFIND_CB" ::: 1 2 3 4 5
 			Assert [ "$res" = "4 2" ]
 			Assert [ "$inner_res" = "2" ]
 		End
@@ -166,10 +168,18 @@ Describe 'sx_arg_rfind'
 			Assert [ "$res" = "3 2" ]
 		End
 
-		It '::: 以降にデータがない場合に正しく処理する'
+		It '検索対象を省略すると空文字列を探す'
 			When call sx_arg_rfind res ::: "target" "other"
 			The status should be failure
 			The variable res should equal ""
+		End
+	End
+
+	Describe '簡易形式（bind・検索対象・データ）'
+		It '第2引数を検索対象とし数値のデータもフラグとして消費しない'
+			When call sx_arg_rfind res b b 1 b
+			The status should be success
+			The variable res should equal '3 1'
 		End
 	End
 

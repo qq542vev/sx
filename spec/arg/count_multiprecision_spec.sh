@@ -123,7 +123,7 @@ Describe 'sx_arg_count 多倍長対応'
 
   It '簡易形式でも多倍長経路で空要素を数える'
     select_count_path nat0
-    When call sx_arg_count res '' x ''
+    When call sx_arg_count res '' '' x ''
     The status should be success
     The variable res should equal 2
   End

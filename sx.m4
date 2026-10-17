@@ -1044,7 +1044,7 @@ sx_util_eval() {
 ### sx_arg_count - 引数リストから指定された値の出現回数を取得する
 ##
 ## 使い方:
-##   sx_arg_count 結果変数名 [arg...]
+##   sx_arg_count 結果変数名 [検索対象 [arg ...]]
 ##   sx_arg_count 結果変数名 [検索対象 [フラグ]] ::: [arg ...]
 ##
 ## 説明:
@@ -1058,6 +1058,11 @@ sx_util_eval() {
 ##   引数個数・インデックス・一致数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ##   空の検索対象を指定した場合、空文字の値のみが一致とみなされる。
+##   結果変数名は必須。:::（SX_CFG_SEP）なしでは第2引数が検索対象、
+##   第3引数以降がデータとなり、フラグは 0 とする。
+##   検索対象の省略時は空文字列とする。::: 形式では検索対象・フラグを
+##   省略でき、::: より後はすべてデータとして扱う。
+##   データ先頭付近に SX_CFG_SEP の値を含む場合は、::: 形式で境界を明示する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -1092,6 +1097,7 @@ M_RENAME_QI([|dnl
 ##
 ## 使い方:
 ##   __sx_arg_count 結果変数名 [検索対象 [フラグ]] ::: [値 ...]
+##   __sx_arg_count 結果変数名 [検索対象 [値 ...]]
 ##
 ## 説明:
 ##   sx_arg_count の内部実装。引数チェックは行わない。
@@ -1274,7 +1280,7 @@ __sx_arg_enough() {
 			;;
 		*)
 			Q_cb="${1-}"
-			shift "$((0${1+1}))"
+			${1+'shift'}
 			;;
 	esac
 
@@ -1342,8 +1348,8 @@ __sx_arg_enough() {
 ### sx_arg_find - 引数リストから指定された値を探し、そのインデックスまたは値を取得する
 ##
 ## 使い方:
-##   sx_arg_find [結果変数名 [検索対象 [フラグ]]] ::: [値 ...]
-##   sx_arg_find 結果変数名 [値 ...]
+##   sx_arg_find bind [検索対象 [フラグ]] ::: [値 ...]
+##   sx_arg_find bind [検索対象 [値 ...]]
 ##
 ## 説明:
 ##   検索対象が、指定された値のリストの中で何番目（1開始）にあるかを探し、
@@ -1359,12 +1365,14 @@ __sx_arg_enough() {
 ##   取得件数はバインド形式によって決まる。
 ##   例: res（全件）、3res:（最大3件）、idx1:idx2（2件を分配）
 ##   2つの呼び出し形式がある:
-##     1. ::: を使用する形式。bind, target, flg を :::
-##        で区切って指定する。すべて省略可能（::: が第1引数の場合、
-##        bind ごと省略）。
-##     2. ::: を使用しない簡易形式。第1引数が bind、
-##        第2引数以降が検索対象の値となる。
-##        target・flg は指定不可。
+##     1. :::（SX_CFG_SEP）形式。bind は必須で、検索対象・フラグを
+##        ::: より前に指定する。::: より後はすべてデータとなる。
+##        検索対象・フラグは省略でき、それぞれ空文字列・0 とする。
+##     2. 簡易形式。第1引数が bind、第2引数が検索対象、
+##        第3引数以降がデータとなる。フラグは 0 とする。
+##        検索対象の省略時は空文字列とする。
+##   bind 自体の省略は不可。空文字列の bind は有効だが、検索せず 1 を返す。
+##   データ先頭付近に SX_CFG_SEP の値を含む場合は、::: 形式で境界を明示する。
 ##   引数個数・インデックス・一致数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
@@ -1378,17 +1386,12 @@ sx_arg_find() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
 
-	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}") ;;
-		*)
-			__sx_var_is_bind ${1+"${1}"} || return M_EX_USAGE
+		__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-			__sx_var_is_bindable ${1+"${1}"} || return M_EX_NOPERM
-			;;
-	esac
+		__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}" | "${2+X${2}}" | "${3+X${3}}") ;;
+		"${2+X${2}}" | "${3+X${3}}") ;;
 		"${4+X${4}}")
 			__sx_num_is_nat0_safe "${3}" || return M_EX_USAGE
 
@@ -1406,6 +1409,7 @@ M_RENAME_QI([|dnl
 ##
 ## 使い方:
 ##   __sx_arg_find 結果変数名 [検索対象 [フラグ]] ::: [値 ...]
+##   __sx_arg_find 結果変数名 [検索対象 [値 ...]]
 ##
 ## 説明:
 ##   ::: セパレータをパースし、フラグに応じて __sx_arg_find_lit または
@@ -1419,22 +1423,22 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_bind Q_tgt Q_flg|])dnl
 
 __sx_arg_find() {
+	Q_bind="${1}"
+
 	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}") shift;;
 		"${2+X${2}}")
-			Q_bind="${1}"
 			shift 2;;
 		"${3+X${3}}")
-			Q_bind="${1}" Q_tgt="${2}"
+			Q_tgt="${2}"
 			shift 3
 			;;
 		"${4+X${4}}")
-			Q_bind="${1}" Q_tgt="${2}" Q_flg="${3}"
+			Q_tgt="${2}" Q_flg="${3}"
 			shift 4
 			;;
 		*)
-			Q_bind="${1-}"
-			shift "$((0${1+1}))"
+			Q_tgt="${2-}"
+			shift ${2+'2'}
 			;;
 	esac
 
@@ -1679,8 +1683,8 @@ M_RENAME_Q([|dnl
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
 ##
 ## 使い方:
-##   sx_arg_isep [bind [sep [inv [limit [flg]]]]] ::: [arg ...]
-##   sx_arg_isep [bind] [arg ...]
+##   sx_arg_isep bind [sep [inv [limit [flg]]]] ::: [arg ...]
+##   sx_arg_isep bind [sep [arg ...]]
 ##
 ## 説明:
 ##   引数グループの間にセパレータを挿入し、すべての要素（セパレータを含む）を
@@ -1693,9 +1697,11 @@ M_RENAME_Q([|dnl
 ##   2 つの呼び出し形式がある:
 ##     1) ::: 形式: bind/sep/inv/limit/flg を ::: より前の位置引数で指定し、
 ##        ::: 以降をデータとして扱う。設定引数とデータを明確に分離できる。
-##     2) 簡略形式: bind のみを第一引数で指定し、第二引数以降はすべてデータ
-##        として扱われる。この形式ではセパレータは空文字、インターバルは 1、
-##        リミットは無制限、フラグは 0 になる。
+##     2) 簡略形式: 第一引数が bind、第二引数が sep、第三引数以降がデータ
+##        として扱われる。インターバルは 1、リミットは無制限、フラグは 0 とする。
+##   bind は必須（空文字列可）。sep の省略時は空文字列とする。
+##   ::: は SX_CFG_SEP の値を使用する。データ先頭付近にその値を含む場合は、
+##   ::: 形式で境界を明示する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -1711,17 +1717,12 @@ sx_arg_isep() {
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
 	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
-	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}") ;;
-		*)
-			__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-			__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
-			;;
-	esac
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}" | "${2+X${2}}" | "${3+X${3}}") ;;
+		"${2+X${2}}" | "${3+X${3}}") ;;
 		"${4+X${4}}") Q_int="${3}";;
 		"${5+X${5}}") Q_int="${3}" Q_lim="${4}";;
 		"${6+X${6}}") Q_int="${3}" Q_lim="${4}" Q_flg="${5}";;
@@ -1747,8 +1748,8 @@ M_RENAME_QI([|dnl
 ### __sx_arg_isep - 引数間にセパレータを挿入する（ディスパッチャ、内部用）
 ##
 ## 使い方:
-##   __sx_arg_isep [bind [sep [inv [limit [flg]]]]] ::: [arg ...]
-##   __sx_arg_isep [bind] [arg ...]
+##   __sx_arg_isep bind [sep [inv [limit [flg]]]] ::: [arg ...]
+##   __sx_arg_isep bind [sep [arg ...]]
 ##
 ## 説明:
 ##   ::: のパースと、lit/cb の振り分けを行う。
@@ -1756,31 +1757,30 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_bind Q_sep Q_int Q_lim Q_flg|])dnl
 
 __sx_arg_isep() {
+	Q_bind="${1}"
+
 	# ::: の位置を特定 (Bounded Search: $2, $3, $4, $5, $6)
 	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}") shift;;
-		"${2+X${2}}")
-			Q_bind="${1}"
-			shift 2;;
+		"${2+X${2}}") shift 2;;
 		"${3+X${3}}")
-			Q_bind="${1}" Q_sep="${2}"
+			Q_sep="${2}"
 			shift 3
 			;;
 		"${4+X${4}}")
-			Q_bind="${1}" Q_sep="${2}" Q_int="${3}"
+			Q_sep="${2}" Q_int="${3}"
 			shift 4
 			;;
 		"${5+X${5}}")
-			Q_bind="${1}" Q_sep="${2}" Q_int="${3}" Q_lim="${4}"
+			Q_sep="${2}" Q_int="${3}" Q_lim="${4}"
 			shift 5
 			;;
 		"${6+X${6}}")
-			Q_bind="${1}" Q_sep="${2}" Q_int="${3}" Q_lim="${4}" Q_flg="${5}"
+			Q_sep="${2}" Q_int="${3}" Q_lim="${4}" Q_flg="${5}"
 			shift 6
 			;;
 		*)
-			Q_bind="${1-}"
-			shift "$((0${1+1}))"
+			Q_sep="${2-}"
+			shift ${2+'2'}
 			;;
 	esac
 
@@ -2166,7 +2166,7 @@ __sx_arg_join() {
 	Q_res="${1}"
 	Q_sep="${2-}"
 	Q_out=
-	shift ${2+2}
+	shift ${2+'2'}
 
 	for Q_arg in "${@}"; do
 		M_STR_APPEND([|Q_out|], [|"${Q_sep}${Q_arg}"|])
@@ -2231,6 +2231,7 @@ __sx_arg_len() {
 ## 説明:
 ##   指定された値のリストの各要素に対してコールバック関数を適用し、
 ##   その結果をバインド形式に従って結果変数に格納する。
+##   第一引数は必須（空文字列可）。空 bind ではコールバックを呼ばず成功する。
 ##
 ##   コールバック関数のシグネチャ:
 ##     callback 結果変数名 現在の値 インデックス
@@ -2253,9 +2254,9 @@ sx_arg_map() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_arg_map "${@}" || return
 }
@@ -2345,6 +2346,7 @@ __sx_arg_map() {
 ##   指定された値をそれぞれシングルクォートで囲み（内部のシングルクォートはエスケープ）、
 ##   スペース区切りで順方向に結合した文字列を作成して結果変数（スキーマ）に格納する。
 ##   スキーマにコロン (:) を含めることで、引数の分配代入（デストラクチャリング）が可能。
+##   スキーマは必須（空文字列可）。空 bind では結果を格納せず成功する。
 ##   作成された文字列は eval 等で安全に位置パラメータに戻すことができる。
 ##   引数個数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
@@ -2358,9 +2360,9 @@ sx_arg_quote() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_arg_quote "${@}"
 }
@@ -2377,7 +2379,7 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_bind|])dnl
 
 __sx_arg_quote() {
-	__sx_var_bind_init "${1-}"
+	__sx_var_bind_init "${1}"
 	__sx_var_bind Q_bind "${@}" || :
 
 	unset CLEANUP
@@ -2387,8 +2389,8 @@ __sx_arg_quote() {
 ### sx_arg_pad - 引数リストを指定された長さになるようパディングする
 ##
 ## 使い方:
-##   sx_arg_pad [bind [len [val [flg]]]] ::: [arg ...]
-##   sx_arg_pad [bind] [arg ...]
+##   sx_arg_pad bind [len [val [flg]]] ::: [arg ...]
+##   sx_arg_pad bind [len [arg ...]]
 ##
 ## 説明:
 ##   与えられた引数リスト [arg ...] を、絶対値が |len| になるよう
@@ -2404,8 +2406,12 @@ __sx_arg_quote() {
 ##   2 つの呼び出し形式がある:
 ##     1) ::: 形式: bind/len/val/flg を ::: より前の位置引数で指定し、
 ##        ::: 以降をデータとして扱う。設定引数とデータを明確に分離できる。
-##     2) 簡略形式: bind のみを第一引数で指定し、第二引数以降はすべてデータ
-##        として扱われる。この形式では len は 0、val は空文字、flg は 0 になる。
+##     2) 簡略形式: 第一引数が bind、第二引数が len、第三引数以降がデータ
+##        となる。val は空文字列、flg は 0 とする。
+##   bind は必須（空文字列可）。len の省略時は 0 とする。
+##   簡略形式では空の len も 0 とする。::: 形式で len に空文字列を明示した場合は不正。
+##   ::: は SX_CFG_SEP の値を使用する。データ先頭付近にその値を含む場合は、
+##   ::: 形式で境界を明示する。
 ##
 ##   コールバックモード:
 ##     flg に SX_ARG_PAD_CB (1) を設定すると、val はコールバック関数名として
@@ -2431,21 +2437,16 @@ sx_arg_pad() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
 
-	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}") ;;
-		*)
-			__sx_var_is_bind ${1+"${1}"} || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-			__sx_var_is_bindable ${1+"${1}"} || return M_EX_NOPERM
-			;;
-	esac
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}" | "${2+X${2}}") ;;
-		"${3+X${3}}" | "${4+X${4}}") __sx_num_is_int_base 10 "${2}" || return M_EX_USAGE;;
-		"${5+X${5}}")
-			__sx_num_is_int_base 10 "${2}" && __sx_num_is_int_safe_inv "${4}" || return M_EX_USAGE;;
-	esac
+		"${2+X${2}}") ;;
+		"${3+X${3}}" | "${4+X${4}}") __sx_num_is_int_base 10 "${2}";;
+		"${5+X${5}}") __sx_num_is_int_base 10 "${2}" && __sx_num_is_int_safe_inv "${4}";;
+		*) __sx_num_is_int_base 10 ${2:+"${2}"};;
+	esac || return M_EX_USAGE
 
 	__sx_arg_pad "${@}" || return
 }
@@ -2454,8 +2455,8 @@ M_RENAME_QI([|dnl
 ### __sx_arg_pad - 引数リストをパディングスキーマで整形する（内部用）
 ##
 ## 使い方:
-##   __sx_arg_pad [bind [len [val [flg]]]] ::: [arg ...]
-##   __sx_arg_pad [bind] [arg ...]
+##   __sx_arg_pad bind [len [val [flg]]] ::: [arg ...]
+##   __sx_arg_pad bind [len [arg ...]]
 ##
 ## 説明:
 ##   sx_arg_pad の内部実装。
@@ -2468,27 +2469,25 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_bind Q_len Q_val Q_flg|])dnl
 
 __sx_arg_pad() {
+	Q_bind="${1}"
+
 	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}") shift;;
-		"${2+X${2}}")
-			Q_bind="${1}"
-			shift 2
-			;;
+		"${2+X${2}}") shift 2;;
 		"${3+X${3}}")
-			Q_bind="${1}" Q_len="${2}"
+			Q_len="${2}"
 			shift 3
 			;;
 		"${4+X${4}}")
-			Q_bind="${1}" Q_len="${2}" Q_val="${3}"
+			Q_len="${2}" Q_val="${3}"
 			shift 4
 			;;
 		"${5+X${5}}")
-			Q_bind="${1}" Q_len="${2}" Q_val="${3}" Q_flg="${4}"
+			Q_len="${2}" Q_val="${3}" Q_flg="${4}"
 			shift 5
 			;;
 		*)
-			Q_bind="${1-}"
-			shift "$((0${1+1}))"
+			Q_len="${2-}"
+			shift ${2+'2'}
 			;;
 	esac
 
@@ -2709,8 +2708,8 @@ M_RENAME_Q([|dnl
 ### sx_arg_resize - 引数リストを指定された形状にリサイズする
 ##
 ## 使い方:
-##   sx_arg_resize [bind [shape [pad_val [flag]]]] ::: [arg ...]
-##   sx_arg_resize [bind] [arg ...]
+##   sx_arg_resize bind [shape [pad_val [flag]]] ::: [arg ...]
+##   sx_arg_resize bind [shape [arg ...]]
 ##
 ## 説明:
 ##   与えられた引数リスト [arg ...] を、指定された shape の総要素数に
@@ -2730,9 +2729,12 @@ M_RENAME_Q([|dnl
 ##   2 つの呼び出し形式がある:
 ##     1) ::: 形式: bind/shape/val/flag を ::: より前の位置引数で指定し、
 ##        ::: 以降をデータとして扱う。設定引数とデータを明確に分離できる。
-##     2) 簡略形式: bind のみを第一引数で指定し、第二引数以降はすべてデータ
-##        として扱われる。この形式では shape は空になり、
-##        リサイズは行われず単にクォートのみ行う。
+##     2) 簡略形式: 第一引数が bind、第二引数が shape、第三引数以降がデータ
+##        となる。pad_val は空文字列、flag は 0 とする。
+##   bind は必須（空文字列可）。shape の省略時・空指定時はデータの個数を使用し、
+##   リサイズせずクォートする。
+##   ::: は SX_CFG_SEP の値を使用する。データ先頭付近にその値を含む場合は、
+##   ::: 形式で境界を明示する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -2748,22 +2750,19 @@ sx_arg_resize() {
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
 	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
-	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}") ;;
-		*)
-			__sx_var_is_bind ${1+"${1}"} || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-			__sx_var_is_bindable ${1+"${1}"} || return M_EX_NOPERM
-			;;
-	esac
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	Q_shape=
 	case "X${SX_CFG_SEP}" in
+		"${2+X${2}}") ;;
 		"${3+X${3}}" | "${4+X${4}}") Q_shape="${2}";;
 		"${5+X${5}}")
 			__sx_num_is_nat0_safe "${4:-}" || return M_EX_USAGE
 			Q_shape="${2}"
 			;;
+			*) Q_shape="${2-}";;
 	esac
 
 	case "${Q_shape}" in *::* | *-[02-9]* | *[!:0-9-]* | *-1*-1* | :* | *: | *-1[!:]*)
@@ -2781,7 +2780,8 @@ M_RENAME_QI([|dnl
 ### __sx_arg_resize - 引数リストをリサイズする（内部用）
 ##
 ## 使い方:
-##   __sx_arg_resize 結果変数名 [形状 [パディング値]] ::: [値 ...]
+##   __sx_arg_resize bind [shape [pad_val [flag]]] ::: [値 ...]
+##   __sx_arg_resize bind [shape [値 ...]]
 ##
 ## 説明:
 ##   ::: セパレータをパースし、形状を解析してリサイズを実行する。
@@ -2792,27 +2792,25 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_padded Q_bind Q_shape Q_val Q_inferred Q_total Q_out Q_arg Q_tmp Q_cnt Q_dim Q_group Q_flg|])dnl
 
 __sx_arg_resize() {
+	Q_bind="${1}"
+
 	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}") shift;;
-		"${2+X${2}}")
-			Q_bind="${1}"
-			shift 2
-			;;
+		"${2+X${2}}") shift 2;;
 		"${3+X${3}}")
-			Q_bind="${1}" Q_shape="${2}"
+			Q_shape="${2}"
 			shift 3
 			;;
 		"${4+X${4}}")
-			Q_bind="${1}" Q_shape="${2}" Q_val="${3}"
+			Q_shape="${2}" Q_val="${3}"
 			shift 4
 			;;
 		"${5+X${5}}")
-			Q_bind="${1}" Q_shape="${2}" Q_val="${3}" Q_flg="${4}"
+			Q_shape="${2}" Q_val="${3}" Q_flg="${4}"
 			shift 5
 			;;
 		*)
-			Q_bind="${1-}"
-			shift "$((0${1+1}))"
+			Q_shape="${2-}"
+			shift ${2+'2'}
 			;;
 	esac
 
@@ -2940,8 +2938,8 @@ __sx_arg_range() {
 ### sx_arg_rfind - 引数リストから指定された値を末尾から探し、そのインデックスまたは値を取得する
 ##
 ## 使い方:
-##   sx_arg_rfind [結果変数名 [検索対象 [フラグ]]] ::: [値 ...]
-##   sx_arg_rfind 結果変数名 [値 ...]
+##   sx_arg_rfind bind [検索対象 [フラグ]] ::: [値 ...]
+##   sx_arg_rfind bind [検索対象 [値 ...]]
 ##
 ## 説明:
 ##   sx_arg_find と同じだが、末尾から前方向に検索する。
@@ -2952,7 +2950,9 @@ __sx_arg_range() {
 ##     0 を返すと一致、非0 は不一致としてスキップ。
 ##     count は現在の要素より右側で一致した件数（0開始）。
 ##   取得件数はバインド形式によって決まる。
-##   呼び出し形式は sx_arg_find に準ずる。
+##   呼び出し形式は sx_arg_find に準ずる。bind は必須（空文字列可）。
+##   ::: なしでは第2引数が検索対象、第3引数以降がデータとなり、フラグは 0。
+##   空 bind では検索せず 1 を返す。
 ##   引数個数・インデックス・一致数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
@@ -2966,17 +2966,12 @@ sx_arg_rfind() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
 
-	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}") ;;
-		*)
-			__sx_var_is_bind ${1+"${1}"} || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-			__sx_var_is_bindable ${1+"${1}"} || return M_EX_NOPERM
-			;;
-	esac
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}" | "${2+X${2}}" | "${3+X${3}}") ;;
+		"${2+X${2}}" | "${3+X${3}}") ;;
 		"${4+X${4}}")
 			__sx_num_is_nat0_safe "${3}" || return M_EX_USAGE
 
@@ -2994,6 +2989,7 @@ M_RENAME_QI([|dnl
 ##
 ## 使い方:
 ##   __sx_arg_rfind 結果変数名 [検索対象 [フラグ]] ::: [値 ...]
+##   __sx_arg_rfind 結果変数名 [検索対象 [値 ...]]
 ##
 ## 説明:
 ##   ::: セパレータをパースし、フラグに応じて __sx_arg_rfind_lit または
@@ -3007,22 +3003,21 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_bind Q_tgt Q_flg|])dnl
 
 __sx_arg_rfind() {
+	Q_bind="${1}"
+
 	case "X${SX_CFG_SEP}" in
-		"${1+X${1}}") shift;;
-		"${2+X${2}}")
-			Q_bind="${1}"
-			shift 2;;
+		"${2+X${2}}") shift 2;;
 		"${3+X${3}}")
-			Q_bind="${1}" Q_tgt="${2}"
+			Q_tgt="${2}"
 			shift 3
 			;;
 		"${4+X${4}}")
-			Q_bind="${1}" Q_tgt="${2}" Q_flg="${3}"
+			Q_tgt="${2}" Q_flg="${3}"
 			shift 4
 			;;
 		*)
-			Q_bind="${1-}"
-			shift "$((0${1+1}))"
+			Q_tgt="${2-}"
+			shift ${2+'2'}
 			;;
 	esac
 
@@ -3275,6 +3270,7 @@ __sx_arg_rfold() {
 ##   指定された値をそれぞれシングルクォートで囲み、
 ##   逆順（最後の引数が先頭）にスペース区切りで結合した文字列を作成して結果変数に格納する。
 ##   第一引数にはバインド形式を指定して分配代入を行うことも可能。
+##   第一引数は必須（空文字列可）。空 bind では結果を格納せず成功する。
 ##   引数個数に SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:
@@ -3287,9 +3283,9 @@ sx_arg_rquote() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
 
-	__sx_var_is_bind "${1-}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-	__sx_var_is_bindable "${1-}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_arg_rquote "${@}"
 }

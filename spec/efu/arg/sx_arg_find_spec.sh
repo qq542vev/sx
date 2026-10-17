@@ -9,6 +9,16 @@ Describe 'sx_arg_find -efu 環境検証'
     The status should be success
   End
 
+  It '不正な bind をシェルエラーにせず64で拒否する'
+    When run efu_run sx_arg_find 'a b' target ::: target
+    The status should equal 64
+  End
+
+  It 'SEP なしでは第2引数を検索対象にする'
+    When run efu_run sx_arg_find res b a b
+    The status should be success
+  End
+
   Context '多倍長経路'
     Parameters
       0

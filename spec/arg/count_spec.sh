@@ -35,10 +35,16 @@ Describe 'sx_arg_count'
 		The variable res should equal 1
 	End
 
-	It '::: 省略で空要素の数を返すこと'
-		When call sx_arg_count res "a" "" "c"
+	It '簡易形式で空の検索対象を明示して空要素の数を返すこと'
+		When call sx_arg_count res "" "a" "" "c"
 		The status should be success
 		The variable res should equal 1
+	End
+
+	It '簡易形式では第2引数を検索対象、第3引数以降をデータとして数えること'
+		When call sx_arg_count res a a 1 a
+		The status should be success
+		The variable res should equal 2
 	End
 
 	It '特殊文字を含む値を正しくカウントすること'
@@ -62,21 +68,21 @@ Describe 'sx_arg_count'
 	Describe 'Callback モード (SX_ARG_COUNT_CB)'
 		It 'コールバックの終了ステータスで一致をカウントすること'
 			is_even() { [ $(($1 % 2)) -eq 0 ]; }
-			When call sx_arg_count res is_even $SX_ARG_COUNT_CB ::: 1 2 3 4 5
+			When call sx_arg_count res is_even "$SX_ARG_COUNT_CB" ::: 1 2 3 4 5
 			The status should be success
 			The variable res should equal 2
 		End
 
 		It '全要素がコールバックに一致した場合'
 			all_true() { return 0; }
-			When call sx_arg_count res all_true $SX_ARG_COUNT_CB ::: a b c
+			When call sx_arg_count res all_true "$SX_ARG_COUNT_CB" ::: a b c
 			The status should be success
 			The variable res should equal 3
 		End
 
 		It 'コールバックの一致なしで0を返すこと'
 			all_false() { return 1; }
-			When call sx_arg_count res all_false $SX_ARG_COUNT_CB ::: a b c
+			When call sx_arg_count res all_false "$SX_ARG_COUNT_CB" ::: a b c
 			The status should be success
 			The variable res should equal 0
 		End
@@ -91,7 +97,7 @@ Describe 'sx_arg_count'
 		It 'コールバック内で外部変数を参照できること'
 			min_val=3
 			is_ge_min() { [ "${1}" -ge "${min_val}" ]; }
-			When call sx_arg_count res is_ge_min $SX_ARG_COUNT_CB ::: 1 2 3 4 5
+			When call sx_arg_count res is_ge_min "$SX_ARG_COUNT_CB" ::: 1 2 3 4 5
 			The status should be success
 			The variable res should equal 3
 		End

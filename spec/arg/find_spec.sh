@@ -1,4 +1,6 @@
 #!/bin/sh
+# shellcheck shell=sh disable=SC2154,SC2329
+# 結果変数は参照渡しで設定され、コールバックはテスト対象から間接的に呼ばれる。
 
 eval "$(shellspec - -c) exit 1"
 
@@ -66,19 +68,19 @@ Describe 'sx_arg_find'
 	Describe 'Callback 検索 (SX_ARG_FIND_CB)'
 		It 'コールバックの終了ステータスで一致を判定する'
 			is_even() { [ $(($2 % 2)) -eq 0 ]; }
-			sx_arg_find res is_even $SX_ARG_FIND_CB ::: 1 2 3 4 5
+			sx_arg_find res is_even "$SX_ARG_FIND_CB" ::: 1 2 3 4 5
 			Assert [ "$res" = "2 4" ]
 		End
 
 		It 'コールバックが 0 を返すと一致とみなす'
 			all_true() { return 0; }
-			sx_arg_find res all_true $SX_ARG_FIND_CB ::: a b c
+			sx_arg_find res all_true "$SX_ARG_FIND_CB" ::: a b c
 			Assert [ "$res" = "1 2 3" ]
 		End
 
 		It 'コールバックが非0を返すと一致しない'
 			all_false() { return 1; }
-			When call sx_arg_find res all_false $SX_ARG_FIND_CB ::: a b c
+			When call sx_arg_find res all_false "$SX_ARG_FIND_CB" ::: a b c
 			The status should be failure
 			The variable res should equal ""
 		End
@@ -93,13 +95,13 @@ Describe 'sx_arg_find'
 
 		It 'バインド形式と併用できる'
 			is_even() { [ $(($2 % 2)) -eq 0 ]; }
-			sx_arg_find "2res:" is_even $SX_ARG_FIND_CB ::: 1 2 3 4 5 6
+			sx_arg_find "2res:" is_even "$SX_ARG_FIND_CB" ::: 1 2 3 4 5 6
 			Assert [ "$res" = "2 4" ]
 		End
 
 		It '分配代入と併用できる'
 			is_even() { [ $(($2 % 2)) -eq 0 ]; }
-			sx_arg_find "idx1:idx2" is_even $SX_ARG_FIND_CB ::: 1 2 3 4 5 6
+			sx_arg_find "idx1:idx2" is_even "$SX_ARG_FIND_CB" ::: 1 2 3 4 5 6
 			Assert [ "$idx1" = "2" ]
 			Assert [ "$idx2" = "4 6" ]
 		End
@@ -107,7 +109,7 @@ Describe 'sx_arg_find'
 		It 'コールバック内で外部変数を参照できる'
 			min_val=3
 			is_ge_min() { [ "${2}" -ge "${min_val}" ]; }
-			sx_arg_find res is_ge_min $SX_ARG_FIND_CB ::: 1 2 3 4 5
+			sx_arg_find res is_ge_min "$SX_ARG_FIND_CB" ::: 1 2 3 4 5
 			Assert [ "$res" = "3 4 5" ]
 		End
 
@@ -169,14 +171,35 @@ Describe 'sx_arg_find'
 			Assert [ "$res" = "2 3" ]
 		End
 
-		It '::: 以降にデータがない場合に正しく処理する'
+		It '検索対象を省略すると空文字列を探す'
 			When call sx_arg_find res ::: "target" "other"
 			The status should be failure
 			The variable res should equal ""
 		End
+
+		It '設定を省略して空要素のインデックスを返す'
+			When call sx_arg_find res ::: a '' c
+			The status should be success
+			The variable res should equal 2
+		End
+	End
+
+	Describe '簡易形式（bind・検索対象・データ）'
+		It '第2引数を検索対象とし数値のデータもフラグとして消費しない'
+			When call sx_arg_find res b b 1 b
+			The status should be success
+			The variable res should equal '1 3'
+		End
 	End
 
 	Describe 'エラーケース'
+		It '空白を含む bind を分割せず使用法エラーにする'
+			When call sx_arg_find 'a b' target ::: target
+			The status should equal "$SX_EX_USAGE"
+			The variable a should be undefined
+			The variable b should be undefined
+		End
+
 		It '無効な変数名に対して使用法エラーを返す'
 			When call sx_arg_find "1invalid" "target" ::: "target"
 			The status should equal "$SX_EX_USAGE"

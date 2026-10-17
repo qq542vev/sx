@@ -169,9 +169,9 @@ Describe 'sx_arg_resize'
     End
   End
 
-  Describe 'Form 2（short form: クォートのみ）'
-    It '複数の引数をクォートして格納'
-      When call sx_arg_resize res hello world
+  Describe '簡易形式（bind・形状・データ）'
+    It '第2引数の形状に従って第3引数以降を格納する'
+      When call sx_arg_resize res 2 hello world
       The status should be success
       eval "set -- $res"
       The value "$1" should equal "hello"
@@ -183,6 +183,36 @@ Describe 'sx_arg_resize'
       When call sx_arg_resize res
       The status should be success
       The variable res should equal ""
+    End
+
+    It '形状が空ならデータの個数を使用する'
+      When call sx_arg_resize res '' hello world
+      The status should be success
+      The variable res should equal "'hello' 'world'"
+    End
+
+    It '形状が不正な第2引数をデータとして扱わず拒否する'
+      res=old
+      When call sx_arg_resize res hello world
+      The status should equal 64
+      The variable res should equal old
+    End
+
+    It '多次元の形状に従ってグループ化し空文字列で埋める'
+      When call sx_arg_resize res 2:2 a b c
+      The status should be success
+      eval "set -- $res"
+      The value "$#" should equal 2
+      The value "$1" should equal "'a' 'b'"
+      The value "$2" should equal "'c' ''"
+    End
+  End
+
+  Describe '設定を省略した SEP 形式'
+    It '第2引数が SEP の場合は全データをクォートする'
+      When call sx_arg_resize res ::: a b
+      The status should be success
+      The variable res should equal "'a' 'b'"
     End
   End
 

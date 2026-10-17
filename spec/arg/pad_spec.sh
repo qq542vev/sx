@@ -1,4 +1,6 @@
 #!/bin/sh
+# shellcheck shell=sh disable=SC2329
+# コールバックはテスト対象から間接的に呼ばれる。
 
 eval "$(shellspec - -c) exit 1"
 
@@ -127,9 +129,9 @@ Describe 'sx_arg_pad'
     End
   End
 
-  Describe 'Form 2 (short form: クォートのみ)'
-    It '複数の引数をクォートして格納すること'
-      When call sx_arg_pad res hello world
+  Describe '簡易形式（bind・長さ・データ）'
+    It '長さ0では第3引数以降をクォートして格納すること'
+      When call sx_arg_pad res 0 hello world
       The status should be success
       eval "set -- $res"
       The value "$1" should equal "hello"
@@ -144,7 +146,7 @@ Describe 'sx_arg_pad'
     End
 
     It '特殊文字を含む引数をクォートすること'
-      When call sx_arg_pad res "it's" 'a b'
+      When call sx_arg_pad res 0 "it's" 'a b'
       The status should be success
       eval "set -- $res"
       The value "$1" should equal "it's"
@@ -153,11 +155,37 @@ Describe 'sx_arg_pad'
     End
 
     It '分割代入で結果を分配すること'
-      When call sx_arg_pad 'a:b:rest' hello world
+      When call sx_arg_pad 'a:b:rest' 0 hello world
       The status should be success
       The variable a should equal "hello"
       The variable b should equal "world"
       The variable rest should equal ""
+    End
+
+    Context '空文字列でパディング'
+      Parameters
+        3 "'a' 'b' ''"
+        '-3' "'' 'a' 'b'"
+      End
+
+      It '第2引数の符号に従って既定の空文字列で埋めること'
+        When call sx_arg_pad res "$1" a b
+        The status should be success
+        The variable res should equal "$2"
+      End
+    End
+
+    It '空の長さではパディングせずデータを保持すること'
+      When call sx_arg_pad res '' a b
+      The status should be success
+      The variable res should equal "'a' 'b'"
+    End
+
+    It '数値でない第2引数をデータとして扱わず拒否すること'
+      res=old
+      When call sx_arg_pad res hello world
+      The status should equal 64
+      The variable res should equal old
     End
   End
 

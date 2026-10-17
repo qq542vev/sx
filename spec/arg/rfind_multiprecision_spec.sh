@@ -183,7 +183,7 @@ Describe 'sx_arg_rfind 多倍長対応'
 
   It '簡易形式でも多倍長経路で空要素を逆順に探す'
     select_rfind_path nat0
-    When call sx_arg_rfind res '' x ''
+    When call sx_arg_rfind res '' '' x ''
     The status should be success
     The variable res should equal '3 1'
   End

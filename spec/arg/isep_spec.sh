@@ -1,4 +1,6 @@
 #!/bin/sh
+# shellcheck shell=sh disable=SC2154,SC2329
+# 結果変数は参照渡しで設定され、コールバックはテスト対象から間接的に呼ばれる。
 
 eval "$(shellspec - -c) exit 1"
 
@@ -74,16 +76,14 @@ Describe 'sx_arg_isep'
     The status should equal 64
   End
 
-  It 'bind引数のみを消費し、$2以降はデータとして扱われること'
+  It '簡易形式では第2引数をセパレータ、第3引数以降をデータとして扱うこと'
     When call sx_arg_isep res "-" "a" "b"
     The status should be success
     eval "set -- $res"
-    The value "$1" should equal "-"
-    The value "$2" should equal ""
-    The value "$3" should equal "a"
-    The value "$4" should equal ""
-    The value "$5" should equal "b"
-    The value "$#" should equal 5
+    The value "$1" should equal "a"
+    The value "$2" should equal "-"
+    The value "$3" should equal "b"
+    The value "$#" should equal 3
   End
 
   Describe 'PRE / POST と limit の境界条件'

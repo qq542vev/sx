@@ -145,7 +145,7 @@ Describe 'sx_arg_find 多倍長対応'
       __sx_num_is_nat0_safe() { return 0; }
       __sx_num_is_int_fit_dec() { fit_called=1; return 1; }
       cb() { called=1; }
-      case "$2" in '') set -- ::: a b;; *) set -- res cb 2 :::;; esac
+      case "$2" in '') set -- '' ::: a b;; *) set -- res cb 2 :::;; esac
       When call sx_arg_find "$@"
       The status should equal 1
       The variable fit_called should equal 0
@@ -177,9 +177,9 @@ Describe 'sx_arg_find 多倍長対応'
     The variable res should equal old
   End
 
-  It '検索対象を省略して空文字列を探せる'
+  It '簡易形式で空の検索対象を明示して空文字列を探せる'
     select_find_path nat0
-    When call sx_arg_find res '' x ''
+    When call sx_arg_find res '' '' x ''
     The status should be success
     The variable res should equal '1 3'
   End
