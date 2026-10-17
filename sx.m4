@@ -16350,28 +16350,35 @@ __sx_csv_parse() {
 ### sx_uri_enc - URI の構成要素に入れるバイト列をパーセントエンコードする
 ##
 ## 使い方:
-##   sx_uri_enc 結果変数名 [入力文字列]
+##   sx_uri_enc バインド形式 [入力文字列 ...]
 ##
 ## 説明:
 ##   C (POSIX) ロケールで起動したシェルから呼び出すことを前提とする。
-##   入力は NUL を除くバイト列とし、省略時は空文字列として扱う。
+##   各入力は NUL を除くバイト列とし、入力省略時は 0 件として扱う。
 ##   ASCII の英数字と - . _ ~ を保持し、その他を大文字の %HH に変換する。
 ##   空白は %20、+ は %2B、% は %25 とし、既存の %HH も再エンコードする。
 ##   文字コードの変換・検証は行わない。UTF-8 入力はそのバイト列を変換する。
 ##   URI 全体の区切り文字を保持する用途ではなく、構成要素の値に使用する。
-##   ロケールの検査・変更は行わない。SX_CFG_NUM_RANGE には依存しない。
-##   結果変数が配列の場合、呼び出し前に sx_var_unset で解放すること。
+##   ロケールの検査・変更は行わない。
+##   バインド先を初期化し、各入力の変換結果を sx_var_ubind と同じ規則で渡す。
+##   単一変数には結果を空白区切りで蓄積し、a:b: 等では順番に分配する。
+##   @name / N@name による配列への分配にも対応する。
+##   空文字列は代入スロットと配列で保持するが、クォートなしの蓄積では
+##   空要素の境界を保持しない。入力なしと空文字列 1 件は異なる。
+##   バインド先が枯渇した場合は残りの入力を処理せず、成功を返す。
+##   既存配列をバインド先へ使い回す場合は、事前に sx_var_unset で解放すること。
 ##
 ## 終了ステータス:
-##    0  成功 (SX_EX_OK)
-##   64  引数の個数または結果変数名が不正 (SX_EX_USAGE)
-##   77  結果変数が読み取り専用 (SX_EX_NOPERM)
+##    0  成功（バインド枯渇による早期終了を含む）(SX_EX_OK)
+##   64  バインド形式が省略または不正 (SX_EX_USAGE)
+##   77  バインド先に読み取り専用の変数がある (SX_EX_NOPERM)
+##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_uri_enc() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_enc "${@}" || return; return 0;; esac
 
-	case "${#}" in 1 | 2) ;; *) return M_EX_USAGE;; esac
-	sx_var_is_name "${1}" || return M_EX_USAGE
-	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_uri_enc "${@}"
 }
@@ -16381,48 +16388,60 @@ M_RENAME_QI([|dnl
 # このブロック内で定義し、生成する作業変数も Q_* の名前変換を通す。
 define([|__sx_m4_gen_uri_enc_case|], [|dnl
 ifelse(eval(($1 >= 48 && $1 <= 57) || ($1 >= 65 && $1 <= 90) || ($1 >= 97 && $1 <= 122) || $1 == 45 || $1 == 46 || $1 == 95 || $1 == 126), 0, [|dnl
-format([|				$'\x%02X') M_STR_APPEND([|Q_out|], [|'%%%02X'|]);;
+format([|					$'\x%02X') M_STR_APPEND([|Q_out|], [|'%%%02X'|]);;
 |], $1, $1)|])dnl
 ifelse($1, 255, [||], [|__sx_m4_gen_uri_enc_case(incr($1))|])|])dnl
 
 ### __sx_uri_enc - バイト列をパーセントエンコードする（内部用）
 ##
 ## 使い方:
-##   __sx_uri_enc 結果変数名 [入力文字列]
+##   __sx_uri_enc バインド形式 [入力文字列 ...]
 ##
 ## 説明:
 ##   内部実装。引数チェックは行わない。
 ##   C (POSIX) ロケールで、保持区間を一括コピーし変換対象区間だけを走査する。
 ##   バイトと %HH の対応はビルド時に生成し、実行時の数値変換は行わない。
-##   結果は最後に一度だけ代入する。
+##   バインド先を初期化し、各入力を変換してから __sx_var_ubind で分配する。
+##   バインド先が枯渇したら残りの入力の変換を打ち切る。
 ##
 ## 終了ステータス:
-##    0  成功
-define([|CLEANUP|], [|Q_rest Q_out Q_safe Q_chunk|])dnl
+##    0  成功（バインド枯渇による早期終了を含む）
+define([|CLEANUP|], [|Q_bind Q_rest Q_out Q_safe Q_chunk|])dnl
 
 __sx_uri_enc() {
-	Q_rest="${2-}" Q_out='' Q_safe="${SX_STR_ALNUM}-._~"
+	__sx_var_bind_init "${1}"
+	Q_bind="${1}" Q_safe="${SX_STR_ALNUM}-._~"
+	shift
 
-	while M_STR_NE([|"${Q_rest}"|], [|''|]); do
-		# 最初の非予約文字より前にある変換対象区間を切り出す。
-		Q_chunk="${Q_rest%%["${Q_safe}"]*}"
-		Q_rest="${Q_rest#"${Q_chunk}"}"
+	for Q_rest in "${@}"; do
+		case "${Q_bind}" in '')
+			break
+		esac
 
-		while M_STR_NE([|"${Q_chunk}"|], [|''|]); do
-			case "${Q_chunk%"${Q_chunk#?}"}" in
+		Q_out=
+
+		while M_STR_NE([|"${Q_rest}"|], [|''|]); do
+			# 最初の非予約文字より前にある変換対象区間を切り出す。
+			Q_chunk="${Q_rest%%["${Q_safe}"]*}"
+			Q_rest="${Q_rest#"${Q_chunk}"}"
+
+			while M_STR_NE([|"${Q_chunk}"|], [|''|]); do
+				case "${Q_chunk%"${Q_chunk#?}"}" in
 __sx_m4_gen_uri_enc_case(1)
-			esac
+				esac
 
-			Q_chunk="${Q_chunk#?}"
+				Q_chunk="${Q_chunk#?}"
+			done
+
+			# 後続の非予約文字は一文字ずつ調べず、まとめて結果へ追加する。
+			Q_chunk="${Q_rest%%[!"${Q_safe}"]*}"
+			M_STR_APPEND([|Q_out|], [|"${Q_chunk}"|])
+			Q_rest="${Q_rest#"${Q_chunk}"}"
 		done
 
-		# 後続の非予約文字は一文字ずつ調べず、まとめて結果へ追加する。
-		Q_chunk="${Q_rest%%[!"${Q_safe}"]*}"
-		M_STR_APPEND([|Q_out|], [|"${Q_chunk}"|])
-		Q_rest="${Q_rest#"${Q_chunk}"}"
+		__sx_var_ubind Q_bind "${Q_bind}" "${Q_out}"
 	done
 
-	M_VAR_SET([|${1}|], [|${Q_out}|])
 	unset CLEANUP
 }
 undefine([|__sx_m4_gen_uri_enc_case|])dnl

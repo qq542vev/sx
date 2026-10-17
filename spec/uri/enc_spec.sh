@@ -57,11 +57,135 @@ Describe 'sx_uri_enc'
     The variable res should equal 'a%20b%25'
   End
 
-  It '数値範囲設定に依存しない'
+  It '数値範囲設定が不正なら結果を変更せず拒否する'
+    res=before
     SX_CFG_NUM_RANGE=invalid
     When call sx_uri_enc res 'a/b'
+    The status should equal 78
+    The variable res should equal before
+  End
+
+  It '複数入力をクォートせず空白区切りで蓄積する'
+    When call sx_uri_enc res 'a b' 'c/d' '%20'
     The status should be success
-    The variable res should equal 'a%2Fb'
+    The variable res should equal 'a%20b c%2Fd %2520'
+  End
+
+  It '分配スロットへ順番に代入して残りを蓄積する'
+    When call sx_uri_enc 'item_a:item_b:rest' 'a b' 'c/d' 'x+y' 'z%'
+    The status should be success
+    The variable item_a should equal 'a%20b'
+    The variable item_b should equal 'c%2Fd'
+    The variable rest should equal 'x%2By z%25'
+  End
+
+  It '数値プレフィックスの蓄積先へ指定件数を渡す'
+    When call sx_uri_enc '2group:rest' 'a b' 'c/d' 'x+y' 'z%'
+    The status should be success
+    The variable group should equal 'a%20b c%2Fd'
+    The variable rest should equal 'x%2By z%25'
+  End
+
+  It '空スロットと件数指定で入力をスキップする'
+    When call sx_uri_enc 'item_a::2:rest' a ignored skip skip 'b c'
+    The status should be success
+    The variable item_a should equal a
+    The variable rest should equal 'b%20c'
+  End
+
+  It 'バインド枯渇後の余分な入力を破棄して成功する'
+    When call sx_uri_enc 'item_a:item_b:' 'a b' 'c/d' ignored extra
+    The status should be success
+    The variable item_a should equal 'a%20b'
+    The variable item_b should equal 'c%2Fd'
+  End
+
+  It '空のバインド形式はすべての入力を破棄する'
+    res=before
+    When call sx_uri_enc '' 'a b' extra
+    The status should be success
+    The variable res should equal before
+  End
+
+  It '入力なしでは代入スロットを unset し蓄積先を空にする'
+    item_a=before rest=before
+    When call sx_uri_enc 'item_a:rest'
+    The status should be success
+    The variable item_a should be undefined
+    The variable rest should equal ''
+  End
+
+  It '空文字列を代入スロットへ渡し未到達のスロットと区別する'
+    item_a=before item_b=before
+    When call sx_uri_enc 'item_a:item_b:' ''
+    The status should be success
+    The variable item_a should equal ''
+    The variable item_b should be undefined
+  End
+
+  It '入力が少なくても数値プレフィックスの蓄積先を初期化する'
+    group=before rest=before
+    When call sx_uri_enc '2group:rest' 'a b'
+    The status should be success
+    The variable group should equal 'a%20b'
+    The variable rest should equal ''
+  End
+
+  It '蓄積先の先頭の空文字列は既存の ubind と同じ扱いにする'
+    When call sx_uri_enc res '' 'a b'
+    The status should be success
+    The variable res should equal 'a%20b'
+  End
+
+  It '蓄積先の途中の空文字列は ubind の区切り規則に従う'
+    When call sx_uri_enc res a '' b
+    The status should be success
+    The variable res should equal 'a  b'
+  End
+
+  It '配列に空文字列を含むすべての結果を保存する'
+    When call sx_uri_enc '@res' 'a b' '' 'c/d'
+    The status should be success
+    The variable res_len should equal 3
+    The variable res_0 should equal 'a%20b'
+    The variable res_1 should equal ''
+    The variable res_2 should equal 'c%2Fd'
+    Assert sx_var_is_arr res
+  End
+
+  It '既存配列を明示的に解放してからバインド先として再利用する'
+    sx_arr_gen res old old old
+    sx_var_unset res
+    When call sx_uri_enc '@res' 'a b'
+    The status should be success
+    The variable res_len should equal 1
+    The variable res_0 should equal 'a%20b'
+    The variable res_1 should be undefined
+    The variable res_2 should be undefined
+  End
+
+  It '入力なしの配列バインドは空配列にする'
+    When call sx_uri_enc '@res'
+    The status should be success
+    The variable res_len should equal 0
+    Assert sx_var_is_arr res
+  End
+
+  It '数値プレフィックス付き配列と後続スロットへ分配する'
+    When call sx_uri_enc 'item_a:2@items:rest' 'a b' '' 'c/d' 'e+f'
+    The status should be success
+    The variable item_a should equal 'a%20b'
+    The variable items_len should equal 2
+    The variable items_0 should equal ''
+    The variable items_1 should equal 'c%2Fd'
+    The variable rest should equal 'e%2Bf'
+  End
+
+  It '未使用の配列スロットも先に初期化する'
+    When call sx_uri_enc 'item_a:@items' a
+    The status should be success
+    The variable item_a should equal a
+    The variable items_len should equal 0
   End
 
   Context '公開・内部・検証省略'
@@ -71,7 +195,7 @@ Describe 'sx_uri_enc'
       __sx_uri_enc 0
     End
 
-    It '各経路で入力省略を空文字列として扱う'
+    It '各経路で入力省略を 0 件として扱う'
       SX_CFG_SKIP_CHK=$2
       res=before
       When call "$1" res
@@ -85,18 +209,38 @@ Describe 'sx_uri_enc'
       The status should be success
       The variable res should equal '%25a%20b%2F'
     End
+
+    It '各経路で分配・配列・蓄積を組み合わせられる'
+      SX_CFG_SKIP_CHK=$2
+      When call "$1" 'item_a:2@items:rest' 'a b' '' 'c/d' 'x+y' 'z%'
+      The status should be success
+      The variable item_a should equal 'a%20b'
+      The variable items_len should equal 2
+      The variable items_0 should equal ''
+      The variable items_1 should equal 'c%2Fd'
+      The variable rest should equal 'x%2By z%25'
+    End
+
+    It '各経路でバインドが枯渇しても成功する'
+      SX_CFG_SKIP_CHK=$2
+      When call "$1" 'item_a:' 'a b' 'c/d'
+      The status should be success
+      The variable item_a should equal 'a%20b'
+    End
   End
 
   Context '引数検証'
     Parameters
-      ''
       '1invalid'
       'invalid-name'
-      'res:other'
       'res;command'
+      '0res:other'
+      '2res'
+      'res:res'
+      'res:@res'
     End
 
-    It '不正な結果変数名を拒否する'
+    It '不正なバインド形式を拒否する'
       When call sx_uri_enc "$1" value
       The status should equal 64
       The stdout should equal ''
@@ -104,16 +248,9 @@ Describe 'sx_uri_enc'
     End
   End
 
-  It '結果変数名の省略を拒否する'
+  It 'バインド形式の省略を拒否する'
     When call sx_uri_enc
     The status should equal 64
-  End
-
-  It '余分な引数を拒否し結果を変更しない'
-    res=before
-    When call sx_uri_enc res input extra
-    The status should equal 64
-    The variable res should equal before
   End
 
   It '読み取り専用の結果変数を拒否し値を保持する'
@@ -122,6 +259,24 @@ Describe 'sx_uri_enc'
     The status should equal 77
     The variable res should equal before
     The stderr should equal ''
+  End
+
+  It '後続スロットが読み取り専用なら先頭も変更しない'
+    item_a=before
+    readonly item_b=before
+    When call sx_uri_enc 'item_a:item_b:' a b
+    The status should equal 77
+    The variable item_a should equal before
+    The variable item_b should equal before
+  End
+
+  It '配列要素が読み取り専用なら初期化前に拒否する'
+    sx_arr_gen res old
+    readonly res_0
+    When call sx_uri_enc '@res' 'a b'
+    The status should equal 77
+    The variable res_len should equal 1
+    The variable res_0 should equal old
   End
 
   Context 'C ロケールでの任意バイト列'
