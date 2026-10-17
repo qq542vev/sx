@@ -1443,7 +1443,7 @@ __sx_arg_find() {
 
 	__sx_var_bind_init "${1}"
 
-	case "${1:+X}${4+X}" in '' | X)
+	case "${1:+${4+X}}" in '')
 		return 1
 	esac
 
@@ -2283,7 +2283,7 @@ define([|CLEANUP|], [|Q_arg Q_next Q_ret Q_sts Q_fmt|])dnl
 __sx_arg_map() {
 	__sx_var_bind_init "${1}"
 
-	case "${1:+X}${3+X}" in '' | X)
+	case "${1:+${3+X}}" in '')
 		return
 	esac
 
@@ -3031,7 +3031,7 @@ __sx_arg_rfind() {
 
 	__sx_var_bind_init "${1}"
 
-	case "${1:+X}${4+X}" in '' | X)
+	case "${1:+${4+X}}" in '')
 		return 1
 	esac
 
@@ -3313,7 +3313,7 @@ define([|CLEANUP|], [|Q_bind Q_i Q_type|])dnl
 __sx_arg_rquote() {
 	__sx_var_bind_init "${1}"
 
-	case "${1:+X}${2+X}" in '' | X)
+	case "${1:+${2+X}}" in '')
 		return
 	esac
 
@@ -3330,7 +3330,7 @@ __sx_arg_rquote() {
 	while
 		eval __sx_var_bind Q_bind '"${Q_bind}"' "\"\${${Q_i}}\""
 
-		case "${Q_i}:${Q_bind:+X}" in 1:* | *:)
+		case "${Q_bind:+${Q_i}}" in '' | 1)
 			break
 		esac
 
@@ -11125,7 +11125,7 @@ __sx_str_cycle() {
 	Q_len="${#Q_str}"
 	Q_shift="${3:-1}"
 
-	case "${Q_str:+X}:${Q_shift}" in :* | *:0 | *:[+-]0)
+	case "${Q_str:+${Q_shift}}" in '' | 0 | [+-]0)
 		M_VAR_SET([|${1}|], [|${2}|])
 		unset CLEANUP
 		return
@@ -11225,7 +11225,7 @@ define([|CLEANUP|], [|Q_gs Q_cb_se Q_cb_ee|])dnl
 __sx_str_escape() {
 	set -- "${1}" "${2-}" "${3-}" "${4:-\\}" "${5:-}"
 
-	case "${2:+X}${3:+X}" in '' | X)
+	case "${2:+${3:+X}}" in '')
 		M_VAR_SET([|${1}|], [|${2}|])
 		return
 	esac
@@ -12164,7 +12164,7 @@ define([|CLEANUP|], [|Q_slen Q_plen Q_needed Q_cnt Q_rep Q_fill Q_type|])dnl
 __sx_str_pad() {
 	set -- "${1}" "${2-}" "${3-0}" "${4- }"
 
-	case "${3}:${4:+X}" in 0* | [+-]0* | *:)
+	case "${4:+${3}}" in '' | 0 | [+-]0*)
 		M_VAR_SET([|${1}|], [|${2}|])
 		return
 	esac
@@ -13154,9 +13154,9 @@ __sx_str_split_empty() {
 		# この境界で使った一回を減らす。Q_typeが : の場合、空または文字数を超える上限を保つ。
 		"${Q_type}" Q_lim "${Q_lim}"
 
-		# :* は残りが空、X:0 は残りが非空で回数を使い切った場合。
-		# コロンを挟むことで、無制限のQ_limと残りがともに空でも確実に判定できる。
-		case "${Q_str:+X}:${Q_lim}" in :* | X:0)
+		# 残りが空、または残り回数が0なら終了する。
+		# 無制限を表す空のQ_limはXに置き換え、残りがある間は走査を続ける。
+		case "${Q_str:+${Q_lim:-X}}" in '' | 0)
 			break
 		esac
 
@@ -13951,7 +13951,7 @@ __sx_str_tr() {
 	Q_abs="${Q_lim#[+-]}"
 	Q_cnt=0
 
-	case "${Q_str:+X}${Q_from:+X}" in '' | X)
+	case "${Q_str:+${Q_from:+X}}" in '')
 		__sx_var_bind '' "${Q_bind}" "${Q_str}" "${Q_cnt}" || :
 		unset CLEANUP
 		return
