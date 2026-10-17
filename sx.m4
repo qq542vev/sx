@@ -16442,3 +16442,200 @@ __sx_m4_gen_uri_enc_case(1)
 }
 undefine([|__sx_m4_gen_uri_enc_case|])dnl
 |], [|uri_enc|])dnl
+
+### sx_uri_is_pct - すべての入力のパーセント表記が正しいか確認する
+##
+## 使い方:
+##   sx_uri_is_pct [入力文字列 ...]
+##
+## 説明:
+##   各入力に含まれる % がすべて %HH（H は ASCII の16進数字）であるか確認する。
+##   % 以外の文字には制限を設けず、日本語や URI の区切り文字も許可する。
+##   %00 も許可する。文字コードや URI 全体の妥当性は検査しない。
+##   空文字列・入力なしは成功とし、最初の不一致で検査を打ち切る。
+##
+## 終了ステータス:
+##    0  すべての入力のパーセント表記が正しい (SX_EX_OK)
+##    1  不正なパーセント表記が含まれる
+sx_uri_is_pct() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_is_pct "${@}" || return; return 0;; esac
+
+	__sx_uri_is_pct "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+### __sx_uri_is_pct - パーセント表記の構文を確認する（内部用）
+##
+## 使い方:
+##   __sx_uri_is_pct [入力文字列 ...]
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   % の後にある非16進数字、または末尾の桁不足を case で検出する。
+##   空文字列・入力なしは成功とする。
+##
+## 終了ステータス:
+##    0  すべての入力のパーセント表記が正しい
+##    1  不正なパーセント表記が含まれる
+define([|CLEANUP|], [|Q_arg|])dnl
+
+__sx_uri_is_pct() {
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in *%[!"${SX_STR_XDIGIT}"]* | *%?[!"${SX_STR_XDIGIT}"]* | *% | *%?)
+			unset CLEANUP
+			return 1
+		esac
+	done
+
+	unset CLEANUP
+}
+|], [|uri_is_pct|])dnl
+
+### sx_uri_is_pct_safe - パーセント表記が正しく %00 を含まないか確認する
+##
+## 使い方:
+##   sx_uri_is_pct_safe [入力文字列 ...]
+##
+## 説明:
+##   sx_uri_is_pct の条件に加え、NUL を表す %00 を拒否する。
+##   safe は1回のデコードで NUL が生じないことを意味する。
+##   再帰的なデコードは想定せず、%2500 は許可する。
+##   その他の制御文字を表す %HH は許可し、一般的な安全性は保証しない。
+##   空文字列・入力なしは成功とする。
+##
+## 終了ステータス:
+##    0  すべての入力のパーセント表記が正しく %00 を含まない (SX_EX_OK)
+##    1  不正なパーセント表記、または %00 が含まれる
+sx_uri_is_pct_safe() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_is_pct_safe "${@}" || return; return 0;; esac
+
+	__sx_uri_is_pct_safe "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+### __sx_uri_is_pct_safe - パーセント表記と NUL の不在を確認する（内部用）
+##
+## 使い方:
+##   __sx_uri_is_pct_safe [入力文字列 ...]
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   %00 を拒否し、パーセント表記の構文検査へ委譲する。
+##   空文字列・入力なしは成功とする。
+##
+## 終了ステータス:
+##    0  すべての入力のパーセント表記が正しく %00 を含まない
+##    1  不正なパーセント表記、または %00 が含まれる
+define([|CLEANUP|], [|Q_arg|])dnl
+
+__sx_uri_is_pct_safe() {
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in *%00*)
+			unset CLEANUP
+			return 1
+		esac
+	done
+
+	unset CLEANUP
+	__sx_uri_is_pct "${@}" || return
+}
+|], [|uri_is_pct_safe|])dnl
+
+### sx_uri_is_enc - 非予約文字と正しいパーセント表記だけか確認する
+##
+## 使い方:
+##   sx_uri_is_enc [入力文字列 ...]
+##
+## 説明:
+##   各入力が ASCII の英数字と - . _ ~、および %HH だけで構成されるか確認する。
+##   %HH の16進数字は大文字・小文字を許可し、%00 も許可する。
+##   sx_uri_enc の出力に対応する形式を検査し、文字コードの検証は行わない。
+##   URI 全体や、埋め込み先での意味的な安全性は検査しない。
+##   空文字列・入力なしは成功とする。
+##
+## 終了ステータス:
+##    0  すべての入力が非予約文字と正しい %HH だけで構成される (SX_EX_OK)
+##    1  許可しない文字、または不正なパーセント表記が含まれる
+sx_uri_is_enc() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_is_enc "${@}" || return; return 0;; esac
+
+	__sx_uri_is_enc "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+### __sx_uri_is_enc - エンコードされた構成要素の形式を確認する（内部用）
+##
+## 使い方:
+##   __sx_uri_is_enc [入力文字列 ...]
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   非予約文字と % 以外を拒否し、パーセント表記の構文検査へ委譲する。
+##   空文字列・入力なしは成功とする。
+##
+## 終了ステータス:
+##    0  すべての入力が非予約文字と正しい %HH だけで構成される
+##    1  許可しない文字、または不正なパーセント表記が含まれる
+define([|CLEANUP|], [|Q_arg|])dnl
+
+__sx_uri_is_enc() {
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in *[!"${SX_STR_ALNUM}"%._~-]*)
+			unset CLEANUP
+			return 1
+		esac
+	done
+
+	unset CLEANUP
+	__sx_uri_is_pct "${@}" || return
+}
+|], [|uri_is_enc|])dnl
+
+### sx_uri_is_enc_safe - エンコードされた構成要素が %00 を含まないか確認する
+##
+## 使い方:
+##   sx_uri_is_enc_safe [入力文字列 ...]
+##
+## 説明:
+##   sx_uri_is_enc の条件に加え、NUL を表す %00 を拒否する。
+##   safe は1回のデコードで NUL が生じないことを意味する。
+##   %2500 や、その他の制御文字を表す %HH は許可する。
+##   空文字列・入力なしは成功とし、埋め込み先での意味的な安全性は保証しない。
+##
+## 終了ステータス:
+##    0  すべての入力が非予約文字と正しい %HH だけで構成され %00 を含まない (SX_EX_OK)
+##    1  許可しない文字、不正なパーセント表記、または %00 が含まれる
+sx_uri_is_enc_safe() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_is_enc_safe "${@}" || return; return 0;; esac
+
+	__sx_uri_is_enc_safe "${@}" || return
+}
+
+M_RENAME_QI([|dnl
+### __sx_uri_is_enc_safe - 構成要素の形式と NUL の不在を確認する（内部用）
+##
+## 使い方:
+##   __sx_uri_is_enc_safe [入力文字列 ...]
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   %00 を拒否し、エンコードされた構成要素の形式検査へ委譲する。
+##   空文字列・入力なしは成功とする。
+##
+## 終了ステータス:
+##    0  すべての入力が非予約文字と正しい %HH だけで構成され %00 を含まない
+##    1  許可しない文字、不正なパーセント表記、または %00 が含まれる
+define([|CLEANUP|], [|Q_arg|])dnl
+
+__sx_uri_is_enc_safe() {
+	for Q_arg in "${@}"; do
+		case "${Q_arg}" in *%00*)
+			unset CLEANUP
+			return 1
+		esac
+	done
+
+	unset CLEANUP
+	__sx_uri_is_enc "${@}" || return
+}
+|], [|uri_is_enc_safe|])dnl
