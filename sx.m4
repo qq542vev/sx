@@ -1693,6 +1693,20 @@ M_RENAME_Q([|dnl
 ##   インターバルが正の場合は先頭から、負の場合は末尾から数えて挿入する。
 ##   リミットを指定すると、セパレータの挿入回数を制限できる。
 ##   インターバルに 0 は指定できない。
+##   インターバルは符号付き、リミットは符号なしの10進整数（先行ゼロなし）とする。
+##   インターバルの省略時・空指定時は1、リミットの省略時・空指定時は回数制限なし。
+##   引数個数・インターバル・リミット・各カウンタに SX_CFG_NUM_RANGE による上限は設けない。
+##   フラグには引き続き SX_CFG_NUM_RANGE による範囲検証を適用する。
+##
+##   コールバック契約: callback 結果変数名 slot count skip
+##     slot は左端を0とした境界番号、count は1開始の呼び出し回数、
+##     skip はそれまでに結果変数が未設定だった回数。
+##   結果変数を未設定にすると挿入を省略するが、リミットは消費する。
+##   非0を返した回の結果は破棄し、以後の挿入を停止して元の値を保持する。
+##   正方向では逐次バインドし、負方向では右からコールバックを実行後、左からバインドする。
+##   コールバックの非0終了ステータスはそのまま返す。
+##   コールバックは途中の処理を別変数で行い、末尾で結果変数に単純代入する。
+##   結果変数を他の関数の結果変数・バインド先として渡してはならない。
 ##
 ##   2 つの呼び出し形式がある:
 ##     1) ::: 形式: bind/sep/inv/limit/flg を ::: より前の位置引数で指定し、
@@ -1705,7 +1719,7 @@ M_RENAME_Q([|dnl
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE)
+##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
@@ -1715,7 +1729,6 @@ sx_arg_isep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_isep "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
@@ -1728,10 +1741,12 @@ sx_arg_isep() {
 		"${6+X${6}}") Q_int="${3}" Q_lim="${4}" Q_flg="${5}";;
 	esac
 
-	__sx_num_is_int_safe_inv ${Q_int:+"${Q_int}"} && __sx_num_is_nat0_safe ${Q_lim:+"${Q_lim}"} ${Q_flg:+"${Q_flg}"} || {
+	if ! __sx_num_is_int_base 10 ${Q_int:+"${Q_int}"} ||
+		! __sx_num_is_nat0_base 10 ${Q_lim:+"${Q_lim}"} ||
+		! __sx_num_is_nat0_safe ${Q_flg:+"${Q_flg}"}; then
 		unset CLEANUP
 		return M_EX_USAGE
-	}
+	fi
 
 	case ${Q_int:+"${Q_int#[+-]}"} in 0)
 		unset CLEANUP
@@ -1752,9 +1767,16 @@ M_RENAME_QI([|dnl
 ##   __sx_arg_isep bind [sep [arg ...]]
 ##
 ## 説明:
-##   ::: のパースと、lit/cb の振り分けを行う。
+##   内部実装。引数チェックは行わない。
+##   引数を分離し、走査方向で最初の境界と実際に処理する境界数を求める。
+##   元の個数・間隔・上限が算術域内で、個数+1も収まる場合だけ算術経路を使う。
+##   境界数は最大で個数+1。上限を適用してから位置を求め、余分な加減算を避ける。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   非0  コールバックの終了ステータス
 
-define([|CLEANUP|], [|Q_bind Q_sep Q_int Q_lim Q_flg|])dnl
+define([|CLEANUP|], [|Q_bind Q_sep Q_int Q_lim Q_flg Q_abs Q_size Q_type Q_dir Q_start Q_end Q_count Q_rem Q_pos Q_tmp|])dnl
 
 __sx_arg_isep() {
 	Q_bind="${1}"
@@ -1784,346 +1806,266 @@ __sx_arg_isep() {
 			;;
 	esac
 
-	set -- "${Q_bind-}" "${Q_sep-}" "${Q_int:-1}" "${Q_lim:-${SX_NUM_I32_MAX}}" "$((${Q_flg:-0} & (${#} != 0 ? ~0 : (0 < ${Q_int:-1} ? ~SX_ARG_ISEP_POST : ~SX_ARG_ISEP_PRE))))" "${@}"
-	unset CLEANUP
+	__sx_var_bind_init "${Q_bind}"
 
-	__sx_var_bind_init "${1}"
+	case "${Q_bind:+X}:${Q_lim-}" in :* | *:0)
+		__sx_var_bind '' "${Q_bind}" "${@}" || :
+		unset CLEANUP
+		return
+	esac
 
-	case "$((${5} & SX_ARG_ISEP_CB))" in
-		0) __sx_arg_isep_lit "${@}";;
-		*) __sx_arg_isep_cb "${@}";;
+	: "${Q_int:=1}" "${Q_flg:=0}"
+	Q_abs="${Q_int#[+-]}" Q_size="${#}"
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_size}" "${Q_abs}" ${Q_lim:+"${Q_lim}"} &&
+		M_STR_NE([|"${Q_size}"|], [|"${SX_SYS_NUM_MAX}"|]); then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+
+	case "${Q_int}" in
+		-*) Q_dir=1 Q_start=$(((Q_flg & SX_ARG_ISEP_POST) != 0)) Q_end=$(((Q_flg & SX_ARG_ISEP_PRE) != 0));;
+		*) Q_dir=0 Q_start=$(((Q_flg & SX_ARG_ISEP_PRE) != 0)) Q_end=$(((Q_flg & SX_ARG_ISEP_POST) != 0));;
+	esac
+
+	# 商から内部境界数を求める。反対側の端は、空でなく余り0の場合だけ有効。
+	"__sx_num_divmod_${Q_type}" Q_count:Q_rem: "${Q_size}" "${Q_abs}"
+	case "${Q_size}:${Q_rem}" in
+		0:*) Q_end=0;;
+		*:0) "__sx_num_sub1_${Q_type}" Q_count "${Q_count}";;
+		*) Q_end=0;;
+	esac
+	case "${Q_start}" in 1) "__sx_num_add1_${Q_type}" Q_count "${Q_count}";; esac
+	case "${Q_end}" in 1) "__sx_num_add1_${Q_type}" Q_count "${Q_count}";; esac
+
+	case "${Q_lim:+X}" in X)
+		"__sx_num_cmp_${Q_type}" "${Q_count}" "${Q_lim}" || case "${?}" in
+			3) Q_count="${Q_lim}";;
+		esac
+	esac
+
+	case "${Q_count}" in 0)
+		__sx_var_bind '' "${Q_bind}" "${@}" || :
+		unset CLEANUP
+		return
+	esac
+
+	case "${Q_dir}${Q_start}" in
+		00) Q_pos="${Q_abs}";;
+		01) Q_pos=0;;
+		10) "__sx_num_sub_${Q_type}" Q_pos "${Q_size}" "${Q_abs}";;
+		11) Q_pos="${Q_size}";;
+	esac
+
+	case "$((Q_flg & SX_ARG_ISEP_CB))" in
+		0)
+			# リテラルは左から直接バインドするため、選択された最左の境界に換算する。
+			case "${Q_dir}" in 1)
+				"__sx_num_sub1_${Q_type}" Q_tmp "${Q_count}"
+				"__sx_num_mul_${Q_type}" Q_tmp "${Q_tmp}" "${Q_abs}"
+				"__sx_num_sub_${Q_type}" Q_pos "${Q_pos}" "${Q_tmp}"
+			esac
+			set -- "${Q_bind}" "${Q_sep-}" "${Q_abs}" "${Q_type}" "${Q_pos}" "${Q_count}" 0 "${@}"
+			unset CLEANUP
+			__sx_arg_isep_lit "${@}"
+			;;
+		*)
+			set -- "${Q_dir}" "${Q_bind}" "${Q_sep-}" "${Q_abs}" "${Q_type}" "${Q_pos}" "${Q_count}" "${Q_size}" "${@}"
+			unset CLEANUP
+			case "${1}" in
+				0) shift; __sx_arg_isep_cb "${@}";;
+				1) shift; __sx_arg_isep_rcb "${@}";;
+			esac
+			;;
 	esac || return
 }
 |], [|arg_isep|])dnl
 
 M_RENAME_QI([|dnl
-### __sx_arg_isep_cb - 引数間にセパレータを挿入する（コールバックモード、内部用）
+### __sx_arg_isep_cb - 前方の挿入境界でコールバックを実行する
 ##
 ## 使い方:
-##   __sx_arg_isep_cb 結果変数名 コールバック インターバル リミット フラグ [値 ...]
+##   __sx_arg_isep_cb bind cb abs type first count size [値 ...]
 ##
 ## 説明:
-##   コールバックモード。セパレータ位置ごとにコールバックを呼び出し、
-##   その戻り値をセパレータとして挿入する。
+##   内部実装。引数チェックは行わない。
+##   正規化済みの境界を左から処理し、元の値と挿入値を逐次バインドする。
+##   状態を位置パラメータに保存し、一時変数を解放してからコールバックを呼ぶ。
+##   末尾の空要素は終了端の処理用であり、元の値としては出力しない。
+##   境界数が残っているときだけ次の位置を計算する。
 ##
-##   状態レイアウト（位置パラメータ、前向きのみ）:
-##     $1: sep_cnt, $2: skip, $3: stat, $4: i
-##     $5: bind, $6: cb, $7: int, $8: lim, $9: flags
-##     $10+: 元の値（for ループが走査）
-##
-##   コールバック呼出: cb_func ret_var slot count skip
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   非0  最初に失敗したコールバックの終了ステータス
 
-define([|CLEANUP|], [|Q_bind Q_int Q_flg Q_cnt Q_stat Q_post Q_r Q_i Q_arg Q_ret|])dnl
+define([|CLEANUP|], [|Q_arg Q_i Q_cnt Q_skip Q_stat Q_bind Q_pos Q_left Q_ret|])dnl
 
 __sx_arg_isep_cb() {
-	if M_NUM_LT([|0|], [|${3}|]); then
-		# === 正のインターバル: 前向き処理 (左→右, append) ===
-		# 状態レイアウトに再構築: $1=sep_cnt $2=skip $3=stat $4=i $5=bind $6=cb $7=int $8=lim $9=flags
-		set -- 0 0 0 -10 "${@}"
+	# 1:位置 2:回数 3:skip 4:終了状態 5:bind 6:cb 7:間隔 8:数値経路
+	# 9:次の境界 10:残り境界数 11:元の個数 12:現在の値
+	set -- -12 0 0 0 "${@}"
 
-		case "${5:+X}" in '')
-			return "${3}"
+	for Q_arg in "${@}" ''; do
+		Q_i="${1}"
+		case "${Q_i}" in
+			-*) M_NUM_INCR([|Q_i|]);;
+			*) "__sx_num_add1_${8}" Q_i "${Q_i}";;
 		esac
+		set -- "${Q_i}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${11}" "${Q_arg}"
 
-		# === PRE セパレータ ===
-		case "$((${1} < ${8} && ${9} & SX_ARG_ISEP_PRE))" in 1)
-			if "${6}" Q_ret 0 "$((${1} + 1))" "${2}"; then
-				case "${Q_ret+X}" in X)
-					__sx_var_bind Q_bind "${5}" "${Q_ret}"
-					eval 'shift 5;' set -- "$((${1} + 1))" "${2}" 0 "${4}" "${Q_bind}" '"${@}"';;
-				*)
-					eval 'shift 2;' set -- "$((${1} + 1))" "$((${2} + 1))" '"${@}"';;
-				esac
-			else
-				eval 'shift 3;' set -- "${8}" "${2}" "${?}" '"${@}"'
-			fi
+		case "${1}" in -*) continue;; esac
+		case "${5}" in '') break;; esac
 
-			unset Q_ret Q_bind Q_cb
-		esac
+		if M_STR_EQ([|"${1}"|], [|"${9}"|]) && M_STR_NE([|"${10}"|], [|0|]); then
+			"__sx_num_add1_${8}" Q_cnt "${2}"
+			set -- "${1}" "${Q_cnt}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${11}" "${12}"
+			unset CLEANUP
 
-		# === メインループ ===
-		for Q_arg in "${@}"; do
-			set -- "${1}" "${2}" "${3}" "$((${4} + 1))" "${5}" "${6}" "${7}" "${8}" "${9}" "${Q_arg}"
-
-			case "$((${4} < 0))" in 1)
-				continue
-			esac
-
-			unset Q_arg
-
-			case "${5:+X}" in '')
-				return "${3}"
-			esac
-
-			# 内部セパレータ挿入判定（前向き）
-			case "$((${1} < ${8} && 0 < ${4} && ${4} % ${7} == 0))" in 1)
-				if "${6}" Q_ret "${4}" "$((${1} + 1))" "${2}"; then
-					case "${Q_ret+X}" in X)
-						__sx_var_bind Q_bind "${5}" "${Q_ret}"
-
-						set -- "$((${1} + 1))" "${2}" 0 "${4}" "${Q_bind}" "${6}" "${7}" "${8}" "${9}" "${10}";;
-					*)
-						set -- "$((${1} + 1))" "$((${2} + 1))" 0 "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}";;
-					esac
-				else
-					set -- "${8}" "${2}" "${?}" "${4}" "${5}" '' "${7}" "${8}" "${9}" "${10}"
-				fi
-			esac
-
-			__sx_var_bind Q_bind "${5}" "${10}" || :
-			set -- "${1}" "${2}" "${3}" "${4}" "${Q_bind}" "${6}" "${7}" "${8}" "${9}"
-			unset Q_ret Q_bind
-		done
-
-		case "${5:+X}" in '')
-			unset Q_arg
-			return "${3}"
-		esac
-
-		# === POST セパレータ ===
-		case "$((${1} < ${8} && ${9} & SX_ARG_ISEP_POST && (${4} + 1) % ${7} == 0))" in 1)
-			if "${6}" Q_ret "$((${4} + 1))" "$((${1} + 1))" "${2}"; then
-				case "${Q_ret+X}" in X)
-					__sx_var_bind Q_bind "${5}" "${Q_ret}" || :
-				esac
-			else
-				set -- "${1}" "${2}" "${?}"
-			fi
-		esac
-
-		unset Q_ret Q_arg Q_bind
-		return "${3}"
-	else
-		# === 負のインターバル: countベースCB呼出 + 左→右bind ===
-		Q_bind="${1}"
-		Q_cb="${2}"
-		Q_int="${3}"
-		Q_lim="${4}"
-		Q_flg="${5}"
-		shift 5
-
-		# max = eff（accumulator、max < lim なら lim を cap）
-		Q_max=$(((0 < ${#}) * (${#} - 1) / ${Q_int#-}))
-
-		# POST加算
-		case "$((Q_flg & SX_ARG_ISEP_POST))" in [!0]*)
-			M_NUM_INCR([|Q_max|])
-		esac
-
-		# PRE加算（eff < lim - post は max < lim に簡約）
-		case "$((Q_flg & SX_ARG_ISEP_PRE && (${#} % ${Q_int#-}) == 0))" in 1)
-			M_NUM_INCR([|Q_max|])
-		esac
-
-		# lim capping
-		Q_lim=$((Q_max < Q_lim ? Q_max : Q_lim))
-
-		# ===== Phase 1: countベースCB呼出 + 結果prepend（save/restore対応） =====
-			# SAVE state (8 vars) — 再帰呼び出しでCLEANUPにより変数が消える対策
-		set -- 0 0 "${Q_bind}" "${Q_cb}" "${Q_int}" "${Q_lim}" "${Q_flg}" "${#}" "${@}"
-		unset Q_bind Q_cb Q_int Q_lim Q_flg Q_max
-
-		while M_NUM_BOOL([|${1} < ${6}|]); do
-			if "${4}" Q_ret "$(((${7} & SX_ARG_ISEP_POST) && ${1} == 0 ? ${8} : ${8} - (${1} + 1 - ((${7} & SX_ARG_ISEP_POST) != 0)) * ${5#-}))" "$((${1} + 1))" "${2}"; then
+			if "${6}" Q_ret "${1}" "${2}" "${3}"; then
+				Q_bind="${5}" Q_skip="${3}" Q_stat="${4}" Q_pos="${9}"
 				case "${Q_ret+X}" in
-					X)
-						Q_cb="${4}"
-						eval 'shift 8;' set -- "$((${1} + 1))" "${2}" "${3}" '"${Q_cb}"' "${5}" "${6}" "${7}" "${8}" '"${Q_ret+:}${Q_ret-}"' '"${@}"'
-						;;
-				*) eval 'shift 2;' set -- "$((${1} + 1))" "$((${2} + 1))" '"${@}"';;
+					X) __sx_var_bind Q_bind "${Q_bind}" "${Q_ret}" || :;;
+					*) "__sx_num_add1_${8}" Q_skip "${Q_skip}";;
 				esac
+				"__sx_num_sub1_${8}" Q_left "${10}"
+				case "${Q_left}" in 0) ;; *) "__sx_num_add_${8}" Q_pos "${Q_pos}" "${7}";; esac
 			else
-				Q_stat="${?}"
-				break
+				Q_stat="${?}" Q_bind="${5}" Q_skip="${3}" Q_pos="${9}" Q_left=0
 			fi
 
-			unset Q_ret Q_cb
-		done
+			set -- "${1}" "${2}" "${Q_skip}" "${Q_stat}" "${Q_bind}" "${6}" "${7}" "${8}" "${Q_pos}" "${Q_left}" "${11}" "${12}"
+		fi
 
-		Q_cnt="${1}"
-		Q_bind="${3}"
-		Q_int="${5}"
-		Q_flg="${7}"
-		: "${Q_stat=0}"
-		shift 8
-
-		# ===== Phase 2: 左→右bind (for ループ) =====
-		# $@ = sep_N ... sep_1 data_1 ... data_M
-		# cnt_ 個の sep が先頭に積まれている
-		Q_post=$((Q_flg & SX_ARG_ISEP_POST && 0 < Q_cnt))
-		Q_r=$(((${#} - Q_cnt) - (Q_cnt - Q_post) * ${Q_int#-}))
-
-		# $@ 先頭から ${1} + shift で sep を消費する
-		# PRE (先頭セパレータ)
-		case "$((Q_flg & SX_ARG_ISEP_PRE && Q_r == 0))" in 1)
-			case "${1-}" in :*)
-				__sx_var_bind Q_bind "${Q_bind}" "${1#:}" || {
-					set -- "${Q_stat}"
-					unset CLEANUP
-					return "${1}"
-				}
-			esac
-
-			shift
-			M_NUM_DECR([|Q_cnt|])
-		esac
-
-		# 要素を左→右に走査してbind (for ループ)
-		Q_i="-${Q_cnt}"
-		for Q_arg in "${@}"; do
-			M_NUM_INCR([|Q_i|])
-
-			# 先頭の sep 領域をスキップ
-			case "$((Q_i <= 0))" in 1) continue; esac
-
-			# 内部セパレータ
-			case "$((
-				1 < Q_i &&
-				Q_r < Q_i &&
-				(Q_i - Q_r - 1) % ${Q_int#-} == 0
-			))" in 1)
-				case "${1-}" in :*)
-					__sx_var_bind Q_bind "${Q_bind}" "${1#:}" || {
-						set -- "${Q_stat}"
-						unset CLEANUP
-						return "${1}"
-					}
-				esac
-
-				shift
-			esac
-
-			# 要素本体をbind
-			__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || {
-				set -- "${Q_stat}"
-				unset CLEANUP
-				return "${1}"
-			}
-		done
-
-		# POST (末尾セパレータ)
-		case "$((Q_post))${1-}" in 1:*)
-			__sx_var_bind Q_bind "${Q_bind}" "${1#:}" || :;;
-		esac
-
-		set -- "${Q_stat}"
+		case "${1}" in "${11}") break;; esac
+		__sx_var_bind Q_bind "${5}" "${12}" || :
+		set -- "${1}" "${2}" "${3}" "${4}" "${Q_bind}" "${6}" "${7}" "${8}" "${9}" "${10}" "${11}"
 		unset CLEANUP
-		return "${1}"
-	fi
+	done
+
+	unset CLEANUP
+	return "${4}"
 }
 |], [|arg_isep_cb|])dnl
 
 M_RENAME_QI([|dnl
-### __sx_arg_isep_lit - 引数間にリテラルセパレータを挿入する（内部用）
+### __sx_arg_isep_rcb - 後方の挿入境界でコールバックを実行する
 ##
 ## 使い方:
-##   __sx_arg_isep_lit 結果変数名 セパレータ インターバル フラグ リミット [値 ...]
+##   __sx_arg_isep_rcb bind cb abs type first count size [値 ...]
 ##
 ## 説明:
-##   引数間にセパレータを挿入し、すべてをクォートして結合する。
-##   PRE/POST フラグにより先頭・末尾への挿入も行う。
+##   内部実装。引数チェックは行わない。
+##   コールバックを右から実行し、成功した各境界の結果を逆順に保存する。
+##   未設定の結果は空のマーカー、設定済みの結果は先頭に ':' を付けて保存する。
+##   スキップした境界も保持するため、後続の挿入位置と元の値はずれない。
+##   状態を位置パラメータに保存し、一時変数を解放してからコールバックを呼ぶ。
+##   終了後は __sx_arg_isep_lit で元の値とともに左からバインドする。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+##   非0  最初に失敗したコールバックの終了ステータス
 
-define([|CLEANUP|], [|Q_bind Q_sep Q_int Q_flg Q_lim Q_eff Q_r Q_i Q_arg Q_max Q_post_ok|])dnl
+define([|CLEANUP|], [|Q_cnt Q_skip Q_out Q_bind Q_cb Q_abs Q_type Q_pos Q_left Q_ret Q_stat|])dnl
 
-__sx_arg_isep_lit() {
-	Q_bind="${1}"
-	Q_sep="${2}"
-	Q_int="${3}"
-	Q_lim="${4}"
-	Q_flg="${5}"
-	shift 5
+__sx_arg_isep_rcb() {
+	# 1:回数 2:skip 3:クォート済みマーカー列 4:成功済み最左境界 5:bind 6:cb
+	# 7:間隔 8:数値経路 9:次の境界 10:残り境界数 11:元の個数 12以降:元の値
+	set -- 0 0 '' 0 "${@}"
 
-	# セパレータを挿入可能な論理的な箇所数（要素間のみ）を計算
-	Q_eff=$(((0 < ${#}) * (${#} - 1) / ${Q_int#-}))
+	while M_STR_NE([|"${10}"|], [|0|]); do
+		"__sx_num_add1_${8}" Q_cnt "${1}"
+		Q_bind="${5}" Q_cb="${6}" Q_out="${3}"
+		eval 'shift 11;' set -- "${Q_cnt}" "${2}" '"${Q_out}"' "${4}" '"${Q_bind}"' '"${Q_cb}"' "${7}" "${8}" "${9}" "${10}" "${11}" '"${@}"'
+		unset CLEANUP
 
-	# --- 特殊処理: 負のインターバル（後方から数えるモード） ---
-	# インターバルが負の場合、末尾（POST側）を基準にするため、
-	# POSTフラグが指定されている場合は、ループ前にあらかじめ回数を1つ消費しておく。
-	case "$((Q_int < 0 && Q_lim != 0 && Q_flg & SX_ARG_ISEP_POST))" in 1)
-		Q_post_ok=1
-		M_NUM_DECR([|Q_lim|])
-	esac
-
-	# --- 回数制限 (lim) の調整 ---
-	# PRE/POSTフラグを含めた「物理的に挿入可能な絶対最大数」を算出し、lim がそれを超えないよう制限(cap)する。
-	Q_max="${Q_eff}"
-	case "$((Q_flg & SX_ARG_ISEP_PRE))" in [!0]*)
-		M_NUM_INCR([|Q_max|])
-	esac
-
-	case "$((Q_flg & SX_ARG_ISEP_POST))" in [!0]*)
-		M_NUM_INCR([|Q_max|])
-	esac
-
-	case "$((Q_max < Q_lim))" in 1)
-		Q_lim="${Q_max}"
-	esac
-
-	# --- オフセット (r_) の計算 ---
-	# ループ内で最初のセパレータをどこで入れるかを決めるための基準値を算出する。
-	# 正の場合：単純にインターバル数。
-	# 負の場合：要素数と残りの挿入可能回数から、左から数えて何個目を起点にするかを逆算。
-	Q_r=$((0 < Q_int ? Q_int : ${#} - Q_lim * ${Q_int#-}))
-
-	# --- PRE セパレータの挿入 ---
-	# 先頭にセパレータを配置するフラグがある場合の処理。
-	case "$((
-		Q_flg & SX_ARG_ISEP_PRE &&
-		(0 < Q_int ?
-			Q_lim != 0 :
-			Q_eff < Q_lim &&
-			(Q_r % Q_int) == 0)
-		))" in 1)
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_sep}" || {
-			unset CLEANUP
-			return M_EX_OK
+		"${6}" Q_ret "${9}" "${1}" "${2}" || {
+			Q_stat="${?}"
+			"__sx_num_sub1_${8}" Q_cnt "${1}"
+			break
 		}
-		M_NUM_DECR([|Q_lim|])
-	esac
 
-	Q_i=1
-	# --- メインループ: 引数の結合 ---
-	for Q_arg in "${@}"; do
-		# 1. セパレータの挿入判定
-		#    - 制限回数 (lim) が残っている
-		#    - 最初の要素ではなく (1 < j_)
-		#    - オフセット位置を過ぎており (r_ < j_)
-		#    - インターバルの倍数位置である ((j - r - 1) % int == 0)
-		case "$((
-			Q_lim != 0 &&
-			1 < Q_i &&
-			Q_r < Q_i &&
-			(Q_i - Q_r - 1) % Q_int == 0
-		))" in 1)
-			__sx_var_bind Q_bind "${Q_bind}" "${Q_sep}" || {
-				unset CLEANUP
-				return M_EX_OK
-			}
-			M_NUM_DECR([|Q_lim|])
-		esac
+		Q_skip="${2}"
+		case "${Q_ret+X}" in '') "__sx_num_add1_${8}" Q_skip "${Q_skip}";; esac
+		__sx_str_quote Q_ret "${Q_ret+:}${Q_ret-}"
+		Q_out="${Q_ret} ${3}" Q_bind="${5}" Q_cb="${6}" Q_pos="${9}"
+		"__sx_num_sub1_${8}" Q_left "${10}"
+		case "${Q_left}" in 0) ;; *) "__sx_num_sub_${8}" Q_pos "${Q_pos}" "${7}";; esac
 
-		# 2. 値の結合（クォートして結合）
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || {
-			unset CLEANUP
-			return M_EX_OK
-		}
-		M_NUM_INCR([|Q_i|])
+		eval 'shift 11;' set -- "${1}" "${Q_skip}" '"${Q_out}"' "${9}" '"${Q_bind}"' '"${Q_cb}"' "${7}" "${8}" "${Q_pos}" "${Q_left}" "${11}" '"${@}"'
+		unset CLEANUP
 	done
 
-	# --- POST セパレータの挿入 ---
-	# 末尾にセパレータを配置するフラグがある場合の処理。
-	case "$((${Q_post_ok-0} || (
-		0 < Q_int &&
-		Q_lim != 0 &&
-		Q_flg & SX_ARG_ISEP_POST &&
-		(${#} - Q_r) % ${Q_int} == 0
-	)))" in 1)
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_sep}" || :
+	Q_cnt="${Q_cnt-${1}}" Q_stat="${Q_stat-0}"
+	Q_bind="${5}" Q_abs="${7}" Q_type="${8}" Q_pos="${4}" Q_out="${3}"
+	shift 11
+	# マーカー列は __sx_str_quote 済み。元の値は再評価せず位置パラメータで渡す。
+	eval __sx_arg_isep_lit '"${Q_bind}"' "''" '"${Q_abs}"' '"${Q_type}"' '"${Q_pos}"' '"${Q_cnt}"' '"${Q_cnt}"' "${Q_out}" '"${@}"'
+
+	set -- "${Q_stat}"
+	unset CLEANUP
+	return "${1}"
+}
+|], [|arg_isep_rcb|])dnl
+
+M_RENAME_QI([|dnl
+### __sx_arg_isep_lit - 選択済みの境界に値を挿入して左からバインドする
+##
+## 使い方:
+##   __sx_arg_isep_lit bind sep abs type first count head [マーカー ...] [値 ...]
+##
+## 説明:
+##   内部実装。引数チェックは行わない。
+##   first は最左の挿入境界。head=0 ではリテラル sep を挿入する。
+##   head>0 では先頭の head 個を後方コールバックのマーカー列として消費する。
+##   マーカーが ':' で始まる場合だけその後ろの値を挿入し、空なら省略する。
+##   残り境界数が0になった後は位置を更新しない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
+
+define([|CLEANUP|], [|Q_bind Q_sep Q_abs Q_type Q_pos Q_left Q_head Q_mode Q_i Q_arg Q_val|])dnl
+
+__sx_arg_isep_lit() {
+	Q_bind="${1}" Q_sep="${2}" Q_abs="${3}" Q_type="${4}"
+	Q_pos="${5}" Q_left="${6}" Q_head="${7}" Q_i=0
+	case "${Q_head}" in 0) Q_mode=0;; *) Q_mode=1;; esac
+	shift 7
+
+	for Q_arg in "${@}"; do
+		case "${Q_head}" in 0) ;; *)
+			"__sx_num_sub1_${Q_type}" Q_head "${Q_head}"
+			continue
+		esac
+
+		case "${Q_bind}" in '') break;; esac
+		if M_STR_NE([|"${Q_left}"|], [|0|]) && M_STR_EQ([|"${Q_i}"|], [|"${Q_pos}"|]); then
+			case "${Q_mode}" in
+				0) Q_val=":${Q_sep}";;
+				1) Q_val="${1}"; shift;;
+			esac
+			case "${Q_val}" in :*) __sx_var_bind Q_bind "${Q_bind}" "${Q_val#:}" || :;; esac
+			"__sx_num_sub1_${Q_type}" Q_left "${Q_left}"
+			case "${Q_left}" in 0) ;; *) "__sx_num_add_${Q_type}" Q_pos "${Q_pos}" "${Q_abs}";; esac
+		fi
+
+		__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || break
+		case "${Q_left}" in 0) ;; *) "__sx_num_add1_${Q_type}" Q_i "${Q_i}";; esac
+	done
+
+	# 元の値をすべて処理した後に残り得る境界は終了端の1つだけ。
+	case "${Q_bind:+X}:${Q_left}" in :* | *:0) ;; *)
+		case "${Q_mode}" in
+			0) Q_val=":${Q_sep}";;
+			1) Q_val="${1}";;
+		esac
+		case "${Q_val}" in :*) __sx_var_bind '' "${Q_bind}" "${Q_val#:}" || :;; esac
 	esac
 
 	unset CLEANUP
 }
 |], [|arg_isep_lit|])dnl
+
 
 ### sx_arg_join - 引数を指定された区切り文字で結合する
 ##
