@@ -2663,7 +2663,9 @@ M_RENAME_Q([|dnl
 ##     2:3:4 → 2行×3列×4層 = 24要素
 ##   いずれかの軸に -1 を指定すると、その軸のサイズを
 ##   切り上げ ceil(要素数 / 既知の軸の積) で自動計算する。
-##   ただし -1 は1つまで。
+##   ただし -1 は1つまで。各軸は先行ゼロのない非負の10進整数、または -1。
+##   軸のサイズと総要素数は多倍長に対応する。既知の軸の積が0なら推論値も0。
+##   分配先が尽きた時点で生成を終了する。
 ##
 ##   flag には以下のビットマスクを指定できる（省略時は 0）:
 ##     SX_ARG_RESIZE_PAD_LEFT (2) — 不足要素を左側に詰める
@@ -2680,17 +2682,16 @@ M_RENAME_Q([|dnl
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-##   64  引数不正、引数個数が安全範囲（SX_CFG_NUM_RANGE）外 (SX_EX_USAGE) - shape の形式が不正
+##   64  引数不正、shape または flag の形式が不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 ##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 
-define([|CLEANUP|], [|Q_shape|])dnl
+define([|CLEANUP|], [|Q_shape Q_dim Q_inferred|])dnl
 
 sx_arg_resize() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_resize "${@}" || return; return 0;; esac
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
-	__sx_num_is_nat0_safe "${#}" || return M_EX_USAGE
 
 	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
@@ -2701,16 +2702,28 @@ sx_arg_resize() {
 		"${2+X${2}}") ;;
 		"${3+X${3}}" | "${4+X${4}}") Q_shape="${2}";;
 		"${5+X${5}}")
-			__sx_num_is_nat0_safe "${4:-}" || return M_EX_USAGE
+			__sx_num_is_nat0_safe "${4:-}" || {
+				unset CLEANUP
+				return M_EX_USAGE
+			}
 			Q_shape="${2}"
 			;;
 			*) Q_shape="${2-}";;
 	esac
 
-	case "${Q_shape}" in *::* | *-[02-9]* | *[!:0-9-]* | *-1*-1* | :* | *: | *-1[!:]*)
-		unset CLEANUP
-		return M_EX_USAGE
-	esac
+	Q_inferred=0
+	case "${Q_shape}" in '') Q_shape=0;; esac
+	while :; do
+		Q_dim="${Q_shape%%:*}"
+		case "${Q_dim}:${Q_inferred}" in
+			-1:0) Q_inferred=1;;
+			*) __sx_num_is_nat0_base 10 "${Q_dim}" || {
+				unset CLEANUP
+				return M_EX_USAGE
+			};;
+		esac
+		case "${Q_shape}" in *:*) Q_shape="${Q_shape#*:}";; *) break;; esac
+	done
 
 	unset CLEANUP
 
@@ -2726,88 +2739,116 @@ M_RENAME_QI([|dnl
 ##   __sx_arg_resize bind [shape [値 ...]]
 ##
 ## 説明:
-##   ::: セパレータをパースし、形状を解析してリサイズを実行する。
-##   引数チェックは行わない。
-##   形状が空または1次元（":"なし）の場合はフラット出力、
-##   2次元以上の場合は階層出力を行う。
+##   sx_arg_resize の内部実装。引数チェックは行わない。
+##   形状の積と推論値は多倍長で計算し、算術域内ならループの減算に算術を使う。
+##   外側の要素を順に生成し、バインド枯渇時に停止する。
+##   サイズ0の軸より内側は生成しない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
 
-define([|CLEANUP|], [|Q_padded Q_bind Q_shape Q_val Q_inferred Q_total Q_out Q_arg Q_tmp Q_cnt Q_dim Q_group Q_flg|])dnl
+define([|CLEANUP|], [|Q_bind Q_shape Q_val Q_flg Q_total Q_tmp Q_dim Q_inferred Q_dims Q_outer Q_block Q_plan Q_left Q_type Q_n Q_value Q_chunk Q_rest Q_step Q_cnt Q_out Q_group|])dnl
 
 __sx_arg_resize() {
 	Q_bind="${1}"
-
+	Q_shape= Q_val= Q_flg=0
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}") shift 2;;
-		"${3+X${3}}")
-			Q_shape="${2}"
-			shift 3
-			;;
-		"${4+X${4}}")
-			Q_shape="${2}" Q_val="${3}"
-			shift 4
-			;;
-		"${5+X${5}}")
-			Q_shape="${2}" Q_val="${3}" Q_flg="${4}"
-			shift 5
-			;;
-		*)
-			Q_shape="${2-}"
-			shift ${2+'2'}
-			;;
+		"${3+X${3}}") Q_shape="${2}"; shift 3;;
+		"${4+X${4}}") Q_shape="${2}" Q_val="${3}"; shift 4;;
+		"${5+X${5}}") Q_shape="${2}" Q_val="${3}" Q_flg="${4}"; shift 5;;
+		*) Q_shape="${2-}"; shift ${2+'2'};;
 	esac
-
-	: "${Q_bind=}" "${Q_shape:=${#}}" "${Q_val=}" "${Q_flg:=0}"
-
+	: "${Q_shape:=${#}}" "${Q_flg:=0}"
 	__sx_var_bind_init "${Q_bind}"
-	__sx_str_sub Q_shape: "${Q_shape}" : '*'
-	__sx_str_sub Q_tmp: "${Q_shape}" -1 1
-	Q_total=$((${Q_tmp}))
+	case "${Q_bind}" in '') unset CLEANUP; return 0;; esac
 
-	# 形状解析
-	case "${Q_shape}" in *-1*)
-		Q_inferred=$((Q_total == 0 ? 0 : (${#} + Q_total - 1) / Q_total))
-
-		Q_total=$((Q_total * Q_inferred))
+	# 既知の軸の積を求める。入力値を算術式として展開しない。
+	Q_total=1 Q_tmp="${Q_shape}"
+	while :; do
+		Q_dim="${Q_tmp%%:*}"
+		case "${Q_dim}" in -1) ;; *) __sx_num_mul_nat0 Q_total "${Q_total}" "${Q_dim}";; esac
+		case "${Q_tmp}" in *:*) Q_tmp="${Q_tmp#*:}";; *) break;; esac
+	done
+	case ":${Q_shape}:" in *:-1:*)
+		Q_inferred=0
+		case "${Q_total}" in 0) ;; *) __sx_num_divceil_nat0 Q_inferred "${#}" "${Q_total}";; esac
+		__sx_num_mul_nat0 Q_total "${Q_total}" "${Q_inferred}"
 		__sx_str_sub Q_shape: "${Q_shape}" -1 "${Q_inferred}"
 	esac
 
-	__sx_arg_pad Q_padded "$((Q_total * (Q_flg & SX_ARG_RESIZE_PAD_LEFT ? -1 : 1)))" "${Q_val}" ::: "${@}"
+	# 空の軸の子孫は出力に現れないので、形状から取り除く。
+	Q_dims= Q_tmp="${Q_shape}"
+	while :; do
+		Q_dim="${Q_tmp%%:*}"
+		Q_dims="${Q_dims}${Q_dims:+:}${Q_dim}"
+		case "${Q_dim}" in 0) break;; esac
+		case "${Q_tmp}" in *:*) Q_tmp="${Q_tmp#*:}";; *) break;; esac
+	done
+	Q_outer="${Q_dims%%:*}"
+	case "${Q_outer}" in 0) unset CLEANUP; return 0;; esac
 
-	eval set -- "${Q_padded}"
+	# 外側の1要素に必要な個数と、内側からのグループ化手順を保持する。
+	Q_block=1 Q_plan=
+	case "${Q_dims}" in *:*)
+		Q_tmp="${Q_dims#*:}"
+		while :; do
+			Q_dim="${Q_tmp%%:*}"
+			Q_plan="${Q_dim}:${Q_block} ${Q_plan}"
+			__sx_num_mul_nat0 Q_block "${Q_block}" "${Q_dim}"
+			case "${Q_tmp}" in *:*) Q_tmp="${Q_tmp#*:}";; *) break;; esac
+		done
+	esac
+	Q_type=nat0
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_total}" "${Q_outer}" "${Q_block}" "${#}"; then
+		Q_type=arith
+	fi
+	Q_left=0
+	case "$((Q_flg & SX_ARG_RESIZE_PAD_LEFT))" in 0) ;; *)
+		"__sx_num_cmp_${Q_type}" "${Q_total}" "${#}" || case "${?}" in 3)
+			"__sx_num_sub_${Q_type}" Q_left "${Q_total}" "${#}"
+		esac
+	esac
 
-	# Phase 1-N: grouping (最内→最外)
-	while M_STR_HAS([|"${Q_shape}"|], [|'*'|]); do
-		Q_dim="${Q_shape##*'*'}"
-		Q_shape="${Q_shape%'*'*}"
-		Q_cnt=$((${Q_shape}))
-		Q_out=
-
-		while M_NUM_LT([|0|], [|Q_cnt|]); do
-			case ${Q_dim} in
-				[!0]*) __sx_arg_quote "${Q_dim}Q_group:" "${@}";;
-				*) Q_group=;;
+	while M_STR_NE([|"${Q_outer}"|], [|0|]) && M_STR_NE([|"${Q_bind}"|], [|''|]); do
+		Q_n="${Q_block}" Q_chunk=
+		while M_STR_NE([|"${Q_n}"|], [|0|]); do
+			case "${Q_left}" in
+				0) case "${#}" in
+					0) Q_value="${Q_val}";;
+					*) Q_value="${1}"; shift;;
+				esac;;
+				*) Q_value="${Q_val}"; "__sx_num_sub1_${Q_type}" Q_left "${Q_left}";;
 			esac
-
-			__sx_arg_quote Q_group "${Q_group}"
-			M_STR_APPEND([|Q_out|], [|" ${Q_group}"|])
-
-			shift "${Q_dim}"
-			M_NUM_DECR([|Q_cnt|])
+			case "${Q_plan}" in '') ;; *) __sx_var_bind '' Q_chunk "${Q_value}";; esac
+			"__sx_num_sub1_${Q_type}" Q_n "${Q_n}"
 		done
 
-		eval set -- "${Q_out}"
-	done
-
-	for Q_arg in "${@}"; do
-		case "$((0 < Q_shape))" in 0)
-			break
+		case "${Q_plan}" in '') ;; *)
+			__sx_arg_quote Q_rest "${@}"
+			eval set -- "${Q_chunk}"
+			Q_tmp="${Q_plan}"
+			while M_STR_NE([|"${Q_tmp}"|], [|''|]); do
+				Q_step="${Q_tmp%% *}" Q_tmp="${Q_tmp#* }"
+				Q_dim="${Q_step%%:*}" Q_cnt="${Q_step#*:}" Q_out=
+				while M_STR_NE([|"${Q_cnt}"|], [|0|]); do
+					Q_group=
+					case "${Q_dim}" in 0) ;; *)
+						__sx_arg_quote "${Q_dim}Q_group:" "${@}"
+						# 生成済みの位置パラメータから取り出すため、この個数はシェルで扱える。
+						shift "${Q_dim}"
+					esac
+					__sx_var_bind '' Q_out "${Q_group}"
+					__sx_num_sub1_nat0 Q_cnt "${Q_cnt}"
+				done
+				eval set -- "${Q_out}"
+			done
+			Q_value="${1}"
+			eval set -- "${Q_rest}"
 		esac
-
-		__sx_var_bind Q_bind "${Q_bind}" "${Q_arg}" || break
-		M_NUM_DECR([|Q_shape|])
+		__sx_var_bind Q_bind "${Q_bind}" "${Q_value}" || break
+		"__sx_num_sub1_${Q_type}" Q_outer "${Q_outer}"
 	done
-
-	# クリーンアップ
 	unset CLEANUP
 }
 |], [|arg_resize|])dnl

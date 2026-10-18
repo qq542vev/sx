@@ -16,4 +16,18 @@ Describe 'sx_arg_resize -efu 環境検証'
     When run efu_run sx_arg_resize res 2:2 a b c
     The status should be success
   End
+  It '巨大な形状と左パディングを処理する'
+    When run efu_run sx_arg_resize 'a:b:' 1000000000000000000000000000000:2 p 2 ::: x
+    The status should be success
+  End
+
+  It '巨大な軸と -1 の推論を処理する'
+    When run efu_run sx_arg_resize 'a:b:' 1000000000000000000000000000000:-1 ::: x y
+    The status should be success
+  End
+
+  It '0の軸より内側の巨大な形状を省略する'
+    When run efu_run sx_arg_resize res 2:0:1000000000000000000000000000000 ::: x
+    The status should be success
+  End
 End
