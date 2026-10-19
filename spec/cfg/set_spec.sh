@@ -11,6 +11,16 @@ Describe 'sx_cfg_set()'
 			SEP=@@ ARR_UPDATE=0 ARR_HOLE=hole ARR_REF=@ "SKIP_CHK=${1-0}"
 	}
 
+	cfg_with_ifs() {
+		cfg_saved_ifs=${IFS}
+		IFS='_:'
+		"${@}"
+		set -- "${?}" "${cfg_saved_ifs}"
+		IFS=${2}
+		unset cfg_saved_ifs
+		return "${1}"
+	}
+
 	Context '引数なしの全設定リセット'
 		Parameters
 			'sx_cfg_set' 0
@@ -23,13 +33,13 @@ Describe 'sx_cfg_set()'
 			cfg_set_custom "${2}"
 			When call "${1}"
 			The status should be success
-			The variable SX_CFG_SIG_ARR should equal "${SX_CFG_DEF_SIG_ARR}"
-			The variable SX_CFG_SKIP_CHK should equal "${SX_CFG_DEF_SKIP_CHK}"
-			The variable SX_CFG_NUM_RANGE should equal "${SX_CFG_DEF_NUM_RANGE}"
-			The variable SX_CFG_SEP should equal "${SX_CFG_DEF_SEP}"
-			The variable SX_CFG_ARR_UPDATE should equal "${SX_CFG_DEF_ARR_UPDATE}"
-			The variable SX_CFG_ARR_HOLE should equal "${SX_CFG_DEF_ARR_HOLE}"
-			The variable SX_CFG_ARR_REF should equal "${SX_CFG_DEF_ARR_REF}"
+			The variable SX_CFG_SIG_ARR should equal "${SX_CFG_META_DEF_SIG_ARR}"
+			The variable SX_CFG_SKIP_CHK should equal "${SX_CFG_META_DEF_SKIP_CHK}"
+			The variable SX_CFG_NUM_RANGE should equal "${SX_CFG_META_DEF_NUM_RANGE}"
+			The variable SX_CFG_SEP should equal "${SX_CFG_META_DEF_SEP}"
+			The variable SX_CFG_ARR_UPDATE should equal "${SX_CFG_META_DEF_ARR_UPDATE}"
+			The variable SX_CFG_ARR_HOLE should equal "${SX_CFG_META_DEF_ARR_HOLE}"
+			The variable SX_CFG_ARR_REF should equal "${SX_CFG_META_DEF_ARR_REF}"
 			The variable SX_SYS_NUM_WLEN should equal "${SX_NUM_I32_WLEN}"
 			The variable SX_SYS_NUM_QM should equal "${SX_NUM_I32_QM}"
 			The variable SX_SYS_NUM_ZR should equal "${SX_NUM_I32_ZR}"
@@ -43,8 +53,49 @@ Describe 'sx_cfg_set()'
 		sx_cfg_set
 		When call sx_cfg_set
 		The status should be success
-		The variable SX_CFG_SIG_ARR should equal "${SX_CFG_DEF_SIG_ARR}"
-		The variable SX_CFG_NUM_RANGE should equal "${SX_CFG_DEF_NUM_RANGE}"
+		The variable SX_CFG_SIG_ARR should equal "${SX_CFG_META_DEF_SIG_ARR}"
+		The variable SX_CFG_NUM_RANGE should equal "${SX_CFG_META_DEF_NUM_RANGE}"
+	End
+
+	Context 'IFS に依存しない全設定リセット'
+		Parameters
+			0
+			1
+		End
+
+		It "SKIP_CHK=$1 で IFS を変更しても全設定を既定値に戻せること"
+			cfg_set_custom "${1}"
+			When call cfg_with_ifs sx_cfg_set
+			The status should be success
+			The variable SX_CFG_SIG_ARR should equal "${SX_CFG_META_DEF_SIG_ARR}"
+			The variable SX_CFG_SKIP_CHK should equal "${SX_CFG_META_DEF_SKIP_CHK}"
+			The variable SX_CFG_NUM_RANGE should equal "${SX_CFG_META_DEF_NUM_RANGE}"
+			The variable SX_CFG_SEP should equal "${SX_CFG_META_DEF_SEP}"
+			The variable SX_CFG_ARR_UPDATE should equal "${SX_CFG_META_DEF_ARR_UPDATE}"
+			The variable SX_CFG_ARR_HOLE should equal "${SX_CFG_META_DEF_ARR_HOLE}"
+			The variable SX_CFG_ARR_REF should equal "${SX_CFG_META_DEF_ARR_REF}"
+		End
+	End
+
+	Context 'メタ情報の設定の拒否'
+		Parameters
+			'META_NAMES'
+			'META_DEF_SIG_ARR'
+			'META_DESC_SIG_ARR'
+			'META_OTHER'
+			'META_NAMES=invalid'
+			'META_DEF_SIG_ARR=invalid'
+			'META_DESC_SIG_ARR=invalid'
+		End
+
+		It "$1 を64で拒否し、他の設定も変更しないこと"
+			cfg_set_custom
+			When call sx_cfg_set NUM_RANGE=32 "${1}"
+			The status should equal 64
+			The stderr should equal ''
+			The variable SX_CFG_NUM_RANGE should equal 64
+			The variable SX_CFG_SIG_ARR should equal custom-array
+		End
 	End
 
 	It '全設定リセットでリビジョンと既存配列のデータを変更しないこと'
@@ -127,7 +178,7 @@ Describe 'sx_cfg_set()'
 		sx_cfg_set SIG_ARR=custom-array
 		When call sx_cfg_set "SIG_ARR"
 		The status should be success
-		The variable SX_CFG_SIG_ARR should equal "${SX_CFG_DEF_SIG_ARR}"
+		The variable SX_CFG_SIG_ARR should equal "${SX_CFG_META_DEF_SIG_ARR}"
 	End
 
 	Context '廃止された SIG_BASE の拒否'

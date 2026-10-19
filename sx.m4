@@ -282,14 +282,25 @@ define([|M_NUM_BASE10_CHARS|], [|0123456789|])dnl
 define([|M_NUM_BASE16_PREFIX|], [|0[Xx]|])dnl
 define([|M_NUM_BASE16_CHARS|], [|0123456789ABCDEFabcdef|])dnl
 
+# 設定項目名の唯一の一覧。検証・全リセットの引数列もビルド時に生成する。
+define([|M_CFG_META_NAMES|], [|SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_UPDATE ARR_HOLE ARR_REF|])dnl
+
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
-define([|M_CFG_DEF_SIG_ARR|], [|array-sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c|])dnl
-define([|M_CFG_DEF_SKIP_CHK|], [|0|])dnl
-define([|M_CFG_DEF_NUM_RANGE|], [|32|])dnl
-define([|M_CFG_DEF_SEP|], [|:::|])dnl
-define([|M_CFG_DEF_ARR_UPDATE|], [|1|])dnl
-define([|M_CFG_DEF_ARR_HOLE|], [||])dnl
-define([|M_CFG_DEF_ARR_REF|], [||])dnl
+define([|M_CFG_META_DEF_SIG_ARR|], [|array-sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c|])dnl
+define([|M_CFG_META_DEF_SKIP_CHK|], [|0|])dnl
+define([|M_CFG_META_DEF_NUM_RANGE|], [|32|])dnl
+define([|M_CFG_META_DEF_SEP|], [|:::|])dnl
+define([|M_CFG_META_DEF_ARR_UPDATE|], [|1|])dnl
+define([|M_CFG_META_DEF_ARR_HOLE|], [||])dnl
+define([|M_CFG_META_DEF_ARR_REF|], [||])dnl
+
+define([|M_CFG_META_DESC_SIG_ARR|], [|配列を識別する署名。|])dnl
+define([|M_CFG_META_DESC_SKIP_CHK|], [|1 で公開 API の引数検査を省略する。|])dnl
+define([|M_CFG_META_DESC_NUM_RANGE|], [|実行シェルの算術域以下で指定する整数のビット幅（32・64・128）。|])dnl
+define([|M_CFG_META_DESC_SEP|], [|設定引数とデータを区切る文字列。|])dnl
+define([|M_CFG_META_DESC_ARR_UPDATE|], [|0 で sx_arr_push・sx_arr_pop によるリビジョン更新を抑制する。|])dnl
+define([|M_CFG_META_DESC_ARR_HOLE|], [|sx_arr_quote・sx_arr_rquote で未設定の配列要素を表す値。|])dnl
+define([|M_CFG_META_DESC_ARR_REF|], [|配列への値指定で変数参照を示す接頭辞。空文字で参照指定を無効にする。|])dnl
 
 # 実行時定数
 
@@ -509,22 +520,32 @@ readonly SX_NUM_BASE10_CHARS=M_STR_QUOTE(M_NUM_BASE10_CHARS)
 readonly SX_NUM_BASE16_PREFIX=M_STR_QUOTE(M_NUM_BASE16_PREFIX)
 readonly SX_NUM_BASE16_CHARS=M_STR_QUOTE(M_NUM_BASE16_CHARS)
 
-# 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
-readonly SX_CFG_DEF_SIG_ARR=M_STR_QUOTE(M_CFG_DEF_SIG_ARR)
-readonly SX_CFG_DEF_SKIP_CHK=M_CFG_DEF_SKIP_CHK
-readonly SX_CFG_DEF_NUM_RANGE=M_CFG_DEF_NUM_RANGE
-readonly SX_CFG_DEF_SEP=M_STR_QUOTE(M_CFG_DEF_SEP)
-readonly SX_CFG_DEF_ARR_UPDATE=M_CFG_DEF_ARR_UPDATE
-readonly SX_CFG_DEF_ARR_HOLE=M_STR_QUOTE(M_CFG_DEF_ARR_HOLE)
-readonly SX_CFG_DEF_ARR_REF=M_STR_QUOTE(M_CFG_DEF_ARR_REF)
+# 設定のメタ情報。META_ は設定項目名の予約接頭辞とする。
+readonly SX_CFG_META_NAMES=M_STR_QUOTE(M_CFG_META_NAMES)
 
-SX_CFG_SIG_ARR="${SX_CFG_SIG_ARR-${SX_CFG_DEF_SIG_ARR}}"
-SX_CFG_SKIP_CHK="${SX_CFG_SKIP_CHK-${SX_CFG_DEF_SKIP_CHK}}"
-SX_CFG_NUM_RANGE="${SX_CFG_NUM_RANGE-${SX_CFG_DEF_NUM_RANGE}}"
-SX_CFG_SEP="${SX_CFG_SEP-${SX_CFG_DEF_SEP}}"
-SX_CFG_ARR_UPDATE="${SX_CFG_ARR_UPDATE-${SX_CFG_DEF_ARR_UPDATE}}"
-SX_CFG_ARR_HOLE="${SX_CFG_ARR_HOLE-${SX_CFG_DEF_ARR_HOLE}}"
-SX_CFG_ARR_REF="${SX_CFG_ARR_REF-${SX_CFG_DEF_ARR_REF}}"
+readonly SX_CFG_META_DEF_SIG_ARR=M_STR_QUOTE(M_CFG_META_DEF_SIG_ARR)
+readonly SX_CFG_META_DEF_SKIP_CHK=M_CFG_META_DEF_SKIP_CHK
+readonly SX_CFG_META_DEF_NUM_RANGE=M_CFG_META_DEF_NUM_RANGE
+readonly SX_CFG_META_DEF_SEP=M_STR_QUOTE(M_CFG_META_DEF_SEP)
+readonly SX_CFG_META_DEF_ARR_UPDATE=M_CFG_META_DEF_ARR_UPDATE
+readonly SX_CFG_META_DEF_ARR_HOLE=M_STR_QUOTE(M_CFG_META_DEF_ARR_HOLE)
+readonly SX_CFG_META_DEF_ARR_REF=M_STR_QUOTE(M_CFG_META_DEF_ARR_REF)
+
+readonly SX_CFG_META_DESC_SIG_ARR=M_STR_QUOTE(M_CFG_META_DESC_SIG_ARR)
+readonly SX_CFG_META_DESC_SKIP_CHK=M_STR_QUOTE(M_CFG_META_DESC_SKIP_CHK)
+readonly SX_CFG_META_DESC_NUM_RANGE=M_STR_QUOTE(M_CFG_META_DESC_NUM_RANGE)
+readonly SX_CFG_META_DESC_SEP=M_STR_QUOTE(M_CFG_META_DESC_SEP)
+readonly SX_CFG_META_DESC_ARR_UPDATE=M_STR_QUOTE(M_CFG_META_DESC_ARR_UPDATE)
+readonly SX_CFG_META_DESC_ARR_HOLE=M_STR_QUOTE(M_CFG_META_DESC_ARR_HOLE)
+readonly SX_CFG_META_DESC_ARR_REF=M_STR_QUOTE(M_CFG_META_DESC_ARR_REF)
+
+SX_CFG_SIG_ARR="${SX_CFG_SIG_ARR-${SX_CFG_META_DEF_SIG_ARR}}"
+SX_CFG_SKIP_CHK="${SX_CFG_SKIP_CHK-${SX_CFG_META_DEF_SKIP_CHK}}"
+SX_CFG_NUM_RANGE="${SX_CFG_NUM_RANGE-${SX_CFG_META_DEF_NUM_RANGE}}"
+SX_CFG_SEP="${SX_CFG_SEP-${SX_CFG_META_DEF_SEP}}"
+SX_CFG_ARR_UPDATE="${SX_CFG_ARR_UPDATE-${SX_CFG_META_DEF_ARR_UPDATE}}"
+SX_CFG_ARR_HOLE="${SX_CFG_ARR_HOLE-${SX_CFG_META_DEF_ARR_HOLE}}"
+SX_CFG_ARR_REF="${SX_CFG_ARR_REF-${SX_CFG_META_DEF_ARR_REF}}"
 
 SX_SYS_REV=0
 eval SX_SYS_NUM_WLEN="\${SX_NUM_I${SX_CFG_NUM_RANGE}_WLEN}" SX_SYS_NUM_QM="\${SX_NUM_I${SX_CFG_NUM_RANGE}_QM}" SX_SYS_NUM_ZR="\${SX_NUM_I${SX_CFG_NUM_RANGE}_ZR}" SX_SYS_NUM_MAX="\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}" SX_SYS_NUM_MIN="\${SX_NUM_I${SX_CFG_NUM_RANGE}_MIN}"
@@ -543,6 +564,8 @@ M_RENAME_Q([|dnl
 ##   引数が '名前=値' の形式の場合は、その設定値が妥当か検査する。
 ##   引数が '名前' のみの場合は、その名前が設定項目として有効か検査する。
 ##   引数がない場合は、現在の SX_CFG_* 変数の値をすべて検査する。
+##   未設定の項目は不正とする。設定済みの空文字は項目ごとの規則に従って検査する。
+##   設定項目名は SX_CFG_META_NAMES に列挙する。META_ で始まる名前は設定項目として認めない。
 ##
 ## 終了ステータス:
 ##    0  すべて妥当 (SX_EX_OK)
@@ -552,19 +575,12 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 sx_cfg_is_valid() {
 	case "${#}" in 0)
-		set -- \
-			NUM_RANGE="${SX_CFG_NUM_RANGE-}" \
-			SKIP_CHK="${SX_CFG_SKIP_CHK-}" \
-			SIG_ARR="${SX_CFG_SIG_ARR-}" \
-			SEP="${SX_CFG_SEP-}" \
-			ARR_UPDATE="${SX_CFG_ARR_UPDATE-}" \
-			ARR_HOLE="${SX_CFG_ARR_HOLE-}" \
-			ARR_REF="${SX_CFG_ARR_REF-}"
+		set -- patsubst(M_CFG_META_NAMES, [|\([_A-Z][_A-Z0-9]*\)|], [|"${SX_CFG_\1+\1=${SX_CFG_\1}}"|])
 	esac
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			NUM_RANGE | SKIP_CHK | SIG_ARR | SEP | ARR_UPDATE | ARR_HOLE | ARR_REF) ;;
+			patsubst(M_CFG_META_NAMES, [| |], [| | |])) ;;
 			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128) ;;
 			SKIP_CHK=[01] | SIG_ARR=?* | SEP=?* | ARR_UPDATE=[01] | ARR_HOLE=* | ARR_REF=*) ;;
 			*)
@@ -587,7 +603,7 @@ M_RENAME_Q([|dnl
 ## 説明:
 ##   sx_cfg_is_valid を用いて全引数を検査し、すべて合格した場合のみ値を設定する。
 ##   '名前' のみが指定された場合は、その項目をデフォルト値にリセットする。
-##   引数がない場合は、全設定項目を SX_CFG_DEF_* の値にリセットする。
+##   引数がない場合は、全設定項目を SX_CFG_META_DEF_* の値にリセットする。
 ##   NUM_RANGE に対応する派生値も更新するが、SX_SYS_REV と既存の配列データは変更しない。
 ##   署名が変わると、変更前の署名で作成した配列は認識されなくなる。
 ##   検査を省略しない場合は、派生値を含む全変更対象の書込可否を変更前に確認する。
@@ -603,7 +619,7 @@ sx_cfg_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_cfg_set "${@}" || return; return 0;; esac
 
 	case "${#}" in 0)
-		set -- SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_UPDATE ARR_HOLE ARR_REF
+		set -- M_CFG_META_NAMES
 	esac
 
 	sx_cfg_is_valid "${@}" || return M_EX_USAGE
@@ -638,8 +654,8 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   内部実装。引数チェックは行わない。
-##   '名前' のみが指定された場合は、対応する SX_CFG_DEF_* の値でリセットする。
-##   引数がない場合は、全設定項目を SX_CFG_DEF_* の値にリセットする。
+##   '名前' のみが指定された場合は、対応する SX_CFG_META_DEF_* の値でリセットする。
+##   引数がない場合は、全設定項目を SX_CFG_META_DEF_* の値にリセットする。
 ##   NUM_RANGE の派生値も更新する。SX_SYS_REV と既存の配列データは変更しない。
 ##
 ## 終了ステータス:
@@ -649,13 +665,13 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_cfg_set() {
 	case "${#}" in 0)
-		set -- SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_UPDATE ARR_HOLE ARR_REF
+		set -- M_CFG_META_NAMES
 	esac
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
 			*=*) eval "SX_CFG_${Q_arg%%=*}=\"\${Q_arg#*=}\"";;
-			*) eval "SX_CFG_${Q_arg}=\"\${SX_CFG_DEF_${Q_arg}}\"";;
+			*) eval "SX_CFG_${Q_arg}=\"\${SX_CFG_META_DEF_${Q_arg}}\"";;
 		esac
 
 		case "${Q_arg}" in NUM_RANGE | NUM_RANGE=*)

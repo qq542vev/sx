@@ -7,6 +7,12 @@ Describe 'sx_cfg_set -efu 環境検証'
     The status should be success
   End
 
+  It 'メタ情報への設定を64で拒否すること'
+    When run efu_run sx_cfg_set META_NAMES=invalid
+    The status should equal 64
+    The stderr should equal ''
+  End
+
   Context '引数なしの全設定リセット'
     Parameters
       0

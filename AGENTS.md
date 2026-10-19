@@ -54,14 +54,16 @@ POSIX sh には `local` が存在しないため、命名規則と `m4` 展開�
 - **結果変数**: 原則として第1引数で指定（参照渡し）します。単一変数名かバインド形式かで検査を使い分けます（`sx_var_is_name`／`__sx_var_is_bind`＋`__sx_var_is_bindable` の順）。
 - **バインド形式**: 蓄積前は `__sx_var_bind_init` が必須です。クォートありは `__sx_var_bind`、数値・idx 等は `__sx_var_ubind` を使用します。
 - **設定とグローバル状態** (`sx.m4:272-286`):
-  - `SX_CFG_SIG_ARR/SKIP_CHK/NUM_RANGE/SEP/ARR_UPDATE/ARR_HOLE/ARR_REF` の7変数（環境継承優先、`SX_CFG_DEF_*` が既定値）。署名は `SIG_ARR` で設定します。`sx_cfg_set` は引数なしで全設定を既定値に戻します。`ARR_UPDATE=0` で `sx_arr_push`／`sx_arr_pop` のリビジョン更新（`__sx_var_touch`）を抑制します（`sx_arr_gen` は常に更新）。`ARR_HOLE` は疎配列の穴の表現値（既定は空文字）。`sx_arr_quote`／`sx_arr_rquote` は未設定要素を `SX_CFG_ARR_HOLE` の値で表します。
+  - `SX_CFG_SIG_ARR/SKIP_CHK/NUM_RANGE/SEP/ARR_UPDATE/ARR_HOLE/ARR_REF` の7変数（環境継承優先、`SX_CFG_META_DEF_*` が既定値）。署名は `SIG_ARR` で設定します。`sx_cfg_set` は引数なしで全設定を既定値に戻します。`ARR_UPDATE=0` で `sx_arr_push`／`sx_arr_pop` のリビジョン更新（`__sx_var_touch`）を抑制します（`sx_arr_gen` は常に更新）。`ARR_HOLE` は疎配列の穴の表現値（既定は空文字）。`sx_arr_quote`／`sx_arr_rquote` は未設定要素を `SX_CFG_ARR_HOLE` の値で表します。
+  - 設定のメタ情報は readonly の `SX_CFG_META_*` に置きます。`SX_CFG_META_NAMES` は接頭辞なしの設定項目名をスペース1文字で区切った一覧、`SX_CFG_META_DEF_*` は既定値、`SX_CFG_META_DESC_*` は短い説明です。`META_` は設定項目名の予約接頭辞です。一覧の唯一の定義元は `M_CFG_META_NAMES` とし、検証・全リセットの引数列はビルド時に生成して `IFS` への依存を避けます。
+  - `sx_cfg_is_valid` の引数なし呼び出しでは全項目の現在値を検査し、未設定の項目があれば `1` を返します。設定済みの空文字とは区別します。
   - `SX_SYS_REV` は一意名・リビジョン用カウンタ（`__sx_fn_anon`、`__sx_var_touch` のみが更新）。
 - **`:::` セパレータ**: `SX_CFG_SEP`（既定 `:::`）で設定引数とデータを分離します。パースは `X${SX_CFG_SEP}`＋`${N+X${N}}` イディオム（空値・`set -u` 対策）を定型とします。
 
 ## 5. 実装標準 (Implementation Standards)
 
 - **ターゲット環境**: `yash -efu -o posix` を基準とし、最も厳格な POSIX 準拠を維持します。
-- **定数体系** (`sx.m4:65-278`＋`m4` 生成): prefix で判別します。`SX_EX_*`（終了状態）、`SX_STR_*`（文字・集合・フラグ）、`SX_ARG_*`（フラグ）、`SX_NUM_*`（整数限界・`QM/ZR`・浮動小数・数学定数・基数）、`SX_CFG_DEF_*`（既定値）。m4 時定数 `M_EX_OK/USAGE/NOPERM/CONFIG` と併用します。
+- **定数体系** (`sx.m4:65-278`＋`m4` 生成): prefix で判別します。`SX_EX_*`（終了状態）、`SX_STR_*`（文字・集合・フラグ）、`SX_ARG_*`（フラグ）、`SX_NUM_*`（整数限界・`QM/ZR`・浮動小数・数学定数・基数）、`SX_CFG_META_*`（設定項目名一覧・既定値・説明）。m4 時定数 `M_EX_OK/USAGE/NOPERM/CONFIG` と併用します。
 - **文字列操作**: `sed`/`awk` の代わりにパラメータ展開（`#`, `##`, `%`, `%%`）と `case` 文を駆使してください。
 - **位置パラメータの活用**: 内部変数を増やす前に `set --` による状態管理を検討してください。
 - **サブシェルの最小化**: `$(...)` や `(...)` は極限まで抑えてください。特にループ内での使用は厳禁です。

@@ -38,12 +38,26 @@ Describe 'sx_const_check'
     The variable SX_EX_MSG71 should equal "EX_OSERR(71): system error (e.g., can't fork)"
     The variable SX_EX_MSG73 should equal "EX_CANTCREAT(73): can't create (user) output file"
     The variable SX_NUM_BASE10_PREFIX should equal ''
-    The variable SX_CFG_DEF_ARR_HOLE should equal ''
-    The variable SX_CFG_DEF_ARR_REF should equal ''
+    The variable SX_CFG_META_DEF_ARR_HOLE should equal ''
+    The variable SX_CFG_META_DEF_ARR_REF should equal ''
   End
 
   It '既定の配列署名の値を保持すること'
     When call :
-    The variable SX_CFG_DEF_SIG_ARR should equal 'array-sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c'
+    The variable SX_CFG_META_DEF_SIG_ARR should equal 'array-sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c'
+  End
+
+  It '設定項目名の一覧を公開すること'
+    When call :
+    The variable SX_CFG_META_NAMES should equal 'SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_UPDATE ARR_HOLE ARR_REF'
+  End
+
+  It '設定のメタ情報が読み取り専用であること'
+    When call sx_var_is_ro SX_CFG_META_NAMES \
+      SX_CFG_META_DEF_SIG_ARR SX_CFG_META_DEF_SKIP_CHK SX_CFG_META_DEF_NUM_RANGE \
+      SX_CFG_META_DEF_SEP SX_CFG_META_DEF_ARR_UPDATE SX_CFG_META_DEF_ARR_HOLE SX_CFG_META_DEF_ARR_REF \
+      SX_CFG_META_DESC_SIG_ARR SX_CFG_META_DESC_SKIP_CHK SX_CFG_META_DESC_NUM_RANGE \
+      SX_CFG_META_DESC_SEP SX_CFG_META_DESC_ARR_UPDATE SX_CFG_META_DESC_ARR_HOLE SX_CFG_META_DESC_ARR_REF
+    The status should be success
   End
 End
