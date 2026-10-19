@@ -283,8 +283,7 @@ define([|M_NUM_BASE16_PREFIX|], [|0[Xx]|])dnl
 define([|M_NUM_BASE16_CHARS|], [|0123456789ABCDEFabcdef|])dnl
 
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
-define([|M_CFG_DEF_SIG_BASE|], [|sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c|])dnl
-define([|M_CFG_DEF_SIG_ARR|], [|array-M_CFG_DEF_SIG_BASE()|])dnl
+define([|M_CFG_DEF_SIG_ARR|], [|array-sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c|])dnl
 define([|M_CFG_DEF_SKIP_CHK|], [|0|])dnl
 define([|M_CFG_DEF_NUM_RANGE|], [|32|])dnl
 define([|M_CFG_DEF_SEP|], [|:::|])dnl
@@ -511,7 +510,6 @@ readonly SX_NUM_BASE16_PREFIX=M_STR_QUOTE(M_NUM_BASE16_PREFIX)
 readonly SX_NUM_BASE16_CHARS=M_STR_QUOTE(M_NUM_BASE16_CHARS)
 
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
-readonly SX_CFG_DEF_SIG_BASE=M_STR_QUOTE(M_CFG_DEF_SIG_BASE)
 readonly SX_CFG_DEF_SIG_ARR=M_STR_QUOTE(M_CFG_DEF_SIG_ARR)
 readonly SX_CFG_DEF_SKIP_CHK=M_CFG_DEF_SKIP_CHK
 readonly SX_CFG_DEF_NUM_RANGE=M_CFG_DEF_NUM_RANGE
@@ -520,7 +518,6 @@ readonly SX_CFG_DEF_ARR_UPDATE=M_CFG_DEF_ARR_UPDATE
 readonly SX_CFG_DEF_ARR_HOLE=M_STR_QUOTE(M_CFG_DEF_ARR_HOLE)
 readonly SX_CFG_DEF_ARR_REF=M_STR_QUOTE(M_CFG_DEF_ARR_REF)
 
-SX_CFG_SIG_BASE="${SX_CFG_SIG_BASE-${SX_CFG_DEF_SIG_BASE}}"
 SX_CFG_SIG_ARR="${SX_CFG_SIG_ARR-${SX_CFG_DEF_SIG_ARR}}"
 SX_CFG_SKIP_CHK="${SX_CFG_SKIP_CHK-${SX_CFG_DEF_SKIP_CHK}}"
 SX_CFG_NUM_RANGE="${SX_CFG_NUM_RANGE-${SX_CFG_DEF_NUM_RANGE}}"
@@ -558,7 +555,6 @@ sx_cfg_is_valid() {
 		set -- \
 			NUM_RANGE="${SX_CFG_NUM_RANGE-}" \
 			SKIP_CHK="${SX_CFG_SKIP_CHK-}" \
-			SIG_BASE="${SX_CFG_SIG_BASE-}" \
 			SIG_ARR="${SX_CFG_SIG_ARR-}" \
 			SEP="${SX_CFG_SEP-}" \
 			ARR_UPDATE="${SX_CFG_ARR_UPDATE-}" \
@@ -568,9 +564,9 @@ sx_cfg_is_valid() {
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			NUM_RANGE | SKIP_CHK | SIG_BASE | SIG_ARR | SEP | ARR_UPDATE | ARR_HOLE | ARR_REF) ;;
+			NUM_RANGE | SKIP_CHK | SIG_ARR | SEP | ARR_UPDATE | ARR_HOLE | ARR_REF) ;;
 			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128) ;;
-			SKIP_CHK=[01] | SIG_BASE=?* | SIG_ARR=?* | SEP=?* | ARR_UPDATE=[01] | ARR_HOLE=* | ARR_REF=*) ;;
+			SKIP_CHK=[01] | SIG_ARR=?* | SEP=?* | ARR_UPDATE=[01] | ARR_HOLE=* | ARR_REF=*) ;;
 			*)
 				unset CLEANUP
 				return 1
@@ -592,7 +588,6 @@ M_RENAME_Q([|dnl
 ##   sx_cfg_is_valid を用いて全引数を検査し、すべて合格した場合のみ値を設定する。
 ##   '名前' のみが指定された場合は、その項目をデフォルト値にリセットする。
 ##   引数がない場合は、全設定項目を SX_CFG_DEF_* の値にリセットする。
-##   SX_CFG_SIG_BASE が変更された場合は、自動的に SX_CFG_SIG_ARR も更新する。
 ##   NUM_RANGE に対応する派生値も更新するが、SX_SYS_REV と既存の配列データは変更しない。
 ##   署名が変わると、変更前の署名で作成した配列は認識されなくなる。
 ##   検査を省略しない場合は、派生値を含む全変更対象の書込可否を変更前に確認する。
@@ -608,7 +603,7 @@ sx_cfg_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_cfg_set "${@}" || return; return 0;; esac
 
 	case "${#}" in 0)
-		set -- SIG_BASE SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_UPDATE ARR_HOLE ARR_REF
+		set -- SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_UPDATE ARR_HOLE ARR_REF
 	esac
 
 	sx_cfg_is_valid "${@}" || return M_EX_USAGE
@@ -619,9 +614,6 @@ sx_cfg_set() {
 		M_STR_APPEND([|Q_chk|], [|" SX_CFG_${Q_arg%%=*}"|])
 
 		case "${Q_arg}" in
-			SIG_BASE | SIG_BASE=*)
-				M_STR_APPEND([|Q_chk|], [|" SX_CFG_SIG_ARR"|])
-				;;
 			NUM_RANGE | NUM_RANGE=*)
 				M_STR_APPEND([|Q_chk|], [|" SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX SX_SYS_NUM_MIN"|])
 				;;
@@ -648,7 +640,6 @@ M_RENAME_QI([|dnl
 ##   内部実装。引数チェックは行わない。
 ##   '名前' のみが指定された場合は、対応する SX_CFG_DEF_* の値でリセットする。
 ##   引数がない場合は、全設定項目を SX_CFG_DEF_* の値にリセットする。
-##   SIG_BASE が変更された場合は、SIG_ARR も自動的に更新する。
 ##   NUM_RANGE の派生値も更新する。SX_SYS_REV と既存の配列データは変更しない。
 ##
 ## 終了ステータス:
@@ -658,17 +649,13 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_cfg_set() {
 	case "${#}" in 0)
-		set -- SIG_BASE SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_UPDATE ARR_HOLE ARR_REF
+		set -- SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_UPDATE ARR_HOLE ARR_REF
 	esac
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
 			*=*) eval "SX_CFG_${Q_arg%%=*}=\"\${Q_arg#*=}\"";;
 			*) eval "SX_CFG_${Q_arg}=\"\${SX_CFG_DEF_${Q_arg}}\"";;
-		esac
-
-		case "${Q_arg}" in SIG_BASE | SIG_BASE=*)
-			SX_CFG_SIG_ARR="array-${SX_CFG_SIG_BASE}"
 		esac
 
 		case "${Q_arg}" in NUM_RANGE | NUM_RANGE=*)

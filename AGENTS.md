@@ -54,7 +54,7 @@ POSIX sh には `local` が存在しないため、命名規則と `m4` 展開�
 - **結果変数**: 原則として第1引数で指定（参照渡し）します。単一変数名かバインド形式かで検査を使い分けます（`sx_var_is_name`／`__sx_var_is_bind`＋`__sx_var_is_bindable` の順）。
 - **バインド形式**: 蓄積前は `__sx_var_bind_init` が必須です。クォートありは `__sx_var_bind`、数値・idx 等は `__sx_var_ubind` を使用します。
 - **設定とグローバル状態** (`sx.m4:272-286`):
-  - `SX_CFG_SIG_BASE/SIG_ARR/SKIP_CHK/NUM_RANGE/SEP/ARR_UPDATE/ARR_HOLE` の7変数（環境継承優先、`SX_CFG_DEF_*` が既定値）。`SIG_BASE` 変更時は `SIG_ARR` を自動同期します。`ARR_UPDATE=0` で `sx_arr_push`／`sx_arr_pop` のリビジョン更新（`__sx_var_touch`）を抑制します（`sx_arr_gen` は常に更新）。`ARR_HOLE` は疎配列の穴の表現値（既定は空文字）。`sx_arr_quote`／`sx_arr_rquote` は未設定要素を `SX_CFG_ARR_HOLE` の値で表します。
+  - `SX_CFG_SIG_ARR/SKIP_CHK/NUM_RANGE/SEP/ARR_UPDATE/ARR_HOLE/ARR_REF` の7変数（環境継承優先、`SX_CFG_DEF_*` が既定値）。署名は `SIG_ARR` で設定します。`sx_cfg_set` は引数なしで全設定を既定値に戻します。`ARR_UPDATE=0` で `sx_arr_push`／`sx_arr_pop` のリビジョン更新（`__sx_var_touch`）を抑制します（`sx_arr_gen` は常に更新）。`ARR_HOLE` は疎配列の穴の表現値（既定は空文字）。`sx_arr_quote`／`sx_arr_rquote` は未設定要素を `SX_CFG_ARR_HOLE` の値で表します。
   - `SX_SYS_REV` は一意名・リビジョン用カウンタ（`__sx_fn_anon`、`__sx_var_touch` のみが更新）。
 - **`:::` セパレータ**: `SX_CFG_SEP`（既定 `:::`）で設定引数とデータを分離します。パースは `X${SX_CFG_SEP}`＋`${N+X${N}}` イディオム（空値・`set -u` 対策）を定型とします。
 

@@ -7,7 +7,7 @@ Describe 'sx_cfg_set()'
 	Include ./sx.sh
 
 	cfg_set_custom() {
-		sx_cfg_set SIG_BASE=custom SIG_ARR=custom-array NUM_RANGE=64 \
+		sx_cfg_set SIG_ARR=custom-array NUM_RANGE=64 \
 			SEP=@@ ARR_UPDATE=0 ARR_HOLE=hole ARR_REF=@ "SKIP_CHK=${1-0}"
 	}
 
@@ -23,7 +23,6 @@ Describe 'sx_cfg_set()'
 			cfg_set_custom "${2}"
 			When call "${1}"
 			The status should be success
-			The variable SX_CFG_SIG_BASE should equal "${SX_CFG_DEF_SIG_BASE}"
 			The variable SX_CFG_SIG_ARR should equal "${SX_CFG_DEF_SIG_ARR}"
 			The variable SX_CFG_SKIP_CHK should equal "${SX_CFG_DEF_SKIP_CHK}"
 			The variable SX_CFG_NUM_RANGE should equal "${SX_CFG_DEF_NUM_RANGE}"
@@ -44,7 +43,6 @@ Describe 'sx_cfg_set()'
 		sx_cfg_set
 		When call sx_cfg_set
 		The status should be success
-		The variable SX_CFG_SIG_BASE should equal "${SX_CFG_DEF_SIG_BASE}"
 		The variable SX_CFG_SIG_ARR should equal "${SX_CFG_DEF_SIG_ARR}"
 		The variable SX_CFG_NUM_RANGE should equal "${SX_CFG_DEF_NUM_RANGE}"
 	End
@@ -65,7 +63,6 @@ Describe 'sx_cfg_set()'
 
 	Context '全変更対象の書込可否の事前検査'
 		Parameters
-			'SX_CFG_SIG_BASE'
 			'SX_CFG_SIG_ARR'
 			'SX_CFG_SKIP_CHK'
 			'SX_CFG_NUM_RANGE'
@@ -86,7 +83,6 @@ Describe 'sx_cfg_set()'
 			When call sx_cfg_set
 			The status should equal 77
 			The stderr should equal ''
-			The variable SX_CFG_SIG_BASE should equal custom
 			The variable SX_CFG_SIG_ARR should equal custom-array
 			The variable SX_CFG_SKIP_CHK should equal 0
 			The variable SX_CFG_NUM_RANGE should equal 64
@@ -102,30 +98,21 @@ Describe 'sx_cfg_set()'
 		End
 	End
 
-	Context '個別設定の派生値の書込可否の事前検査'
-		Parameters
-			'SX_CFG_SIG_ARR' 'SIG_BASE'
-			'SX_SYS_NUM_MAX' 'NUM_RANGE'
-		End
-
-		It "$1 が readonly なら $2 の変更前に77を返すこと"
-			cfg_set_custom
-			readonly "${1}"
-			When call sx_cfg_set "${2}"
-			The status should equal 77
-			The stderr should equal ''
-			The variable SX_CFG_SIG_BASE should equal custom
-			The variable SX_CFG_SIG_ARR should equal custom-array
-			The variable SX_CFG_NUM_RANGE should equal 64
-			The variable SX_SYS_NUM_MAX should equal "${SX_NUM_I64_MAX}"
-		End
+	It '数値派生値が readonly なら NUM_RANGE の変更前に77を返すこと'
+		cfg_set_custom
+		readonly SX_SYS_NUM_MAX
+		When call sx_cfg_set NUM_RANGE
+		The status should equal 77
+		The stderr should equal ''
+		The variable SX_CFG_SIG_ARR should equal custom-array
+		The variable SX_CFG_NUM_RANGE should equal 64
+		The variable SX_SYS_NUM_MAX should equal "${SX_NUM_I64_MAX}"
 	End
 
-	It '値を正常に設定し、SIG_ARRを更新すること'
-		When call sx_cfg_set "SIG_BASE=new-sig" "NUM_RANGE=64"
+	It '署名と数値範囲を正常に設定できること'
+		When call sx_cfg_set "SIG_ARR=new-sig" "NUM_RANGE=64"
 		The status should be success
-		The variable SX_CFG_SIG_BASE should equal 'new-sig'
-		The variable SX_CFG_SIG_ARR should equal 'array-new-sig'
+		The variable SX_CFG_SIG_ARR should equal 'new-sig'
 		The variable SX_CFG_NUM_RANGE should equal 64
 	End
 
@@ -136,13 +123,38 @@ Describe 'sx_cfg_set()'
 		The variable SX_CFG_NUM_RANGE should equal 32
 	End
 
-	It 'SIG_BASEをリセットした時にSIG_ARRもデフォルトに戻ること'
-		SX_CFG_SIG_BASE="custom"
-		SX_CFG_SIG_ARR="array-custom"
-		When call sx_cfg_set "SIG_BASE"
+	It '署名を個別に既定値に戻せること'
+		sx_cfg_set SIG_ARR=custom-array
+		When call sx_cfg_set "SIG_ARR"
 		The status should be success
-		The variable SX_CFG_SIG_BASE should equal 'sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c'
-		The variable SX_CFG_SIG_ARR should equal 'array-sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c'
+		The variable SX_CFG_SIG_ARR should equal "${SX_CFG_DEF_SIG_ARR}"
+	End
+
+	Context '廃止された SIG_BASE の拒否'
+		Parameters
+			'SIG_BASE'
+			'SIG_BASE=custom'
+			'SIG_BASE='
+		End
+
+		It "$1 を64で拒否し、他の設定も変更しないこと"
+			cfg_set_custom
+			When call sx_cfg_set NUM_RANGE=32 "${1}"
+			The status should equal 64
+			The variable SX_CFG_SIG_ARR should equal custom-array
+			The variable SX_CFG_NUM_RANGE should equal 64
+		End
+	End
+
+	It '独自署名で生成した配列を認識できること'
+		sx_cfg_set SIG_ARR=custom-array
+		sx_arr_gen cfg_custom_arr first second
+		When call sx_var_is_arr cfg_custom_arr
+		The status should be success
+		The variable cfg_custom_arr should start with 'custom-array:'
+		The variable cfg_custom_arr_len should equal 2
+		The variable cfg_custom_arr_0 should equal first
+		The variable cfg_custom_arr_1 should equal second
 	End
 
 	It '一つでも不正な値があれば、何も設定しないこと'

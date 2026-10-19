@@ -38,9 +38,17 @@ Describe 'sx_cfg_is_valid()'
 		The status should equal 1
 	End
 
-	It '空の値を拒否すること (SIG_BASE)'
-		When call sx_cfg_is_valid "SIG_BASE="
-		The status should equal 1
+	Context '廃止された SIG_BASE の拒否'
+		Parameters
+			'SIG_BASE'
+			'SIG_BASE=custom'
+			'SIG_BASE='
+		End
+
+		It "$1 を設定項目として認めないこと"
+			When call sx_cfg_is_valid "${1}"
+			The status should equal 1
+		End
 	End
 
 	It '空の値を拒否すること (SIG_ARR)'
@@ -62,7 +70,6 @@ Describe 'sx_cfg_is_valid()'
 
 	It 'プレフィックスありの指定は不正とみなされること (SX_CFG_...)'
 		# SX_CFG_NUM_RANGE=64 と渡すと SX_CFG_SX_CFG_NUM_RANGE=64 として扱われる
-		# 未知の項目は現状パスするが、SIG_BASE などの依存関係は壊れない
 		When call sx_cfg_is_valid "SX_CFG_NUM_RANGE=64"
 		The status should be failure
 		The status should equal 1

@@ -42,8 +42,8 @@ Describe 'sx_const_check'
     The variable SX_CFG_DEF_ARR_REF should equal ''
   End
 
-  It '既定の配列署名をビルド時に合成しても値を保持すること'
+  It '既定の配列署名の値を保持すること'
     When call :
-    The variable SX_CFG_DEF_SIG_ARR should equal "array-${SX_CFG_DEF_SIG_BASE}"
+    The variable SX_CFG_DEF_SIG_ARR should equal 'array-sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c'
   End
 End
