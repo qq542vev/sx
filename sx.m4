@@ -294,6 +294,20 @@ define([|M_CFG_META_DEF_ARR_UPDATE|], [|1|])dnl
 define([|M_CFG_META_DEF_ARR_HOLE|], [||])dnl
 define([|M_CFG_META_DEF_ARR_REF|], [||])dnl
 
+# 受理する glob パターンを | で区切る。各選択肢に設定名を付けて case を生成する。
+define([|M_CFG_META_PATTERN_SIG_ARR|], [|?*|])dnl
+define([|M_CFG_META_PATTERN_SKIP_CHK|], [|[01]|])dnl
+define([|M_CFG_META_PATTERN_NUM_RANGE|], [|32|64|128|])dnl
+define([|M_CFG_META_PATTERN_SEP|], [|?*|])dnl
+define([|M_CFG_META_PATTERN_ARR_UPDATE|], [|[01]|])dnl
+define([|M_CFG_META_PATTERN_ARR_HOLE|], [|*|])dnl
+define([|M_CFG_META_PATTERN_ARR_REF|], [|*|])dnl
+
+define([|__sx_m4_gen_cfg_pattern|], [|readonly SX_CFG_META_PATTERN_$1=M_STR_QUOTE(defn([|M_CFG_META_PATTERN_$1|]))
+|])dnl
+define([|__sx_m4_gen_cfg_case|], [|$1=patsubst(defn([|M_CFG_META_PATTERN_$1|]), [|||], [| | $1=|])) ;;
+|])dnl
+
 define([|M_CFG_META_DESC_SIG_ARR|], [|配列を識別する署名。|])dnl
 define([|M_CFG_META_DESC_SKIP_CHK|], [|1 で公開 API の引数検査を省略する。|])dnl
 define([|M_CFG_META_DESC_NUM_RANGE|], [|実行シェルの算術域以下で指定する整数のビット幅（32・64・128）。|])dnl
@@ -531,6 +545,8 @@ readonly SX_CFG_META_DEF_ARR_UPDATE=M_CFG_META_DEF_ARR_UPDATE
 readonly SX_CFG_META_DEF_ARR_HOLE=M_STR_QUOTE(M_CFG_META_DEF_ARR_HOLE)
 readonly SX_CFG_META_DEF_ARR_REF=M_STR_QUOTE(M_CFG_META_DEF_ARR_REF)
 
+patsubst(M_CFG_META_NAMES, [|\([_A-Z][_A-Z0-9]*\)|], [|__sx_m4_gen_cfg_pattern(\1)|])dnl
+
 readonly SX_CFG_META_DESC_SIG_ARR=M_STR_QUOTE(M_CFG_META_DESC_SIG_ARR)
 readonly SX_CFG_META_DESC_SKIP_CHK=M_STR_QUOTE(M_CFG_META_DESC_SKIP_CHK)
 readonly SX_CFG_META_DESC_NUM_RANGE=M_STR_QUOTE(M_CFG_META_DESC_NUM_RANGE)
@@ -566,6 +582,7 @@ M_RENAME_Q([|dnl
 ##   引数がない場合は、現在の SX_CFG_* 変数の値をすべて検査する。
 ##   未設定の項目は不正とする。設定済みの空文字は項目ごとの規則に従って検査する。
 ##   設定項目名は SX_CFG_META_NAMES に列挙する。META_ で始まる名前は設定項目として認めない。
+##   各設定値の受理パターンは SX_CFG_META_PATTERN_* に公開する。
 ##
 ## 終了ステータス:
 ##    0  すべて妥当 (SX_EX_OK)
@@ -581,8 +598,7 @@ sx_cfg_is_valid() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
 			patsubst(M_CFG_META_NAMES, [| |], [| | |])) ;;
-			NUM_RANGE=32 | NUM_RANGE=64 | NUM_RANGE=128) ;;
-			SKIP_CHK=[01] | SIG_ARR=?* | SEP=?* | ARR_UPDATE=[01] | ARR_HOLE=* | ARR_REF=*) ;;
+patsubst(M_CFG_META_NAMES, [|\([_A-Z][_A-Z0-9]*\)|], [|__sx_m4_gen_cfg_case(\1)|])dnl
 			*)
 				unset CLEANUP
 				return 1

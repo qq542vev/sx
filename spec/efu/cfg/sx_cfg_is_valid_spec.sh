@@ -7,6 +7,22 @@ Describe 'sx_cfg_is_valid -efu 環境検証'
     The status should be success
   End
 
+  Context '生成された数値範囲の選択肢の検査'
+    Parameters
+      'NUM_RANGE=32' 0
+      'NUM_RANGE=64' 0
+      'NUM_RANGE=128' 0
+      '64' 1
+      '128' 1
+    End
+
+    It "$1 を設定名を含めて検査すること"
+      When run efu_run sx_cfg_is_valid "${1}"
+      The status should equal "${2}"
+      The stderr should equal ''
+    End
+  End
+
   It '設定値の空白と空文字を保持して全項目を検査すること'
     sx_cfg_set 'SIG_ARR=custom array *' 'ARR_HOLE=' 'ARR_REF=@ ref'
     When run efu_run sx_cfg_is_valid

@@ -6,6 +6,39 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_cfg_is_valid()'
 	Include ./sx.sh
 
+	Context '生成されたパターンによる設定値の検査'
+		Parameters
+			'NUM_RANGE=32' 0
+			'NUM_RANGE=64' 0
+			'NUM_RANGE=128' 0
+			'NUM_RANGE=064' 1
+			'NUM_RANGE=64x' 1
+			'NUM_RANGE=32|64|128' 1
+			'SKIP_CHK=0' 0
+			'SKIP_CHK=1' 0
+			'SKIP_CHK=01' 1
+			'ARR_UPDATE=0' 0
+			'ARR_UPDATE=1' 0
+			'ARR_UPDATE=2' 1
+			'ARR_UPDATE=01' 1
+			'SIG_ARR=x' 0
+			'SEP=|' 0
+			'ARR_HOLE=' 0
+			'ARR_HOLE=32|64|128' 0
+			'ARR_REF=' 0
+			'ARR_REF=[01]' 0
+			'32' 1
+			'64' 1
+			'128' 1
+		End
+
+		It "$1 を項目名と値の両方で検査すること"
+			When call sx_cfg_is_valid "${1}"
+			The status should equal "${2}"
+			The stderr should equal ''
+		End
+	End
+
 	It '正常な値をパスすること (NUM_RANGE=64)'
 		When call sx_cfg_is_valid "NUM_RANGE=64"
 		The status should be success
@@ -101,6 +134,7 @@ Describe 'sx_cfg_is_valid()'
 			'META_NAMES'
 			'META_DEF_SIG_ARR'
 			'META_DESC_SIG_ARR'
+			'META_PATTERN_NUM_RANGE'
 			'META_OTHER'
 			'DEF_SIG_ARR'
 		End

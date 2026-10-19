@@ -82,10 +82,12 @@ Describe 'sx_cfg_set()'
 			'META_NAMES'
 			'META_DEF_SIG_ARR'
 			'META_DESC_SIG_ARR'
+			'META_PATTERN_NUM_RANGE'
 			'META_OTHER'
 			'META_NAMES=invalid'
 			'META_DEF_SIG_ARR=invalid'
 			'META_DESC_SIG_ARR=invalid'
+			'META_PATTERN_NUM_RANGE=invalid'
 		End
 
 		It "$1 を64で拒否し、他の設定も変更しないこと"
