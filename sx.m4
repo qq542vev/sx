@@ -18,6 +18,13 @@ define([|M_STR_WRAP|], [|$1=$2"${$1}"$3|])dnl
 define([|M_STR_LTRIM|], [|${$1#"${$1%%$2*}"}|])dnl
 define([|M_STR_RTRIM|], [|${$1%"${$1##*$2}"}|])dnl
 
+# 生の文字列を POSIX 2024 のドル単一引用符で囲む。制御文字は3桁の8進表記にする。
+# 各段階で m4 の引用を保持し、値に含まれるマクロ名・カンマ・括弧の再解釈を防ぐ。
+define([|M_STR_QUOTE|], [|$'__M_STR_QUOTE_CTRL(__M_STR_QUOTE_APOS(__M_STR_QUOTE_BS([|$1|])), 1)'|])dnl
+define([|__M_STR_QUOTE_BS|], [|patsubst([|[|$1|]|], [|\\|], [|\\\\|])|])dnl
+define([|__M_STR_QUOTE_APOS|], [|patsubst([|[|$1|]|], [|'|], [|\\'|])|])dnl
+define([|__M_STR_QUOTE_CTRL|], [|ifelse($2, 32, [|patsubst([|[|$1|]|], format([|%c|], 127), [|\\177|])|], [|__M_STR_QUOTE_CTRL(patsubst([|[|$1|]|], format([|%c|], $2), format([|\\%03o|], $2)), incr($2))|])|])dnl
+
 define([|M_EX_OK|], [|0|])dnl
 define([|M_EX_USAGE|], [|64|])dnl
 define([|M_EX_DATAERR|], [|65|])dnl
@@ -61,199 +68,187 @@ define([|M_NUM_BOOL|], [|M_STR_NE([|$(($1))|], 0)|])dnl
 define([|M_RENAME_Q|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Za-z]*\)|], [|\1__sx_$2_\2|])|])dnl
 define([|M_RENAME_QI|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Za-z]*\)|], [|\1__sx_$2_\2_|])|])dnl
 
-# sysexits(3) compatible exit codes
-readonly SX_EX_OK=0
-readonly SX_EX_USAGE=64
-readonly SX_EX_DATAERR=65
-readonly SX_EX_NOINPUT=66
-readonly SX_EX_NOUSER=67
-readonly SX_EX_NOHOST=68
-readonly SX_EX_UNAVAILABLE=69
-readonly SX_EX_SOFTWARE=70
-readonly SX_EX_OSERR=71
-readonly SX_EX_OSFILE=72
-readonly SX_EX_CANTCREAT=73
-readonly SX_EX_IOERR=74
-readonly SX_EX_TEMPFAIL=75
-readonly SX_EX_PROTOCOL=76
-readonly SX_EX_NOPERM=77
-readonly SX_EX_CONFIG=78
+# 定数マクロ
+# 固定定数の値は M_* で管理する。
+# 引数の区切りになる値は、利用側で defn により引用したまま取り出す。
+# トークン境界の保護が必要な合成では、合成側に空引用を置く。
+# 合成もビルド時に完了させ、実行時の定数参照を生成しない。
 
-readonly SX_EX_STS0=OK
-readonly SX_EX_STS64=USAGE
-readonly SX_EX_STS65=DATAERR
-readonly SX_EX_STS66=NOINPUT
-readonly SX_EX_STS67=NOUSER
-readonly SX_EX_STS68=NOHOST
-readonly SX_EX_STS69=UNAVAILABLE
-readonly SX_EX_STS70=SOFTWARE
-readonly SX_EX_STS71=OSERR
-readonly SX_EX_STS72=OSFILE
-readonly SX_EX_STS73=CANTCREAT
-readonly SX_EX_STS74=IOERR
-readonly SX_EX_STS75=TEMPFAIL
-readonly SX_EX_STS76=PROTOCOL
-readonly SX_EX_STS77=NOPERM
-readonly SX_EX_STS78=CONFIG
+define([|M_EX_STS0|], [|OK|])dnl
+define([|M_EX_STS64|], [|USAGE|])dnl
+define([|M_EX_STS65|], [|DATAERR|])dnl
+define([|M_EX_STS66|], [|NOINPUT|])dnl
+define([|M_EX_STS67|], [|NOUSER|])dnl
+define([|M_EX_STS68|], [|NOHOST|])dnl
+define([|M_EX_STS69|], [|UNAVAILABLE|])dnl
+define([|M_EX_STS70|], [|SOFTWARE|])dnl
+define([|M_EX_STS71|], [|OSERR|])dnl
+define([|M_EX_STS72|], [|OSFILE|])dnl
+define([|M_EX_STS73|], [|CANTCREAT|])dnl
+define([|M_EX_STS74|], [|IOERR|])dnl
+define([|M_EX_STS75|], [|TEMPFAIL|])dnl
+define([|M_EX_STS76|], [|PROTOCOL|])dnl
+define([|M_EX_STS77|], [|NOPERM|])dnl
+define([|M_EX_STS78|], [|CONFIG|])dnl
 
-readonly SX_EX_MSG0='EX_OK(0): successful termination'
-readonly SX_EX_MSG64='EX_USAGE(64): command line usage error'
-readonly SX_EX_MSG65='EX_DATAERR(65): data format error'
-readonly SX_EX_MSG66='EX_NOINPUT(66): cannot open input'
-readonly SX_EX_MSG67='EX_NOUSER(67): addressee unknown'
-readonly SX_EX_MSG68='EX_NOHOST(68): host name unknown'
-readonly SX_EX_MSG69='EX_UNAVAILABLE(69): service unavailable'
-readonly SX_EX_MSG70='EX_SOFTWARE(70): internal software error'
-readonly SX_EX_MSG71="EX_OSERR(71): system error (e.g., can't fork)"
-readonly SX_EX_MSG72='EX_OSFILE(72): critical OS file missing'
-readonly SX_EX_MSG73="EX_CANTCREAT(73): can't create (user) output file"
-readonly SX_EX_MSG74='EX_IOERR(74): input/output error'
-readonly SX_EX_MSG75='EX_TEMPFAIL(75): temp failure; user is invited to retry'
-readonly SX_EX_MSG76='EX_PROTOCOL(76): remote error in protocol'
-readonly SX_EX_MSG77='EX_NOPERM(77): permission denied'
-readonly SX_EX_MSG78='EX_CONFIG(78): configuration error'
+define([|M_EX_MSG0|], [|EX_OK(0): successful termination|])dnl
+define([|M_EX_MSG64|], [|EX_USAGE(64): command line usage error|])dnl
+define([|M_EX_MSG65|], [|EX_DATAERR(65): data format error|])dnl
+define([|M_EX_MSG66|], [|EX_NOINPUT(66): cannot open input|])dnl
+define([|M_EX_MSG67|], [|EX_NOUSER(67): addressee unknown|])dnl
+define([|M_EX_MSG68|], [|EX_NOHOST(68): host name unknown|])dnl
+define([|M_EX_MSG69|], [|EX_UNAVAILABLE(69): service unavailable|])dnl
+define([|M_EX_MSG70|], [|EX_SOFTWARE(70): internal software error|])dnl
+define([|M_EX_MSG71|], [|EX_OSERR(71): system error (e.g., can't fork)|])dnl
+define([|M_EX_MSG72|], [|EX_OSFILE(72): critical OS file missing|])dnl
+define([|M_EX_MSG73|], [|EX_CANTCREAT(73): can't create (user) output file|])dnl
+define([|M_EX_MSG74|], [|EX_IOERR(74): input/output error|])dnl
+define([|M_EX_MSG75|], [|EX_TEMPFAIL(75): temp failure; user is invited to retry|])dnl
+define([|M_EX_MSG76|], [|EX_PROTOCOL(76): remote error in protocol|])dnl
+define([|M_EX_MSG77|], [|EX_NOPERM(77): permission denied|])dnl
+define([|M_EX_MSG78|], [|EX_CONFIG(78): configuration error|])dnl
 
-readonly SX_STR_SOH=$'\cA'
-readonly SX_STR_STX=$'\cB'
-readonly SX_STR_ETX=$'\cC'
-readonly SX_STR_EOT=$'\cD'
-readonly SX_STR_ENQ=$'\cE'
-readonly SX_STR_ACK=$'\cF'
-readonly SX_STR_BEL=$'\cG'
-readonly SX_STR_BS=$'\cH'
-readonly SX_STR_HT=$'\cI'
-readonly SX_STR_LF=$'\cJ'
-readonly SX_STR_VT=$'\cK'
-readonly SX_STR_FF=$'\cL'
-readonly SX_STR_CR=$'\cM'
-readonly SX_STR_SO=$'\cN'
-readonly SX_STR_SI=$'\cO'
-readonly SX_STR_DLE=$'\cP'
-readonly SX_STR_DC1=$'\cQ'
-readonly SX_STR_DC2=$'\cR'
-readonly SX_STR_DC3=$'\cS'
-readonly SX_STR_DC4=$'\cT'
-readonly SX_STR_NAK=$'\cU'
-readonly SX_STR_SYN=$'\cV'
-readonly SX_STR_ETB=$'\cW'
-readonly SX_STR_CAN=$'\cX'
-readonly SX_STR_EM=$'\cY'
-readonly SX_STR_SUB=$'\cZ'
-readonly SX_STR_ESC=$'\c['
-readonly SX_STR_FS=$'\c\\'
-readonly SX_STR_GS=$'\c]'
-readonly SX_STR_RS=$'\c^'
-readonly SX_STR_US=$'\c_'
-readonly SX_STR_DEL=$'\c?'
+define([|M_STR_SOH|], [|format([|%c|], 1)|])dnl
+define([|M_STR_STX|], [|format([|%c|], 2)|])dnl
+define([|M_STR_ETX|], [|format([|%c|], 3)|])dnl
+define([|M_STR_EOT|], [|format([|%c|], 4)|])dnl
+define([|M_STR_ENQ|], [|format([|%c|], 5)|])dnl
+define([|M_STR_ACK|], [|format([|%c|], 6)|])dnl
+define([|M_STR_BEL|], [|format([|%c|], 7)|])dnl
+define([|M_STR_BS|], [|format([|%c|], 8)|])dnl
+define([|M_STR_HT|], [|format([|%c|], 9)|])dnl
+define([|M_STR_LF|], [|format([|%c|], 10)|])dnl
+define([|M_STR_VT|], [|format([|%c|], 11)|])dnl
+define([|M_STR_FF|], [|format([|%c|], 12)|])dnl
+define([|M_STR_CR|], [|format([|%c|], 13)|])dnl
+define([|M_STR_SO|], [|format([|%c|], 14)|])dnl
+define([|M_STR_SI|], [|format([|%c|], 15)|])dnl
+define([|M_STR_DLE|], [|format([|%c|], 16)|])dnl
+define([|M_STR_DC1|], [|format([|%c|], 17)|])dnl
+define([|M_STR_DC2|], [|format([|%c|], 18)|])dnl
+define([|M_STR_DC3|], [|format([|%c|], 19)|])dnl
+define([|M_STR_DC4|], [|format([|%c|], 20)|])dnl
+define([|M_STR_NAK|], [|format([|%c|], 21)|])dnl
+define([|M_STR_SYN|], [|format([|%c|], 22)|])dnl
+define([|M_STR_ETB|], [|format([|%c|], 23)|])dnl
+define([|M_STR_CAN|], [|format([|%c|], 24)|])dnl
+define([|M_STR_EM|], [|format([|%c|], 25)|])dnl
+define([|M_STR_SUB|], [|format([|%c|], 26)|])dnl
+define([|M_STR_ESC|], [|format([|%c|], 27)|])dnl
+define([|M_STR_FS|], [|format([|%c|], 28)|])dnl
+define([|M_STR_GS|], [|format([|%c|], 29)|])dnl
+define([|M_STR_RS|], [|format([|%c|], 30)|])dnl
+define([|M_STR_US|], [|format([|%c|], 31)|])dnl
+define([|M_STR_DEL|], [|format([|%c|], 127)|])dnl
 
-readonly SX_STR_BLANK=$'\t '
-readonly SX_STR_SPACE=$'\t\n\v\f\r '
-readonly SX_STR_CNTRL=$'\cA\cB\cC\cD\cE\cF\cG\cH\cI\cJ\cK\cL\cM\cN\cO\cP\cQ\cR\cS\cT\cU\cV\cW\cX\cY\cZ\c[\c\\\c]\c^\c_\c?'
-readonly SX_STR_OCT='01234567'
-readonly SX_STR_DIGIT='0123456789'
-readonly SX_STR_XDIGIT='0123456789ABCDEFabcdef'
-readonly SX_STR_UPPER='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-readonly SX_STR_LOWER='abcdefghijklmnopqrstuvwxyz'
-readonly SX_STR_PUNCT='!"#$%&'\''()*+,-./:;<=>?@[\]^_`{|}~'
-readonly SX_STR_ALPHA="${SX_STR_UPPER}${SX_STR_LOWER}"
-readonly SX_STR_ALNUM="${SX_STR_DIGIT}${SX_STR_ALPHA}"
-readonly SX_STR_WORD="_${SX_STR_ALNUM}"
-readonly SX_STR_SWORD="_${SX_STR_ALPHA}"
-readonly SX_STR_GRAPH="${SX_STR_PUNCT}${SX_STR_ALNUM}"
-readonly SX_STR_PRINT=" ${SX_STR_GRAPH}"
-readonly SX_STR_ASCII="${SX_STR_CNTRL}${SX_STR_PRINT}"
+define([|M_STR_BLANK|], [|M_STR_HT() |])dnl
+define([|M_STR_SPACE|], [|M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR() |])dnl
+define([|M_STR_CNTRL|], [|M_STR_SOH()M_STR_STX()M_STR_ETX()M_STR_EOT()M_STR_ENQ()M_STR_ACK()M_STR_BEL()M_STR_BS()M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR()M_STR_SO()M_STR_SI()M_STR_DLE()M_STR_DC1()M_STR_DC2()M_STR_DC3()M_STR_DC4()M_STR_NAK()M_STR_SYN()M_STR_ETB()M_STR_CAN()M_STR_EM()M_STR_SUB()M_STR_ESC()M_STR_FS()M_STR_GS()M_STR_RS()M_STR_US()M_STR_DEL()|])dnl
+define([|M_STR_OCT|], [|01234567|])dnl
+define([|M_STR_DIGIT|], [|0123456789|])dnl
+define([|M_STR_XDIGIT|], [|0123456789ABCDEFabcdef|])dnl
+define([|M_STR_UPPER|], [|ABCDEFGHIJKLMNOPQRSTUVWXYZ|])dnl
+define([|M_STR_LOWER|], [|abcdefghijklmnopqrstuvwxyz|])dnl
+define([|M_STR_PUNCT|], [|!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~|])dnl
+define([|M_STR_ALPHA|], [|M_STR_UPPER()[||]M_STR_LOWER()|])dnl
+define([|M_STR_ALNUM|], [|M_STR_DIGIT()M_STR_ALPHA()|])dnl
+define([|M_STR_WORD|], [|_[||]M_STR_ALNUM()|])dnl
+define([|M_STR_SWORD|], [|_[||]M_STR_ALPHA()|])dnl
+define([|M_STR_GRAPH|], [|defn([|M_STR_PUNCT|])M_STR_ALNUM()|])dnl
+define([|M_STR_PRINT|], [| M_STR_GRAPH()|])dnl
+define([|M_STR_ASCII|], [|M_STR_CNTRL()M_STR_PRINT()|])dnl
 
 # sx_str_split 等で使用するフラグ
-readonly SX_STR_SPLIT_GLOB=1
-readonly SX_STR_SPLIT_INC=2
-readonly SX_STR_SUB_GLOB=1
-readonly SX_STR_SUB_CB=2
-readonly SX_STR_CAPITAL_KEEP=1
-readonly SX_STR_CAPITAL_SENT=2
-readonly SX_ARG_PAD_CB=1
-readonly SX_ARG_RESIZE_PAD_LEFT=2
-readonly SX_STR_ISEP_CB=1
-readonly SX_STR_ISEP_PRE=2
-readonly SX_STR_ISEP_POST=4
-readonly SX_ARG_ISEP_CB=1
-readonly SX_ARG_ISEP_PRE=2
-readonly SX_ARG_ISEP_POST=4
-readonly SX_ARG_FIND_GLOB=1
-readonly SX_ARG_FIND_TEXT=4
-readonly SX_ARG_FIND_CB=2
-readonly SX_ARG_RFIND_GLOB=1
-readonly SX_ARG_RFIND_TEXT=4
-readonly SX_ARG_RFIND_CB=2
-readonly SX_ARG_COUNT_GLOB=1
-readonly SX_ARG_COUNT_CB=2
-readonly SX_STR_FIND_GLOB=1
-readonly SX_STR_FIND_OVERLAP=2
-readonly SX_STR_FIND_TEXT=4
-readonly SX_STR_RFIND_GLOB=1
-readonly SX_STR_RFIND_OVERLAP=2
-readonly SX_STR_RFIND_TEXT=4
-readonly SX_STR_COUNT_GLOB=1
-readonly SX_STR_COUNT_OVERLAP=2
-readonly SX_STR_CHUNK_SKIP_SHORT=1
-readonly SX_STR_CHUNK_SKIP_LONG=2
-readonly SX_STR_RCHUNK_SKIP_SHORT=1
-readonly SX_STR_RCHUNK_SKIP_LONG=2
+define([|M_STR_SPLIT_GLOB|], [|1|])dnl
+define([|M_STR_SPLIT_INC|], [|2|])dnl
+define([|M_STR_SUB_GLOB|], [|1|])dnl
+define([|M_STR_SUB_CB|], [|2|])dnl
+define([|M_STR_CAPITAL_KEEP|], [|1|])dnl
+define([|M_STR_CAPITAL_SENT|], [|2|])dnl
+define([|M_ARG_PAD_CB|], [|1|])dnl
+define([|M_ARG_RESIZE_PAD_LEFT|], [|2|])dnl
+define([|M_STR_ISEP_CB|], [|1|])dnl
+define([|M_STR_ISEP_PRE|], [|2|])dnl
+define([|M_STR_ISEP_POST|], [|4|])dnl
+define([|M_ARG_ISEP_CB|], [|1|])dnl
+define([|M_ARG_ISEP_PRE|], [|2|])dnl
+define([|M_ARG_ISEP_POST|], [|4|])dnl
+define([|M_ARG_FIND_GLOB|], [|1|])dnl
+define([|M_ARG_FIND_TEXT|], [|4|])dnl
+define([|M_ARG_FIND_CB|], [|2|])dnl
+define([|M_ARG_RFIND_GLOB|], [|1|])dnl
+define([|M_ARG_RFIND_TEXT|], [|4|])dnl
+define([|M_ARG_RFIND_CB|], [|2|])dnl
+define([|M_ARG_COUNT_GLOB|], [|1|])dnl
+define([|M_ARG_COUNT_CB|], [|2|])dnl
+define([|M_STR_FIND_GLOB|], [|1|])dnl
+define([|M_STR_FIND_OVERLAP|], [|2|])dnl
+define([|M_STR_FIND_TEXT|], [|4|])dnl
+define([|M_STR_RFIND_GLOB|], [|1|])dnl
+define([|M_STR_RFIND_OVERLAP|], [|2|])dnl
+define([|M_STR_RFIND_TEXT|], [|4|])dnl
+define([|M_STR_COUNT_GLOB|], [|1|])dnl
+define([|M_STR_COUNT_OVERLAP|], [|2|])dnl
+define([|M_STR_CHUNK_SKIP_SHORT|], [|1|])dnl
+define([|M_STR_CHUNK_SKIP_LONG|], [|2|])dnl
+define([|M_STR_RCHUNK_SKIP_SHORT|], [|1|])dnl
+define([|M_STR_RCHUNK_SKIP_LONG|], [|2|])dnl
 
 # 数値定数 (8bit / 16bit / 32bit / 64bit / 128bit 整数限界)
-readonly SX_NUM_I8_MAX=127
-readonly SX_NUM_I8_MIN=-128
-readonly SX_NUM_I8_WLEN=1
-readonly SX_NUM_I8_QM='?'
-readonly SX_NUM_I8_ZR='0'
-readonly SX_NUM_U8_MAX=255
-readonly SX_NUM_U8_WLEN=2
-readonly SX_NUM_U8_QM='??'
-readonly SX_NUM_U8_ZR='00'
-readonly SX_NUM_I16_MAX=32767
-readonly SX_NUM_I16_MIN=-32768
-readonly SX_NUM_I16_WLEN=4
-readonly SX_NUM_I16_QM='????'
-readonly SX_NUM_I16_ZR='0000'
-readonly SX_NUM_U16_MAX=65535
-readonly SX_NUM_U16_WLEN=4
-readonly SX_NUM_U16_QM='????'
-readonly SX_NUM_U16_ZR='0000'
-readonly SX_NUM_I32_MAX=2147483647
-readonly SX_NUM_I32_MIN=-2147483648
-readonly SX_NUM_I32_WLEN=9
-readonly SX_NUM_I32_QM='?????????'
-readonly SX_NUM_I32_ZR='000000000'
-readonly SX_NUM_U32_MAX=4294967295
-readonly SX_NUM_U32_WLEN=9
-readonly SX_NUM_U32_QM='?????????'
-readonly SX_NUM_U32_ZR='000000000'
-readonly SX_NUM_I64_MAX=9223372036854775807
-readonly SX_NUM_I64_MIN=-9223372036854775808
-readonly SX_NUM_I64_WLEN=18
-readonly SX_NUM_I64_QM='??????????????????'
-readonly SX_NUM_I64_ZR='000000000000000000'
-readonly SX_NUM_U64_MAX=18446744073709551615
-readonly SX_NUM_U64_WLEN=18
-readonly SX_NUM_U64_QM='??????????????????'
-readonly SX_NUM_U64_ZR='000000000000000000'
-readonly SX_NUM_I128_MAX=170141183460469231731687303715884105727
-readonly SX_NUM_I128_MIN=-170141183460469231731687303715884105728
-readonly SX_NUM_I128_WLEN=37
-readonly SX_NUM_I128_QM='?????????????????????????????????????'
-readonly SX_NUM_I128_ZR='0000000000000000000000000000000000000'
-readonly SX_NUM_U128_MAX=340282366920938463463374607431768211455
-readonly SX_NUM_U128_WLEN=38
-readonly SX_NUM_U128_QM='??????????????????????????????????????'
-readonly SX_NUM_U128_ZR='00000000000000000000000000000000000000'
+define([|M_NUM_I8_MAX|], [|127|])dnl
+define([|M_NUM_I8_MIN|], [|-128|])dnl
+define([|M_NUM_I8_WLEN|], [|1|])dnl
+define([|M_NUM_I8_QM|], [|?|])dnl
+define([|M_NUM_I8_ZR|], [|0|])dnl
+define([|M_NUM_U8_MAX|], [|255|])dnl
+define([|M_NUM_U8_WLEN|], [|2|])dnl
+define([|M_NUM_U8_QM|], [|??|])dnl
+define([|M_NUM_U8_ZR|], [|00|])dnl
+define([|M_NUM_I16_MAX|], [|32767|])dnl
+define([|M_NUM_I16_MIN|], [|-32768|])dnl
+define([|M_NUM_I16_WLEN|], [|4|])dnl
+define([|M_NUM_I16_QM|], [|????|])dnl
+define([|M_NUM_I16_ZR|], [|0000|])dnl
+define([|M_NUM_U16_MAX|], [|65535|])dnl
+define([|M_NUM_U16_WLEN|], [|4|])dnl
+define([|M_NUM_U16_QM|], [|????|])dnl
+define([|M_NUM_U16_ZR|], [|0000|])dnl
+define([|M_NUM_I32_MAX|], [|2147483647|])dnl
+define([|M_NUM_I32_MIN|], [|-2147483648|])dnl
+define([|M_NUM_I32_WLEN|], [|9|])dnl
+define([|M_NUM_I32_QM|], [|?????????|])dnl
+define([|M_NUM_I32_ZR|], [|000000000|])dnl
+define([|M_NUM_U32_MAX|], [|4294967295|])dnl
+define([|M_NUM_U32_WLEN|], [|9|])dnl
+define([|M_NUM_U32_QM|], [|?????????|])dnl
+define([|M_NUM_U32_ZR|], [|000000000|])dnl
+define([|M_NUM_I64_MAX|], [|9223372036854775807|])dnl
+define([|M_NUM_I64_MIN|], [|-9223372036854775808|])dnl
+define([|M_NUM_I64_WLEN|], [|18|])dnl
+define([|M_NUM_I64_QM|], [|??????????????????|])dnl
+define([|M_NUM_I64_ZR|], [|000000000000000000|])dnl
+define([|M_NUM_U64_MAX|], [|18446744073709551615|])dnl
+define([|M_NUM_U64_WLEN|], [|18|])dnl
+define([|M_NUM_U64_QM|], [|??????????????????|])dnl
+define([|M_NUM_U64_ZR|], [|000000000000000000|])dnl
+define([|M_NUM_I128_MAX|], [|170141183460469231731687303715884105727|])dnl
+define([|M_NUM_I128_MIN|], [|-170141183460469231731687303715884105728|])dnl
+define([|M_NUM_I128_WLEN|], [|37|])dnl
+define([|M_NUM_I128_QM|], [|?????????????????????????????????????|])dnl
+define([|M_NUM_I128_ZR|], [|0000000000000000000000000000000000000|])dnl
+define([|M_NUM_U128_MAX|], [|340282366920938463463374607431768211455|])dnl
+define([|M_NUM_U128_WLEN|], [|38|])dnl
+define([|M_NUM_U128_QM|], [|??????????????????????????????????????|])dnl
+define([|M_NUM_U128_ZR|], [|00000000000000000000000000000000000000|])dnl
 
 # 最適乗算チャンク用動的定数の事前定義 (1〜37桁)
-define([|__sx_m4_gen_qm|], [|readonly SX_NUM_QM_$1='$2'
+define([|__sx_m4_gen_qm|], [|define([|M_NUM_QM_$1|], [|$2|])dnl
+readonly SX_NUM_QM_$1=M_STR_QUOTE(M_NUM_QM_$1)
 ifelse([|$1|], [|37|], [||], [|__sx_m4_gen_qm(incr($1), $2?)|])|])dnl
-__sx_m4_gen_qm(1, ?)
 
-define([|__sx_m4_gen_zr|], [|readonly SX_NUM_ZR_$1='$2'
+define([|__sx_m4_gen_zr|], [|define([|M_NUM_ZR_$1|], [|$2|])dnl
+readonly SX_NUM_ZR_$1=M_STR_QUOTE(M_NUM_ZR_$1)
 ifelse([|$1|], [|37|], [||], [|__sx_m4_gen_zr(incr($1), $2[|0|])|])|])dnl
-__sx_m4_gen_zr(1, 0)
 
 # __sx_str_qm / __sx_str_zr 用の 37 分岐 case を生成する（定数生成と同一の 37 境界）
 define([|__sx_m4_gen_qm_case|], [|	$1) __sx_str_qm_out_="${SX_NUM_QM_$1}";;
@@ -262,40 +257,268 @@ define([|__sx_m4_gen_zr_case|], [|	$1) __sx_str_zr_out_="${SX_NUM_ZR_$1}";;
 ifelse([|$1|], [|37|], [||], [|__sx_m4_gen_zr_case(incr($1))|])|])dnl
 
 # 浮動小数点数限界 (IEEE 754 準拠)
-readonly SX_NUM_DBL_MAX='1.7976931348623157e+308'
-readonly SX_NUM_DBL_MIN='2.2250738585072014e-308'
-readonly SX_NUM_DBL_EPSILON='2.2204460492503131e-16'
-readonly SX_NUM_FLT_MAX='3.402823466e+38'
-readonly SX_NUM_FLT_MIN='1.175494351e-38'
-readonly SX_NUM_FLT_EPSILON='1.192092896e-07'
+define([|M_NUM_DBL_MAX|], [|1.7976931348623157e+308|])dnl
+define([|M_NUM_DBL_MIN|], [|2.2250738585072014e-308|])dnl
+define([|M_NUM_DBL_EPSILON|], [|2.2204460492503131e-16|])dnl
+define([|M_NUM_FLT_MAX|], [|3.402823466e+38|])dnl
+define([|M_NUM_FLT_MIN|], [|1.175494351e-38|])dnl
+define([|M_NUM_FLT_EPSILON|], [|1.192092896e-07|])dnl
 
 # 数学定数 (bc などの外部コマンド利用時用)
-readonly SX_NUM_PI='3.14159265358979323846'
-readonly SX_NUM_TAU='6.28318530717958647692'
-readonly SX_NUM_E='2.71828182845904523536'
-readonly SX_NUM_SQRT2='1.41421356237309504880'
-readonly SX_NUM_SQRT3='1.73205080756887729352'
-readonly SX_NUM_SQRT5='2.23606797749978969640'
-readonly SX_NUM_PHI='1.61803398874989484820'
-readonly SX_NUM_LN2='0.69314718055994530941'
-readonly SX_NUM_LN10='2.30258509299404568401'
+define([|M_NUM_PI|], [|3.14159265358979323846|])dnl
+define([|M_NUM_TAU|], [|6.28318530717958647692|])dnl
+define([|M_NUM_E|], [|2.71828182845904523536|])dnl
+define([|M_NUM_SQRT2|], [|1.41421356237309504880|])dnl
+define([|M_NUM_SQRT3|], [|1.73205080756887729352|])dnl
+define([|M_NUM_SQRT5|], [|2.23606797749978969640|])dnl
+define([|M_NUM_PHI|], [|1.61803398874989484820|])dnl
+define([|M_NUM_LN2|], [|0.69314718055994530941|])dnl
+define([|M_NUM_LN10|], [|2.30258509299404568401|])dnl
 
-readonly SX_NUM_BASE8_PREFIX='0'
-readonly SX_NUM_BASE8_CHARS='01234567'
-readonly SX_NUM_BASE10_PREFIX=
-readonly SX_NUM_BASE10_CHARS='0123456789'
-readonly SX_NUM_BASE16_PREFIX='0[Xx]'
-readonly SX_NUM_BASE16_CHARS='0123456789ABCDEFabcdef'
+define([|M_NUM_BASE8_PREFIX|], [|0|])dnl
+define([|M_NUM_BASE8_CHARS|], [|01234567|])dnl
+define([|M_NUM_BASE10_PREFIX|], [||])dnl
+define([|M_NUM_BASE10_CHARS|], [|0123456789|])dnl
+define([|M_NUM_BASE16_PREFIX|], [|0[Xx]|])dnl
+define([|M_NUM_BASE16_CHARS|], [|0123456789ABCDEFabcdef|])dnl
 
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
-readonly SX_CFG_DEF_SIG_BASE=sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c
-readonly SX_CFG_DEF_SIG_ARR="array-${SX_CFG_DEF_SIG_BASE}"
-readonly SX_CFG_DEF_SKIP_CHK=0
-readonly SX_CFG_DEF_NUM_RANGE=32
-readonly SX_CFG_DEF_SEP=':::'
-readonly SX_CFG_DEF_ARR_UPDATE=1
-readonly SX_CFG_DEF_ARR_HOLE=
-readonly SX_CFG_DEF_ARR_REF=
+define([|M_CFG_DEF_SIG_BASE|], [|sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c|])dnl
+define([|M_CFG_DEF_SIG_ARR|], [|array-M_CFG_DEF_SIG_BASE()|])dnl
+define([|M_CFG_DEF_SKIP_CHK|], [|0|])dnl
+define([|M_CFG_DEF_NUM_RANGE|], [|32|])dnl
+define([|M_CFG_DEF_SEP|], [|:::|])dnl
+define([|M_CFG_DEF_ARR_UPDATE|], [|1|])dnl
+define([|M_CFG_DEF_ARR_HOLE|], [||])dnl
+define([|M_CFG_DEF_ARR_REF|], [||])dnl
+
+# 実行時定数
+
+# sysexits(3) compatible exit codes
+readonly SX_EX_OK=M_EX_OK
+readonly SX_EX_USAGE=M_EX_USAGE
+readonly SX_EX_DATAERR=M_EX_DATAERR
+readonly SX_EX_NOINPUT=M_EX_NOINPUT
+readonly SX_EX_NOUSER=M_EX_NOUSER
+readonly SX_EX_NOHOST=M_EX_NOHOST
+readonly SX_EX_UNAVAILABLE=M_EX_UNAVAILABLE
+readonly SX_EX_SOFTWARE=M_EX_SOFTWARE
+readonly SX_EX_OSERR=M_EX_OSERR
+readonly SX_EX_OSFILE=M_EX_OSFILE
+readonly SX_EX_CANTCREAT=M_EX_CANTCREAT
+readonly SX_EX_IOERR=M_EX_IOERR
+readonly SX_EX_TEMPFAIL=M_EX_TEMPFAIL
+readonly SX_EX_PROTOCOL=M_EX_PROTOCOL
+readonly SX_EX_NOPERM=M_EX_NOPERM
+readonly SX_EX_CONFIG=M_EX_CONFIG
+
+readonly SX_EX_STS0=M_STR_QUOTE(M_EX_STS0)
+readonly SX_EX_STS64=M_STR_QUOTE(M_EX_STS64)
+readonly SX_EX_STS65=M_STR_QUOTE(M_EX_STS65)
+readonly SX_EX_STS66=M_STR_QUOTE(M_EX_STS66)
+readonly SX_EX_STS67=M_STR_QUOTE(M_EX_STS67)
+readonly SX_EX_STS68=M_STR_QUOTE(M_EX_STS68)
+readonly SX_EX_STS69=M_STR_QUOTE(M_EX_STS69)
+readonly SX_EX_STS70=M_STR_QUOTE(M_EX_STS70)
+readonly SX_EX_STS71=M_STR_QUOTE(M_EX_STS71)
+readonly SX_EX_STS72=M_STR_QUOTE(M_EX_STS72)
+readonly SX_EX_STS73=M_STR_QUOTE(M_EX_STS73)
+readonly SX_EX_STS74=M_STR_QUOTE(M_EX_STS74)
+readonly SX_EX_STS75=M_STR_QUOTE(M_EX_STS75)
+readonly SX_EX_STS76=M_STR_QUOTE(M_EX_STS76)
+readonly SX_EX_STS77=M_STR_QUOTE(M_EX_STS77)
+readonly SX_EX_STS78=M_STR_QUOTE(M_EX_STS78)
+
+readonly SX_EX_MSG0=M_STR_QUOTE(M_EX_MSG0)
+readonly SX_EX_MSG64=M_STR_QUOTE(M_EX_MSG64)
+readonly SX_EX_MSG65=M_STR_QUOTE(M_EX_MSG65)
+readonly SX_EX_MSG66=M_STR_QUOTE(M_EX_MSG66)
+readonly SX_EX_MSG67=M_STR_QUOTE(M_EX_MSG67)
+readonly SX_EX_MSG68=M_STR_QUOTE(M_EX_MSG68)
+readonly SX_EX_MSG69=M_STR_QUOTE(M_EX_MSG69)
+readonly SX_EX_MSG70=M_STR_QUOTE(M_EX_MSG70)
+readonly SX_EX_MSG71=M_STR_QUOTE(M_EX_MSG71)
+readonly SX_EX_MSG72=M_STR_QUOTE(M_EX_MSG72)
+readonly SX_EX_MSG73=M_STR_QUOTE(M_EX_MSG73)
+readonly SX_EX_MSG74=M_STR_QUOTE(M_EX_MSG74)
+readonly SX_EX_MSG75=M_STR_QUOTE(M_EX_MSG75)
+readonly SX_EX_MSG76=M_STR_QUOTE(M_EX_MSG76)
+readonly SX_EX_MSG77=M_STR_QUOTE(M_EX_MSG77)
+readonly SX_EX_MSG78=M_STR_QUOTE(M_EX_MSG78)
+
+readonly SX_STR_SOH=M_STR_QUOTE(M_STR_SOH)
+readonly SX_STR_STX=M_STR_QUOTE(M_STR_STX)
+readonly SX_STR_ETX=M_STR_QUOTE(M_STR_ETX)
+readonly SX_STR_EOT=M_STR_QUOTE(M_STR_EOT)
+readonly SX_STR_ENQ=M_STR_QUOTE(M_STR_ENQ)
+readonly SX_STR_ACK=M_STR_QUOTE(M_STR_ACK)
+readonly SX_STR_BEL=M_STR_QUOTE(M_STR_BEL)
+readonly SX_STR_BS=M_STR_QUOTE(M_STR_BS)
+readonly SX_STR_HT=M_STR_QUOTE(M_STR_HT)
+readonly SX_STR_LF=M_STR_QUOTE(M_STR_LF)
+readonly SX_STR_VT=M_STR_QUOTE(M_STR_VT)
+readonly SX_STR_FF=M_STR_QUOTE(M_STR_FF)
+readonly SX_STR_CR=M_STR_QUOTE(M_STR_CR)
+readonly SX_STR_SO=M_STR_QUOTE(M_STR_SO)
+readonly SX_STR_SI=M_STR_QUOTE(M_STR_SI)
+readonly SX_STR_DLE=M_STR_QUOTE(M_STR_DLE)
+readonly SX_STR_DC1=M_STR_QUOTE(M_STR_DC1)
+readonly SX_STR_DC2=M_STR_QUOTE(M_STR_DC2)
+readonly SX_STR_DC3=M_STR_QUOTE(M_STR_DC3)
+readonly SX_STR_DC4=M_STR_QUOTE(M_STR_DC4)
+readonly SX_STR_NAK=M_STR_QUOTE(M_STR_NAK)
+readonly SX_STR_SYN=M_STR_QUOTE(M_STR_SYN)
+readonly SX_STR_ETB=M_STR_QUOTE(M_STR_ETB)
+readonly SX_STR_CAN=M_STR_QUOTE(M_STR_CAN)
+readonly SX_STR_EM=M_STR_QUOTE(M_STR_EM)
+readonly SX_STR_SUB=M_STR_QUOTE(M_STR_SUB)
+readonly SX_STR_ESC=M_STR_QUOTE(M_STR_ESC)
+readonly SX_STR_FS=M_STR_QUOTE(M_STR_FS)
+readonly SX_STR_GS=M_STR_QUOTE(M_STR_GS)
+readonly SX_STR_RS=M_STR_QUOTE(M_STR_RS)
+readonly SX_STR_US=M_STR_QUOTE(M_STR_US)
+readonly SX_STR_DEL=M_STR_QUOTE(M_STR_DEL)
+
+readonly SX_STR_BLANK=M_STR_QUOTE(M_STR_BLANK)
+readonly SX_STR_SPACE=M_STR_QUOTE(M_STR_SPACE)
+readonly SX_STR_CNTRL=M_STR_QUOTE(M_STR_CNTRL)
+readonly SX_STR_OCT=M_STR_QUOTE(M_STR_OCT)
+readonly SX_STR_DIGIT=M_STR_QUOTE(M_STR_DIGIT)
+readonly SX_STR_XDIGIT=M_STR_QUOTE(M_STR_XDIGIT)
+readonly SX_STR_UPPER=M_STR_QUOTE(M_STR_UPPER)
+readonly SX_STR_LOWER=M_STR_QUOTE(M_STR_LOWER)
+readonly SX_STR_PUNCT=M_STR_QUOTE(defn([|M_STR_PUNCT|]))
+readonly SX_STR_ALPHA=M_STR_QUOTE(M_STR_ALPHA)
+readonly SX_STR_ALNUM=M_STR_QUOTE(M_STR_ALNUM)
+readonly SX_STR_WORD=M_STR_QUOTE(M_STR_WORD)
+readonly SX_STR_SWORD=M_STR_QUOTE(M_STR_SWORD)
+readonly SX_STR_GRAPH=M_STR_QUOTE(M_STR_GRAPH)
+readonly SX_STR_PRINT=M_STR_QUOTE(M_STR_PRINT)
+readonly SX_STR_ASCII=M_STR_QUOTE(M_STR_ASCII)
+
+# sx_str_split 等で使用するフラグ
+readonly SX_STR_SPLIT_GLOB=M_STR_SPLIT_GLOB
+readonly SX_STR_SPLIT_INC=M_STR_SPLIT_INC
+readonly SX_STR_SUB_GLOB=M_STR_SUB_GLOB
+readonly SX_STR_SUB_CB=M_STR_SUB_CB
+readonly SX_STR_CAPITAL_KEEP=M_STR_CAPITAL_KEEP
+readonly SX_STR_CAPITAL_SENT=M_STR_CAPITAL_SENT
+readonly SX_ARG_PAD_CB=M_ARG_PAD_CB
+readonly SX_ARG_RESIZE_PAD_LEFT=M_ARG_RESIZE_PAD_LEFT
+readonly SX_STR_ISEP_CB=M_STR_ISEP_CB
+readonly SX_STR_ISEP_PRE=M_STR_ISEP_PRE
+readonly SX_STR_ISEP_POST=M_STR_ISEP_POST
+readonly SX_ARG_ISEP_CB=M_ARG_ISEP_CB
+readonly SX_ARG_ISEP_PRE=M_ARG_ISEP_PRE
+readonly SX_ARG_ISEP_POST=M_ARG_ISEP_POST
+readonly SX_ARG_FIND_GLOB=M_ARG_FIND_GLOB
+readonly SX_ARG_FIND_TEXT=M_ARG_FIND_TEXT
+readonly SX_ARG_FIND_CB=M_ARG_FIND_CB
+readonly SX_ARG_RFIND_GLOB=M_ARG_RFIND_GLOB
+readonly SX_ARG_RFIND_TEXT=M_ARG_RFIND_TEXT
+readonly SX_ARG_RFIND_CB=M_ARG_RFIND_CB
+readonly SX_ARG_COUNT_GLOB=M_ARG_COUNT_GLOB
+readonly SX_ARG_COUNT_CB=M_ARG_COUNT_CB
+readonly SX_STR_FIND_GLOB=M_STR_FIND_GLOB
+readonly SX_STR_FIND_OVERLAP=M_STR_FIND_OVERLAP
+readonly SX_STR_FIND_TEXT=M_STR_FIND_TEXT
+readonly SX_STR_RFIND_GLOB=M_STR_RFIND_GLOB
+readonly SX_STR_RFIND_OVERLAP=M_STR_RFIND_OVERLAP
+readonly SX_STR_RFIND_TEXT=M_STR_RFIND_TEXT
+readonly SX_STR_COUNT_GLOB=M_STR_COUNT_GLOB
+readonly SX_STR_COUNT_OVERLAP=M_STR_COUNT_OVERLAP
+readonly SX_STR_CHUNK_SKIP_SHORT=M_STR_CHUNK_SKIP_SHORT
+readonly SX_STR_CHUNK_SKIP_LONG=M_STR_CHUNK_SKIP_LONG
+readonly SX_STR_RCHUNK_SKIP_SHORT=M_STR_RCHUNK_SKIP_SHORT
+readonly SX_STR_RCHUNK_SKIP_LONG=M_STR_RCHUNK_SKIP_LONG
+
+# 数値定数 (8bit / 16bit / 32bit / 64bit / 128bit 整数限界)
+readonly SX_NUM_I8_MAX=M_NUM_I8_MAX
+readonly SX_NUM_I8_MIN=M_NUM_I8_MIN
+readonly SX_NUM_I8_WLEN=M_NUM_I8_WLEN
+readonly SX_NUM_I8_QM=M_STR_QUOTE(M_NUM_I8_QM)
+readonly SX_NUM_I8_ZR=M_STR_QUOTE(M_NUM_I8_ZR)
+readonly SX_NUM_U8_MAX=M_NUM_U8_MAX
+readonly SX_NUM_U8_WLEN=M_NUM_U8_WLEN
+readonly SX_NUM_U8_QM=M_STR_QUOTE(M_NUM_U8_QM)
+readonly SX_NUM_U8_ZR=M_STR_QUOTE(M_NUM_U8_ZR)
+readonly SX_NUM_I16_MAX=M_NUM_I16_MAX
+readonly SX_NUM_I16_MIN=M_NUM_I16_MIN
+readonly SX_NUM_I16_WLEN=M_NUM_I16_WLEN
+readonly SX_NUM_I16_QM=M_STR_QUOTE(M_NUM_I16_QM)
+readonly SX_NUM_I16_ZR=M_STR_QUOTE(M_NUM_I16_ZR)
+readonly SX_NUM_U16_MAX=M_NUM_U16_MAX
+readonly SX_NUM_U16_WLEN=M_NUM_U16_WLEN
+readonly SX_NUM_U16_QM=M_STR_QUOTE(M_NUM_U16_QM)
+readonly SX_NUM_U16_ZR=M_STR_QUOTE(M_NUM_U16_ZR)
+readonly SX_NUM_I32_MAX=M_NUM_I32_MAX
+readonly SX_NUM_I32_MIN=M_NUM_I32_MIN
+readonly SX_NUM_I32_WLEN=M_NUM_I32_WLEN
+readonly SX_NUM_I32_QM=M_STR_QUOTE(M_NUM_I32_QM)
+readonly SX_NUM_I32_ZR=M_STR_QUOTE(M_NUM_I32_ZR)
+readonly SX_NUM_U32_MAX=M_NUM_U32_MAX
+readonly SX_NUM_U32_WLEN=M_NUM_U32_WLEN
+readonly SX_NUM_U32_QM=M_STR_QUOTE(M_NUM_U32_QM)
+readonly SX_NUM_U32_ZR=M_STR_QUOTE(M_NUM_U32_ZR)
+readonly SX_NUM_I64_MAX=M_NUM_I64_MAX
+readonly SX_NUM_I64_MIN=M_NUM_I64_MIN
+readonly SX_NUM_I64_WLEN=M_NUM_I64_WLEN
+readonly SX_NUM_I64_QM=M_STR_QUOTE(M_NUM_I64_QM)
+readonly SX_NUM_I64_ZR=M_STR_QUOTE(M_NUM_I64_ZR)
+readonly SX_NUM_U64_MAX=M_NUM_U64_MAX
+readonly SX_NUM_U64_WLEN=M_NUM_U64_WLEN
+readonly SX_NUM_U64_QM=M_STR_QUOTE(M_NUM_U64_QM)
+readonly SX_NUM_U64_ZR=M_STR_QUOTE(M_NUM_U64_ZR)
+readonly SX_NUM_I128_MAX=M_NUM_I128_MAX
+readonly SX_NUM_I128_MIN=M_NUM_I128_MIN
+readonly SX_NUM_I128_WLEN=M_NUM_I128_WLEN
+readonly SX_NUM_I128_QM=M_STR_QUOTE(M_NUM_I128_QM)
+readonly SX_NUM_I128_ZR=M_STR_QUOTE(M_NUM_I128_ZR)
+readonly SX_NUM_U128_MAX=M_NUM_U128_MAX
+readonly SX_NUM_U128_WLEN=M_NUM_U128_WLEN
+readonly SX_NUM_U128_QM=M_STR_QUOTE(M_NUM_U128_QM)
+readonly SX_NUM_U128_ZR=M_STR_QUOTE(M_NUM_U128_ZR)
+
+# 最適乗算チャンク用動的定数の事前定義 (1〜37桁)
+__sx_m4_gen_qm(1, ?)
+
+__sx_m4_gen_zr(1, 0)
+
+# 浮動小数点数限界 (IEEE 754 準拠)
+readonly SX_NUM_DBL_MAX=M_STR_QUOTE(M_NUM_DBL_MAX)
+readonly SX_NUM_DBL_MIN=M_STR_QUOTE(M_NUM_DBL_MIN)
+readonly SX_NUM_DBL_EPSILON=M_STR_QUOTE(M_NUM_DBL_EPSILON)
+readonly SX_NUM_FLT_MAX=M_STR_QUOTE(M_NUM_FLT_MAX)
+readonly SX_NUM_FLT_MIN=M_STR_QUOTE(M_NUM_FLT_MIN)
+readonly SX_NUM_FLT_EPSILON=M_STR_QUOTE(M_NUM_FLT_EPSILON)
+
+# 数学定数 (bc などの外部コマンド利用時用)
+readonly SX_NUM_PI=M_STR_QUOTE(M_NUM_PI)
+readonly SX_NUM_TAU=M_STR_QUOTE(M_NUM_TAU)
+readonly SX_NUM_E=M_STR_QUOTE(M_NUM_E)
+readonly SX_NUM_SQRT2=M_STR_QUOTE(M_NUM_SQRT2)
+readonly SX_NUM_SQRT3=M_STR_QUOTE(M_NUM_SQRT3)
+readonly SX_NUM_SQRT5=M_STR_QUOTE(M_NUM_SQRT5)
+readonly SX_NUM_PHI=M_STR_QUOTE(M_NUM_PHI)
+readonly SX_NUM_LN2=M_STR_QUOTE(M_NUM_LN2)
+readonly SX_NUM_LN10=M_STR_QUOTE(M_NUM_LN10)
+
+readonly SX_NUM_BASE8_PREFIX=M_STR_QUOTE(M_NUM_BASE8_PREFIX)
+readonly SX_NUM_BASE8_CHARS=M_STR_QUOTE(M_NUM_BASE8_CHARS)
+readonly SX_NUM_BASE10_PREFIX=M_STR_QUOTE(M_NUM_BASE10_PREFIX)
+readonly SX_NUM_BASE10_CHARS=M_STR_QUOTE(M_NUM_BASE10_CHARS)
+readonly SX_NUM_BASE16_PREFIX=M_STR_QUOTE(M_NUM_BASE16_PREFIX)
+readonly SX_NUM_BASE16_CHARS=M_STR_QUOTE(M_NUM_BASE16_CHARS)
+
+# 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
+readonly SX_CFG_DEF_SIG_BASE=M_STR_QUOTE(M_CFG_DEF_SIG_BASE)
+readonly SX_CFG_DEF_SIG_ARR=M_STR_QUOTE(M_CFG_DEF_SIG_ARR)
+readonly SX_CFG_DEF_SKIP_CHK=M_CFG_DEF_SKIP_CHK
+readonly SX_CFG_DEF_NUM_RANGE=M_CFG_DEF_NUM_RANGE
+readonly SX_CFG_DEF_SEP=M_STR_QUOTE(M_CFG_DEF_SEP)
+readonly SX_CFG_DEF_ARR_UPDATE=M_CFG_DEF_ARR_UPDATE
+readonly SX_CFG_DEF_ARR_HOLE=M_STR_QUOTE(M_CFG_DEF_ARR_HOLE)
+readonly SX_CFG_DEF_ARR_REF=M_STR_QUOTE(M_CFG_DEF_ARR_REF)
 
 : "${SX_CFG_SIG_BASE:=${SX_CFG_DEF_SIG_BASE}}"
 : "${SX_CFG_SIG_ARR:=${SX_CFG_DEF_SIG_ARR}}"
