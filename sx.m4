@@ -591,7 +591,11 @@ M_RENAME_Q([|dnl
 ## 説明:
 ##   sx_cfg_is_valid を用いて全引数を検査し、すべて合格した場合のみ値を設定する。
 ##   '名前' のみが指定された場合は、その項目をデフォルト値にリセットする。
+##   引数がない場合は、全設定項目を SX_CFG_DEF_* の値にリセットする。
 ##   SX_CFG_SIG_BASE が変更された場合は、自動的に SX_CFG_SIG_ARR も更新する。
+##   NUM_RANGE に対応する派生値も更新するが、SX_SYS_REV と既存の配列データは変更しない。
+##   署名が変わると、変更前の署名で作成した配列は認識されなくなる。
+##   検査を省略しない場合は、派生値を含む全変更対象の書込可否を変更前に確認する。
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
@@ -604,7 +608,7 @@ sx_cfg_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_cfg_set "${@}" || return; return 0;; esac
 
 	case "${#}" in 0)
-		return
+		set -- SIG_BASE SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_UPDATE ARR_HOLE ARR_REF
 	esac
 
 	sx_cfg_is_valid "${@}" || return M_EX_USAGE
@@ -613,6 +617,15 @@ sx_cfg_set() {
 
 	for Q_arg in "${@}"; do
 		M_STR_APPEND([|Q_chk|], [|" SX_CFG_${Q_arg%%=*}"|])
+
+		case "${Q_arg}" in
+			SIG_BASE | SIG_BASE=*)
+				M_STR_APPEND([|Q_chk|], [|" SX_CFG_SIG_ARR"|])
+				;;
+			NUM_RANGE | NUM_RANGE=*)
+				M_STR_APPEND([|Q_chk|], [|" SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX SX_SYS_NUM_MIN"|])
+				;;
+		esac
 	done
 
 	eval sx_var_is_rw "${Q_chk}" || {
@@ -632,14 +645,22 @@ M_RENAME_QI([|dnl
 ##   __sx_cfg_set [名前[=値] ...]
 ##
 ## 説明:
-##   sx_cfg_set の内部実装。
-##   引数チェックを行わずに設定値を反映する。
+##   内部実装。引数チェックは行わない。
 ##   '名前' のみが指定された場合は、対応する SX_CFG_DEF_* の値でリセットする。
+##   引数がない場合は、全設定項目を SX_CFG_DEF_* の値にリセットする。
 ##   SIG_BASE が変更された場合は、SIG_ARR も自動的に更新する。
+##   NUM_RANGE の派生値も更新する。SX_SYS_REV と既存の配列データは変更しない。
+##
+## 終了ステータス:
+##    0  成功 (SX_EX_OK)
 
 define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_cfg_set() {
+	case "${#}" in 0)
+		set -- SIG_BASE SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_UPDATE ARR_HOLE ARR_REF
+	esac
+
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
 			*=*) eval "SX_CFG_${Q_arg%%=*}=\"\${Q_arg#*=}\"";;

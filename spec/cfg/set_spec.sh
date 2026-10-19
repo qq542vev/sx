@@ -6,6 +6,121 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_cfg_set()'
 	Include ./sx.sh
 
+	cfg_set_custom() {
+		sx_cfg_set SIG_BASE=custom SIG_ARR=custom-array NUM_RANGE=64 \
+			SEP=@@ ARR_UPDATE=0 ARR_HOLE=hole ARR_REF=@ "SKIP_CHK=${1-0}"
+	}
+
+	Context '引数なしの全設定リセット'
+		Parameters
+			'sx_cfg_set' 0
+			'sx_cfg_set' 1
+			'__sx_cfg_set' 0
+			'__sx_cfg_set' 1
+		End
+
+		It "$1 が SKIP_CHK=$2 から全設定と数値派生値を既定値に戻すこと"
+			cfg_set_custom "${2}"
+			When call "${1}"
+			The status should be success
+			The variable SX_CFG_SIG_BASE should equal "${SX_CFG_DEF_SIG_BASE}"
+			The variable SX_CFG_SIG_ARR should equal "${SX_CFG_DEF_SIG_ARR}"
+			The variable SX_CFG_SKIP_CHK should equal "${SX_CFG_DEF_SKIP_CHK}"
+			The variable SX_CFG_NUM_RANGE should equal "${SX_CFG_DEF_NUM_RANGE}"
+			The variable SX_CFG_SEP should equal "${SX_CFG_DEF_SEP}"
+			The variable SX_CFG_ARR_UPDATE should equal "${SX_CFG_DEF_ARR_UPDATE}"
+			The variable SX_CFG_ARR_HOLE should equal "${SX_CFG_DEF_ARR_HOLE}"
+			The variable SX_CFG_ARR_REF should equal "${SX_CFG_DEF_ARR_REF}"
+			The variable SX_SYS_NUM_WLEN should equal "${SX_NUM_I32_WLEN}"
+			The variable SX_SYS_NUM_QM should equal "${SX_NUM_I32_QM}"
+			The variable SX_SYS_NUM_ZR should equal "${SX_NUM_I32_ZR}"
+			The variable SX_SYS_NUM_MAX should equal "${SX_NUM_I32_MAX}"
+			The variable SX_SYS_NUM_MIN should equal "${SX_NUM_I32_MIN}"
+		End
+	End
+
+	It '全設定リセットを繰り返しても成功すること'
+		cfg_set_custom
+		sx_cfg_set
+		When call sx_cfg_set
+		The status should be success
+		The variable SX_CFG_SIG_BASE should equal "${SX_CFG_DEF_SIG_BASE}"
+		The variable SX_CFG_SIG_ARR should equal "${SX_CFG_DEF_SIG_ARR}"
+		The variable SX_CFG_NUM_RANGE should equal "${SX_CFG_DEF_NUM_RANGE}"
+	End
+
+	It '全設定リセットでリビジョンと既存配列のデータを変更しないこと'
+		cfg_set_custom
+		sx_arr_gen cfg_existing first ''
+		cfg_existing_sig=${cfg_existing}
+		cfg_existing_rev=${SX_SYS_REV}
+		When call sx_cfg_set
+		The status should be success
+		The variable SX_SYS_REV should equal "${cfg_existing_rev}"
+		The variable cfg_existing should equal "${cfg_existing_sig}"
+		The variable cfg_existing_len should equal 2
+		The variable cfg_existing_0 should equal first
+		The variable cfg_existing_1 should equal ''
+	End
+
+	Context '全変更対象の書込可否の事前検査'
+		Parameters
+			'SX_CFG_SIG_BASE'
+			'SX_CFG_SIG_ARR'
+			'SX_CFG_SKIP_CHK'
+			'SX_CFG_NUM_RANGE'
+			'SX_CFG_SEP'
+			'SX_CFG_ARR_UPDATE'
+			'SX_CFG_ARR_HOLE'
+			'SX_CFG_ARR_REF'
+			'SX_SYS_NUM_WLEN'
+			'SX_SYS_NUM_QM'
+			'SX_SYS_NUM_ZR'
+			'SX_SYS_NUM_MAX'
+			'SX_SYS_NUM_MIN'
+		End
+
+		It "$1 が readonly なら77を返し、設定と数値派生値を変更しないこと"
+			cfg_set_custom
+			readonly "${1}"
+			When call sx_cfg_set
+			The status should equal 77
+			The stderr should equal ''
+			The variable SX_CFG_SIG_BASE should equal custom
+			The variable SX_CFG_SIG_ARR should equal custom-array
+			The variable SX_CFG_SKIP_CHK should equal 0
+			The variable SX_CFG_NUM_RANGE should equal 64
+			The variable SX_CFG_SEP should equal @@
+			The variable SX_CFG_ARR_UPDATE should equal 0
+			The variable SX_CFG_ARR_HOLE should equal hole
+			The variable SX_CFG_ARR_REF should equal @
+			The variable SX_SYS_NUM_WLEN should equal "${SX_NUM_I64_WLEN}"
+			The variable SX_SYS_NUM_QM should equal "${SX_NUM_I64_QM}"
+			The variable SX_SYS_NUM_ZR should equal "${SX_NUM_I64_ZR}"
+			The variable SX_SYS_NUM_MAX should equal "${SX_NUM_I64_MAX}"
+			The variable SX_SYS_NUM_MIN should equal "${SX_NUM_I64_MIN}"
+		End
+	End
+
+	Context '個別設定の派生値の書込可否の事前検査'
+		Parameters
+			'SX_CFG_SIG_ARR' 'SIG_BASE'
+			'SX_SYS_NUM_MAX' 'NUM_RANGE'
+		End
+
+		It "$1 が readonly なら $2 の変更前に77を返すこと"
+			cfg_set_custom
+			readonly "${1}"
+			When call sx_cfg_set "${2}"
+			The status should equal 77
+			The stderr should equal ''
+			The variable SX_CFG_SIG_BASE should equal custom
+			The variable SX_CFG_SIG_ARR should equal custom-array
+			The variable SX_CFG_NUM_RANGE should equal 64
+			The variable SX_SYS_NUM_MAX should equal "${SX_NUM_I64_MAX}"
+		End
+	End
+
 	It '値を正常に設定し、SIG_ARRを更新すること'
 		When call sx_cfg_set "SIG_BASE=new-sig" "NUM_RANGE=64"
 		The status should be success
