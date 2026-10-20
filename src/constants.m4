@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_UNIT([|SX_EX_OK|], [|src/constants/ex/SX_EX_OK.m4|])dnl
 M_UNIT([|SX_EX_USAGE|], [|src/constants/ex/SX_EX_USAGE.m4|])dnl
 M_UNIT([|SX_EX_DATAERR|], [|src/constants/ex/SX_EX_DATAERR.m4|])dnl

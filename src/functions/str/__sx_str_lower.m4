@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_STR_LOWER SX_STR_UPPER __sx_str_tr|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_str_lower - 文字列内のラテン大文字を小文字に変換する（内部用）

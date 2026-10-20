@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""m4 と make による部分版ビルドの契約を検証する。"""
+"""m4 と make による全体版・部分版ビルドの契約を検証する。"""
 
 import os
 from pathlib import Path
@@ -25,9 +25,12 @@ class BundleTest(unittest.TestCase):
         self.env.pop("SX_SYMBOLS", None)
         self.env.pop("SX_OUT", None)
 
-    def build(self, symbols, output=None):
-        args = ["make", f"SX_SYMBOLS={symbols}",
-                f"SX_OUT={output or self.output}", "bundle"]
+    def build(self, symbols=None, output=None, target=None):
+        args = ["make", f"SX_OUT={output or self.output}"]
+        if symbols is not None:
+            args.append(f"SX_SYMBOLS={symbols}")
+        if target is not None:
+            args.append(target)
         return subprocess.run(args, cwd=ROOT, env=self.env, capture_output=True,
                               text=True, timeout=60)
 
@@ -91,7 +94,7 @@ class BundleTest(unittest.TestCase):
 
     def test_invalid_request_keeps_existing_output(self):
         self.output.write_text("既存の内容\n", encoding="utf-8")
-        for symbols in ("", "unknown_name", "sx_uri_enc  sx_cfg_set"):
+        for symbols in ("unknown_name", "sx_uri_enc  sx_cfg_set"):
             with self.subTest(symbols=symbols):
                 result = self.build(symbols)
                 self.assertNotEqual(0, result.returncode)
@@ -158,6 +161,30 @@ class BundleTest(unittest.TestCase):
         self.assertEqual(700, len(names))
         self.assert_build(" ".join(names))
         self.assertEqual((ROOT / "sx.sh").read_bytes(), self.output.read_bytes())
+
+    def test_omitted_and_empty_symbols_select_all(self):
+        result = self.build()
+        self.assertEqual(0, result.returncode, result.stderr)
+        expected = self.output.read_bytes()
+        self.assertEqual((ROOT / "sx.sh").read_bytes(), expected)
+        for target in (None, "all", "bundle"):
+            with self.subTest(target=target):
+                result = self.build("", target=target)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual(expected, self.output.read_bytes())
+
+    def test_default_target_accepts_selection(self):
+        result = self.build("sx_uri_enc")
+        self.assertEqual(0, result.returncode, result.stderr)
+        functions = FUNCTION.findall(self.output.read_text(encoding="utf-8"))
+        self.assertIn("sx_uri_enc", functions)
+        self.assertNotIn("sx_uri_is_pct", functions)
+
+    def test_test_target_forces_full_build(self):
+        result = subprocess.run(["make", "-n", "SX_SYMBOLS=sx_uri_enc", "test"],
+                                cwd=ROOT, env=self.env, capture_output=True, text=True)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("SX_SYMBOLS= SX_OUT=sx.sh all", result.stdout)
 
 
 if __name__ == "__main__":

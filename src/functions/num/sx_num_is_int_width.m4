@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_width|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_is_int_width - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する

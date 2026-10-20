@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_UNIT([|sx_cfg_is_valid|], [|src/functions/cfg/sx_cfg_is_valid.m4|])dnl
 M_UNIT([|sx_cfg_set|], [|src/functions/cfg/sx_cfg_set.m4|])dnl
 M_UNIT([|__sx_cfg_set|], [|src/functions/cfg/__sx_cfg_set.m4|])dnl

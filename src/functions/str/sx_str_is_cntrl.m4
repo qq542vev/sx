@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_STR_CNTRL sx_str_is_of|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_is_cntrl - すべての引数が制御文字（0x01-0x1F, 0x7F）のみで構成されているか確認する

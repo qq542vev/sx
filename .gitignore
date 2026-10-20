@@ -3,16 +3,13 @@
 !AGENTS.md
 !GEMINI.md
 !Makefile
-!sx.m4
 !.shellcheckrc
 !.shellspec
 !tools/
 !tools/compact.awk
 !tools/dependency_headers.py
 !tools/check-dependencies.py
-!tools/split-constants.py
-!tools/split-functions.py
-!tools/split-globals.py
+!tools/check-units.py
 !m4/
 !m4/common.m4
 !m4/resolve.m4

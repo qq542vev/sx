@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_str_split_ifs __sx_var_is_bind __sx_var_is_bindable sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_split_ifs - 現在の IFS を使用して文字列を単語分割し、結果を変数に格納する

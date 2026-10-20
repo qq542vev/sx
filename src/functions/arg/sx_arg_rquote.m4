@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arg_rquote __sx_var_is_bind __sx_var_is_bindable sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する

@@ -30,9 +30,17 @@ undefine([|__sx_active_$1|])dnl
 define([|__sx_words|], [|ifelse([|$1|], [||], [||], [|ifelse(index([|$1|], [| |]), -1, [|__sx_visit([|$1|])|], [|__sx_visit(substr([|$1|], 0, index([|$1|], [| |])))__sx_words(substr([|$1|], incr(index([|$1|], [| |]))))|])|])|])dnl
 define([|M_REQUIRE|], [|__sx_words([|$1|])|])dnl
 
-ifdef([|SX_SYMBOLS|], [||], [|__sx_resolve_error([|SX_SYMBOLS が未指定です|])|])dnl
+ifdef([|SX_SYMBOLS|], [||], [|define([|SX_SYMBOLS|], [||])|])dnl
+ifelse(len(defn([|SX_SYMBOLS|])), 0, [|dnl
+dnl 空指定では一覧の全単位を起点にし、依存と循環も通常どおり検証する。
+define([|M_UNIT|], [|__sx_visit([|$1|])|])dnl
+include([|src/constants.m4|])dnl
+include([|src/globals.m4|])dnl
+include([|src/functions.m4|])dnl
+|], [|dnl
 ifelse(regexp(defn([|SX_SYMBOLS|]), [|^[A-Za-z_][A-Za-z0-9_]*\( [A-Za-z_][A-Za-z0-9_]*\)*$|]), 0, [||], [|__sx_resolve_error([|SX_SYMBOLS の形式が不正です|])|])dnl
 __sx_words(defn([|SX_SYMBOLS|]))dnl
+|])dnl
 
 dnl 第3段階: 元の一覧順に選択済み単位だけを出力する。
 define([|M_REQUIRE|], [||])dnl

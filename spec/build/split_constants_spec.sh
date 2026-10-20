@@ -9,7 +9,7 @@ Describe '共通マクロと定数の個別展開'
 
   compare_split_constants() {
     original_constants=$(
-      original_script=$(m4 -- sx.m4) || exit
+      original_script=$(m4 -- m4/resolve.m4) || exit
       eval "${original_script}" || exit
       readonly -p
     ) || return

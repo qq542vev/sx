@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|__sx_num_cmp_fixed_abs|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_num_cmp_fixed - 正規化済み数値を比較する（内部用）

@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|__sx_arr_splice_raw|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_arr_push_raw - リビジョンを更新せず配列の末尾へ追加する（内部用）

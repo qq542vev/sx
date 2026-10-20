@@ -7,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 Describe 'm4 による定数値の生成と引用'
   expand_constant() {
     constant_script=$(
-      printf '\nconstant_value=%s\n' "$1" | m4 -- sx.m4 -
+      printf '\nconstant_value=%s\n' "$1" | m4 -- m4/common.m4 -
     ) || return
     eval "${constant_script}" || return
     unset constant_script
@@ -30,12 +30,12 @@ Describe 'm4 による定数値の生成と引用'
 
   compare_compacted_constants() {
     original_values=$(
-      original_constants=$(m4 -- sx.m4) || exit
+      original_constants=$(m4 -- m4/resolve.m4) || exit
       eval "${original_constants}" || exit
       readonly -p
     ) || return
     compacted_values=$(
-      original_constants=$(m4 -- sx.m4) || exit
+      original_constants=$(m4 -- m4/resolve.m4) || exit
       compacted_constants=$(
         printf '%s\n' "${original_constants}" | LC_ALL=C awk -f tools/compact.awk
       ) || exit

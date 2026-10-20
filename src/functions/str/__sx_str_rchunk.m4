@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|__sx_str_chunk0|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_str_rchunk - 文字列を一定の長さで区切り後方から結果を格納する（内部用）

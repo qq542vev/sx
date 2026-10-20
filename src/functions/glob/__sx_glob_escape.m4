@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|__sx_str_escape|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_glob_escape - 文字列内の glob 特殊文字をエスケープする（内部用）

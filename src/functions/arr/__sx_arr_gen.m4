@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SIG_ARR __sx_arr_push_raw __sx_var_touch|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_arr_gen - 配列を初期化し、要素を追加する（内部用）

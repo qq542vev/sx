@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|__sx_var_bind0|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし・内部用）

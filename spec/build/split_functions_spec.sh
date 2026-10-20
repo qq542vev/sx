@@ -2,17 +2,17 @@
 
 eval "$(shellspec - -c) exit 1"
 
-Describe '関数の個別展開と結合'
-  It '元ソースと定数の分割ファイルが同期していること'
-    When run python3 tools/split-constants.py --check
+Describe '分割単位の個別展開と結合'
+  It '一覧と実ファイルが一致すること'
+    When run python3 tools/check-units.py
     The status should be success
-    The output should include '全定数の読み込み一覧1ファイル'
+    The output should include '700 単位'
   End
 
-  It '元ソースと関数の分割ファイルが同期していること'
-    When run python3 tools/split-functions.py --check
+  It '一覧の欠落と重複を検出すること'
+    When run python3 spec/build/units_test.py
     The status should be success
-    The output should include '全関数の読み込み一覧1ファイル'
+    The output should include 'OK'
   End
 
   It '全関数の単独展開・スコープ保持・結合結果を検証すること'

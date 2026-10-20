@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SIG_ARR __sx_num_is_nat0_base sx_str_sw|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl

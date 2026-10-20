@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_rw_all __sx_var_unset sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_unset - 変数または配列を関連要素を含めて削除する

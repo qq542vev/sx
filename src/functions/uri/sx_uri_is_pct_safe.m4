@@ -1,4 +1,4 @@
-dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SKIP_CHK __sx_uri_is_pct_safe|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_uri_is_pct_safe - パーセント表記が正しく %00 を含まないか確認する
