@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|__sx_var_is_rw_deep|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl

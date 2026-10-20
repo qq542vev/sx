@@ -1,3 +1,2 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_META_DEF_NUM_RANGE|])dnl
 SX_CFG_NUM_RANGE="${SX_CFG_NUM_RANGE-${SX_CFG_META_DEF_NUM_RANGE}}"

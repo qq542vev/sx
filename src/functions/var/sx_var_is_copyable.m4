@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_copyable sx_var_is_chain|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_is_copyable - コピー先が構造を含めて書き込み可能か確認する

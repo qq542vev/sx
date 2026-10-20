@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_int_safe __sx_num_is_sub_arith_safe sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_is_sub_arith_safe - 引数順の減算で桁溢れしないか確認する

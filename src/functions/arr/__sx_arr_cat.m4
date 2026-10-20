@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|__sx_arr_bind __sx_arr_bind_commit __sx_num_add1_nat0 __sx_var_to_ebind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl

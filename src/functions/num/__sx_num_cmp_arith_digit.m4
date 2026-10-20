@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|__sx_num_cmp_arith|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_num_cmp_arith_digit - 10進整数文字列を算術展開で比較する（内部用）

@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_num_safe __sx_num_rel sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl

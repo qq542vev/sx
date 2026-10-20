@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_cmp_nat0 __sx_num_is_nat0_base sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_cmp_nat0 - 2つの符号なし10進整数を比較する

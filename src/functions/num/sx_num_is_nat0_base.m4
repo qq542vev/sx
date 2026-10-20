@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_nat0_base|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_is_nat0_base - 指定された基数で0以上の自然数か確認する

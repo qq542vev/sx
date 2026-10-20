@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_STR_CR SX_STR_LF __sx_arr_gen __sx_num_add1_nat0|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl

@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_NUM_I128_MIN SX_NUM_I32_MIN SX_NUM_I64_MIN __sx_num_is_int_safe|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl

@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_nzint_base|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_is_nzint_base - 指定された基数で 0 以外の整数か確認する

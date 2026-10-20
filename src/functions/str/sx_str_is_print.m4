@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_STR_PRINT sx_str_is_of|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_is_print - すべての引数が表示可能文字（図形文字 + スペース）のみで構成されているか確認する

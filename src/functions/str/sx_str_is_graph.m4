@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_STR_GRAPH sx_str_is_of|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_is_graph - すべての引数が図形文字（英数字 + 区切り記号）のみで構成されているか確認する

@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|sx_num_is_int|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl

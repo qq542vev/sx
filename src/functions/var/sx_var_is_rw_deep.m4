@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_rw_deep sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_is_rw_deep - 変数およびその配下のサブ変数がすべて書き込み可能か確認する

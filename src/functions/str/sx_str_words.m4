@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_str_words __sx_var_is_rw sx_cfg_is_valid sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_words - 命名規則を自動検出して単語に分割する

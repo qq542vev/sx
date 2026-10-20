@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_int_safe_inv sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_is_int_safe_inv - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）で符号反転可能な整数か確認する

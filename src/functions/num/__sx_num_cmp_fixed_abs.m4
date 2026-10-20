@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|__sx_num_cmp_fixed_frac __sx_num_cmp_nat0|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_num_cmp_fixed_abs - 正規化済み絶対値同士を比較する（内部用）

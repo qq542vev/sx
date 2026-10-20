@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_num_safe sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_is_num_safe - すべての引数が有効な数値（整数または実数）であるか確認する

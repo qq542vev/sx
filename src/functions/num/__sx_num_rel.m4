@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|__sx_num_cmp_arith __sx_num_cmp_fixed __sx_num_norm __sx_num_rel_classify|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl

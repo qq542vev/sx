@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_STR_BLANK sx_str_is_of|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_is_blank - すべての引数が空白文字（タブ, スペース）のみで構成されているか確認する

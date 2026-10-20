@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_int_base __sx_str_rot __sx_var_is_rw sx_cfg_is_valid sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_rot - 文字セット内で文字をシフトして変換する

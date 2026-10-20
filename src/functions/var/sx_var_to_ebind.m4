@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_var_is_bind __sx_var_is_rw __sx_var_to_ebind sx_cfg_is_valid sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_to_ebind - bind形式を拡張bind形式に変換する

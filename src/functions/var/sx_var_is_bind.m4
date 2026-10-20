@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_bind|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_is_bind - 文字列が分配代入バインド形式として有効か確認する

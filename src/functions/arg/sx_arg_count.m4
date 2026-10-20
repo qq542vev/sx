@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_ARG_COUNT_CB SX_ARG_COUNT_GLOB SX_CFG_NUM_RANGE SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_count __sx_num_is_nat0_safe __sx_var_is_rw sx_cfg_is_valid sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_count - 引数リストから指定された値の出現回数を取得する

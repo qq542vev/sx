@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK SX_STR_CR SX_STR_LF __sx_csv_parse __sx_var_is_rw_deep sx_cfg_is_valid sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_csv_parse - CSV を行ごとの SX 配列に変換する

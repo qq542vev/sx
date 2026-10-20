@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_nat0_safe __sx_str_find __sx_var_is_bind __sx_var_is_bindable sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_find - 文字列から指定された文字列を前方一致で探し、位置を取得する

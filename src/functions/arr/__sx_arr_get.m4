@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE __sx_arr_bind __sx_arr_bind_commit __sx_arr_to_int __sx_num_add_nat0 __sx_num_cmp_nat0 __sx_num_divmod_nat0 __sx_num_is_int_fit_dec __sx_num_sub1_nat0 __sx_num_sub_int __sx_num_sub_nat0 __sx_var_to_ebind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl

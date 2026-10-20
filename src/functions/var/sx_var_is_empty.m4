@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_empty sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_is_empty - 変数が設定されており、かつ空か確認する

@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|__sx_str_upper_cb|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_str_title_cb - sx_str_title 用コールバック（内部用）

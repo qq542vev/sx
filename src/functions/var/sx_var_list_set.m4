@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_var_is_bind __sx_var_is_bindable __sx_var_list_set sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_list_set - 設定されている変数の一覧を取得する

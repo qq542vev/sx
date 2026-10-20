@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_STR_DIGIT sx_str_is_of|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_is_digit - すべての引数が数字のみで構成されている（空でない）か確認する

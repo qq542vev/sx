@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_STR_WORD sx_str_is_of|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_is_word - すべての引数が単語構成文字（英数字 + _）のみで構成されているか確認する

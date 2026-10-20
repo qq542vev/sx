@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_enough __sx_num_is_nat0_base sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する

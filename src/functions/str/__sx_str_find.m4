@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_STR_FIND_GLOB SX_STR_FIND_OVERLAP SX_STR_FIND_TEXT __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_add_arith __sx_num_add_nat0 __sx_num_is_int_fit_dec __sx_var_bind __sx_var_bind_init __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl

@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([||])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_var_is_rw - 変数が書き込み可能か確認する（内部用）

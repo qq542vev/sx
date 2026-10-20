@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_cmp_float sx_num_is_float|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_cmp_float - 2つの数値を比較する

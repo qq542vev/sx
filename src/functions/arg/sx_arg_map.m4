@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arg_map __sx_var_is_bind __sx_var_is_bindable sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_map - 引数リストの各要素にコールバック関数を適用する

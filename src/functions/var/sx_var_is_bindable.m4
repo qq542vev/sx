@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_is_bindable - バインド形式が有効であり、かつ全変数が書き込み可能か確認する

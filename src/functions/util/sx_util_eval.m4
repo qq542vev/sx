@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([||])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_util_eval - 文字列をシェルコマンドとして実行する

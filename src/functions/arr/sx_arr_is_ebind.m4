@@ -1,4 +1,3 @@
-dnl 定義と依存宣言はこのファイルで管理する。
 M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_is_ebind sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arr_is_ebind - 文字列が配列分配用拡張バインド形式として有効か確認する
