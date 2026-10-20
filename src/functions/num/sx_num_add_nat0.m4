@@ -1,0 +1,44 @@
+dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_add_nat0 __sx_num_is_nat0_base __sx_var_is_rw sx_cfg_is_valid sx_var_is_name|])dnl
+pushdef([|CLEANUP|])dnl
+M_RENAME_Q([|dnl
+### sx_num_add_nat0 - 複数の絶対値をチャンク加算する
+##
+## 使い方:
+##   sx_num_add_nat0 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   符号なし10進整数の絶対値を加算する。
+##   引数の検証を行い、符号なし整数でない場合はエラーとする。
+##   逐次方式でアキュムレータに各数値を順次加算する。
+##
+## 終了ステータス:
+##   0  成功 (SX_EX_OK)
+##  64  引数不正 (SX_EX_USAGE) — 数値以外、または符号付き整数が含まれる
+##  77  結果変数名が読み取り専用 (SX_EX_NOPERM)
+##  78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+
+define([|CLEANUP|], [|Q_res|])dnl
+
+sx_num_add_nat0() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add_nat0 "${@}" || return; return 0;; esac
+
+	sx_var_is_name "${1-}" || return M_EX_USAGE
+
+	__sx_var_is_rw "${1}" || return M_EX_NOPERM
+
+	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+
+	Q_res="${1}"
+	shift
+
+	__sx_num_is_nat0_base 10 "${@}" || {
+		unset CLEANUP
+		return M_EX_USAGE
+	}
+
+	__sx_num_add_nat0 "${Q_res}" "${@}"
+	unset CLEANUP
+}
+|], [|num_add_nat0|])dnl
+popdef([|CLEANUP|])dnl

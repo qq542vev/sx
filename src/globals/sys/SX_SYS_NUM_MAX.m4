@@ -1,0 +1,3 @@
+dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_NUM_I128_MAX SX_NUM_I32_MAX SX_NUM_I64_MAX|])dnl
+eval SX_SYS_NUM_MAX="\${SX_NUM_I${SX_CFG_NUM_RANGE}_MAX}"

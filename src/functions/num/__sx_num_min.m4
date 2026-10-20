@@ -1,0 +1,35 @@
+dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+M_REQUIRE([|__sx_num_cmp_fixed __sx_num_norm|])dnl
+pushdef([|CLEANUP|])dnl
+M_RENAME_QI([|dnl
+### __sx_num_min - 与えられた数値の最小値を取得する（内部用）
+##
+## 使い方:
+##   __sx_num_min 結果変数名 [数値1 [数値2 ...]]
+##
+## 説明:
+##   sx_num_min の内部実装。引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_res Q_win Q_wnorm Q_arg Q_anorm|])dnl
+
+__sx_num_min() {
+	Q_res="${1}"
+	Q_win="${2}"
+	shift 2
+
+	__sx_num_norm Q_wnorm "${Q_win}"
+
+	for Q_arg in "${@}"; do
+		__sx_num_norm Q_anorm "${Q_arg}"
+
+		__sx_num_cmp_fixed "${Q_wnorm}" "${Q_anorm}" || case "${?}" in 3)
+			Q_win="${Q_arg}"
+			Q_wnorm="${Q_anorm}"
+		esac
+	done
+
+	M_VAR_SET([|${Q_res}|], [|${Q_win}|])
+	unset CLEANUP
+}
+|], [|num_min|])dnl
+popdef([|CLEANUP|])dnl

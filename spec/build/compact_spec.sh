@@ -169,4 +169,25 @@ readonly d=1'
     The status should be success
     The output should equal "$input"
   End
+
+  It '単一引用符内の空行・コメントに見える行・バックスラッシュを保持すること'
+    input="readonly a='先頭
+
+  # 値の一部
+\\
+  readonly fake=変更しない
+末尾'
+readonly b='次'"
+    When run compact "$input"
+    The status should be success
+    The output should equal "$input"
+  End
+
+  It '引用の外でエスケープされた連続引用符を保持すること'
+    input="readonly a='あ'\\'\\''う'
+readonly b='次'"
+    When run compact "$input"
+    The status should be success
+    The output should equal "$input"
+  End
 End

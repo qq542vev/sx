@@ -1,0 +1,113 @@
+dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_STR_FIND_GLOB SX_STR_FIND_OVERLAP SX_STR_FIND_TEXT __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_add_arith __sx_num_add_nat0 __sx_num_is_int_fit_dec __sx_var_bind __sx_var_bind_init __sx_var_ubind|])dnl
+pushdef([|CLEANUP|])dnl
+M_RENAME_QI([|dnl
+### __sx_str_find - 文字列から指定された文字列を前方一致で探す（内部用）
+##
+## 使い方:
+##   __sx_str_find 結果変数名（またはバインド形式） [元文字列 [検索文字列 [フラグ]]]
+##
+## 説明:
+##   sx_str_find の内部実装。引数チェックは行わない。
+
+define([|CLEANUP|], [|Q_bind Q_tgt Q_off Q_pre Q_sts Q_match Q_after Q_text Q_overlap Q_type Q_len|])dnl
+
+__sx_str_find() {
+	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
+	__sx_var_bind_init "${1}"
+	Q_bind="${1}"
+	Q_tgt="${2}"
+	Q_text=$((${4} & SX_STR_FIND_TEXT))
+	Q_overlap=$((${4} & SX_STR_FIND_OVERLAP))
+	Q_off=0
+
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#Q_tgt}"; then
+		Q_type=arith
+	else
+		Q_type=nat0
+	fi
+
+	if
+		M_STR_EQ([|"${3}"|], [|''|]) ||
+		{ M_NUM_BOOL([|${4} & SX_STR_FIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
+	then
+		Q_sts=M_EX_OK
+		Q_len="${#Q_tgt}"
+
+		# 空 needle: 全境界位置（0 〜 len）に長さ0で出力
+		while
+			case "${Q_text}" in
+				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:0";;
+				*) __sx_var_bind Q_bind "${Q_bind}" '';;
+			esac || break
+
+			case "${Q_off}" in "${Q_len}")
+				break
+			esac
+
+			"__sx_num_add1_${Q_type}" Q_off "${Q_off}"
+			continue
+		do :; done
+	elif M_NUM_BOOL([|${4} & SX_STR_FIND_GLOB|]); then
+		# ==== グロブモード ====
+		while M_STR_HAS([|"${Q_tgt}"|], [|${3}|]); do
+			# マッチ文字列を抽出（__sx_str_sub_cb と同じ手法）
+			Q_pre="${Q_tgt%%${3}*}"
+			Q_after="${Q_tgt#*${3}}"
+			Q_match="${Q_tgt#"${Q_pre}"}"
+			Q_match="${Q_match%"${Q_after}"}"
+			Q_len="${#Q_match}"
+
+			"__sx_num_add_${Q_type}" Q_off "${Q_off}" "${#Q_pre}"
+			: "${Q_sts=M_EX_OK}"
+
+			case "${Q_text}" in
+				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:${Q_len}";;
+				*) __sx_var_bind Q_bind "${Q_bind}" "${Q_match}";;
+			esac || break
+
+			case "${Q_overlap}" in
+				0)
+					"__sx_num_add_${Q_type}" Q_off "${Q_off}" "${Q_len}"
+					Q_tgt="${Q_tgt#"${Q_pre}${Q_match}"}"
+					;;
+				*)
+					"__sx_num_add1_${Q_type}" Q_off "${Q_off}"
+					Q_tgt="${Q_tgt#"${Q_pre}"?}"
+					;;
+			esac
+		done
+	else
+		# ==== リテラルモード ====
+		Q_len="${#3}"
+
+		while M_STR_HAS([|"${Q_tgt}"|], [|"${3}"|]); do
+			Q_pre="${Q_tgt%%"${3}"*}"
+
+			"__sx_num_add_${Q_type}" Q_off "${Q_off}" "${#Q_pre}"
+			: "${Q_sts=M_EX_OK}"
+
+			case "${Q_text}" in
+				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:${Q_len}";;
+				*) __sx_var_bind Q_bind "${Q_bind}" "${3}";;
+			esac || break
+
+			case "${Q_overlap}" in
+				0)
+					"__sx_num_add_${Q_type}" Q_off "${Q_off}" "${Q_len}"
+					Q_tgt="${Q_tgt#*"${3}"}"
+					;;
+				*)
+					"__sx_num_add1_${Q_type}" Q_off "${Q_off}"
+					Q_tgt="${Q_tgt#"${Q_pre}"?}"
+					;;
+			esac
+		done
+	fi
+
+	set -- "${Q_sts-1}"
+	unset CLEANUP
+	return "${1}"
+}
+|], [|str_find|])dnl
+popdef([|CLEANUP|])dnl

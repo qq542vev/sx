@@ -13,7 +13,7 @@
 ##   modified - 2026-05-08
 ##   copyright - Copyright (C) 2026-2026 qq542vev. All rights reserved.
 ##   license - <GPL-3.0-only at https://www.gnu.org/licenses/gpl-3.0.txt>
-##   depends - awk, chmod, echo, m4, mv, rm, shellspec
+##   depends - awk, chmod, echo, m4, mkdir, mv, rm, shellspec
 ##
 ## See Also:
 ##
@@ -25,7 +25,7 @@
 
 .POSIX:
 
-.PHONY: all test clean rebuild help version
+.PHONY: all bundle test clean rebuild help version
 
 .SILENT: help version
 
@@ -42,6 +42,22 @@ COMPACT = tools/compact.awk
 # =====
 
 all: $(TARGET)
+
+# SX_SYMBOLS は make のコマンド行で指定する。コマンド行変数はレシピの環境へ継承される。
+# 毎回生成し、異なる選択内容で同じ出力先を使っても古い内容を残さない。
+bundle:
+	@set -eu; \
+	symbols=$${SX_SYMBOLS-}; \
+	case "$$symbols" in '') echo 'SX_SYMBOLS を指定してください' >&2; exit 1;; esac; \
+	out=$${SX_OUT:-sx-bundle.sh}; \
+	case "$$out" in sx.sh) echo 'SX_OUT に sx.sh は指定できません' >&2; exit 1;; esac; \
+	case "$$out" in */*) dir=$${out%/*}; case "$$dir" in '') dir=/;; esac; mkdir -p -- "$$dir";; esac; \
+	raw="$$out.tmp"; compact="$$out.tmp2"; \
+	trap 'rm -f -- "$$raw" "$$compact"' 0; \
+	m4 "-DSX_SYMBOLS=$$symbols" -- m4/resolve.m4 > "$$raw"; \
+	LC_ALL=C awk -f $(COMPACT) "$$raw" > "$$compact"; \
+	chmod 755 -- "$$compact"; \
+	mv -f -- "$$compact" "$$out"
 
 $(TARGET): $(SOURCE) $(COMPACT) Makefile
 	m4 -- $(SOURCE) >$@.tmp
@@ -76,6 +92,8 @@ help:
 	echo
 	echo 'TARGET:'
 	echo '  all     全てのファイルを作成する。'
+	echo '  bundle  SX_SYMBOLS に指定した名前と依存先を SX_OUT（既定 sx-bundle.sh）へ出力する。'
+	echo '          例: make SX_SYMBOLS=sx_uri_enc SX_OUT=sx-uri-enc.sh bundle'
 	echo '  test    作成したファイルのテストを行う。'
 	echo '  clean   作成したファイルを削除する。'
 	echo '  rebuild cleanの実行後にallを実行する。'

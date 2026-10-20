@@ -1,0 +1,3 @@
+dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_NUM_I128_QM SX_NUM_I32_QM SX_NUM_I64_QM|])dnl
+eval SX_SYS_NUM_QM="\${SX_NUM_I${SX_CFG_NUM_RANGE}_QM}"

@@ -1,0 +1,3 @@
+dnl 本体は sx.m4 から生成。依存宣言はこのファイルで管理する。
+M_REQUIRE([||])dnl
+M_CONST([|CFG_META_DEF_NUM_RANGE|])
