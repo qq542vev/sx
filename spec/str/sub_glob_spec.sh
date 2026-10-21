@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_sub (glob)'
-  Include ./spec/support/library.sh spec/str/sub_glob_spec.sh SX_NUM_I32_MAX SX_STR_SUB_GLOB sx_str_sub
+  Include ./spec/support/library.sh sx_str_sub
 
   It 'globパターン（文字クラス）で置換すること'
     When call sx_str_sub res: "a1b2c3d" "[0-9]" "X" "${SX_NUM_I32_MAX}" "${SX_STR_SUB_GLOB}"

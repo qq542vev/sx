@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_list_ro'
-  Include ./spec/support/library.sh spec/var/list_ro_spec.sh SX_CFG_NUM_RANGE sx_var_list_ro
+  Include ./spec/support/library.sh sx_var_list_ro
 
   It 'すべての読み取り専用変数名の一覧を返すこと'
     readonly MY_RO_VAR_1=ro
