@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_capital()'
-    Include ./spec/support/library.sh spec/str/capital_spec.sh SX_EX_NOPERM SX_EX_USAGE SX_STR_CAPITAL_KEEP SX_STR_CAPITAL_SENT sx_str_capital
+    Include ./spec/support/library.sh sx_str_capital
 
     It '文頭がアルファベットなら大文字に、残りを小文字に変換する'
         When call sx_str_capital res "aaa bbb ccc"
@@ -69,7 +69,7 @@ Describe 'sx_str_capital()'
         readonly MYRO_CAP="const"
         When call sx_str_capital MYRO_CAP "abc"
         The status should be failure
-        The status should equal "${SX_EX_NOPERM}"
+        The status should equal 77
     End
 
     It 'KEEP+SENT フラグ：先頭空白の場合、最初のアルファベットのみ大文字化'
@@ -140,13 +140,13 @@ Describe 'sx_str_capital()'
     It 'flags に不正な文字列を渡すと EX_USAGE を返す'
         When call sx_str_capital res "abc" "xyz"
         The status should be failure
-        The status should equal "${SX_EX_USAGE}"
+        The status should equal 64
     End
 
     It '第1引数を省略すると EX_USAGE を返す'
         When call sx_str_capital
         The status should be failure
-        The status should equal "${SX_EX_USAGE}"
+        The status should equal 64
     End
 
     It 'KEEP フラグ：先頭が非アルファベット小文字で始まる場合は何もしない（最適化パス）'

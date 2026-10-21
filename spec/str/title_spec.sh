@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_title()'
-    Include ./spec/support/library.sh spec/str/title_spec.sh SX_EX_NOPERM SX_STR_LF sx_str_title
+    Include ./spec/support/library.sh sx_str_title
 
     It '各単語の先頭を大文字に、残りを小文字に変換する'
         When call sx_str_title res "aaa bbb ccc"
@@ -44,7 +44,7 @@ Describe 'sx_str_title()'
         readonly MYRO_TITLE="const"
         When call sx_str_title MYRO_TITLE "abc"
         The status should be failure
-        The status should equal "${SX_EX_NOPERM}"
+        The status should equal 77
     End
 
     It 'カスタム区切り文字で変換する'
@@ -68,7 +68,9 @@ Describe 'sx_str_title()'
     End
 
     It '改行区切りの単語を変換できること'
-        When call sx_str_title res "hello${SX_STR_LF}world"
-        The variable res should equal "Hello${SX_STR_LF}World"
+        input=$(printf 'hello\nworld')
+        expected=$(printf 'Hello\nWorld')
+        When call sx_str_title res "$input"
+        The variable res should equal "$expected"
     End
 End
