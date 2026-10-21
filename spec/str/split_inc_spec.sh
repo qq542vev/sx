@@ -3,28 +3,28 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split (SX_STR_SPLIT_INC)'
-  Include ./spec/support/library.sh spec/str/split_inc_spec.sh SX_NUM_I32_MAX SX_STR_SPLIT_GLOB SX_STR_SPLIT_INC sx_str_split
+  Include ./spec/support/library.sh sx_str_split
 
   It '通常文字での INC 動作確認（前方分割）'
-    When call sx_str_split res "A:B:C" ":" "${SX_NUM_I32_MAX}" "${SX_STR_SPLIT_INC}"
+    When call sx_str_split res "A:B:C" ":" 2147483647 "${SX_STR_SPLIT_INC}"
     The status should be success
     The variable res should equal "'A' ':' 'B' ':' 'C'"
   End
 
   It '通常文字での INC 動作確認（後方分割）'
-    When call sx_str_split res "A:B:C" ":" "-${SX_NUM_I32_MAX}" "${SX_STR_SPLIT_INC}"
+    When call sx_str_split res "A:B:C" ":" -2147483647 "${SX_STR_SPLIT_INC}"
     The status should be success
     The variable res should equal "'A' ':' 'B' ':' 'C'"
   End
 
   It 'GLOB パターンでの INC 動作確認（前方分割）'
-    When call sx_str_split res "A1B2C" "[0-9]" "${SX_NUM_I32_MAX}" "$((SX_STR_SPLIT_GLOB | SX_STR_SPLIT_INC))"
+    When call sx_str_split res "A1B2C" "[0-9]" 2147483647 "$((SX_STR_SPLIT_GLOB | SX_STR_SPLIT_INC))"
     The status should be success
     The variable res should equal "'A' '1' 'B' '2' 'C'"
   End
 
   It 'GLOB パターンでの INC 動作確認（後方分割）'
-    When call sx_str_split res "A1B2C" "[0-9]" "-${SX_NUM_I32_MAX}" "$((SX_STR_SPLIT_GLOB | SX_STR_SPLIT_INC))"
+    When call sx_str_split res "A1B2C" "[0-9]" -2147483647 "$((SX_STR_SPLIT_GLOB | SX_STR_SPLIT_INC))"
     The status should be success
     The variable res should equal "'A' '1' 'B' '2' 'C'"
   End
@@ -42,7 +42,7 @@ Describe 'sx_str_split (SX_STR_SPLIT_INC)'
   End
 
   It '空文字区切りでの INC 動作確認'
-    When call sx_str_split res "ABC" "" "${SX_NUM_I32_MAX}" "${SX_STR_SPLIT_INC}"
+    When call sx_str_split res "ABC" "" 2147483647 "${SX_STR_SPLIT_INC}"
     The status should be success
     The variable res should equal "'' '' 'A' '' 'B' '' 'C' '' ''"
   End
@@ -89,7 +89,7 @@ Describe 'sx_str_split (SX_STR_SPLIT_INC)'
   End
 
   It '連続する区切り文字の処理確認'
-    When call sx_str_split res "A::B" ":" "${SX_NUM_I32_MAX}" "${SX_STR_SPLIT_INC}"
+    When call sx_str_split res "A::B" ":" 2147483647 "${SX_STR_SPLIT_INC}"
     The status should be success
     The variable res should equal "'A' ':' '' ':' 'B'"
   End

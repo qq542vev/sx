@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split'
-  Include ./spec/support/library.sh spec/str/split_spec.sh SX_NUM_I32_MAX SX_STR_SPLIT_GLOB sx_str_eq sx_str_split
+  Include ./spec/support/library.sh sx_str_split
   It '文字列を分割して結果変数に格納すること'
     When call sx_str_split res "a:b:c:d" ":"
     The status should be success
@@ -65,27 +65,32 @@ Describe 'sx_str_split'
   End
 
   It 'glob モードで * のみの区切り文字は空区切り相当になること'
-    sx_str_split res "abc" "*" "${SX_NUM_I32_MAX}" "${SX_STR_SPLIT_GLOB}"
-    Assert sx_str_eq "${res}" "'' 'a' 'b' 'c' ''"
+    When call sx_str_split res "abc" "*" 2147483647 "${SX_STR_SPLIT_GLOB}"
+    The status should be success
+    The variable res should equal "'' 'a' 'b' 'c' ''"
   End
 
   It '非 glob モードでは * はリテラルとして扱われること'
-    sx_str_split res "abc" "*"
-    Assert sx_str_eq "${res}" "'abc'"
+    When call sx_str_split res "abc" "*"
+    The status should be success
+    The variable res should equal "'abc'"
   End
 
   It 'glob モードで * のみの区切り文字、空文字列の場合は空要素2つになること'
-    sx_str_split res "" "*" "${SX_NUM_I32_MAX}" "${SX_STR_SPLIT_GLOB}"
-    Assert sx_str_eq "${res}" "'' ''"
+    When call sx_str_split res "" "*" 2147483647 "${SX_STR_SPLIT_GLOB}"
+    The status should be success
+    The variable res should equal "'' ''"
   End
 
   It 'glob モードで * のみの区切り文字、制限付き前方分割ができること'
-    sx_str_split res "abcde" "*" 3 "${SX_STR_SPLIT_GLOB}"
-    Assert sx_str_eq "${res}" "'' 'a' 'b' 'cde'"
+    When call sx_str_split res "abcde" "*" 3 "${SX_STR_SPLIT_GLOB}"
+    The status should be success
+    The variable res should equal "'' 'a' 'b' 'cde'"
   End
 
   It 'glob モードで * のみの区切り文字、制限付き後方分割ができること'
-    sx_str_split res "abcde" "*" -3 "${SX_STR_SPLIT_GLOB}"
-    Assert sx_str_eq "${res}" "'abc' 'd' 'e' ''"
+    When call sx_str_split res "abcde" "*" -3 "${SX_STR_SPLIT_GLOB}"
+    The status should be success
+    The variable res should equal "'abc' 'd' 'e' ''"
   End
 End
