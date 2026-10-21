@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_sub'
-  Include ./spec/support/library.sh spec/str/sub_spec.sh SX_NUM_I32_MAX SX_STR_SUB_GLOB sx_str_eq sx_str_sub
+  Include ./spec/support/library.sh sx_str_sub
   It 'パターンを文字列で置換すること'
     When call sx_str_sub result: "hello world" "world" "earth"
     The status should be success
@@ -101,28 +101,33 @@ Describe 'sx_str_sub'
   End
 
   It 'glob モードで * のみのパターンは空パターン相当になること'
-    sx_str_sub res: "abc" "*" "X" "${SX_NUM_I32_MAX}" "${SX_STR_SUB_GLOB}"
-    Assert sx_str_eq "${res}" "XaXbXcX"
+    When call sx_str_sub res: "abc" "*" "X" "${SX_NUM_I32_MAX}" "${SX_STR_SUB_GLOB}"
+    The status should be success
+    The variable res should equal "XaXbXcX"
   End
 
   It '非 glob モードでは * はリテラルとして扱われること'
-    sx_str_sub res: "a*b" "*" "X"
-    Assert sx_str_eq "${res}" "aXb"
+    When call sx_str_sub res: "a*b" "*" "X"
+    The status should be success
+    The variable res should equal "aXb"
   End
 
   It 'glob モードで * のみのパターン、制限付き前方置換ができること'
-    sx_str_sub res: "abc" "*" "X" 2 "${SX_STR_SUB_GLOB}"
-    Assert sx_str_eq "${res}" "XaXbc"
+    When call sx_str_sub res: "abc" "*" "X" 2 "${SX_STR_SUB_GLOB}"
+    The status should be success
+    The variable res should equal "XaXbc"
   End
 
   It 'glob モードで * のみのパターン、制限付き後方置換ができること'
-    sx_str_sub res: "abc" "*" "X" -2 "${SX_STR_SUB_GLOB}"
-    Assert sx_str_eq "${res}" "abXcX"
+    When call sx_str_sub res: "abc" "*" "X" -2 "${SX_STR_SUB_GLOB}"
+    The status should be success
+    The variable res should equal "abXcX"
   End
 
   It 'glob モードで * のみのパターン、空文字列に対する置換'
-    sx_str_sub res: "" "*" "X" "${SX_NUM_I32_MAX}" "${SX_STR_SUB_GLOB}"
-    Assert sx_str_eq "${res}" "X"
+    When call sx_str_sub res: "" "*" "X" "${SX_NUM_I32_MAX}" "${SX_STR_SUB_GLOB}"
+    The status should be success
+    The variable res should equal "X"
   End
 
   Context 'バインド形式で置換回数を取得する場合'

@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_alpha'
-  Include ./spec/support/library.sh spec/str/is_alpha_spec.sh SX_STR_LF sx_str_is_alpha
+  Include ./spec/support/library.sh sx_str_is_alpha
 
   It '英字のみを含む文字列の場合、成功を返すこと'
     When call sx_str_is_alpha "abc" "XYZ" "AbC"
@@ -38,7 +38,8 @@ Describe 'sx_str_is_alpha'
   End
 
   It '改行が含まれる場合、失敗を返すこと'
-    When call sx_str_is_alpha "ab${SX_STR_LF}c"
+    input=$(printf 'ab\nc')
+    When call sx_str_is_alpha "$input"
     The status should be failure
   End
 

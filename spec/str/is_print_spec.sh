@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_print'
-  Include ./spec/support/library.sh spec/str/is_print_spec.sh SX_STR_LF sx_str_is_print
+  Include ./spec/support/library.sh sx_str_is_print
 
   It '英字のみの場合、成功を返すこと'
     When call sx_str_is_print "abcXYZ"
@@ -28,7 +28,8 @@ Describe 'sx_str_is_print'
   End
 
   It '改行が含まれる場合、失敗を返すこと'
-    When call sx_str_is_print "abc${SX_STR_LF}def"
+    input=$(printf 'abc\ndef')
+    When call sx_str_is_print "$input"
     The status should be failure
   End
 

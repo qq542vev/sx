@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_alnum'
-  Include ./spec/support/library.sh spec/str/is_alnum_spec.sh SX_STR_LF sx_str_is_alnum
+  Include ./spec/support/library.sh sx_str_is_alnum
 
   It '英数字のみを含む文字列の場合、成功を返すこと'
     When call sx_str_is_alnum "abc123" "XYZ" "AbC99"
@@ -38,7 +38,8 @@ Describe 'sx_str_is_alnum'
   End
 
   It '改行が含まれる場合、失敗を返すこと'
-    When call sx_str_is_alnum "ab${SX_STR_LF}c"
+    input=$(printf 'ab\nc')
+    When call sx_str_is_alnum "$input"
     The status should be failure
   End
 

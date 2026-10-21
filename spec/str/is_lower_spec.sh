@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_lower'
-  Include ./spec/support/library.sh spec/str/is_lower_spec.sh SX_STR_LF sx_str_is_lower
+  Include ./spec/support/library.sh sx_str_is_lower
 
   It '小文字のみを含む文字列の場合、成功を返すこと'
     When call sx_str_is_lower "abc" "x" "xyz"
@@ -38,7 +38,8 @@ Describe 'sx_str_is_lower'
   End
 
   It '改行が含まれる場合、失敗を返すこと'
-    When call sx_str_is_lower "ab${SX_STR_LF}c"
+    input=$(printf 'ab\nc')
+    When call sx_str_is_lower "$input"
     The status should be failure
   End
 

@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_digit'
-  Include ./spec/support/library.sh spec/str/is_digit_spec.sh SX_STR_LF sx_str_is_digit
+  Include ./spec/support/library.sh sx_str_is_digit
 
   It '数字のみを含む文字列の場合、成功を返すこと'
     When call sx_str_is_digit "123" "0" "456"
@@ -38,7 +38,8 @@ Describe 'sx_str_is_digit'
   End
 
   It '改行が含まれる場合、失敗を返すこと'
-    When call sx_str_is_digit "12${SX_STR_LF}3"
+    input=$(printf '12\n3')
+    When call sx_str_is_digit "$input"
     The status should be failure
   End
 
