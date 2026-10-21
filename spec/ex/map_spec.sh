@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_ex_map'
-  Include ./spec/support/library.sh spec/ex/map_spec.sh SX_CFG_SKIP_CHK SX_EX_USAGE sx_ex_map
+  Include ./spec/support/library.sh sx_ex_map
 
   Describe '名前をステータス数値に解決すること'
     It 'OK を 0 に解決すること'

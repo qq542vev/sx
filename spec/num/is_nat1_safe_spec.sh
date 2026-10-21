@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_nat1_safe'
-  Include ./spec/support/library.sh spec/num/is_nat1_safe_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_num_is_nat1_safe
+  Include ./spec/support/library.sh sx_num_is_nat1_safe
 
   Context 'デフォルト (32ビット)'
     It '32ビットの正の境界値を検証すること'

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_cmp_nat0'
-  Include ./spec/support/library.sh spec/num/cmp_nat0_spec.sh SX_CFG_NUM_RANGE sx_num_cmp_nat0
+  Include ./spec/support/library.sh sx_num_cmp_nat0
 
   It '多倍長の自然数を大小比較できること'
     When call sx_num_cmp_nat0 1000000000000000000 999999999999999999
