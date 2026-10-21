@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_find'
-	Include ./spec/support/library.sh spec/str/find_spec.sh SX_EX_NOPERM SX_EX_USAGE SX_STR_FIND_GLOB SX_STR_FIND_OVERLAP SX_STR_FIND_TEXT sx_str_find
+	Include ./spec/support/library.sh sx_str_find
 
 	It '単一一致で index:len を返すこと'
 		When call sx_str_find res "hello world" "world"
@@ -65,13 +65,13 @@ Describe 'sx_str_find'
 
 	It '無効な変数名でエラーになること'
 		When call sx_str_find "1invalid" "abc" "a"
-		The status should eq "$SX_EX_USAGE"
+		The status should eq 64
 	End
 
 	It '読み取り専用変数でエラーになること'
 		readonly ro_var=0
 		When call sx_str_find ro_var "abc" "a"
-		The status should eq "$SX_EX_NOPERM"
+		The status should eq 77
 	End
 
 	It '重複フラグ有効で重なり合う一致をすべて見つけること'

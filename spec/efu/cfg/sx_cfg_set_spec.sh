@@ -1,5 +1,5 @@
 Describe 'sx_cfg_set -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/cfg/sx_cfg_set_spec.sh SX_CFG_ARR_REF SX_CFG_SIG_ARR SX_SYS_NUM_MIN sx_cfg_set
+  Include ./spec/support/library.sh sx_cfg_set
 
   It '正常動作'
 

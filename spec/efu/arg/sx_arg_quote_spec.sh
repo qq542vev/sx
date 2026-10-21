@@ -1,5 +1,5 @@
 Describe 'sx_arg_quote -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/arg/sx_arg_quote_spec.sh __sx_num_is_nat0_safe sx_arg_quote
+  Include ./spec/support/library.sh sx_arg_quote
 
   It '引数個数が安全範囲外でも-efu下で成功すること'
     __sx_num_is_nat0_safe() {

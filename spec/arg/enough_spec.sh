@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_enough'
-  Include ./spec/support/library.sh spec/arg/enough_spec.sh SX_CFG_SKIP_CHK __sx_arg_enough sx_arg_enough
+  Include ./spec/support/library.sh sx_arg_enough
 
   Describe '全要素成功'
     It 'count <= 要素数の場合に成功する'

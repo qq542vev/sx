@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_len'
-  Include ./spec/support/library.sh spec/arg/len_spec.sh SX_CFG_SKIP_CHK __sx_arg_len sx_arg_len
+  Include ./spec/support/library.sh sx_arg_len
 
   It '引数の個数を正しくカウントすること (3個)'
     When call sx_arg_len res "v1" "v2" "v3"

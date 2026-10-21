@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_is_spec'
-  Include ./spec/support/library.sh spec/arr/is_spec_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_arr_is_spec
+  Include ./spec/support/library.sh sx_arr_is_spec
 
   It '単体指定を検証すること'
     When call sx_arr_is_spec "0" "-1" "+1" "-0" "3"

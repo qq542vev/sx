@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_glob_escape'
-	Include ./spec/support/library.sh spec/glob/escape_spec.sh SX_CFG_SKIP_CHK SX_EX_NOPERM sx_glob_escape sx_str_match
+	Include ./spec/support/library.sh sx_glob_escape
 
 	Describe '正常系: 各特殊文字のエスケープ'
 		It '* を [*] にエスケープする'
@@ -58,23 +58,26 @@ Describe 'sx_glob_escape'
 
 	Describe '正常系: case パターン内でのリテラルマッチ'
 		It 'エスケープした文字列を case パターンでリテラルマッチできる'
-			sx_glob_escape ge_p 'f*o'
-			When call sx_str_match 'f*o' "${ge_p}"
+			input='f*o' ge_p=''
+			When call sx_glob_escape ge_p "$input"
 			The status should be success
+			The variable input should match pattern "${ge_p}"
 			unset ge_p
 		End
 
 		It 'エスケープなしの glob 文字を含む文字列をリテラルマッチできる'
-			sx_glob_escape ge_p '*?[abc]'
-			When call sx_str_match '*?[abc]' "${ge_p}"
+			input='*?[abc]' ge_p=''
+			When call sx_glob_escape ge_p "$input"
 			The status should be success
+			The variable input should match pattern "${ge_p}"
 			unset ge_p
 		End
 
 		It 'エスケープされたパターンは glob として解釈されない'
-			sx_glob_escape ge_p 'f*o'
-			When call sx_str_match 'foo' "${ge_p}"
-			The status should be failure
+			probe='foo' ge_p=''
+			When call sx_glob_escape ge_p 'f*o'
+			The status should be success
+			The variable probe should not match pattern "${ge_p}"
 			unset ge_p
 		End
 	End
@@ -83,7 +86,7 @@ Describe 'sx_glob_escape'
 		It '読み取り専用変数に対して EX_NOPERM を返す'
 			readonly MYRO_GE='const'
 			When call sx_glob_escape MYRO_GE 'abc'
-			The status should equal "${SX_EX_NOPERM}"
+			The status should equal 77
 		End
 	End
 
