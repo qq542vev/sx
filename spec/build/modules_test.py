@@ -66,7 +66,11 @@ class ModulesTest(unittest.TestCase):
         other = self.output / "sx_uri_is_pct.sh"
         original = selected.read_bytes()
         other_original = other.read_bytes()
-        self.assertIn("sx_uri_is_pct", FUNCTION.findall(other.read_text(encoding="utf-8")))
+        percent_code = other.read_text(encoding="utf-8")
+        self.assertEqual({"sx_uri_is_pct", "__sx_uri_is_pct"}, set(FUNCTION.findall(percent_code)))
+        self.assertIn("readonly SX_STR_XDIGIT=", percent_code)
+        self.assertNotIn("SX_SYS_REV", percent_code)
+        self.assertNotIn("SX_CFG_NUM_RANGE", percent_code)
         selected.write_text("古い生成物\n", encoding="utf-8")
         self.assert_build("sx_uri_enc")
         self.assertEqual(original, selected.read_bytes())

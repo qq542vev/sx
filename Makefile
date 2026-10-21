@@ -74,9 +74,11 @@ modules:
 
 test:
 	$(MAKE) SX_SYMBOLS= SX_OUT=sx.sh all
-	$(MAKE) SX_SYMBOLS=sx_uri_enc modules
+	$(MAKE) SX_SYMBOLS='sx_uri_enc sx_uri_is_pct' modules
 	SX_TEST_MODE=full shellspec
-	SX_TEST_MODE=module shellspec spec/uri/enc_spec.sh spec/efu/uri/sx_uri_enc_spec.sh
+	SX_TEST_MODE=module shellspec \
+		spec/uri/enc_spec.sh spec/efu/uri/sx_uri_enc_spec.sh \
+		spec/uri/is_pct_spec.sh spec/efu/uri/sx_uri_is_pct_spec.sh
 
 # Clean
 # =====

@@ -48,21 +48,23 @@ shellspec spec/modules/uri_enc_spec.sh
 通常のバンドルでそれらを一つにまとめてください。
 同じ名前は毎回再生成し、今回指定していない名前のファイルは保持します。
 `make clean` は個別生成物も削除します。
-`make test` は `sx_uri_enc` の個別版を生成し、全体版と個別版のテストを実行します。
+`make test` は `sx_uri_enc` と `sx_uri_is_pct` の個別版を生成し、全体版と個別版のテストを実行します。
 
-既存の URI エンコードテストも、既定で個別版を読み込みます。
+既存の URI エンコードとパーセント表記の検査テストも、既定で個別版を読み込みます。
 同じテストを全体版で実行するときは `SX_TEST_MODE=full` を指定します。
 両者は ShellSpec をそれぞれ起動して検証します。
 
 ```sh
 shellspec spec/uri/enc_spec.sh spec/efu/uri/sx_uri_enc_spec.sh
 SX_TEST_MODE=full shellspec spec/uri/enc_spec.sh spec/efu/uri/sx_uri_enc_spec.sh
+shellspec spec/uri/is_pct_spec.sh spec/efu/uri/sx_uri_is_pct_spec.sh
+SX_TEST_MODE=full shellspec spec/uri/is_pct_spec.sh spec/efu/uri/sx_uri_is_pct_spec.sh
 ```
 
 切り替えには `Include ./spec/support/library.sh sx_uri_enc` を使います。
-現在この切り替えに対応しているのは上記の2ファイルです。
-テスト用の制御文字・既存配列はテスト内で用意し、製品の依存宣言には追加しません。
-`make test` は全体版で全テストを実行した後、上記2ファイルを個別版でも実行します。
+現在この切り替えに対応しているのは上記の4ファイルです。
+テスト用の制御文字・既存配列・非変更を検証するカウンタはテスト内で用意し、製品の依存宣言には追加しません。
+`make test` は全体版で全テストを実行した後、上記4ファイルを個別版でも実行します。
 
 依存は各ファイル先頭の `M_REQUIRE([|...|])dnl` に直接参照する実行時の名前を列挙します。
 依存がないときも `M_REQUIRE([||])dnl` を一行置きます。

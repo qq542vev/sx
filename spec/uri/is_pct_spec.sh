@@ -2,7 +2,7 @@
 # shellcheck shell=sh
 
 Describe 'sx_uri_is_pct'
-  Include ./sx.sh
+  Include ./spec/support/library.sh sx_uri_is_pct
 
   Context '公開・内部・検証省略'
     Parameters
@@ -189,7 +189,8 @@ Describe 'sx_uri_is_pct'
 
     It '改行と制御文字を許可する'
       SX_CFG_SKIP_CHK=$2
-      When call "$1" "a${SX_STR_LF}${SX_STR_HT}${SX_STR_SOH}b"
+      input=$(printf 'a\012\011\001b')
+      When call "$1" "$input"
       The status should equal 0
       The stdout should equal ''
       The stderr should equal ''
@@ -285,7 +286,8 @@ Describe 'sx_uri_is_pct'
   End
 
   It '連続した呼び出しで失敗後も成功し、リビジョンを変更しない'
-    saved_rev=$SX_SYS_REV
+    # 判定関数に不要なカウンタは、非変更を検証するための値をテスト側で用意する。
+    SX_SYS_REV=41
     # shellcheck disable=SC2329
     check_repeated() {
       if sx_uri_is_pct '%GG'; then return 1; fi
@@ -295,6 +297,6 @@ Describe 'sx_uri_is_pct'
     }
     When call check_repeated
     The status should be success
-    The variable SX_SYS_REV should equal "$saved_rev"
+    The variable SX_SYS_REV should equal 41
   End
 End
