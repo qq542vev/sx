@@ -3,20 +3,20 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rot()'
-    Include ./spec/support/library.sh spec/str/rot_spec.sh SX_EX_NOPERM SX_EX_USAGE SX_STR_ALPHA SX_STR_DIGIT SX_STR_LOWER SX_STR_UPPER sx_str_rot
+    Include ./spec/support/library.sh sx_str_rot
 
     It '大文字のみ ROT13 が機能する'
-        When call sx_str_rot res "HELLO" "${SX_STR_UPPER}" 13
+        When call sx_str_rot res "HELLO" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" 13
         The variable res should equal "URYYB"
     End
 
     It '小文字のみ ROT13 が機能する'
-        When call sx_str_rot res "hello" "${SX_STR_LOWER}" 13
+        When call sx_str_rot res "hello" "abcdefghijklmnopqrstuvwxyz" 13
         The variable res should equal "uryyb"
     End
 
     It '大文字のみ ROT13 でシフト量が文字セット長を超える場合は剰余を使用する'
-        When call sx_str_rot res "HELLO" "${SX_STR_UPPER}" 39
+        When call sx_str_rot res "HELLO" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" 39
         The variable res should equal "URYYB"
     End
 
@@ -36,17 +36,17 @@ Describe 'sx_str_rot()'
     End
 
     It '任意の文字セットでシフトできる'
-        When call sx_str_rot res "135" "${SX_STR_DIGIT}" 3
+        When call sx_str_rot res "135" "0123456789" 3
         The variable res should equal "468"
     End
 
     It '負のシフトが機能する'
-        When call sx_str_rot res "BC" "${SX_STR_UPPER}" -1
+        When call sx_str_rot res "BC" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" -1
         The variable res should equal "AB"
     End
 
     It 'シフト0は何も変換しない'
-        When call sx_str_rot res "ABC" "${SX_STR_UPPER}" 0
+        When call sx_str_rot res "ABC" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" 0
         The variable res should equal "ABC"
     End
 
@@ -64,12 +64,12 @@ Describe 'sx_str_rot()'
         readonly MYRO_ROT="const"
         When call sx_str_rot MYRO_ROT "ABC"
         The status should be failure
-        The status should equal "${SX_EX_NOPERM}"
+        The status should equal 77
     End
 
     It '不正なシフト量に対して EX_USAGE を返す'
-        When call sx_str_rot res "ABC" "${SX_STR_UPPER}" "x"
+        When call sx_str_rot res "ABC" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" "x"
         The status should be failure
-        The status should equal "${SX_EX_USAGE}"
+        The status should equal 64
     End
 End

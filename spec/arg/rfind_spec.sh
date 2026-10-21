@@ -6,7 +6,7 @@ eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_arg_rfind'
-	Include ./spec/support/library.sh spec/arg/rfind_spec.sh SX_ARG_RFIND_CB SX_ARG_RFIND_GLOB SX_ARG_RFIND_TEXT SX_EX_NOPERM SX_EX_USAGE sx_arg_rfind
+	Include ./spec/support/library.sh sx_arg_rfind
 
 	Describe '後ろ向き検索 (sx_arg_rfind)'
 		It 'デフォルトで全件一致する（末尾から）'
@@ -112,7 +112,7 @@ Describe 'sx_arg_rfind'
 
 		It 'GLOB + CALLBACK 同時指定は Usage Error'
 			When call sx_arg_rfind res cb $((SX_ARG_RFIND_GLOB | SX_ARG_RFIND_CB)) ::: a b
-			The status should equal "$SX_EX_USAGE"
+			The status should equal 64
 		End
 	End
 
@@ -186,13 +186,13 @@ Describe 'sx_arg_rfind'
 	Describe 'エラーケース'
 		It '無効な変数名に対して使用法エラーを返す'
 			When call sx_arg_rfind "1invalid" "target" ::: "target"
-			The status should equal "$SX_EX_USAGE"
+			The status should equal 64
 		End
 
 		It '読み取り専用変数に対して権限エラーを返す'
 			readonly RO_VAR=1
 			When call sx_arg_rfind RO_VAR "target" ::: "target"
-			The status should equal "$SX_EX_NOPERM"
+			The status should equal 77
 		End
 	End
 End
