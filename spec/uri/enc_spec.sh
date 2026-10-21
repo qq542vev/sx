@@ -4,7 +4,7 @@
 # shellcheck disable=SC2154,SC2286,SC2329
 
 Describe 'sx_uri_enc'
-  Include ./sx.sh
+  Include ./spec/support/library.sh sx_uri_enc
 
   It '非予約文字をすべて保持する'
     input='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
@@ -38,7 +38,8 @@ Describe 'sx_uri_enc'
   End
 
   It '改行・タブ・制御文字を変換する'
-    When call sx_uri_enc res "${SX_STR_SOH}a${SX_STR_HT}${SX_STR_LF}${SX_STR_CR}z${SX_STR_DEL}"
+    input=$(printf '\001a\011\012\015z\177')
+    When call sx_uri_enc res "$input"
     The status should be success
     The variable res should equal '%01a%09%0A%0Dz%7F'
   End
@@ -150,12 +151,13 @@ Describe 'sx_uri_enc'
     The variable res_0 should equal 'a%20b'
     The variable res_1 should equal ''
     The variable res_2 should equal 'c%2Fd'
-    Assert sx_var_is_arr res
+    The variable res should start with "${SX_CFG_SIG_ARR}:"
   End
 
-  It '既存配列を明示的に解放してからバインド先として再利用する'
-    sx_arr_gen res old old old
-    sx_var_unset res
+  It '既存配列の関連変数を解放してからバインド先として再利用する'
+    res="${SX_CFG_SIG_ARR}:0" res_len=3
+    res_0=old res_1=old res_2=old
+    unset res res_len res_0 res_1 res_2
     When call sx_uri_enc '@res' 'a b'
     The status should be success
     The variable res_len should equal 1
@@ -168,7 +170,7 @@ Describe 'sx_uri_enc'
     When call sx_uri_enc '@res'
     The status should be success
     The variable res_len should equal 0
-    Assert sx_var_is_arr res
+    The variable res should start with "${SX_CFG_SIG_ARR}:"
   End
 
   It '数値プレフィックス付き配列と後続スロットへ分配する'
@@ -271,7 +273,7 @@ Describe 'sx_uri_enc'
   End
 
   It '配列要素が読み取り専用なら初期化前に拒否する'
-    sx_arr_gen res old
+    res="${SX_CFG_SIG_ARR}:0" res_len=1 res_0=old
     readonly res_0
     When call sx_uri_enc '@res' 'a b'
     The status should equal 77

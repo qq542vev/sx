@@ -1,7 +1,7 @@
 # shellcheck shell=sh
 
 Describe 'sx_uri_enc -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh sx_uri_enc
 
   Context '公開・内部・検証省略'
     Parameters
@@ -26,7 +26,8 @@ Describe 'sx_uri_enc -efu 環境検証'
 
     It '制御文字と保持区間の混在を -efu 下で処理できる'
       SX_CFG_SKIP_CHK=$2
-      When run efu_run "$1" res "${SX_STR_LF}a/b ${SX_STR_HT}z%"
+      input=$(printf '\012a/b \011z%%')
+      When run efu_run "$1" res "$input"
       The status should be success
       The stdout should equal ''
       The stderr should equal ''

@@ -185,6 +185,7 @@ class BundleTest(unittest.TestCase):
                                 cwd=ROOT, env=self.env, capture_output=True, text=True)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("SX_SYMBOLS= SX_OUT=sx.sh all", result.stdout)
+        self.assertIn("SX_SYMBOLS=sx_uri_enc modules", result.stdout)
 
 
 if __name__ == "__main__":
