@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_lower()'
-    Include ./spec/support/library.sh spec/str/lower_spec.sh SX_EX_NOPERM SX_EX_USAGE sx_str_lower
+    Include ./spec/support/library.sh sx_str_lower
 
     It '大文字を小文字に変換する'
         When call sx_str_lower res "ABC"
@@ -45,14 +45,14 @@ Describe 'sx_str_lower()'
     It '不正な回数制限に対して EX_USAGE を返す'
         When call sx_str_lower res "ABC" "x"
         The status should be failure
-        The status should equal "${SX_EX_USAGE}"
+        The status should equal 64
     End
 
     It '読み取り専用変数に対して EX_NOPERM を返す'
         readonly MYRO_LOWER="const"
         When call sx_str_lower MYRO_LOWER "ABC"
         The status should be failure
-        The status should equal "${SX_EX_NOPERM}"
+        The status should equal 77
     End
 
     It 'count=0では何も変換しないこと'

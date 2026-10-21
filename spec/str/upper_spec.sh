@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_upper()'
-    Include ./spec/support/library.sh spec/str/upper_spec.sh SX_EX_NOPERM SX_EX_USAGE sx_str_upper
+    Include ./spec/support/library.sh sx_str_upper
 
     It '小文字を大文字に変換する'
         When call sx_str_upper res "abc"
@@ -45,14 +45,14 @@ Describe 'sx_str_upper()'
     It '不正な回数制限に対して EX_USAGE を返す'
         When call sx_str_upper res "abc" "x"
         The status should be failure
-        The status should equal "${SX_EX_USAGE}"
+        The status should equal 64
     End
 
     It '読み取り専用変数に対して EX_NOPERM を返す'
         readonly MYRO_UPPER="const"
         When call sx_str_upper MYRO_UPPER "abc"
         The status should be failure
-        The status should equal "${SX_EX_NOPERM}"
+        The status should equal 77
     End
 
     It 'count=0では何も変換しないこと'

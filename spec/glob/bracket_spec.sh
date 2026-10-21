@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_glob_bracket'
-	Include ./spec/support/library.sh spec/glob/bracket_spec.sh SX_CFG_SKIP_CHK SX_EX_NOPERM sx_glob_bracket
+	Include ./spec/support/library.sh sx_glob_bracket
 
 	Describe '正常系: 通常の文字セット'
 		It '1文字のセットをブラケット式に変換する'
@@ -356,7 +356,7 @@ Describe 'sx_glob_bracket'
 		It '読み取り専用変数に対して EX_NOPERM を返す'
 			readonly MYRO_GS='const'
 			When call sx_glob_bracket MYRO_GS 'a'
-			The status should equal "${SX_EX_NOPERM}"
+			The status should equal 77
 		End
 	End
 

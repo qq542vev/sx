@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_escape'
-	Include ./spec/support/library.sh spec/str/escape_spec.sh SX_EX_NOPERM SX_EX_USAGE sx_str_escape
+	Include ./spec/support/library.sh sx_str_escape
 
 	It 'デフォルト(\)で \" と \ をエスケープする'
 		When call sx_str_escape res 'a\b"c' '\"'
@@ -54,13 +54,13 @@ Describe 'sx_str_escape'
 
 	It '無効な結果変数名に対してエラーを返す'
 		When call sx_str_escape "1invalid" "abc"
-		The status should eq "$SX_EX_USAGE"
+		The status should eq 64
 	End
 
 	It '読み取り専用変数に対してエラーを返す'
 		readonly ro_var_escape=0
 		When call sx_str_escape ro_var_escape "abc"
-		The status should eq "$SX_EX_NOPERM"
+		The status should eq 77
 	End
 
 	It 'すべての引数を省略した場合、空文字列を返す'

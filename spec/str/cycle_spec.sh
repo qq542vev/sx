@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_cycle()'
-    Include ./spec/support/library.sh spec/str/cycle_spec.sh SX_EX_NOPERM SX_EX_USAGE sx_str_cycle
+    Include ./spec/support/library.sh sx_str_cycle
 
     It '文字列を指定されたシフト量だけ左方向に循環させる'
         When call sx_str_cycle res "ABCDE" 2
@@ -63,12 +63,12 @@ Describe 'sx_str_cycle()'
         readonly MYRO_CYC="const"
         When call sx_str_cycle MYRO_CYC "ABC"
         The status should be failure
-        The status should equal "${SX_EX_NOPERM}"
+        The status should equal 77
     End
 
     It '不正なシフト量に対して EX_USAGE を返す'
         When call sx_str_cycle res "ABC" "x"
         The status should be failure
-        The status should equal "${SX_EX_USAGE}"
+        The status should equal 64
     End
 End
