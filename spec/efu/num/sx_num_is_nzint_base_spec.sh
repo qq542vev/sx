@@ -1,5 +1,5 @@
 Describe 'sx_num_is_nzint_base -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/num/sx_num_is_nzint_base_spec.sh sx_num_is_nzint_base
 
   It '正常動作'
 

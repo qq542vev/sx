@@ -1,7 +1,7 @@
 # shellcheck shell=sh disable=SC2329
 # コールバックは検索関数から間接的に呼び出される。
 Describe 'sx_arg_find -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/arg/sx_arg_find_spec.sh __sx_num_add1_arith __sx_num_is_int_fit_dec __sx_num_is_nat0_safe sx_arg_find sx_cfg_set
 
   It '正常動作'
 

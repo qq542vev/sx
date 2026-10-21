@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_move'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/move_spec.sh sx_arr_gen sx_var_move
   It '右方向連鎖移動（v1-v2-v3）を実行すること'
     v1=AAA v2=BBB v3=CCC
     When call sx_var_move v1-v2-v3

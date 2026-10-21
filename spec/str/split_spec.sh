@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/split_spec.sh SX_NUM_I32_MAX SX_STR_SPLIT_GLOB sx_str_eq sx_str_split
   It '文字列を分割して結果変数に格納すること'
     When call sx_str_split res "a:b:c:d" ":"
     The status should be success

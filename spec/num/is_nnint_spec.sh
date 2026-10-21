@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_nnint'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/is_nnint_spec.sh sx_num_is_nnint
 
   Context '有効な入力 - 各基数'
     It '各基数での0以上の整数に対して成功を返すこと'

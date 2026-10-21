@@ -1,5 +1,5 @@
 Describe 'sx_arr_is_ebind -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/arr/sx_arr_is_ebind_spec.sh sx_arr_is_ebind
 
   It '有効な拡張バインドを受け付けること'
     When run efu_run sx_arr_is_ebind 'scalar:0/2list:0/3list'

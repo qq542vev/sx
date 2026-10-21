@@ -2,7 +2,7 @@
 # コールバックは ShellSpec 経由で間接的に呼び出す。
 
 Describe 'sx_csv_parse -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/csv/sx_csv_parse_spec.sh SX_STR_CR SX_STR_HT SX_STR_LF __sx_csv_parse sx_cfg_set sx_csv_parse
 
   Context '公開・内部・検証省略'
     Parameters

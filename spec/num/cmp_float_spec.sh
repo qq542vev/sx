@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_cmp_float'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/num/cmp_float_spec.sh SX_CFG_SKIP_CHK SX_NUM_DBL_MAX sx_num_cmp_float
 
 	It 'LHS < RHS の場合に 1 を返すこと'
 		When call sx_num_cmp_float 1.2 3.4

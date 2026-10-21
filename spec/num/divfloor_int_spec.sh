@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_divfloor_int'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/divfloor_int_spec.sh SX_CFG_NUM_RANGE sx_cfg_set sx_num_divfloor_int
 
   It '小さな数の除算ができること（あまりなし）'
     When call sx_num_divfloor_int q 100 4

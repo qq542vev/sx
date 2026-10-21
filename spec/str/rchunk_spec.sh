@@ -5,7 +5,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rchunk'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/rchunk_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK SX_STR_RCHUNK_SKIP_LONG SX_STR_RCHUNK_SKIP_SHORT __sx_num_is_int_fit_dec sx_cfg_set sx_str_rchunk
 
   Context '基準方向と結果順'
     Parameters

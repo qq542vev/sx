@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_cmp_arith'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/cmp_arith_spec.sh SX_CFG_SKIP_CHK SX_SYS_NUM_MAX SX_SYS_NUM_MIN sx_cfg_set sx_num_cmp_arith
 
   It 'LHS < RHS の場合に 1 を返すこと'
     When call sx_num_cmp_arith 10 20

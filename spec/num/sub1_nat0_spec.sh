@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_sub1_nat0'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/sub1_nat0_spec.sh SX_CFG_NUM_RANGE sx_num_sub1_nat0
 
   # === 基本動作 ===
   It '1から1を引くと0になること'

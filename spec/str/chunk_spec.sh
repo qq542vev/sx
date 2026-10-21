@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe "sx_str_chunk"
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/chunk_spec.sh SX_STR_CHUNK_SKIP_LONG SX_STR_CHUNK_SKIP_SHORT __sx_num_is_int_fit_dec __sx_str_qm sx_cfg_set sx_str_chunk
 
   Context 'IFS=a での動的な数値関数呼び出し'
     # shellcheck disable=SC2329

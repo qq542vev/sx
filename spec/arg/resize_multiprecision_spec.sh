@@ -4,7 +4,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_resize 多倍長対応'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/resize_multiprecision_spec.sh __sx_arg_resize sx_arg_quote sx_arg_resize sx_cfg_set
 
   Context '算術域を超える形状'
     Parameters

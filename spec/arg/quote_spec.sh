@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_quote'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/quote_spec.sh __sx_num_is_nat0_safe sx_arg_quote sx_arr_gen sx_arr_push sx_var_unset
 
   Context '引数個数の制限なし'
     Before 'reject_quote_arg_count'

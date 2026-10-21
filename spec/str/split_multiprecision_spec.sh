@@ -5,7 +5,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split 多倍長対応'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/split_multiprecision_spec.sh SX_CFG_NUM_RANGE SX_NUM_I8_MAX SX_NUM_I8_MIN SX_NUM_I8_QM SX_NUM_I8_WLEN SX_NUM_I8_ZR SX_STR_SPLIT_INC __sx_arg_isep __sx_cfg_set __sx_num_is_int_fit_dec __sx_num_is_nat0_safe __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_str_chunk __sx_str_qm __sx_str_split __sx_var_set sx_cfg_set sx_str_rep sx_str_split
 
   Context '算術域を超える回数'
     Parameters

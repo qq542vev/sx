@@ -1,5 +1,5 @@
 Describe 'sx_str_split -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/str/sx_str_split_spec.sh sx_cfg_set sx_str_split
 
   Context '多倍長の回数と直接バインド'
     Parameters

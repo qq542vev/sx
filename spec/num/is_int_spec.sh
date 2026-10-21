@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_int'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/is_int_spec.sh sx_num_is_int
 
   Context '有効な入力 - 各基数'
     It '10進数の整数に対して成功を返すこと'

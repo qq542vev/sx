@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_ebind'
-    Include ./sx.sh
+    Include ./spec/support/library.sh spec/var/is_ebind_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_var_is_ebind
 
     It '基本的なバインドを検証すること'
         When call sx_var_is_ebind "a:b:c"

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_push'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arr/push_spec.sh sx_arr_gen sx_arr_push sx_cfg_set sx_var_unset
   BeforeEach 'sx_arr_gen myarr a'
 
   It '要素を配列の末尾に追加すること'

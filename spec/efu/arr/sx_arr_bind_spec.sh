@@ -1,5 +1,5 @@
 Describe 'sx_arr_bind -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/arr/sx_arr_bind_spec.sh sx_arr_bind sx_cfg_set
 
   It '正常動作'
     br=

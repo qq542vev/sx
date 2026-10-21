@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_copy'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/copy_spec.sh sx_arr_gen sx_var_copy
 
   Describe 'スカラー変数のコピー'
     It '単一のコピー (v1 -> v2) が成功すること'

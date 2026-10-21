@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_nat0'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/is_nat0_spec.sh sx_num_is_nat0
 
   Context '有効な入力 - 10進数'
     It '単一の有効な符号なし整数に対して成功を返すこと'

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_pop'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arr/pop_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_arr_gen sx_arr_pop sx_cfg_set
 
   Describe '基本 pop'
     It '末尾の1要素をスカラーへ取り出し、元配列から削除すること'

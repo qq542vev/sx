@@ -4,7 +4,7 @@
 # shellcheck disable=SC2154
 
 Describe '配列操作とリビジョン更新の分離'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arr/raw_spec.sh SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_CFG_ARR_UPDATE SX_CFG_SIG_ARR SX_SYS_REV __sx_arr_pop_raw __sx_arr_push_raw __sx_arr_splice_raw sx_arr_gen sx_arr_pop sx_arr_push sx_arr_splice sx_cfg_set sx_var_bind sx_var_bind_init sx_var_ubind
 
   Context 'raw の元配列は更新しない'
     Parameters

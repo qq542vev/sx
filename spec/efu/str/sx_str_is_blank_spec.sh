@@ -1,5 +1,5 @@
 Describe 'sx_str_is_blank -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/str/sx_str_is_blank_spec.sh sx_str_is_blank
 
   It '正常動作'
 

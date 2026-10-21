@@ -1,5 +1,5 @@
 Describe 'sx_arr_cat -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/arr/sx_arr_cat_spec.sh sx_arr_cat sx_arr_gen sx_cfg_set
 
   Describe '単一の末尾配列へ連結'
     It '引数が0個の場合は 64 を返す'

@@ -6,7 +6,7 @@ eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_arg_rfind'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/arg/rfind_spec.sh SX_ARG_RFIND_CB SX_ARG_RFIND_GLOB SX_ARG_RFIND_TEXT SX_EX_NOPERM SX_EX_USAGE sx_arg_rfind
 
 	Describe '後ろ向き検索 (sx_arg_rfind)'
 		It 'デフォルトで全件一致する（末尾から）'

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_copyable'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/is_copyable_spec.sh sx_arr_gen sx_var_is_copyable
 
   It 'コピー先の変数がすべて書き込み可能な場合に成功を返すこと'
     v1=a v2=b v3=c

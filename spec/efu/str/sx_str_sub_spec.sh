@@ -1,5 +1,5 @@
 Describe 'sx_str_sub -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/str/sx_str_sub_spec.sh __sx_var_set sx_str_sub
 
   It '正常動作'
 

@@ -3,7 +3,7 @@
 # shellcheck disable=SC2329
 
 Describe '配列 raw 処理 -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/arr/sx_arr_raw_spec.sh SX_SYS_REV __sx_arr_pop_raw __sx_arr_push_raw __sx_arr_splice_raw sx_arr_gen sx_cfg_set
 
   raw_checked() {
     # shellcheck disable=SC3040

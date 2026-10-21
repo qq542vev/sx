@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_range'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/range_spec.sh sx_arg_range
 
   It '0からN-1までの参照を生成すること (Python方式: range(stop))'
     When call sx_arg_range result 3

@@ -4,7 +4,7 @@ eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_arg_isep (backward CB mode, int < 0)'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/isep_cb_back_spec.sh SX_ARG_ISEP_CB SX_ARG_ISEP_POST SX_ARG_ISEP_PRE __sx_var_set sx_arg_isep
 
   Describe '基本: int=-1（全要素間）'
     It 'int=-1, a b c → a 2 b 1 c'

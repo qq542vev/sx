@@ -3,7 +3,7 @@
 # shellcheck disable=SC2215,SC2288
 
 Describe 'sx_arr_get -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/arr/sx_arr_get_spec.sh sx_arr_gen sx_arr_get sx_cfg_set
 
   It '正常動作'
     sx_arr_gen myarr a b c d e

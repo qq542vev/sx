@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_set'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/is_set_spec.sh sx_var_is_set
   It 'すべての変数が設定されている場合に成功を返すこと'
     a=1 b=2
     When call sx_var_is_set a b

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_fn_set'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/fn/set_spec.sh SX_CFG_SKIP_CHK sx_fn_set
 
 	It '関数を動的に定義すること'
 		sx_fn_set "my_func=echo hello"

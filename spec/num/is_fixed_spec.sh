@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_fixed'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/is_fixed_spec.sh sx_num_is_fixed
 
   It '10進の整数表記を受け入れること'
     When call sx_num_is_fixed "0" "123" "+456" "-789"

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_min -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/num/sx_num_min_spec.sh sx_num_min
 
   It '正常動作'
 

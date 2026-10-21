@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rfind'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/str/rfind_spec.sh SX_EX_NOPERM SX_EX_USAGE SX_STR_RFIND_GLOB SX_STR_RFIND_OVERLAP SX_STR_RFIND_TEXT __sx_num_is_int_fit_dec __sx_num_is_nat0_safe __sx_num_sub_arith __sx_var_bind __sx_var_ubind sx_str_rfind
 
 	Context '多倍長経路の境界位置'
 		Parameters

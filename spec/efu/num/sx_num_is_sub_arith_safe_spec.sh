@@ -1,7 +1,7 @@
 # shellcheck shell=sh
 
 Describe 'sx_num_is_sub_arith_safe -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/num/sx_num_is_sub_arith_safe_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_cfg_set sx_num_is_sub_arith_safe
   Before 'sx_cfg_set NUM_RANGE=32'
 
   Context '32ビットの減算可能性'

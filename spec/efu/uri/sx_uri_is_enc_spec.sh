@@ -1,7 +1,7 @@
 # shellcheck shell=sh
 
 Describe 'sx_uri_is_enc -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/uri/sx_uri_is_enc_spec.sh SX_CFG_SKIP_CHK SX_STR_LF __sx_uri_is_enc sx_uri_is_enc
 
   Context '公開・内部・検証省略'
     Parameters

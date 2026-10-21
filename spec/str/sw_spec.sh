@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_sw'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/sw_spec.sh sx_str_sw
 
   Context '基本機能テスト'
     It '単一の一致する接頭辞を持つ場合に成功を返すこと'

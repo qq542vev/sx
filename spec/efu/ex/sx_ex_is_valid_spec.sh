@@ -1,5 +1,5 @@
 Describe 'sx_ex_is_valid -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/ex/sx_ex_is_valid_spec.sh sx_ex_is_valid
 
   It '正常動作'
 

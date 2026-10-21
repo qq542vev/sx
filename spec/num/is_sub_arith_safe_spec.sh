@@ -5,7 +5,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_sub_arith_safe'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/is_sub_arith_safe_spec.sh SX_CFG_NUM_RANGE sx_cfg_set sx_num_is_sub_arith_safe
   Before 'sx_cfg_set NUM_RANGE=32'
 
   Context '32ビットの減算可能性'

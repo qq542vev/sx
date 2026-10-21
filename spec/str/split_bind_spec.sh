@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split bind'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/split_bind_spec.sh SX_STR_SPLIT_GLOB SX_STR_SPLIT_INC __sx_arg_isep __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_str_chunk __sx_var_bind __sx_var_bind0 sx_cfg_set sx_str_split
 
   It '前方分割でバインドができること'
     When call sx_str_split "a:b:rem" "v1:v2:v3:v4" ":"

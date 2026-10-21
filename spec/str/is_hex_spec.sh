@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_hex'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/is_hex_spec.sh SX_STR_LF sx_str_is_hex
 
   It '有効な小文字の 16 進数文字列の場合、成功を返すこと'
     When call sx_str_is_hex "0123456789abcdef"

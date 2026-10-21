@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_splice'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/splice_spec.sh sx_cfg_set sx_str_splice
 
   It '文字列の途中に挿入できること (len=0)'
     sx_str_splice res "abcde" 2 0 "."

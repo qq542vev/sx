@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_fn_with'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/fn/with_spec.sh SX_CFG_SEP SX_SYS_REV sx_fn_with
   SX_CFG_SEP="--"
 
   It '単一の匿名関数を定義して実行できること'

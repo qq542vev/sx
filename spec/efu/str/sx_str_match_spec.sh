@@ -1,5 +1,5 @@
 Describe 'sx_str_match -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/str/sx_str_match_spec.sh sx_str_match
 
   It '正常動作'
 

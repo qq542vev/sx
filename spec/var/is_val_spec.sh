@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_val'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/is_val_spec.sh sx_var_is_val
   It 'すべての変数が空ではない値を持っている場合に成功を返すこと'
     a=1 b=0
     When call sx_var_is_val a b

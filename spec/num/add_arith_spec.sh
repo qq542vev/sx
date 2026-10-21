@@ -5,7 +5,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_add_arith'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/add_arith_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_cfg_set sx_num_add_arith sx_num_add_int sx_num_add_nat0
   Before 'sx_cfg_set NUM_RANGE=32'
 
   It '数値省略時は0を格納すること'

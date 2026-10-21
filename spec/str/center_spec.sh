@@ -2,7 +2,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_center'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/center_spec.sh __sx_num_is_int_fit_dec __sx_str_rep __sx_str_substr sx_cfg_set sx_str_center
 
   # shellcheck disable=SC2329
   record_center_sizes() {

@@ -4,7 +4,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_map'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/map_spec.sh SX_CFG_SKIP_CHK SX_NUM_I8_MAX SX_NUM_I8_MIN SX_NUM_I8_QM SX_NUM_I8_WLEN SX_NUM_I8_ZR __sx_arg_map __sx_cfg_set __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_var_set sx_arg_map sx_cfg_set sx_str_rep sx_str_upper
 
   select_map_path() {
     case "$1" in

@@ -1,5 +1,5 @@
 Describe 'sx_arr_pop -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/arr/sx_arr_pop_spec.sh sx_arr_gen sx_arr_pop
 
   It '正常動作'
 sx_arr_gen myarr a b c

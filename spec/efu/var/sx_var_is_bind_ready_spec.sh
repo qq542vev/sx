@@ -1,5 +1,5 @@
 Describe 'sx_var_is_bind_ready -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/var/sx_var_is_bind_ready_spec.sh sx_var_bind_init sx_var_is_bind_ready
 
   It '準備済みの場合の正常動作'
     bir_efu_ok_case() {

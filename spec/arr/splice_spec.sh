@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_splice'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arr/splice_spec.sh SX_CFG_ARR_REF SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_arr_gen sx_arr_splice sx_cfg_set sx_var_unset
 
   It '中間の要素を置換すること'
     sx_arr_gen myarr a b c d

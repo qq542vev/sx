@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_tr()'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/str/tr_spec.sh SX_CFG_SKIP_CHK __sx_num_is_int_fit_dec sx_str_tr
 
 	It '基本的な変換ができること'
 		When call sx_str_tr res:cnt "a1b2c3" "abc" "XYZ"

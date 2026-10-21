@@ -3,7 +3,7 @@
 # shellcheck disable=SC2215
 
 Describe 'sx_str_rchunk -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/str/sx_str_rchunk_spec.sh sx_cfg_set sx_str_rchunk
 
   Context '後方基準'
     Parameters

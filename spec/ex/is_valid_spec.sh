@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_ex_is_valid'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/ex/is_valid_spec.sh SX_EX_OK sx_ex_is_valid
 
   Describe '有効な数値ステータス'
     It '0 を検証すること'

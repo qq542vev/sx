@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_alpha'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/is_alpha_spec.sh SX_STR_LF sx_str_is_alpha
 
   It '英字のみを含む文字列の場合、成功を返すこと'
     When call sx_str_is_alpha "abc" "XYZ" "AbC"

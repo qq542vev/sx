@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_fn_anon'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/fn/anon_spec.sh sx_fn_anon
 
 	It 'ユニークな関数名を生成して定義すること'
 		sx_fn_anon f_name 'echo "hello"'

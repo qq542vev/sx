@@ -5,7 +5,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_edivmod_arith'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/edivmod_arith_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_divmod_arith_safe sx_arr_gen sx_cfg_set sx_num_edivmod_arith sx_num_edivmod_int
   Before 'sx_cfg_set NUM_RANGE=32'
 
   Context '商と余り'

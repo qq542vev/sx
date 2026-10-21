@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_unset'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/unset_spec.sh sx_arr_gen sx_var_unset
   It '通常の変数を未設定にすること'
     a=1
     When call sx_var_unset a

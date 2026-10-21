@@ -3,7 +3,7 @@
 # shellcheck disable=SC2215
 
 Describe 'sx_num_is_divmod_arith_safe -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/num/sx_num_is_divmod_arith_safe_spec.sh SX_CFG_NUM_RANGE sx_cfg_set sx_num_is_divmod_arith_safe
   Before 'sx_cfg_set NUM_RANGE=32'
 
   Context '除算可能性'

@@ -1,5 +1,5 @@
 Describe 'sx_arg_join -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/arg/sx_arg_join_spec.sh __sx_num_is_nat0_safe sx_arg_join
 
   It '引数個数が安全範囲外でも-efu下で成功すること'
     __sx_num_is_nat0_safe() {

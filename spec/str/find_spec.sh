@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_find'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/str/find_spec.sh SX_EX_NOPERM SX_EX_USAGE SX_STR_FIND_GLOB SX_STR_FIND_OVERLAP SX_STR_FIND_TEXT sx_str_find
 
 	It '単一一致で index:len を返すこと'
 		When call sx_str_find res "hello world" "world"

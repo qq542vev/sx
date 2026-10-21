@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_list_dep'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/list_dep_spec.sh sx_arr_gen sx_var_list_dep
 
   It '指定された変数に関連するすべての変数名を収集すること'
     sx_arr_gen myarr a b

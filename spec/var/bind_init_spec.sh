@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_bind_init'
-    Include ./sx.sh
+    Include ./spec/support/library.sh spec/var/bind_init_spec.sh SX_EX_NOPERM SX_EX_USAGE sx_arr_gen sx_var_bind_init sx_var_is_arr
 
     It 'a:b:rest 形式で変数を初期化すること'
         v1="old1"

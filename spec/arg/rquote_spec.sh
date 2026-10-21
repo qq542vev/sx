@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_rquote'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/rquote_spec.sh sx_arg_rquote
 
   It '引数を逆順で安全にエンコードし、eval で復元できること'
     set -- "first" "second" "third"

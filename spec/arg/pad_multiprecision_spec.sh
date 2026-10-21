@@ -4,7 +4,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_pad 多倍長対応'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/pad_multiprecision_spec.sh SX_NUM_I8_MAX SX_NUM_I8_MIN SX_NUM_I8_QM SX_NUM_I8_WLEN SX_NUM_I8_ZR __sx_arg_pad __sx_cfg_set __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_num_is_int_safe_inv __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_var_set sx_arg_pad sx_cfg_set
 
   select_pad_path() {
     case "$1" in

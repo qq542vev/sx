@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split (SX_STR_SPLIT_INC)'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/split_inc_spec.sh SX_NUM_I32_MAX SX_STR_SPLIT_GLOB SX_STR_SPLIT_INC sx_str_split
 
   It '通常文字での INC 動作確認（前方分割）'
     When call sx_str_split res "A:B:C" ":" "${SX_NUM_I32_MAX}" "${SX_STR_SPLIT_INC}"

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe '拡張バインド構文'
-    Include ./sx.sh
+    Include ./spec/support/library.sh spec/var/bind_extended_spec.sh sx_arg_find sx_arg_quote sx_arg_rquote sx_str_split
 
     Describe 'sx_arg_quote'
         It '1v:rest形式で指定した数だけ変数にリストとして格納すること'

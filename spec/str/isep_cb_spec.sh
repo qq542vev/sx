@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_isep (callback)'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/isep_cb_spec.sh SX_STR_ISEP_CB SX_STR_ISEP_POST SX_STR_ISEP_PRE __sx_var_set sx_str_isep
 
   It '正方向のコールバックで動的セパレータを挿入すること'
     cb() { __sx_var_set "${1}=($4)"; }

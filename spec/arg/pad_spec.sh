@@ -5,7 +5,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_pad'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/pad_spec.sh SX_ARG_PAD_CB SX_CFG_SKIP_CHK __sx_arg_pad __sx_var_set sx_arg_pad
 
   Describe 'Form 1 (":::" 区切り)'
     It '右パディング: 3要素を5に拡張'

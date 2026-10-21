@@ -1,5 +1,5 @@
 Describe 'sx_str_is_digit -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/str/sx_str_is_digit_spec.sh sx_str_is_digit
 
   It '正常動作'
 

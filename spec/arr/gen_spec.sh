@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_gen'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arr/gen_spec.sh sx_arr_gen sx_cfg_set sx_var_set sx_var_unset
 
   It '新しい配列を値で初期化すること'
     When call sx_arr_gen myarr "first" "second"

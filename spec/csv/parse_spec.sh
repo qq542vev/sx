@@ -4,7 +4,7 @@
 # shellcheck disable=SC2016,SC2154,SC2286,SC2288,SC2317,SC2329
 
 Describe 'sx_csv_parse'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/csv/parse_spec.sh SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_CFG_ARR_UPDATE SX_CFG_NUM_RANGE SX_STR_CR SX_STR_HT SX_STR_LF SX_SYS_REV __sx_csv_parse sx_arr_gen sx_cfg_set sx_csv_parse sx_var_is_arr sx_var_unset
 
   It 'ヘッダを含む各行を SX 配列として保存する'
     data="name,age${SX_STR_LF}alice,15${SX_STR_LF}bob,13${SX_STR_LF}"

@@ -1,5 +1,5 @@
 Describe 'sx_var_ubind -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/var/sx_var_ubind_spec.sh sx_var_bind_init sx_var_ubind
 
   It '正常動作'
     efu_ubind_ok() {

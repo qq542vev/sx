@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_join'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/join_spec.sh __sx_num_is_nat0_safe sx_arg_join
 
   It '引数個数に安全範囲の上限を適用しないこと'
     # 巨大な引数リストを作らず、呼び出し時の個数5を範囲外とする。

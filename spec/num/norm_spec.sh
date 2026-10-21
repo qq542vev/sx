@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_norm'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/norm_spec.sh sx_num_norm
 
   It '10進整数をそのまま返すこと'
     When call sx_num_norm res 123

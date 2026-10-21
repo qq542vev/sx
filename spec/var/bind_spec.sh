@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_bind'
-    Include ./sx.sh
+    Include ./spec/support/library.sh spec/var/bind_spec.sh SX_CFG_NUM_RANGE SX_EX_DATAERR SX_EX_NOPERM sx_arr_gen sx_var_bind sx_var_bind_init
 
     Describe '基本動作'
         It '単純な代入を実行し、状態を更新すること'

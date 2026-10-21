@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_range'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/range_spec.sh sx_cfg_set sx_num_range
 
   It '0からN-1までの範囲を生成すること (Python方式: range(stop))'
     When call sx_num_range result 5

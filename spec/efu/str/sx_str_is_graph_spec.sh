@@ -1,5 +1,5 @@
 Describe 'sx_str_is_graph -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/str/sx_str_is_graph_spec.sh sx_str_is_graph
 
   It '正常動作'
 

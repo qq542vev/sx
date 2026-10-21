@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_rw_deep'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arr/is_rw_spec.sh sx_arr_gen sx_var_is_rw_deep
 
   It '配列要素が読み取り専用でない場合は成功を返すこと'
     sx_arr_gen myarr a b c

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_bind'
-    Include ./sx.sh
+    Include ./spec/support/library.sh spec/arr/bind_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_arr_bind sx_cfg_set
 
     Describe '基本動作'
         It '通常のバインドで chain と残り bind を生成すること'

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe '命名規則・タイトルケース変換の多倍長対応'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/case_multiprecision_spec.sh SX_CFG_NUM_RANGE SX_NUM_I8_MAX SX_NUM_I8_MIN SX_NUM_I8_QM SX_NUM_I8_WLEN SX_NUM_I8_ZR SX_STR_SUB_CB SX_STR_SUB_GLOB __sx_cfg_set __sx_num_add1_arith __sx_num_is_int_fit_dec __sx_num_is_nat0_safe __sx_str_camel __sx_str_pascal __sx_str_sub __sx_str_title __sx_str_tr __sx_str_words __sx_var_set sx_cfg_set sx_str_camel sx_str_pascal sx_str_rep sx_str_title sx_str_words
 
   Context '公開APIの文字列長制限撤廃'
     Parameters

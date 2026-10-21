@@ -1,7 +1,7 @@
 # shellcheck shell=sh
 
 Describe 'arg 関数の第一引数 bind'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/bind_required_spec.sh sx_arg_find sx_arg_isep sx_arg_map sx_arg_pad sx_arg_quote sx_arg_resize sx_arg_rfind sx_arg_rquote
 
   Context 'bind の省略'
     Parameters

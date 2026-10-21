@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_bind_ready'
-    Include ./sx.sh
+    Include ./spec/support/library.sh spec/var/is_bind_ready_spec.sh SX_CFG_SKIP_CHK sx_var_bind sx_var_bind_init sx_var_is_bind_ready
 
     Describe '受理 - bind_init 直後の状態'
         It '中間未設定・末尾設定済みの場合に成功を返すこと'

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_rfold'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/rfold_spec.sh SX_CFG_SKIP_CHK __sx_arg_rfold __sx_var_set sx_arg_fold sx_arg_rfold
 
   Describe '右から左への順序検証'
     It 'prefix (val+acc) で右畳み込みの順序を確認する'

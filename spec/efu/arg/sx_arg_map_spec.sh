@@ -2,7 +2,7 @@
 # コールバックと検証用の差し替え関数はShellSpec経由で間接的に呼び出される。
 
 Describe 'sx_arg_map -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/arg/sx_arg_map_spec.sh __sx_num_add1_arith __sx_num_is_int_fit_dec __sx_var_set sx_arg_map sx_cfg_set
 
   Context '多倍長経路'
     Parameters

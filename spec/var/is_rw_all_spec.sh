@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_rw_all'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/is_rw_all_spec.sh sx_arr_gen sx_var_is_rw_all
 
   It 'すべての変数が書き込み可能な場合に成功を返すこと'
     v1=1 v2=2

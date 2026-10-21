@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_ubind'
-    Include ./sx.sh
+    Include ./spec/support/library.sh spec/var/ubind_spec.sh SX_CFG_NUM_RANGE SX_EX_DATAERR sx_var_bind_init sx_var_ubind
 
     Describe '基本動作'
         It '蓄積スロットにクォートなしで累積すること'

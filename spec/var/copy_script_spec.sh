@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_copy_script'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/copy_script_spec.sh __sx_var_unset sx_arr_gen sx_var_copy_script
 
   It '右方向連鎖式のコピースクリプトを生成すること'
     When call sx_var_copy_script result "a-b-c"

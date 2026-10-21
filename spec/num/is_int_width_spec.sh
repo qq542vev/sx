@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_int_width'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/is_int_width_spec.sh sx_num_is_int_width
 
   Context '8ビット符号付き整数'
     It '境界値を検証すること'

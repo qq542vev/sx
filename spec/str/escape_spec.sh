@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_escape'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/str/escape_spec.sh SX_EX_NOPERM SX_EX_USAGE sx_str_escape
 
 	It 'デフォルト(\)で \" と \ をエスケープする'
 		When call sx_str_escape res 'a\b"c' '\"'

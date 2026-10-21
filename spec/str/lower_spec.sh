@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_lower()'
-    Include ./sx.sh
+    Include ./spec/support/library.sh spec/str/lower_spec.sh SX_EX_NOPERM SX_EX_USAGE sx_str_lower
 
     It '大文字を小文字に変換する'
         When call sx_str_lower res "ABC"

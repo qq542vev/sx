@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_rel'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/rel_spec.sh sx_num_rel
 
   It '正常な関係（単一の比較）で成功を返すこと'
     When call sx_num_rel 1 '<' 2

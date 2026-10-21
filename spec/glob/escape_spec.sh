@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_glob_escape'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/glob/escape_spec.sh SX_CFG_SKIP_CHK SX_EX_NOPERM sx_glob_escape sx_str_match
 
 	Describe '正常系: 各特殊文字のエスケープ'
 		It '* を [*] にエスケープする'

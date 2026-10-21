@@ -1,5 +1,5 @@
 Describe 'sx_var_is_rw_deep -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/arr/sx_var_is_rw_deep_spec.sh sx_arr_gen sx_var_is_rw_deep
 
   It '正常動作'
     sx_arr_gen arr a b c

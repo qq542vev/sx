@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_count'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/str/count_spec.sh SX_EX_NOPERM SX_STR_COUNT_GLOB SX_STR_COUNT_OVERLAP SX_STR_FIND_TEXT sx_str_count
 
 	It '単一一致で1を返すこと'
 		When call sx_str_count res "hello world" "world"

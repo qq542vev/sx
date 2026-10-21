@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_alnum'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/is_alnum_spec.sh SX_STR_LF sx_str_is_alnum
 
   It '英数字のみを含む文字列の場合、成功を返すこと'
     When call sx_str_is_alnum "abc123" "XYZ" "AbC99"

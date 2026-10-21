@@ -1,5 +1,5 @@
 Describe 'sx_str_chunk -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/str/sx_str_chunk_spec.sh sx_cfg_set sx_str_chunk
 
   It '正常動作'
 

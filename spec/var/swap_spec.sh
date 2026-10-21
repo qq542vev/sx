@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_swap'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/swap_spec.sh sx_arr_gen sx_var_swap
   It '右方向に値を回転（v1-v2-v3 -> v3 v1 v2）させること'
     v1=AAA v2=BBB v3=CCC
     When call sx_var_swap v1-v2-v3

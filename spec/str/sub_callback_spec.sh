@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_sub (callback)'
-    Include ./sx.sh
+    Include ./spec/support/library.sh spec/str/sub_callback_spec.sh SX_STR_SUB_CB SX_STR_SUB_GLOB sx_str_isep sx_str_sub sx_var_set
 
     # テスト用コールバック関数
     # 数字に [ ] を付ける

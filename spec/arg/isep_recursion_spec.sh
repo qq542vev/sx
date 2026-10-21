@@ -4,7 +4,7 @@ eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_arg_isep (recursion support)'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/isep_recursion_spec.sh SX_ARG_ISEP_CB __sx_var_set sx_arg_isep
 
   Describe 'Forward Callback Recursion'
     inner_cb() { __sx_var_set "${1}=>"; }

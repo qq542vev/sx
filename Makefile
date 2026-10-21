@@ -13,7 +13,7 @@
 ##   modified - 2026-05-08
 ##   copyright - Copyright (C) 2026-2026 qq542vev. All rights reserved.
 ##   license - <GPL-3.0-only at https://www.gnu.org/licenses/gpl-3.0.txt>
-##   depends - awk, chmod, echo, m4, mkdir, mv, rm, shellspec
+##   depends - awk, chmod, echo, find, m4, mkdir, mv, python3, rm, shellspec
 ##
 ## See Also:
 ##
@@ -25,7 +25,7 @@
 
 .POSIX:
 
-.PHONY: all bundle modules test clean rebuild help version
+.PHONY: all bundle modules test-modules test clean rebuild help version
 
 .SILENT: help version
 
@@ -35,6 +35,7 @@
 VERSION = 0.0.1
 
 COMPACT = tools/compact.awk
+TEST_FLAGS =
 
 # Build
 # =====
@@ -72,13 +73,14 @@ modules:
 # Test
 # ====
 
+test-modules:
+	python3 tools/build-spec-modules.py
+
 test:
 	$(MAKE) SX_SYMBOLS= SX_OUT=sx.sh all
-	$(MAKE) SX_SYMBOLS='sx_uri_enc sx_uri_is_pct' modules
-	SX_TEST_MODE=full shellspec
-	SX_TEST_MODE=module shellspec \
-		spec/uri/enc_spec.sh spec/efu/uri/sx_uri_enc_spec.sh \
-		spec/uri/is_pct_spec.sh spec/efu/uri/sx_uri_is_pct_spec.sh
+	$(MAKE) SX_SPECS= test-modules
+	SX_TEST_MODE=module shellspec $(TEST_FLAGS)
+	SX_TEST_MODE=full shellspec $(TEST_FLAGS)
 
 # Clean
 # =====
@@ -86,6 +88,9 @@ test:
 clean:
 	rm -f -- sx.sh sx.sh.tmp sx.sh.tmp2
 	rm -f -- build/modules/*.sh build/modules/*.sh.tmp build/modules/*.sh.tmp2
+	if [ -d build/spec-modules ]; then \
+		find build/spec-modules -type f \( -name '*_spec.sh' -o -name '*_spec.sh.tmp' -o -name '*_spec.sh.tmp2' \) -exec rm -f -- {} +; \
+	fi
 
 rebuild: clean
 	$(MAKE)
@@ -106,6 +111,8 @@ help:
 	echo '  bundle  all と同じ生成処理を実行する。'
 	echo '  modules SX_SYMBOLS の各指定名を build/modules/<名前>.sh に個別生成する。'
 	echo '          例: make modules SX_SYMBOLS=sx_uri_enc'
+	echo '  test-modules テストの読み込み宣言から個別のテスト用モジュールを生成する。'
+	echo '          SX_SPECS でテストファイルまたはディレクトリを選択できる。'
 	echo '  test    全体版を生成してテストする。'
 	echo '  clean   作成したファイルを削除する。'
 	echo '  rebuild cleanの実行後にallを実行する。'

@@ -5,7 +5,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_mul_arith'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/mul_arith_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_cfg_set sx_num_mul_arith
   Before 'sx_cfg_set NUM_RANGE=32'
 
   Context '安全な乗算'

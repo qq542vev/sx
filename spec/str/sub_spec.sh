@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_sub'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/sub_spec.sh SX_NUM_I32_MAX SX_STR_SUB_GLOB sx_str_eq sx_str_sub
   It 'パターンを文字列で置換すること'
     When call sx_str_sub result: "hello world" "world" "earth"
     The status should be success

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split (glob)'
-    Include ./sx.sh
+    Include ./spec/support/library.sh spec/str/split_glob_spec.sh SX_NUM_I32_MAX SX_STR_SPLIT_GLOB sx_str_eq sx_str_split
 
     It 'glob パターンによる分割ができること'
         sx_str_split res "a1b2c3d" "[0-9]" "${SX_NUM_I32_MAX}" "${SX_STR_SPLIT_GLOB}"

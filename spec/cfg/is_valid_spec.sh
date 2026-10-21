@@ -4,7 +4,7 @@ eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_cfg_is_valid()'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/cfg/is_valid_spec.sh SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_CFG_ARR_UPDATE SX_CFG_NUM_RANGE SX_CFG_SEP SX_CFG_SIG_ARR SX_CFG_SKIP_CHK sx_cfg_is_valid sx_cfg_set
 
 	Context '生成されたパターンによる設定値の検査'
 		Parameters

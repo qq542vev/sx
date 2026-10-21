@@ -1,5 +1,5 @@
 Describe 'sx_var_list_ro -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/var/sx_var_list_ro_spec.sh sx_var_list_ro
 
   It '正常動作'
     my_ro_efu=1; readonly my_ro_efu

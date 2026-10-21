@@ -3,7 +3,7 @@
 # shellcheck disable=SC2215,SC2288
 
 Describe 'sx_num_sub_nat0 -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/num/sx_num_sub_nat0_spec.sh sx_cfg_set sx_num_sub_nat0
 
   sub_check_value() {
     expected="$1"

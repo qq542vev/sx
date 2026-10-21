@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rev()'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/rev_spec.sh __sx_str_qm sx_cfg_set sx_str_rev
 
   BeforeRun 'PATH=""'
 

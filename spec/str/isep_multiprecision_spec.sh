@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_isep 多倍長対応'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/isep_multiprecision_spec.sh SX_NUM_I8_MAX SX_NUM_I8_MIN SX_NUM_I8_QM SX_NUM_I8_WLEN SX_NUM_I8_ZR __sx_cfg_set __sx_num_add_arith __sx_num_is_int_fit_dec __sx_num_is_nat0_safe __sx_str_isep __sx_str_qm __sx_var_set sx_str_isep sx_str_rep
 
   It '巨大な間隔 999999999999999999999999999999 では内部境界のパターンを生成しないこと'
     __sx_str_qm() { return 64; }

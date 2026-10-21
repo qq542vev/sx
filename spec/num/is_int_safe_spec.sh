@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_int_safe'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/num/is_int_safe_spec.sh SX_CFG_NUM_RANGE sx_cfg_set sx_num_is_int_safe
 
   Context 'デフォルト (32ビット)'
     It '32ビットの境界値を検証すること'

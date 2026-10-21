@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_quote'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arr/quote_spec.sh SX_CFG_ARR_HOLE sx_arr_gen sx_arr_quote sx_arr_rquote sx_cfg_set sx_var_unset
 
   setup() {
     sx_arr_gen arr1 "hello world" "it's me"
@@ -116,7 +116,7 @@ Describe 'sx_arr_quote'
 End
 
 Describe 'sx_arr_rquote'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arr/quote_spec.sh SX_CFG_ARR_HOLE sx_arr_gen sx_arr_quote sx_arr_rquote sx_cfg_set sx_var_unset
 
   setup() {
     sx_arr_gen arr1 "hello world" "it's me"

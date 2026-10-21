@@ -1,7 +1,7 @@
 # shellcheck shell=sh disable=SC2329
 # 検証用の差し替え関数は間接的に呼び出される。
 Describe 'sx_arg_rquote -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/arg/sx_arg_rquote_spec.sh __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0 sx_arg_rquote sx_cfg_set
 
   It '正常動作'
 

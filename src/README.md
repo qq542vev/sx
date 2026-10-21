@@ -48,23 +48,36 @@ shellspec spec/modules/uri_enc_spec.sh
 通常のバンドルでそれらを一つにまとめてください。
 同じ名前は毎回再生成し、今回指定していない名前のファイルは保持します。
 `make clean` は個別生成物も削除します。
-`make test` は `sx_uri_enc` と `sx_uri_is_pct` の個別版を生成し、全体版と個別版のテストを実行します。
-
-既存の URI エンコードとパーセント表記の検査テストも、既定で個別版を読み込みます。
-同じテストを全体版で実行するときは `SX_TEST_MODE=full` を指定します。
-両者は ShellSpec をそれぞれ起動して検証します。
+全ての実行時テストは、既定で個別モジュールを読み込みます。
+テストが補助API・定数・設定値を必要とするときは、読み込み行に名前を明示します。
+製品側の `M_REQUIRE` にはテスト専用の依存を追加しません。
 
 ```sh
-shellspec spec/uri/enc_spec.sh spec/efu/uri/sx_uri_enc_spec.sh
-SX_TEST_MODE=full shellspec spec/uri/enc_spec.sh spec/efu/uri/sx_uri_enc_spec.sh
-shellspec spec/uri/is_pct_spec.sh spec/efu/uri/sx_uri_is_pct_spec.sh
-SX_TEST_MODE=full shellspec spec/uri/is_pct_spec.sh spec/efu/uri/sx_uri_is_pct_spec.sh
+make test-modules
+# 対象だけを再生成することもできる。
+make test-modules SX_SPECS=spec/arr/push_spec.sh
+shellspec spec/arr/push_spec.sh
+SX_TEST_MODE=full shellspec spec/arr/push_spec.sh
 ```
 
-切り替えには `Include ./spec/support/library.sh sx_uri_enc` を使います。
-現在この切り替えに対応しているのは上記の4ファイルです。
-テスト用の制御文字・既存配列・非変更を検証するカウンタはテスト内で用意し、製品の依存宣言には追加しません。
-`make test` は全体版で全テストを実行した後、上記4ファイルを個別版でも実行します。
+例えば、配列の準備・設定変更・後始末も行うテストでは次の形式を使います。
+
+```sh
+Include ./spec/support/library.sh spec/arr/push_spec.sh sx_arr_push sx_arr_gen sx_cfg_set sx_var_unset
+```
+
+`make test-modules` は各テストの宣言から、必要な提供名と依存先を一つにまとめた
+`build/spec-modules/arr/push_spec.sh` を生成します。
+一つのテスト内で複数のグループが宣言した名前は結合し、出力は一度だけ生成します。
+単独APIだけを使う `Include ./spec/support/library.sh sx_uri_enc` の形式も使えます。
+その場合は従来どおり `build/modules/sx_uri_enc.sh` を読み込みます。
+テスト用の生成を管理する Python は読み込み宣言の収集を行い、依存解決には既存の m4 生成器を使います。
+
+全体版との比較には `SX_TEST_MODE=full` を指定し、ShellSpec を起動し直します。
+この場合は先に `make all` で全体版を生成してください。
+`make test` は全体版と全テスト用モジュールを生成し、全テストを個別版・全体版でそれぞれ実行します。
+ShellSpec のオプションは `make test TEST_FLAGS='--jobs 4'` のように指定できます。
+`make clean` はテスト用の生成物も削除します。
 
 依存は各ファイル先頭の `M_REQUIRE([|...|])dnl` に直接参照する実行時の名前を列挙します。
 依存がないときも `M_REQUIRE([||])dnl` を一行置きます。

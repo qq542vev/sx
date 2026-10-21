@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_dump'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/dump_spec.sh SX_STR_LF sx_arr_gen sx_var_dump
 
   It '変数の状態を代入式形式で取得すること（末尾改行あり）'
     v1="hello world"

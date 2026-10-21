@@ -3,7 +3,7 @@
 # shellcheck disable=SC2215,SC2288
 
 Describe 'sx_num_range -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/num/sx_num_range_spec.sh sx_cfg_set sx_num_range
 
   range_check_values() {
     expected="$1"

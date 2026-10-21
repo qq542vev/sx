@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_has'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/has_spec.sh sx_str_has
 
   Context '基本機能テスト'
     It '単一の一致する文字列を検索する場合に成功を返すこと'

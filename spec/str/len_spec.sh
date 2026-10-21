@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_len'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/str/len_spec.sh SX_EX_NOPERM SX_EX_USAGE
 
 	xIt '単一の引数（集約モード）'
 		When call sx_str_len res "abc"

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_isep'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/isep_spec.sh SX_STR_ISEP_POST SX_STR_ISEP_PRE sx_str_isep
 
   It 'interval=1 で文字列の各文字間にセパレータを挿入すること'
     When call sx_str_isep res: "abc" "-" 1

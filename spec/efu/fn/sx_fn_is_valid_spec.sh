@@ -1,5 +1,5 @@
 Describe 'sx_fn_is_valid -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/fn/sx_fn_is_valid_spec.sh sx_fn_is_valid
 
   It '正常動作'
 

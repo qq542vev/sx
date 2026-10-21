@@ -1,5 +1,5 @@
 Describe 'sx_str_rep -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/str/sx_str_rep_spec.sh sx_cfg_set sx_str_rep
 
   It '正常動作'
     When run efu_run sx_str_rep res "a" 3

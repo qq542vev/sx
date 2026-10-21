@@ -5,7 +5,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_isep'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/isep_spec.sh SX_ARG_ISEP_CB SX_ARG_ISEP_POST SX_ARG_ISEP_PRE __sx_var_set sx_arg_isep
 
   It 'interval=1 で引数間にセパレータを挿入してクォートすること'
     When call sx_arg_isep res "-" 1 ::: "a" "b" "c"

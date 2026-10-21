@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_get'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arr/get_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_arr_gen sx_arr_get sx_cfg_set
   BeforeEach 'sx_arr_gen myarr "a" "b" "c" "d" "e"'
 
   Context '単体指定'

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_touch'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/touch_spec.sh sx_arr_gen sx_var_touch
   It '変数のリビジョンを更新すること'
     sx_arr_gen myarr a
     old_val="${myarr}"

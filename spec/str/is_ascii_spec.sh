@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_ascii'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/is_ascii_spec.sh sx_str_is_ascii
 
   It '英字のみの場合、成功を返すこと'
     When call sx_str_is_ascii "abcXYZ"

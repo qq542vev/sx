@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_set'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/set_spec.sh sx_arr_gen sx_var_set
   It '複数の変数を設定すること'
     When call sx_var_set v1=a v2=b
     The status should be success

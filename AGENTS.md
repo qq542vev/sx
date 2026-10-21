@@ -73,11 +73,13 @@ POSIX sh には `local` が存在しないため、命名規則と `m4` 展開�
 
 - **静的解析**: `shellcheck` を必須とします（個別・全体を問わず毎回実行）。
 - **テスト**: `shellspec`（`--warning-as-failure`、全 Example を `-efu` 下で実行＋`check_no_leak`）をパスすることを必須とします。
-- **個別テスト（日常の原則）**: `make all` でビルド後、変更に関連する spec のみを実行します。`.shellspec` の警告・`spec_helper`（`-efu`＋`check_no_leak`）は個別実行時も自動継承されます。
+- **個別テスト（日常の原則）**: `make all` と `make test-modules SX_SPECS=対象のspec` でビルド後、変更に関連する spec のみを実行します。既定では個別モジュールを読み込み、`SX_TEST_MODE=full` で全体版に切り替えます。`.shellspec` の警告・`spec_helper`（`-efu`＋`check_no_leak`）は個別実行時も自動継承されます。
   ```sh
   # 機能単位（公開 API と -efu 検証の両方を実行）
+  make test-modules SX_SPECS='spec/num/add_nat0_spec.sh spec/efu/num/sx_num_add_nat0_spec.sh'
   shellspec spec/num/add_nat0_spec.sh spec/efu/num/sx_num_add_nat0_spec.sh
   # ディレクトリ単位も可
+  make test-modules SX_SPECS=spec/num/
   shellspec spec/num/
   ```
   - 対応関係: `src/functions/` の対象機能 `sx_<領域>_<機能>` は `spec/<領域>/<機能>_spec.sh` と `spec/efu/<領域>/sx_<領域>_<機能>_spec.sh` が対応します。

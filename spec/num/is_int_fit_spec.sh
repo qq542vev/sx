@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_int_fit'
-	Include ./sx.sh
+	Include ./spec/support/library.sh spec/num/is_int_fit_spec.sh sx_num_is_int_fit
 
 	Describe '有効な値'
 		Context '正符号付きの境界値'

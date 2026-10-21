@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_squish'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/squish_spec.sh SX_CFG_SKIP_CHK SX_STR_SPACE sx_str_squish
 
   It 'デフォルト（空白文字）で normalize-space 相当の動作をすること'
     sx_str_squish res "  A	B

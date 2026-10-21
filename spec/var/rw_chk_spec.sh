@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_rw_chk'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/rw_chk_spec.sh sx_arr_gen
 
   xIt '書き込み可能な変数名に対して成功を返すこと'
     v1=a

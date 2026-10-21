@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_rw'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/is_rw_spec.sh sx_var_is_rw
   It '書き込み可能な変数の場合に成功を返すこと'
     a=1
     When call sx_var_is_rw a

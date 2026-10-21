@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_arr'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/var/is_arr_spec.sh sx_arr_gen sx_var_is_arr
   It 'sx配列に対して成功を返すこと'
     sx_arr_gen myarr a b
     When call sx_var_is_arr myarr

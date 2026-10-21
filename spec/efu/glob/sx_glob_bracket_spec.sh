@@ -1,5 +1,5 @@
 Describe 'sx_glob_bracket -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/glob/sx_glob_bracket_spec.sh sx_glob_bracket
 
   It '正常動作'
     When run efu_run sx_glob_bracket result 'a'

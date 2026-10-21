@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rot()'
-    Include ./sx.sh
+    Include ./spec/support/library.sh spec/str/rot_spec.sh SX_EX_NOPERM SX_EX_USAGE SX_STR_ALPHA SX_STR_DIGIT SX_STR_LOWER SX_STR_UPPER sx_str_rot
 
     It '大文字のみ ROT13 が機能する'
         When call sx_str_rot res "HELLO" "${SX_STR_UPPER}" 13

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_is_bindable'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arr/is_bindable_spec.sh SX_CFG_SKIP_CHK sx_arr_is_bindable
 
   It 'スカラー変数が書き込み可能の場合に成功を返すこと'
     writable=1

@@ -2,7 +2,7 @@
 # shellcheck shell=sh
 
 Describe 'sx_uri_is_enc'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/uri/is_enc_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK SX_STR_HT SX_STR_LF SX_STR_SOH SX_SYS_REV __sx_uri_is_enc sx_uri_is_enc
 
   Context '公開・内部・検証省略'
     Parameters

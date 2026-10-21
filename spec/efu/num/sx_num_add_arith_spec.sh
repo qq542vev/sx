@@ -3,7 +3,7 @@
 # shellcheck disable=SC2215
 
 Describe 'sx_num_add_arith -efu 環境検証'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/efu/num/sx_num_add_arith_spec.sh SX_CFG_SKIP_CHK sx_cfg_set sx_num_add_arith
   Before 'sx_cfg_set NUM_RANGE=32'
 
   It '数値省略時も正常に終了すること'

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe '可変長 sx_arg_* の引数個数ガード'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arg/capacity_guard_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_nat0_safe __sx_var_copy_script __sx_var_set __sx_var_unset sx_arg_len sx_arg_map sx_arg_pad
 
   Describe 'sx_arg_len'
     It 'SX_CFG_NUM_RANGE が不正な値の場合に EX_CONFIG を返すこと'

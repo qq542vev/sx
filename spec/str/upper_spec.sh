@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_upper()'
-    Include ./sx.sh
+    Include ./spec/support/library.sh spec/str/upper_spec.sh SX_EX_NOPERM SX_EX_USAGE sx_str_upper
 
     It '小文字を大文字に変換する'
         When call sx_str_upper res "abc"

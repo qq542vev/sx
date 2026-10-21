@@ -2,7 +2,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_pad'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/pad_spec.sh SX_STR_LF __sx_num_is_int_fit_dec __sx_str_rep sx_cfg_set sx_str_pad
 
   Context 'IFS=a での動的な数値関数呼び出し'
     # shellcheck disable=SC2329

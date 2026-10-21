@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_substr()'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/str/substr_spec.sh __sx_str_qm sx_cfg_set sx_str_substr
 
   Context 'IFS=a での動的な数値関数呼び出し'
     # shellcheck disable=SC2329

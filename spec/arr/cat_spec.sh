@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_cat'
-  Include ./sx.sh
+  Include ./spec/support/library.sh spec/arr/cat_spec.sh SX_CFG_NUM_RANGE sx_arr_cat sx_arr_gen sx_cfg_set
 
   Describe '基本連結'
     It '複数の配列を1つの末尾配列へ順に連結すること'
