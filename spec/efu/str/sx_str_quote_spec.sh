@@ -1,5 +1,5 @@
 Describe 'sx_str_quote -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/str/sx_str_quote_spec.sh sx_str_quote
+  Include ./spec/support/library.sh sx_str_quote
 
   It '正常動作'
     When run efu_run sx_str_quote res "a'b"

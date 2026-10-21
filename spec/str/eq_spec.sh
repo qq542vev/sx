@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_eq'
-  Include ./spec/support/library.sh spec/str/eq_spec.sh sx_str_eq
+  Include ./spec/support/library.sh sx_str_eq
   It 'すべての引数が等しい場合に成功を返すこと'
     When call sx_str_eq "a" "a" "a"
     The status should be success

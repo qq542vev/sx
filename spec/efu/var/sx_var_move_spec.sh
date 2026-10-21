@@ -1,5 +1,5 @@
 Describe 'sx_var_move -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/var/sx_var_move_spec.sh sx_var_move
+  Include ./spec/support/library.sh sx_var_move
 
   It '正常動作'
 

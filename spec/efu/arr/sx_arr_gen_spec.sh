@@ -1,5 +1,5 @@
 Describe 'sx_arr_gen -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/arr/sx_arr_gen_spec.sh sx_arr_gen
+  Include ./spec/support/library.sh sx_arr_gen
 
   It '正常動作'
 

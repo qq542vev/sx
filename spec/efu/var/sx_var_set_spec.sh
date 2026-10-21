@@ -1,5 +1,5 @@
 Describe 'sx_var_set -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/var/sx_var_set_spec.sh sx_var_set
+  Include ./spec/support/library.sh sx_var_set
 
   It '正常動作'
 

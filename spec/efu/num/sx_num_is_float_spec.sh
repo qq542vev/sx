@@ -1,5 +1,5 @@
 Describe 'sx_num_is_float -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_is_float_spec.sh sx_num_is_float
+  Include ./spec/support/library.sh sx_num_is_float
 
   It '正常動作'
 

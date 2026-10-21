@@ -1,5 +1,5 @@
 Describe 'sx_num_is_nnint -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_is_nnint_spec.sh sx_num_is_nnint
+  Include ./spec/support/library.sh sx_num_is_nnint
 
   It '正常動作'
 

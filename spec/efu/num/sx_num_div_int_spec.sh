@@ -1,5 +1,5 @@
 Describe 'sx_num_div_int -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_div_int_spec.sh sx_num_div_int
+  Include ./spec/support/library.sh sx_num_div_int
 
   It '正常動作'
 

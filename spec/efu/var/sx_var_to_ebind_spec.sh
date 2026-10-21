@@ -1,5 +1,5 @@
 Describe 'sx_var_to_ebind -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/var/sx_var_to_ebind_spec.sh sx_var_to_ebind
+  Include ./spec/support/library.sh sx_var_to_ebind
 
   It '正常動作'
     When run efu_run sx_var_to_ebind res '2:3a:b:9@c:2a:2d::d'

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_name'
-  Include ./spec/support/library.sh spec/var/is_name_spec.sh sx_var_is_name
+  Include ./spec/support/library.sh sx_var_is_name
   It '有効な変数名に対して成功を返すこと'
     When call sx_var_is_name var1 _var VAR_123
     The status should be success

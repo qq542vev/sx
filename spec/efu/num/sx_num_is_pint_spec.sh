@@ -1,5 +1,5 @@
 Describe 'sx_num_is_pint -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_is_pint_spec.sh sx_num_is_pint
+  Include ./spec/support/library.sh sx_num_is_pint
 
   It '正常動作'
 

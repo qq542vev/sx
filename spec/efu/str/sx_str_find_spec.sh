@@ -1,5 +1,5 @@
 Describe 'sx_str_find -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/str/sx_str_find_spec.sh sx_str_find
+  Include ./spec/support/library.sh sx_str_find
 
   It '正常動作'
 

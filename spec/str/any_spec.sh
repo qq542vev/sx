@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_any'
-  Include ./spec/support/library.sh spec/str/any_spec.sh sx_str_any
+  Include ./spec/support/library.sh sx_str_any
   It '第1引数がそれ以降のいずれかの引数と一致する場合に成功を返すこと'
     When call sx_str_any "a" "x" "a" "y"
     The status should be success

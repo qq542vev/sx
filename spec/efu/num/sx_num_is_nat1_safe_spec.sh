@@ -1,5 +1,5 @@
 Describe 'sx_num_is_nat1_safe -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_is_nat1_safe_spec.sh sx_num_is_nat1_safe
+  Include ./spec/support/library.sh sx_num_is_nat1_safe
 
   It '正常動作'
 

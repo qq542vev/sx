@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_add_int'
-  Include ./spec/support/library.sh spec/num/add_int_spec.sh sx_num_add_int
+  Include ./spec/support/library.sh sx_num_add_int
 
   It '引数0個で結果が0になること'
     When call sx_num_add_int result

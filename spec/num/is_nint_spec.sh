@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_nint'
-  Include ./spec/support/library.sh spec/num/is_nint_spec.sh sx_num_is_nint
+  Include ./spec/support/library.sh sx_num_is_nint
 
   Context '有効な入力 - 各基数'
     It '10進数の負の整数に対して成功を返すこと'

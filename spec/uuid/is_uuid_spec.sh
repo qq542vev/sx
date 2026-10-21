@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_uuid_is_uuid'
-  Include ./spec/support/library.sh spec/uuid/is_uuid_spec.sh sx_uuid_is_uuid
+  Include ./spec/support/library.sh sx_uuid_is_uuid
   It '有効なUUIDに対して成功を返すこと'
     When call sx_uuid_is_uuid "550e8400-e29b-41d4-a716-446655440000"
     The status should be success

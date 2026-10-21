@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_cntrl'
-  Include ./spec/support/library.sh spec/str/is_cntrl_spec.sh sx_str_is_cntrl
+  Include ./spec/support/library.sh sx_str_is_cntrl
 
   It '単一の制御文字の場合、成功を返すこと'
     When call sx_str_is_cntrl "$(printf '\001')"

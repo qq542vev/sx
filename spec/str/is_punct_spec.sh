@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_punct'
-  Include ./spec/support/library.sh spec/str/is_punct_spec.sh sx_str_is_punct
+  Include ./spec/support/library.sh sx_str_is_punct
 
   It '区切り記号のみの場合、成功を返すこと'
     When call sx_str_is_punct "!@#"

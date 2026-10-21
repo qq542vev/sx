@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_match'
-  Include ./spec/support/library.sh spec/str/match_spec.sh sx_str_match
+  Include ./spec/support/library.sh sx_str_match
   It '第1引数がそれ以降のいずれかのパターン（glob）に一致する場合に成功を返すこと'
     When call sx_str_match "file.txt" "*.txt" "*.md"
     The status should be success

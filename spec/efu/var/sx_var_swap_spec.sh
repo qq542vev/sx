@@ -1,5 +1,5 @@
 Describe 'sx_var_swap -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/var/sx_var_swap_spec.sh sx_var_swap
+  Include ./spec/support/library.sh sx_var_swap
 
   It '正常動作'
 

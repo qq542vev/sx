@@ -1,5 +1,5 @@
 Describe 'sx_var_is_chain -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/var/sx_var_is_chain_spec.sh sx_var_is_chain
+  Include ./spec/support/library.sh sx_var_is_chain
 
   It '正常動作'
 

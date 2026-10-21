@@ -1,5 +1,5 @@
 Describe 'sx_uuid_is_uuid -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/uuid/sx_uuid_is_uuid_spec.sh sx_uuid_is_uuid
+  Include ./spec/support/library.sh sx_uuid_is_uuid
 
   It '正常動作'
 

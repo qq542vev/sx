@@ -1,5 +1,5 @@
 Describe 'sx_num_add_int -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_add_int_spec.sh sx_num_add_int
+  Include ./spec/support/library.sh sx_num_add_int
 
   It '正常動作'
 

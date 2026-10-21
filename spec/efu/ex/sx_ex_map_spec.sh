@@ -1,5 +1,5 @@
 Describe 'sx_ex_map -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/ex/sx_ex_map_spec.sh sx_ex_map
+  Include ./spec/support/library.sh sx_ex_map
 
   It '正常動作'
 

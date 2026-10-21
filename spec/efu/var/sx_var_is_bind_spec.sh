@@ -1,5 +1,5 @@
 Describe 'sx_var_is_bind -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/var/sx_var_is_bind_spec.sh sx_var_is_bind
+  Include ./spec/support/library.sh sx_var_is_bind
 
   It '正常動作'
 

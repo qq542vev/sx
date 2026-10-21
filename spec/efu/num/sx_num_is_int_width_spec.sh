@@ -1,5 +1,5 @@
 Describe 'sx_num_is_int_width -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_is_int_width_spec.sh sx_num_is_int_width
+  Include ./spec/support/library.sh sx_num_is_int_width
 
   It '正常動作'
 

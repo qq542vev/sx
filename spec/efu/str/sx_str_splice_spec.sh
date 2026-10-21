@@ -1,5 +1,5 @@
 Describe 'sx_str_splice -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/str/sx_str_splice_spec.sh sx_str_splice
+  Include ./spec/support/library.sh sx_str_splice
 
   It '正常動作'
     When run efu_run sx_str_splice res "a*b?c[d" 2 1 "X"

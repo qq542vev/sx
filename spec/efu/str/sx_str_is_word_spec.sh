@@ -1,5 +1,5 @@
 Describe 'sx_str_is_word -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/str/sx_str_is_word_spec.sh sx_str_is_word
+  Include ./spec/support/library.sh sx_str_is_word
 
   It '正常動作'
 

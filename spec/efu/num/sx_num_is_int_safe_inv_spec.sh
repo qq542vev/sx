@@ -1,5 +1,5 @@
 Describe 'sx_num_is_int_safe_inv -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_is_int_safe_inv_spec.sh sx_num_is_int_safe_inv
+  Include ./spec/support/library.sh sx_num_is_int_safe_inv
 
   It '正常動作'
 

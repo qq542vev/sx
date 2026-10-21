@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_ex_is_err'
-  Include ./spec/support/library.sh spec/ex/is_err_spec.sh sx_ex_is_err
+  Include ./spec/support/library.sh sx_ex_is_err
 
   Describe '有効な10進数のエラーステータス'
     It '1 を検証すること'

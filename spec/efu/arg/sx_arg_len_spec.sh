@@ -1,5 +1,5 @@
 Describe 'sx_arg_len -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/arg/sx_arg_len_spec.sh sx_arg_len
+  Include ./spec/support/library.sh sx_arg_len
 
   It '正常動作'
 

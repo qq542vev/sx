@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_add_nat0'
-  Include ./spec/support/library.sh spec/num/add_nat0_spec.sh sx_num_add_nat0
+  Include ./spec/support/library.sh sx_num_add_nat0
 
   It '引数0個で結果が0になること'
     When call sx_num_add_nat0 result

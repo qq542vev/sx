@@ -1,5 +1,5 @@
 Describe 'sx_num_is_npint_base -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_is_npint_base_spec.sh sx_num_is_npint_base
+  Include ./spec/support/library.sh sx_num_is_npint_base
 
   It '正常動作'
 

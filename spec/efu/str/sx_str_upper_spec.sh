@@ -1,5 +1,5 @@
 Describe 'sx_str_upper -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/str/sx_str_upper_spec.sh sx_str_upper
+  Include ./spec/support/library.sh sx_str_upper
 
   It '正常動作'
     When run efu_run sx_str_upper res "abc"
