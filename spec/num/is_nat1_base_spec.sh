@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_nat1_base'
-  Include ./spec/support/library.sh spec/num/is_nat1_base_spec.sh SX_CFG_SKIP_CHK sx_num_is_nat1_base
+  Include ./spec/support/library.sh sx_num_is_nat1_base
 
   Describe '10進数 (base 10)'
     It '1以上の有効な10進数で成功すること'

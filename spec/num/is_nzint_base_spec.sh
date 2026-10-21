@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_nzint_base'
-  Include ./spec/support/library.sh spec/num/is_nzint_base_spec.sh SX_CFG_SKIP_CHK sx_num_is_nzint_base
+  Include ./spec/support/library.sh sx_num_is_nzint_base
 
   It '10進数の0以外の整数で成功すること'
     When call sx_num_is_nzint_base 10 "1" "+123" "-1" "-123"
