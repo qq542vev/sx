@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_pascal'
-	Include ./spec/support/library.sh spec/str/pascal_spec.sh SX_CFG_SKIP_CHK sx_str_pascal
+	Include ./spec/support/library.sh sx_str_pascal
 
 	It 'snake_case を PascalCase に変換すること'
 		When call sx_str_pascal res "hello_world"

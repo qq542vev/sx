@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_words'
-	Include ./spec/support/library.sh spec/str/words_spec.sh SX_CFG_SKIP_CHK sx_str_words
+	Include ./spec/support/library.sh sx_str_words
 
 	It 'snake_case を分割すること'
 		When call sx_str_words res "hello_world"

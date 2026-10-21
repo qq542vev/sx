@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_trim'
-  Include ./spec/support/library.sh spec/str/trim_spec.sh SX_CFG_SKIP_CHK sx_str_trim
+  Include ./spec/support/library.sh sx_str_trim
 
   It '前後の空白を削除すること (デフォルト)'
     sx_str_trim res "  hello  "

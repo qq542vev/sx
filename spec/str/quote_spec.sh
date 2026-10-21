@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_quote'
-  Include ./spec/support/library.sh spec/str/quote_spec.sh SX_CFG_SKIP_CHK sx_str_quote
+  Include ./spec/support/library.sh sx_str_quote
 
   It '通常の文字列をシングルクォートで囲むこと'
     sx_str_quote res "abc"
