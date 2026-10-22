@@ -4,7 +4,20 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_rfind 多倍長対応'
-  Include ./spec/support/library.sh spec/arg/rfind_multiprecision_spec.sh SX_NUM_I8_MAX SX_NUM_I8_MIN SX_NUM_I8_QM SX_NUM_I8_WLEN SX_NUM_I8_ZR __sx_arg_rfind __sx_cfg_set __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_num_is_nat0_safe __sx_num_sub1_arith __sx_num_sub1_nat0 sx_arg_rfind sx_cfg_set
+  # Exampleごとに対象だけを読み込み、再入とスタブは検証側に残す。
+  load_subject() {
+    case "$1" in
+      sx_arg_rfind)
+        Include ./spec/support/library.sh sx_arg_rfind
+        ;;
+      __sx_arg_rfind)
+        Include ./spec/support/library.sh __sx_arg_rfind
+        ;;
+      *) return 64;;
+    esac
+  }
+
+  Include ./spec/support/prepare.sh
 
   select_rfind_path() {
     case "$1" in
@@ -32,7 +45,8 @@ Describe 'sx_arg_rfind 多倍長対応'
     End
 
     It '検証の有無によらず各検索モードで逆順に添字と値を収集する'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_rfind
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_rfind_path "$2"
       flags="$3"
       case "$flags" in
@@ -57,7 +71,8 @@ Describe 'sx_arg_rfind 多倍長対応'
     End
 
     It '元の添字と右側の一致数を渡し非0は不一致として扱う'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_rfind
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_rfind_path "$2"
       calls=''
       cb() { calls="${calls}${2}:${3};"; is_b "$1"; }
@@ -68,7 +83,8 @@ Describe 'sx_arg_rfind 多倍長対応'
     End
 
     It 'バインド枯渇後はコールバックを呼ばない'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_rfind
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_rfind_path "$2"
       calls=''
       cb() { calls="${calls}${2}:${3};"; }
@@ -80,7 +96,8 @@ Describe 'sx_arg_rfind 多倍長対応'
     End
 
     It '再入しても外側の位置番号と一致数とバインドを保持する'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_rfind
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_rfind_path "$2"
       calls=''
       inner_cb() { return 0; }
@@ -98,6 +115,7 @@ Describe 'sx_arg_rfind 多倍長対応'
   End
 
   It '再入呼び出しが別の数値経路を選んでも外側の経路を保持する'
+    load_subject sx_arg_rfind
     # 外側の最大位置11は多倍長、内側の最大位置9は算術を選ぶ。
     __sx_num_is_int_fit_dec() {
       case "${#}:${2-}" in 2:11) return 1;; esac
@@ -127,6 +145,7 @@ Describe 'sx_arg_rfind 多倍長対応'
     End
 
     It '多倍長経路でも結果を初期化して終了状態1を返す'
+      load_subject sx_arg_rfind
       select_rfind_path nat0
       res=old
       never() { return 77; }
@@ -143,7 +162,8 @@ Describe 'sx_arg_rfind 多倍長対応'
     End
 
     It '数値経路を判定せず終了状態1を返す'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_rfind
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       fit_called=0 called=0 res=old
       __sx_num_is_nat0_safe() { return 0; }
       __sx_num_is_int_fit_dec() { fit_called=1; return 1; }
@@ -165,6 +185,7 @@ Describe 'sx_arg_rfind 多倍長対応'
     End
 
     It '引数個数に安全範囲の上限を適用しない'
+      load_subject sx_arg_rfind
       __sx_num_is_nat0_safe() { case "$1" in 6) return 1;; esac; return 0; }
       cb() { case "$1" in b) return 0;; esac; return 77; }
       When call sx_arg_rfind res "$2" "$1" ::: a b
@@ -174,7 +195,8 @@ Describe 'sx_arg_rfind 多倍長対応'
   End
 
   It 'フラグには引き続き数値範囲検証を適用する'
-    sx_cfg_set NUM_RANGE=32
+    load_subject sx_arg_rfind
+    sx_test_setup sx_cfg_set NUM_RANGE=32
     res=old
     When call sx_arg_rfind res b 2147483648 ::: a b
     The status should equal 64
@@ -182,6 +204,7 @@ Describe 'sx_arg_rfind 多倍長対応'
   End
 
   It '簡易形式でも多倍長経路で空要素を逆順に探す'
+    load_subject sx_arg_rfind
     select_rfind_path nat0
     When call sx_arg_rfind res '' '' x ''
     The status should be success
@@ -195,6 +218,7 @@ Describe 'sx_arg_rfind 多倍長対応'
     End
 
     It '空文字列と引用符とシェル構文を含む値を逆順で復元できる'
+      load_subject sx_arg_rfind
       select_rfind_path nat0
       cb() { return 0; }
       # シェル構文は評価せず値として渡す。
@@ -218,6 +242,7 @@ Describe 'sx_arg_rfind 多倍長対応'
     End
 
     It '管理用の位置番号と一致数が算術域を超えても全件を逆順に検索する'
+      load_subject __sx_arg_rfind
       count="$1" flags="$2" idx=0 expected=''
       set --
       while [ "$idx" -lt "$count" ]; do
@@ -229,7 +254,7 @@ Describe 'sx_arg_rfind 多倍長対応'
         esac
       done
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      __sx_cfg_set NUM_RANGE=8
+      sx_test_setup __sx_cfg_set NUM_RANGE=8
       case "$flags" in 2 | 6) bound=120;; *) bound=127;; esac
       if [ "$count" -le "$bound" ]; then
         __sx_num_sub1_nat0() { return 64; }

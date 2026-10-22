@@ -4,7 +4,20 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_enough 多倍長対応'
-  Include ./spec/support/library.sh spec/arg/enough_multiprecision_spec.sh SX_NUM_I8_MAX SX_NUM_I8_MIN SX_NUM_I8_QM SX_NUM_I8_WLEN SX_NUM_I8_ZR __sx_arg_enough __sx_cfg_set __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_num_is_nat0_safe __sx_num_sub1_arith __sx_num_sub1_nat0 sx_arg_enough sx_cfg_set
+  # Exampleごとに対象だけを読み込み、再入とスタブは検証側に残す。
+  load_subject() {
+    case "$1" in
+      sx_arg_enough)
+        Include ./spec/support/library.sh sx_arg_enough
+        ;;
+      __sx_arg_enough)
+        Include ./spec/support/library.sh __sx_arg_enough
+        ;;
+      *) return 64;;
+    esac
+  }
+
+  Include ./spec/support/prepare.sh
 
   select_enough_path() {
     case "$1" in
@@ -21,6 +34,7 @@ Describe 'sx_arg_enough 多倍長対応'
   }
 
   It '引数個数と必要件数に安全範囲の上限を適用しない'
+    load_subject sx_arg_enough
     __sx_num_is_nat0_safe() { return 1; }
     cb() { return 0; }
     When call sx_arg_enough cb 2 ::: a b c
@@ -34,7 +48,8 @@ Describe 'sx_arg_enough 多倍長対応'
     End
 
     It '必要数に達した要素で成功し残りのコールバックを呼ばない'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_enough
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_enough_path "$2"
       calls=''
       cb() {
@@ -48,7 +63,8 @@ Describe 'sx_arg_enough 多倍長対応'
     End
 
     It '残りが不足した時点で失敗し次のコールバックを呼ばない'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_enough
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_enough_path "$2"
       calls=''
       cb() {
@@ -62,7 +78,8 @@ Describe 'sx_arg_enough 多倍長対応'
     End
 
     It '初めから必要数に届かない場合はコールバックを呼ばない'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_enough
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_enough_path "$2"
       called=0
       cb() { called=1; return 0; }
@@ -72,7 +89,8 @@ Describe 'sx_arg_enough 多倍長対応'
     End
 
     It '簡易形式では空文字列を含む全要素を必要数として扱う'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_enough
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_enough_path "$2"
       calls=''
       cb() { calls="${calls}${2}:${1};"; }
@@ -82,7 +100,8 @@ Describe 'sx_arg_enough 多倍長対応'
     End
 
     It '再入しても外側の添字と残件数と必要件数を保持する'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_enough
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_enough_path "$2"
       calls=''
       inner_cb() { return 0; }
@@ -99,6 +118,7 @@ Describe 'sx_arg_enough 多倍長対応'
   End
 
   It '再入呼び出しが別の数値経路を選んでも外側の経路を保持する'
+    load_subject sx_arg_enough
     __sx_num_is_int_fit_dec() {
       case "${#}:${2-}:${3-}" in 3:4:2) return 1;; esac
       return 0
@@ -123,7 +143,8 @@ Describe 'sx_arg_enough 多倍長対応'
     End
 
     It '数値経路を判定せず成功しコールバックを呼ばない'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_enough
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       fit_called=0 called=0
       __sx_num_is_int_fit_dec() { fit_called=1; return 1; }
       cb() { called=1; }
@@ -141,7 +162,8 @@ Describe 'sx_arg_enough 多倍長対応'
     End
 
     It '数値経路を判定せず失敗しコールバックを呼ばない'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_enough
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       fit_called=0 called=0
       __sx_num_is_int_fit_dec() { fit_called=1; return 1; }
       cb() { called=1; }
@@ -159,7 +181,8 @@ Describe 'sx_arg_enough 多倍長対応'
     End
 
     It '必要件数を拒否せず不足として扱いコールバックを呼ばない'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_enough
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       called=0
       cb() { called=1; return 0; }
       When call sx_arg_enough cb "$2" ::: a b c
@@ -190,6 +213,7 @@ Describe 'sx_arg_enough 多倍長対応'
     End
 
     It '不正な形式を拒否しコールバックを呼ばない'
+      load_subject sx_arg_enough
       called=0
       cb() { called=1; return 0; }
       When call sx_arg_enough cb "$1" ::: a b
@@ -208,6 +232,7 @@ Describe 'sx_arg_enough 多倍長対応'
     End
 
     It '算術域の前後で正しい添字と必要数で短絡終了する'
+      load_subject __sx_arg_enough
       count="$1" need="$2" expected_status="$3" expected_calls="$4" path="$5"
       idx=0
       set --
@@ -216,7 +241,7 @@ Describe 'sx_arg_enough 多倍長対応'
         set -- "$@" x
       done
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      __sx_cfg_set NUM_RANGE=8
+      sx_test_setup __sx_cfg_set NUM_RANGE=8
       case "$path" in
         arith)
           __sx_num_add1_nat0() { return 64; }

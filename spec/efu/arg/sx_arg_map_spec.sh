@@ -2,7 +2,11 @@
 # コールバックと検証用の差し替え関数はShellSpec経由で間接的に呼び出される。
 
 Describe 'sx_arg_map -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/arg/sx_arg_map_spec.sh __sx_num_add1_arith __sx_num_is_int_fit_dec __sx_var_set sx_arg_map sx_cfg_set
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arg_map
+
+  # コールバック本体は検証側に残し、補助代入だけを別シェルで行う。
+  cb_set3() { sx_test_setup sx_var_set "${1}=${3}"; }
 
   Context '多倍長経路'
     Parameters
@@ -11,27 +15,27 @@ Describe 'sx_arg_map -efu 環境検証'
     End
 
     It '検証の有無によらず-efu下で全要素を変換する'
-      sx_cfg_set "SKIP_CHK=$1"
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
-      When run efu_run sx_arg_map res efu_cb_set3 'a b' '' "c'd"
+      When run efu_run sx_arg_map res cb_set3 'a b' '' "c'd"
       The status should be success
     End
 
     It '-efu下でスキップとバインド枯渇を扱う'
-      sx_cfg_set "SKIP_CHK=$1"
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
-      cb() { case "$2" in skip) return 0;; esac; __sx_var_set "${1}=${3}"; }
+      cb() { case "$2" in skip) return 0;; esac; sx_test_setup sx_var_set "${1}=${3}"; }
       When run efu_run sx_arg_map '2res:' cb skip a b c
       The status should be success
     End
 
     It '-efu下で最初の失敗ステータスを返す'
-      sx_cfg_set "SKIP_CHK=$1"
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
-      cb() { case "$3" in 2) return 77;; esac; __sx_var_set "${1}=${3}"; }
+      cb() { case "$3" in 2) return 77;; esac; sx_test_setup sx_var_set "${1}=${3}"; }
       When run efu_run sx_arg_map res cb a b c
       The status should equal 77
     End
@@ -39,7 +43,7 @@ Describe 'sx_arg_map -efu 環境検証'
 
   It '正常動作'
 
-    When run efu_run sx_arg_map res efu_cb_set3 a b c
+    When run efu_run sx_arg_map res cb_set3 a b c
     The status should be success
   End
 End

@@ -1,11 +1,26 @@
 #!/bin/sh
+# ShellSpec: 参照渡しで設定する変数・Parameters内の負数・Parameters内の空文字列・間接的に呼び出すコールバック・スタブを使用する。
+# shellcheck disable=SC2154,SC2215,SC2286,SC2329
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_sub 多倍長対応'
-  Include ./spec/support/library.sh spec/str/sub_multiprecision_spec.sh SX_CFG_SKIP_CHK SX_NUM_I8_MAX SX_NUM_I8_MIN SX_NUM_I8_QM SX_NUM_I8_WLEN SX_NUM_I8_ZR __sx_cfg_set __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_num_is_nat0_safe __sx_str_qm __sx_str_sub __sx_var_set sx_str_rep sx_str_sub
+  # Exampleごとに対象だけを読み込み、再入とスタブは検証側に残す。
+  load_subject() {
+    case "$1" in
+      sx_str_sub)
+        Include ./spec/support/library.sh sx_str_sub
+        ;;
+      __sx_str_sub)
+        Include ./spec/support/library.sh __sx_str_sub
+        ;;
+      *) return 64;;
+    esac
+  }
 
-  cb_replace() { __sx_var_set "${1}=X"; }
+  Include ./spec/support/prepare.sh
+
+  cb_replace() { sx_test_setup sx_var_set "${1}=X"; }
 
   Context '巨大な正負の回数制限'
     Parameters
@@ -33,6 +48,7 @@ Describe 'sx_str_sub 多倍長対応'
     End
 
     It '元文字列内の全マッチを置換できること'
+      load_subject sx_str_sub
       case "$3" in 0 | 1) rep=X;; *) rep=cb_replace;; esac
       When call sx_str_sub res:cnt aba "$2" "$rep" "$1" "$3"
       The status should be success
@@ -57,6 +73,7 @@ Describe 'sx_str_sub 多倍長対応'
     End
 
     It 'isep に上限と方向を渡すこと'
+      load_subject sx_str_sub
       case "$3" in 0 | 1) rep=X;; *) rep=cb_replace;; esac
       case "$1" in +2) expected=XaXb count=2;; -2) expected=aXbX count=2;; *) expected=XaXbX count=3;; esac
       When call sx_str_sub res:cnt ab "$2" "$rep" "$1" "$3"
@@ -79,6 +96,7 @@ Describe 'sx_str_sub 多倍長対応'
     End
 
     It 'パターン生成もコールバック呼び出しも行わないこと'
+      load_subject sx_str_sub
       __sx_str_qm() { return 64; }
       cb_stop() { return 77; }
       When call sx_str_sub res:cnt aba "$2" cb_stop "$1" "$3"
@@ -103,6 +121,7 @@ Describe 'sx_str_sub 多倍長対応'
     End
 
     It '結果を変更せず64を返すこと'
+      load_subject sx_str_sub
       res=original cnt=original
       When call sx_str_sub res:cnt aba a X "$1"
       The status should equal 64
@@ -124,6 +143,7 @@ Describe 'sx_str_sub 多倍長対応'
     End
 
     It '有限上限と省略上限を守ること'
+      load_subject sx_str_sub
       __sx_num_is_int_fit_dec() {
         case "${#}:${2-}" in 2:5 | 2:6 | 3:5 | 3:6) return 1;; esac
         return 0
@@ -150,10 +170,11 @@ Describe 'sx_str_sub 多倍長対応'
     End
 
     It '元文字列長までカウンタを増やせること'
-      sx_str_rep str a "$1"
-      sx_str_rep expected X "$1"
+      load_subject __sx_str_sub
+      sx_test_setup sx_str_rep str a "$1"
+      sx_test_setup sx_str_rep expected X "$1"
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      __sx_cfg_set NUM_RANGE=8
+      sx_test_setup __sx_cfg_set NUM_RANGE=8
       case "$1" in
         128) __sx_num_add1_arith() { return 64; };;
         *) __sx_num_add1_nat0() { return 64; };;
@@ -175,10 +196,11 @@ Describe 'sx_str_sub 多倍長対応'
     End
 
     It '両端を含む128回を多倍長経路で数えること'
-      sx_str_rep str a 127
-      sx_str_rep expected aX 127
+      load_subject __sx_str_sub
+      sx_test_setup sx_str_rep str a 127
+      sx_test_setup sx_str_rep expected aX 127
       expected="X${expected}"
-      __sx_cfg_set NUM_RANGE=8
+      sx_test_setup __sx_cfg_set NUM_RANGE=8
       __sx_num_add1_arith() { return 64; }
       case "$3" in 0 | 1) rep=X;; *) rep=cb_replace;; esac
       When call __sx_str_sub res:cnt "$str" "$2" "$rep" "$1" "$3"
@@ -201,6 +223,7 @@ Describe 'sx_str_sub 多倍長対応'
     End
 
     It '失敗した回を数えず未処理の元文字列と終了状態を保持すること'
+      load_subject sx_str_sub
       __sx_num_is_int_fit_dec() {
         case "${#}:${2-}" in 2:5 | 2:6 | 3:5 | 3:6) return 1;; esac
         return 0
@@ -208,7 +231,7 @@ Describe 'sx_str_sub 多倍長対応'
       __sx_num_add1_arith() { return 64; }
       stop_at=$4
       cb_stop() {
-        __sx_var_set "${1}=X"
+        sx_test_setup sx_var_set "${1}=X"
         case "${5}" in "$stop_at") return 77;; esac
       }
       When call sx_str_sub res:cnt abaaba "$2" cb_stop "$1" "$3"
@@ -227,13 +250,14 @@ Describe 'sx_str_sub 多倍長対応'
     End
 
     It '内外で同じバインド先を使っても結果と回数を保持すること'
+      load_subject sx_str_sub
       __sx_num_is_int_fit_dec() {
         case "${#}:${2-}" in 2:5 | 2:6 | 3:5 | 3:6) return 1;; esac
         return 0
       }
       cb_outer() {
         sx_str_sub res:cnt zz '' cb_replace '' 2
-        __sx_var_set "${1}=[${5}]"
+        sx_test_setup sx_var_set "${1}=[${5}]"
       }
       When call sx_str_sub res:cnt ababa "$2" cb_outer "$1" "$3"
       The status should be success
@@ -243,6 +267,7 @@ Describe 'sx_str_sub 多倍長対応'
   End
 
   It '元文字列長に安全範囲検査を適用しないこと'
+    load_subject sx_str_sub
     __sx_num_is_nat0_safe() {
       case "${1-}" in 3) return 1;; esac
       return 0
@@ -260,6 +285,7 @@ Describe 'sx_str_sub 多倍長対応'
     End
 
     It '内側のコールバック置換結果を保持すること'
+      load_subject sx_str_sub
       cb_recursive() {
         sx_str_sub "${1}:" "${2}" '[a]' cb_replace '' 3
       }
@@ -271,8 +297,9 @@ Describe 'sx_str_sub 多倍長対応'
   End
 
   It '結果未設定のコールバックでは前回の値を使わずマッチ文字列を保持すること'
+    load_subject sx_str_sub
     cb_optional() {
-      case "${5}" in 1) __sx_var_set "${1}=X";; esac
+      case "${5}" in 1) sx_test_setup sx_var_set "${1}=X";; esac
     }
     When call sx_str_sub res:cnt aba a cb_optional '' 2
     The status should be success
@@ -281,6 +308,7 @@ Describe 'sx_str_sub 多倍長対応'
   End
 
   It '検査省略時も巨大な負の制限を算術展開しないこと'
+    load_subject sx_str_sub
     SX_CFG_SKIP_CHK=1
     When call sx_str_sub res:cnt aba a X -999999999999999999999999999999
     The status should be success

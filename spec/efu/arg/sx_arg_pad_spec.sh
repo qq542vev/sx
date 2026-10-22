@@ -1,7 +1,8 @@
 # shellcheck shell=sh disable=SC2329
 # コールバックと検証用の差し替え関数は間接的に呼び出される。
 Describe 'sx_arg_pad -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/arg/sx_arg_pad_spec.sh __sx_num_add1_arith __sx_num_is_int_fit_dec __sx_num_is_int_safe_inv __sx_num_sub1_arith __sx_var_set sx_arg_pad sx_cfg_set
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arg_pad
 
   It '正常動作'
 
@@ -16,13 +17,13 @@ Describe 'sx_arg_pad -efu 環境検証'
     End
 
     It '再入の結果を末尾で代入しても部分結果を保持する'
-      sx_cfg_set "SKIP_CHK=$1"
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       __sx_num_is_int_safe_inv() { return 0; }
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
       __sx_num_sub1_arith() { return 64; }
       res=''
-      inner_cb() { __sx_var_set "${1}=inner"; }
+      inner_cb() { sx_test_setup sx_var_set "${1}=inner"; }
       cb() {
         sx_arg_pad nested_result 2 inner_cb 1 ::: z
         eval "${1}=\${nested_result}"
@@ -37,7 +38,7 @@ Describe 'sx_arg_pad -efu 環境検証'
     End
 
     It '左パディングの失敗時にも元の値を結合し終了状態を返す'
-      sx_cfg_set "SKIP_CHK=$1"
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       __sx_num_is_int_safe_inv() { return 0; }
       __sx_num_is_int_fit_dec() { return 1; }
       cb() { return 77; }

@@ -4,7 +4,20 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_pad 多倍長対応'
-  Include ./spec/support/library.sh spec/arg/pad_multiprecision_spec.sh SX_NUM_I8_MAX SX_NUM_I8_MIN SX_NUM_I8_QM SX_NUM_I8_WLEN SX_NUM_I8_ZR __sx_arg_pad __sx_cfg_set __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_num_is_int_safe_inv __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_var_set sx_arg_pad sx_cfg_set
+  # Exampleごとに対象だけを読み込み、再入とスタブは検証側に残す。
+  load_subject() {
+    case "$1" in
+      sx_arg_pad)
+        Include ./spec/support/library.sh sx_arg_pad
+        ;;
+      __sx_arg_pad)
+        Include ./spec/support/library.sh __sx_arg_pad
+        ;;
+      *) return 64;;
+    esac
+  }
+
+  Include ./spec/support/prepare.sh
 
   select_pad_path() {
     case "$1" in
@@ -30,7 +43,8 @@ Describe 'sx_arg_pad 多倍長対応'
     End
 
     It '検証の有無によらず指定した側をリテラルで埋める'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_pad
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_pad_path "$2"
       case "$3" in
         left) len=-4 expected="'p p' 'p p' 'a' 'b'";;
@@ -42,7 +56,8 @@ Describe 'sx_arg_pad 多倍長対応'
     End
 
     It 'スキップ時は出力位置を保持しスロット番号とスキップ数を進める'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_pad
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_pad_path "$2"
       case "$3" in
         left)
@@ -57,7 +72,7 @@ Describe 'sx_arg_pad 多倍長対応'
       calls=''
       cb() {
         calls="${calls}${2}:${3}:${4};"
-        case "$3" in 1) unset "$1";; *) __sx_var_set "${1}=[${2}:${3}:${4}]";; esac
+        case "$3" in 1) unset "$1";; *) sx_test_setup sx_var_set "${1}=[${2}:${3}:${4}]";; esac
       }
       When call sx_arg_pad res "$len" cb 1 ::: a b
       The status should be success
@@ -66,7 +81,8 @@ Describe 'sx_arg_pad 多倍長対応'
     End
 
     It 'コールバック失敗時の値を捨て終了状態と元の値を保持する'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_pad
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_pad_path "$2"
       case "$3" in
         left) len=-5 expected="'p' 'a' 'b'";;
@@ -75,8 +91,8 @@ Describe 'sx_arg_pad 多倍長対応'
       calls=0
       cb() {
         calls=$((calls + 1))
-        case "$3" in 2) __sx_var_set "${1}=discard"; return 77;; esac
-        __sx_var_set "${1}=p"
+        case "$3" in 2) sx_test_setup sx_var_set "${1}=discard"; return 77;; esac
+        sx_test_setup sx_var_set "${1}=p"
       }
       When call sx_arg_pad res "$len" cb 1 ::: a b
       The status should equal 77
@@ -85,27 +101,29 @@ Describe 'sx_arg_pad 多倍長対応'
     End
 
     It '設定された空文字列はスキップせず値として結合する'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_pad
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_pad_path "$2"
       case "$3" in
         left) len=-3 expected="'' '' 'a'";;
         right) len=3 expected="'a' '' ''";;
       esac
-      cb() { __sx_var_set "${1}="; }
+      cb() { sx_test_setup sx_var_set "${1}="; }
       When call sx_arg_pad res "$len" cb 1 ::: a
       The status should be success
       The variable res should equal "$expected"
     End
 
     It 'バインド枯渇後はコールバックも元の値の処理も進めない'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_pad
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_pad_path "$2"
       case "$3" in
         left) len=-5 expected_calls=2 expected_a=p expected_b=p;;
         right) len=5 expected_calls=1 expected_a=a expected_b=p;;
       esac
       calls=0
-      cb() { calls=$((calls + 1)); __sx_var_set "${1}=p"; }
+      cb() { calls=$((calls + 1)); sx_test_setup sx_var_set "${1}=p"; }
       When call sx_arg_pad 'item_a:item_b:' "$len" cb 1 ::: a
       The status should be success
       The variable item_a should equal "$expected_a"
@@ -114,11 +132,12 @@ Describe 'sx_arg_pad 多倍長対応'
     End
 
     It '再入の結果を末尾で代入しても内外の結果を保持する'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_pad
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_pad_path "$2"
       side="$3" res=''
       case "$side" in left) len=-4;; *) len=4;; esac
-      inner_cb() { __sx_var_set "${1}=inner"; }
+      inner_cb() { sx_test_setup sx_var_set "${1}=inner"; }
       cb() {
         sx_arg_pad nested_result 2 inner_cb 1 ::: z
         eval "${1}=\${nested_result}"
@@ -146,12 +165,13 @@ Describe 'sx_arg_pad 多倍長対応'
   End
 
   It '再入呼び出しが別の数値経路を選んでも外側のカウンタを保持する'
+    load_subject sx_arg_pad
     __sx_num_is_int_fit_dec() {
       case "${#}:${2-}:${3-}" in 3:4:2) return 1;; esac
       return 0
     }
     calls=''
-    inner_cb() { __sx_var_set "${1}=inner"; }
+    inner_cb() { sx_test_setup sx_var_set "${1}=inner"; }
     cb() {
       calls="${calls}${2}:${3}:${4};"
       sx_arg_pad nested_result 2 inner_cb 1 ::: z
@@ -163,10 +183,11 @@ Describe 'sx_arg_pad 多倍長対応'
   End
 
   It '複数段再入の結果を末尾で代入しても各段の部分結果を保持する'
+    load_subject sx_arg_pad
     depth=2 res=''
     cb() {
       case "$depth" in
-        0) __sx_var_set "${1}=leaf";;
+        0) sx_test_setup sx_var_set "${1}=leaf";;
         *)
           set -- "$1" "nested_result_$depth"
           depth=$((depth - 1))
@@ -192,7 +213,8 @@ Describe 'sx_arg_pad 多倍長対応'
   End
 
   It '再入の結果を採用せず末尾で外側のコールバック結果を代入する'
-    inner_cb() { __sx_var_set "${1}=inner"; }
+    load_subject sx_arg_pad
+    inner_cb() { sx_test_setup sx_var_set "${1}=inner"; }
     cb() {
       sx_arg_pad nested_result 2 inner_cb 1 ::: z
       eval "${1}=outer"
@@ -212,6 +234,7 @@ Describe 'sx_arg_pad 多倍長対応'
     End
 
     It 'リテラルではバインド枯渇時に終了する'
+      load_subject sx_arg_pad
       case "$1" in -*) expected="'p' 'p'";; *) expected="'a' 'p'";; esac
       When call sx_arg_pad '2res:' "$1" p ::: a
       The status should be success
@@ -219,8 +242,9 @@ Describe 'sx_arg_pad 多倍長対応'
     End
 
     It 'コールバックでは失敗時に終了し部分的な結果を保持する'
+      load_subject sx_arg_pad
       case "$1" in -*) expected="'p' 'a'";; *) expected="'a' 'p'";; esac
-      cb() { case "$3" in 2) return 77;; esac; __sx_var_set "${1}=p"; }
+      cb() { case "$3" in 2) return 77;; esac; sx_test_setup sx_var_set "${1}=p"; }
       When call sx_arg_pad res "$1" cb 1 ::: a
       The status should equal 77
       The variable res should equal "$expected"
@@ -240,6 +264,7 @@ Describe 'sx_arg_pad 多倍長対応'
     End
 
     It '10進整数以外を拒否し結果変数を変更しない'
+      load_subject sx_arg_pad
       res=old
       When call sx_arg_pad res "$2" p ::: a
       The status should equal "$1"
@@ -248,7 +273,8 @@ Describe 'sx_arg_pad 多倍長対応'
   End
 
   It 'フラグには引き続き数値範囲検証を適用する'
-    sx_cfg_set NUM_RANGE=32
+    load_subject sx_arg_pad
+    sx_test_setup sx_cfg_set NUM_RANGE=32
     res=old
     When call sx_arg_pad res 9223372036854775808 p 2147483648 ::: a
     The status should equal 64
@@ -262,6 +288,7 @@ Describe 'sx_arg_pad 多倍長対応'
     End
 
     It '入力値をそのまま保持しコールバックを呼ばない'
+      load_subject sx_arg_pad
       called=0
       cb() { called=1; return 77; }
       case "$2" in 0) val=p;; *) val=cb;; esac
@@ -280,18 +307,19 @@ Describe 'sx_arg_pad 多倍長対応'
     End
 
     It '算術域の前後で末尾の余分な加算をせず全スロットを埋める'
+      load_subject __sx_arg_pad
       count="$1" side="$2" flag="$3" expected='' idx=0
       while [ "$idx" -lt "$count" ]; do
         idx=$((idx + 1))
         expected="${expected}${expected:+ }'p'"
       done
-      __sx_cfg_set NUM_RANGE=8
+      sx_test_setup __sx_cfg_set NUM_RANGE=8
       case "$count" in
         127) __sx_num_add1_nat0() { return 64; }; __sx_num_sub1_nat0() { return 64; };;
         *) __sx_num_add1_arith() { return 64; }; __sx_num_sub1_arith() { return 64; };;
       esac
       last_idx=0 last_cnt=0 last_skip=0
-      cb() { last_idx="$2"; last_cnt="$3"; last_skip="$4"; __sx_var_set "${1}=p"; }
+      cb() { last_idx="$2"; last_cnt="$3"; last_skip="$4"; sx_test_setup sx_var_set "${1}=p"; }
       case "$side" in left) len="-$count";; *) len="$count";; esac
       case "$flag" in 0) val=p;; *) val=cb;; esac
       When call __sx_arg_pad res "$len" "$val" "$flag" :::
@@ -312,6 +340,7 @@ Describe 'sx_arg_pad 多倍長対応'
     End
 
     It '元の値を保持し必要な場合だけ1スロットを追加する'
+      load_subject __sx_arg_pad
       count="$1" side="$2" expected='' idx=0
       set --
       while [ "$idx" -lt "$count" ]; do
@@ -325,11 +354,11 @@ Describe 'sx_arg_pad 多倍長対応'
         128:left) len=-127 expected_calls=0 expected_idx=0;;
         128:right) len=127 expected_calls=0 expected_idx=0;;
       esac
-      __sx_cfg_set NUM_RANGE=8
+      sx_test_setup __sx_cfg_set NUM_RANGE=8
       __sx_num_add1_arith() { return 64; }
       __sx_num_sub1_arith() { return 64; }
       calls=0 last_idx=0
-      cb() { calls=$((calls + 1)); last_idx="$2"; __sx_var_set "${1}=p"; }
+      cb() { calls=$((calls + 1)); last_idx="$2"; sx_test_setup sx_var_set "${1}=p"; }
       When call __sx_arg_pad res "$len" cb 1 ::: "$@"
       The status should be success
       The variable res should equal "$expected"
@@ -346,11 +375,12 @@ Describe 'sx_arg_pad 多倍長対応'
     End
 
     It 'スキップ数128とスロット番号129を正しく渡す'
+      load_subject __sx_arg_pad
       len="$1"
-      __sx_cfg_set NUM_RANGE=8
+      sx_test_setup __sx_cfg_set NUM_RANGE=8
       __sx_num_add1_arith() { return 64; }
       __sx_num_sub1_arith() { return 64; }
-      cb() { case "$3" in 129) __sx_var_set "${1}=${2}:${3}:${4}";; *) unset "$1";; esac; }
+      cb() { case "$3" in 129) sx_test_setup sx_var_set "${1}=${2}:${3}:${4}";; *) unset "$1";; esac; }
       When call __sx_arg_pad res "$len" cb 1 :::
       The status should be success
       The variable res should equal "'1:129:128'"

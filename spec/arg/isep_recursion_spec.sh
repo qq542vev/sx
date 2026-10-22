@@ -1,26 +1,29 @@
 #!/bin/sh
+# ShellSpec: 参照渡しで設定する変数を使用する。
+# shellcheck disable=SC2154
 
 eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_arg_isep (recursion support)'
-  Include ./spec/support/library.sh spec/arg/isep_recursion_spec.sh SX_ARG_ISEP_CB __sx_var_set sx_arg_isep
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arg_isep
 
   Describe 'Forward Callback Recursion'
-    inner_cb() { __sx_var_set "${1}=>"; }
+    inner_cb() { sx_test_setup sx_var_set "${1}=>"; }
     outer_cb() {
       _o_var="${1}" _o_cnt="${3}"
       if [ "${_o_cnt}" = "1" ]; then
-        sx_arg_isep inner_res inner_cb 1 "" "$SX_ARG_ISEP_CB" ::: "A" "B"
-        __sx_var_set "${_o_var}=<${inner_res}>"
+        sx_arg_isep inner_res inner_cb 1 "" "1" ::: "A" "B"
+        sx_test_setup sx_var_set "${_o_var}=<${inner_res}>"
       else
-        __sx_var_set "${_o_var}=[${_o_cnt}]"
+        sx_test_setup sx_var_set "${_o_var}=[${_o_cnt}]"
       fi
       unset _o_var _o_cnt
     }
 
     It 'コールバック内で sx_arg_isep を再帰的に呼び出した場合の挙動確認'
-      When call sx_arg_isep res outer_cb 1 "" "$SX_ARG_ISEP_CB" ::: "1" "2" "3"
+      When call sx_arg_isep res outer_cb 1 "" "1" ::: "1" "2" "3"
       
       The status should be success
       eval "set -- $res"
@@ -34,20 +37,20 @@ Describe 'sx_arg_isep (recursion support)'
   End
 
   Describe 'Backward Callback Recursion'
-    inner_cb_back() { __sx_var_set "${1}=>"; }
+    inner_cb_back() { sx_test_setup sx_var_set "${1}=>"; }
     outer_cb_back() {
       _ob_var="${1}" _ob_cnt="${3}"
       if [ "${_ob_cnt}" = "1" ]; then
-        sx_arg_isep inner_res inner_cb_back -1 "" "$SX_ARG_ISEP_CB" ::: "X" "Y"
-        __sx_var_set "${_ob_var}=<${inner_res}>"
+        sx_arg_isep inner_res inner_cb_back -1 "" "1" ::: "X" "Y"
+        sx_test_setup sx_var_set "${_ob_var}=<${inner_res}>"
       else
-        __sx_var_set "${_ob_var}=[${_ob_cnt}]"
+        sx_test_setup sx_var_set "${_ob_var}=[${_ob_cnt}]"
       fi
       unset _ob_var _ob_cnt
     }
 
     It 'コールバック内で sx_arg_isep を再帰的に呼び出した場合の挙動確認 (Backward)'
-      When call sx_arg_isep res outer_cb_back -1 "" "$SX_ARG_ISEP_CB" ::: "1" "2"
+      When call sx_arg_isep res outer_cb_back -1 "" "1" ::: "1" "2"
       
       The status should be success
       eval "set -- $res"
@@ -59,30 +62,30 @@ Describe 'sx_arg_isep (recursion support)'
   End
 
   Describe '3段階ネスト再帰'
-    innermost_cb() { __sx_var_set "${1}=inner"; }
+    innermost_cb() { sx_test_setup sx_var_set "${1}=inner"; }
     middle_cb() {
       _m_var="${1}" _m_cnt="${3}"
       if [ "${_m_cnt}" = "1" ]; then
-        sx_arg_isep innermost_res innermost_cb 1 "" "$SX_ARG_ISEP_CB" ::: "Z" "W"
-        __sx_var_set "${_m_var}=inner_done"
+        sx_arg_isep innermost_res innermost_cb 1 "" "1" ::: "Z" "W"
+        sx_test_setup sx_var_set "${_m_var}=inner_done"
       else
-        __sx_var_set "${_m_var}=m${_m_cnt}"
+        sx_test_setup sx_var_set "${_m_var}=m${_m_cnt}"
       fi
       unset _m_var _m_cnt innermost_res
     }
     outer_cb_deep() {
       _od_var="${1}" _od_cnt="${3}"
       if [ "${_od_cnt}" = "1" ]; then
-        sx_arg_isep middle_res middle_cb 1 "" "$SX_ARG_ISEP_CB" ::: "X" "Y"
-        __sx_var_set "${_od_var}=middle_done"
+        sx_arg_isep middle_res middle_cb 1 "" "1" ::: "X" "Y"
+        sx_test_setup sx_var_set "${_od_var}=middle_done"
       else
-        __sx_var_set "${_od_var}=o${_od_cnt}"
+        sx_test_setup sx_var_set "${_od_var}=o${_od_cnt}"
       fi
       unset _od_var _od_cnt middle_res
     }
 
     It '外側→中間→最内の3段階ネスト (全て Forward)'
-      When call sx_arg_isep res outer_cb_deep 1 "" "$SX_ARG_ISEP_CB" ::: "1" "2" "3"
+      When call sx_arg_isep res outer_cb_deep 1 "" "1" ::: "1" "2" "3"
       
       The status should be success
       eval "set -- $res"
@@ -96,20 +99,20 @@ Describe 'sx_arg_isep (recursion support)'
   End
 
   Describe '混在方向ネスト再帰 (Forward → Backward)'
-    inner_cb_mixed() { __sx_var_set "${1}=CB"; }
+    inner_cb_mixed() { sx_test_setup sx_var_set "${1}=CB"; }
     outer_cb_mixed() {
       _om_var="${1}" _om_cnt="${3}"
       if [ "${_om_cnt}" = "1" ]; then
-        sx_arg_isep inner_res_mixed inner_cb_mixed -1 "" "$SX_ARG_ISEP_CB" ::: "P" "Q"
-        __sx_var_set "${_om_var}=mixed_done"
+        sx_arg_isep inner_res_mixed inner_cb_mixed -1 "" "1" ::: "P" "Q"
+        sx_test_setup sx_var_set "${_om_var}=mixed_done"
       else
-        __sx_var_set "${_om_var}=[${_om_cnt}]"
+        sx_test_setup sx_var_set "${_om_var}=[${_om_cnt}]"
       fi
       unset _om_var _om_cnt inner_res_mixed
     }
 
     It '外側 Forward → 内側 Backward で正しく動作すること'
-      When call sx_arg_isep res outer_cb_mixed 1 "" "$SX_ARG_ISEP_CB" ::: "1" "2"
+      When call sx_arg_isep res outer_cb_mixed 1 "" "1" ::: "1" "2"
       
       The status should be success
       eval "set -- $res"
@@ -121,21 +124,21 @@ Describe 'sx_arg_isep (recursion support)'
   End
 
   Describe '再帰内エラー伝搬'
-    inner_cb_err() { __sx_var_set "${1}=ERR"; return 42; }
+    inner_cb_err() { sx_test_setup sx_var_set "${1}=ERR"; return 42; }
 
     It '内側の CB エラーが外側に影響しないこと'
       inner_res_err=
       cb_err_recurse() {
         _e_var="${1}" _e_cnt="${3}"
         if [ "${_e_cnt}" = "1" ]; then
-          sx_arg_isep inner_res_err inner_cb_err 1 "" "$SX_ARG_ISEP_CB" ::: "A" "B"
-          __sx_var_set "${_e_var}=err_handled"
+          sx_arg_isep inner_res_err inner_cb_err 1 "" "1" ::: "A" "B"
+          sx_test_setup sx_var_set "${_e_var}=err_handled"
         else
-          __sx_var_set "${_e_var}=[${_e_cnt}]"
+          sx_test_setup sx_var_set "${_e_var}=[${_e_cnt}]"
         fi
         unset _e_var _e_cnt inner_res_err
       }
-      When call sx_arg_isep res cb_err_recurse 1 "" "$SX_ARG_ISEP_CB" ::: "1" "2" "3"
+      When call sx_arg_isep res cb_err_recurse 1 "" "1" ::: "1" "2" "3"
       The status should be success
       eval "set -- $res"
       The value "$1" should equal "1"

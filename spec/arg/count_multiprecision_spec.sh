@@ -4,7 +4,20 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_count 多倍長対応'
-  Include ./spec/support/library.sh spec/arg/count_multiprecision_spec.sh SX_CFG_NUM_RANGE SX_NUM_I8_MAX SX_NUM_I8_MIN SX_NUM_I8_QM SX_NUM_I8_WLEN SX_NUM_I8_ZR __sx_arg_count __sx_cfg_set __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_num_is_nat0_safe sx_arg_count sx_cfg_set sx_str_rep
+  # Exampleごとに対象だけを読み込み、再入とスタブは検証側に残す。
+  load_subject() {
+    case "$1" in
+      sx_arg_count)
+        Include ./spec/support/library.sh sx_arg_count
+        ;;
+      __sx_arg_count)
+        Include ./spec/support/library.sh __sx_arg_count
+        ;;
+      *) return 64;;
+    esac
+  }
+
+  Include ./spec/support/prepare.sh
 
   select_count_path() {
     case "$1" in
@@ -26,6 +39,7 @@ Describe 'sx_arg_count 多倍長対応'
     End
 
     It '引数個数に安全範囲の上限を適用しない'
+      load_subject sx_arg_count
       __sx_num_is_nat0_safe() { case "$1" in 6) return 1;; esac; return 0; }
       cb() { case "$1" in b) return 0;; esac; return 77; }
       When call sx_arg_count res "$2" "$1" ::: a b
@@ -42,7 +56,8 @@ Describe 'sx_arg_count 多倍長対応'
     End
 
     It '検証の有無によらずリテラル・glob・コールバックで件数を数える'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_count
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_count_path "$2"
       flags="$3" calls=''
       cb() {
@@ -75,6 +90,7 @@ Describe 'sx_arg_count 多倍長対応'
     End
 
     It '多倍長経路でも終了状態0で件数0を返す'
+      load_subject sx_arg_count
       select_count_path nat0
       res=old
       never() { return 77; }
@@ -91,7 +107,8 @@ Describe 'sx_arg_count 多倍長対応'
     End
 
     It '数値経路を判定せず件数0を返す'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_count
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       fit_called=0 called=0 res=old
       __sx_num_is_nat0_safe() { return 0; }
       __sx_num_is_int_fit_dec() { fit_called=1; return 1; }
@@ -111,6 +128,7 @@ Describe 'sx_arg_count 多倍長対応'
     End
 
     It '空文字列と引用符とシェル構文を含む値を各1件として数える'
+      load_subject sx_arg_count
       select_count_path nat0
       cb() { return 0; }
       # シェル構文を評価せず値として渡し、内部evalで再評価されないことを確認する。
@@ -122,6 +140,7 @@ Describe 'sx_arg_count 多倍長対応'
   End
 
   It '簡易形式でも多倍長経路で空要素を数える'
+    load_subject sx_arg_count
     select_count_path nat0
     When call sx_arg_count res '' '' x ''
     The status should be success
@@ -129,7 +148,8 @@ Describe 'sx_arg_count 多倍長対応'
   End
 
   It 'フラグには引き続き数値範囲検証を適用する'
-    sx_cfg_set NUM_RANGE=32
+    load_subject sx_arg_count
+    sx_test_setup sx_cfg_set NUM_RANGE=32
     res=old
     When call sx_arg_count res b 2147483648 ::: a b
     The status should equal 64
@@ -137,6 +157,7 @@ Describe 'sx_arg_count 多倍長対応'
   End
 
   It '不正な数値範囲設定は引き続き拒否する'
+    load_subject sx_arg_count
     SX_CFG_NUM_RANGE=bogus
     res=old
     When call sx_arg_count res b ::: a b
@@ -151,13 +172,14 @@ Describe 'sx_arg_count 多倍長対応'
     End
 
     It '算術域の前後で添字と一致数を更新し全件を数える'
+      load_subject __sx_arg_count
       expected_count="$1" flags="$2"
       expected_prior=$((expected_count - 1))
       args=
-      sx_str_rep args "'x' " "$expected_count"
+      sx_test_setup sx_str_rep args "'x' " "$expected_count"
       eval "set -- $args"
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      __sx_cfg_set NUM_RANGE=8
+      sx_test_setup __sx_cfg_set NUM_RANGE=8
       case "${expected_count}:${flags}" in
         124:* | 127:0 | 127:1 | 127:4 | 127:5) __sx_num_add1_nat0() { return 64; };;
         *) __sx_num_add1_arith() { return 64; };;

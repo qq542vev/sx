@@ -1,9 +1,59 @@
 #!/bin/sh
+# shellcheck disable=SC3003
+# 制御文字の期待値にはPOSIX.1-2024のドル単一引用符を使用する。
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_const_check'
-  Include ./spec/support/library.sh spec/const_check_spec.sh SX_CFG_META_DEF_ARR_HOLE SX_CFG_META_DEF_ARR_REF SX_CFG_META_DEF_ARR_UPDATE SX_CFG_META_DEF_NUM_RANGE SX_CFG_META_DEF_SEP SX_CFG_META_DEF_SIG_ARR SX_CFG_META_DEF_SKIP_CHK SX_CFG_META_DESC_ARR_HOLE SX_CFG_META_DESC_ARR_REF SX_CFG_META_DESC_ARR_UPDATE SX_CFG_META_DESC_NUM_RANGE SX_CFG_META_DESC_SEP SX_CFG_META_DESC_SIG_ARR SX_CFG_META_DESC_SKIP_CHK SX_CFG_META_NAMES SX_CFG_META_PATTERN_ARR_HOLE SX_CFG_META_PATTERN_ARR_REF SX_CFG_META_PATTERN_ARR_UPDATE SX_CFG_META_PATTERN_NUM_RANGE SX_CFG_META_PATTERN_SEP SX_CFG_META_PATTERN_SIG_ARR SX_CFG_META_PATTERN_SKIP_CHK SX_EX_MSG71 SX_EX_MSG73 SX_EX_USAGE SX_NUM_BASE10_PREFIX SX_STR_ALNUM SX_STR_ALPHA SX_STR_ASCII SX_STR_BLANK SX_STR_CNTRL SX_STR_DEL SX_STR_FS SX_STR_GRAPH SX_STR_LF SX_STR_PRINT SX_STR_PUNCT SX_STR_SOH SX_STR_SPACE SX_STR_SWORD SX_STR_WORD sx_var_is_ro
+  # readonly属性は同じシェルで検査する。全体モードではここで全体版を一度だけ読み込む。
+  Include ./spec/support/library.sh sx_var_is_ro
+
+  # SX_STR_WORDとSX_CFG_META_DEF_SKIP_CHKは上のモジュールに含まれるため再定義しない。
+  # 定数チェックでは、残りの定数の単独モジュールを同じシェルに読み込む。
+  case "${SX_TEST_MODE-module}" in
+    module)
+      Include ./spec/support/library.sh SX_CFG_META_DEF_ARR_HOLE
+      Include ./spec/support/library.sh SX_CFG_META_DEF_ARR_REF
+      Include ./spec/support/library.sh SX_CFG_META_DEF_ARR_UPDATE
+      Include ./spec/support/library.sh SX_CFG_META_DEF_NUM_RANGE
+      Include ./spec/support/library.sh SX_CFG_META_DEF_SEP
+      Include ./spec/support/library.sh SX_CFG_META_DEF_SIG_ARR
+      Include ./spec/support/library.sh SX_CFG_META_DESC_ARR_HOLE
+      Include ./spec/support/library.sh SX_CFG_META_DESC_ARR_REF
+      Include ./spec/support/library.sh SX_CFG_META_DESC_ARR_UPDATE
+      Include ./spec/support/library.sh SX_CFG_META_DESC_NUM_RANGE
+      Include ./spec/support/library.sh SX_CFG_META_DESC_SEP
+      Include ./spec/support/library.sh SX_CFG_META_DESC_SIG_ARR
+      Include ./spec/support/library.sh SX_CFG_META_DESC_SKIP_CHK
+      Include ./spec/support/library.sh SX_CFG_META_NAMES
+      Include ./spec/support/library.sh SX_CFG_META_PATTERN_ARR_HOLE
+      Include ./spec/support/library.sh SX_CFG_META_PATTERN_ARR_REF
+      Include ./spec/support/library.sh SX_CFG_META_PATTERN_ARR_UPDATE
+      Include ./spec/support/library.sh SX_CFG_META_PATTERN_NUM_RANGE
+      Include ./spec/support/library.sh SX_CFG_META_PATTERN_SEP
+      Include ./spec/support/library.sh SX_CFG_META_PATTERN_SIG_ARR
+      Include ./spec/support/library.sh SX_CFG_META_PATTERN_SKIP_CHK
+      Include ./spec/support/library.sh SX_EX_MSG71
+      Include ./spec/support/library.sh SX_EX_MSG73
+      Include ./spec/support/library.sh SX_EX_USAGE
+      Include ./spec/support/library.sh SX_NUM_BASE10_PREFIX
+      Include ./spec/support/library.sh SX_STR_ALNUM
+      Include ./spec/support/library.sh SX_STR_ALPHA
+      Include ./spec/support/library.sh SX_STR_ASCII
+      Include ./spec/support/library.sh SX_STR_BLANK
+      Include ./spec/support/library.sh SX_STR_CNTRL
+      Include ./spec/support/library.sh SX_STR_DEL
+      Include ./spec/support/library.sh SX_STR_FS
+      Include ./spec/support/library.sh SX_STR_GRAPH
+      Include ./spec/support/library.sh SX_STR_LF
+      Include ./spec/support/library.sh SX_STR_PRINT
+      Include ./spec/support/library.sh SX_STR_PUNCT
+      Include ./spec/support/library.sh SX_STR_SOH
+      Include ./spec/support/library.sh SX_STR_SPACE
+      Include ./spec/support/library.sh SX_STR_SWORD
+      ;;
+  esac
+
   It 'SX_EX_USAGE が関数内で定義されていること'
     check() { echo "$SX_EX_USAGE"; }
     When call check

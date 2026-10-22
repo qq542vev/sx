@@ -2,7 +2,8 @@
 # コールバックと検証用の差し替え関数はShellSpec経由で間接的に呼び出される。
 
 Describe 'sx_arg_each -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/arg/sx_arg_each_spec.sh __sx_num_add1_arith __sx_num_is_int_fit_dec __sx_num_is_nat0_safe sx_arg_each sx_cfg_set
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arg_each
 
   Context '多倍長経路'
     Parameters
@@ -11,7 +12,7 @@ Describe 'sx_arg_each -efu 環境検証'
     End
 
     It '検証の有無によらず-efu下で全要素を処理する'
-      sx_cfg_set "SKIP_CHK=$1"
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
       When run efu_run sx_arg_each efu_cb_true 'a b' '' "c'd"
@@ -19,7 +20,7 @@ Describe 'sx_arg_each -efu 環境検証'
     End
 
     It '-efu下でコールバックの失敗ステータスを返す'
-      sx_cfg_set "SKIP_CHK=$1"
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
       cb_stop() { case "$2" in 2) return 77;; esac; return 0; }

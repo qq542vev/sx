@@ -1,7 +1,8 @@
 # shellcheck shell=sh disable=SC2329
 # コールバックは検索関数から間接的に呼び出される。
 Describe 'sx_arg_find -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/arg/sx_arg_find_spec.sh __sx_num_add1_arith __sx_num_is_int_fit_dec __sx_num_is_nat0_safe sx_arg_find sx_cfg_set
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arg_find
 
   It '正常動作'
 
@@ -26,7 +27,7 @@ Describe 'sx_arg_find -efu 環境検証'
     End
 
     It '再入とバインド枯渇時も状態を保持する'
-      sx_cfg_set "SKIP_CHK=$1"
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       __sx_num_is_nat0_safe() { return 0; }
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
@@ -47,7 +48,7 @@ Describe 'sx_arg_find -efu 環境検証'
     End
 
     It '全件不一致なら終了状態1を返す'
-      sx_cfg_set "SKIP_CHK=$1"
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       __sx_num_is_nat0_safe() { return 0; }
       __sx_num_is_int_fit_dec() { return 1; }
       cb() { return 77; }
