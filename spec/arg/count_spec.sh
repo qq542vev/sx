@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_count'
-	Include ./spec/support/library.sh spec/arg/count_spec.sh SX_ARG_COUNT_CB SX_ARG_COUNT_GLOB SX_ARG_FIND_TEXT SX_CFG_SKIP_CHK SX_EX_NOPERM SX_EX_USAGE __sx_arg_count sx_arg_count
+	Include ./spec/support/library.sh sx_arg_count
 
 	It '単一一致で1を返すこと'
 		When call sx_arg_count res "b" ::: "a" "b" "c"
@@ -105,13 +105,13 @@ Describe 'sx_arg_count'
 
 	It 'GLOB + CALLBACK 同時指定は Usage Error'
 		When call sx_arg_count res cb $((SX_ARG_COUNT_GLOB | SX_ARG_COUNT_CB)) ::: a b
-		The status should equal "$SX_EX_USAGE"
+		The status should equal 64
 	End
 
 	It '読み取り専用変数でエラーになること'
 		readonly ro_var=0
 		When call sx_arg_count ro_var "a" ::: "a" "b" "a"
-		The status should eq "$SX_EX_NOPERM"
+		The status should eq 77
 	End
 
 	It '高速モード (SX_CFG_SKIP_CHK=1) で正しく動作すること'

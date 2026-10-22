@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rfind'
-	Include ./spec/support/library.sh spec/str/rfind_spec.sh SX_EX_NOPERM SX_EX_USAGE SX_STR_RFIND_GLOB SX_STR_RFIND_OVERLAP SX_STR_RFIND_TEXT __sx_num_is_int_fit_dec __sx_num_is_nat0_safe __sx_num_sub_arith __sx_var_bind __sx_var_ubind sx_str_rfind
+	Include ./spec/support/library.sh sx_str_rfind
 
 	Context '多倍長経路の境界位置'
 		Parameters
@@ -123,13 +123,13 @@ Describe 'sx_str_rfind'
 
 	It '無効な変数名でエラーになること'
 		When call sx_str_rfind "1invalid" "abc" "a"
-		The status should eq "$SX_EX_USAGE"
+		The status should eq 64
 	End
 
 	It '読み取り専用変数でエラーになること'
 		readonly ro_var=0
 		When call sx_str_rfind ro_var "abc" "a"
-		The status should eq "$SX_EX_NOPERM"
+		The status should eq 77
 	End
 
 	It '重複フラグ有効で重なり合う一致をすべて見つけること'
