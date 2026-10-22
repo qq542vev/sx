@@ -1,7 +1,7 @@
 # shellcheck shell=sh
 
 Describe 'sx_uri_is_pct_safe -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/uri/sx_uri_is_pct_safe_spec.sh SX_CFG_SKIP_CHK SX_STR_LF __sx_uri_is_pct_safe sx_uri_is_pct_safe
+  Include ./spec/support/library.sh sx_uri_is_pct_safe
 
   Context '公開・内部・検証省略'
     Parameters
@@ -36,7 +36,9 @@ Describe 'sx_uri_is_pct_safe -efu 環境検証'
 
     It '予約文字と改行を -efu 下で判定する'
       SX_CFG_SKIP_CHK=$2
-      When run efu_run "$1" "a/b?c${SX_STR_LF}"
+      input=$(printf 'a/b?c\n.')
+      input=${input%.}
+      When run efu_run "$1" "$input"
       The status should equal 0
       The stdout should equal ''
       The stderr should equal ''
