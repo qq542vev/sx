@@ -3,8 +3,9 @@
 # shellcheck disable=SC2215
 
 Describe 'sx_num_edivmod_arith -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_edivmod_arith_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_cfg_set sx_num_edivmod_arith
-  Before 'sx_cfg_set NUM_RANGE=32'
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_edivmod_arith
+  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
   edivmod_check_values() {
     expected_q="$1" expected_r="$2"
@@ -104,7 +105,7 @@ Describe 'sx_num_edivmod_arith -efu 環境検証'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
 
     Context '最小値を含む除算と補正'
       Parameters

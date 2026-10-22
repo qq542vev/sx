@@ -5,8 +5,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_add_arith'
-  Include ./spec/support/library.sh spec/num/add_arith_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_cfg_set sx_num_add_arith sx_num_add_int sx_num_add_nat0
-  Before 'sx_cfg_set NUM_RANGE=32'
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_add_arith
+  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
   It '数値省略時は0を格納すること'
     When call sx_num_add_arith result
@@ -36,7 +37,7 @@ Describe 'sx_num_add_arith'
   It 'intとの動的な切り替えで同じ結果を得られること'
     type=arith
     expected=
-    sx_num_add_int expected 10 -20 30
+    sx_test_setup sx_num_add_int expected 10 -20 30
     When call "sx_num_add_${type}" result 10 -20 30
     The status should be success
     The variable result should equal "${expected}"
@@ -165,7 +166,7 @@ Describe 'sx_num_add_arith'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
 
     Context '境界値'
       Parameters

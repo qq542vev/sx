@@ -3,7 +3,8 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_bind_init'
-    Include ./spec/support/library.sh spec/var/bind_init_spec.sh SX_EX_NOPERM SX_EX_USAGE sx_arr_gen sx_var_bind_init sx_var_is_arr
+    Include ./spec/support/prepare.sh
+    Include ./spec/support/library.sh sx_var_bind_init
 
     It 'a:b:rest 形式で変数を初期化すること'
         v1="old1"
@@ -84,7 +85,7 @@ Describe 'sx_var_bind_init'
     End
 
     It '数値プレフィックス付き SX 配列を空文字列で初期化できること'
-        sx_arr_gen arr x y
+        sx_test_setup sx_arr_gen arr x y
         When call sx_var_bind_init "2arr:rest"
         The status should be success
         The variable arr should equal ""
@@ -100,9 +101,10 @@ Describe 'sx_var_bind_init'
         End
 
         It '@name で生成した変数が sx 配列として認識されること'
-            sx_var_bind_init "x:@bi_arr2"
-            When call sx_var_is_arr "bi_arr2"
+            When call sx_var_bind_init "x:@bi_arr2"
             The status should be success
+            The variable bi_arr2 should start with "${SX_CFG_SIG_ARR}:"
+            The variable bi_arr2_len should equal 0
         End
 
         It 'N@name 中間形で配列を生成し他を通常初期化すること'

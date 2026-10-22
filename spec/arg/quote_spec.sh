@@ -1,9 +1,12 @@
 #!/bin/sh
+# ShellSpec: 参照渡しで設定される変数を使用する。
+# shellcheck disable=SC2154
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_quote'
-  Include ./spec/support/library.sh spec/arg/quote_spec.sh __sx_num_is_nat0_safe sx_arg_quote sx_arr_gen sx_arr_push sx_var_unset
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arg_quote
 
   Context '引数個数の制限なし'
     Before 'reject_quote_arg_count'
@@ -115,10 +118,10 @@ Describe 'sx_arg_quote'
 
     It '再利用時に既存の配列変数を呼び出し側がクリーンアップすること'
       # Correctly initialize an SX array
-      sx_arr_gen myarr
-      sx_arr_push myarr "old"
+      sx_test_setup sx_arr_gen myarr
+      sx_test_setup sx_arr_push myarr "old"
       # 配列のクリーンアップは呼び出し側の責務
-      sx_var_unset myarr
+      sx_test_setup sx_var_unset myarr
       When call sx_arg_quote 'myarr' newval
       The status should be success
       The variable myarr should equal "'newval'"

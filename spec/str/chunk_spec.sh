@@ -1,14 +1,17 @@
 #!/bin/sh
+# ShellSpec: 展開せずに渡すテスト入力・Parameters内のパターン文字列・ライブラリから間接的に呼び出されるスタブを使用する。
+# shellcheck disable=SC2016,SC2288,SC2329
 
 eval "$(shellspec - -c) exit 1"
 
 Describe "sx_str_chunk"
-  Include ./spec/support/library.sh spec/str/chunk_spec.sh SX_STR_CHUNK_SKIP_LONG SX_STR_CHUNK_SKIP_SHORT __sx_num_is_int_fit_dec __sx_str_qm sx_cfg_set sx_str_chunk
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_str_chunk
 
   Context 'IFS=a での動的な数値関数呼び出し'
     # shellcheck disable=SC2329
     with_ifs_a() { IFS=a "${@}"; }
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     Parameters
       '2' "'ab' 'cdef' 'g'"
@@ -428,7 +431,7 @@ c"
 
 
   Describe '多倍長の長さと分割回数'
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     Context '入力別の検証'
       Parameters
@@ -490,7 +493,7 @@ c"
     End
 
     It '検証省略時にも巨大な長さと回数を処理すること'
-      sx_cfg_set SKIP_CHK=1
+      sx_test_setup sx_cfg_set SKIP_CHK=1
       When call sx_str_chunk res abc '1:-9223372036854775808' 999999999999999999999999
       The status should be success
       The variable res should equal "'a' 'bc'"
@@ -521,7 +524,7 @@ c"
   End
 
   Context '文字列長を多倍長演算で処理する経路'
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     Parameters
       '2:-1:3' 0 "'ab' 'cde' 'f' 'g'"

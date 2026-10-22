@@ -3,8 +3,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_push'
-  Include ./spec/support/library.sh spec/arr/push_spec.sh sx_arr_gen sx_arr_push sx_cfg_set sx_var_unset
-  BeforeEach 'sx_arr_gen myarr a'
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arr_push
+  BeforeEach 'sx_test_setup sx_arr_gen myarr a'
 
   It '要素を配列の末尾に追加すること'
     When call sx_arr_push myarr b c
@@ -28,35 +29,35 @@ Describe 'sx_arr_push'
   End
 
   It '読み取り専用の配列に対して EX_NOPERM を返すこと'
-    sx_arr_gen ro_arr_push
+    sx_test_setup sx_arr_gen ro_arr_push
     readonly ro_arr_push
     When call sx_arr_push ro_arr_push x
     The status should equal 77
   End
 
   It '配列の長さ変数が読み取り専用の場合に EX_NOPERM を返すこと'
-    sx_arr_gen len_ro_arr a
+    sx_test_setup sx_arr_gen len_ro_arr a
     readonly len_ro_arr_len
     When call sx_arr_push len_ro_arr b
     The status should equal 77
   End
 
   It '空文字列の要素をプッシュできること'
-    sx_arr_gen myarr_empty a
+    sx_test_setup sx_arr_gen myarr_empty a
     When call sx_arr_push myarr_empty ""
     The variable myarr_empty_len should equal 2
     The variable myarr_empty_1 should equal ""
   End
 
   It '特殊文字を含む要素をプッシュできること'
-    sx_arr_gen myarr_spec
+    sx_test_setup sx_arr_gen myarr_spec
     When call sx_arr_push myarr_spec "it's" 'say "hello"'
     The variable myarr_spec_0 should equal "it's"
     The variable myarr_spec_1 should equal 'say "hello"'
   End
 
   It '5個の要素を連続プッシュできること'
-    sx_arr_gen myarr_mul
+    sx_test_setup sx_arr_gen myarr_mul
     sx_arr_push myarr_mul a
     sx_arr_push myarr_mul b
     sx_arr_push myarr_mul c
@@ -69,26 +70,26 @@ Describe 'sx_arr_push'
 
   It 'ARR_REF 設定時は参照をコピーしてプッシュすること'
     src="hello"
-    sx_arr_gen myarr_push_ref
-    sx_cfg_set "ARR_REF=@"
+    sx_test_setup sx_arr_gen myarr_push_ref
+    sx_test_setup sx_cfg_set "ARR_REF=@"
     When call sx_arr_push myarr_push_ref "@src"
     The status should be success
     The variable myarr_push_ref_0 should equal "hello"
-    sx_cfg_set "ARR_REF"
-    sx_var_unset myarr_push_ref src
+    sx_test_setup sx_cfg_set "ARR_REF"
+    sx_test_setup sx_var_unset myarr_push_ref src
   End
 
   It '参照値とリテラルを指定順に末尾へ追加すること'
     src="reference"
-    sx_arr_gen myarr_push_mixed head
-    sx_cfg_set "ARR_REF=@"
+    sx_test_setup sx_arr_gen myarr_push_mixed head
+    sx_test_setup sx_cfg_set "ARR_REF=@"
     When call sx_arr_push myarr_push_mixed "@src" literal
     The status should be success
     The variable myarr_push_mixed_len should equal 3
     The variable myarr_push_mixed_0 should equal "head"
     The variable myarr_push_mixed_1 should equal "reference"
     The variable myarr_push_mixed_2 should equal "literal"
-    sx_cfg_set "ARR_REF"
-    sx_var_unset myarr_push_mixed src
+    sx_test_setup sx_cfg_set "ARR_REF"
+    sx_test_setup sx_var_unset myarr_push_mixed src
   End
 End

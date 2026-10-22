@@ -5,8 +5,22 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_add_arith_safe'
-  Include ./spec/support/library.sh spec/num/is_add_arith_safe_spec.sh SX_CFG_NUM_RANGE __sx_num_is_add_arith_safe sx_cfg_set sx_num_is_add_arith_safe
-  Before 'sx_cfg_set NUM_RANGE=32'
+  # Exampleごとに対象だけを読み込む。IncludeはExampleの外で宣言する。
+  load_subject() {
+    case "$1" in
+      sx_num_is_add_arith_safe)
+        Include ./spec/support/library.sh sx_num_is_add_arith_safe
+        ;;
+      __sx_num_is_add_arith_safe)
+        Include ./spec/support/library.sh __sx_num_is_add_arith_safe
+        ;;
+      *) return 64;;
+    esac
+  }
+
+  Include ./spec/support/prepare.sh
+
+  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
   Context '32ビットの加算可能性'
     Parameters
@@ -43,6 +57,7 @@ Describe 'sx_num_is_add_arith_safe'
     End
 
     It "引数列 $* の加算可能性を判定すること"
+      load_subject sx_num_is_add_arith_safe
       expected="$1"
       shift
       When call sx_num_is_add_arith_safe "$@"
@@ -76,6 +91,7 @@ Describe 'sx_num_is_add_arith_safe'
     End
 
     It "入力 $* を計算前に64で拒否すること"
+      load_subject sx_num_is_add_arith_safe
       expected="$1"
       shift
       result=unchanged
@@ -95,6 +111,7 @@ Describe 'sx_num_is_add_arith_safe'
     End
 
     It "設定 $1 を78で拒否すること"
+      load_subject sx_num_is_add_arith_safe
       SX_CFG_NUM_RANGE="$1"
       When call sx_num_is_add_arith_safe 1
       The status should equal 78
@@ -102,19 +119,22 @@ Describe 'sx_num_is_add_arith_safe'
   End
 
   Context 'チェック省略'
-    Before 'sx_cfg_set SKIP_CHK=1'
+    Before 'sx_test_setup sx_cfg_set SKIP_CHK=1'
 
     It '安全な加算を0で判定すること'
+      load_subject sx_num_is_add_arith_safe
       When call sx_num_is_add_arith_safe 010 -0x10 +20
       The status should be success
     End
 
     It 'チェック省略時も桁溢れを1で判定すること'
+      load_subject sx_num_is_add_arith_safe
       When call sx_num_is_add_arith_safe 2147483647 1 -1
       The status should equal 1
     End
 
     It 'チェック省略時も最小値を扱えること'
+      load_subject sx_num_is_add_arith_safe
       When call sx_num_is_add_arith_safe -2147483648 2147483647 1
       The status should be success
     End
@@ -122,11 +142,13 @@ Describe 'sx_num_is_add_arith_safe'
 
   Context '内部関数'
     It '安全な加算を0で判定すること'
+      load_subject __sx_num_is_add_arith_safe
       When call __sx_num_is_add_arith_safe 2147483647 -2147483648
       The status should be success
     End
 
     It '桁溢れを1で判定すること'
+      load_subject __sx_num_is_add_arith_safe
       When call __sx_num_is_add_arith_safe -1 -2147483648
       The status should equal 1
     End
@@ -134,9 +156,10 @@ Describe 'sx_num_is_add_arith_safe'
 
   Context '32bit算術シェル専用の算術域境界'
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     It '最大値に最小値と-1を加算できること'
+      load_subject sx_num_is_add_arith_safe
       When call sx_num_is_add_arith_safe 2147483647 -0x80000000 -1
       The status should be success
       The stdout should equal ''
@@ -146,7 +169,7 @@ Describe 'sx_num_is_add_arith_safe'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
 
     Parameters
       0 9223372036854775807 0
@@ -179,6 +202,7 @@ Describe 'sx_num_is_add_arith_safe'
     End
 
     It "引数列 $* を64ビット幅で判定すること"
+      load_subject sx_num_is_add_arith_safe
       expected="$1"
       shift
       When call sx_num_is_add_arith_safe "$@"

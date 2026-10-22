@@ -5,8 +5,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_divmod_arith'
-  Include ./spec/support/library.sh spec/num/divmod_arith_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_arr_gen sx_cfg_set sx_num_divmod_arith sx_num_divmod_int sx_num_divmod_nat0
-  Before 'sx_cfg_set NUM_RANGE=32'
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_divmod_arith
+  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
   Context '商と余り'
     Parameters
@@ -153,7 +154,7 @@ Describe 'sx_num_divmod_arith'
   End
 
   It '配列を初期化して商と余りを格納できること'
-    sx_arr_gen items old extra stale
+    sx_test_setup sx_arr_gen items old extra stale
     When call sx_num_divmod_arith '@items' 7 2
     The status should be success
     The variable items_len should equal 2
@@ -162,7 +163,7 @@ Describe 'sx_num_divmod_arith'
   End
 
   It '検証失敗時は配列の要素とリビジョンも変更しないこと'
-    sx_arr_gen items old
+    sx_test_setup sx_arr_gen items old
     old_signature="${items-}"
     When call sx_num_divmod_arith '@items' 7 0
     The status should equal 64
@@ -182,7 +183,7 @@ Describe 'sx_num_divmod_arith'
     End
 
     It "引数列 $* で同じ商と余りを返すこと"
-      sx_num_divmod_int 'expected_q:expected_r:' "$@"
+      sx_test_setup sx_num_divmod_int 'expected_q:expected_r:' "$@"
       type=arith
       When call "sx_num_divmod_${type}" 'q:r:' "$@"
       The status should be success
@@ -218,7 +219,7 @@ Describe 'sx_num_divmod_arith'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
 
     Context '商と余り'
       Parameters

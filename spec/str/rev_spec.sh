@@ -3,7 +3,8 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rev()'
-  Include ./spec/support/library.sh spec/str/rev_spec.sh __sx_str_qm sx_cfg_set sx_str_rev
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_str_rev
 
   BeforeRun 'PATH=""'
 
@@ -165,7 +166,7 @@ a"
   End
 
   Context '文字列長以上のチャンクサイズ'
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     Parameters
       '3'
@@ -203,7 +204,7 @@ a"
   End
 
   Context '空文字列と巨大なチャンクサイズ'
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     Parameters
       '1000000000000000000000000000000'

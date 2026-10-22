@@ -5,7 +5,8 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rchunk'
-  Include ./spec/support/library.sh spec/str/rchunk_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK SX_STR_RCHUNK_SKIP_LONG SX_STR_RCHUNK_SKIP_SHORT __sx_num_is_int_fit_dec sx_cfg_set sx_str_rchunk
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_str_rchunk
 
   Context '基準方向と結果順'
     Parameters
@@ -65,7 +66,7 @@ Describe 'sx_str_rchunk'
   End
 
   It '残余を除外して前方の予約分を取得すること'
-    When call sx_str_rchunk 'v1:' abcdefg '-2:-1' 2 "$SX_STR_RCHUNK_SKIP_LONG"
+    When call sx_str_rchunk 'v1:' abcdefg '-2:-1' 2 "2"
     The status should be success
     The variable v1 should equal c
   End
@@ -180,8 +181,8 @@ Describe 'sx_str_rchunk'
 
     It 'rchunk用のフラグで短い余り・長い余りを除外すること'
       case "$1" in
-        1) flag=$SX_STR_RCHUNK_SKIP_SHORT limit=;;
-        2) flag=$SX_STR_RCHUNK_SKIP_LONG limit=1;;
+        1) flag=1 limit=;;
+        2) flag=2 limit=1;;
       esac
       When call sx_str_rchunk res abcde 2 "$limit" "$flag"
       The status should be success
@@ -191,7 +192,7 @@ Describe 'sx_str_rchunk'
 
   Context 'IFS=a での動的な数値関数呼び出し'
     with_ifs_a() { IFS=a "${@}"; }
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     Parameters
       '2' "'fg' 'bcde' 'a'"

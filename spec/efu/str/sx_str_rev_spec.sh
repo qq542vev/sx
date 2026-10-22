@@ -1,5 +1,6 @@
 Describe 'sx_str_rev -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/str/sx_str_rev_spec.sh sx_cfg_set sx_str_rev
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_str_rev
 
   It '正常動作'
     When run efu_run sx_str_rev res "hello"
@@ -31,7 +32,7 @@ Describe 'sx_str_rev -efu 環境検証'
   End
 
   Context '数値範囲を超える10進表記のチャンクサイズ'
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     Parameters
       '9223372036854775809'

@@ -3,12 +3,13 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_cat'
-  Include ./spec/support/library.sh spec/arr/cat_spec.sh SX_CFG_NUM_RANGE sx_arr_cat sx_arr_gen sx_cfg_set
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arr_cat
 
   Describe '基本連結'
     It '複数の配列を1つの末尾配列へ順に連結すること'
-      sx_arr_gen a1 a b c
-      sx_arr_gen a2 d e
+      sx_test_setup sx_arr_gen a1 a b c
+      sx_test_setup sx_arr_gen a2 d e
 
       When call sx_arr_cat x a1 a2
       The status should be success
@@ -21,7 +22,7 @@ Describe 'sx_arr_cat'
     End
 
     It '空文字列や特殊文字を含む要素も正しく連結すること'
-      sx_arr_gen a1 "" "it's" 'say "hello"'
+      sx_test_setup sx_arr_gen a1 "" "it's" 'say "hello"'
 
       When call sx_arr_cat x a1
       The status should be success
@@ -32,7 +33,7 @@ Describe 'sx_arr_cat'
     End
 
     It '源配列が1つのみの場合にそのまま連結すること'
-      sx_arr_gen a1 p q r
+      sx_test_setup sx_arr_gen a1 p q r
 
       When call sx_arr_cat x a1
       The status should be success
@@ -45,8 +46,8 @@ Describe 'sx_arr_cat'
 
   Describe '分配'
     It '数値先行セグメントと末尾セグメントへ要素ずつ分配すること'
-      sx_arr_gen a1 a b c
-      sx_arr_gen a2 d e
+      sx_test_setup sx_arr_gen a1 a b c
+      sx_test_setup sx_arr_gen a2 d e
 
       When call sx_arr_cat 2a:x a1 a2
       The status should be success
@@ -60,7 +61,7 @@ Describe 'sx_arr_cat'
     End
 
     It '素セグメントはスカラーとして扱い配列化しないこと'
-      sx_arr_gen a1 p q r s t
+      sx_test_setup sx_arr_gen a1 p q r s t
 
       When call sx_arr_cat a:2b:x a1
       The status should be success
@@ -76,7 +77,7 @@ Describe 'sx_arr_cat'
 
   Describe 'スカラーを挟む部分充填（回帰対策）'
     It '数値先行セグメントが未満充填でも正しい長さになること'
-      sx_arr_gen a1 p
+      sx_test_setup sx_arr_gen a1 p
 
       When call sx_arr_cat 2a:b:x a1
       The status should be success
@@ -87,7 +88,7 @@ Describe 'sx_arr_cat'
     End
 
     It '源が空でも中間スカラーがあれば空配列を生成すること'
-      sx_arr_gen a1
+      sx_test_setup sx_arr_gen a1
 
       When call sx_arr_cat 2a:b:x a1
       The status should be success
@@ -97,8 +98,8 @@ Describe 'sx_arr_cat'
     End
 
     It '複数配列を跨ぐ分配でも後続セグメントの長さが正しいこと'
-      sx_arr_gen a1 p q
-      sx_arr_gen a2 r
+      sx_test_setup sx_arr_gen a1 p q
+      sx_test_setup sx_arr_gen a2 r
 
       When call sx_arr_cat 2a:2b:c:x a1 a2
       The status should be success
@@ -109,7 +110,7 @@ Describe 'sx_arr_cat'
     End
 
     It '数値スキップセグメントを挟んでも正しい長さになること'
-      sx_arr_gen a1 p q r
+      sx_test_setup sx_arr_gen a1 p q r
 
       When call sx_arr_cat 2a:2:2b:x a1
       The status should be success
@@ -132,7 +133,7 @@ Describe 'sx_arr_cat'
     End
 
     It '源配列が空の場合に空配列を生成すること'
-      sx_arr_gen a1
+      sx_test_setup sx_arr_gen a1
 
       When call sx_arr_cat x a1
       The status should be success
@@ -140,7 +141,7 @@ Describe 'sx_arr_cat'
     End
 
     It '要素が不足する場合に切り詰めて成功すること'
-      sx_arr_gen a1 p q r
+      sx_test_setup sx_arr_gen a1 p q r
 
       When call sx_arr_cat 2a:x a1
       The status should be success
@@ -155,9 +156,9 @@ Describe 'sx_arr_cat'
   Describe '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
     It '複数の配列を1つの末尾配列へ順に連結すること'
-      sx_arr_gen a1 a b c
-      sx_arr_gen a2 d e
-      sx_cfg_set NUM_RANGE=64
+      sx_test_setup sx_arr_gen a1 a b c
+      sx_test_setup sx_arr_gen a2 d e
+      sx_test_setup sx_cfg_set NUM_RANGE=64
 
       When call sx_arr_cat x a1 a2
       The status should be success
@@ -167,9 +168,9 @@ Describe 'sx_arr_cat'
     End
 
     It '数値先行セグメントと末尾セグメントへ分配すること'
-      sx_arr_gen a1 a b c
-      sx_arr_gen a2 d e
-      sx_cfg_set NUM_RANGE=64
+      sx_test_setup sx_arr_gen a1 a b c
+      sx_test_setup sx_arr_gen a2 d e
+      sx_test_setup sx_cfg_set NUM_RANGE=64
 
       When call sx_arr_cat 2a:x a1 a2
       The status should be success
@@ -180,8 +181,8 @@ Describe 'sx_arr_cat'
     End
 
     It '源配列が空の場合は空配列を生成すること'
-      sx_arr_gen a1
-      sx_cfg_set NUM_RANGE=64
+      sx_test_setup sx_arr_gen a1
+      sx_test_setup sx_cfg_set NUM_RANGE=64
 
       When call sx_arr_cat x a1
       The status should be success
@@ -191,21 +192,21 @@ Describe 'sx_arr_cat'
 
   Describe 'バリデーション'
     It 'バインド形式が不正な場合に 64 を返すこと'
-      sx_arr_gen a1 a b
+      sx_test_setup sx_arr_gen a1 a b
 
       When call sx_arr_cat "2b" a1
       The status should equal 64
     End
 
     It '先頭0のバインド形式が不正な場合に 64 を返すこと'
-      sx_arr_gen a1 a b
+      sx_test_setup sx_arr_gen a1 a b
 
       When call sx_arr_cat "0a" a1
       The status should equal 64
     End
 
     It '@ を含むバインド形式の場合に 64 を返すこと'
-      sx_arr_gen a1 a b
+      sx_test_setup sx_arr_gen a1 a b
 
       When call sx_arr_cat "x:@arr" a1
       The status should equal 64
@@ -219,7 +220,7 @@ Describe 'sx_arr_cat'
     End
 
     It '設定エラー (EX_CONFIG: 78) を検知すること'
-      sx_arr_gen a1 a b
+      sx_test_setup sx_arr_gen a1 a b
       check_config() {
         SX_CFG_NUM_RANGE=99
         sx_arr_cat x a1
@@ -232,8 +233,8 @@ Describe 'sx_arr_cat'
 
   Describe 'トランザクション'
     It '分配先が読み取り専用の場合に 77 を返し、他の分配先にも書き込まないこと'
-      sx_arr_gen a1 a b c
-      sx_arr_gen a2 d e
+      sx_test_setup sx_arr_gen a1 a b c
+      sx_test_setup sx_arr_gen a2 d e
       readonly x
       unset a
 
@@ -244,7 +245,7 @@ Describe 'sx_arr_cat'
     End
 
     It '分配先要素が読み取り専用の場合に 77 を返し、他の分配先にも書き込まないこと'
-      sx_arr_gen a1 p q
+      sx_test_setup sx_arr_gen a1 p q
       readonly a_1
 
       When call sx_arr_cat 2a:x a1
@@ -255,8 +256,8 @@ Describe 'sx_arr_cat'
     End
 
     It '読み取り専用でない通常の分配では全要素が正しく書き込まれること'
-      sx_arr_gen a1 a b c
-      sx_arr_gen a2 d e
+      sx_test_setup sx_arr_gen a1 a b c
+      sx_test_setup sx_arr_gen a2 d e
       unset a x
 
       When call sx_arr_cat 2a:x a1 a2

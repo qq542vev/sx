@@ -3,7 +3,8 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_bind'
-    Include ./spec/support/library.sh spec/arr/bind_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_arr_bind sx_cfg_set
+    Include ./spec/support/prepare.sh
+    Include ./spec/support/library.sh sx_arr_bind
 
     Describe '基本動作'
         It '通常のバインドで chain と残り bind を生成すること'
@@ -169,7 +170,7 @@ Describe 'sx_arr_bind'
         Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
         It 'M/vn 無限累積の残り bind が NUM_RANGE 非依存であること'
             unset br cr
-            sx_cfg_set NUM_RANGE=64
+            sx_test_setup sx_cfg_set NUM_RANGE=64
             When call sx_arr_bind br cr "0/a" p1 p2
             The status should be success
             The variable br should equal "2/a"
@@ -178,7 +179,7 @@ Describe 'sx_arr_bind'
 
         It '通常のバインドで chain と残り bind を生成すること'
             unset br cr
-            sx_cfg_set NUM_RANGE=64
+            sx_test_setup sx_cfg_set NUM_RANGE=64
             When call sx_arr_bind br cr "a:b:c" v1 v2
             The status should be success
             The variable br should equal "c"

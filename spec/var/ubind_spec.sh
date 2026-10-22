@@ -3,11 +3,12 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_ubind'
-    Include ./spec/support/library.sh spec/var/ubind_spec.sh SX_CFG_NUM_RANGE SX_EX_DATAERR sx_var_bind_init sx_var_ubind
+    Include ./spec/support/prepare.sh
+    Include ./spec/support/library.sh sx_var_ubind
 
     Describe '基本動作'
         It '蓄積スロットにクォートなしで累積すること'
-            sx_var_bind_init "out"
+            sx_test_setup sx_var_bind_init "out"
             unset res
             When call sx_var_ubind res "out" "a1" "a2"
             The status should be success
@@ -16,7 +17,7 @@ Describe 'sx_var_ubind'
         End
 
         It 'カウント指定で複数の値を順に蓄積すること'
-            sx_var_bind_init "2arr:rest"
+            sx_test_setup sx_var_bind_init "2arr:rest"
             unset res
             When call sx_var_ubind res "2arr:rest" "a1" "a2"
             The status should be success
@@ -25,7 +26,7 @@ Describe 'sx_var_ubind'
         End
 
         It '代入スロットと蓄積スロットが混在しても生の値になること'
-            sx_var_bind_init "arr:out"
+            sx_test_setup sx_var_bind_init "arr:out"
             unset res
             When call sx_var_ubind res "arr:out" "it's me" "don't stop"
             The status should be success
@@ -36,7 +37,7 @@ Describe 'sx_var_ubind'
         It '先頭の蓄積値が空文字列の場合もセパレータを付加しないこと'
             skip_empty_accumulation_pending() { return 0; }
             Skip if '空値の蓄積仕様を確定するまで保留' skip_empty_accumulation_pending
-            sx_var_bind_init "2b:rest"
+            sx_test_setup sx_var_bind_init "2b:rest"
             unset res
             When call sx_var_ubind res "2b:rest" "" "x"
             The status should be success
@@ -44,7 +45,7 @@ Describe 'sx_var_ubind'
         End
 
         It 'データが不足している場合に残りのバインド状態を保持すること'
-            sx_var_bind_init "3arr:rest"
+            sx_test_setup sx_var_bind_init "3arr:rest"
             unset res
             When call sx_var_ubind res "3arr:rest" "a1"
             The status should be success
@@ -53,7 +54,7 @@ Describe 'sx_var_ubind'
         End
 
         It 'データが無い場合にバインド状態を結果に書き込んで成功すること'
-            sx_var_bind_init "v1:rest"
+            sx_test_setup sx_var_bind_init "v1:rest"
             unset res
             When call sx_var_ubind res "v1:rest"
             The status should be success
@@ -61,7 +62,7 @@ Describe 'sx_var_ubind'
         End
 
         It 'カウントが 2^64 を超えても正しく減算できること'
-            sx_var_bind_init "18446744073709551615arr:rest"
+            sx_test_setup sx_var_bind_init "18446744073709551615arr:rest"
             unset res
             When call sx_var_ubind res "18446744073709551615arr:rest" "a1" "a2"
             The status should be success
@@ -70,7 +71,7 @@ Describe 'sx_var_ubind'
         End
 
         It 'スロットが尽きた場合に 1 を返し、結果変数に空のバインド形式が書き込まれること'
-            sx_var_bind_init "v1:"
+            sx_test_setup sx_var_bind_init "v1:"
             unset res
             res="unchanged"
             When call sx_var_ubind res "v1:" "a" "b"
@@ -104,7 +105,7 @@ Describe 'sx_var_ubind'
 
     Describe '@ 記法（配列マーカー）'
         It '末尾 @name に残りの全要素を生のまま分配すること'
-            sx_var_bind_init "x:@u_arr"
+            sx_test_setup sx_var_bind_init "x:@u_arr"
             unset res
             When call sx_var_ubind res "x:@u_arr" "a b" "c'd" "e"
             The status should be success
@@ -116,7 +117,7 @@ Describe 'sx_var_ubind'
         End
 
         It 'N@name 中間形で個数制限どおりに分配すること'
-            sx_var_bind_init "a:2@u_arr2:c"
+            sx_test_setup sx_var_bind_init "a:2@u_arr2:c"
             unset res
             When call sx_var_ubind res "a:2@u_arr2:c" "v1" "v2" "v3" "v4"
             The status should be success
@@ -137,21 +138,21 @@ Describe 'sx_var_ubind'
 
     Describe '空結果変数（残り破棄）'
         It '成功時に残りを破棄し、生値で割り当てること'
-            sx_var_bind_init "eu1:euurest"
+            sx_test_setup sx_var_bind_init "eu1:euurest"
             When call sx_var_ubind "" "eu1:euurest" "a b"
             The status should be success
             The variable eu1 should equal "a b"
         End
 
         It 'スロット枯渇時に 1 を返し、残りを破棄すること'
-            sx_var_bind_init "eu2:"
+            sx_test_setup sx_var_bind_init "eu2:"
             When call sx_var_ubind "" "eu2:" "a" "b"
             The status should equal 1
             The variable eu2 should equal "a"
         End
 
         It 'データが無い場合に成功すること'
-            sx_var_bind_init "eu3:euurest2"
+            sx_test_setup sx_var_bind_init "eu3:euurest2"
             When call sx_var_ubind "" "eu3:euurest2"
             The status should be success
         End

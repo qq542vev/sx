@@ -5,8 +5,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_sub1_arith'
-  Include ./spec/support/library.sh spec/num/sub1_arith_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_sub1_arith sx_cfg_set sx_num_sub1_arith
-  Before 'sx_cfg_set NUM_RANGE=32'
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_sub1_arith
+  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
   Context '符号・基数と32ビットの境界値'
     Parameters
@@ -127,7 +128,7 @@ Describe 'sx_num_sub1_arith'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
 
     Context '境界値'
       Parameters
@@ -163,8 +164,9 @@ Describe 'sx_num_sub1_arith'
 End
 
 Describe '__sx_num_sub1_arith'
-  Include ./spec/support/library.sh spec/num/sub1_arith_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_sub1_arith sx_cfg_set sx_num_sub1_arith
-  Before 'sx_cfg_set NUM_RANGE=32'
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh __sx_num_sub1_arith
+  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
   Context '符号・基数と32ビットの境界値'
     Parameters
@@ -215,7 +217,7 @@ Describe '__sx_num_sub1_arith'
 
   Context '64ビットの境界値'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
 
     Parameters
       9223372036854775807 9223372036854775806

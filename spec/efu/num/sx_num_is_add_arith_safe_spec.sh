@@ -1,8 +1,9 @@
 # shellcheck shell=sh
 
 Describe 'sx_num_is_add_arith_safe -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_is_add_arith_safe_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_cfg_set sx_num_is_add_arith_safe
-  Before 'sx_cfg_set NUM_RANGE=32'
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_is_add_arith_safe
+  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
   Context '32ビットの加算可能性'
     Parameters
@@ -41,7 +42,7 @@ Describe 'sx_num_is_add_arith_safe -efu 環境検証'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
 
     Parameters
       0 -0x8000000000000000 0x7fffffffffffffff 1

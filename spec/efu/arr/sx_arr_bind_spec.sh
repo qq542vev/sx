@@ -1,5 +1,6 @@
 Describe 'sx_arr_bind -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/arr/sx_arr_bind_spec.sh sx_arr_bind sx_cfg_set
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arr_bind
 
   It '正常動作'
     br=
@@ -20,7 +21,7 @@ Describe 'sx_arr_bind -efu 環境検証'
     br=
     cr=
     run64() {
-      sx_cfg_set NUM_RANGE=64
+      sx_test_setup sx_cfg_set NUM_RANGE=64
       sx_arr_bind br cr "0/a" p1 p2
     }
     When run efu_run run64

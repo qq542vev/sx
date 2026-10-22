@@ -1,13 +1,28 @@
 #!/bin/sh
+# ShellSpec: 参照渡しで設定される変数を使用する。
+# shellcheck disable=SC2154
 
 eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_cfg_set()'
-	Include ./spec/support/library.sh spec/cfg/set_spec.sh SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_CFG_ARR_UPDATE SX_CFG_META_DEF_ARR_HOLE SX_CFG_META_DEF_ARR_REF SX_CFG_META_DEF_ARR_UPDATE SX_CFG_META_DEF_NUM_RANGE SX_CFG_META_DEF_SEP SX_CFG_META_DEF_SIG_ARR SX_CFG_META_DEF_SKIP_CHK SX_CFG_NUM_RANGE SX_CFG_SEP SX_CFG_SIG_ARR SX_CFG_SKIP_CHK SX_EX_NOPERM SX_NUM_I32_MAX SX_NUM_I32_MIN SX_NUM_I32_QM SX_NUM_I32_WLEN SX_NUM_I32_ZR SX_NUM_I64_MAX SX_NUM_I64_MIN SX_NUM_I64_QM SX_NUM_I64_WLEN SX_NUM_I64_ZR SX_SYS_NUM_MAX SX_SYS_NUM_MIN SX_SYS_NUM_QM SX_SYS_NUM_WLEN SX_SYS_NUM_ZR SX_SYS_REV __sx_cfg_set sx_arr_gen sx_cfg_set sx_var_is_arr
+	# Exampleごとに対象だけを読み込む。IncludeはExampleの外で宣言する。
+	load_subject() {
+		case "$1" in
+			sx_cfg_set)
+				Include ./spec/support/library.sh sx_cfg_set
+				;;
+			__sx_cfg_set)
+				Include ./spec/support/library.sh __sx_cfg_set
+				;;
+			*) return 64;;
+		esac
+	}
+
+	Include ./spec/support/prepare.sh
 
 	cfg_set_custom() {
-		sx_cfg_set SIG_ARR=custom-array NUM_RANGE=64 \
+		sx_test_setup sx_cfg_set SIG_ARR=custom-array NUM_RANGE=64 \
 			SEP=@@ ARR_UPDATE=0 ARR_HOLE=hole ARR_REF=@ "SKIP_CHK=${1-0}"
 	}
 
@@ -30,6 +45,7 @@ Describe 'sx_cfg_set()'
 		End
 
 		It "$1 が SKIP_CHK=$2 から全設定と数値派生値を既定値に戻すこと"
+			load_subject "$1"
 			cfg_set_custom "${2}"
 			When call "${1}"
 			The status should be success
@@ -49,6 +65,7 @@ Describe 'sx_cfg_set()'
 	End
 
 	It '全設定リセットを繰り返しても成功すること'
+		load_subject sx_cfg_set
 		cfg_set_custom
 		sx_cfg_set
 		When call sx_cfg_set
@@ -64,6 +81,7 @@ Describe 'sx_cfg_set()'
 		End
 
 		It "SKIP_CHK=$1 で IFS を変更しても全設定を既定値に戻せること"
+			load_subject sx_cfg_set
 			cfg_set_custom "${1}"
 			When call cfg_with_ifs sx_cfg_set
 			The status should be success
@@ -91,6 +109,7 @@ Describe 'sx_cfg_set()'
 		End
 
 		It "$1 を64で拒否し、他の設定も変更しないこと"
+			load_subject sx_cfg_set
 			cfg_set_custom
 			When call sx_cfg_set NUM_RANGE=32 "${1}"
 			The status should equal 64
@@ -101,8 +120,10 @@ Describe 'sx_cfg_set()'
 	End
 
 	It '全設定リセットでリビジョンと既存配列のデータを変更しないこと'
+		load_subject sx_cfg_set
 		cfg_set_custom
-		sx_arr_gen cfg_existing first ''
+		SX_SYS_REV=${SX_SYS_REV-0}
+		sx_test_setup sx_arr_gen cfg_existing first ''
 		cfg_existing_sig=${cfg_existing}
 		cfg_existing_rev=${SX_SYS_REV}
 		When call sx_cfg_set
@@ -131,6 +152,7 @@ Describe 'sx_cfg_set()'
 		End
 
 		It "$1 が readonly なら77を返し、設定と数値派生値を変更しないこと"
+			load_subject sx_cfg_set
 			cfg_set_custom
 			readonly "${1}"
 			When call sx_cfg_set
@@ -152,6 +174,7 @@ Describe 'sx_cfg_set()'
 	End
 
 	It '数値派生値が readonly なら NUM_RANGE の変更前に77を返すこと'
+		load_subject sx_cfg_set
 		cfg_set_custom
 		readonly SX_SYS_NUM_MAX
 		When call sx_cfg_set NUM_RANGE
@@ -163,6 +186,7 @@ Describe 'sx_cfg_set()'
 	End
 
 	It '署名と数値範囲を正常に設定できること'
+		load_subject sx_cfg_set
 		When call sx_cfg_set "SIG_ARR=new-sig" "NUM_RANGE=64"
 		The status should be success
 		The variable SX_CFG_SIG_ARR should equal 'new-sig'
@@ -170,6 +194,7 @@ Describe 'sx_cfg_set()'
 	End
 
 	It '値をデフォルトにリセットできること'
+		load_subject sx_cfg_set
 		SX_CFG_NUM_RANGE=64
 		When call sx_cfg_set "NUM_RANGE"
 		The status should be success
@@ -177,6 +202,7 @@ Describe 'sx_cfg_set()'
 	End
 
 	It '署名を個別に既定値に戻せること'
+		load_subject sx_cfg_set
 		sx_cfg_set SIG_ARR=custom-array
 		When call sx_cfg_set "SIG_ARR"
 		The status should be success
@@ -191,6 +217,7 @@ Describe 'sx_cfg_set()'
 		End
 
 		It "$1 を64で拒否し、他の設定も変更しないこと"
+			load_subject sx_cfg_set
 			cfg_set_custom
 			When call sx_cfg_set NUM_RANGE=32 "${1}"
 			The status should equal 64
@@ -199,11 +226,11 @@ Describe 'sx_cfg_set()'
 		End
 	End
 
-	It '独自署名で生成した配列を認識できること'
-		sx_cfg_set SIG_ARR=custom-array
-		sx_arr_gen cfg_custom_arr first second
-		When call sx_var_is_arr cfg_custom_arr
+	It '独自署名の設定が配列生成に反映されること'
+		load_subject sx_cfg_set
+		When call sx_cfg_set SIG_ARR=custom-array
 		The status should be success
+		sx_test_setup sx_arr_gen cfg_custom_arr first second
 		The variable cfg_custom_arr should start with 'custom-array:'
 		The variable cfg_custom_arr_len should equal 2
 		The variable cfg_custom_arr_0 should equal first
@@ -211,6 +238,7 @@ Describe 'sx_cfg_set()'
 	End
 
 	It '一つでも不正な値があれば、何も設定しないこと'
+		load_subject sx_cfg_set
 		SX_CFG_NUM_RANGE=32
 		When call sx_cfg_set "NUM_RANGE=64" "SKIP_CHK=invalid"
 		The status should be failure
@@ -218,6 +246,7 @@ Describe 'sx_cfg_set()'
 	End
 
 	xIt 'SKIP_CHK=1 の時はバリデーションをバイパスすること'
+		load_subject sx_cfg_set
 		SX_CFG_SKIP_CHK=1
 		When call sx_cfg_set "NUM_RANGE=999"
 		The status should be success
@@ -225,9 +254,10 @@ Describe 'sx_cfg_set()'
 	End
 
 	It '読み取り専用変数の場合はエラーを返すこと'
+		load_subject sx_cfg_set
 		readonly SX_CFG_NUM_RANGE=32
 		When call sx_cfg_set "NUM_RANGE=64"
-		The status should equal "${SX_EX_NOPERM}"
+		The status should equal "77"
 		The variable SX_CFG_NUM_RANGE should equal 32
 	End
 End

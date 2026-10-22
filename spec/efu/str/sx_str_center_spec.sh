@@ -1,5 +1,6 @@
 Describe 'sx_str_center -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/str/sx_str_center_spec.sh __sx_str_rep sx_cfg_set sx_str_center
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_str_center
 
   It '正常動作'
 
@@ -32,7 +33,7 @@ Describe 'sx_str_center -efu 環境検証'
   End
 
   Context '算術域を超える幅'
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     Parameters
       '+2147483648'

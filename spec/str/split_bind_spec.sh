@@ -3,7 +3,8 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split bind'
-  Include ./spec/support/library.sh spec/str/split_bind_spec.sh SX_STR_SPLIT_GLOB SX_STR_SPLIT_INC __sx_arg_isep __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_str_chunk __sx_var_bind __sx_var_bind0 sx_cfg_set sx_str_split
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_str_split
 
   It '前方分割でバインドができること'
     When call sx_str_split "a:b:rem" "v1:v2:v3:v4" ":"
@@ -68,7 +69,7 @@ Describe 'sx_str_split bind'
     End
 
     It '枯渇検出のバインド呼び出しを最大一回で打ち切り成功終了すること'
-      sx_cfg_set "SKIP_CHK=$1"
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       bind_calls=0
       # shellcheck disable=SC2329
       __sx_var_bind() {
@@ -130,7 +131,7 @@ Describe 'sx_str_split bind'
     End
 
     It '検査の有無・方向・区切り・INCによらず出力せず正常終了すること'
-      sx_cfg_set "SKIP_CHK=$1"
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       res=old
       # 準備関数の呼び出し有無は制約せず、実際の関数で空bindの動作を検証する。
       When call sx_str_split '' "$2" "$3" "$4" "$5"

@@ -3,8 +3,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_get'
-  Include ./spec/support/library.sh spec/arr/get_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_arr_gen sx_arr_get sx_cfg_set
-  BeforeEach 'sx_arr_gen myarr "a" "b" "c" "d" "e"'
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arr_get
+  BeforeEach 'sx_test_setup sx_arr_gen myarr "a" "b" "c" "d" "e"'
 
   Context '単体指定'
     It '先頭要素を取得できること'
@@ -250,7 +251,7 @@ Describe 'sx_arr_get'
     End
 
     It '空配列のstep範囲も空配列で成功すること'
-      sx_arr_gen empty_arr
+      sx_test_setup sx_arr_gen empty_arr
       When call sx_arr_get x empty_arr 0:5:2
       The status should be success
       The variable x_len should equal 0
@@ -276,28 +277,28 @@ Describe 'sx_arr_get'
     End
 
     It '空配列からは空配列で成功すること'
-      sx_arr_gen empty_arr
+      sx_test_setup sx_arr_gen empty_arr
       When call sx_arr_get x empty_arr 0
       The status should be success
       The variable x_len should equal 0
     End
 
     It '空配列の-0も空配列で成功すること (ガード経路)'
-      sx_arr_gen empty_arr
+      sx_test_setup sx_arr_gen empty_arr
       When call sx_arr_get x empty_arr -0
       The status should be success
       The variable x_len should equal 0
     End
 
     It '空配列の範囲も空配列で成功すること'
-      sx_arr_gen empty_arr
+      sx_test_setup sx_arr_gen empty_arr
       When call sx_arr_get x empty_arr 0:5
       The status should be success
       The variable x_len should equal 0
     End
 
     It '空配列の省略終端も空配列で成功すること'
-      sx_arr_gen empty_arr
+      sx_test_setup sx_arr_gen empty_arr
       When call sx_arr_get x empty_arr 0:-5:-1 2::-1
       The status should be success
       The variable x_len should equal 0
@@ -574,7 +575,7 @@ Describe 'sx_arr_get'
   End
 
   Context '32bit算術シェル専用の算術域境界 (NUM_RANGE=32)'
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
     Skip if '32bit算術シェル専用のため' arith_not32
 
     It 't<0 クランプの中間値が溢れないこと (始点D・step-5・境界)'
@@ -621,7 +622,7 @@ Describe 'sx_arr_get'
   End
 
   Context '算術域境界 (NUM_RANGE=64)'
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
 
     It 't<0 クランプの中間値が溢れないこと (始点D・step-5・境界)'

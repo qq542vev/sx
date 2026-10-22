@@ -3,7 +3,8 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_div_int'
-  Include ./spec/support/library.sh spec/num/div_int_spec.sh SX_CFG_NUM_RANGE sx_cfg_set sx_num_div_int
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_div_int
 
   It '小数部を求める除算ができること'
     When call sx_num_div_int d 2 100 3
@@ -126,7 +127,7 @@ Describe 'sx_num_div_int'
   End
 
   Context '64ビット設定'
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
 
     It '一般パスで小数部を求める除算ができること'

@@ -3,8 +3,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_has'
-  Include ./spec/support/library.sh spec/arr/has_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_arr_gen sx_arr_get sx_arr_has sx_cfg_set sx_var_unset
-  BeforeEach 'sx_arr_gen myarr "a" "b" "c" "d" "e"'
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arr_has
+  BeforeEach 'sx_test_setup sx_arr_gen myarr "a" "b" "c" "d" "e"'
 
   Context '単体指定'
     It '存在するインデックスに対して成功を返すこと'
@@ -137,7 +138,7 @@ Describe 'sx_arr_has'
     End
 
     It '空配列の省略終端は失敗すること'
-      sx_arr_gen empty_arr
+      sx_test_setup sx_arr_gen empty_arr
       When call sx_arr_has empty_arr 2::-1 0:-5:-1
       The status should be failure
     End
@@ -165,7 +166,7 @@ Describe 'sx_arr_has'
     End
 
     It '空配列の始点省略は失敗すること'
-      sx_arr_gen empty_arr
+      sx_test_setup sx_arr_gen empty_arr
       When call sx_arr_has empty_arr ::-1 :
       The status should be failure
     End
@@ -183,8 +184,8 @@ Describe 'sx_arr_has'
           4:100000000000000000000000:1 99999999999999999999999:4:-1 :5 ::2 ::-1 : 2:2:-1 4:0:-1 4:0:-2 \
           0:0:-1 5:2:-1 :3 :0:-1 2:0:-2; do
         if sx_arr_has myarr "${spec}"; then hsts=0; else hsts=1; fi
-        sx_var_unset x
-        sx_arr_get x myarr "${spec}"
+        sx_test_setup sx_var_unset x
+        sx_test_setup sx_arr_get x myarr "${spec}"
         if [ "${hsts}" -eq 0 ]; then
           # sx_arr_get が参照渡しで x_len を設定する。
           # shellcheck disable=SC2154
@@ -193,11 +194,11 @@ Describe 'sx_arr_has'
           [ "${x_len}" -eq 0 ] || mismatch=$((mismatch + 1))
         fi
       done
-      sx_arr_gen empty_arr
+      sx_test_setup sx_arr_gen empty_arr
       for spec in 0 -1 0:5 0:1 5:0:-1 3:0 0:-5:-1 2::-1 ::-1 :; do
         if sx_arr_has empty_arr "${spec}"; then hsts=0; else hsts=1; fi
-        sx_var_unset x
-        sx_arr_get x empty_arr "${spec}"
+        sx_test_setup sx_var_unset x
+        sx_test_setup sx_arr_get x empty_arr "${spec}"
         if [ "${hsts}" -eq 0 ]; then
           # sx_arr_get が参照渡しで x_len を設定する。
           # shellcheck disable=SC2154
@@ -239,19 +240,19 @@ Describe 'sx_arr_has'
 
   Context '空配列・穴・空真'
     It '空の配列に対して単体 0 は失敗を返すこと'
-      sx_arr_gen empty_arr
+      sx_test_setup sx_arr_gen empty_arr
       When call sx_arr_has empty_arr 0
       The status should be failure
     End
 
     It '空の配列に対して -0 は失敗を返すこと (ガード経路)'
-      sx_arr_gen empty_arr
+      sx_test_setup sx_arr_gen empty_arr
       When call sx_arr_has empty_arr -0
       The status should be failure
     End
 
     It '空の配列に対して範囲は失敗を返すこと'
-      sx_arr_gen empty_arr
+      sx_test_setup sx_arr_gen empty_arr
       When call sx_arr_has empty_arr 0:5 5:0:-1
       The status should be failure
     End
@@ -346,7 +347,7 @@ Describe 'sx_arr_has'
   End
 
   Context '32bit算術シェル専用の算術域境界 (NUM_RANGE=32)'
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
     Skip if '32bit算術シェル専用のため' arith_not32
 
     It 't<0 クランプの中間値が溢れないこと (始点D・step-5・境界)'
@@ -391,7 +392,7 @@ Describe 'sx_arr_has'
   End
 
   Context '算術域境界 (NUM_RANGE=64)'
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
 
     It 't<0 クランプの中間値が溢れないこと (始点D・step-5・境界)'

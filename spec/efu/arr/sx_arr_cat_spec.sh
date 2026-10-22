@@ -1,5 +1,6 @@
 Describe 'sx_arr_cat -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/arr/sx_arr_cat_spec.sh sx_arr_cat sx_arr_gen sx_cfg_set
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arr_cat
 
   Describe '単一の末尾配列へ連結'
     It '引数が0個の場合は 64 を返す'
@@ -8,8 +9,8 @@ Describe 'sx_arr_cat -efu 環境検証'
     End
 
     It '複数の配列を連結する'
-      sx_arr_gen a1 a b c
-      sx_arr_gen a2 d e
+      sx_test_setup sx_arr_gen a1 a b c
+      sx_test_setup sx_arr_gen a2 d e
 
       sx_arr_cat x a1 a2
       The variable "x_len" should equal 5
@@ -23,7 +24,7 @@ Describe 'sx_arr_cat -efu 環境検証'
     End
 
     It '源配列が空の場合は空配列を生成する'
-      sx_arr_gen a1
+      sx_test_setup sx_arr_gen a1
 
       sx_arr_cat x a1
       The variable "x_len" should equal 0
@@ -32,8 +33,8 @@ Describe 'sx_arr_cat -efu 環境検証'
 
   Describe '複数セグメントへの分配'
     It '数値先行セグメントと末尾セグメントへ分配する'
-      sx_arr_gen a1 a b c
-      sx_arr_gen a2 d e
+      sx_test_setup sx_arr_gen a1 a b c
+      sx_test_setup sx_arr_gen a2 d e
 
       sx_arr_cat 2a:x a1 a2
       The variable "a_len" should equal 2
@@ -45,7 +46,7 @@ Describe 'sx_arr_cat -efu 環境検証'
     End
 
     It '素セグメントはスカラーとして扱い配列化しない'
-      sx_arr_gen a1 p q r s t
+      sx_test_setup sx_arr_gen a1 p q r s t
 
       sx_arr_cat a:2b:x a1
       The variable "a" should equal p
@@ -56,7 +57,7 @@ Describe 'sx_arr_cat -efu 環境検証'
 
   Describe '切り詰め挙動'
     It '要素が不足する場合は配列長が短くなる（成功）'
-      sx_arr_gen a1 p q r
+      sx_test_setup sx_arr_gen a1 p q r
 
       sx_arr_cat 2a:x a1
       The variable "a_len" should equal 2
@@ -64,7 +65,7 @@ Describe 'sx_arr_cat -efu 環境検証'
     End
 
     It 'スカラーを挟む未満充填でも配列長が正しいこと'
-      sx_arr_gen a1 p
+      sx_test_setup sx_arr_gen a1 p
 
       sx_arr_cat 2a:b:x a1
       The variable "a_len" should equal 1
@@ -75,9 +76,9 @@ Describe 'sx_arr_cat -efu 環境検証'
   Describe '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
     It '64ビットレンジで連結と分配が成功する'
-      sx_cfg_set NUM_RANGE=64
-      sx_arr_gen a1 a b c
-      sx_arr_gen a2 d e
+      sx_test_setup sx_cfg_set NUM_RANGE=64
+      sx_test_setup sx_arr_gen a1 a b c
+      sx_test_setup sx_arr_gen a2 d e
 
       sx_arr_cat 2a:x a1 a2
       The variable "a_len" should equal 2
@@ -89,13 +90,13 @@ Describe 'sx_arr_cat -efu 環境検証'
 
   Describe '引数バリデーション'
     It 'バインド形式が不正な場合は 64 を返す'
-      sx_arr_gen a1 a b
+      sx_test_setup sx_arr_gen a1 a b
       When run efu_run sx_arr_cat "2b" a1
       The status should equal 64
     End
 
     It '@ を含むバインド形式の場合は 64 を返す'
-      sx_arr_gen a1 a b
+      sx_test_setup sx_arr_gen a1 a b
       When run efu_run sx_arr_cat "x:@arr" a1
       The status should equal 64
     End

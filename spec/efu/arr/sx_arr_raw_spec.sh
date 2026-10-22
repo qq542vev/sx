@@ -3,12 +3,29 @@
 # shellcheck disable=SC2329
 
 Describe '配列 raw 処理 -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/arr/sx_arr_raw_spec.sh SX_SYS_REV __sx_arr_pop_raw __sx_arr_push_raw __sx_arr_splice_raw sx_arr_gen sx_cfg_set
+  # Exampleごとに対象だけを読み込む。IncludeはExampleの外で宣言する。
+  load_subject() {
+    case "$1" in
+      __sx_arr_push_raw)
+        Include ./spec/support/library.sh __sx_arr_push_raw
+        ;;
+      __sx_arr_splice_raw)
+        Include ./spec/support/library.sh __sx_arr_splice_raw
+        ;;
+      __sx_arr_pop_raw)
+        Include ./spec/support/library.sh __sx_arr_pop_raw
+        ;;
+      *) return 64;;
+    esac
+  }
+
+  Include ./spec/support/prepare.sh
 
   raw_checked() {
     # shellcheck disable=SC3040
     set -efu -o posix
-    sx_arr_gen arr a b c
+    SX_SYS_REV=${SX_SYS_REV-0}
+    sx_test_setup sx_arr_gen arr a b c
     # 配列署名は sx_arr_gen による参照渡しで設定される。
     # shellcheck disable=SC2154
     before_sig=$arr
@@ -34,14 +51,27 @@ Describe '配列 raw 処理 -efu 環境検証'
     End
 
     It '元配列の署名とカウンタを保持し作業変数を残さない'
-      sx_cfg_set "ARR_UPDATE=$2"
+      case "$1" in
+        push)
+          load_subject __sx_arr_push_raw
+          ;;
+        splice)
+          load_subject __sx_arr_splice_raw
+          ;;
+        pop)
+          load_subject __sx_arr_pop_raw
+          ;;
+        *) return 64;;
+      esac
+      sx_test_setup sx_cfg_set "ARR_UPDATE=$2"
       When run raw_checked "$1"
       The status should be success
     End
   End
 
   It 'pop_raw の要素不足が -e 下でも1として返る'
-    sx_arr_gen arr a
+    load_subject __sx_arr_pop_raw
+    sx_test_setup sx_arr_gen arr a
     When run efu_run __sx_arr_pop_raw x:y: arr
     The status should equal 1
   End

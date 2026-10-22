@@ -3,7 +3,8 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_cmp_arith'
-  Include ./spec/support/library.sh spec/num/cmp_arith_spec.sh SX_CFG_SKIP_CHK SX_SYS_NUM_MAX SX_SYS_NUM_MIN sx_cfg_set sx_num_cmp_arith
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_cmp_arith
 
   It 'LHS < RHS の場合に 1 を返すこと'
     When call sx_num_cmp_arith 10 20
@@ -64,36 +65,36 @@ Describe 'sx_num_cmp_arith'
   Context '32bit算術シェル専用の最小値'
     # 64bit 未満のホストでは、設定幅が算術域を超えるため検証しない。
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     It 'MIN < 0 の場合に 1 を返すこと'
-      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" 0
+      When call sx_num_cmp_arith "${SXTEST_NUM_MIN}" 0
       The status should equal 1
     End
 
     It '0 > MIN の場合に 3 を返すこと'
-      When call sx_num_cmp_arith 0 "${SX_SYS_NUM_MIN}"
+      When call sx_num_cmp_arith 0 "${SXTEST_NUM_MIN}"
       The status should equal 3
     End
 
     It 'MIN 同士の比較で 2 を返すこと'
-      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" "${SX_SYS_NUM_MIN}"
+      When call sx_num_cmp_arith "${SXTEST_NUM_MIN}" "${SXTEST_NUM_MIN}"
       The status should equal 2
     End
 
     It 'MIN < MAX の場合に 1 を返すこと'
-      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" "${SX_SYS_NUM_MAX}"
+      When call sx_num_cmp_arith "${SXTEST_NUM_MIN}" "${SXTEST_NUM_MAX}"
       The status should equal 1
     End
 
     It 'MIN < MIN + 1 の場合に 1 を返すこと'
-      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" -2147483647
+      When call sx_num_cmp_arith "${SXTEST_NUM_MIN}" -2147483647
       The status should equal 1
     End
 
     It 'チェックをスキップしても MIN を比較できること'
       SX_CFG_SKIP_CHK=1
-      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" 0
+      When call sx_num_cmp_arith "${SXTEST_NUM_MIN}" 0
       The status should equal 1
     End
   End
@@ -101,36 +102,36 @@ Describe 'sx_num_cmp_arith'
   Context '64ビット設定の最小値'
     # 64bit 未満のホストでは、設定幅が算術域を超えるため検証しない。
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
 
     It 'MIN < 0 の場合に 1 を返すこと'
-      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" 0
+      When call sx_num_cmp_arith "${SXTEST_NUM_MIN}" 0
       The status should equal 1
     End
 
     It '0 > MIN の場合に 3 を返すこと'
-      When call sx_num_cmp_arith 0 "${SX_SYS_NUM_MIN}"
+      When call sx_num_cmp_arith 0 "${SXTEST_NUM_MIN}"
       The status should equal 3
     End
 
     It 'MIN 同士の比較で 2 を返すこと'
-      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" "${SX_SYS_NUM_MIN}"
+      When call sx_num_cmp_arith "${SXTEST_NUM_MIN}" "${SXTEST_NUM_MIN}"
       The status should equal 2
     End
 
     It 'MIN < MAX の場合に 1 を返すこと'
-      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" "${SX_SYS_NUM_MAX}"
+      When call sx_num_cmp_arith "${SXTEST_NUM_MIN}" "${SXTEST_NUM_MAX}"
       The status should equal 1
     End
 
     It 'MIN < MIN + 1 の場合に 1 を返すこと'
-      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" -9223372036854775807
+      When call sx_num_cmp_arith "${SXTEST_NUM_MIN}" -9223372036854775807
       The status should equal 1
     End
 
     It 'チェックをスキップしても MIN を比較できること'
       SX_CFG_SKIP_CHK=1
-      When call sx_num_cmp_arith "${SX_SYS_NUM_MIN}" 0
+      When call sx_num_cmp_arith "${SXTEST_NUM_MIN}" 0
       The status should equal 1
     End
   End

@@ -1,13 +1,16 @@
 #!/bin/sh
+# ShellSpec: 参照渡しで設定される変数を使用する。
+# shellcheck disable=SC2154
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_bind'
-    Include ./spec/support/library.sh spec/var/bind_spec.sh SX_CFG_NUM_RANGE SX_EX_DATAERR SX_EX_NOPERM sx_arr_gen sx_var_bind sx_var_bind_init
+    Include ./spec/support/prepare.sh
+    Include ./spec/support/library.sh sx_var_bind
 
     Describe '基本動作'
         It '単純な代入を実行し、状態を更新すること'
-            sx_var_bind_init "v1:v2:rest"
+            sx_test_setup sx_var_bind_init "v1:v2:rest"
             unset res
             When call sx_var_bind res "v1:v2:rest" "val1"
             The status should be success
@@ -16,7 +19,7 @@ Describe 'sx_var_bind'
         End
 
         It '複数の値を一度に割り当てること'
-            sx_var_bind_init "v1:v2:rest"
+            sx_test_setup sx_var_bind_init "v1:v2:rest"
             unset res
             When call sx_var_bind res "v1:v2:rest" "a" "b" "c"
             The status should be success
@@ -27,7 +30,7 @@ Describe 'sx_var_bind'
         End
 
         It 'スキップスロットを正しく処理すること'
-            sx_var_bind_init ":v2:rest"
+            sx_test_setup sx_var_bind_init ":v2:rest"
             unset res
             When call sx_var_bind res ":v2:rest" "discarded" "val2"
             The status should be success
@@ -36,7 +39,7 @@ Describe 'sx_var_bind'
         End
 
         It 'カウント指定代入を処理すること'
-            sx_var_bind_init "2arr:rest"
+            sx_test_setup sx_var_bind_init "2arr:rest"
             unset res
             When call sx_var_bind res "2arr:rest" "a1" "a2"
             The status should be success
@@ -45,7 +48,7 @@ Describe 'sx_var_bind'
         End
 
         It 'データが不足している場合に残りのバインド状態を保持すること'
-            sx_var_bind_init "3arr:rest"
+            sx_test_setup sx_var_bind_init "3arr:rest"
             unset res
             When call sx_var_bind res "3arr:rest" "a1"
             The status should be success
@@ -55,7 +58,7 @@ Describe 'sx_var_bind'
 
         It 'カウントスロットが bind 未到達でも空文字列として参照できること'
             unset b c
-            sx_var_bind_init "a:2b:c"
+            sx_test_setup sx_var_bind_init "a:2b:c"
             When call sx_var_bind res "a:2b:c" "val1"
             The status should be success
             eval set -- "${b}"
@@ -63,7 +66,7 @@ Describe 'sx_var_bind'
         End
 
         It '残り（rest）スロットに累積すること'
-            sx_var_bind_init "out"
+            sx_test_setup sx_var_bind_init "out"
             unset res
             When call sx_var_bind res "out" "a1" "a2"
             The status should be success
@@ -72,7 +75,7 @@ Describe 'sx_var_bind'
         End
 
         It 'スロットが尽きた場合に 1 を返し、結果変数に空のバインド形式が書き込まれること'
-            sx_var_bind_init "v1:"
+            sx_test_setup sx_var_bind_init "v1:"
             unset res
             res="unchanged"
             When call sx_var_bind res "v1:" "a" "b"
@@ -82,7 +85,7 @@ Describe 'sx_var_bind'
         End
 
         It 'データが無い場合にバインド状態を結果に書き込んで成功すること'
-            sx_var_bind_init "v1:rest"
+            sx_test_setup sx_var_bind_init "v1:rest"
             unset res
             When call sx_var_bind res "v1:rest"
             The status should be success
@@ -92,7 +95,7 @@ Describe 'sx_var_bind'
 
     Describe 'クォート動作'
         It '代入スロットは生の値、蓄積スロットはクォートされること'
-            sx_var_bind_init "arr:out"
+            sx_test_setup sx_var_bind_init "arr:out"
             unset res
             When call sx_var_bind res "arr:out" "it's me" "don't stop"
             The status should be success
@@ -101,7 +104,7 @@ Describe 'sx_var_bind'
         End
 
         It 'カウント指定でもクォートが適用されること'
-            sx_var_bind_init "2arr:rest"
+            sx_test_setup sx_var_bind_init "2arr:rest"
             unset res
             When call sx_var_bind res "2arr:rest" "a'b" "c d"
             The status should be success
@@ -139,7 +142,7 @@ Describe 'sx_var_bind'
 
     Describe '@ 記法（配列マーカー）'
         It '末尾 @name に残りの全要素を分配すること'
-            sx_var_bind_init "x:@b_arr"
+            sx_test_setup sx_var_bind_init "x:@b_arr"
             unset res
             When call sx_var_bind res "x:@b_arr" "v1" "v2" "v3"
             The status should be success
@@ -151,7 +154,7 @@ Describe 'sx_var_bind'
         End
 
         It 'N@name 中間形で個数制限どおりに分配すること'
-            sx_var_bind_init "a:2@b_arr2:c"
+            sx_test_setup sx_var_bind_init "a:2@b_arr2:c"
             unset res
             When call sx_var_bind res "a:2@b_arr2:c" "v1" "v2" "v3" "v4"
             The status should be success
@@ -164,7 +167,7 @@ Describe 'sx_var_bind'
         End
 
         It '空白やクォートを含む値を生のまま格納すること'
-            sx_var_bind_init "x:@b_arr3"
+            sx_test_setup sx_var_bind_init "x:@b_arr3"
             unset res
             When call sx_var_bind res "x:@b_arr3" "a b" "c'd" "e f"
             The status should be success
@@ -175,7 +178,7 @@ Describe 'sx_var_bind'
         End
 
         It '単独 @name に全要素を分配すること'
-            sx_var_bind_init "@b_arr5"
+            sx_test_setup sx_var_bind_init "@b_arr5"
             unset res
             When call sx_var_bind res "@b_arr5" "v1" "v2"
             The status should be success
@@ -186,7 +189,7 @@ Describe 'sx_var_bind'
         End
 
         It 'データが無い場合にバインド形式を残して成功すること'
-            sx_var_bind_init "x:@b_arr4"
+            sx_test_setup sx_var_bind_init "x:@b_arr4"
             unset res
             When call sx_var_bind res "x:@b_arr4"
             The status should be success
@@ -201,7 +204,7 @@ Describe 'sx_var_bind'
         End
 
         It '読み取り専用の配列に対して EX_NOPERM (77) を返すこと'
-            sx_arr_gen ro_barr "x"
+            sx_test_setup sx_arr_gen ro_barr "x"
             readonly ro_barr ro_barr_len ro_barr_0
             When call sx_var_bind res "bq:@ro_barr" "v"
             The status should equal 77 # SX_EX_NOPERM
@@ -210,21 +213,21 @@ Describe 'sx_var_bind'
 
     Describe '空結果変数（残り破棄）'
         It '成功時に残りを破棄し、割当ては実行すること'
-            sx_var_bind_init "eb1:eb2:eberest"
+            sx_test_setup sx_var_bind_init "eb1:eb2:eberest"
             When call sx_var_bind "" "eb1:eb2:eberest" "a"
             The status should be success
             The variable eb1 should equal "a"
         End
 
         It 'スロット枯渇時に 1 を返し、残りを破棄すること'
-            sx_var_bind_init "eb3:"
+            sx_test_setup sx_var_bind_init "eb3:"
             When call sx_var_bind "" "eb3:" "a" "b"
             The status should equal 1
             The variable eb3 should equal "a"
         End
 
         It 'データが無い場合に成功すること'
-            sx_var_bind_init "eb4:eberest2"
+            sx_test_setup sx_var_bind_init "eb4:eberest2"
             When call sx_var_bind "" "eb4:eberest2"
             The status should be success
         End

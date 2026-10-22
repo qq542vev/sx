@@ -1,5 +1,8 @@
+# ShellSpec: 展開せずに渡すテスト入力を使用する。
+# shellcheck disable=SC2016
 Describe 'sx_str_chunk -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/str/sx_str_chunk_spec.sh sx_cfg_set sx_str_chunk
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_str_chunk
 
   It '正常動作'
 
@@ -21,7 +24,7 @@ Describe 'sx_str_chunk -efu 環境検証'
   End
 
   Context '多倍長整数'
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     Parameters
       '9223372036854775808'

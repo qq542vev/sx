@@ -1,5 +1,6 @@
 Describe 'sx_cfg_is_valid -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/cfg/sx_cfg_is_valid_spec.sh SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_CFG_ARR_UPDATE SX_CFG_NUM_RANGE SX_CFG_SEP SX_CFG_SIG_ARR SX_CFG_SKIP_CHK sx_cfg_is_valid sx_cfg_set
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_cfg_is_valid
 
   It '正常動作'
 
@@ -24,7 +25,7 @@ Describe 'sx_cfg_is_valid -efu 環境検証'
   End
 
   It '設定値の空白と空文字を保持して全項目を検査すること'
-    sx_cfg_set 'SIG_ARR=custom array *' 'ARR_HOLE=' 'ARR_REF=@ ref'
+    sx_test_setup sx_cfg_set 'SIG_ARR=custom array *' 'ARR_HOLE=' 'ARR_REF=@ ref'
     When run efu_run sx_cfg_is_valid
     The status should be success
     The stderr should equal ''

@@ -3,7 +3,8 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_gen'
-  Include ./spec/support/library.sh spec/arr/gen_spec.sh sx_arr_gen sx_cfg_set sx_var_set sx_var_unset
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arr_gen
 
   It '新しい配列を値で初期化すること'
     When call sx_arr_gen myarr "first" "second"
@@ -23,14 +24,14 @@ Describe 'sx_arr_gen'
 
   It '参照値とリテラルを指定順に初期化すること'
     src="reference"
-    sx_cfg_set "ARR_REF=@"
+    sx_test_setup sx_cfg_set "ARR_REF=@"
     When call sx_arr_gen myarr_ref "@src" literal
     The status should be success
     The variable myarr_ref_len should equal 2
     The variable myarr_ref_0 should equal "reference"
     The variable myarr_ref_1 should equal "literal"
-    sx_cfg_set "ARR_REF"
-    sx_var_unset myarr_ref src
+    sx_test_setup sx_cfg_set "ARR_REF"
+    sx_test_setup sx_var_unset myarr_ref src
   End
 
   It '無効な配列名に対して EX_USAGE を返すこと'
@@ -60,7 +61,7 @@ Describe 'sx_arr_gen'
   End
 
   It '連続してgenを呼び出しても毎回正しく初期化されること'
-    sx_var_set myarr_seq
+    sx_test_setup sx_var_set myarr_seq
     sx_arr_gen myarr_seq first
     When call sx_arr_gen myarr_seq second
     The variable myarr_seq_len should equal 1

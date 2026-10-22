@@ -1,5 +1,6 @@
 Describe 'sx_str_title -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/str/sx_str_title_spec.sh __sx_num_add1_arith __sx_num_is_int_fit_dec sx_cfg_set sx_str_title
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_str_title
 
   It '正常動作'
     When run efu_run sx_str_title res "aaa bbb ccc"
@@ -19,7 +20,7 @@ Describe 'sx_str_title -efu 環境検証'
       return 0
     }
     __sx_num_add1_arith() { return 64; }
-    sx_cfg_set "SKIP_CHK=$1"
+    sx_test_setup sx_cfg_set "SKIP_CHK=$1"
     When run efu_run sx_str_title res XMLParser
     The status should be success
   End

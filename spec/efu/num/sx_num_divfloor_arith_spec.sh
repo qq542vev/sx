@@ -3,8 +3,9 @@
 # shellcheck disable=SC2215
 
 Describe 'sx_num_divfloor_arith -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_divfloor_arith_spec.sh SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK sx_cfg_set sx_num_divfloor_arith
-  Before 'sx_cfg_set NUM_RANGE=32'
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_divfloor_arith
+  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
   divfloor_check_value() {
     expected="$1"
@@ -78,7 +79,7 @@ Describe 'sx_num_divfloor_arith -efu 環境検証'
 
   Context '32bit算術シェル専用の算術域境界'
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     It 'MIN / MAX の切り下げ商を-e下で検証すること'
       When run efu_run divfloor_check_value -2 -2147483648 2147483647
@@ -90,7 +91,7 @@ Describe 'sx_num_divfloor_arith -efu 環境検証'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
 
     Context '丸め結果'
       Parameters

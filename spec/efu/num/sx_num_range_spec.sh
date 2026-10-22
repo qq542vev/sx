@@ -3,7 +3,8 @@
 # shellcheck disable=SC2215,SC2288
 
 Describe 'sx_num_range -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_range_spec.sh sx_cfg_set sx_num_range
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_range
 
   range_check_values() {
     expected="$1"
@@ -16,7 +17,7 @@ Describe 'sx_num_range -efu 環境検証'
 
   Context '32bit算術シェル専用の算術域境界'
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     Parameters
       '-2147483648:-2147483647:' 'i:j:' -2147483648 2147483647 1

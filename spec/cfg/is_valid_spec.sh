@@ -1,10 +1,13 @@
 #!/bin/sh
+# ShellSpec: Parameters内のパターン文字列を使用する。
+# shellcheck disable=SC2288
 
 eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_cfg_is_valid()'
-	Include ./spec/support/library.sh spec/cfg/is_valid_spec.sh SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_CFG_ARR_UPDATE SX_CFG_NUM_RANGE SX_CFG_SEP SX_CFG_SIG_ARR SX_CFG_SKIP_CHK sx_cfg_is_valid sx_cfg_set
+	Include ./spec/support/prepare.sh
+	Include ./spec/support/library.sh sx_cfg_is_valid
 
 	Context '生成されたパターンによる設定値の検査'
 		Parameters
@@ -124,7 +127,7 @@ Describe 'sx_cfg_is_valid()'
 	End
 
 	It '引数なしの検査で設定値の空白と特殊文字を保持すること'
-		sx_cfg_set 'SIG_ARR=custom array *' 'SEP=: : *' 'ARR_HOLE=hole *' 'ARR_REF=@ ref'
+		sx_test_setup sx_cfg_set 'SIG_ARR=custom array *' 'SEP=: : *' 'ARR_HOLE=hole *' 'ARR_REF=@ ref'
 		When call sx_cfg_is_valid
 		The status should be success
 	End

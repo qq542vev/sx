@@ -3,7 +3,8 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_divceil_nat0'
-  Include ./spec/support/library.sh spec/num/divceil_nat0_spec.sh SX_CFG_NUM_RANGE sx_cfg_set sx_num_divceil_nat0
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_divceil_nat0
 
   It '小さな数の除算ができること（あまりなし）'
     When call sx_num_divceil_nat0 q 100 4
@@ -102,7 +103,7 @@ Describe 'sx_num_divceil_nat0'
   End
 
   Context '64ビット設定'
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
 
     It '一般パス(d>0)の除算ができること'

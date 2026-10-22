@@ -1,5 +1,6 @@
 Describe 'sx_num_cmp_arith -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_cmp_arith_spec.sh SX_SYS_NUM_MIN sx_cfg_set sx_num_cmp_arith
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_cmp_arith
 
   It '正常動作'
     When run efu_run sx_num_cmp_arith 5 5
@@ -8,40 +9,40 @@ Describe 'sx_num_cmp_arith -efu 環境検証'
 
   Context '32bit算術シェル専用の最小値'
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     It 'MIN を左辺として比較できること'
-      When run efu_run sx_num_cmp_arith "${SX_SYS_NUM_MIN}" 0
+      When run efu_run sx_num_cmp_arith "${SXTEST_NUM_MIN}" 0
       The status should equal 1
     End
 
     It 'MIN を右辺として比較できること'
-      When run efu_run sx_num_cmp_arith 0 "${SX_SYS_NUM_MIN}"
+      When run efu_run sx_num_cmp_arith 0 "${SXTEST_NUM_MIN}"
       The status should equal 3
     End
 
     It 'MIN 同士を比較できること'
-      When run efu_run sx_num_cmp_arith "${SX_SYS_NUM_MIN}" "${SX_SYS_NUM_MIN}"
+      When run efu_run sx_num_cmp_arith "${SXTEST_NUM_MIN}" "${SXTEST_NUM_MIN}"
       The status should equal 2
     End
   End
 
   Context '64ビット設定の最小値'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
 
     It 'MIN を左辺として比較できること'
-      When run efu_run sx_num_cmp_arith "${SX_SYS_NUM_MIN}" 0
+      When run efu_run sx_num_cmp_arith "${SXTEST_NUM_MIN}" 0
       The status should equal 1
     End
 
     It 'MIN を右辺として比較できること'
-      When run efu_run sx_num_cmp_arith 0 "${SX_SYS_NUM_MIN}"
+      When run efu_run sx_num_cmp_arith 0 "${SXTEST_NUM_MIN}"
       The status should equal 3
     End
 
     It 'MIN 同士を比較できること'
-      When run efu_run sx_num_cmp_arith "${SX_SYS_NUM_MIN}" "${SX_SYS_NUM_MIN}"
+      When run efu_run sx_num_cmp_arith "${SXTEST_NUM_MIN}" "${SXTEST_NUM_MIN}"
       The status should equal 2
     End
   End

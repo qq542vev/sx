@@ -1,18 +1,21 @@
 #!/bin/sh
+# ShellSpec: 参照渡しで設定される変数を使用する。
+# shellcheck disable=SC2154
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_quote'
-  Include ./spec/support/library.sh spec/arr/quote_spec.sh SX_CFG_ARR_HOLE sx_arr_gen sx_arr_quote sx_arr_rquote sx_cfg_set sx_var_unset
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arr_quote
 
   setup() {
-    sx_arr_gen arr1 "hello world" "it's me"
-    sx_arr_gen arr2 "back\\slash" '"double quotes"'
-    sx_arr_gen arr_empty
+    sx_test_setup sx_arr_gen arr1 "hello world" "it's me"
+    sx_test_setup sx_arr_gen arr2 "back\\slash" '"double quotes"'
+    sx_test_setup sx_arr_gen arr_empty
   }
 
   cleanup() {
-    sx_var_unset arr1 arr2 arr_empty result
+    sx_test_setup sx_var_unset arr1 arr2 arr_empty result
   }
 
   It '単一の配列を安全にエンコードし、eval で復元できること'
@@ -67,8 +70,8 @@ Describe 'sx_arr_quote'
   End
 
   It '疎配列の穴を既定（空文字）で表すこと'
-    sx_arr_gen sparse_arr a b c
-    sx_var_unset sparse_arr_1
+    sx_test_setup sx_arr_gen sparse_arr a b c
+    sx_test_setup sx_var_unset sparse_arr_1
     When call sx_arr_quote result sparse_arr
     The status should be success
 
@@ -78,13 +81,13 @@ Describe 'sx_arr_quote'
     The variable res2 should equal ""
     The variable res3 should equal "c"
     The variable cnt should equal 3
-    sx_var_unset sparse_arr result
+    sx_test_setup sx_var_unset sparse_arr result
   End
 
   It '疎配列の穴をSX_CFG_ARR_HOLEの値で表すこと'
-    sx_arr_gen sparse_arr a b c
-    sx_var_unset sparse_arr_1
-    sx_cfg_set "ARR_HOLE=HOLE"
+    sx_test_setup sx_arr_gen sparse_arr a b c
+    sx_test_setup sx_var_unset sparse_arr_1
+    sx_test_setup sx_cfg_set "ARR_HOLE=HOLE"
     When call sx_arr_quote result sparse_arr
     The status should be success
 
@@ -94,8 +97,8 @@ Describe 'sx_arr_quote'
     The variable res2 should equal "HOLE"
     The variable res3 should equal "c"
     The variable cnt should equal 3
-    sx_cfg_set "ARR_HOLE"
-    sx_var_unset sparse_arr result
+    sx_test_setup sx_cfg_set "ARR_HOLE"
+    sx_test_setup sx_var_unset sparse_arr result
   End
 
   It '配列ではない引数が含まれる場合に EX_DATAERR を返すこと'
@@ -116,16 +119,17 @@ Describe 'sx_arr_quote'
 End
 
 Describe 'sx_arr_rquote'
-  Include ./spec/support/library.sh spec/arr/quote_spec.sh SX_CFG_ARR_HOLE sx_arr_gen sx_arr_quote sx_arr_rquote sx_cfg_set sx_var_unset
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arr_rquote
 
   setup() {
-    sx_arr_gen arr1 "hello world" "it's me"
-    sx_arr_gen arr2 "back\\slash" '"double quotes"'
-    sx_arr_gen arr_empty
+    sx_test_setup sx_arr_gen arr1 "hello world" "it's me"
+    sx_test_setup sx_arr_gen arr2 "back\\slash" '"double quotes"'
+    sx_test_setup sx_arr_gen arr_empty
   }
 
   cleanup() {
-    sx_var_unset arr1 arr2 arr_empty result
+    sx_test_setup sx_var_unset arr1 arr2 arr_empty result
   }
 
   It '単一の配列を逆順で安全にエンコードし、eval で復元できること'
@@ -165,8 +169,8 @@ Describe 'sx_arr_rquote'
   End
 
   It '疎配列の穴を既定（空文字）で逆順に表すこと'
-    sx_arr_gen sparse_arr a b c
-    sx_var_unset sparse_arr_1
+    sx_test_setup sx_arr_gen sparse_arr a b c
+    sx_test_setup sx_var_unset sparse_arr_1
     When call sx_arr_rquote result sparse_arr
     The status should be success
 
@@ -176,13 +180,13 @@ Describe 'sx_arr_rquote'
     The variable res2 should equal ""
     The variable res3 should equal "a"
     The variable cnt should equal 3
-    sx_var_unset sparse_arr result
+    sx_test_setup sx_var_unset sparse_arr result
   End
 
   It '疎配列の穴をSX_CFG_ARR_HOLEの値で逆順に表すこと'
-    sx_arr_gen sparse_arr a b c
-    sx_var_unset sparse_arr_1
-    sx_cfg_set "ARR_HOLE=HOLE"
+    sx_test_setup sx_arr_gen sparse_arr a b c
+    sx_test_setup sx_var_unset sparse_arr_1
+    sx_test_setup sx_cfg_set "ARR_HOLE=HOLE"
     When call sx_arr_rquote result sparse_arr
     The status should be success
 
@@ -192,8 +196,8 @@ Describe 'sx_arr_rquote'
     The variable res2 should equal "HOLE"
     The variable res3 should equal "a"
     The variable cnt should equal 3
-    sx_cfg_set "ARR_HOLE"
-    sx_var_unset sparse_arr result
+    sx_test_setup sx_cfg_set "ARR_HOLE"
+    sx_test_setup sx_var_unset sparse_arr result
   End
 
   It '結果変数が読み取り専用の場合に EX_NOPERM を返すこと'

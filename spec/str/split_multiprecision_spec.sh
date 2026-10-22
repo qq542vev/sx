@@ -5,7 +5,20 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split 多倍長対応'
-  Include ./spec/support/library.sh spec/str/split_multiprecision_spec.sh SX_CFG_NUM_RANGE SX_NUM_I8_MAX SX_NUM_I8_MIN SX_NUM_I8_QM SX_NUM_I8_WLEN SX_NUM_I8_ZR SX_STR_SPLIT_INC __sx_arg_isep __sx_cfg_set __sx_num_is_int_fit_dec __sx_num_is_nat0_safe __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_str_chunk __sx_str_qm __sx_str_split __sx_var_set sx_cfg_set sx_str_rep sx_str_split
+  # Exampleごとに対象だけを読み込む。IncludeはExampleの外で宣言する。
+  load_subject() {
+    case "$1" in
+      sx_str_split)
+        Include ./spec/support/library.sh sx_str_split
+        ;;
+      __sx_str_split)
+        Include ./spec/support/library.sh __sx_str_split
+        ;;
+      *) return 64;;
+    esac
+  }
+
+  Include ./spec/support/prepare.sh
 
   Context '算術域を超える回数'
     Parameters
@@ -72,7 +85,8 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It '検査の有無・方向・区切り・INCによらず任意桁の回数を受け付けること'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_str_split
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       When call sx_str_split res "$2" "$3" "$4" "$5"
       The status should be success
       The variable res should equal "$6"
@@ -116,6 +130,7 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It '両端・文字間の境界を回数に数えINCの要素は回数に含めないこと'
+      load_subject sx_str_split
       # 空区切りは中間リストを構築する関数に依存しない。
       __sx_str_chunk() { return 64; }
       __sx_arg_isep() { return 64; }
@@ -136,6 +151,7 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It '空の回数は前方から無制限として扱うこと'
+      load_subject sx_str_split
       When call sx_str_split res "$1" "$2" '' "$3"
       The status should be success
       The variable res should equal "$4"
@@ -163,6 +179,7 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It '形式不正を64で拒否し結果を変更しないこと'
+      load_subject sx_str_split
       res=original
       When call sx_str_split res abc '' "$1"
       The status should equal 64
@@ -178,6 +195,7 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It 'フラグは従来の符号付き・8進・16進表記を維持すること'
+      load_subject sx_str_split
       When call sx_str_split res a1b '[0-9]' 1 "$1"
       The status should be success
       The variable res should equal "'a' '1' 'b'"
@@ -192,6 +210,7 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It 'フラグには引き続き算術域内の値を要求すること'
+      load_subject sx_str_split
       res=original
       When call sx_str_split res abc '' '' "$1"
       The status should equal 64
@@ -200,6 +219,7 @@ Describe 'sx_str_split 多倍長対応'
   End
 
   It '文字列長を安全範囲の検査で拒否しないこと'
+    load_subject sx_str_split
     __sx_num_is_nat0_safe() { return 1; }
     When call sx_str_split res abc
     The status should be success
@@ -219,6 +239,7 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It '短い入力で多倍長経路を強制しても同じ結果になること'
+      load_subject __sx_str_split
       native_calls=0
       __sx_num_is_int_fit_dec() { return 1; }
       # shellcheck disable=SC2329
@@ -248,6 +269,7 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It '前方の全境界分割では減算せず、後方では先頭準備の一回だけ減算すること'
+      load_subject __sx_str_split
       counter_calls=0
       case "$2" in
         -*) expected_calls=1;;
@@ -281,20 +303,21 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It '文字数と等しい上限では文末を切らず、最大値までは通常の算術を使うこと'
-      sx_str_rep str A "$1"
+      load_subject __sx_str_split
+      sx_test_setup sx_str_rep str A "$1"
       case "$2" in
         0)
-          sx_str_rep expected "'A' " "$1"
+          sx_test_setup sx_str_rep expected "'A' " "$1"
           expected="'' ${expected% }"
           ;;
         *)
           count="$1"
           count=$((count - 1))
-          sx_str_rep expected "'A' '' " "$count"
+          sx_test_setup sx_str_rep expected "'A' '' " "$count"
           expected="'' '' $expected'A'"
           ;;
       esac
-      __sx_cfg_set NUM_RANGE=8
+      sx_test_setup __sx_cfg_set NUM_RANGE=8
       native_calls=0 multiprecision_calls=0
       # shellcheck disable=SC2329
       __sx_num_sub1_arith() {
@@ -325,19 +348,20 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It '文字数+1が算術域を越えても全境界を分割すること'
+      load_subject __sx_str_split
       str='' expected=''
-      sx_str_rep str A "$1"
+      sx_test_setup sx_str_rep str A "$1"
       case "$2" in
         0)
-          sx_str_rep expected "'A' " "$1"
+          sx_test_setup sx_str_rep expected "'A' " "$1"
           expected="'' $expected''"
           ;;
         *)
-          sx_str_rep expected "'A' '' " "$1"
+          sx_test_setup sx_str_rep expected "'A' '' " "$1"
           expected="'' '' $expected''"
           ;;
       esac
-      __sx_cfg_set NUM_RANGE=8
+      sx_test_setup __sx_cfg_set NUM_RANGE=8
       native_calls=0
       case "$1" in 127 | 128)
         # shellcheck disable=SC2329
@@ -361,11 +385,12 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It '分割回数が最大値を越えても全要素を保持すること'
+      load_subject __sx_str_split
       str='' expected=''
-      sx_str_rep str 'A:' "$1"
-      sx_str_rep expected "'A' " "$1"
+      sx_test_setup sx_str_rep str 'A:' "$1"
+      sx_test_setup sx_str_rep expected "'A' " "$1"
       expected="$expected''"
-      __sx_cfg_set NUM_RANGE=8
+      sx_test_setup __sx_cfg_set NUM_RANGE=8
       native_calls=0
       __sx_num_sub1_arith() { native_calls=$((native_calls + 1)); return 64; }
       case "$2" in
@@ -387,6 +412,7 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It '先頭または後続が空の場合にパターンを生成しないこと'
+      load_subject sx_str_split
       # shellcheck disable=SC2329
       __sx_str_qm() { return 64; }
       When call sx_str_split res abcde '' "$1"
@@ -402,10 +428,11 @@ Describe 'sx_str_split 多倍長対応'
     End
 
     It '先頭と後続の短い側だけで切り出しパターンを生成すること'
+      load_subject sx_str_split
       pattern_length=''
       __sx_str_qm() {
         pattern_length="$2"
-        __sx_var_set "$1=?"
+        eval "${1}=?"
       }
       When call sx_str_split res abcde '' "$1"
       The status should be success
@@ -415,6 +442,7 @@ Describe 'sx_str_split 多倍長対応'
   End
 
   It '設定不正を78で拒否し結果を変更しないこと'
+    load_subject sx_str_split
     res=original
     SX_CFG_NUM_RANGE=invalid
     When call sx_str_split res abc
@@ -423,11 +451,13 @@ Describe 'sx_str_split 多倍長対応'
   End
 
   It '不正なバインド形式を64で拒否すること'
+    load_subject sx_str_split
     When call sx_str_split 1invalid abc
     The status should equal 64
   End
 
   It '読み取り専用の結果変数を77で拒否すること'
+    load_subject sx_str_split
     readonly readonly_split=original
     When call sx_str_split readonly_split abc
     The status should equal 77

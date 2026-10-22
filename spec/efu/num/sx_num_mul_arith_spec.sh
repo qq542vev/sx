@@ -3,8 +3,9 @@
 # shellcheck disable=SC2215
 
 Describe 'sx_num_mul_arith -efu 環境検証'
-  Include ./spec/support/library.sh spec/efu/num/sx_num_mul_arith_spec.sh SX_CFG_SKIP_CHK sx_cfg_set sx_num_mul_arith
-  Before 'sx_cfg_set NUM_RANGE=32'
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_mul_arith
+  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
   Context '32ビットの乗算'
     Parameters
@@ -44,7 +45,7 @@ Describe 'sx_num_mul_arith -efu 環境検証'
 
   Context '32bit算術シェル専用の算術域境界'
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
 
     It '負数を含む最大値付近の積と内部変数の解放を-e下で検証すること'
       When run efu_run mul_boundary_check_value
@@ -56,7 +57,7 @@ Describe 'sx_num_mul_arith -efu 環境検証'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
 
     Parameters
       -9223372036854775808 -9223372036854775808 1

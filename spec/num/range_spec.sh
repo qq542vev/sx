@@ -3,7 +3,8 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_range'
-  Include ./spec/support/library.sh spec/num/range_spec.sh sx_cfg_set sx_num_range
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_num_range
 
   It '0からN-1までの範囲を生成すること (Python方式: range(stop))'
     When call sx_num_range result 5
@@ -102,7 +103,7 @@ Describe 'sx_num_range'
   End
 
   Context '32bit算術シェル専用の算術域境界'
-    Before 'sx_cfg_set NUM_RANGE=32'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
     Skip if '32bit算術シェル専用のため' arith_not32
 
     It 'INT32_MINを開始値とする範囲の先頭2要素を取得すること'
@@ -140,7 +141,7 @@ Describe 'sx_num_range'
   End
 
   Context '64ビット設定'
-    Before 'sx_cfg_set NUM_RANGE=64'
+    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
 
     It 'INT64_MINを開始値とする範囲の先頭2要素を取得すること'
