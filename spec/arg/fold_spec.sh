@@ -4,7 +4,21 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_fold'
-  Include ./spec/support/library.sh spec/arg/fold_spec.sh SX_CFG_SKIP_CHK SX_NUM_I8_MAX SX_NUM_I8_MIN SX_NUM_I8_QM SX_NUM_I8_WLEN SX_NUM_I8_ZR __sx_arg_fold __sx_cfg_set __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_num_is_nat0_safe __sx_var_set sx_arg_fold sx_cfg_set sx_num_add_int sx_str_rep
+  # Exampleごとに公開API・内部実装の対象だけを読み込む。
+  load_subject() {
+    case "$1" in
+      sx_arg_fold)
+        Include ./spec/support/library.sh sx_arg_fold
+        ;;
+      __sx_arg_fold)
+        Include ./spec/support/library.sh __sx_arg_fold
+        ;;
+      *) return 64;;
+    esac
+  }
+
+  # 補助処理だけを別シェルへ移し、対象関数への再入は同じシェル内で行う。
+  Include ./spec/support/prepare.sh
 
   select_fold_path() {
     case "$1" in
@@ -17,8 +31,9 @@ Describe 'sx_arg_fold'
   }
 
   It '引数個数に安全範囲の上限を適用しない'
+    load_subject sx_arg_fold
     __sx_num_is_nat0_safe() { return 1; }
-    cb() { __sx_var_set "${1}=${2}${3}"; }
+    cb() { sx_test_setup sx_var_set "${1}=${2}${3}"; }
     When call sx_arg_fold res cb init a b c
     The status should be success
     The variable res should equal initabc
@@ -33,20 +48,22 @@ Describe 'sx_arg_fold'
     End
 
     It '検証の有無によらずアキュムレータと値と添字を渡す'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_fold
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_fold_path "$2"
-      cb() { __sx_var_set "${1}=${2}|${4}:${3}"; }
+      cb() { sx_test_setup sx_var_set "${1}=${2}|${4}:${3}"; }
       When call sx_arg_fold res cb init 'a b' '' "c'd"
       The status should be success
       The variable res should equal "init|1:a b|2:|3:c'd"
     End
 
     It 'スキップ時はアキュムレータを保持し添字だけを進める'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_fold
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_fold_path "$2"
       cb() {
         case "$3" in skip) return 0;; esac
-        __sx_var_set "${1}=${2}|${4}:${3}"
+        sx_test_setup sx_var_set "${1}=${2}|${4}:${3}"
       }
       When call sx_arg_fold res cb init a skip c
       The status should be success
@@ -54,10 +71,11 @@ Describe 'sx_arg_fold'
     End
 
     It '空文字列の結果も新しいアキュムレータとして採用する'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_fold
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_fold_path "$2"
       cb() {
-        case "$3" in empty) __sx_var_set "${1}=";; *) __sx_var_set "${1}=${2}${3}";; esac
+        case "$3" in empty) sx_test_setup sx_var_set "${1}=";; *) sx_test_setup sx_var_set "${1}=${2}${3}";; esac
       }
       When call sx_arg_fold res cb init a empty c
       The status should be success
@@ -65,12 +83,13 @@ Describe 'sx_arg_fold'
     End
 
     It '失敗時の出力を破棄し直前のアキュムレータと終了状態を返す'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_fold
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_fold_path "$2"
       calls=
       cb() {
         calls="${calls}${4}:${3};"
-        __sx_var_set "${1}=${2}|${4}:${3}"
+        sx_test_setup sx_var_set "${1}=${2}|${4}:${3}"
         case "$4" in 2) return 77;; esac
         return 0
       }
@@ -81,9 +100,10 @@ Describe 'sx_arg_fold'
     End
 
     It '結果変数へ再入しても外側のアキュムレータと添字を保持する'
-      sx_cfg_set "SKIP_CHK=$1"
+      load_subject sx_arg_fold
+      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
       select_fold_path "$2"
-      inner_cb() { __sx_var_set "${1}=${2}[${4}:${3}]"; }
+      inner_cb() { sx_test_setup sx_var_set "${1}=${2}[${4}:${3}]"; }
       outer_cb() { sx_arg_fold "$1" inner_cb "${2}|${4}" "${3}x" "${3}y"; }
       When call sx_arg_fold res outer_cb init a b
       The status should be success
@@ -92,12 +112,13 @@ Describe 'sx_arg_fold'
   End
 
   It '再入呼び出しが別の数値経路を選んでも外側の経路を保持する'
+    load_subject sx_arg_fold
     # 外側は5引数で多倍長、内側は4引数で算術を選ぶ。
     __sx_num_is_int_fit_dec() {
       case "${#}:${2-}" in 2:5) return 1;; esac
       return 0
     }
-    inner_cb() { __sx_var_set "${1}=${2}[${4}:${3}]"; }
+    inner_cb() { sx_test_setup sx_var_set "${1}=${2}[${4}:${3}]"; }
     outer_cb() { sx_arg_fold "$1" inner_cb "${2}|${4}" "${3}x"; }
     When call sx_arg_fold res outer_cb init a b
     The status should be success
@@ -105,7 +126,8 @@ Describe 'sx_arg_fold'
   End
 
   It 'コールバックでネイティブ算術域を超える値を加算できる'
-    cb() { sx_num_add_int "$1" "$2" "$3"; }
+    load_subject sx_arg_fold
+    cb() { sx_test_setup sx_num_add_int "$1" "$2" "$3"; }
     When call sx_arg_fold res cb 9223372036854775807 2 -1
     The status should be success
     The variable res should equal 9223372036854775808
@@ -120,20 +142,21 @@ Describe 'sx_arg_fold'
     End
 
     It '算術域の前後で全要素を畳み込み最後の添字を渡す'
+      load_subject __sx_arg_fold
       expected_idx="$1"
       args=
-      sx_str_rep args "'x' " "$expected_idx"
+      sx_test_setup sx_str_rep args "'x' " "$expected_idx"
       expected=
-      sx_str_rep expected x "$expected_idx"
+      sx_test_setup sx_str_rep expected x "$expected_idx"
       eval "set -- $args"
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      __sx_cfg_set NUM_RANGE=8
+      sx_test_setup __sx_cfg_set NUM_RANGE=8
       case "$expected_idx" in
         124) __sx_num_add1_nat0() { return 64; };;
         *) __sx_num_add1_arith() { return 64; };;
       esac
       last_idx=0
-      cb() { __sx_var_set "${1}=${2}${3}"; last_idx="$4"; }
+      cb() { sx_test_setup sx_var_set "${1}=${2}${3}"; last_idx="$4"; }
       When call __sx_arg_fold res cb '' "$@"
       The status should be success
       The variable res should equal "$expected"
@@ -149,7 +172,8 @@ Describe 'sx_arg_fold'
     End
 
     It '数値経路を判定せず初期値と終了状態0を返す'
-      sx_cfg_set "SKIP_CHK=$2"
+      load_subject "$1"
+      sx_test_setup sx_cfg_set "SKIP_CHK=$2"
       fit_called=0 called=0 res=old
       __sx_num_is_int_fit_dec() { fit_called=1; return 1; }
       cb() { called=1; }
@@ -165,14 +189,16 @@ Describe 'sx_arg_fold'
 
   Describe '基本畳み込み: 数値の合計'
     It '初期値 0 で合計を計算する'
-      sum() { __sx_var_set "$1=$(($2 + $3))"; }
+      load_subject sx_arg_fold
+      sum() { sx_test_setup sx_var_set "$1=$(($2 + $3))"; }
       When call sx_arg_fold res sum 0 1 2 3 4 5
       The status should be success
       The variable res should equal 15
     End
 
     It '初期値 10 で合計を計算する'
-      sum() { __sx_var_set "$1=$(($2 + $3))"; }
+      load_subject sx_arg_fold
+      sum() { sx_test_setup sx_var_set "$1=$(($2 + $3))"; }
       When call sx_arg_fold res sum 10 1 2 3
       The status should be success
       The variable res should equal 16
@@ -181,14 +207,16 @@ Describe 'sx_arg_fold'
 
   Describe '基本畳み込み: 文字列連結'
     It '文字列を連結する'
-      concat() { __sx_var_set "$1=$2$3"; }
+      load_subject sx_arg_fold
+      concat() { sx_test_setup sx_var_set "$1=$2$3"; }
       When call sx_arg_fold res concat '' a b c
       The status should be success
       The variable res should equal "abc"
     End
 
     It '区切り文字付き連結'
-      join_with_comma() { __sx_var_set "$1=$2,$3"; }
+      load_subject sx_arg_fold
+      join_with_comma() { sx_test_setup sx_var_set "$1=$2,$3"; }
       When call sx_arg_fold res join_with_comma '' a b c
       The status should be success
       The variable res should equal ",a,b,c"
@@ -197,8 +225,9 @@ Describe 'sx_arg_fold'
 
   Describe 'スキップ: ret を unset でアキュムレータ維持'
     It '条件に合わない要素をスキップする'
+      load_subject sx_arg_fold
       sum_even() {
-        case $(($3 % 2)) in 0) __sx_var_set "$1=$(($2 + $3))"; esac
+        case $(($3 % 2)) in 0) sx_test_setup sx_var_set "$1=$(($2 + $3))"; esac
       }
       When call sx_arg_fold res sum_even 0 1 2 3 4
       The status should be success
@@ -206,6 +235,7 @@ Describe 'sx_arg_fold'
     End
 
     It '全要素スキップすると初期値が返る'
+      load_subject sx_arg_fold
       skipall() { :; }
       When call sx_arg_fold res skipall 42 a b c
       The status should be success
@@ -215,18 +245,20 @@ Describe 'sx_arg_fold'
 
   Describe 'コールバックエラーで即時終了'
     It 'cb が非0を返すとその時点の acc とエラーステータスを返す'
-      err_on_b() { case $3 in b) return 2;; esac; __sx_var_set "$1=$(($2 + 1))"; }
+      load_subject sx_arg_fold
+      err_on_b() { case $3 in b) return 2;; esac; sx_test_setup sx_var_set "$1=$(($2 + 1))"; }
       When call sx_arg_fold res err_on_b 0 a b c
       The status should equal 2
       The variable res should equal 1
     End
 
     It 'エラー発生以降の要素は処理されない'
+      load_subject sx_arg_fold
       cnt=0
       err_then_stop() {
         : $((cnt += 1))
         case $3 in b) return 2;; esac
-        __sx_var_set "$1=$(($2 + 1))"
+        sx_test_setup sx_var_set "$1=$(($2 + 1))"
       }
       When call sx_arg_fold res err_then_stop 0 a b c d e
       The status should equal 2
@@ -235,6 +267,7 @@ Describe 'sx_arg_fold'
     End
 
     It '最初の要素でエラーになると初期値が返る'
+      load_subject sx_arg_fold
       always_err() { return 3; }
       When call sx_arg_fold res always_err 99 a b c
       The status should equal 3
@@ -244,7 +277,8 @@ Describe 'sx_arg_fold'
 
   Describe '空リスト'
     It '要素がない場合、初期値がそのまま返る'
-      cb() { __sx_var_set "$1=changed"; }
+      load_subject sx_arg_fold
+      cb() { sx_test_setup sx_var_set "$1=changed"; }
       When call sx_arg_fold res cb init
       The status should be success
       The variable res should equal "init"
@@ -253,7 +287,8 @@ Describe 'sx_arg_fold'
 
   Describe '単一要素'
     It '1要素だけ処理する'
-      sum() { __sx_var_set "$1=$(($2 + $3))"; }
+      load_subject sx_arg_fold
+      sum() { sx_test_setup sx_var_set "$1=$(($2 + $3))"; }
       When call sx_arg_fold res sum 5 7
       The status should be success
       The variable res should equal 12
@@ -262,7 +297,8 @@ Describe 'sx_arg_fold'
 
   Describe 'エラーケース'
     It '結果変数が読み取り専用の場合に EX_NOPERM を返す'
-      cb() { __sx_var_set "$1=$(($2 + $3))"; }
+      load_subject sx_arg_fold
+      cb() { sx_test_setup sx_var_set "$1=$(($2 + $3))"; }
       readonly ro_fold=0
       When call sx_arg_fold ro_fold cb 0 a
       The status should equal 77
@@ -271,7 +307,8 @@ Describe 'sx_arg_fold'
 
   Describe '高速モード (SX_CFG_SKIP_CHK=1)'
     It 'チェックをスキップして fold する'
-      sum() { __sx_var_set "$1=$(($2 + $3))"; }
+      load_subject sx_arg_fold
+      sum() { sx_test_setup sx_var_set "$1=$(($2 + $3))"; }
       SX_CFG_SKIP_CHK=1
       When call sx_arg_fold res sum 0 1 2 3
       The status should be success
@@ -281,7 +318,8 @@ Describe 'sx_arg_fold'
 
   Describe '内部関数 (__sx_arg_fold)'
     It '__sx_arg_fold が正しく動作する'
-      sum() { __sx_var_set "$1=$(($2 + $3))"; }
+      load_subject __sx_arg_fold
+      sum() { sx_test_setup sx_var_set "$1=$(($2 + $3))"; }
       When call __sx_arg_fold res sum 0 1 2 3
       The status should be success
       The variable res should equal 6
@@ -290,7 +328,8 @@ Describe 'sx_arg_fold'
 
   Describe '再帰呼び出し'
     It 'fold 内で fold を呼び出しても状態が壊れない'
-      inner_sum() { __sx_var_set "$1=$(($2 + $3))"; }
+      load_subject sx_arg_fold
+      inner_sum() { sx_test_setup sx_var_set "$1=$(($2 + $3))"; }
       outer_fold() {
         __sx_arg_fold __sx_arg_fold_tmp inner_sum "$2" "$3" 0
         eval "$1=\${__sx_arg_fold_tmp}"
