@@ -8,49 +8,42 @@
 ## 終了ステータス: 0 成功、64 呼出形式不正、その他は準備・ダンプ・復元の失敗状態。
 ## SXTEST_* は補助処理用の予約名で、出力先には指定できない。
 sxtest_setup() {
-  SXTEST_SETUP_NAMES=''
-  while :; do
-    case "$#" in
-      0) unset SXTEST_SETUP_NAMES; return 64;;
-    esac
-    case "$1" in
-      --) shift; break;;
-      '' | [0-9]* | *[!A-Za-z0-9_]* | SXTEST_*)
-        unset SXTEST_SETUP_NAMES
-        return 64
-        ;;
-    esac
-    # 検査済みの名前を引用した引数列にする。CMD による IFS の変更に依存しない。
-    SXTEST_SETUP_NAMES="${SXTEST_SETUP_NAMES} '${1}'"
-    shift
-  done
-  case "${1-}" in
-    '') unset SXTEST_SETUP_NAMES; return 64;;
-  esac
+	SXTEST_SETUP_UNSET='SXTEST_SETUP_UNSET SXTEST_SETUP_NAMES SXTEST_SETUP_SCRIPT'
+	SXTEST_SETUP_NAMES=
 
-  # 単一引用符内の展開は、新しく起動する準備用シェルで行う。
-  # shellcheck disable=SC2016
-  SXTEST_SETUP_SCRIPT=$(sh -efu -o pipefail -c '
-    . ./sx.sh
-    SXTEST_SETUP_NAMES=$1
-    SXTEST_SETUP_COMMAND=$2
-    shift 2
-    eval "$SXTEST_SETUP_COMMAND" >&2
-    eval "set -- ${SXTEST_SETUP_NAMES}"
-    sx_var_dump SXTEST_SETUP_DUMP "$@"
-    printf "%s" "$SXTEST_SETUP_DUMP"
-  ' sh "$SXTEST_SETUP_NAMES" "$@") || {
-    set -- "$?"
-    unset SXTEST_SETUP_NAMES SXTEST_SETUP_SCRIPT
-    return "$1"
-  }
-  unset SXTEST_SETUP_NAMES
+	while
+		case "${1-}" in
+			--) break;;
+			'' | [0-9]* | *[!A-Za-z0-9_]* | SXTEST_*)
+				eval unset "${SXTEST_SETUP_UNSET}"
+				return 64
+				;;
+		esac
 
-  if eval "$SXTEST_SETUP_SCRIPT"; then
-    unset SXTEST_SETUP_SCRIPT
-  else
-    set -- "$?"
-    unset SXTEST_SETUP_SCRIPT
-    return "$1"
-  fi
+		# 検査済みの名前を空白区切りの引数列にする。CMD による IFS の変更に依存しない。
+		SXTEST_SETUP_NAMES="${SXTEST_SETUP_NAMES} ${1}"
+		shift
+	do :; done
+
+	case "${2-}" in '')
+		eval unset "${SXTEST_SETUP_UNSET}"
+		return 64
+	esac
+
+	# CMD とダンプ処理を組み立て、ShellSpec の指定シェルで実行する。
+	SXTEST_SETUP_SCRIPT=$(
+		unset IFS
+		SXTEST_SETUP_COMMAND="
+			{
+				. ./sx.sh
+				${2}
+				sx_var_dump SXTEST_SETUP_DUMP ${SXTEST_SETUP_NAMES}
+			} >&2
+			printf '%s' \"\${SXTEST_SETUP_DUMP}\"
+		"
+		shift 2
+		${SHELLSPEC_SHELL} -efu -o pipefail -c "${SXTEST_SETUP_COMMAND}" "${SHELLSPEC_SHELL_TYPE}" "${@}"
+	) || eval unset "${SXTEST_SETUP_UNSET}" ';' "return ${?}"
+
+	eval unset "${SXTEST_SETUP_UNSET}" ';' "${SXTEST_SETUP_SCRIPT}"
 }
