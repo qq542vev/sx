@@ -1,9 +1,10 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh
 
 Describe 'sx_num_is_mul_arith_safe -efu 環境検証'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_num_is_mul_arith_safe
-  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
+  Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   Context '32ビットの乗算可能性'
     Parameters
@@ -41,7 +42,7 @@ Describe 'sx_num_is_mul_arith_safe -efu 環境検証'
 
   Context '32bit算術シェル専用の算術域境界'
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
+    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
     It '負数を含む最大値付近の乗算可能性を-e下で判定すること'
       When run efu_run sx_num_is_mul_arith_safe -46340 46340
@@ -53,7 +54,7 @@ Describe 'sx_num_is_mul_arith_safe -efu 環境検証'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
+    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
 
     Parameters
       0 -9223372036854775808 1

@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # ShellSpec: 参照渡しで設定する変数・Parameters内の負数・Parameters内の空文字列・間接的に呼び出すコールバック・スタブを使用する。
 # shellcheck disable=SC2154,SC2215,SC2286,SC2329
 
@@ -19,6 +20,7 @@ Describe 'sx_str_sub 多倍長対応'
   }
 
   Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
 
   cb_replace() { sx_test_setup sx_var_set "${1}=X"; }
 
@@ -171,10 +173,10 @@ Describe 'sx_str_sub 多倍長対応'
 
     It '元文字列長までカウンタを増やせること'
       load_subject __sx_str_sub
-      sx_test_setup sx_str_rep str a "$1"
-      sx_test_setup sx_str_rep expected X "$1"
+      sxtest_setup str -- 'sx_str_rep "$@"' str a "$1"
+      sxtest_setup expected -- 'sx_str_rep "$@"' expected X "$1"
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- '__sx_cfg_set "$@"' NUM_RANGE=8
       case "$1" in
         128) __sx_num_add1_arith() { return 64; };;
         *) __sx_num_add1_nat0() { return 64; };;
@@ -197,10 +199,10 @@ Describe 'sx_str_sub 多倍長対応'
 
     It '両端を含む128回を多倍長経路で数えること'
       load_subject __sx_str_sub
-      sx_test_setup sx_str_rep str a 127
-      sx_test_setup sx_str_rep expected aX 127
+      sxtest_setup str -- 'sx_str_rep "$@"' str a 127
+      sxtest_setup expected -- 'sx_str_rep "$@"' expected aX 127
       expected="X${expected}"
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- '__sx_cfg_set "$@"' NUM_RANGE=8
       __sx_num_add1_arith() { return 64; }
       case "$3" in 0 | 1) rep=X;; *) rep=cb_replace;; esac
       When call __sx_str_sub res:cnt "$str" "$2" "$rep" "$1" "$3"

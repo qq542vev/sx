@@ -1,3 +1,4 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh disable=SC2329
 # コールバックと検証用の差し替え関数はShellSpec経由で間接的に呼び出される。
 
@@ -17,7 +18,7 @@ Describe 'sx_arg_find 多倍長対応'
     esac
   }
 
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
 
   select_find_path() {
     case "$1" in
@@ -42,7 +43,7 @@ Describe 'sx_arg_find 多倍長対応'
 
     It '検証の有無によらずリテラル・glob・コールバックで添字と値を収集する'
       load_subject sx_arg_find
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_find_path "$2"
       flags="$3"
       case "$flags" in
@@ -68,7 +69,7 @@ Describe 'sx_arg_find 多倍長対応'
 
     It '現在の添字と処理前の一致数を渡し非0は不一致として扱う'
       load_subject sx_arg_find
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_find_path "$2"
       calls=
       cb() { calls="${calls}${2}:${3};"; is_b "$1"; }
@@ -80,7 +81,7 @@ Describe 'sx_arg_find 多倍長対応'
 
     It 'バインド枯渇後はコールバックを呼ばない'
       load_subject sx_arg_find
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_find_path "$2"
       calls=
       cb() { calls="${calls}${2}:${3};"; }
@@ -93,7 +94,7 @@ Describe 'sx_arg_find 多倍長対応'
 
     It '再入しても外側の添字と一致数とバインドを保持する'
       load_subject sx_arg_find
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_find_path "$2"
       calls=
       inner_cb() { return 0; }
@@ -160,7 +161,7 @@ Describe 'sx_arg_find 多倍長対応'
 
     It '数値経路を判定せず終了状態1を返す'
       load_subject sx_arg_find
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       fit_called=0 called=0 res=old
       __sx_num_is_nat0_safe() { return 0; }
       __sx_num_is_int_fit_dec() { fit_called=1; return 1; }
@@ -192,7 +193,7 @@ Describe 'sx_arg_find 多倍長対応'
 
   It 'フラグには引き続き数値範囲検証を適用する'
     load_subject sx_arg_find
-    sx_test_setup sx_cfg_set NUM_RANGE=32
+    sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
     res=old
     When call sx_arg_find res b 2147483648 ::: a b
     The status should equal 64
@@ -231,7 +232,7 @@ Describe 'sx_arg_find 多倍長対応'
       expected_idx="$1" flags="$2"
       expected_count=$((expected_idx - 1))
       args=
-      sx_test_setup sx_str_rep args "'x' " "$expected_idx"
+      sxtest_setup args -- 'sx_str_rep "$@"' args "'x' " "$expected_idx"
       eval "set -- $args"
       expected='' idx=0
       while [ "$idx" -lt "$expected_idx" ]; do
@@ -239,7 +240,7 @@ Describe 'sx_arg_find 多倍長対応'
         expected="${expected}${expected:+ }${idx}"
       done
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       case "${expected_idx}:${flags}" in
         124:* | 127:0 | 127:1) __sx_num_add1_nat0() { return 64; };;
         *) __sx_num_add1_arith() { return 64; };;

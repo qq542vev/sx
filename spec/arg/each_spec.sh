@@ -1,3 +1,4 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh disable=SC2329
 # コールバックと検証用の差し替え関数はShellSpec経由で間接的に呼び出される。
 
@@ -17,7 +18,7 @@ Describe 'sx_arg_each'
     esac
   }
 
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
 
   It '引数個数に安全範囲の上限を適用しない'
     load_subject sx_arg_each
@@ -59,7 +60,7 @@ Describe 'sx_arg_each'
     It '検証の有無によらず値と1-basedの添字を保持する'
       load_subject sx_arg_each
       force_each_multiprecision
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       result=
       cb() { result="${result}${2}:(${1})"; }
       When call sx_arg_each cb 'a b' '' "c'd"
@@ -70,7 +71,7 @@ Describe 'sx_arg_each'
     It 'コールバック失敗時は後続を処理せず終了ステータスを返す'
       load_subject sx_arg_each
       force_each_multiprecision
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       result=
       cb() {
         result="${result}${2}:${1};"
@@ -85,7 +86,7 @@ Describe 'sx_arg_each'
     It '再入呼び出し後も外側の値と添字を保持する'
       load_subject sx_arg_each
       force_each_multiprecision
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       result=
       inner_cb() { result="${result}${2}:${1};"; }
       outer_cb() {
@@ -129,12 +130,12 @@ Describe 'sx_arg_each'
       load_subject __sx_arg_each
       expected_idx="$1"
       args=
-      sx_test_setup sx_str_rep args "'x' " "$expected_idx"
+      sxtest_setup args -- 'sx_str_rep "$@"' args "'x' " "$expected_idx"
       expected=
-      sx_test_setup sx_str_rep expected x "$expected_idx"
+      sxtest_setup expected -- 'sx_str_rep "$@"' expected x "$expected_idx"
       eval "set -- $args"
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       result='' last_idx=0
       cb() { result="${result}${1}"; last_idx="$2"; }
       When call __sx_arg_each cb "$@"

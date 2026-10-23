@@ -1,3 +1,4 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh disable=SC2329
 # コールバックと検証用の差し替え関数はShellSpec経由で間接的に呼び出される。
 
@@ -19,6 +20,7 @@ Describe 'sx_arg_map'
 
   # 補助処理だけを別シェルへ移し、対象関数への再入は同じシェル内で行う。
   Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
 
   select_map_path() {
     case "$1" in
@@ -40,7 +42,7 @@ Describe 'sx_arg_map'
 
     It '検証の有無によらず値と1-basedの添字を渡す'
       load_subject sx_arg_map
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_map_path "$2"
       cb() { sx_test_setup sx_var_set "${1}=[${3}:${2}]"; }
       When call sx_arg_map res cb 'a b' '' "c'd"
@@ -50,7 +52,7 @@ Describe 'sx_arg_map'
 
     It 'スキップした要素も元の添字に含める'
       load_subject sx_arg_map
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_map_path "$2"
       cb() {
         case "$2" in skip) return 0;; esac
@@ -63,7 +65,7 @@ Describe 'sx_arg_map'
 
     It '最初の失敗以降は元の値を格納しコールバックを呼ばない'
       load_subject sx_arg_map
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_map_path "$2"
       calls=
       cb() {
@@ -80,7 +82,7 @@ Describe 'sx_arg_map'
 
     It 'バインド枯渇時は後続のコールバックを呼ばない'
       load_subject sx_arg_map
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_map_path "$2"
       calls=
       cb() {
@@ -95,7 +97,7 @@ Describe 'sx_arg_map'
 
     It '再入呼び出し後も外側の値と添字を保持する'
       load_subject sx_arg_map
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_map_path "$2"
       inner_cb() { sx_test_setup sx_var_set "${1}=${3}:${2}"; }
       outer_cb() {
@@ -141,13 +143,13 @@ Describe 'sx_arg_map'
       load_subject __sx_arg_map
       expected_idx="$1"
       args=
-      sx_test_setup sx_str_rep args "'x' " "$expected_idx"
+      sxtest_setup args -- 'sx_str_rep "$@"' args "'x' " "$expected_idx"
       expected=
-      sx_test_setup sx_str_rep expected 'x ' "$expected_idx"
+      sxtest_setup expected -- 'sx_str_rep "$@"' expected 'x ' "$expected_idx"
       expected="${expected% }"
       eval "set -- $args"
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       last_idx=0
       cb() { sx_test_setup sx_var_set "${1}=${2}"; last_idx="$3"; }
       When call __sx_arg_map res cb "$@"

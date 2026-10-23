@@ -1,13 +1,14 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # ShellSpecのParameters内の値をシェルコードとして解釈する診断を抑制する。
 # shellcheck disable=SC2016,SC2215,SC2286,SC2288
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_divmod_arith'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_num_divmod_arith
-  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
+  Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   Context '商と余り'
     Parameters
@@ -154,7 +155,7 @@ Describe 'sx_num_divmod_arith'
   End
 
   It '配列を初期化して商と余りを格納できること'
-    sx_test_setup sx_arr_gen items old extra stale
+    sxtest_setup items SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" items old extra stale
     When call sx_num_divmod_arith '@items' 7 2
     The status should be success
     The variable items_len should equal 2
@@ -163,7 +164,7 @@ Describe 'sx_num_divmod_arith'
   End
 
   It '検証失敗時は配列の要素とリビジョンも変更しないこと'
-    sx_test_setup sx_arr_gen items old
+    sxtest_setup items SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" items old
     old_signature="${items-}"
     When call sx_num_divmod_arith '@items' 7 0
     The status should equal 64
@@ -183,7 +184,7 @@ Describe 'sx_num_divmod_arith'
     End
 
     It "引数列 $* で同じ商と余りを返すこと"
-      sx_test_setup sx_num_divmod_int 'expected_q:expected_r:' "$@"
+      sxtest_setup expected_q expected_r -- 'sx_cfg_set "NUM_RANGE=$1"; shift; sx_num_divmod_int "$@"' "$SX_CFG_NUM_RANGE" 'expected_q:expected_r:' "$@"
       type=arith
       When call "sx_num_divmod_${type}" 'q:r:' "$@"
       The status should be success
@@ -219,7 +220,7 @@ Describe 'sx_num_divmod_arith'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
+    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
 
     Context '商と余り'
       Parameters

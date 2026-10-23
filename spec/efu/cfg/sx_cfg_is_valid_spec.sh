@@ -1,5 +1,6 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 Describe 'sx_cfg_is_valid -efu 環境検証'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_cfg_is_valid
 
   It '正常動作'
@@ -25,7 +26,7 @@ Describe 'sx_cfg_is_valid -efu 環境検証'
   End
 
   It '設定値の空白と空文字を保持して全項目を検査すること'
-    sx_test_setup sx_cfg_set 'SIG_ARR=custom array *' 'ARR_HOLE=' 'ARR_REF=@ ref'
+    sxtest_setup SX_CFG_SIG_ARR SX_CFG_ARR_HOLE SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' 'SIG_ARR=custom array *' 'ARR_HOLE=' 'ARR_REF=@ ref'
     When run efu_run sx_cfg_is_valid
     The status should be success
     The stderr should equal ''

@@ -1,3 +1,4 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh disable=SC2329
 # コールバックと経路検証用の差し替え関数は間接的に呼び出される。
 
@@ -18,6 +19,7 @@ Describe 'sx_arg_isep 多倍長対応'
   }
 
   Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
 
   select_isep_path() {
     case "$1" in
@@ -45,7 +47,7 @@ Describe 'sx_arg_isep 多倍長対応'
 
     It '両端と内部の境界に挿入する'
       load_subject sx_arg_isep
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_isep_path "$2"
       When call sx_arg_isep res p "$3" '' 6 ::: a b c d
       The status should be success
@@ -54,7 +56,7 @@ Describe 'sx_arg_isep 多倍長対応'
 
     It '上限を走査方向から数えPRE/POSTにも適用する'
       load_subject sx_arg_isep
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_isep_path "$2"
       case "$3" in
         2) expected="'p' 'a' 'b' 'p' 'c' 'd'";;
@@ -67,7 +69,7 @@ Describe 'sx_arg_isep 多倍長対応'
 
     It '未設定の結果は省略し境界番号・回数・スキップ数を保持する'
       load_subject sx_arg_isep
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_isep_path "$2"
       case "$3" in
         2) expected_calls='0:1:0;2:2:1;4:3:1;' ;;
@@ -86,7 +88,7 @@ Describe 'sx_arg_isep 多倍長対応'
 
     It '成功時の空文字列を挿入する'
       load_subject sx_arg_isep
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_isep_path "$2"
       cb() { sx_test_setup sx_var_set "${1}="; }
       When call sx_arg_isep res cb "$3" '' 7 ::: a b
@@ -96,7 +98,7 @@ Describe 'sx_arg_isep 多倍長対応'
 
     It '失敗した回の結果を破棄し元の値と直前までの挿入を保持する'
       load_subject sx_arg_isep
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_isep_path "$2"
       case "$3" in
         2) expected="'p' 'a' 'b' 'c' 'd'";;
@@ -110,7 +112,7 @@ Describe 'sx_arg_isep 多倍長対応'
 
     It 'スキップ後の失敗でも元の値を欠落させない'
       load_subject sx_arg_isep
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_isep_path "$2"
       cb() { case "$3" in 1) unset "$1";; *) sx_test_setup sx_var_set "${1}=discard"; return 77;; esac; }
       When call sx_arg_isep res cb "$3" '' 7 ::: a b c d
@@ -120,7 +122,7 @@ Describe 'sx_arg_isep 多倍長対応'
 
     It 'バインド枯渇時も方向ごとのコールバック実行順を保持する'
       load_subject sx_arg_isep
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_isep_path "$2"
       case "$3" in 2) expected_calls=1;; -2) expected_calls=3;; esac
       calls=0
@@ -134,7 +136,7 @@ Describe 'sx_arg_isep 多倍長対応'
 
     It '逆方向の再入呼び出し後も外側の状態を保持する'
       load_subject sx_arg_isep
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_isep_path "$2"
       direction="$3" calls=''
       case "$direction" in
@@ -161,7 +163,7 @@ Describe 'sx_arg_isep 多倍長対応'
 
     It '特殊文字を含む元の値とコールバック結果を再評価せず保持する'
       load_subject sx_arg_isep
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_isep_path "$2"
       direction="$3"
       # shellcheck disable=SC2016
@@ -242,7 +244,7 @@ Describe 'sx_arg_isep 多倍長対応'
 
     It '数値経路の判定とコールバックを行わない'
       load_subject sx_arg_isep
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       case "$2" in
         empty_bind) bind='' limit='' expected=old;;
         zero_limit) bind=res limit=0 expected="'a' 'b'";;
@@ -307,7 +309,7 @@ Describe 'sx_arg_isep 多倍長対応'
 
   It 'フラグには引き続き安全範囲検証を適用する'
     load_subject sx_arg_isep
-    sx_test_setup sx_cfg_set NUM_RANGE=32
+    sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- 'sx_cfg_set "$@"' NUM_RANGE=32
     res=old
     When call sx_arg_isep res p 9223372036854775808 '' 2147483648 ::: a b
     The status should equal 64
@@ -338,7 +340,7 @@ Describe 'sx_arg_isep 多倍長対応'
         expected="$expected 'a' 'p'"
       done
       expected_count=$((size + 1))
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- '__sx_cfg_set "$@"' NUM_RANGE=8
       case "$size" in
         126) __sx_num_add1_nat0() { return 64; }; __sx_num_sub1_nat0() { return 64; };;
         *) __sx_num_add1_arith() { return 64; }; __sx_num_sub1_arith() { return 64; };;
@@ -351,7 +353,7 @@ Describe 'sx_arg_isep 多倍長対応'
       case "$mode" in
         lit) sep=p flag=6;;
         cb) sep=cb flag=7;;
-        skip) sep=cb flag=7; sx_test_setup __sx_arg_quote expected "$@";;
+        skip) sep=cb flag=7; sxtest_setup expected -- '__sx_arg_quote "$@"' expected "$@";;
       esac
       When call __sx_arg_isep res "$sep" "$interval" '' "$flag" ::: "$@"
       The status should be success
@@ -394,7 +396,7 @@ Describe 'sx_arg_isep 多倍長対応'
         idx=$((idx + 1))
       done
       # 除算には公開設定の32bitを使い、isep の数値経路だけを切り替える。
-      sx_test_setup sx_cfg_set NUM_RANGE=32
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- 'sx_cfg_set "$@"' NUM_RANGE=32
       select_isep_path nat0
       When call __sx_arg_isep res "$sep" "$interval" '' "$flag" ::: "$@"
       The status should be success

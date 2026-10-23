@@ -1,7 +1,9 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh disable=SC2329
 # コールバックと検証用の差し替え関数は間接的に呼び出される。
 Describe 'sx_arg_pad -efu 環境検証'
   Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arg_pad
 
   It '正常動作'
@@ -17,7 +19,7 @@ Describe 'sx_arg_pad -efu 環境検証'
     End
 
     It '再入の結果を末尾で代入しても部分結果を保持する'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_int_safe_inv() { return 0; }
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
@@ -38,7 +40,7 @@ Describe 'sx_arg_pad -efu 環境検証'
     End
 
     It '左パディングの失敗時にも元の値を結合し終了状態を返す'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_int_safe_inv() { return 0; }
       __sx_num_is_int_fit_dec() { return 1; }
       cb() { return 77; }

@@ -4,18 +4,21 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_splice の自己呼び出し依存検証'
-	Include ./spec/support/prepare.sh
+	Include ./spec/support/setup.sh
 
 	Context '準備側'
 		Skip if '子プロセスでは準備しない' [ "${SXTEST_DEP_FIXTURE+X}" = X ]
 
 		launch_splice_child() {
 			# 準備はExampleの実行時だけ行う。列挙・dry-runでは読み込まない。
-				sx_test_setup sx_arr_gen items a b c
-				sx_test_setup sx_arr_gen special '' "space quote'" 'first
+			setup_command='
+				sx_arr_gen items a b c
+				sx_arr_gen special "$@"
+				sx_var_dump fixture items special
+			'
+			sxtest_setup fixture -- "$setup_command" '' "space quote'" 'first
 last
 '
-				sx_test_setup sx_var_dump fixture items special
 
 			module_path=./build/modules/sx_arr_splice.sh
 
@@ -64,7 +67,7 @@ last
 						;;
 				esac
 
-			# 親のsx_var_dumpが生成した代入・unsetのみを復元する。
+			# 準備用シェルのsx_var_dumpが生成した代入・unsetのみを復元する。
 			eval "${SXTEST_DEP_FIXTURE}"
 		}
 

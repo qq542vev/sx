@@ -1,9 +1,10 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_bind'
-    Include ./spec/support/prepare.sh
+    Include ./spec/support/setup.sh
     Include ./spec/support/library.sh sx_arr_bind
 
     Describe '基本動作'
@@ -170,7 +171,7 @@ Describe 'sx_arr_bind'
         Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
         It 'M/vn 無限累積の残り bind が NUM_RANGE 非依存であること'
             unset br cr
-            sx_test_setup sx_cfg_set NUM_RANGE=64
+            sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=64
             When call sx_arr_bind br cr "0/a" p1 p2
             The status should be success
             The variable br should equal "2/a"
@@ -179,7 +180,7 @@ Describe 'sx_arr_bind'
 
         It '通常のバインドで chain と残り bind を生成すること'
             unset br cr
-            sx_test_setup sx_cfg_set NUM_RANGE=64
+            sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=64
             When call sx_arr_bind br cr "a:b:c" v1 v2
             The status should be success
             The variable br should equal "c"

@@ -1,11 +1,12 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # ShellSpec: 参照渡しで設定される変数を使用する。
 # shellcheck disable=SC2154
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_quote'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arg_quote
 
   Context '引数個数の制限なし'
@@ -117,11 +118,15 @@ Describe 'sx_arg_quote'
     End
 
     It '再利用時に既存の配列変数を呼び出し側がクリーンアップすること'
-      # Correctly initialize an SX array
-      sx_test_setup sx_arr_gen myarr
-      sx_test_setup sx_arr_push myarr "old"
-      # 配列のクリーンアップは呼び出し側の責務
-      sx_test_setup sx_var_unset myarr
+      # 変数は準備用シェルで展開する。
+      # shellcheck disable=SC2016
+      setup_command='
+        SX_SYS_REV=$1
+        sx_arr_gen myarr
+        sx_arr_push myarr old
+        sx_var_unset myarr
+      '
+      sxtest_setup myarr myarr_len myarr_0 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
       When call sx_arg_quote 'myarr' newval
       The status should be success
       The variable myarr should equal "'newval'"

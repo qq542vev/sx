@@ -1,9 +1,10 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_range'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_num_range
 
   It '0からN-1までの範囲を生成すること (Python方式: range(stop))'
@@ -103,7 +104,7 @@ Describe 'sx_num_range'
   End
 
   Context '32bit算術シェル専用の算術域境界'
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
+    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
     Skip if '32bit算術シェル専用のため' arith_not32
 
     It 'INT32_MINを開始値とする範囲の先頭2要素を取得すること'
@@ -141,7 +142,7 @@ Describe 'sx_num_range'
   End
 
   Context '64ビット設定'
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
+    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
 
     It 'INT64_MINを開始値とする範囲の先頭2要素を取得すること'

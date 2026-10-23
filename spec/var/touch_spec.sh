@@ -1,14 +1,15 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # ShellSpec: 参照渡しで設定される変数を使用する。
 # shellcheck disable=SC2154
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_touch'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_var_touch
   It '変数のリビジョンを更新すること'
-    sx_test_setup sx_arr_gen myarr a
+    sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a
     old_val="${myarr}"
     When call sx_var_touch myarr
     The status should be success
@@ -17,8 +18,12 @@ Describe 'sx_var_touch'
   End
 
   It '複数の変数を同時に更新できること'
-    sx_test_setup sx_arr_gen arr1 a
-    sx_test_setup sx_arr_gen arr2 b
+    setup_command='
+      SX_SYS_REV=$1
+      sx_arr_gen arr1 a
+      sx_arr_gen arr2 b
+    '
+    sxtest_setup arr1 arr2 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
     old1="${arr1}"
     old2="${arr2}"
     When call sx_var_touch arr1 arr2

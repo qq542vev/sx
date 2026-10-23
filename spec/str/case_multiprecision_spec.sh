@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 
 eval "$(shellspec - -c) exit 1"
 
@@ -35,6 +36,7 @@ Describe '命名規則・タイトルケース変換の多倍長対応'
   }
 
   Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
 
   Context '公開APIの文字列長制限撤廃'
     Parameters
@@ -51,7 +53,7 @@ Describe '命名規則・タイトルケース変換の多倍長対応'
     It '検査の有無によらず文字列長を安全範囲で拒否しないこと'
       load_subject "$1"
       __sx_num_is_nat0_safe() { return 1; }
-      sx_test_setup sx_cfg_set "SKIP_CHK=$2"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res XMLParser
       The status should be success
       The variable res should equal "$3"
@@ -80,7 +82,7 @@ Describe '命名規則・タイトルケース変換の多倍長対応'
         return 0
       }
       __sx_num_add1_arith() { return 64; }
-      sx_test_setup sx_cfg_set "SKIP_CHK=$2"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res XMLParser
       The status should be success
       The variable res should equal "$3"
@@ -106,13 +108,13 @@ Describe '命名規則・タイトルケース変換の多倍長対応'
     It '前置文字や単語境界を加えた中間文字列も処理できること'
       load_subject "$1"
       str='' expected=''
-      sx_test_setup sx_str_rep str A "$2"
-      sx_test_setup sx_str_rep expected a "$2"
+      sxtest_setup str -- 'sx_str_rep "$@"' str A "$2"
+      sxtest_setup expected -- 'sx_str_rep "$@"' expected a "$2"
       case "$1" in
         __sx_str_title | __sx_str_pascal) expected="A${expected#?}";;
       esac
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- '__sx_cfg_set "$@"' NUM_RANGE=8
       When call "$1" res "$str"
       The status should be success
       The variable res should equal "$expected"
@@ -139,22 +141,22 @@ Describe '命名規則・タイトルケース変換の多倍長対応'
       load_subject "$1"
       str='' expected=''
       case "$1" in
-        __sx_str_words | __sx_str_title) sx_test_setup sx_str_rep str aB_ "$2";;
-        *) sx_test_setup sx_str_rep str A_ "$2";;
+        __sx_str_words | __sx_str_title) sxtest_setup str -- 'sx_str_rep "$@"' str aB_ "$2";;
+        *) sxtest_setup str -- 'sx_str_rep "$@"' str A_ "$2";;
       esac
       case "$1" in
         __sx_str_words)
-          sx_test_setup sx_str_rep expected 'a b ' "$2"
+          sxtest_setup expected -- 'sx_str_rep "$@"' expected 'a b ' "$2"
           expected="${expected% }"
           ;;
-        __sx_str_title) sx_test_setup sx_str_rep expected Ab_ "$2";;
+        __sx_str_title) sxtest_setup expected -- 'sx_str_rep "$@"' expected Ab_ "$2";;
         __sx_str_camel)
-          sx_test_setup sx_str_rep expected A "$2"
+          sxtest_setup expected -- 'sx_str_rep "$@"' expected A "$2"
           expected="a${expected#?}"
           ;;
-        __sx_str_pascal) sx_test_setup sx_str_rep expected A "$2";;
+        __sx_str_pascal) sxtest_setup expected -- 'sx_str_rep "$@"' expected A "$2";;
       esac
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- '__sx_cfg_set "$@"' NUM_RANGE=8
       case "$1" in
         __sx_str_title) set -- "$1" res "$str" _;;
         *) set -- "$1" res "$str";;

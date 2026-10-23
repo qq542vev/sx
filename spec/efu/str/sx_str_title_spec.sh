@@ -1,5 +1,6 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 Describe 'sx_str_title -efu 環境検証'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_str_title
 
   It '正常動作'
@@ -20,7 +21,7 @@ Describe 'sx_str_title -efu 環境検証'
       return 0
     }
     __sx_num_add1_arith() { return 64; }
-    sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+    sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
     When run efu_run sx_str_title res XMLParser
     The status should be success
   End

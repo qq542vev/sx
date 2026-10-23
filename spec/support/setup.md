@@ -1,14 +1,14 @@
 # 明示した変数だけを戻すテスト準備
 
 `setup.sh` の `sxtest_setup` は、別シェルで準備処理を実行し、指定した変数だけを呼び出し元へ戻します。
-既存の `prepare.sh` の `sx_test_setup` とは独立しており、既存 spec の移行は行いません。
+事前準備にはこのヘルパーを使います。`prepare.sh` の `sx_test_setup` は、コールバック・事後検証・後始末と旧ヘルパー自身のテストに残しています。
 
 ```sh
 Include ./spec/support/setup.sh
 Include ./spec/support/library.sh sx_arr_splice
 
 It '中間の要素を置換すること'
-  sxtest_setup items -- 'sx_arr_gen items "$@"' a b c
+  sxtest_setup items SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen items "$@"' "${SX_SYS_REV-0}" a b c
   When call sx_arr_splice items 1 1 x
   The status should be success
   The variable items_1 should equal x
@@ -29,6 +29,8 @@ End
 - 出力先が書き込み可能であることと、既存配列を再利用する前の後始末は、呼び出し側の責任です。復元途中の失敗に対するロールバックは行いません。
 
 複数の準備処理は、同じ CMD 内にまとめられます。
+
+生成した配列への追加や削除が続く場合も、一連のデータ準備を同じ CMD で実行します。検証対象の呼び出し、検証用の関数定義、readonly 属性の設定は検証側に置きます。リビジョンの継続が必要な場合は、カウンタの入力と出力も明示します。
 
 ```sh
 sxtest_setup items result -- '

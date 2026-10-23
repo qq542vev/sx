@@ -1,9 +1,10 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_bind_init'
-    Include ./spec/support/prepare.sh
+    Include ./spec/support/setup.sh
     Include ./spec/support/library.sh sx_var_bind_init
 
     It 'a:b:rest 形式で変数を初期化すること'
@@ -85,7 +86,7 @@ Describe 'sx_var_bind_init'
     End
 
     It '数値プレフィックス付き SX 配列を空文字列で初期化できること'
-        sx_test_setup sx_arr_gen arr x y
+        sxtest_setup arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr x y
         When call sx_var_bind_init "2arr:rest"
         The status should be success
         The variable arr should equal ""

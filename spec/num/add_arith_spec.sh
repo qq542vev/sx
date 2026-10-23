@@ -1,13 +1,14 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # ShellSpecのParameters内の値をコマンドとして解釈する診断を抑制する。
 # shellcheck disable=SC2016,SC2215,SC2286,SC2288
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_add_arith'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_num_add_arith
-  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
+  Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   It '数値省略時は0を格納すること'
     When call sx_num_add_arith result
@@ -37,7 +38,7 @@ Describe 'sx_num_add_arith'
   It 'intとの動的な切り替えで同じ結果を得られること'
     type=arith
     expected=
-    sx_test_setup sx_num_add_int expected 10 -20 30
+    sxtest_setup expected -- 'sx_cfg_set "NUM_RANGE=$1"; shift; sx_num_add_int "$@"' "$SX_CFG_NUM_RANGE" expected 10 -20 30
     When call "sx_num_add_${type}" result 10 -20 30
     The status should be success
     The variable result should equal "${expected}"
@@ -166,7 +167,7 @@ Describe 'sx_num_add_arith'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
+    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
 
     Context '境界値'
       Parameters

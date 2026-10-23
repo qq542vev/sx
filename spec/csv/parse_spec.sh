@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh
 # ShellSpec の構文・動的結果変数・間接コールバックと、シェル構文を含む文字列を検証する。
 # shellcheck disable=SC2016,SC2154,SC2286,SC2288,SC2317,SC2329
@@ -18,6 +19,7 @@ Describe 'sx_csv_parse'
   }
 
   Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   tab=$(printf '\t')
 
   It 'ヘッダを含む各行を SX 配列として保存する'
@@ -468,7 +470,7 @@ Describe 'sx_csv_parse'
 
   It '配列の参照・穴・更新設定にかかわらず文字列と空フィールドを保存する'
     load_subject sx_csv_parse
-    sx_test_setup sx_cfg_set 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
+    sxtest_setup SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
     src=referenced
     before_rev=$SX_SYS_REV
     When call sx_csv_parse res '@src,hole,'
@@ -487,9 +489,13 @@ Describe 'sx_csv_parse'
 
   It '呼び出し側で削除してから短い結果を再代入できる'
     load_subject sx_csv_parse
-    sx_csv_parse res "a,b,c${SX_STR_LF}d,e"
-    sx_test_setup sx_arr_gen res_0_0 nested
-    sx_test_setup sx_var_unset res
+    setup_command='
+      SX_SYS_REV=$1
+      sx_csv_parse res "a,b,c${SX_STR_LF}d,e"
+      sx_arr_gen res_0_0 nested
+      sx_var_unset res
+    '
+    sxtest_setup res res_len res_0 res_0_len res_0_0 res_0_0_len res_0_0_0 res_0_1 res_0_2 res_1 res_1_len res_1_0 res_1_1 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
     When call sx_csv_parse res z
     The status should be success
     The variable res_len should equal 1
@@ -505,8 +511,12 @@ Describe 'sx_csv_parse'
 
   It '呼び出し側で削除してから空入力を再代入できる'
     load_subject sx_csv_parse
-    sx_csv_parse res 'a,b'
-    sx_test_setup sx_var_unset res
+    setup_command='
+      SX_SYS_REV=$1
+      sx_csv_parse res "a,b"
+      sx_var_unset res
+    '
+    sxtest_setup res res_len res_0 res_0_len res_0_0 res_0_1 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
     When call sx_csv_parse res ''
     The status should be success
     The variable res_len should equal 0
@@ -525,8 +535,12 @@ Describe 'sx_csv_parse'
 
     It '完成行と失敗行の確定済みフィールドを残して原因別の終了ステータスを返す'
       load_subject sx_csv_parse
-      sx_csv_parse res 'old,value'
-      sx_test_setup sx_var_unset res
+      setup_command='
+        SX_SYS_REV=$1
+        sx_csv_parse res "old,value"
+        sx_var_unset res
+      '
+      sxtest_setup res res_len res_0 res_0_len res_0_0 res_0_1 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
       When call sx_csv_parse res "a,b${SX_STR_LF}first,$2"
       The status should equal "$1"
       The variable res_len should equal 2
@@ -618,7 +632,7 @@ Describe 'sx_csv_parse'
 
   It 'エラーでも配列設定を保持しコールバックにも元の設定を渡す'
     load_subject sx_csv_parse
-    sx_test_setup sx_cfg_set 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
+    sxtest_setup SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
     src=referenced
     csv_error() {
       csv_error_cfg="${SX_CFG_ARR_REF}:${SX_CFG_ARR_HOLE}:${SX_CFG_ARR_UPDATE}"
@@ -792,7 +806,7 @@ Describe 'sx_csv_parse'
 
     It '各経路で data の省略を空入力として扱う'
       load_subject "$1"
-      sx_test_setup sx_cfg_set "SKIP_CHK=$2"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res
       The status should be success
       The variable res_len should equal 0
@@ -802,7 +816,7 @@ Describe 'sx_csv_parse'
 
     It '公開・内部・検証省略の各経路が同じ配列を作る'
       load_subject "$1"
-      sx_test_setup sx_cfg_set "SKIP_CHK=$2"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res '"a||b"||' '' '||'
       The status should be success
       The variable res_0_len should equal 2
@@ -812,7 +826,7 @@ Describe 'sx_csv_parse'
 
     It '各経路で失敗行の参照・穴・空フィールドを文字列として残しリビジョンを更新する'
       load_subject "$1"
-      sx_test_setup sx_cfg_set "SKIP_CHK=$2" 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
+      sxtest_setup SX_CFG_SKIP_CHK SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "SKIP_CHK=$2" 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
       src=referenced
       before_rev=$SX_SYS_REV
       When call "$1" res '@src||hole||||"bad' '' '||'
@@ -833,7 +847,7 @@ Describe 'sx_csv_parse'
 
     It '各経路で開始引用符をフィールドごとに選び直す'
       load_subject "$1"
-      sx_test_setup sx_cfg_set "SKIP_CHK=$2"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res "'a||b'||\"c'd\"||" '' '||' "\"'"
       The status should be success
       The variable res_0_len should equal 3
@@ -844,7 +858,7 @@ Describe 'sx_csv_parse'
 
     It '各経路で空の sep を列区切りなしとして扱う'
       load_subject "$1"
-      sx_test_setup sx_cfg_set "SKIP_CHK=$2"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res "\"a,b\"${SX_STR_LF}c,d" '' ''
       The status should be success
       The variable res_len should equal 2
@@ -856,7 +870,7 @@ Describe 'sx_csv_parse'
 
     It '各経路で sep と quote の両方を空指定できる'
       load_subject "$1"
-      sx_test_setup sx_cfg_set "SKIP_CHK=$2"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res "a,'b\"" '' '' ''
       The status should be success
       The variable res_len should equal 1

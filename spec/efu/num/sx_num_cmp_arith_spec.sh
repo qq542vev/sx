@@ -1,6 +1,13 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
+# shellcheck disable=SC2154 # 結果変数は準備用シェルのダンプから復元する。
 Describe 'sx_num_cmp_arith -efu 環境検証'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_num_cmp_arith
+
+  setup_num_range() {
+    sxtest_setup SX_CFG_NUM_RANGE setup_num_min setup_num_max -- \
+      'sx_cfg_set "NUM_RANGE=$1"; setup_num_min=$SX_SYS_NUM_MIN; setup_num_max=$SX_SYS_NUM_MAX' "$1"
+  }
 
   It '正常動作'
     When run efu_run sx_num_cmp_arith 5 5
@@ -9,40 +16,40 @@ Describe 'sx_num_cmp_arith -efu 環境検証'
 
   Context '32bit算術シェル専用の最小値'
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
+    Before 'setup_num_range 32'
 
     It 'MIN を左辺として比較できること'
-      When run efu_run sx_num_cmp_arith "${SXTEST_NUM_MIN}" 0
+      When run efu_run sx_num_cmp_arith "${setup_num_min}" 0
       The status should equal 1
     End
 
     It 'MIN を右辺として比較できること'
-      When run efu_run sx_num_cmp_arith 0 "${SXTEST_NUM_MIN}"
+      When run efu_run sx_num_cmp_arith 0 "${setup_num_min}"
       The status should equal 3
     End
 
     It 'MIN 同士を比較できること'
-      When run efu_run sx_num_cmp_arith "${SXTEST_NUM_MIN}" "${SXTEST_NUM_MIN}"
+      When run efu_run sx_num_cmp_arith "${setup_num_min}" "${setup_num_min}"
       The status should equal 2
     End
   End
 
   Context '64ビット設定の最小値'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
+    Before 'setup_num_range 64'
 
     It 'MIN を左辺として比較できること'
-      When run efu_run sx_num_cmp_arith "${SXTEST_NUM_MIN}" 0
+      When run efu_run sx_num_cmp_arith "${setup_num_min}" 0
       The status should equal 1
     End
 
     It 'MIN を右辺として比較できること'
-      When run efu_run sx_num_cmp_arith 0 "${SXTEST_NUM_MIN}"
+      When run efu_run sx_num_cmp_arith 0 "${setup_num_min}"
       The status should equal 3
     End
 
     It 'MIN 同士を比較できること'
-      When run efu_run sx_num_cmp_arith "${SXTEST_NUM_MIN}" "${SXTEST_NUM_MIN}"
+      When run efu_run sx_num_cmp_arith "${setup_num_min}" "${setup_num_min}"
       The status should equal 2
     End
   End

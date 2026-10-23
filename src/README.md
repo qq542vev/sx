@@ -65,11 +65,11 @@ SX_TEST_MODE=full shellspec spec/arr/push_spec.sh
 
 ```sh
 Describe 'sx_arr_push'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arr_push
 
   It '末尾に要素を追加すること'
-    sx_test_setup sx_arr_gen items a b
+    sxtest_setup items SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen items "$@"' "${SX_SYS_REV-0}" a b
     When call sx_arr_push items c
     The status should be success
     The variable items_2 should equal c
@@ -83,7 +83,7 @@ End
 `Include ./build/modules/sx_uri_enc.sh` の直接指定も収集対象です。
 複数のグループやファイルで同じ名前を指定しても、生成は重複しません。
 提供名の収集は Python、依存解決は既存の m4 生成器が担当します。
-準備方法と複数機能のテストの書き方は [prepare.md](../spec/support/prepare.md) を参照してください。
+事前準備は [setup.md](../spec/support/setup.md)、コールバックや事後検証で使う旧ヘルパーは [prepare.md](../spec/support/prepare.md) を参照してください。
 
 全体版との比較には `SX_TEST_MODE=full` を指定し、ShellSpec を起動し直します。
 この場合は先に `make all` で全体版を生成してください。

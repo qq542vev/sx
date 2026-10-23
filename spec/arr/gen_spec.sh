@@ -1,9 +1,11 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_gen'
   Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arr_gen
 
   It '新しい配列を値で初期化すること'
@@ -24,7 +26,7 @@ Describe 'sx_arr_gen'
 
   It '参照値とリテラルを指定順に初期化すること'
     src="reference"
-    sx_test_setup sx_cfg_set "ARR_REF=@"
+    sxtest_setup SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF=@"
     When call sx_arr_gen myarr_ref "@src" literal
     The status should be success
     The variable myarr_ref_len should equal 2
@@ -61,7 +63,7 @@ Describe 'sx_arr_gen'
   End
 
   It '連続してgenを呼び出しても毎回正しく初期化されること'
-    sx_test_setup sx_var_set myarr_seq
+    sxtest_setup myarr_seq -- 'sx_var_set myarr_seq'
     sx_arr_gen myarr_seq first
     When call sx_arr_gen myarr_seq second
     The variable myarr_seq_len should equal 1

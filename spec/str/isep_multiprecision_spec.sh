@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # ShellSpec: Parameters内の負数・間接的に呼び出すコールバック・スタブを使用する。
 # shellcheck disable=SC2215,SC2329
 
@@ -19,6 +20,7 @@ Describe 'sx_str_isep 多倍長対応'
   }
 
   Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
 
   It '巨大な間隔 999999999999999999999999999999 では内部境界のパターンを生成しないこと'
     load_subject sx_str_isep
@@ -302,11 +304,11 @@ Describe 'sx_str_isep 多倍長対応'
     It '両端を含めて文字列長+1回挿入できること'
       load_subject __sx_str_isep
       str=
-      sx_test_setup sx_str_rep str a "$1"
-      sx_test_setup sx_str_rep expected a- "$1"
+      sxtest_setup str -- 'sx_str_rep "$@"' str a "$1"
+      sxtest_setup expected -- 'sx_str_rep "$@"' expected a- "$1"
       expected="-${expected}"
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- '__sx_cfg_set "$@"' NUM_RANGE=8
       cb() { sx_test_setup sx_var_set "${1}=-"; }
       case "$3" in 6) sep=-;; 7) sep=cb;; esac
       When call __sx_str_isep res:cnt "$str" "$sep" 1 '' "$3"

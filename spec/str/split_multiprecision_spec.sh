@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # Parameters 内の空文字列・負数・末尾空白はコマンドではなくテストデータ。
 # shellcheck disable=SC2215,SC2286,SC2288
 
@@ -18,7 +19,7 @@ Describe 'sx_str_split 多倍長対応'
     esac
   }
 
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
 
   Context '算術域を超える回数'
     Parameters
@@ -86,7 +87,7 @@ Describe 'sx_str_split 多倍長対応'
 
     It '検査の有無・方向・区切り・INCによらず任意桁の回数を受け付けること'
       load_subject sx_str_split
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       When call sx_str_split res "$2" "$3" "$4" "$5"
       The status should be success
       The variable res should equal "$6"
@@ -304,20 +305,20 @@ Describe 'sx_str_split 多倍長対応'
 
     It '文字数と等しい上限では文末を切らず、最大値までは通常の算術を使うこと'
       load_subject __sx_str_split
-      sx_test_setup sx_str_rep str A "$1"
+      sxtest_setup str -- 'sx_str_rep "$@"' str A "$1"
       case "$2" in
         0)
-          sx_test_setup sx_str_rep expected "'A' " "$1"
+          sxtest_setup expected -- 'sx_str_rep "$@"' expected "'A' " "$1"
           expected="'' ${expected% }"
           ;;
         *)
           count="$1"
           count=$((count - 1))
-          sx_test_setup sx_str_rep expected "'A' '' " "$count"
+          sxtest_setup expected -- 'sx_str_rep "$@"' expected "'A' '' " "$count"
           expected="'' '' $expected'A'"
           ;;
       esac
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       native_calls=0 multiprecision_calls=0
       # shellcheck disable=SC2329
       __sx_num_sub1_arith() {
@@ -350,18 +351,18 @@ Describe 'sx_str_split 多倍長対応'
     It '文字数+1が算術域を越えても全境界を分割すること'
       load_subject __sx_str_split
       str='' expected=''
-      sx_test_setup sx_str_rep str A "$1"
+      sxtest_setup str -- 'sx_str_rep "$@"' str A "$1"
       case "$2" in
         0)
-          sx_test_setup sx_str_rep expected "'A' " "$1"
+          sxtest_setup expected -- 'sx_str_rep "$@"' expected "'A' " "$1"
           expected="'' $expected''"
           ;;
         *)
-          sx_test_setup sx_str_rep expected "'A' '' " "$1"
+          sxtest_setup expected -- 'sx_str_rep "$@"' expected "'A' '' " "$1"
           expected="'' '' $expected''"
           ;;
       esac
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       native_calls=0
       case "$1" in 127 | 128)
         # shellcheck disable=SC2329
@@ -387,10 +388,10 @@ Describe 'sx_str_split 多倍長対応'
     It '分割回数が最大値を越えても全要素を保持すること'
       load_subject __sx_str_split
       str='' expected=''
-      sx_test_setup sx_str_rep str 'A:' "$1"
-      sx_test_setup sx_str_rep expected "'A' " "$1"
+      sxtest_setup str -- 'sx_str_rep "$@"' str 'A:' "$1"
+      sxtest_setup expected -- 'sx_str_rep "$@"' expected "'A' " "$1"
       expected="$expected''"
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       native_calls=0
       __sx_num_sub1_arith() { native_calls=$((native_calls + 1)); return 64; }
       case "$2" in

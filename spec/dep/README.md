@@ -11,8 +11,9 @@ shellspec spec/dep/arr/splice_spec.sh
 代わりに `make modules SX_SYMBOLS=sx_arr_splice` でも準備できる。
 
 環境変数 `SXTEST_DEP_FIXTURE` が未設定なら、親用の2つのExampleを実行する。
-親はExample実行時に `sx_test_setup` を使い、別シェルの全体版で配列を生成して
-`sx_var_dump` でシェルコードにする。新しいShellSpecへその値を渡し、同じspecだけを実行する。
+親はExample実行時に `sxtest_setup` を使い、配列生成と `sx_var_dump` を
+準備用シェルの同じCMDで実行する。fixtureのシェルコードだけを親へ戻し、
+新しいShellSpecへその値を渡して同じspecだけを実行する。
 子は対象モジュールだけを読み込み、各Exampleの前に入力を復元する。
 `spec_helper` の -efu と漏洩検査を共有する。
 

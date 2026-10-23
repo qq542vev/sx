@@ -1,8 +1,10 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh disable=SC2329
 # コールバックと検証用の差し替え関数はShellSpec経由で間接的に呼び出される。
 
 Describe 'sx_arg_fold -efu 環境検証'
   Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arg_fold
 
   # 再入する対象関数は同じシェル内で呼び、補助代入だけを分離する。
@@ -15,7 +17,7 @@ Describe 'sx_arg_fold -efu 環境検証'
     End
 
     It '検証の有無によらず-efu下で全要素を畳み込む'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
       When run efu_run sx_arg_fold res cb_sum 0 1 2 3
@@ -23,7 +25,7 @@ Describe 'sx_arg_fold -efu 環境検証'
     End
 
     It '-efu下でコールバックの失敗ステータスを返す'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
       cb() {
@@ -35,7 +37,7 @@ Describe 'sx_arg_fold -efu 環境検証'
     End
 
     It '-efu下で結果変数への再入呼び出しを扱う'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
       inner_cb() { sx_test_setup sx_var_set "${1}=${2}${3}"; }
@@ -46,7 +48,7 @@ Describe 'sx_arg_fold -efu 環境検証'
   End
 
   It '空リストでは直前の失敗状態を引き継がない'
-    sx_test_setup sx_cfg_set SKIP_CHK=1
+    sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
     fail() { return 77; }
     after_failure() { fail || sx_arg_fold res efu_cb_true init; }
     When run efu_run after_failure

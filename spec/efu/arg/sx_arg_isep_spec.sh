@@ -1,7 +1,9 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh disable=SC2329
 # コールバックと経路検証用の差し替え関数は間接的に呼び出される。
 Describe 'sx_arg_isep -efu 環境検証'
   Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arg_isep
 
   It '正常動作'
@@ -17,7 +19,7 @@ Describe 'sx_arg_isep -efu 環境検証'
     End
 
     It '未設定の結果があっても元の値と次の挿入位置を保持する'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       direction="$2" res=''
       __sx_num_is_nat0_safe() { return 0; }
       __sx_num_is_int_fit_dec() { case "$#" in 2) return 0;; *) return 1;; esac; }
@@ -33,7 +35,7 @@ Describe 'sx_arg_isep -efu 環境検証'
     End
 
     It 'コールバックの失敗時にも元の値を保持して変数を解放する'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       direction="$2" res=''
       cb() { sx_test_setup sx_var_set "${1}=discard"; return 77; }
       verify() {
@@ -46,7 +48,7 @@ Describe 'sx_arg_isep -efu 環境検証'
     End
 
     It '再入呼び出しが算術経路を選んでも外側の状態を保持する'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       direction="$2" res=''
       inner_cb() { sx_test_setup sx_var_set "${1}=inner"; }
       cb() {

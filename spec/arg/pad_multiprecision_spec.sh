@@ -1,3 +1,4 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh disable=SC2329
 # コールバックと検証用の差し替え関数は間接的に呼び出される。
 
@@ -18,6 +19,7 @@ Describe 'sx_arg_pad 多倍長対応'
   }
 
   Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
 
   select_pad_path() {
     case "$1" in
@@ -44,7 +46,7 @@ Describe 'sx_arg_pad 多倍長対応'
 
     It '検証の有無によらず指定した側をリテラルで埋める'
       load_subject sx_arg_pad
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_pad_path "$2"
       case "$3" in
         left) len=-4 expected="'p p' 'p p' 'a' 'b'";;
@@ -57,7 +59,7 @@ Describe 'sx_arg_pad 多倍長対応'
 
     It 'スキップ時は出力位置を保持しスロット番号とスキップ数を進める'
       load_subject sx_arg_pad
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_pad_path "$2"
       case "$3" in
         left)
@@ -82,7 +84,7 @@ Describe 'sx_arg_pad 多倍長対応'
 
     It 'コールバック失敗時の値を捨て終了状態と元の値を保持する'
       load_subject sx_arg_pad
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_pad_path "$2"
       case "$3" in
         left) len=-5 expected="'p' 'a' 'b'";;
@@ -102,7 +104,7 @@ Describe 'sx_arg_pad 多倍長対応'
 
     It '設定された空文字列はスキップせず値として結合する'
       load_subject sx_arg_pad
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_pad_path "$2"
       case "$3" in
         left) len=-3 expected="'' '' 'a'";;
@@ -116,7 +118,7 @@ Describe 'sx_arg_pad 多倍長対応'
 
     It 'バインド枯渇後はコールバックも元の値の処理も進めない'
       load_subject sx_arg_pad
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_pad_path "$2"
       case "$3" in
         left) len=-5 expected_calls=2 expected_a=p expected_b=p;;
@@ -133,7 +135,7 @@ Describe 'sx_arg_pad 多倍長対応'
 
     It '再入の結果を末尾で代入しても内外の結果を保持する'
       load_subject sx_arg_pad
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_pad_path "$2"
       side="$3" res=''
       case "$side" in left) len=-4;; *) len=4;; esac
@@ -274,7 +276,7 @@ Describe 'sx_arg_pad 多倍長対応'
 
   It 'フラグには引き続き数値範囲検証を適用する'
     load_subject sx_arg_pad
-    sx_test_setup sx_cfg_set NUM_RANGE=32
+    sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
     res=old
     When call sx_arg_pad res 9223372036854775808 p 2147483648 ::: a
     The status should equal 64
@@ -313,7 +315,7 @@ Describe 'sx_arg_pad 多倍長対応'
         idx=$((idx + 1))
         expected="${expected}${expected:+ }'p'"
       done
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       case "$count" in
         127) __sx_num_add1_nat0() { return 64; }; __sx_num_sub1_nat0() { return 64; };;
         *) __sx_num_add1_arith() { return 64; }; __sx_num_sub1_arith() { return 64; };;
@@ -354,7 +356,7 @@ Describe 'sx_arg_pad 多倍長対応'
         128:left) len=-127 expected_calls=0 expected_idx=0;;
         128:right) len=127 expected_calls=0 expected_idx=0;;
       esac
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       __sx_num_add1_arith() { return 64; }
       __sx_num_sub1_arith() { return 64; }
       calls=0 last_idx=0
@@ -377,7 +379,7 @@ Describe 'sx_arg_pad 多倍長対応'
     It 'スキップ数128とスロット番号129を正しく渡す'
       load_subject __sx_arg_pad
       len="$1"
-      sx_test_setup __sx_cfg_set NUM_RANGE=8
+      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       __sx_num_add1_arith() { return 64; }
       __sx_num_sub1_arith() { return 64; }
       cb() { case "$3" in 129) sx_test_setup sx_var_set "${1}=${2}:${3}:${4}";; *) unset "$1";; esac; }

@@ -1,7 +1,8 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # ShellSpec: 展開せずに渡すテスト入力を使用する。
 # shellcheck disable=SC2016
 Describe 'sx_str_chunk -efu 環境検証'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_str_chunk
 
   It '正常動作'
@@ -24,7 +25,7 @@ Describe 'sx_str_chunk -efu 環境検証'
   End
 
   Context '多倍長整数'
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
+    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
 
     Parameters
       '9223372036854775808'

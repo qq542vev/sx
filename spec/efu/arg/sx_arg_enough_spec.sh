@@ -1,7 +1,8 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh disable=SC2329
 # コールバックと検証用の差し替え関数は間接的に呼び出される。
 Describe 'sx_arg_enough -efu 環境検証'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arg_enough
 
   It '正常動作'
@@ -17,7 +18,7 @@ Describe 'sx_arg_enough -efu 環境検証'
     End
 
     It '再入後も必要数で短絡成功する'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
       __sx_num_sub1_arith() { return 64; }
@@ -38,7 +39,7 @@ Describe 'sx_arg_enough -efu 環境検証'
     End
 
     It '残件数が不足した場合は終了状態1を返す'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       cb() { return 77; }
       When run efu_run sx_arg_enough cb 2 ::: a b c
@@ -46,7 +47,7 @@ Describe 'sx_arg_enough -efu 環境検証'
     End
 
     It '必要数0では成功してコールバックを呼ばない'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       cb() { return 77; }
       When run efu_run sx_arg_enough cb 0 ::: a b
       The status should be success

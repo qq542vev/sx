@@ -1,9 +1,10 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh
 # ShellSpecのParameters内の負数・範囲指定の診断を抑制する。
 # shellcheck disable=SC2215,SC2288
 
 Describe 'sx_num_sub_nat0 -efu 環境検証'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_num_sub_nat0
 
   sub_check_value() {
@@ -17,7 +18,7 @@ Describe 'sx_num_sub_nat0 -efu 環境検証'
 
   Context '32bit算術シェル専用の算術域境界'
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
+    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
 
     Parameters
       4 2147483648 2147483644

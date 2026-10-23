@@ -1,8 +1,10 @@
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # shellcheck shell=sh disable=SC2329
 # コールバックと検証用の差し替え関数はShellSpec経由で間接的に呼び出される。
 
 Describe 'sx_arg_map -efu 環境検証'
   Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arg_map
 
   # コールバック本体は検証側に残し、補助代入だけを別シェルで行う。
@@ -15,7 +17,7 @@ Describe 'sx_arg_map -efu 環境検証'
     End
 
     It '検証の有無によらず-efu下で全要素を変換する'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
       When run efu_run sx_arg_map res cb_set3 'a b' '' "c'd"
@@ -23,7 +25,7 @@ Describe 'sx_arg_map -efu 環境検証'
     End
 
     It '-efu下でスキップとバインド枯渇を扱う'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
       cb() { case "$2" in skip) return 0;; esac; sx_test_setup sx_var_set "${1}=${3}"; }
@@ -32,7 +34,7 @@ Describe 'sx_arg_map -efu 環境検証'
     End
 
     It '-efu下で最初の失敗ステータスを返す'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
       cb() { case "$3" in 2) return 77;; esac; sx_test_setup sx_var_set "${1}=${3}"; }

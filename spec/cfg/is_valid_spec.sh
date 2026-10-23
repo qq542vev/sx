@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # ShellSpec: Parameters内のパターン文字列を使用する。
 # shellcheck disable=SC2288
 
@@ -6,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_cfg_is_valid()'
-	Include ./spec/support/prepare.sh
+	Include ./spec/support/setup.sh
 	Include ./spec/support/library.sh sx_cfg_is_valid
 
 	Context '生成されたパターンによる設定値の検査'
@@ -127,7 +128,7 @@ Describe 'sx_cfg_is_valid()'
 	End
 
 	It '引数なしの検査で設定値の空白と特殊文字を保持すること'
-		sx_test_setup sx_cfg_set 'SIG_ARR=custom array *' 'SEP=: : *' 'ARR_HOLE=hole *' 'ARR_REF=@ ref'
+		sxtest_setup SX_CFG_SIG_ARR SX_CFG_SEP SX_CFG_ARR_HOLE SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' 'SIG_ARR=custom array *' 'SEP=: : *' 'ARR_HOLE=hole *' 'ARR_REF=@ ref'
 		When call sx_cfg_is_valid
 		The status should be success
 	End

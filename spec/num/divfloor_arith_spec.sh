@@ -1,13 +1,14 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # ShellSpecのParameters内の値をシェルコードとして解釈する診断を抑制する。
 # shellcheck disable=SC2016,SC2215,SC2286
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_divfloor_arith'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_num_divfloor_arith
-  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
+  Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   Context '切り捨て商'
     Parameters
@@ -145,7 +146,7 @@ Describe 'sx_num_divfloor_arith'
 
     It "引数列 $* の商がintと一致すること"
       expected=
-      sx_test_setup sx_num_divfloor_int expected "$@"
+      sxtest_setup expected -- 'sx_cfg_set "NUM_RANGE=$1"; shift; sx_num_divfloor_int "$@"' "$SX_CFG_NUM_RANGE" expected "$@"
       type=arith
       When call "sx_num_divfloor_$type" result "$@"
       The status should be success
@@ -179,7 +180,7 @@ Describe 'sx_num_divfloor_arith'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
+    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
 
     Context '境界値の商'
       Parameters

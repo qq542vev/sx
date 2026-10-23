@@ -1,9 +1,10 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split bind'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_str_split
 
   It '前方分割でバインドができること'
@@ -69,7 +70,7 @@ Describe 'sx_str_split bind'
     End
 
     It '枯渇検出のバインド呼び出しを最大一回で打ち切り成功終了すること'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       bind_calls=0
       # shellcheck disable=SC2329
       __sx_var_bind() {
@@ -131,7 +132,7 @@ Describe 'sx_str_split bind'
     End
 
     It '検査の有無・方向・区切り・INCによらず出力せず正常終了すること'
-      sx_test_setup sx_cfg_set "SKIP_CHK=$1"
+      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       res=old
       # 準備関数の呼び出し有無は制約せず、実際の関数で空bindの動作を検証する。
       When call sx_str_split '' "$2" "$3" "$4" "$5"

@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # ShellSpec: 参照渡しで設定される変数を使用する。
 # shellcheck disable=SC2154
 
@@ -20,9 +21,10 @@ Describe 'sx_cfg_set()'
 	}
 
 	Include ./spec/support/prepare.sh
+	Include ./spec/support/setup.sh
 
 	cfg_set_custom() {
-		sx_test_setup sx_cfg_set SIG_ARR=custom-array NUM_RANGE=64 \
+		sxtest_setup SX_CFG_SIG_ARR SX_CFG_NUM_RANGE SX_CFG_SEP SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_CFG_SKIP_CHK SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- 'sx_cfg_set "$@"' SIG_ARR=custom-array NUM_RANGE=64 \
 			SEP=@@ ARR_UPDATE=0 ARR_HOLE=hole ARR_REF=@ "SKIP_CHK=${1-0}"
 	}
 
@@ -123,7 +125,7 @@ Describe 'sx_cfg_set()'
 		load_subject sx_cfg_set
 		cfg_set_custom
 		SX_SYS_REV=${SX_SYS_REV-0}
-		sx_test_setup sx_arr_gen cfg_existing first ''
+		sxtest_setup cfg_existing SX_SYS_REV -- 'SX_CFG_SIG_ARR=$1; SX_SYS_REV=$2; shift 2; sx_arr_gen "$@"' "$SX_CFG_SIG_ARR" "${SX_SYS_REV-0}" cfg_existing first ''
 		cfg_existing_sig=${cfg_existing}
 		cfg_existing_rev=${SX_SYS_REV}
 		When call sx_cfg_set

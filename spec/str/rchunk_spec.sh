@@ -1,11 +1,12 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # ShellSpec の Parameters と引用文字列に関する診断を抑制する。
 # shellcheck disable=SC2016,SC2215,SC2286,SC2288,SC2329
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rchunk'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_str_rchunk
 
   Context '基準方向と結果順'
@@ -192,7 +193,7 @@ Describe 'sx_str_rchunk'
 
   Context 'IFS=a での動的な数値関数呼び出し'
     with_ifs_a() { IFS=a "${@}"; }
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
+    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
 
     Parameters
       '2' "'fg' 'bcde' 'a'"

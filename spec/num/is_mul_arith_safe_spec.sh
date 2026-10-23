@@ -1,13 +1,14 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 # ShellSpecのParameters内の文字列をシェルコードとして解釈する診断を抑制する。
 # shellcheck disable=SC2016,SC2286
 
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_mul_arith_safe'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_num_is_mul_arith_safe
-  Before 'sx_test_setup sx_cfg_set NUM_RANGE=32'
+  Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   Context '32ビットの乗算可能性'
     Parameters
@@ -59,7 +60,7 @@ Describe 'sx_num_is_mul_arith_safe'
   End
 
   Context 'チェック省略'
-    Before 'sx_test_setup sx_cfg_set SKIP_CHK=1'
+    Before 'sxtest_setup SX_CFG_SKIP_CHK -- "sx_cfg_set SKIP_CHK=1"'
 
     It '安全な乗算を0で判定すること'
       When call sx_num_is_mul_arith_safe 0 2147483647 2
@@ -74,7 +75,7 @@ Describe 'sx_num_is_mul_arith_safe'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sx_test_setup sx_cfg_set NUM_RANGE=64'
+    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
 
     Parameters
       0 -9223372036854775808 1
