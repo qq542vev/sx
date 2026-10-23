@@ -6,7 +6,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_quote'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_arg_quote
 
   Context '引数個数の制限なし'
@@ -126,7 +126,7 @@ Describe 'sx_arg_quote'
         sx_arr_push myarr old
         sx_var_unset myarr
       '
-      sxtest_setup myarr myarr_len myarr_0 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+      sxtest_run myarr myarr_len myarr_0 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
       When call sx_arg_quote 'myarr' newval
       The status should be success
       The variable myarr should equal "'newval'"

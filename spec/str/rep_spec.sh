@@ -4,7 +4,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rep'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_str_rep
   It '指定された回数だけ文字列を繰り返すこと'
     When call sx_str_rep res "a" 3
@@ -95,7 +95,7 @@ Describe 'sx_str_rep'
   End
 
   Context '数値範囲を超える10進表記の回数'
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
 
     Parameters
       '2147483648'

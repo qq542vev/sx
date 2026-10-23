@@ -19,9 +19,9 @@ Describe 'sx_num_is_add_arith_safe'
     esac
   }
 
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
 
-  Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
+  Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   Context '32ビットの加算可能性'
     Parameters
@@ -120,7 +120,7 @@ Describe 'sx_num_is_add_arith_safe'
   End
 
   Context 'チェック省略'
-    Before 'sxtest_setup SX_CFG_SKIP_CHK -- "sx_cfg_set SKIP_CHK=1"'
+    Before 'sxtest_run SX_CFG_SKIP_CHK -- "sx_cfg_set SKIP_CHK=1"'
 
     It '安全な加算を0で判定すること'
       load_subject sx_num_is_add_arith_safe
@@ -157,7 +157,7 @@ Describe 'sx_num_is_add_arith_safe'
 
   Context '32bit算術シェル専用の算術域境界'
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
     It '最大値に最小値と-1を加算できること'
       load_subject sx_num_is_add_arith_safe
@@ -170,7 +170,7 @@ Describe 'sx_num_is_add_arith_safe'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
 
     Parameters
       0 9223372036854775807 0

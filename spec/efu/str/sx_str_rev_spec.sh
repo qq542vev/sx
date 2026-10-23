@@ -1,6 +1,6 @@
 # shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 Describe 'sx_str_rev -efu 環境検証'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_str_rev
 
   It '正常動作'
@@ -33,7 +33,7 @@ Describe 'sx_str_rev -efu 環境検証'
   End
 
   Context '数値範囲を超える10進表記のチャンクサイズ'
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
 
     Parameters
       '9223372036854775809'

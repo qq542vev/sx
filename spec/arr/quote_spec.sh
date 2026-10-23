@@ -6,7 +6,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_quote'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_arr_quote
 
   setup() {
@@ -16,11 +16,11 @@ Describe 'sx_arr_quote'
       sx_arr_gen arr2 "$4" "$5"
       sx_arr_gen arr_empty
     '
-    sxtest_setup arr1 arr2 arr_empty SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}" "hello world" "it's me" "back\\slash" '"double quotes"'
+    sxtest_run arr1 arr2 arr_empty SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}" "hello world" "it's me" "back\\slash" '"double quotes"'
   }
 
   cleanup() {
-    sxtest_setup arr1 arr1_len arr1_0 arr1_1 arr2 arr2_len arr2_0 arr2_1 arr_empty arr_empty_len result -- \
+    sxtest_run arr1 arr1_len arr1_0 arr1_1 arr2 arr2_len arr2_0 arr2_1 arr_empty arr_empty_len result -- \
       'sx_var_unset "$@"' arr1 arr1_len arr1_0 arr1_1 arr2 arr2_len arr2_0 arr2_1 arr_empty arr_empty_len result
   }
 
@@ -76,7 +76,7 @@ Describe 'sx_arr_quote'
   End
 
   It '疎配列の穴を既定（空文字）で表すこと'
-    sxtest_setup sparse_arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"; sx_var_unset sparse_arr_1' "${SX_SYS_REV-0}" sparse_arr a b c
+    sxtest_run sparse_arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"; sx_var_unset sparse_arr_1' "${SX_SYS_REV-0}" sparse_arr a b c
     When call sx_arr_quote result sparse_arr
     The status should be success
 
@@ -86,13 +86,13 @@ Describe 'sx_arr_quote'
     The variable res2 should equal ""
     The variable res3 should equal "c"
     The variable cnt should equal 3
-    sxtest_setup sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result -- \
+    sxtest_run sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result -- \
       'sx_var_unset "$@"' sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result
   End
 
   It '疎配列の穴をSX_CFG_ARR_HOLEの値で表すこと'
-    sxtest_setup sparse_arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"; sx_var_unset sparse_arr_1' "${SX_SYS_REV-0}" sparse_arr a b c
-    sxtest_setup SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "ARR_HOLE=HOLE"
+    sxtest_run sparse_arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"; sx_var_unset sparse_arr_1' "${SX_SYS_REV-0}" sparse_arr a b c
+    sxtest_run SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "ARR_HOLE=HOLE"
     When call sx_arr_quote result sparse_arr
     The status should be success
 
@@ -102,8 +102,8 @@ Describe 'sx_arr_quote'
     The variable res2 should equal "HOLE"
     The variable res3 should equal "c"
     The variable cnt should equal 3
-    sxtest_setup SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "ARR_HOLE"
-    sxtest_setup sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result -- \
+    sxtest_run SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "ARR_HOLE"
+    sxtest_run sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result -- \
       'sx_var_unset "$@"' sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result
   End
 
@@ -125,7 +125,7 @@ Describe 'sx_arr_quote'
 End
 
 Describe 'sx_arr_rquote'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_arr_rquote
 
   setup() {
@@ -135,11 +135,11 @@ Describe 'sx_arr_rquote'
       sx_arr_gen arr2 "$4" "$5"
       sx_arr_gen arr_empty
     '
-    sxtest_setup arr1 arr2 arr_empty SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}" "hello world" "it's me" "back\\slash" '"double quotes"'
+    sxtest_run arr1 arr2 arr_empty SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}" "hello world" "it's me" "back\\slash" '"double quotes"'
   }
 
   cleanup() {
-    sxtest_setup arr1 arr1_len arr1_0 arr1_1 arr2 arr2_len arr2_0 arr2_1 arr_empty arr_empty_len result -- \
+    sxtest_run arr1 arr1_len arr1_0 arr1_1 arr2 arr2_len arr2_0 arr2_1 arr_empty arr_empty_len result -- \
       'sx_var_unset "$@"' arr1 arr1_len arr1_0 arr1_1 arr2 arr2_len arr2_0 arr2_1 arr_empty arr_empty_len result
   }
 
@@ -180,7 +180,7 @@ Describe 'sx_arr_rquote'
   End
 
   It '疎配列の穴を既定（空文字）で逆順に表すこと'
-    sxtest_setup sparse_arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"; sx_var_unset sparse_arr_1' "${SX_SYS_REV-0}" sparse_arr a b c
+    sxtest_run sparse_arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"; sx_var_unset sparse_arr_1' "${SX_SYS_REV-0}" sparse_arr a b c
     When call sx_arr_rquote result sparse_arr
     The status should be success
 
@@ -190,13 +190,13 @@ Describe 'sx_arr_rquote'
     The variable res2 should equal ""
     The variable res3 should equal "a"
     The variable cnt should equal 3
-    sxtest_setup sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result -- \
+    sxtest_run sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result -- \
       'sx_var_unset "$@"' sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result
   End
 
   It '疎配列の穴をSX_CFG_ARR_HOLEの値で逆順に表すこと'
-    sxtest_setup sparse_arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"; sx_var_unset sparse_arr_1' "${SX_SYS_REV-0}" sparse_arr a b c
-    sxtest_setup SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "ARR_HOLE=HOLE"
+    sxtest_run sparse_arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"; sx_var_unset sparse_arr_1' "${SX_SYS_REV-0}" sparse_arr a b c
+    sxtest_run SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "ARR_HOLE=HOLE"
     When call sx_arr_rquote result sparse_arr
     The status should be success
 
@@ -206,8 +206,8 @@ Describe 'sx_arr_rquote'
     The variable res2 should equal "HOLE"
     The variable res3 should equal "a"
     The variable cnt should equal 3
-    sxtest_setup SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "ARR_HOLE"
-    sxtest_setup sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result -- \
+    sxtest_run SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "ARR_HOLE"
+    sxtest_run sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result -- \
       'sx_var_unset "$@"' sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result
   End
 

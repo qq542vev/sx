@@ -7,18 +7,18 @@ eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_arg_isep (recursion support)'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_arg_isep
 
   Describe 'Forward Callback Recursion'
-    inner_cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=>"; }
+    inner_cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=>"; }
     outer_cb() {
       _o_var="${1}" _o_cnt="${3}"
       if [ "${_o_cnt}" = "1" ]; then
         sx_arg_isep inner_res inner_cb 1 "" "1" ::: "A" "B"
-        sxtest_setup "${_o_var}" -- 'sx_var_set "$@"' "${_o_var}=<${inner_res}>"
+        sxtest_run "${_o_var}" -- 'sx_var_set "$@"' "${_o_var}=<${inner_res}>"
       else
-        sxtest_setup "${_o_var}" -- 'sx_var_set "$@"' "${_o_var}=[${_o_cnt}]"
+        sxtest_run "${_o_var}" -- 'sx_var_set "$@"' "${_o_var}=[${_o_cnt}]"
       fi
       unset _o_var _o_cnt
     }
@@ -38,14 +38,14 @@ Describe 'sx_arg_isep (recursion support)'
   End
 
   Describe 'Backward Callback Recursion'
-    inner_cb_back() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=>"; }
+    inner_cb_back() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=>"; }
     outer_cb_back() {
       _ob_var="${1}" _ob_cnt="${3}"
       if [ "${_ob_cnt}" = "1" ]; then
         sx_arg_isep inner_res inner_cb_back -1 "" "1" ::: "X" "Y"
-        sxtest_setup "${_ob_var}" -- 'sx_var_set "$@"' "${_ob_var}=<${inner_res}>"
+        sxtest_run "${_ob_var}" -- 'sx_var_set "$@"' "${_ob_var}=<${inner_res}>"
       else
-        sxtest_setup "${_ob_var}" -- 'sx_var_set "$@"' "${_ob_var}=[${_ob_cnt}]"
+        sxtest_run "${_ob_var}" -- 'sx_var_set "$@"' "${_ob_var}=[${_ob_cnt}]"
       fi
       unset _ob_var _ob_cnt
     }
@@ -63,14 +63,14 @@ Describe 'sx_arg_isep (recursion support)'
   End
 
   Describe '3段階ネスト再帰'
-    innermost_cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=inner"; }
+    innermost_cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=inner"; }
     middle_cb() {
       _m_var="${1}" _m_cnt="${3}"
       if [ "${_m_cnt}" = "1" ]; then
         sx_arg_isep innermost_res innermost_cb 1 "" "1" ::: "Z" "W"
-        sxtest_setup "${_m_var}" -- 'sx_var_set "$@"' "${_m_var}=inner_done"
+        sxtest_run "${_m_var}" -- 'sx_var_set "$@"' "${_m_var}=inner_done"
       else
-        sxtest_setup "${_m_var}" -- 'sx_var_set "$@"' "${_m_var}=m${_m_cnt}"
+        sxtest_run "${_m_var}" -- 'sx_var_set "$@"' "${_m_var}=m${_m_cnt}"
       fi
       unset _m_var _m_cnt innermost_res
     }
@@ -78,9 +78,9 @@ Describe 'sx_arg_isep (recursion support)'
       _od_var="${1}" _od_cnt="${3}"
       if [ "${_od_cnt}" = "1" ]; then
         sx_arg_isep middle_res middle_cb 1 "" "1" ::: "X" "Y"
-        sxtest_setup "${_od_var}" -- 'sx_var_set "$@"' "${_od_var}=middle_done"
+        sxtest_run "${_od_var}" -- 'sx_var_set "$@"' "${_od_var}=middle_done"
       else
-        sxtest_setup "${_od_var}" -- 'sx_var_set "$@"' "${_od_var}=o${_od_cnt}"
+        sxtest_run "${_od_var}" -- 'sx_var_set "$@"' "${_od_var}=o${_od_cnt}"
       fi
       unset _od_var _od_cnt middle_res
     }
@@ -100,14 +100,14 @@ Describe 'sx_arg_isep (recursion support)'
   End
 
   Describe '混在方向ネスト再帰 (Forward → Backward)'
-    inner_cb_mixed() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=CB"; }
+    inner_cb_mixed() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=CB"; }
     outer_cb_mixed() {
       _om_var="${1}" _om_cnt="${3}"
       if [ "${_om_cnt}" = "1" ]; then
         sx_arg_isep inner_res_mixed inner_cb_mixed -1 "" "1" ::: "P" "Q"
-        sxtest_setup "${_om_var}" -- 'sx_var_set "$@"' "${_om_var}=mixed_done"
+        sxtest_run "${_om_var}" -- 'sx_var_set "$@"' "${_om_var}=mixed_done"
       else
-        sxtest_setup "${_om_var}" -- 'sx_var_set "$@"' "${_om_var}=[${_om_cnt}]"
+        sxtest_run "${_om_var}" -- 'sx_var_set "$@"' "${_om_var}=[${_om_cnt}]"
       fi
       unset _om_var _om_cnt inner_res_mixed
     }
@@ -125,7 +125,7 @@ Describe 'sx_arg_isep (recursion support)'
   End
 
   Describe '再帰内エラー伝搬'
-    inner_cb_err() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=ERR"; return 42; }
+    inner_cb_err() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=ERR"; return 42; }
 
     It '内側の CB エラーが外側に影響しないこと'
       inner_res_err=
@@ -133,9 +133,9 @@ Describe 'sx_arg_isep (recursion support)'
         _e_var="${1}" _e_cnt="${3}"
         if [ "${_e_cnt}" = "1" ]; then
           sx_arg_isep inner_res_err inner_cb_err 1 "" "1" ::: "A" "B"
-          sxtest_setup "${_e_var}" -- 'sx_var_set "$@"' "${_e_var}=err_handled"
+          sxtest_run "${_e_var}" -- 'sx_var_set "$@"' "${_e_var}=err_handled"
         else
-          sxtest_setup "${_e_var}" -- 'sx_var_set "$@"' "${_e_var}=[${_e_cnt}]"
+          sxtest_run "${_e_var}" -- 'sx_var_set "$@"' "${_e_var}=[${_e_cnt}]"
         fi
         unset _e_var _e_cnt inner_res_err
       }

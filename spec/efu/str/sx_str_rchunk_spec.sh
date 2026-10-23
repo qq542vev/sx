@@ -4,7 +4,7 @@
 # shellcheck disable=SC2215
 
 Describe 'sx_str_rchunk -efu 環境検証'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_str_rchunk
 
   Context '後方基準'
@@ -25,7 +25,7 @@ Describe 'sx_str_rchunk -efu 環境検証'
   End
 
   Context '周期指定と巨大な数値'
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
 
     Parameters
       '0:-1:2' ''

@@ -4,8 +4,8 @@
 # Parameters 内の空文字・コード文字列はコマンド名ではない。
 # shellcheck disable=SC2286,SC2288
 
-Describe 'sxtest_setup による明示的な事前準備'
-  Include ./spec/support/setup.sh
+Describe 'sxtest_run による補助処理の実行'
+  Include ./spec/support/run.sh
 
   It '複数の準備処理を同じシェルで実行し、指定した出力だけを戻すこと'
     kept=parent
@@ -16,7 +16,7 @@ Describe 'sxtest_setup による明示的な事前準備'
       kept=child
       not_requested=child
     '
-    When call sxtest_setup items result -- "$setup_command"
+    When call sxtest_run items result -- "$setup_command"
     The status should be success
     The variable items_len should equal 3
     The variable items_2 should equal c
@@ -24,15 +24,15 @@ Describe 'sxtest_setup による明示的な事前準備'
     The variable kept should equal parent
     The variable not_requested should be undefined
     The variable SX_SYS_REV should be undefined
-    The variable SXTEST_SETUP_NAMES should be undefined
-    The variable SXTEST_SETUP_SCRIPT should be undefined
+    The variable SXTEST_RUN_NAMES should be undefined
+    The variable SXTEST_RUN_SCRIPT should be undefined
   End
 
   It '位置パラメータの空白・空文字・引用符・末尾改行・globを保持すること'
     tail='first
 last
 '
-    When call sxtest_setup items -- 'sx_arr_gen items "$@"' 'a b' '' "it's" "$tail" '* ?'
+    When call sxtest_run items -- 'sx_arr_gen items "$@"' 'a b' '' "it's" "$tail" '* ?'
     The status should be success
     The variable items_len should equal 5
     The variable items_0 should equal 'a b'
@@ -48,7 +48,7 @@ last
       unset items_1
       sx_arr_gen items_2 nested ""
     '
-    When call sxtest_setup items -- "$setup_command"
+    When call sxtest_run items -- "$setup_command"
     The status should be success
     The variable items_len should equal 3
     The variable items_1 should be undefined
@@ -73,7 +73,7 @@ last
       case $SX_CFG_ARR_HOLE:$SX_SYS_REV in :0) ;; *) exit 65;; esac
       observed=isolated
     '
-    When call sxtest_setup observed -- "$setup_command"
+    When call sxtest_run observed -- "$setup_command"
     The status should be success
     The variable observed should equal isolated
     The variable SX_CFG_ARR_HOLE should equal parent_hole
@@ -82,14 +82,14 @@ last
 
   It 'export済みの環境変数は通常どおり継承すること'
     export SXT_ENV_INPUT='space quote'
-    When call sxtest_setup observed -- 'observed=$SXT_ENV_INPUT'
+    When call sxtest_run observed -- 'observed=$SXT_ENV_INPUT'
     The status should be success
     The variable observed should equal 'space quote'
   End
 
   It '出力名と混在する環境変数指定と位置引数を子へ渡し、親の入力は変更しないこと'
     export SXT_ENV_INPUT=parent
-    When call sxtest_setup observed 'SXT_ENV_INPUT=child value' args -- 'observed=$SXT_ENV_INPUT; args="$#:$1:$2"' 'a b' ''
+    When call sxtest_run observed 'SXT_ENV_INPUT=child value' args -- 'observed=$SXT_ENV_INPUT; args="$#:$1:$2"' 'a b' ''
     The status should be success
     The variable observed should equal 'child value'
     The variable args should equal '2:a b:'
@@ -97,14 +97,14 @@ last
   End
 
   It '親のIFSが変更されていてもシェルの起動オプションを分割できること'
-    setup_with_ifs() (
+    run_with_ifs() (
       IFS=:
       SHELLSPEC_SHELL="${SHELLSPEC_SHELL} -f"
-      sxtest_setup observed -- 'observed=$1' 'a b'
+      sxtest_run observed -- 'observed=$1' 'a b'
       [ "$IFS" = : ] || return 1
       printf '%s' "$observed"
     )
-    When call setup_with_ifs
+    When call run_with_ifs
     The status should be success
     The stdout should equal 'a b'
   End
@@ -117,7 +117,7 @@ last
       sx_cfg_set ARR_HOLE=hole
       sx_arr_gen items "$@"
     '
-    When call sxtest_setup items SX_SYS_REV -- "$setup_command" "$SX_SYS_REV" a b
+    When call sxtest_run items SX_SYS_REV -- "$setup_command" "$SX_SYS_REV" a b
     The status should be success
     The variable items should end with ':7'
     The variable SX_SYS_REV should equal 8
@@ -126,7 +126,7 @@ last
   End
 
   It '出力0個でもCMDを実行し、表示を標準エラーへ送ること'
-    When call sxtest_setup -- 'printf "%s\n" executed; hidden=child'
+    When call sxtest_run -- 'printf "%s\n" executed; hidden=child'
     The status should be success
     The stdout should equal ''
     The stderr should equal executed
@@ -134,11 +134,11 @@ last
   End
 
   It '空CMDを受け付け、出力0個でも成功すること'
-    When call sxtest_setup -- ''
+    When call sxtest_run -- ''
     The status should be success
     The stdout should equal ''
     The stderr should equal ''
-    The variable SXTEST_SETUP_SCRIPT should be undefined
+    The variable SXTEST_RUN_SCRIPT should be undefined
   End
 
   It 'CMDの標準出力を復元コードと混在させないこと'
@@ -147,7 +147,7 @@ last
       printf "%s\n" diagnostic >&2
       result=ready
     '
-    When call sxtest_setup result -- "$setup_command"
+    When call sxtest_run result -- "$setup_command"
     The status should be success
     The stdout should equal ''
     The stderr should equal 'not shell code
@@ -162,7 +162,7 @@ diagnostic'
       out_first=$1
       out_second=value
     '
-    When call sxtest_setup out_first out_second -- "$setup_command" original
+    When call sxtest_run out_first out_second -- "$setup_command" original
     The status should be success
     The variable out_first should equal replaced
     The variable out_second should equal value
@@ -170,7 +170,7 @@ diagnostic'
 
   It '未設定の出力は親側でもunsetすること'
     result=old
-    When call sxtest_setup result -- ':'
+    When call sxtest_run result -- ':'
     The status should be success
     The variable result should be undefined
   End
@@ -187,7 +187,7 @@ diagnostic'
     It '失敗状態を返し、親の値を変更しないこと'
       unset SXT_UNSET_INPUT
       result=parent
-      When call sxtest_setup result -- "$1"
+      When call sxtest_run result -- "$1"
       The status should equal "$2"
       The stdout should equal ''
       case "$2" in
@@ -196,20 +196,20 @@ diagnostic'
           ;;
       esac
       The variable result should equal parent
-      The variable SXTEST_SETUP_NAMES should be undefined
-      The variable SXTEST_SETUP_SCRIPT should be undefined
+      The variable SXTEST_RUN_NAMES should be undefined
+      The variable SXTEST_RUN_SCRIPT should be undefined
     End
   End
 
   It '出力0個でもCMDの失敗状態を返すこと'
-    When call sxtest_setup -- 'exit 29'
+    When call sxtest_run -- 'exit 29'
     The status should equal 29
     The stdout should equal ''
     The stderr should equal ''
   End
 
   It '準備側でパス名展開を無効にすること'
-    When call sxtest_setup observed -- 'set -- *; observed=$1'
+    When call sxtest_run observed -- 'set -- *; observed=$1'
     The status should be success
     The variable observed should equal '*'
   End
@@ -223,34 +223,34 @@ diagnostic'
       "1invalid -- ':'"
       "a:b -- ':'"
       "'a b' -- ':'"
-      "SXTEST_SETUP_SCRIPT -- ':'"
+      "SXTEST_RUN_SCRIPT -- ':'"
       "SXTEST_USER -- ':'"
       "'x;bad' -- ':'"
     End
 
-    invalid_setup() {
-      eval "sxtest_setup $1"
+    invalid_run() {
+      eval "sxtest_run $1"
     }
 
     It '不正な構文・変数名を64で拒否すること'
-      When call invalid_setup "$1"
+      When call invalid_run "$1"
       The status should equal 64
       The stdout should equal ''
       The stderr should equal ''
-      The variable SXTEST_SETUP_NAMES should be undefined
-      The variable SXTEST_SETUP_SCRIPT should be undefined
+      The variable SXTEST_RUN_NAMES should be undefined
+      The variable SXTEST_RUN_SCRIPT should be undefined
     End
   End
 
   It '変数名が不正ならCMDを実行しないこと'
-    When call sxtest_setup 'bad:name' -- 'printf "%s\n" must_not_run'
+    When call sxtest_run 'bad:name' -- 'printf "%s\n" must_not_run'
     The status should equal 64
     The stdout should equal ''
     The stderr should equal ''
   End
 
   It '準備側のライブラリ関数を親に定義しないこと'
-    sxtest_setup items -- 'sx_arr_gen items a'
+    sxtest_run items -- 'sx_arr_gen items a'
     When call command -v sx_arr_gen
     The status should be failure
     The stdout should equal ''
@@ -258,12 +258,12 @@ diagnostic'
   End
 End
 
-Describe 'sxtest_setup と単独モジュールの組み合わせ'
-  Include ./spec/support/setup.sh
+Describe 'sxtest_run と単独モジュールの組み合わせ'
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_arr_splice
 
   It '準備した配列を検証側の対象関数へ渡せること'
-    sxtest_setup items -- 'sx_arr_gen items "$@"' a b c
+    sxtest_run items -- 'sx_arr_gen items "$@"' a b c
     When call sx_arr_splice items 1 1 x
     The status should be success
     The variable items_len should equal 3

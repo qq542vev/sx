@@ -6,7 +6,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_isep'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_arg_isep
 
   It 'interval=1 で引数間にセパレータを挿入してクォートすること'
@@ -573,7 +573,7 @@ Describe 'sx_arg_isep'
 
   Describe 'コールバックモード (CB)'
     It '正方向 (int=1) で値間にコールバック結果が挿入されること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 1 "" "1" ::: "a" "b" "c"
       The status should be success
       eval "set -- $res"
@@ -586,7 +586,7 @@ Describe 'sx_arg_isep'
     End
 
     It '正方向 (int=2) で2つおきにコールバック結果が挿入されること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 2 "" "1" ::: "1" "2" "3" "4" "5"
       The status should be success
       eval "set -- $res"
@@ -601,7 +601,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'int=3 でPRE|POST、内部挿入位置が正しいこと'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=($3)"; }
       When call sx_arg_isep res cb 3 "" \
         "$((1 | 2 | 4))" ::: "1" "2" "3" "4" "5" "6"
       The status should be success
@@ -619,7 +619,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'PRE フラグで先頭にコールバック結果が挿入されること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 1 "" "$((1 | 2))" ::: "a" "b"
       The status should be success
       eval "set -- $res"
@@ -631,7 +631,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'PRE のみ: 要素が1つでもPREが挿入されること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 1 "" "$((1 | 2))" ::: "only"
       The status should be success
       eval "set -- $res"
@@ -641,7 +641,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'PRE のみ: int が要素数より大きくてもPREが挿入されること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 5 "" "$((1 | 2))" ::: "a" "b"
       The status should be success
       eval "set -- $res"
@@ -652,7 +652,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'POST フラグで末尾にコールバック結果が挿入されること (偶数分割)'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 2 "" "$((1 | 4))" ::: "a" "b" "c" "d"
       The status should be success
       eval "set -- $res"
@@ -666,7 +666,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'POST フラグで末尾に挿入されないこと (奇数分割)'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 2 "" "$((1 | 4))" ::: "a" "b" "c"
       The status should be success
       eval "set -- $res"
@@ -678,7 +678,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'POST のみ: int が要素数より大きい場合は何も挿入されないこと'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=x"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=x"; }
       When call sx_arg_isep res cb 5 "" "$((1 | 4))" ::: "a" "b"
       The status should be success
       eval "set -- $res"
@@ -688,7 +688,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'PRE|POST で両端にコールバック結果が挿入されること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 1 "" \
         "$((1 | 2 | 4))" ::: "x"
       The status should be success
@@ -700,7 +700,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'limit で内部挿入回数が制限されること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 1 2 "1" ::: "a" "b" "c" "d"
       The status should be success
       eval "set -- $res"
@@ -714,7 +714,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'limit=0 では一切挿入されないこと'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 1 0 "1" ::: "a" "b" "c"
       The status should be success
       eval "set -- $res"
@@ -725,7 +725,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'limit=1 で PRE が優先され内部が挿入されないこと'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 1 1 "$((1 | 2))" ::: "a" "b"
       The status should be success
       eval "set -- $res"
@@ -736,7 +736,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'limit=1 で内部は挿入されるが POST は挿入されないこと'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 1 1 "$((1 | 4))" ::: "a" "b"
       The status should be success
       eval "set -- $res"
@@ -747,7 +747,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'PRE|POST と limit=1 で PRE のみ挿入されること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       When call sx_arg_isep res cb 1 1 \
         "$((1 | 2 | 4))" ::: "a" "b"
       The status should be success
@@ -760,7 +760,7 @@ Describe 'sx_arg_isep'
 
     It 'コールバックが非0を返すと以後の内部挿入が中断されること'
       cb_stop() {
-        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=!"
+        sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=!"
         case "$3" in 2) return 1;; esac
       }
       When call sx_arg_isep res cb_stop 2 "" "1" ::: "1" "2" "3" "4" "5" "6"
@@ -777,7 +777,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'PRE コールバックが失敗すると内部/POSTも挿入されないこと'
-      cb_fail() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X"; return 1; }
+      cb_fail() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=X"; return 1; }
       stat=0
       sx_arg_isep res cb_fail 1 "" \
         "$((1 | 2 | 4))" ::: "a" "b" || stat=$?
@@ -791,8 +791,8 @@ Describe 'sx_arg_isep'
     It 'POST コールバックが失敗しても内部/PREの値は挿入され、ステータスはエラーになること'
       cb_fail_post() {
         case "$3" in
-          3) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=!"; return 1;;
-          *) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($3)";;
+          3) sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=!"; return 1;;
+          *) sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=($3)";;
         esac
       }
       When call sx_arg_isep res cb_fail_post 1 "" \
@@ -807,7 +807,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'コールバックエラーが status に伝搬されること'
-      cb_err() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=E"; return 42; }
+      cb_err() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=E"; return 42; }
       When call sx_arg_isep res cb_err 1 "" "1" ::: "a" "b"
       The status should equal 42
       eval "set -- $res"
@@ -817,7 +817,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'count 引数が PRE→内部→POST で連続して増加すること'
-      cb_cnt() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=C$3"; }
+      cb_cnt() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=C$3"; }
       When call sx_arg_isep res cb_cnt 2 "" \
         "$((1 | 2 | 4))" ::: "a" "b" "c" "d"
       The status should be success
@@ -833,7 +833,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'slot 引数が正方向で左基準の境界番号になること'
-      cb_slot() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=S${2}C${3}K${4}"; }
+      cb_slot() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=S${2}C${3}K${4}"; }
       When call sx_arg_isep res cb_slot 2 "" "1" ::: "a" "b" "c" "d" "f"
       The status should be success
       eval "set -- $res"
@@ -848,7 +848,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'slot 引数が負方向でも左基準の境界番号になること'
-      cb_slot() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=S${2}C${3}K${4}"; }
+      cb_slot() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=S${2}C${3}K${4}"; }
       When call sx_arg_isep res cb_slot -2 "" "1" ::: "a" "b" "c" "d" "f"
       The status should be success
       eval "set -- $res"
@@ -866,7 +866,7 @@ Describe 'sx_arg_isep'
       cb_skip() {
         case "$3" in
           1|3) :;;
-          *) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=S${2}C${3}K${4}";;
+          *) sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=S${2}C${3}K${4}";;
         esac
       }
       When call sx_arg_isep res cb_skip 1 "" \
@@ -882,14 +882,14 @@ Describe 'sx_arg_isep'
     End
 
     It 'コールバックが挿入されないケースでも count が正しいこと'
-      cb_cnt2() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=C$3"; }
+      cb_cnt2() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=C$3"; }
       When call sx_arg_isep res cb_cnt2 1 "" "1" ::: "x"
       The status should be success
       The variable res should equal "'x'"
     End
 
     It '分配代入 (bind) とコールバックが併用できること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
       sx_arg_isep "v1:v2:rest" cb 1 "" "1" ::: "a" "b"
       The variable v1 should equal "a"
       The variable v2 should equal "(@1)"
@@ -897,7 +897,7 @@ Describe 'sx_arg_isep'
     End
 
     It 'スキップを含む分配代入とコールバックが併用できること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=SEP"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=SEP"; }
       sx_arg_isep "::v3" cb 1 "" "1" ::: "a" "b"
       The variable v1 should be undefined
       The variable v2 should be undefined
@@ -905,21 +905,21 @@ Describe 'sx_arg_isep'
     End
 
     It '引数がない場合は空文字を返すこと'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=x"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=x"; }
       When call sx_arg_isep res cb 1 "" "1" :::
       The status should be success
       The variable res should equal ""
     End
 
     It '引数が1つの場合はセパレータが挿入されないこと'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=x"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=x"; }
       When call sx_arg_isep res cb 1 "" "1" ::: "only"
       The status should be success
       The variable res should equal "'only'"
     End
 
     It '特殊文字が含まれていても正しく処理されること (CB + PRE|POST)'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=[@$3]"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=[@$3]"; }
       When call sx_arg_isep res cb 1 "" \
         "$((1 | 2 | 4))" ::: "hello world" "foo'bar"
       The status should be success
@@ -933,7 +933,7 @@ Describe 'sx_arg_isep'
     End
 
     It '読み取り専用変数に書き込もうとした場合にエラーになること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=x"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=x"; }
       readonly ro_res_isep_cb="fixed"
       When call sx_arg_isep ro_res_isep_cb cb 1 "" "1" ::: "a"
       The status should equal 77
@@ -941,49 +941,49 @@ Describe 'sx_arg_isep'
 
     Context '引数が空の場合の挙動 (CB)'
       It '引数が空で 正のインターバル、PRE|POST|CB の場合、セパレータが1つだけ出力されること'
-        cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
+        cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
         When call sx_arg_isep res cb 1 10 "$((2 | 4 | 1))" :::
         The status should be success
         The variable res should equal "'X1'"
       End
 
       It '引数が空で 負のインターバル、PRE|POST|CB の場合、セパレータが1つだけ出力されること'
-        cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
+        cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
         When call sx_arg_isep res cb -1 10 "$((2 | 4 | 1))" :::
         The status should be success
         The variable res should equal "'X1'"
       End
 
       It '引数が空で 正のインターバル、PRE|CB の場合、セパレータが1つ出力されること'
-        cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
+        cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
         When call sx_arg_isep res cb 1 10 "$((2 | 1))" :::
         The status should be success
         The variable res should equal "'X1'"
       End
 
       It '引数が空で 負のインターバル、PRE|CB の場合、何も出力されないこと'
-        cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
+        cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
         When call sx_arg_isep res cb -1 10 "$((2 | 1))" :::
         The status should be success
         The variable res should equal ""
       End
 
       It '引数が空で 正のインターバル、POST|CB の場合、何も出力されないこと'
-        cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
+        cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
         When call sx_arg_isep res cb 1 10 "$((4 | 1))" :::
         The status should be success
         The variable res should equal ""
       End
 
       It '引数が空で 負のインターバル、POST|CB の場合、セパレータが1つ出力されること'
-        cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
+        cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
         When call sx_arg_isep res cb -1 10 "$((4 | 1))" :::
         The status should be success
         The variable res should equal "'X1'"
       End
 
       It '引数が空で 正のインターバル、CBのみ（フラグなし）の場合、何も出力されないこと'
-        cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
+        cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=X${3}"; }
         When call sx_arg_isep res cb 1 10 "1" :::
         The status should be success
         The variable res should equal ""
@@ -992,7 +992,7 @@ Describe 'sx_arg_isep'
 
     Context 'PRE + limit 境界 (int=2)'
       It 'int=2, PRE|POST, lim=1, 4要素 → PRE のみ挿入されること'
-        cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+        cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
         When call sx_arg_isep res cb 2 1 \
           "$((1 | 2 | 4))" ::: "a" "b" "c" "d"
         The status should be success
@@ -1006,7 +1006,7 @@ Describe 'sx_arg_isep'
       End
 
       It 'int=2, PRE|POST, lim=2, 4要素 → PRE + 内部1つ (POST無)'
-        cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
+        cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=(@$3)"; }
         When call sx_arg_isep res cb 2 2 \
           "$((1 | 2 | 4))" ::: "a" "b" "c" "d"
         The status should be success

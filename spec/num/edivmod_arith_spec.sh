@@ -6,9 +6,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_edivmod_arith'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_num_edivmod_arith
-  Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
+  Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   Context '商と余り'
     Parameters
@@ -169,7 +169,7 @@ Describe 'sx_num_edivmod_arith'
   End
 
   It '配列を初期化して商と余りを格納できること'
-    sxtest_setup items SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" items old extra stale
+    sxtest_run items SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" items old extra stale
     When call sx_num_edivmod_arith '@items' -7 -2
     The status should be success
     The variable items_len should equal 2
@@ -186,7 +186,7 @@ Describe 'sx_num_edivmod_arith'
   End
 
   It '検証失敗時は配列の要素とリビジョンも変更しないこと'
-    sxtest_setup items SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" items old
+    sxtest_run items SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" items old
     old_signature="${items-}"
     When call sx_num_edivmod_arith '@items' 7 0
     The status should equal 64
@@ -210,7 +210,7 @@ Describe 'sx_num_edivmod_arith'
     End
 
     It "引数列 $* で同じ商と余りを返すこと"
-      sxtest_setup "SX_CFG_NUM_RANGE=$SX_CFG_NUM_RANGE" expected_q expected_r -- 'sx_num_edivmod_int "$@"' 'expected_q:expected_r:' "$@"
+      sxtest_run "SX_CFG_NUM_RANGE=$SX_CFG_NUM_RANGE" expected_q expected_r -- 'sx_num_edivmod_int "$@"' 'expected_q:expected_r:' "$@"
       type=arith
       When call "sx_num_edivmod_${type}" 'q:r:' "$@"
       The status should be success
@@ -247,7 +247,7 @@ Describe 'sx_num_edivmod_arith'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
 
     Context '商と余り'
       Parameters

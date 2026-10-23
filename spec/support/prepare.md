@@ -1,8 +1,8 @@
 # 旧ヘルパーの互換テスト
 
 `prepare.sh` の `sx_test_setup` は、補助関数を別シェルで実行し、結果の変数を呼び出し元へ戻す旧ヘルパーです。
-通常のspecの呼び出しは `sxtest_setup` に移行済みで、`spec/build/prepare_spec.sh` に旧ヘルパー自身のテストを残しています。
-事前準備・事後検証・コールバックの補助処理・後始末には、入出力を明示する [sxtest_setup](setup.md) を使います。
+通常のspecの呼び出しは `sxtest_run` に移行済みで、`spec/build/prepare_spec.sh` に旧ヘルパー自身のテストを残しています。
+事前準備・事後検証・コールバックの補助処理・後始末には、入出力を明示する [sxtest_run](run.md) を使います。
 以下は、旧ヘルパーのテストで維持している挙動の説明です。
 
 準備側は `sh -efu` で新しく起動し、全体版の `sx.sh` を読み込みます。検証側の関数やスタブは引き継ぎません。検証側には対象の単独モジュールとその宣言済み依存先だけが定義されるため、準備で使う `sx_arr_gen` などによって依存不足が隠れることを防げます。既存の Parameters や Before/BeforeEach はそのまま利用できます。
@@ -15,8 +15,8 @@
 
 検証対象の呼び出しは `When call sx_...` / `When run efu_run sx_...` に置きます。複数の機能を検証するファイルでは、読み込み関数の中に静的な Include を宣言し、Example ごとに対象だけを選びます。ShellSpec は Example 内に直接書いた Include を受け付けません。
 
-コールバック内の補助処理と配列の後始末については、[setup.md](setup.md) を参照してください。
+コールバック内の補助処理と配列の後始末については、[run.md](run.md) を参照してください。
 
-配列構造などの事後検証は、[setup.md の事後検証](setup.md#事後検証)に従い、`Set 'allexport:on'` と必要な入力の明示的な export を使います。
+配列構造などの事後検証は、[run.md の事後検証](run.md#事後検証)に従い、`Set 'allexport:on'` と必要な入力の明示的な export を使います。
 
 プロジェクトルートから、先に `make all` と対象の `make test-modules SX_SPECS=...` を実行してください。`SX_TEST_MODE=full` でも準備方法は同じで、検証側の読み込みだけが全体版に切り替わります。

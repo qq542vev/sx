@@ -2,7 +2,7 @@
 # shellcheck shell=sh disable=SC2329
 # コールバックと検証用の差し替え関数は間接的に呼び出される。
 Describe 'sx_arg_count -efu 環境検証'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_arg_count
 
   It '正常動作'
@@ -18,7 +18,7 @@ Describe 'sx_arg_count -efu 環境検証'
     End
 
     It '検証の有無によらずすべての検索モードで件数を返す'
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_nat0_safe() { return 0; }
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
@@ -45,7 +45,7 @@ Describe 'sx_arg_count -efu 環境検証'
     End
 
     It '不一致と空入力でも成功して件数0を返す'
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_nat0_safe() { return 0; }
       __sx_num_is_int_fit_dec() { return 1; }
       cb() { return 77; }

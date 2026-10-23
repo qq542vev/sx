@@ -6,21 +6,21 @@
 Describe 'sx_arr_get -efu 環境検証'
     # shellcheck disable=SC2329
   setup_myarr_fixture() {
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d e
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d e
     }
 
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_arr_get
 
   It '正常動作'
-    sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d e
+    sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d e
 
     When run efu_run sx_arr_get x myarr 3:0:-1
     The status should be success
   End
 
   It '範囲取得ができること (t<0 は終端を含む)'
-    sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d e
+    sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d e
 
     sx_arr_get x myarr 3:0:-1
     The variable "x_len" should equal 4
@@ -30,14 +30,14 @@ Describe 'sx_arr_get -efu 環境検証'
   End
 
   It '逆方向の2要素範囲は既定stepでは空であること'
-    sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d e
+    sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d e
 
     sx_arr_get x myarr 3:0
     The variable "x_len" should equal 0
   End
 
   It '終端省略の降順ができること'
-    sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d e
+    sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d e
 
     sx_arr_get x myarr 2::-1
     The variable "x_len" should equal 3
@@ -56,7 +56,7 @@ Describe 'sx_arr_get -efu 環境検証'
 
   Context '32bit算術シェル専用の算術域境界 (NUM_RANGE=32)'
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
     BeforeEach setup_myarr_fixture
 
     Parameters
@@ -85,7 +85,7 @@ Describe 'sx_arr_get -efu 環境検証'
         sx_cfg_set NUM_RANGE=64
         sx_arr_gen myarr a b c d e
       '
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR myarr SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR myarr SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
       When call sx_arr_get x myarr 9223372036854775807:0:-5
       The status should be success
       The variable "x_len" should equal 1
@@ -98,7 +98,7 @@ Describe 'sx_arr_get -efu 環境検証'
         sx_cfg_set NUM_RANGE=64
         sx_arr_gen myarr a b c d e
       '
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR myarr SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR myarr SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
       When call sx_arr_get x myarr 9223372036854775807:0:-6
       The status should be success
       The variable "x_len" should equal 1
@@ -111,7 +111,7 @@ Describe 'sx_arr_get -efu 環境検証'
         sx_cfg_set NUM_RANGE=64
         sx_arr_gen myarr a b c d e
       '
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR myarr SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR myarr SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
       When call sx_arr_get x myarr 9223372036854775807:0:-4
       The status should be success
       The variable "x_len" should equal 1
@@ -124,7 +124,7 @@ Describe 'sx_arr_get -efu 環境検証'
         sx_cfg_set NUM_RANGE=64
         sx_arr_gen myarr a b c d e
       '
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR myarr SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR myarr SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
       When call sx_arr_get x myarr -9223372036854775813:10:1
       The status should be success
       The variable "x_len" should equal 5
@@ -138,7 +138,7 @@ Describe 'sx_arr_get -efu 環境検証'
         sx_cfg_set NUM_RANGE=64
         sx_arr_gen myarr a b c d e
       '
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR myarr SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR myarr SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
       When call sx_arr_get x myarr -9000000000000000000:10:9000000000000000000
       The status should be success
       The variable "x_len" should equal 0

@@ -6,7 +6,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rchunk'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_str_rchunk
 
   Context '基準方向と結果順'
@@ -193,7 +193,7 @@ Describe 'sx_str_rchunk'
 
   Context 'IFS=a での動的な数値関数呼び出し'
     with_ifs_a() { IFS=a "${@}"; }
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
 
     Parameters
       '2' "'fg' 'bcde' 'a'"

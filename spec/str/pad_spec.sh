@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_pad'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_str_pad
 
   Context 'IFS=a での動的な数値関数呼び出し'
@@ -18,7 +18,7 @@ Describe 'sx_str_pad'
     End
 
     It '多倍長経路で繰り返し回数を求められること'
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
       # 巨大な文字列の生成だけを置き換え、数値演算は実行する。
       __sx_str_rep() { pad_repeat_count="${3}"; eval "${1}="; }
       When call with_ifs_a sx_str_pad res 'A' 2147483648 'xyz'
@@ -172,7 +172,7 @@ Describe 'sx_str_pad'
   End
 
   Context '算術域を超える幅と空の埋め込み文字列'
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
 
     Parameters
       '2147483648'
@@ -194,7 +194,7 @@ Describe 'sx_str_pad'
   End
 
   Context '多倍長の不足長と繰り返し回数'
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
     Before 'guard_pad_repeat'
 
     # shellcheck disable=SC2329
@@ -260,7 +260,7 @@ Describe 'sx_str_pad'
   End
 
   It '検証を省略しても巨大な幅と空の埋め込み文字列を処理できること'
-    sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
+    sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
     When call sx_str_pad res 'ABC' -1000000000000000000000000000000 ''
     The status should be success
     The variable res should equal 'ABC'

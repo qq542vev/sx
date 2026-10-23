@@ -18,7 +18,7 @@ Describe 'sx_csv_parse'
     esac
   }
 
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   tab=$(printf '\t')
 
   It 'ヘッダを含む各行を SX 配列として保存する'
@@ -35,7 +35,7 @@ Describe 'sx_csv_parse'
     The variable res_1_1 should equal 15
     The variable res_2_1 should equal 13
     The variable res_3 should be undefined
-    Assert sxtest_setup -- 'sx_var_is_arr "$@"' res res_0 res_1 res_2
+    Assert sxtest_run -- 'sx_var_is_arr "$@"' res res_0 res_1 res_2
   End
 
   It '引用内の区切り・改行と二重化された引用符を復元する'
@@ -57,7 +57,7 @@ Describe 'sx_csv_parse'
     The status should be success
     The variable res_len should equal 0
     The variable res_0 should be undefined
-    Assert sxtest_setup -- 'sx_var_is_arr "$@"' res
+    Assert sxtest_run -- 'sx_var_is_arr "$@"' res
   End
 
   It '途中の空行は空フィールド一つの配列にする'
@@ -306,7 +306,7 @@ Describe 'sx_csv_parse'
         The variable res_0_0 should equal 'first,row'
         The variable res_1_len should equal 0
         The variable res_1_0 should be undefined
-        Assert sxtest_setup -- 'sx_var_is_arr "$@"' res_1
+        Assert sxtest_run -- 'sx_var_is_arr "$@"' res_1
       End
     End
 
@@ -473,7 +473,7 @@ Describe 'sx_csv_parse'
   It '配列の参照・穴・更新設定にかかわらず文字列と空フィールドを保存する'
     Set 'allexport:on'
     load_subject sx_csv_parse
-    sxtest_setup SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
+    sxtest_run SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
     src=referenced
     before_rev=$SX_SYS_REV
     When call sx_csv_parse res '@src,hole,'
@@ -482,7 +482,7 @@ Describe 'sx_csv_parse'
     The variable res_0_0 should equal '@src'
     The variable res_0_1 should equal hole
     The variable res_0_2 should equal ''
-    Assert sxtest_setup -- 'sx_var_is_arr "$@"' res res_0
+    Assert sxtest_run -- 'sx_var_is_arr "$@"' res res_0
     The variable SX_SYS_REV should not equal "$before_rev"
     The variable res should not equal "$res_0"
     The variable SX_CFG_ARR_REF should equal '@'
@@ -498,7 +498,7 @@ Describe 'sx_csv_parse'
       sx_arr_gen res_0_0 nested
       sx_var_unset res
     '
-    sxtest_setup res res_len res_0 res_0_len res_0_0 res_0_0_len res_0_0_0 res_0_1 res_0_2 res_1 res_1_len res_1_0 res_1_1 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+    sxtest_run res res_len res_0 res_0_len res_0_0 res_0_0_len res_0_0_0 res_0_1 res_0_2 res_1 res_1_len res_1_0 res_1_1 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
     When call sx_csv_parse res z
     The status should be success
     The variable res_len should equal 1
@@ -519,7 +519,7 @@ Describe 'sx_csv_parse'
       sx_csv_parse res "a,b"
       sx_var_unset res
     '
-    sxtest_setup res res_len res_0 res_0_len res_0_0 res_0_1 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+    sxtest_run res res_len res_0 res_0_len res_0_0 res_0_1 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
     When call sx_csv_parse res ''
     The status should be success
     The variable res_len should equal 0
@@ -544,7 +544,7 @@ Describe 'sx_csv_parse'
         sx_csv_parse res "old,value"
         sx_var_unset res
       '
-      sxtest_setup res res_len res_0 res_0_len res_0_0 res_0_1 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+      sxtest_run res res_len res_0 res_0_len res_0_0 res_0_1 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
       When call sx_csv_parse res "a,b${SX_STR_LF}first,$2"
       The status should equal "$1"
       The variable res_len should equal 2
@@ -554,7 +554,7 @@ Describe 'sx_csv_parse'
       The variable res_1_0 should equal first
       The variable res_1_1 should be undefined
       The variable res_2 should be undefined
-      Assert sxtest_setup -- 'sx_var_is_arr "$@"' res_1
+      Assert sxtest_run -- 'sx_var_is_arr "$@"' res_1
     End
   End
 
@@ -598,7 +598,7 @@ Describe 'sx_csv_parse'
       The variable res_0_len should equal 0
       The variable res_0_0 should be undefined
       The variable res_1 should be undefined
-      Assert sxtest_setup -- 'sx_var_is_arr "$@"' res res_0
+      Assert sxtest_run -- 'sx_var_is_arr "$@"' res res_0
     End
   End
 
@@ -637,7 +637,7 @@ Describe 'sx_csv_parse'
 
   It 'エラーでも配列設定を保持しコールバックにも元の設定を渡す'
     load_subject sx_csv_parse
-    sxtest_setup SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
+    sxtest_run SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
     src=referenced
     csv_error() {
       csv_error_cfg="${SX_CFG_ARR_REF}:${SX_CFG_ARR_HOLE}:${SX_CFG_ARR_UPDATE}"
@@ -812,17 +812,17 @@ Describe 'sx_csv_parse'
     It '各経路で data の省略を空入力として扱う'
       Set 'allexport:on'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res
       The status should be success
       The variable res_len should equal 0
       The variable res_0 should be undefined
-      Assert sxtest_setup -- 'sx_var_is_arr "$@"' res
+      Assert sxtest_run -- 'sx_var_is_arr "$@"' res
     End
 
     It '公開・内部・検証省略の各経路が同じ配列を作る'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res '"a||b"||' '' '||'
       The status should be success
       The variable res_0_len should equal 2
@@ -833,7 +833,7 @@ Describe 'sx_csv_parse'
     It '各経路で失敗行の参照・穴・空フィールドを文字列として残しリビジョンを更新する'
       Set 'allexport:on'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "SKIP_CHK=$2" 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
+      sxtest_run SX_CFG_SKIP_CHK SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "SKIP_CHK=$2" 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
       src=referenced
       before_rev=$SX_SYS_REV
       When call "$1" res '@src||hole||||"bad' '' '||'
@@ -849,12 +849,12 @@ Describe 'sx_csv_parse'
       The variable SX_CFG_ARR_REF should equal '@'
       The variable SX_CFG_ARR_HOLE should equal hole
       The variable SX_CFG_ARR_UPDATE should equal 0
-      Assert sxtest_setup -- 'sx_var_is_arr "$@"' res res_0
+      Assert sxtest_run -- 'sx_var_is_arr "$@"' res res_0
     End
 
     It '各経路で開始引用符をフィールドごとに選び直す'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res "'a||b'||\"c'd\"||" '' '||' "\"'"
       The status should be success
       The variable res_0_len should equal 3
@@ -865,7 +865,7 @@ Describe 'sx_csv_parse'
 
     It '各経路で空の sep を列区切りなしとして扱う'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res "\"a,b\"${SX_STR_LF}c,d" '' ''
       The status should be success
       The variable res_len should equal 2
@@ -877,7 +877,7 @@ Describe 'sx_csv_parse'
 
     It '各経路で sep と quote の両方を空指定できる'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res "a,'b\"" '' '' ''
       The status should be success
       The variable res_len should equal 1

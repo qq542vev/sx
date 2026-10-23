@@ -6,13 +6,13 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_substr()'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_str_substr
 
   Context 'IFS=a での動的な数値関数呼び出し'
     # shellcheck disable=SC2329
     with_ifs_a() { IFS=a "${@}"; }
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
 
     Parameters
       '-8' '5'
@@ -204,7 +204,7 @@ Describe 'sx_str_substr()'
     End
 
     It '最大値の範囲内で先頭より前の部分を差し引くこと'
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' "NUM_RANGE=$1"
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' "NUM_RANGE=$1"
       When call sx_str_substr res 'abcde' "-$2" "$2"
       The status should be success
       The variable res should equal 'abcde'
@@ -212,7 +212,7 @@ Describe 'sx_str_substr()'
     End
 
     It '最小値の絶対値を多倍長で扱い交差部分を抽出すること'
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' "NUM_RANGE=$1"
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' "NUM_RANGE=$1"
       When call sx_str_substr res 'abcde' "$3" "$2"
       The status should be success
       The variable res should equal 'abcd'
@@ -220,7 +220,7 @@ Describe 'sx_str_substr()'
     End
 
     It '最小値の長さですべての文字を除外すること'
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' "NUM_RANGE=$1"
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' "NUM_RANGE=$1"
       When call sx_str_substr res 'abcde' 0 "$3"
       The status should be success
       The variable res should equal ''
@@ -229,7 +229,7 @@ Describe 'sx_str_substr()'
   End
 
   Context '数値範囲を超える引数'
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
     Before 'guard_substr_pattern'
 
     guard_substr_pattern() {
@@ -316,7 +316,7 @@ Describe 'sx_str_substr()'
     End
 
     It "オフセット $1、長さ $2 の交差部分を警告なしで返すこと"
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
       res=before
       When call sx_str_substr res 'abcde' "$1" "$2"
       The status should be success
@@ -327,7 +327,7 @@ Describe 'sx_str_substr()'
   End
 
   It '検証を省略しても巨大な数値を処理できること'
-    sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
+    sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
     When call sx_str_substr res "abcdef" -1000000000000000000000000000000 +1000000000000000000000000000000
     The status should be success
     The variable res should equal "abcdef"

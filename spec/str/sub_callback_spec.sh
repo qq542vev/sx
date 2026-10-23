@@ -7,19 +7,19 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_sub (callback)'
     Include ./spec/support/library.sh sx_str_sub
-    Include ./spec/support/setup.sh
+    Include ./spec/support/run.sh
 
     # テスト用コールバック関数
     # 数字に [ ] を付ける
     cb_bracket() {
-        sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=[$2]"
+        sxtest_run "$1" -- 'sx_var_set "$@"' "$1=[$2]"
     }
 
     # 文字を大文字にする (簡易版)
     cb_upper() {
         case "$2" in
-            world) sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=WORLD" ;;
-            *) sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=$2" ;;
+            world) sxtest_run "$1" -- 'sx_var_set "$@"' "$1=WORLD" ;;
+            *) sxtest_run "$1" -- 'sx_var_set "$@"' "$1=$2" ;;
         esac
     }
 
@@ -56,7 +56,7 @@ Describe 'sx_str_sub (callback)'
 
     It 'コールバックが非0を返すと置換を中断すること'
         cb_stop() {
-            sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=X"
+            sxtest_run "$1" -- 'sx_var_set "$@"' "$1=X"
             return 1
         }
         When call sx_str_sub res: "aaa" "a" cb_stop 2147483647 "${SX_STR_SUB_CB}"
@@ -67,7 +67,7 @@ Describe 'sx_str_sub (callback)'
 
     It '後方置換でコールバックが非0を返すと置換を中断すること'
         cb_stop() {
-            sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=X"
+            sxtest_run "$1" -- 'sx_var_set "$@"' "$1=X"
             return 1
         }
         When call sx_str_sub res: "aaa" "a" cb_stop -2147483647 "${SX_STR_SUB_CB}"
@@ -80,7 +80,7 @@ Describe 'sx_str_sub (callback)'
         cb_check() {
             # $1: res, $2: match, $3: left, $4: right, $5: count
             # マッチした箇所を [match:count:left|right] に置換する
-            sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=[$2:$5:$3|$4]"
+            sxtest_run "$1" -- 'sx_var_set "$@"' "$1=[$2:$5:$3|$4]"
         }
         # "a1b2c" で数字にマッチさせる
         # 1回目: match="1", left="a", right="b2c", count=1
@@ -92,7 +92,7 @@ Describe 'sx_str_sub (callback)'
     It '後方置換でコールバックに正確な引数が渡されること'
         cb_check() {
             # $1: res, $2: match, $3: left, $4: right, $5: count
-            sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=[$2:$5:$3|$4]"
+            sxtest_run "$1" -- 'sx_var_set "$@"' "$1=[$2:$5:$3|$4]"
         }
         # "a1b2c" で数字にマッチさせる (後方から)
         # 1回目 (後ろから1つ目): match="2", left="a1b"(文字列左), right="c"(文字列右), count=1
@@ -104,7 +104,7 @@ Describe 'sx_str_sub (callback)'
     It '空文字列パターンでコールバックを呼び出し、正確な引数が渡されること'
         cb_check_empty() {
             # $1: res, $2: match, $3: left, $4: right, $5: count
-            sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=<$2|$3|$4|$5>"
+            sxtest_run "$1" -- 'sx_var_set "$@"' "$1=<$2|$3|$4|$5>"
         }
         When call sx_str_sub res: "AB" "" cb_check_empty 2147483647 "${SX_STR_SUB_CB}"
         The variable res should eq "<||AB|1>A<|A|B|2>B<|AB||3>"
@@ -112,7 +112,7 @@ Describe 'sx_str_sub (callback)'
 
     It '空文字列パターンで後方置換コールバックを呼び出し、正確な引数が渡されること'
         cb_check_empty() {
-            sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=<$2|$3|$4|$5>"
+            sxtest_run "$1" -- 'sx_var_set "$@"' "$1=<$2|$3|$4|$5>"
         }
         When call sx_str_sub res: "AB" "" cb_check_empty -2147483647 "${SX_STR_SUB_CB}"
         # 後方からの場合、PRE/POSTフラグにより順序が逆転する
@@ -124,7 +124,7 @@ Describe 'sx_str_sub (callback)'
 
     It '前方リテラル置換でコールバックに正確な引数（match, left, right, count）が渡されること'
         cb_check() {
-            sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=[$2:$5:$3|$4]"
+            sxtest_run "$1" -- 'sx_var_set "$@"' "$1=[$2:$5:$3|$4]"
         }
         # "a1b1c" で固定文字列 "1" に前方マッチ (GLOB無し)
         # 1回目: match="1", left="a", right="b1c", count=1
@@ -135,7 +135,7 @@ Describe 'sx_str_sub (callback)'
 
     It '後方リテラル置換でコールバックに正確な引数（match, left, right, count）が渡されること'
         cb_check() {
-            sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=[$2:$5:$3|$4]"
+            sxtest_run "$1" -- 'sx_var_set "$@"' "$1=[$2:$5:$3|$4]"
         }
         # "a1b1c" で固定文字列 "1" に後方マッチ (GLOB無し)
         # 1回目 (後ろから1つ目): match="1", left="a1b", right="c", count=1
@@ -153,7 +153,7 @@ Describe 'sx_str_sub (callback)'
 
         It '中断した場合は成功分のみ数えること'
             cb_stop2() {
-                sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=X"
+                sxtest_run "$1" -- 'sx_var_set "$@"' "$1=X"
                 return 1
             }
             When call sx_str_sub res:cnt "aaa" "a" cb_stop2 2147483647 "${SX_STR_SUB_CB}"
@@ -168,7 +168,7 @@ Describe 'sx_str_sub (callback)'
                 __sx_str_isep inner: "ab" "-" 1
                 # innerは参照渡しで設定される。
                 # shellcheck disable=SC2154
-                sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=[${inner}:$5]"
+                sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=[${inner}:$5]"
             }
             When call sx_str_sub res:cnt "a1b" "[0-9]" cb_nest 2147483647 "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
             The status should be success

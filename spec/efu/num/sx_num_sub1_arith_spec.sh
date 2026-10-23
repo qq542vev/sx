@@ -4,9 +4,9 @@
 # shellcheck disable=SC2215
 
 Describe 'sx_num_sub1_arith -efu 環境検証'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_num_sub1_arith
-  Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
+  Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   sub1_public_check_value() {
     sx_num_sub1_arith result "$1"
@@ -72,7 +72,7 @@ Describe 'sx_num_sub1_arith -efu 環境検証'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
 
     Context '最小値を得る減算'
       Parameters
@@ -106,9 +106,9 @@ Describe 'sx_num_sub1_arith -efu 環境検証'
 End
 
 Describe '__sx_num_sub1_arith -efu 環境検証'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh __sx_num_sub1_arith
-  Before 'sxtest_setup SX_CFG_NUM_RANGE -- "sx_cfg_set NUM_RANGE=32"'
+  Before 'sxtest_run SX_CFG_NUM_RANGE -- "sx_cfg_set NUM_RANGE=32"'
 
   sub1_check_value() {
     result=unchanged
@@ -143,7 +143,7 @@ Describe '__sx_num_sub1_arith -efu 環境検証'
 
   Context '64ビット設定の最小値'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sxtest_setup SX_CFG_NUM_RANGE -- "sx_cfg_set NUM_RANGE=64"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE -- "sx_cfg_set NUM_RANGE=64"'
 
     Parameters
       -9223372036854775807

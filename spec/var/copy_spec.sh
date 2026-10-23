@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_copy'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
 
   load_var_copy_module() {
     # 対象モジュールと準備用シェルを、ともに既定設定で初期化する。
@@ -54,7 +54,7 @@ Describe 'sx_var_copy'
 
   Describe '配列のコピー'
     It '配列構造全体がコピーされること'
-      sxtest_setup arr1 -- '
+      sxtest_run arr1 -- '
         sx_cfg_set
         sx_arr_gen arr1 a b
       '
@@ -67,7 +67,7 @@ Describe 'sx_var_copy'
     End
 
     It '配列の連鎖コピーが成功すること'
-      sxtest_setup arr1 arr2 -- '
+      sxtest_run arr1 arr2 -- '
         sx_cfg_set
         sx_arr_gen arr1 a
         sx_arr_gen arr2 b
@@ -81,7 +81,7 @@ Describe 'sx_var_copy'
     End
 
     It '同一コピー先への複数連鎖で古い要素が残らないこと'
-      sxtest_setup reg_a reg_c -- '
+      sxtest_run reg_a reg_c -- '
         sx_cfg_set
         sx_arr_gen reg_a 0 1 2
         sx_arr_gen reg_c 3
@@ -95,7 +95,7 @@ Describe 'sx_var_copy'
     End
 
     It '要素数の少ない配列で上書きしたときに古い要素が残らないこと'
-      sxtest_setup big_arr small_arr -- '
+      sxtest_run big_arr small_arr -- '
         sx_cfg_set
         sx_arr_gen big_arr 0 1 2
         sx_arr_gen small_arr 9
@@ -134,7 +134,7 @@ Describe 'sx_var_copy'
 
   Describe '境界ケース'
     It '配列の内容をスカラー変数にコピーすると配列シグネチャがコピーされること'
-      sxtest_setup src_arr -- '
+      sxtest_run src_arr -- '
         sx_cfg_set
         sx_arr_gen src_arr a b
       '
@@ -144,7 +144,7 @@ Describe 'sx_var_copy'
 
     It 'スカラー変数の値を配列にコピーすると配列の値が変わること'
       src_val="value"
-      sxtest_setup dst_val -- '
+      sxtest_run dst_val -- '
         sx_cfg_set
         sx_arr_gen dst_val x
       '

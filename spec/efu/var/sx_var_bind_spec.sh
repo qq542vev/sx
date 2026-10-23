@@ -1,5 +1,5 @@
 Describe 'sx_var_bind -efu 環境検証'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
 
   load_var_bind_efu_module() {
     # 対象モジュールと準備用シェルを、ともに既定設定で初期化する。
@@ -10,7 +10,7 @@ Describe 'sx_var_bind -efu 環境検証'
   BeforeEach load_var_bind_efu_module
 
   It '正常動作'
-    sxtest_setup v1 v2 rest -- '
+    sxtest_run v1 v2 rest -- '
       sx_cfg_set
       sx_var_bind_init "v1:v2:rest"
     '
@@ -23,7 +23,7 @@ Describe 'sx_var_bind -efu 環境検証'
   End
 
   It 'バインド先の枯渇で 1 を返すこと'
-    sxtest_setup v1 -- '
+    sxtest_run v1 -- '
       sx_cfg_set
       sx_var_bind_init "v1:"
     '
@@ -36,7 +36,7 @@ Describe 'sx_var_bind -efu 環境検証'
   End
 
   It '@name への分配が正常動作すること'
-    sxtest_setup x e_arr -- '
+    sxtest_run x e_arr -- '
       sx_cfg_set
       sx_var_bind_init "x:@e_arr"
     '
@@ -49,7 +49,7 @@ Describe 'sx_var_bind -efu 環境検証'
   End
 
   It '空結果変数で残りを破棄できること'
-    sxtest_setup e1 e2 erest -- '
+    sxtest_run e1 e2 erest -- '
       sx_cfg_set
       sx_var_bind_init "e1:e2:erest"
     '
@@ -62,7 +62,7 @@ Describe 'sx_var_bind -efu 環境検証'
   End
 
   It '空結果変数で枯渇時に 1 を返すこと'
-    sxtest_setup e3 -- '
+    sxtest_run e3 -- '
       sx_cfg_set
       sx_var_bind_init "e3:"
     '

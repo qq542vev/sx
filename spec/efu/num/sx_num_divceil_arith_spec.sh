@@ -4,9 +4,9 @@
 # shellcheck disable=SC2215
 
 Describe 'sx_num_divceil_arith -efu 環境検証'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_num_divceil_arith
-  Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
+  Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   divceil_check_value() {
     expected="$1"
@@ -80,7 +80,7 @@ Describe 'sx_num_divceil_arith -efu 環境検証'
 
   Context '32bit算術シェル専用の算術域境界'
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
     It 'MIN / MAX の切り上げ商を-e下で検証すること'
       When run efu_run divceil_check_value -1 -2147483648 2147483647
@@ -92,7 +92,7 @@ Describe 'sx_num_divceil_arith -efu 環境検証'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
 
     Context '丸め結果'
       Parameters

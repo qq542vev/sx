@@ -4,7 +4,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_sub_nat0'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_num_sub_nat0
 
   It '引数0個で結果が0になること'
@@ -80,7 +80,7 @@ Describe 'sx_num_sub_nat0'
   End
 
   Context '32bit算術シェル専用の算術域境界 (NUM_RANGE=32)'
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
     Skip if '32bit算術シェル専用のため' arith_not32
 
     It '最上位チャンクの差が0でも先頭ゼロを残さないこと'
@@ -97,7 +97,7 @@ Describe 'sx_num_sub_nat0'
   End
 
   Context '算術域境界 (NUM_RANGE=64)'
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=64"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=64"'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
 
     It '最上位チャンクの差が0でも先頭ゼロを残さないこと'

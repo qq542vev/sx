@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_rw_deep'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
 
   setup_var_is_rw_deep_fixture() {
     # 対象モジュールと準備用シェルを、ともに既定設定で初期化する。
@@ -11,7 +11,7 @@ Describe 'sx_var_is_rw_deep'
       SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF
     Include ./spec/support/library.sh sx_var_is_rw_deep
     # 各Exampleで配列の初期状態を準備する。
-    sxtest_setup myarr sig_arr first second -- '
+    sxtest_run myarr sig_arr first second -- '
       sx_cfg_set
       sx_arr_gen myarr a b c
       sx_arr_gen sig_arr a

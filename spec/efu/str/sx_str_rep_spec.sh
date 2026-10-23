@@ -1,6 +1,6 @@
 # shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 Describe 'sx_str_rep -efu 環境検証'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_str_rep
 
   It '正常動作'
@@ -33,7 +33,7 @@ Describe 'sx_str_rep -efu 環境検証'
   End
 
   It '数値範囲を超える10進表記の回数でも正常に終了すること'
-    sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
+    sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
     When run efu_run sx_str_rep res "" 9223372036854775809
     The status should be success
     The stderr should equal ''

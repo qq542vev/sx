@@ -18,9 +18,9 @@ Describe 'sx_str_sub 多倍長対応'
       *) return 64;;
     esac
   }
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
 
-  cb_replace() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X"; }
+  cb_replace() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=X"; }
 
   Context '巨大な正負の回数制限'
     Parameters
@@ -171,10 +171,10 @@ Describe 'sx_str_sub 多倍長対応'
 
     It '元文字列長までカウンタを増やせること'
       load_subject __sx_str_sub
-      sxtest_setup str -- 'sx_str_rep "$@"' str a "$1"
-      sxtest_setup expected -- 'sx_str_rep "$@"' expected X "$1"
+      sxtest_run str -- 'sx_str_rep "$@"' str a "$1"
+      sxtest_run expected -- 'sx_str_rep "$@"' expected X "$1"
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- '__sx_cfg_set "$@"' NUM_RANGE=8
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- '__sx_cfg_set "$@"' NUM_RANGE=8
       case "$1" in
         128) __sx_num_add1_arith() { return 64; };;
         *) __sx_num_add1_nat0() { return 64; };;
@@ -197,10 +197,10 @@ Describe 'sx_str_sub 多倍長対応'
 
     It '両端を含む128回を多倍長経路で数えること'
       load_subject __sx_str_sub
-      sxtest_setup str -- 'sx_str_rep "$@"' str a 127
-      sxtest_setup expected -- 'sx_str_rep "$@"' expected aX 127
+      sxtest_run str -- 'sx_str_rep "$@"' str a 127
+      sxtest_run expected -- 'sx_str_rep "$@"' expected aX 127
       expected="X${expected}"
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- '__sx_cfg_set "$@"' NUM_RANGE=8
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- '__sx_cfg_set "$@"' NUM_RANGE=8
       __sx_num_add1_arith() { return 64; }
       case "$3" in 0 | 1) rep=X;; *) rep=cb_replace;; esac
       When call __sx_str_sub res:cnt "$str" "$2" "$rep" "$1" "$3"
@@ -231,7 +231,7 @@ Describe 'sx_str_sub 多倍長対応'
       __sx_num_add1_arith() { return 64; }
       stop_at=$4
       cb_stop() {
-        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X"
+        sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=X"
         case "${5}" in "$stop_at") return 77;; esac
       }
       When call sx_str_sub res:cnt abaaba "$2" cb_stop "$1" "$3"
@@ -257,7 +257,7 @@ Describe 'sx_str_sub 多倍長対応'
       }
       cb_outer() {
         sx_str_sub res:cnt zz '' cb_replace '' 2
-        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=[${5}]"
+        sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=[${5}]"
       }
       When call sx_str_sub res:cnt ababa "$2" cb_outer "$1" "$3"
       The status should be success
@@ -299,7 +299,7 @@ Describe 'sx_str_sub 多倍長対応'
   It '結果未設定のコールバックでは前回の値を使わずマッチ文字列を保持すること'
     load_subject sx_str_sub
     cb_optional() {
-      case "${5}" in 1) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X";; esac
+      case "${5}" in 1) sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=X";; esac
     }
     When call sx_str_sub res:cnt aba a cb_optional '' 2
     The status should be success

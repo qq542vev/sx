@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_swap'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
 
   setup_var_swap_fixture() {
     # 対象モジュールと準備用シェルを、ともに既定設定で初期化する。
@@ -11,7 +11,7 @@ Describe 'sx_var_swap'
       SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF
     Include ./spec/support/library.sh sx_var_swap
     # 各Exampleで配列の初期状態を準備する。
-    sxtest_setup arr1 arr2 -- '
+    sxtest_run arr1 arr2 -- '
       sx_cfg_set
       sx_arr_gen arr1 a
       sx_arr_gen arr2 b

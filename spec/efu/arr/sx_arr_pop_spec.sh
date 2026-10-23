@@ -1,5 +1,5 @@
 Describe 'sx_arr_pop -efu 環境検証'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
 
   setup_arr_pop_efu_fixture() {
     # 対象モジュールと準備用シェルを、ともに既定設定で初期化する。
@@ -7,7 +7,7 @@ Describe 'sx_arr_pop -efu 環境検証'
       SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF
     Include ./spec/support/library.sh sx_arr_pop
     # 各Exampleで配列の初期状態を準備する。
-    sxtest_setup myarr -- '
+    sxtest_run myarr -- '
       sx_cfg_set
       sx_arr_gen myarr a b c
     '

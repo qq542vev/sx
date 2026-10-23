@@ -6,18 +6,18 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_isep (callback)'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_str_isep
 
   It '正方向のコールバックで動的セパレータを挿入すること'
-    cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($4)"; }
+    cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=($4)"; }
     When call sx_str_isep res: "123456" cb 2 "" "1"
     The status should be success
     The variable res should equal "12(1)34(2)56"
   End
 
   It '逆方向のコールバックで動的セパレータを挿入すること'
-    cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($4)"; }
+    cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=($4)"; }
     When call sx_str_isep res: "12345" cb -2 "" "1"
     The status should be success
     The variable res should equal "1(2)23(1)45"
@@ -25,7 +25,7 @@ Describe 'sx_str_isep (callback)'
 
   It 'コールバック引数 (left, right, count) が正しいこと (Forward)'
     # callback res left right count
-    cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=:${2}|${3}:${4}"; }
+    cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=:${2}|${3}:${4}"; }
     
     # Forward: 123456, int=2
     # 1st: left=12, right=3456, count=1
@@ -36,7 +36,7 @@ Describe 'sx_str_isep (callback)'
   End
 
   It 'コールバック引数 (left, right, count) が正しいこと (Backward)'
-    cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=:${2}|${3}:${4}"; }
+    cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=:${2}|${3}:${4}"; }
     
     # Backward: 123456, int=-2
     # 1st: left=1234, right=56, count=1
@@ -47,21 +47,21 @@ Describe 'sx_str_isep (callback)'
   End
 
   It 'ab に対する正方向 (int=1) の left/right が正しいこと'
-    cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=[${2}:${3}]"; }
+    cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=[${2}:${3}]"; }
     When call sx_str_isep res: "ab" cb 1 "" "1"
     The status should be success
     The variable res should equal "a[a:b]b"
   End
 
   It 'ab に対する逆方向 (int=-1) の left/right が正しいこと'
-    cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=[${2}:${3}]"; }
+    cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=[${2}:${3}]"; }
     When call sx_str_isep res: "ab" cb -1 "" "1"
     The status should be success
     The variable res should equal "a[a:b]b"
   End
 
   It 'リミットがコールバックでも機能すること'
-    cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=*"; }
+    cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=*"; }
     When call sx_str_isep res: "123456" cb 2 1 "1"
     The status should be success
     The variable res should equal "12*3456"
@@ -69,7 +69,7 @@ Describe 'sx_str_isep (callback)'
 
   It 'コールバックが非0を返すと正方向の挿入を中断すること'
     cb_stop() {
-      sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=!"
+      sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=!"
       [ "$4" -lt 2 ] # count=2 で非0を返す
     }
     # 1st: left=12, count=1 -> returns 0, inserts !
@@ -81,7 +81,7 @@ Describe 'sx_str_isep (callback)'
 
   It 'コールバックが非0を返すと逆方向の挿入を中断すること'
     cb_stop() {
-      sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=!"
+      sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=!"
       [ "$4" -lt 2 ] # count=2 で非0を返す
     }
     # Backward "123456" int=-2
@@ -94,7 +94,7 @@ Describe 'sx_str_isep (callback)'
 
   Context 'SX_STR_ISEP_PRE / POST フラグ (コールバック)'
     It 'SX_STR_ISEP_PRE で先頭コールバックを呼び出すこと'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=<${2}:${3}:${4}>"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=<${2}:${3}:${4}>"; }
       # Forward "abc", int=1, PRE
       # 1st: PRE -> left="", right="abc", count=1
       # 2nd: loop -> left="a", right="bc", count=2
@@ -105,7 +105,7 @@ Describe 'sx_str_isep (callback)'
     End
 
     It 'SX_STR_ISEP_POST で末尾コールバックを呼び出すこと'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=<${2}:${3}:${4}>"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=<${2}:${3}:${4}>"; }
       # Forward "abc", int=1, POST
       # 1st: loop -> left="a", right="bc", count=1
       # 2nd: loop -> left="ab", right="c", count=2
@@ -116,7 +116,7 @@ Describe 'sx_str_isep (callback)'
     End
 
     It '逆方向での PRE | POST コールバック'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($4)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=($4)"; }
       # Backward "1234", int=-2, PRE | POST
       # 1st: POST -> count=1
       # 2nd: loop -> count=2
@@ -127,7 +127,7 @@ Describe 'sx_str_isep (callback)'
     End
 
     It '空文字列に対して PRE|POST を指定した場合 (コールバック)'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=A"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=A"; }
       When call sx_str_isep res: "" cb 1 "" $((1 | 2 | 4))
       The status should be success
       The variable res should equal "A"
@@ -136,7 +136,7 @@ Describe 'sx_str_isep (callback)'
 
   Context 'バインド形式で成功挿入回数を取得する場合 (コールバック)'
     It 'res:cnt で結果と成功回数を取得すること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($4)"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=($4)"; }
       When call sx_str_isep res:cnt "123456" cb 2 "" "1"
       The status should be success
       The variable res should equal "12(1)34(2)56"
@@ -145,7 +145,7 @@ Describe 'sx_str_isep (callback)'
 
     It '中断した場合は成功分のみ数えること'
       cb_stop() {
-        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=!"
+        sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=!"
         [ "$4" -lt 2 ]
       }
       When call sx_str_isep res:cnt "123456" cb_stop 2 "" "1"
@@ -170,7 +170,7 @@ Describe 'sx_str_isep (callback)'
     End
 
     It '有効な境界だけを処理して元文字列を保持すること'
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=-"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=-"; }
       When call sx_str_isep res:cnt "$2" cb "$1" '' "$3"
       The status should be success
       The variable res should equal "$4"
@@ -180,7 +180,7 @@ Describe 'sx_str_isep (callback)'
 
   It '値を設定しないコールバックが前回の値を再利用しないこと'
     cb() {
-      case "${4}" in 1) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=-";; esac
+      case "${4}" in 1) sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=-";; esac
     }
     When call sx_str_isep res:cnt abc cb 1 '' 7
     The status should be success
@@ -195,10 +195,10 @@ Describe 'sx_str_isep (callback)'
     End
 
     It '外側の結果と成功回数を復元して失敗した挿入を破棄すること'
-      inner() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=!"; }
+      inner() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=!"; }
       cb() {
         sx_str_isep res:cnt ab inner 1 '' 7
-        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=-"
+        sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=-"
         case "${4}" in 2) return 77;; esac
       }
       When call sx_str_isep res:cnt abc cb "$1" '' 7
@@ -212,7 +212,7 @@ Describe 'sx_str_isep (callback)'
     It 'コールバック内のリテラル挿入が外側の結果・回数を壊さないこと'
       cb() {
         sx_str_isep inner: "ab" "-" 1
-        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=[${inner}:$4]"
+        sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=[${inner}:$4]"
       }
       When call sx_str_isep res:cnt "123456" cb 2 "" "1"
       The status should be success
@@ -221,10 +221,10 @@ Describe 'sx_str_isep (callback)'
     End
 
     It 'コールバック内のコールバック挿入が内外の回数を壊さないこと'
-      inner() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($4)"; }
+      inner() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=($4)"; }
       cb() {
         sx_str_isep sub:scnt "ab" inner 1 "" "1"
-        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=<$sub:$scnt:$4>"
+        sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=<$sub:$scnt:$4>"
       }
       When call sx_str_isep res:cnt "123456" cb 2 "" "1"
       The status should be success
@@ -235,7 +235,7 @@ Describe 'sx_str_isep (callback)'
     It '同名変数でのネストでも外側の bind が汚染されないこと'
       cb() {
         sx_str_isep shared: "ab" "-" 1
-        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($4)"
+        sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=($4)"
       }
       When call sx_str_isep shared "12" cb 1 "" "1"
       The status should be success

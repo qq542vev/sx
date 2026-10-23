@@ -39,7 +39,7 @@ Describe '配列操作とリビジョン更新の分離'
     esac
   }
 
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
 
   Context 'raw の元配列は更新しない'
     Parameters
@@ -50,8 +50,8 @@ Describe '配列操作とリビジョン更新の分離'
     It 'push_raw は設定にかかわらず末尾へ追加し署名とカウンタを保持する'
       load_subject __sx_arr_push_raw
       SX_SYS_REV=${SX_SYS_REV-0}
-      sxtest_setup SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1"
-      sxtest_setup arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a
+      sxtest_run SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1"
+      sxtest_run arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a
       before_sig=$arr
       before_rev=$SX_SYS_REV
       When call __sx_arr_push_raw arr b ''
@@ -67,8 +67,8 @@ Describe '配列操作とリビジョン更新の分離'
     It 'splice_raw は設定にかかわらず挿入・削除し署名とカウンタを保持する'
       load_subject __sx_arr_splice_raw
       SX_SYS_REV=${SX_SYS_REV-0}
-      sxtest_setup SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1"
-      sxtest_setup arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b c
+      sxtest_run SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1"
+      sxtest_run arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b c
       before_sig=$arr
       before_rev=$SX_SYS_REV
       When call __sx_arr_splice_raw arr 1 1 x y
@@ -86,8 +86,8 @@ Describe '配列操作とリビジョン更新の分離'
     It 'pop_raw は設定にかかわらず末尾を取り出し元の署名とカウンタを保持する'
       load_subject __sx_arr_pop_raw
       SX_SYS_REV=${SX_SYS_REV-0}
-      sxtest_setup SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1"
-      sxtest_setup arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b c
+      sxtest_run SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1"
+      sxtest_run arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b c
       before_sig=$arr
       before_rev=$SX_SYS_REV
       When call __sx_arr_pop_raw x: arr
@@ -110,7 +110,7 @@ Describe '配列操作とリビジョン更新の分離'
       sx_arr_gen arr head
       sx_cfg_set ARR_REF=@ ARR_HOLE=hole
     '
-    sxtest_setup src arr SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+    sxtest_run src arr SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
     before_sig=$arr
     before_rev=$SX_SYS_REV
     When call __sx_arr_push_raw arr '@src' hole ''
@@ -130,7 +130,7 @@ Describe '配列操作とリビジョン更新の分離'
   It 'pop_raw の要素不足では分配先・元配列・カウンタを変更しない'
     load_subject __sx_arr_pop_raw
     SX_SYS_REV=${SX_SYS_REV-0}
-    sxtest_setup arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a
+    sxtest_run arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a
     x=original
     before_sig=$arr
     before_rev=$SX_SYS_REV
@@ -147,7 +147,7 @@ Describe '配列操作とリビジョン更新の分離'
   It 'pop_raw の分配先配列にはリビジョンを発行し元配列の署名は保持する'
     load_subject __sx_arr_pop_raw
     SX_SYS_REV=${SX_SYS_REV-0}
-    sxtest_setup arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b c
+    sxtest_run arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b c
     before_sig=$arr
     before_rev=$SX_SYS_REV
     When call __sx_arr_pop_raw 2out: arr
@@ -172,8 +172,8 @@ Describe '配列操作とリビジョン更新の分離'
     It 'push は設定と検証省略の有無に従い更新を一度だけ行う'
       load_subject sx_arr_push
       SX_SYS_REV=${SX_SYS_REV-0}
-      sxtest_setup SX_CFG_ARR_UPDATE SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1" "SKIP_CHK=$2"
-      sxtest_setup arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a
+      sxtest_run SX_CFG_ARR_UPDATE SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1" "SKIP_CHK=$2"
+      sxtest_run arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a
       before_sig=$arr
       before_rev=$SX_SYS_REV
       When call sx_arr_push arr b
@@ -191,8 +191,8 @@ Describe '配列操作とリビジョン更新の分離'
     It 'splice は設定と検証省略の有無に従い更新を一度だけ行う'
       load_subject sx_arr_splice
       SX_SYS_REV=${SX_SYS_REV-0}
-      sxtest_setup SX_CFG_ARR_UPDATE SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1" "SKIP_CHK=$2"
-      sxtest_setup arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b
+      sxtest_run SX_CFG_ARR_UPDATE SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1" "SKIP_CHK=$2"
+      sxtest_run arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b
       before_sig=$arr
       before_rev=$SX_SYS_REV
       When call sx_arr_splice arr 1 1 x
@@ -210,8 +210,8 @@ Describe '配列操作とリビジョン更新の分離'
     It 'pop は成功したときだけ設定に従い更新を一度だけ行う'
       load_subject sx_arr_pop
       SX_SYS_REV=${SX_SYS_REV-0}
-      sxtest_setup SX_CFG_ARR_UPDATE SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1" "SKIP_CHK=$2"
-      sxtest_setup arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b
+      sxtest_run SX_CFG_ARR_UPDATE SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1" "SKIP_CHK=$2"
+      sxtest_run arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b
       before_sig=$arr
       before_rev=$SX_SYS_REV
       When call sx_arr_pop x: arr
@@ -230,7 +230,7 @@ Describe '配列操作とリビジョン更新の分離'
     It 'gen は設定と検証省略の有無にかかわらず一度だけ更新し設定値を保持する'
       load_subject sx_arr_gen
       SX_SYS_REV=${SX_SYS_REV-0}
-      sxtest_setup SX_CFG_ARR_UPDATE SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1" "SKIP_CHK=$2"
+      sxtest_run SX_CFG_ARR_UPDATE SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1" "SKIP_CHK=$2"
       before_rev=$SX_SYS_REV
       When call sx_arr_gen arr a b
       The status should be success
@@ -252,8 +252,8 @@ Describe '配列操作とリビジョン更新の分離'
     It '分配先の生成が元配列の更新方針を変更しない'
       load_subject sx_arr_pop
       SX_SYS_REV=${SX_SYS_REV-0}
-      sxtest_setup SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1"
-      sxtest_setup arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b c
+      sxtest_run SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1"
+      sxtest_run arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b c
       before_sig=$arr
       before_rev=$SX_SYS_REV
       When call sx_arr_pop 2out: arr
@@ -286,8 +286,8 @@ Describe '配列操作とリビジョン更新の分離'
     It '配列への追加は署名と設定値を保持する'
       load_subject "$1"
       SX_SYS_REV=${SX_SYS_REV-0}
-      sxtest_setup SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$2"
-      sxtest_setup arr tail SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_var_bind_init "$@"' "${SX_SYS_REV-0}" "$3"
+      sxtest_run SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$2"
+      sxtest_run arr tail SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_var_bind_init "$@"' "${SX_SYS_REV-0}" "$3"
       before_sig=$arr
       before_rev=$SX_SYS_REV
       When call "$1" rest "$3" x y

@@ -4,9 +4,9 @@
 # shellcheck disable=SC2215
 
 Describe 'sx_num_add_arith -efu 環境検証'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_num_add_arith
-  Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
+  Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   It '数値省略時も正常に終了すること'
     When run efu_run sx_num_add_arith result
@@ -61,7 +61,7 @@ Describe 'sx_num_add_arith -efu 環境検証'
 
   Context '32bit算術シェル専用の算術域境界'
     Skip if '32bit算術シェル専用のため' arith_not32
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
     Parameters
       -2147483648
@@ -79,7 +79,7 @@ Describe 'sx_num_add_arith -efu 環境検証'
 
   Context '64ビット設定の最小値'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
 
     Parameters
       -9223372036854775808

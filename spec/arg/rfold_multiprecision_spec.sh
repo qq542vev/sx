@@ -17,7 +17,7 @@ Describe 'sx_arg_rfold 多倍長対応'
       *) return 64;;
     esac
   }
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
 
   select_rfold_path() {
     case "$1" in
@@ -32,7 +32,7 @@ Describe 'sx_arg_rfold 多倍長対応'
   It '引数個数に安全範囲の上限を適用しない'
     load_subject sx_arg_rfold
     __sx_num_is_nat0_safe() { return 1; }
-    cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${2}${3}"; }
+    cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=${2}${3}"; }
     When call sx_arg_rfold res cb init a b c
     The status should be success
     The variable res should equal initcba
@@ -46,9 +46,9 @@ Describe 'sx_arg_rfold 多倍長対応'
 
     It '右端から元の添字と特殊文字を含む値を渡す'
       load_subject sx_arg_rfold
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_rfold_path "$2"
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${2}|${4}:${3}"; }
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=${2}|${4}:${3}"; }
       When call sx_arg_rfold res cb init 'a b' '' "c'd"
       The status should be success
       The variable res should equal "init|3:c'd|2:|1:a b"
@@ -56,11 +56,11 @@ Describe 'sx_arg_rfold 多倍長対応'
 
     It '戻り値の未設定時はアキュムレータを保持し添字だけを進める'
       load_subject sx_arg_rfold
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_rfold_path "$2"
       cb() {
         case "$3" in skip) return 0;; esac
-        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${2}|${4}:${3}"
+        sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=${2}|${4}:${3}"
       }
       When call sx_arg_rfold res cb init a skip c
       The status should be success
@@ -69,10 +69,10 @@ Describe 'sx_arg_rfold 多倍長対応'
 
     It '空文字列の戻り値も新しいアキュムレータとして採用する'
       load_subject sx_arg_rfold
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_rfold_path "$2"
       cb() {
-        case "$3" in empty) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=";; *) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${2}|${4}:${3}";; esac
+        case "$3" in empty) sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=";; *) sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=${2}|${4}:${3}";; esac
       }
       When call sx_arg_rfold res cb init a empty c
       The status should be success
@@ -81,12 +81,12 @@ Describe 'sx_arg_rfold 多倍長対応'
 
     It '失敗時の出力を破棄し直前のアキュムレータと終了状態を返す'
       load_subject sx_arg_rfold
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_rfold_path "$2"
       calls=''
       cb() {
         calls="${calls}${4}:${3};"
-        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${2}|${4}:${3}"
+        sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=${2}|${4}:${3}"
         case "$4" in 2) return 77;; esac
         return 0
       }
@@ -98,9 +98,9 @@ Describe 'sx_arg_rfold 多倍長対応'
 
     It '結果変数へ再入しても外側のアキュムレータと添字を保持する'
       load_subject sx_arg_rfold
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_rfold_path "$2"
-      inner_cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${2}[${4}:${3}]"; }
+      inner_cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=${2}[${4}:${3}]"; }
       outer_cb() { sx_arg_rfold "$1" inner_cb "${2}|${4}" "${3}x" "${3}y"; }
       When call sx_arg_rfold res outer_cb init a b
       The status should be success
@@ -115,7 +115,7 @@ Describe 'sx_arg_rfold 多倍長対応'
       case "${#}:${2-}" in 2:10) return 1;; esac
       return 0
     }
-    inner_cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${2}[${4}:${3}]"; }
+    inner_cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=${2}[${4}:${3}]"; }
     outer_cb() { sx_arg_rfold "$1" inner_cb "${2}|${4}" "$3"; }
     When call sx_arg_rfold res outer_cb init a b c d
     The status should be success
@@ -131,7 +131,7 @@ Describe 'sx_arg_rfold 多倍長対応'
 
     It '数値経路を判定せず初期値と終了状態0を返す'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       fit_called=0 called=0 res=old
       __sx_num_is_int_fit_dec() { fit_called=1; return 1; }
       cb() { called=1; }
@@ -164,7 +164,7 @@ Describe 'sx_arg_rfold 多倍長対応'
       done
       expected="init${expected}"
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       case "$count" in
         121) __sx_num_sub1_nat0() { return 64; };;
         *) __sx_num_sub1_arith() { return 64; };;
@@ -173,7 +173,7 @@ Describe 'sx_arg_rfold 多倍長対応'
       cb() {
         case "$first_idx" in 0) first_idx="$4";; esac
         last_idx="$4"
-        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${2}|${4}:${3}"
+        sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=${2}|${4}:${3}"
       }
       When call __sx_arg_rfold res cb init "$@"
       The status should be success

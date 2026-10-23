@@ -5,11 +5,11 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_cmp_arith'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_num_cmp_arith
 
   setup_num_range() {
-    sxtest_setup SX_CFG_NUM_RANGE setup_num_min setup_num_max -- \
+    sxtest_run SX_CFG_NUM_RANGE setup_num_min setup_num_max -- \
       'sx_cfg_set "NUM_RANGE=$1"; setup_num_min=$SX_SYS_NUM_MIN; setup_num_max=$SX_SYS_NUM_MAX' "$1"
   }
 

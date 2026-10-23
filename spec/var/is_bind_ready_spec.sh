@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_bind_ready'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
 
   setup_var_is_bind_ready_fixture() {
     # 対象モジュールと準備用シェルを、ともに既定設定で初期化する。
@@ -11,7 +11,7 @@ Describe 'sx_var_is_bind_ready'
       SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF
     Include ./spec/support/library.sh sx_var_is_bind_ready
     # 各Exampleで未設定・空文字列を含む変数の初期状態を準備する。
-    sxtest_setup bir_a bir_b bir_c bir_d bir_e bir_x bir_arr bir_f bir_g bir_h bir_p \
+    sxtest_run bir_a bir_b bir_c bir_d bir_e bir_x bir_arr bir_f bir_g bir_h bir_p \
       bir_q bir_y bir_z bir_r1 bir_r2 bir_res bir_ro1 bir_ro2 bir_rok bir_roarr bir_t1 \
       bir_t2 bir_t3 bir_tarr -- '
       sx_cfg_set

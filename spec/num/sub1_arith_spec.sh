@@ -6,9 +6,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_sub1_arith'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_num_sub1_arith
-  Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
+  Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   Context '符号・基数と32ビットの境界値'
     Parameters
@@ -129,7 +129,7 @@ Describe 'sx_num_sub1_arith'
 
   Context '64ビット設定'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=64"'
 
     Context '境界値'
       Parameters
@@ -165,9 +165,9 @@ Describe 'sx_num_sub1_arith'
 End
 
 Describe '__sx_num_sub1_arith'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh __sx_num_sub1_arith
-  Before 'sxtest_setup SX_CFG_NUM_RANGE -- "sx_cfg_set NUM_RANGE=32"'
+  Before 'sxtest_run SX_CFG_NUM_RANGE -- "sx_cfg_set NUM_RANGE=32"'
 
   Context '符号・基数と32ビットの境界値'
     Parameters
@@ -218,7 +218,7 @@ Describe '__sx_num_sub1_arith'
 
   Context '64ビットの境界値'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
-    Before 'sxtest_setup SX_CFG_NUM_RANGE -- "sx_cfg_set NUM_RANGE=64"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE -- "sx_cfg_set NUM_RANGE=64"'
 
     Parameters
       9223372036854775807 9223372036854775806

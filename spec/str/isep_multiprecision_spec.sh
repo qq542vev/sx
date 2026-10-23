@@ -18,7 +18,7 @@ Describe 'sx_str_isep 多倍長対応'
       *) return 64;;
     esac
   }
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
 
   It '巨大な間隔 999999999999999999999999999999 では内部境界のパターンを生成しないこと'
     load_subject sx_str_isep
@@ -101,10 +101,10 @@ Describe 'sx_str_isep 多倍長対応'
 
   It '多倍長経路で再入呼び出し後もコールバックの文脈と回数を保持すること 2'
     load_subject sx_str_isep
-    inner() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=-"; }
+    inner() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=-"; }
     cb() {
       sx_str_isep nested: abc inner 1 '' 1
-      sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=<${2}:${3}:${4}>"
+      sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=<${2}:${3}:${4}>"
     }
     When call sx_str_isep res:cnt abcdef cb 2 999999999999999999999999999999 7
     The status should be success
@@ -114,10 +114,10 @@ Describe 'sx_str_isep 多倍長対応'
 
   It '多倍長経路で再入呼び出し後もコールバックの文脈と回数を保持すること -2'
     load_subject sx_str_isep
-    inner() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=-"; }
+    inner() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=-"; }
     cb() {
       sx_str_isep nested: abc inner 1 '' 1
-      sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=<${2}:${3}:${4}>"
+      sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=<${2}:${3}:${4}>"
     }
     When call sx_str_isep res:cnt abcdef cb -2 999999999999999999999999999999 7
     The status should be success
@@ -128,7 +128,7 @@ Describe 'sx_str_isep 多倍長対応'
   It '多倍長経路で非0終了の値を破棄すること 2 回数1'
     load_subject sx_str_isep
     cb() {
-      sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=-"
+      sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=-"
       case "${4}" in 1) return 77;; esac
     }
     When call sx_str_isep res:cnt abcdef cb 2 999999999999999999999999999999 7
@@ -140,7 +140,7 @@ Describe 'sx_str_isep 多倍長対応'
   It '多倍長経路で非0終了の値を破棄すること 2 回数2'
     load_subject sx_str_isep
     cb() {
-      sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=-"
+      sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=-"
       case "${4}" in 2) return 77;; esac
     }
     When call sx_str_isep res:cnt abcdef cb 2 999999999999999999999999999999 7
@@ -152,7 +152,7 @@ Describe 'sx_str_isep 多倍長対応'
   It '多倍長経路で非0終了の値を破棄すること 2 回数4'
     load_subject sx_str_isep
     cb() {
-      sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=-"
+      sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=-"
       case "${4}" in 4) return 77;; esac
     }
     When call sx_str_isep res:cnt abcdef cb 2 999999999999999999999999999999 7
@@ -164,7 +164,7 @@ Describe 'sx_str_isep 多倍長対応'
   It '多倍長経路で非0終了の値を破棄すること -2 回数1'
     load_subject sx_str_isep
     cb() {
-      sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=-"
+      sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=-"
       case "${4}" in 1) return 77;; esac
     }
     When call sx_str_isep res:cnt abcdef cb -2 999999999999999999999999999999 7
@@ -176,7 +176,7 @@ Describe 'sx_str_isep 多倍長対応'
   It '多倍長経路で非0終了の値を破棄すること -2 回数2'
     load_subject sx_str_isep
     cb() {
-      sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=-"
+      sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=-"
       case "${4}" in 2) return 77;; esac
     }
     When call sx_str_isep res:cnt abcdef cb -2 999999999999999999999999999999 7
@@ -188,7 +188,7 @@ Describe 'sx_str_isep 多倍長対応'
   It '多倍長経路で非0終了の値を破棄すること -2 回数4'
     load_subject sx_str_isep
     cb() {
-      sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=-"
+      sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=-"
       case "${4}" in 4) return 77;; esac
     }
     When call sx_str_isep res:cnt abcdef cb -2 999999999999999999999999999999 7
@@ -302,12 +302,12 @@ Describe 'sx_str_isep 多倍長対応'
     It '両端を含めて文字列長+1回挿入できること'
       load_subject __sx_str_isep
       str=
-      sxtest_setup str -- 'sx_str_rep "$@"' str a "$1"
-      sxtest_setup expected -- 'sx_str_rep "$@"' expected a- "$1"
+      sxtest_run str -- 'sx_str_rep "$@"' str a "$1"
+      sxtest_run expected -- 'sx_str_rep "$@"' expected a- "$1"
       expected="-${expected}"
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- '__sx_cfg_set "$@"' NUM_RANGE=8
-      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=-"; }
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX -- '__sx_cfg_set "$@"' NUM_RANGE=8
+      cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=-"; }
       case "$3" in 6) sep=-;; 7) sep=cb;; esac
       When call __sx_str_isep res:cnt "$str" "$sep" 1 '' "$3"
       The status should be success

@@ -1,6 +1,6 @@
 # shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 Describe 'sx_str_split -efu 環境検証'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_str_split
 
   Context '多倍長の回数と直接バインド'
@@ -17,7 +17,7 @@ Describe 'sx_str_split -efu 環境検証'
     End
 
     It '検査の有無によらず-efu下で成功すること'
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       When run efu_run sx_str_split 'a:b:rem' "$2" "$3" "$4" "$5"
       The status should be success
     End

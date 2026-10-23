@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_center'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_str_center
 
   # shellcheck disable=SC2329
@@ -33,7 +33,7 @@ Describe 'sx_str_center'
     End
 
     It '多倍長経路で幅を配分できること'
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
       record_center_sizes
       When call with_ifs_a sx_str_center res 'A' -2147483648 'ab' 'xyz'
       The status should be success
@@ -219,7 +219,7 @@ Describe 'sx_str_center'
   End
 
   Context '算術域を超える幅と空の埋め文字列'
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
 
     Parameters
       '2147483648'
@@ -241,7 +241,7 @@ Describe 'sx_str_center'
   End
 
   Context '巨大な幅の配分と繰り返し回数'
-    Before 'sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
+    Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'
     Before 'record_center_sizes'
 
     Parameters
@@ -273,7 +273,7 @@ Describe 'sx_str_center'
 
     It '64bit最大値でも不足長に1を加算せず配分できること'
       Skip if '64bit算術を使用できないため' arith_lt64
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=64
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=64
       When call sx_str_center res '' 9223372036854775807 'ab' 'xyz'
       The status should be success
       The variable center_slices should equal '4611686018427387903 4611686018427387904'
@@ -282,7 +282,7 @@ Describe 'sx_str_center'
     End
 
     It '左右の埋め文字列が同じなら長い側に合わせて一度だけ生成すること'
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
       When call sx_str_center res 'A' -2147483648 'xyz'
       The status should be success
       The variable center_slices should equal '1073741824 1073741823'
@@ -328,7 +328,7 @@ Describe 'sx_str_center'
   End
 
   It '検証を省略しても巨大な幅と空の埋め文字列を処理できること'
-    sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
+    sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
     When call sx_str_center res 'ABC' -1000000000000000000000000000000 '' ''
     The status should be success
     The variable res should equal 'ABC'

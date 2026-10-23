@@ -6,10 +6,10 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_touch'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_var_touch
   It '変数のリビジョンを更新すること'
-    sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a
+    sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a
     old_val="${myarr}"
     When call sx_var_touch myarr
     The status should be success
@@ -23,7 +23,7 @@ Describe 'sx_var_touch'
       sx_arr_gen arr1 a
       sx_arr_gen arr2 b
     '
-    sxtest_setup arr1 arr2 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+    sxtest_run arr1 arr2 SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
     old1="${arr1}"
     old2="${arr2}"
     When call sx_var_touch arr1 arr2

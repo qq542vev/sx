@@ -4,7 +4,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_gen'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_arr_gen
 
   It '新しい配列を値で初期化すること'
@@ -25,14 +25,14 @@ Describe 'sx_arr_gen'
 
   It '参照値とリテラルを指定順に初期化すること'
     src="reference"
-    sxtest_setup SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF=@"
+    sxtest_run SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF=@"
     When call sx_arr_gen myarr_ref "@src" literal
     The status should be success
     The variable myarr_ref_len should equal 2
     The variable myarr_ref_0 should equal "reference"
     The variable myarr_ref_1 should equal "literal"
-    sxtest_setup SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
-    sxtest_setup myarr_ref myarr_ref_len myarr_ref_0 myarr_ref_1 src -- \
+    sxtest_run SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
+    sxtest_run myarr_ref myarr_ref_len myarr_ref_0 myarr_ref_1 src -- \
       'sx_var_unset "$@"' myarr_ref myarr_ref_len myarr_ref_0 myarr_ref_1 src
   End
 
@@ -63,7 +63,7 @@ Describe 'sx_arr_gen'
   End
 
   It '連続してgenを呼び出しても毎回正しく初期化されること'
-    sxtest_setup myarr_seq -- 'sx_var_set myarr_seq'
+    sxtest_run myarr_seq -- 'sx_var_set myarr_seq'
     sx_arr_gen myarr_seq first
     When call sx_arr_gen myarr_seq second
     The variable myarr_seq_len should equal 1

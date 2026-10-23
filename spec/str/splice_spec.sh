@@ -6,7 +6,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_splice'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_str_splice
 
   It '文字列の途中に挿入できること (len=0)'
@@ -112,7 +112,7 @@ Describe 'sx_str_splice'
     End
 
     It "開始位置 $1、削除数 $2 を処理すること"
-      sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
+      sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- 'sx_cfg_set "$@"' NUM_RANGE=32
       When call sx_str_splice res 'abcd' "$1" "$2" 'X'
       The status should be success
       The variable res should equal "$3"
@@ -151,7 +151,7 @@ Describe 'sx_str_splice'
   End
 
   It '検証省略時にも多倍長の範囲を扱うこと'
-    sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
+    sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
     res=abcd
     When call sx_str_splice res "$res" -1000000000000000000000000000000 999999999999999999999999999997
     The status should be success
@@ -175,7 +175,7 @@ Describe 'sx_str_splice'
     End
 
     It '検証を省略しても同じ既定値で処理すること'
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
       When call sx_str_splice res abcd "$1" "$2" X
       The status should be success
       The variable res should equal "$3"

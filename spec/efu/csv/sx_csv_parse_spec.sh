@@ -16,7 +16,7 @@ Describe 'sx_csv_parse -efu 環境検証'
     esac
   }
 
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   tab=$(printf '\t')
 
   Context '公開・内部・検証省略'
@@ -28,70 +28,70 @@ Describe 'sx_csv_parse -efu 環境検証'
 
     It 'data の省略を -efu 下で空入力として扱う'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When run efu_run "$1" res
       The status should be success
     End
 
     It '引用内改行と空フィールドを -efu 下で解析できる'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When run efu_run "$1" res "\"a${SX_STR_LF}b\",${SX_STR_LF}"
       The status should be success
     End
 
     It '引用無効の TSV を -efu 下で解析できる'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When run efu_run "$1" res "a${tab}\"b" '' "$tab" ''
       The status should be success
     End
 
     It '単独の CR と引用フィールド末尾の CR を -efu 下で解析できる'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When run efu_run "$1" res "${SX_STR_CR},\"a${SX_STR_CR}\"${SX_STR_LF}${SX_STR_CR}"
       The status should be success
     End
 
     It '異なる引用符と引用内改行を -efu 下で解析できる'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When run efu_run "$1" res "'a\"${SX_STR_LF}b',\"c'd\"" '' ',' "\"'"
       The status should be success
     End
 
     It '開始時とは別の引用符で閉じようとした場合は -efu 下でもエラーを返す'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When run efu_run "$1" res "\"bad'" '' ',' "\"'"
       The status should equal 1
     End
 
     It '空の sep でも引用内改行を -efu 下で解析できる'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When run efu_run "$1" res "'a,b${SX_STR_LF}c'${SX_STR_LF}\"d'e\"" '' '' "\"'"
       The status should be success
     End
 
     It '空の sep と quote でも -efu 下で解析が完了する'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When run efu_run "$1" res "X:a,'b\"${SX_STR_LF}:c,d" '' '' ''
       The status should be success
     End
 
     It '空の sep でも閉じ引用符の後のカンマを -efu 下で拒否する'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When run efu_run "$1" res '"ok",tail' '' ''
       The status should equal 3
     End
 
     It '通知コールバックが成功なら -efu 下でも成功を返す'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       csv_error() { return 0; }
       When run efu_run "$1" res 'bad"' csv_error
       The status should be success
@@ -99,7 +99,7 @@ Describe 'sx_csv_parse -efu 環境検証'
 
     It '失敗行を保存してから -efu 下で通知し確定済みの空フィールドも保持する'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       csv_error() {
         # 結果配列は通知前に解析関数が参照渡しで設定する。
         # shellcheck disable=SC2154
@@ -114,7 +114,7 @@ Describe 'sx_csv_parse -efu 環境検証'
 
     It '通知コールバックが失敗なら -efu 下でもその終了ステータスを返す'
       load_subject "$1"
-      sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       csv_error() { return 99; }
       When run efu_run "$1" res 'bad"' csv_error
       The status should equal 99

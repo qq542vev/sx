@@ -4,12 +4,12 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_pop'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_arr_pop
 
   Describe '基本 pop'
     It '末尾の1要素をスカラーへ取り出し、元配列から削除すること'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
 
       When call sx_arr_pop x: myarr
       The status should be success
@@ -19,7 +19,7 @@ Describe 'sx_arr_pop'
     End
 
     It '複数スロットへ末尾順に取り出すこと'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
 
       When call sx_arr_pop x:y: myarr
       The status should be success
@@ -31,7 +31,7 @@ Describe 'sx_arr_pop'
     End
 
     It '全要素を取り出すと元配列が空になること'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
 
       When call sx_arr_pop x:y:z: myarr
       The status should be success
@@ -43,7 +43,7 @@ Describe 'sx_arr_pop'
     End
 
     It '元配列が sx 配列のまま残ること'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
 
       When call sx_arr_pop x: myarr
       The status should be success
@@ -53,7 +53,7 @@ Describe 'sx_arr_pop'
 
   Describe '配列と破棄'
     It '数値プレフィックスで配列へ複数割り当てること'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
 
       When call sx_arr_pop 2v: myarr
       The status should be success
@@ -66,7 +66,7 @@ Describe 'sx_arr_pop'
     End
 
     It '数値セグメントで要素を破棄できること'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d
 
       When call sx_arr_pop 2v:1:w: myarr
       The status should be success
@@ -78,7 +78,7 @@ Describe 'sx_arr_pop'
     End
 
     It '破棄のみの bind でも正しく要素が削除されること'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
 
       When call sx_arr_pop 2: myarr
       The status should be success
@@ -90,7 +90,7 @@ Describe 'sx_arr_pop'
 
   Describe '要素不足と失敗'
     It 'スロット数が要素数を超える場合に 1 を返し、何も変更しないこと'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
 
       When call sx_arr_pop x:y:z:w: myarr
       The status should equal 1
@@ -104,7 +104,7 @@ Describe 'sx_arr_pop'
     End
 
     It '末尾「:」の無い bind（x）は要素不足となり 1 を返すこと'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
 
       When call sx_arr_pop x myarr
       The status should equal 1
@@ -113,7 +113,7 @@ Describe 'sx_arr_pop'
     End
 
     It '末尾「:」の無い bind（x:y）も 1 を返し無変更であること'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
 
       When call sx_arr_pop x:y myarr
       The status should equal 1
@@ -123,7 +123,7 @@ Describe 'sx_arr_pop'
     End
 
     It '空の配列から pop すると 1 を返すこと'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr
 
       When call sx_arr_pop x: myarr
       The status should equal 1
@@ -140,7 +140,7 @@ Describe 'sx_arr_pop'
         sx_arr_gen myarr a b c d e
         sx_cfg_set NUM_RANGE=64
       '
-      sxtest_setup myarr SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+      sxtest_run myarr SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
 
       When call sx_arr_pop 3v: myarr
       The status should be success
@@ -153,28 +153,28 @@ Describe 'sx_arr_pop'
 
   Describe 'バリデーション'
     It 'bind が不正な場合に 64 を返すこと'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
 
       When call sx_arr_pop "0x:" myarr
       The status should equal 64
     End
 
     It 'bind が不正な場合に 64 を返すこと（先頭0）'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
 
       When call sx_arr_pop "a  b:" myarr
       The status should equal 64
     End
 
     It '@ を含む bind の場合に 64 を返すこと'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
 
       When call sx_arr_pop "x:@arr:" myarr
       The status should equal 64
     End
 
     It '配列名が未指定の場合に 64 を返すこと'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
 
       When call sx_arr_pop x:
       The status should equal 64
@@ -188,7 +188,7 @@ Describe 'sx_arr_pop'
     End
 
     It '分配先が読み取り専用の場合に 77 を返すこと'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
       readonly x
 
       When call sx_arr_pop x: myarr
@@ -196,7 +196,7 @@ Describe 'sx_arr_pop'
     End
 
     It '元配列の _len が読み取り専用の場合に 77 を返すこと'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
       readonly myarr_len
 
       When call sx_arr_pop x: myarr
@@ -204,7 +204,7 @@ Describe 'sx_arr_pop'
     End
 
     It '設定エラー (EX_CONFIG: 78) を検知すること'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
       check_config() {
         SX_CFG_NUM_RANGE=99
         sx_arr_pop x: myarr
@@ -217,7 +217,7 @@ Describe 'sx_arr_pop'
 
   Describe 'SX_CFG_SKIP_CHK モード'
     It 'checkskip 有効時も成功する'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
       SX_CFG_SKIP_CHK=1
 
       When call sx_arr_pop x: myarr
@@ -227,7 +227,7 @@ Describe 'sx_arr_pop'
     End
 
     It 'checkskip 有効時も要素不足で 1 を返すこと'
-      sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
       SX_CFG_SKIP_CHK=1
 
       When call sx_arr_pop x:y:z:w: myarr

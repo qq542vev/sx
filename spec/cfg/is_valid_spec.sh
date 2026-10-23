@@ -7,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_cfg_is_valid()'
-	Include ./spec/support/setup.sh
+	Include ./spec/support/run.sh
 	Include ./spec/support/library.sh sx_cfg_is_valid
 
 	Context '生成されたパターンによる設定値の検査'
@@ -128,7 +128,7 @@ Describe 'sx_cfg_is_valid()'
 	End
 
 	It '引数なしの検査で設定値の空白と特殊文字を保持すること'
-		sxtest_setup SX_CFG_SIG_ARR SX_CFG_SEP SX_CFG_ARR_HOLE SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' 'SIG_ARR=custom array *' 'SEP=: : *' 'ARR_HOLE=hole *' 'ARR_REF=@ ref'
+		sxtest_run SX_CFG_SIG_ARR SX_CFG_SEP SX_CFG_ARR_HOLE SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' 'SIG_ARR=custom array *' 'SEP=: : *' 'ARR_HOLE=hole *' 'ARR_REF=@ ref'
 		When call sx_cfg_is_valid
 		The status should be success
 	End

@@ -1,22 +1,22 @@
 # 明示した変数だけを戻すテスト補助処理
 
-`setup.sh` の `sxtest_setup` は、別シェルで補助処理を実行し、指定した変数だけを呼び出し元へ戻します。
+`run.sh` の `sxtest_run` は、別シェルで補助処理を実行し、指定した変数だけを呼び出し元へ戻します。
 事前準備・事後検証・コールバックの補助処理・後始末にはこのヘルパーを使います。
 `prepare.sh` の `sx_test_setup` は、旧ヘルパー自身のテストに残しています。
 
 ```sh
-Include ./spec/support/setup.sh
+Include ./spec/support/run.sh
 Include ./spec/support/library.sh sx_arr_splice
 
 It '中間の要素を置換すること'
-  sxtest_setup items SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen items "$@"' "${SX_SYS_REV-0}" a b c
+  sxtest_run items SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen items "$@"' "${SX_SYS_REV-0}" a b c
   When call sx_arr_splice items 1 1 x
   The status should be success
   The variable items_1 should equal x
 End
 ```
 
-構文は `sxtest_setup [変数名|名前=値 ...] -- CMD [引数 ...]` です。
+構文は `sxtest_run [変数名|名前=値 ...] -- CMD [引数 ...]` です。
 
 - 出力の変数名は0個以上。単純な変数名だけを受け付け、バインド形式は受け付けません。`SXTEST_*` は補助処理用の予約名で、出力先・環境変数名には指定できません。
 - `--` の前には、出力変数名と `名前=値` 形式の環境変数指定を混在できます。環境変数指定は子の起動時に適用され、出力名にも指定しない限り親へは戻しません。同名の継承済み環境変数があれば、指定した値で上書きします。
@@ -33,8 +33,8 @@ End
 環境変数を明示して子で利用し、指定した結果だけを戻せます。
 
 ```sh
-sxtest_setup INPUT='a b' result -- 'result=$INPUT'
-sxtest_setup -- ''  # 空CMD・出力なし。ライブラリの読み込みだけを行う。
+sxtest_run INPUT='a b' result -- 'result=$INPUT'
+sxtest_run -- ''  # 空CMD・出力なし。ライブラリの読み込みだけを行う。
 ```
 
 複数の準備処理は、同じ CMD 内にまとめられます。
@@ -42,7 +42,7 @@ sxtest_setup -- ''  # 空CMD・出力なし。ライブラリの読み込みだ�
 生成した配列への追加や削除が続く場合も、一連のデータ準備を同じ CMD で実行します。検証対象の呼び出し、検証用の関数定義、readonly 属性の設定は検証側に置きます。リビジョンの継続が必要な場合は、カウンタの入力と出力も明示します。
 
 ```sh
-sxtest_setup items result -- '
+sxtest_run items result -- '
   sx_arr_gen items "$@"
   sx_arr_push items extra
   result=ready
@@ -52,7 +52,7 @@ sxtest_setup items result -- '
 親のカウンタを引き継ぐ場合も、入力と出力を明示します。
 
 ```sh
-sxtest_setup items SX_SYS_REV -- '
+sxtest_run items SX_SYS_REV -- '
   SX_SYS_REV=$1
   shift
   sx_arr_gen items "$@"
@@ -62,30 +62,29 @@ sxtest_setup items SX_SYS_REV -- '
 検証対象は準備後に検証側で呼び出します。準備側で全体版を読み込んでも、その関数定義を検証側へ持ち込みません。
 
 通常の単独モジュール検証では、準備のために同じspecを別のShellSpecで起動する必要はありません。
-共通の初期状態は `BeforeEach`、ケースごとに異なる初期状態は各Exampleの `sxtest_setup` で準備します。
+共通の初期状態は `BeforeEach`、ケースごとに異なる初期状態は各Exampleの `sxtest_run` で準備します。
 親子の切替用の環境変数・`Skip if`・子の集計文字列の検査は不要になり、各検証結果を直接報告できます。
 具体例は [sx_var_copyのspec](../var/copy_spec.sh) を参照してください。
 
 従来の `env -i` による既定設定での検証を引き継ぐspecでは、各Exampleで対象モジュールを読み込む前に
 設定7変数を `unset` し、モジュールの初期化で既定値と派生値を揃えます。
 準備用のCMDでも `sx_cfg_set` を呼びます。子での設定変更は、出力名に含めない限り検証側へ戻りません。
-子ShellSpecの失敗伝播そのものを検証する [依存検証の試作](../dep/README.md) は、通常のデータ準備とは別に残しています。
 
 ## 事後検証
 
 検証対象が生成した変数を子で読み取る場合は、ShellSpec の `Set 'allexport:on'` を指定します。
-判定だけなら出力変数を指定せず、`Assert sxtest_setup -- CMD` を使います。
+判定だけなら出力変数を指定せず、`Assert sxtest_run -- CMD` を使います。
 
 ```sh
 Describe 'sx_csv_parse'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
   Include ./spec/support/library.sh sx_csv_parse
 
   It '解析結果をSX配列として保存すること'
     Set 'allexport:on'
     When call sx_csv_parse res 'a,b'
     The status should be success
-    Assert sxtest_setup -- 'sx_var_is_arr res res_0'
+    Assert sxtest_run -- 'sx_var_is_arr res res_0'
   End
 End
 ```
@@ -104,7 +103,7 @@ export items items_len items_0 items_1
 比較用の値が必要なら、出力名を明示して受け取れます。
 
 ```sh
-sxtest_setup result -- 'sx_arr_quote result items'
+sxtest_run result -- 'sx_arr_quote result items'
 The variable result should equal "'a' 'b'"
 ```
 
@@ -119,15 +118,15 @@ The variable result should equal "'a' 'b'"
 
 ```sh
 cb() {
-  sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=[$2]"
+  sxtest_run "$1" -- 'sx_var_set "$@"' "$1=[$2]"
 }
 
 upper_cb() {
-  sxtest_setup "$1" -- 'sx_str_upper "$@"' "$1" "$2"
+  sxtest_run "$1" -- 'sx_str_upper "$@"' "$1" "$2"
 }
 
 sum_cb() {
-  sxtest_setup "$1" -- 'sx_num_add_int "$@"' "$1" "$2" "$3"
+  sxtest_run "$1" -- 'sx_num_add_int "$@"' "$1" "$2" "$3"
 }
 ```
 
@@ -140,7 +139,7 @@ sum_cb() {
 設定を既定値に戻す場合は、戻す設定変数だけを出力に指定します。
 
 ```sh
-sxtest_setup SX_CFG_ARR_REF -- 'sx_cfg_set ARR_REF'
+sxtest_run SX_CFG_ARR_REF -- 'sx_cfg_set ARR_REF'
 ```
 
 構成が固定された配列を削除する場合は、ルートだけでなく長さと各要素も出力に指定し、子で削除します。
@@ -148,7 +147,7 @@ sxtest_setup SX_CFG_ARR_REF -- 'sx_cfg_set ARR_REF'
 
 ```sh
 # itemsは2要素の配列。各変数の未設定状態を親へ戻す。
-sxtest_setup items items_len items_0 items_1 -- \
+sxtest_run items items_len items_0 items_1 -- \
   'sx_var_unset "$@"' items items_len items_0 items_1
 ```
 

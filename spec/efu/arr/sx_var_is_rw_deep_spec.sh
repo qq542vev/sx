@@ -1,5 +1,5 @@
 Describe 'sx_var_is_rw_deep -efu 環境検証'
-  Include ./spec/support/setup.sh
+  Include ./spec/support/run.sh
 
   load_var_is_rw_deep_efu_module() {
     # 対象モジュールと準備用シェルを、ともに既定設定で初期化する。
@@ -10,7 +10,7 @@ Describe 'sx_var_is_rw_deep -efu 環境検証'
   BeforeEach load_var_is_rw_deep_efu_module
 
   It '正常動作'
-    sxtest_setup arr -- '
+    sxtest_run arr -- '
       sx_cfg_set
       sx_arr_gen arr a b c
     '
