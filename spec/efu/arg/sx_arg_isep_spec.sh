@@ -2,7 +2,6 @@
 # shellcheck shell=sh disable=SC2329
 # コールバックと経路検証用の差し替え関数は間接的に呼び出される。
 Describe 'sx_arg_isep -efu 環境検証'
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arg_isep
 
@@ -25,7 +24,7 @@ Describe 'sx_arg_isep -efu 環境検証'
       __sx_num_is_int_fit_dec() { case "$#" in 2) return 0;; *) return 1;; esac; }
       __sx_num_add1_arith() { return 64; }
       __sx_num_sub1_arith() { return 64; }
-      cb() { case "$3" in 2) sx_test_setup sx_var_set "${1}=${2}:${3}:${4}";; *) unset "$1";; esac; }
+      cb() { case "$3" in 2) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${2}:${3}:${4}";; *) unset "$1";; esac; }
       verify() {
         sx_arg_isep res cb "$direction" '' 7 ::: a b
         [ "$res" = "'a' '1:2:1' 'b'" ] && check_no_leak
@@ -37,7 +36,7 @@ Describe 'sx_arg_isep -efu 環境検証'
     It 'コールバックの失敗時にも元の値を保持して変数を解放する'
       sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       direction="$2" res=''
-      cb() { sx_test_setup sx_var_set "${1}=discard"; return 77; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=discard"; return 77; }
       verify() {
         status=0
         sx_arg_isep res cb "$direction" 9223372036854775808 7 ::: a b || status="$?"
@@ -50,7 +49,7 @@ Describe 'sx_arg_isep -efu 環境検証'
     It '再入呼び出しが算術経路を選んでも外側の状態を保持する'
       sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       direction="$2" res=''
-      inner_cb() { sx_test_setup sx_var_set "${1}=inner"; }
+      inner_cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=inner"; }
       cb() {
         sx_arg_isep nested_result inner_cb 1 '' 1 ::: x y
         eval "${1}=\${nested_result}"

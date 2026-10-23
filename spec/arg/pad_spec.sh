@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は補助処理用シェルで展開する。
 # shellcheck shell=sh disable=SC2329
 # コールバックはテスト対象から間接的に呼ばれる。
 
@@ -18,7 +19,7 @@ Describe 'sx_arg_pad'
     esac
   }
 
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
 
   Describe 'Form 1 (":::" 区切り)'
     It '右パディング: 3要素を5に拡張'
@@ -239,7 +240,7 @@ Describe 'sx_arg_pad'
   Describe 'コールバックモード (CB)'
     It '右パディング: cbで動的に値を生成'
       load_subject sx_arg_pad
-      cb() { sx_test_setup sx_var_set "${1}=($3)"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($3)"; }
       When call sx_arg_pad res 5 cb "1" ::: a b c
       The status should be success
       eval "set -- $res"
@@ -253,7 +254,7 @@ Describe 'sx_arg_pad'
     
     It '左パディング: cbで動的に値を生成'
       load_subject sx_arg_pad
-      cb() { sx_test_setup sx_var_set "${1}=($3)"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($3)"; }
       When call sx_arg_pad res -5 cb "1" ::: a b c
       The status should be success
       eval "set -- $res"
@@ -267,7 +268,7 @@ Describe 'sx_arg_pad'
 
     It 'CB引数 (idx, cnt, skip) が正しいこと'
       load_subject sx_arg_pad
-      cb() { sx_test_setup sx_var_set "${1}=($2:$3:$4)"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($2:$3:$4)"; }
       When call sx_arg_pad res 5 cb "1" ::: x y z
       The status should be success
       eval "set -- $res"
@@ -277,7 +278,7 @@ Describe 'sx_arg_pad'
     
     It '左パディングでCB引数 (idx, cnt, skip) が正しいこと'
       load_subject sx_arg_pad
-      cb() { sx_test_setup sx_var_set "${1}=($2:$3:$4)"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($2:$3:$4)"; }
       When call sx_arg_pad res -5 cb "1" ::: x y z
       The status should be success
       eval "set -- $res"
@@ -288,7 +289,7 @@ Describe 'sx_arg_pad'
     It 'skip: ret unsetでスロットが飛ばされる'
       load_subject sx_arg_pad
       cb() {
-        case "${3}" in 1|3) sx_test_setup sx_var_set "${1}=x";; *) unset "${1}";; esac
+        case "${3}" in 1|3) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=x";; *) unset "${1}";; esac
       }
       When call sx_arg_pad res 6 cb "1" ::: a b c
       The status should be success
@@ -304,7 +305,7 @@ Describe 'sx_arg_pad'
     It 'skip+idx不変: skip時idxが変化しないこと'
       load_subject sx_arg_pad
       cb() {
-        case "${3}" in 1) unset "${1}";; *) sx_test_setup sx_var_set "${1}=($2:$3)";; esac
+        case "${3}" in 1) unset "${1}";; *) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($2:$3)";; esac
       }
       When call sx_arg_pad res -6 cb "1" ::: a b c
       The status should be success
@@ -329,7 +330,7 @@ Describe 'sx_arg_pad'
     It '中断: cbが非0を返すと処理を中断'
       load_subject sx_arg_pad
       cb() {
-        sx_test_setup sx_var_set "${1}=x"
+        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=x"
         [ "$3" -lt 2 ]
       }
       When call sx_arg_pad res 5 cb "1" ::: a b c
@@ -342,7 +343,7 @@ Describe 'sx_arg_pad'
     It 'パディング不要: len <= arg countならcb呼ばれない'
       load_subject sx_arg_pad
       cb_called=0
-      cb() { : $((cb_called += 1)); sx_test_setup sx_var_set "${1}=x"; }
+      cb() { : $((cb_called += 1)); sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=x"; }
       When call sx_arg_pad res 3 cb "1" ::: a b c
       The status should be success
       eval "set -- $res"
@@ -352,7 +353,7 @@ Describe 'sx_arg_pad'
 
     It '空入力からの右パディング'
       load_subject sx_arg_pad
-      cb() { sx_test_setup sx_var_set "${1}=($3)"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($3)"; }
       When call sx_arg_pad res 3 cb "1" :::
       The status should be success
       eval "set -- $res"
@@ -366,7 +367,7 @@ Describe 'sx_arg_pad'
   Describe 'コールバックモード - 拡張テスト'
     It '左パディング: パディング数 > 2 でも全て正しくバインドされる'
       load_subject sx_arg_pad
-      cb() { sx_test_setup sx_var_set "${1}=($3)"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($3)"; }
       When call sx_arg_pad res -5 cb "1" :::
       The status should be success
       eval "set -- $res"
@@ -380,7 +381,7 @@ Describe 'sx_arg_pad'
     
     It '右パディング: 元の値が10個以上でも正しく動作'
       load_subject sx_arg_pad
-      cb() { sx_test_setup sx_var_set "${1}=($3)"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($3)"; }
       When call sx_arg_pad res 12 cb "1" ::: 0 1 2 3 4 5 6 7 8 9 A B
       The status should be success
       eval "set -- $res"
@@ -393,7 +394,7 @@ Describe 'sx_arg_pad'
     
     It '左パディング: 元の値が10個以上でも正しく動作'
       load_subject sx_arg_pad
-      cb() { sx_test_setup sx_var_set "${1}=($3)"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($3)"; }
       When call sx_arg_pad res -15 cb "1" ::: 0 1 2 3 4 5 6 7 8 9 A B
       The status should be success
       eval "set -- $res"
@@ -407,7 +408,7 @@ Describe 'sx_arg_pad'
     
     It '右パディング: パディング数 > 2 でも全て正しくバインドされる'
       load_subject sx_arg_pad
-      cb() { sx_test_setup sx_var_set "${1}=($3)"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($3)"; }
       When call sx_arg_pad res 5 cb "1" :::
       The status should be success
       eval "set -- $res"
@@ -422,7 +423,7 @@ Describe 'sx_arg_pad'
     It '左パディング+skip混在+元の値多数でidx/skipが正しい'
       load_subject sx_arg_pad
       cb() {
-        case "${3}" in 1|3|5) unset "${1}";; *) sx_test_setup sx_var_set "${1}=($2:$3:$4)";; esac
+        case "${3}" in 1|3|5) unset "${1}";; *) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($2:$3:$4)";; esac
       }
       When call sx_arg_pad res -14 cb "1" ::: a b c d e f g
       The status should be success
@@ -438,7 +439,7 @@ Describe 'sx_arg_pad'
 
     It '右パディング+CB: 元値10個以上+実パディング'
       load_subject sx_arg_pad
-      cb() { sx_test_setup sx_var_set "${1}=($3)"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($3)"; }
       When call sx_arg_pad res 13 cb "1" ::: 0 1 2 3 4 5 6 7 8 9 A B
       The status should be success
       eval "set -- $res"
@@ -453,7 +454,7 @@ Describe 'sx_arg_pad'
     It '左パディング+CB: cbが非0を返すと中断'
       load_subject sx_arg_pad
       cb() {
-        sx_test_setup sx_var_set "${1}=x"
+        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=x"
         [ "$3" -lt 2 ]
       }
       When call sx_arg_pad res -5 cb "1" ::: a b c
@@ -466,7 +467,7 @@ Describe 'sx_arg_pad'
     It '右パディング+skip+元値あり: idx/skipが正しい'
       load_subject sx_arg_pad
       cb() {
-        case "${3}" in 1) unset "${1}";; *) sx_test_setup sx_var_set "${1}=($2:$3)";; esac
+        case "${3}" in 1) unset "${1}";; *) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($2:$3)";; esac
       }
       When call sx_arg_pad res 6 cb "1" ::: a b c
       The status should be success
@@ -490,7 +491,7 @@ Describe 'sx_arg_pad'
 
     It 'padding数1のCB呼出: idx/cnt/skipが正しい'
       load_subject sx_arg_pad
-      cb() { sx_test_setup sx_var_set "${1}=($2:$3:$4)"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=($2:$3:$4)"; }
       When call sx_arg_pad res 4 cb "1" ::: x y z
       The status should be success
       eval "set -- $res"

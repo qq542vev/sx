@@ -8,8 +8,6 @@ Describe 'sx_arr_push'
   setup_myarr_fixture() {
     sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a
   }
-
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arr_push
   BeforeEach setup_myarr_fixture
@@ -86,8 +84,9 @@ Describe 'sx_arr_push'
     When call sx_arr_push myarr_push_ref "@src"
     The status should be success
     The variable myarr_push_ref_0 should equal "hello"
-    sx_test_setup sx_cfg_set "ARR_REF"
-    sx_test_setup sx_var_unset myarr_push_ref src
+    sxtest_setup SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
+    sxtest_setup myarr_push_ref myarr_push_ref_len myarr_push_ref_0 src -- \
+      'sx_var_unset "$@"' myarr_push_ref myarr_push_ref_len myarr_push_ref_0 src
   End
 
   It '参照値とリテラルを指定順に末尾へ追加すること'
@@ -104,7 +103,8 @@ Describe 'sx_arr_push'
     The variable myarr_push_mixed_0 should equal "head"
     The variable myarr_push_mixed_1 should equal "reference"
     The variable myarr_push_mixed_2 should equal "literal"
-    sx_test_setup sx_cfg_set "ARR_REF"
-    sx_test_setup sx_var_unset myarr_push_mixed src
+    sxtest_setup SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
+    sxtest_setup myarr_push_mixed myarr_push_mixed_len myarr_push_mixed_0 myarr_push_mixed_1 myarr_push_mixed_2 src -- \
+      'sx_var_unset "$@"' myarr_push_mixed myarr_push_mixed_len myarr_push_mixed_0 myarr_push_mixed_1 myarr_push_mixed_2 src
   End
 End

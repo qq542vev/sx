@@ -1,10 +1,11 @@
+# shellcheck disable=SC2016 # CMD内の変数は補助処理用シェルで展開する。
 # ShellSpec: Parameters内の負数・Parameters内の空文字列を使用する。
 # shellcheck disable=SC2215,SC2286
 Describe 'sx_str_sub -efu 環境検証'
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
 
   # 共通コールバックと同じ引数を使い、補助代入だけを分離する。
-  efu_cb_set2() { sx_test_setup sx_var_set "${1}=${2}"; }
+  efu_cb_set2() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${2}"; }
   Include ./spec/support/library.sh sx_str_sub
 
   It '正常動作'

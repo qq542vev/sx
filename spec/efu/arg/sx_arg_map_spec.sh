@@ -3,12 +3,11 @@
 # コールバックと検証用の差し替え関数はShellSpec経由で間接的に呼び出される。
 
 Describe 'sx_arg_map -efu 環境検証'
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arg_map
 
   # コールバック本体は検証側に残し、補助代入だけを別シェルで行う。
-  cb_set3() { sx_test_setup sx_var_set "${1}=${3}"; }
+  cb_set3() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${3}"; }
 
   Context '多倍長経路'
     Parameters
@@ -28,7 +27,7 @@ Describe 'sx_arg_map -efu 環境検証'
       sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
-      cb() { case "$2" in skip) return 0;; esac; sx_test_setup sx_var_set "${1}=${3}"; }
+      cb() { case "$2" in skip) return 0;; esac; sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${3}"; }
       When run efu_run sx_arg_map '2res:' cb skip a b c
       The status should be success
     End
@@ -37,7 +36,7 @@ Describe 'sx_arg_map -efu 環境検証'
       sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       __sx_num_is_int_fit_dec() { return 1; }
       __sx_num_add1_arith() { return 64; }
-      cb() { case "$3" in 2) return 77;; esac; sx_test_setup sx_var_set "${1}=${3}"; }
+      cb() { case "$3" in 2) return 77;; esac; sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${3}"; }
       When run efu_run sx_arg_map res cb a b c
       The status should equal 77
     End

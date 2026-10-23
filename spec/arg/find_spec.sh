@@ -19,7 +19,6 @@ Describe 'sx_arg_find'
 		esac
 	}
 
-	Include ./spec/support/prepare.sh
 
 	Describe '前向き検索 (sx_arg_find)'
 		It 'デフォルトで全件一致する'

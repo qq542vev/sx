@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2016 # CMD内の変数は補助処理用シェルで展開する。
 
 eval "$(shellspec - -c) exit 1"
 
@@ -22,7 +23,7 @@ Describe '可変長 sx_arg_* の引数個数ガード'
     esac
   }
 
-  Include ./spec/support/prepare.sh
+  Include ./spec/support/setup.sh
 
   Describe 'sx_arg_len'
     It 'SX_CFG_NUM_RANGE が不正な値の場合に EX_CONFIG を返すこと'
@@ -55,7 +56,7 @@ Describe '可変長 sx_arg_* の引数個数ガード'
       # shellcheck disable=SC2329
       __sx_num_is_nat0_safe() { [ "${1}" -ge 3 ] && return 1; return 0; }
       # shellcheck disable=SC2329
-      cb() { sx_test_setup sx_var_set "${1}=${3}:${2}"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${3}:${2}"; }
       When call sx_arg_map res cb "v1" "v2"
       The status should be success
       The variable res should equal '1:v1 2:v2'

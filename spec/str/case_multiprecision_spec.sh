@@ -34,8 +34,6 @@ Describe '命名規則・タイトルケース変換の多倍長対応'
       *) return 64;;
     esac
   }
-
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
 
   Context '公開APIの文字列長制限撤廃'
@@ -173,12 +171,12 @@ Describe '命名規則・タイトルケース変換の多倍長対応'
     # ! だけの区切り文字セットは glob_bracket から直接返される。
     __sx_str_tr() {
       lower_limit="${5-}"
-      sx_test_setup sx_var_set "${1%%:*}=abc!def"
+      sxtest_setup "${1%%:*}" -- 'sx_var_set "$@"' "${1%%:*}=abc!def"
     }
     __sx_str_sub() {
       title_limit="${5-}"
       title_flags="${6-}"
-      sx_test_setup sx_var_set "${1%%:*}=!Abc!Def"
+      sxtest_setup "${1%%:*}" -- 'sx_var_set "$@"' "${1%%:*}=!Abc!Def"
     }
     When call sx_str_title res ABC!DEF '!'
     The status should be success

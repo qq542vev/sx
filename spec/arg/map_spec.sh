@@ -19,7 +19,6 @@ Describe 'sx_arg_map'
   }
 
   # 補助処理だけを別シェルへ移し、対象関数への再入は同じシェル内で行う。
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
 
   select_map_path() {
@@ -44,7 +43,7 @@ Describe 'sx_arg_map'
       load_subject sx_arg_map
       sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_map_path "$2"
-      cb() { sx_test_setup sx_var_set "${1}=[${3}:${2}]"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=[${3}:${2}]"; }
       When call sx_arg_map res cb 'a b' '' "c'd"
       The status should be success
       The variable res should equal "[1:a b] [2:] [3:c'd]"
@@ -56,7 +55,7 @@ Describe 'sx_arg_map'
       select_map_path "$2"
       cb() {
         case "$2" in skip) return 0;; esac
-        sx_test_setup sx_var_set "${1}=${3}:${2}"
+        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${3}:${2}"
       }
       When call sx_arg_map res cb a skip c
       The status should be success
@@ -70,7 +69,7 @@ Describe 'sx_arg_map'
       calls=
       cb() {
         calls="${calls}${3}:${2};"
-        sx_test_setup sx_var_set "${1}=changed:${2}"
+        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=changed:${2}"
         case "$3" in 2) return 77;; esac
         return 0
       }
@@ -87,7 +86,7 @@ Describe 'sx_arg_map'
       calls=
       cb() {
         calls="${calls}${3};"
-        sx_test_setup sx_var_set "${1}=${3}:${2}"
+        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${3}:${2}"
       }
       When call sx_arg_map '2res:' cb a b c
       The status should be success
@@ -99,11 +98,11 @@ Describe 'sx_arg_map'
       load_subject sx_arg_map
       sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       select_map_path "$2"
-      inner_cb() { sx_test_setup sx_var_set "${1}=${3}:${2}"; }
+      inner_cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${3}:${2}"; }
       outer_cb() {
         sx_arg_map nested_result inner_cb "${2}x" "${2}y"
         # shellcheck disable=SC2154
-        sx_test_setup sx_var_set "${1}=(${3}:${nested_result})"
+        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(${3}:${nested_result})"
         unset nested_result
       }
       When call sx_arg_map res outer_cb a b
@@ -119,11 +118,11 @@ Describe 'sx_arg_map'
       case "${#}:${2-}" in 2:5) return 1;; esac
       return 0
     }
-    inner_cb() { sx_test_setup sx_var_set "${1}=${3}:${2}"; }
+    inner_cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${3}:${2}"; }
     outer_cb() {
       sx_arg_map nested_result inner_cb "${2}x"
       # shellcheck disable=SC2154
-      sx_test_setup sx_var_set "${1}=(${3}:${nested_result})"
+      sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=(${3}:${nested_result})"
       unset nested_result
     }
     When call sx_arg_map res outer_cb a b c
@@ -151,7 +150,7 @@ Describe 'sx_arg_map'
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
       sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       last_idx=0
-      cb() { sx_test_setup sx_var_set "${1}=${2}"; last_idx="$3"; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${2}"; last_idx="$3"; }
       When call __sx_arg_map res cb "$@"
       The status should be success
       The variable res should equal "$expected"
@@ -183,7 +182,7 @@ Describe 'sx_arg_map'
   Describe 'マップ: 全要素に変換を適用'
     It '各要素を大文字に変換する'
       load_subject sx_arg_map
-      cb() { case $2 in a) sx_test_setup sx_var_set "$1=A";; b) sx_test_setup sx_var_set "$1=B";; c) sx_test_setup sx_var_set "$1=C";; esac; }
+      cb() { case $2 in a) sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=A";; b) sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=B";; c) sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=C";; esac; }
       When call sx_arg_map res cb a b c
       The status should be success
       The variable res should equal "A B C"
@@ -191,7 +190,7 @@ Describe 'sx_arg_map'
 
     It '空文字列も変換対象とする'
       load_subject sx_arg_map
-      cb() { sx_test_setup sx_var_set "$1=($2)"; }
+      cb() { sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=($2)"; }
       When call sx_arg_map res cb '' foo ''
       The status should be success
       The variable res should equal "() (foo) ()"
@@ -201,7 +200,7 @@ Describe 'sx_arg_map'
   Describe 'フィルター: ret を unset でスキップ'
     It '数値のみを通す'
       load_subject sx_arg_map
-      filternum() { case $2 in *[!0-9]*) ;; *) sx_test_setup sx_var_set "$1=$2"; esac; }
+      filternum() { case $2 in *[!0-9]*) ;; *) sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=$2"; esac; }
       When call sx_arg_map res filternum a 42 b 7 c
       The status should be success
       The variable res should equal "42 7"
@@ -219,7 +218,7 @@ Describe 'sx_arg_map'
   Describe 'フィルター + マップ'
     It '偶数番目だけ変換する'
       load_subject sx_arg_map
-      even_only() { case $(($3 % 2)) in 0) sx_test_setup sx_str_upper "$1" "$2"; esac; }
+      even_only() { case $(($3 % 2)) in 0) sxtest_setup "$1" -- 'sx_str_upper "$@"' "$1" "$2"; esac; }
       When call sx_arg_map res even_only a b c d e
       The status should be success
       The variable res should equal "B D"
@@ -229,7 +228,7 @@ Describe 'sx_arg_map'
   Describe 'エラー回復'
     It 'cb が非0を返すと元の値をバインド、ステータスを保存'
       load_subject sx_arg_map
-      err_on_b() { case $2 in b) return 2;; esac; sx_test_setup sx_var_set "$1=$2"; }
+      err_on_b() { case $2 in b) return 2;; esac; sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=$2"; }
       When call sx_arg_map res err_on_b a b c
       The status should equal 2
       The variable res should equal "a b c"
@@ -242,7 +241,7 @@ Describe 'sx_arg_map'
           b) return 2;;
           d) return 5;;
         esac
-        sx_test_setup sx_var_set "$1=$2"
+        sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=$2"
       }
       When call sx_arg_map res err_on_b_d a b c d
       The status should equal 2
@@ -261,7 +260,7 @@ Describe 'sx_arg_map'
   Describe '空リスト'
     It '引数なしで空文字列、ステータス 0'
       load_subject sx_arg_map
-      cb() { sx_test_setup sx_var_set "$1=X"; }
+      cb() { sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=X"; }
       When call sx_arg_map res cb
       The status should be success
       The variable res should equal ""
@@ -271,7 +270,7 @@ Describe 'sx_arg_map'
   Describe 'バインド形式'
     It 'Nname: で上限を指定できる'
       load_subject sx_arg_map
-      cb() { sx_test_setup sx_str_upper "$1" "$2"; }
+      cb() { sxtest_setup "$1" -- 'sx_str_upper "$@"' "$1" "$2"; }
       When call sx_arg_map "2res:" cb a b c d
       The status should be success
       The variable res should equal "A B"
@@ -279,7 +278,7 @@ Describe 'sx_arg_map'
 
     It 'v1:v2: で分配代入できる'
       load_subject sx_arg_map
-      cb() { sx_test_setup sx_str_upper "$1" "$2"; }
+      cb() { sxtest_setup "$1" -- 'sx_str_upper "$@"' "$1" "$2"; }
       When call sx_arg_map "r1:r2:" cb a b c
       The status should be success
       The variable r1 should equal "A"
@@ -290,7 +289,7 @@ Describe 'sx_arg_map'
   Describe 'エラーケース'
     It '結果変数が読み取り専用の場合に EX_NOPERM を返す'
       load_subject sx_arg_map
-      cb() { sx_test_setup sx_var_set "$1=$2"; }
+      cb() { sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=$2"; }
       readonly ro_map=0
       When call sx_arg_map ro_map cb a b
       The status should equal 77
@@ -307,7 +306,7 @@ Describe 'sx_arg_map'
   Describe '高速モード (SX_CFG_SKIP_CHK=1)'
     It 'チェックをスキップしてマップする'
       load_subject sx_arg_map
-      cb() { sx_test_setup sx_var_set "$1=($2)"; }
+      cb() { sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=($2)"; }
       SX_CFG_SKIP_CHK=1
       When call sx_arg_map res cb a b c
       The status should be success
@@ -318,7 +317,7 @@ Describe 'sx_arg_map'
   Describe '内部関数 (__sx_arg_map)'
     It '__sx_arg_map が正しく動作する'
       load_subject __sx_arg_map
-      cb() { sx_test_setup sx_var_set "$1=($2)"; }
+      cb() { sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=($2)"; }
       When call __sx_arg_map res cb a b c
       The status should be success
       The variable res should equal "(a) (b) (c)"
@@ -328,7 +327,7 @@ Describe 'sx_arg_map'
   Describe '再帰呼び出し'
     It 'arg_map 内で arg_map を呼び出しても状態が壊れない'
       load_subject sx_arg_map
-      inner_cb() { sx_test_setup sx_var_set "$1=($2)"; }
+      inner_cb() { sxtest_setup "$1" -- 'sx_var_set "$@"' "$1=($2)"; }
       outer_cb() {
         __sx_arg_map __sx_arg_map_tmp inner_cb "${2}x" "${2}y"
         eval "$1=\${__sx_arg_map_tmp}"

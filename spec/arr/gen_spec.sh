@@ -4,7 +4,6 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_gen'
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arr_gen
 
@@ -32,8 +31,9 @@ Describe 'sx_arr_gen'
     The variable myarr_ref_len should equal 2
     The variable myarr_ref_0 should equal "reference"
     The variable myarr_ref_1 should equal "literal"
-    sx_test_setup sx_cfg_set "ARR_REF"
-    sx_test_setup sx_var_unset myarr_ref src
+    sxtest_setup SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
+    sxtest_setup myarr_ref myarr_ref_len myarr_ref_0 myarr_ref_1 src -- \
+      'sx_var_unset "$@"' myarr_ref myarr_ref_len myarr_ref_0 myarr_ref_1 src
   End
 
   It '無効な配列名に対して EX_USAGE を返すこと'

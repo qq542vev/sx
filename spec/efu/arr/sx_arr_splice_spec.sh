@@ -1,6 +1,5 @@
 # shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 Describe 'sx_arr_splice -efu 環境検証'
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arr_splice
 
@@ -31,8 +30,9 @@ Describe 'sx_arr_splice -efu 環境検証'
     When run efu_run splice_ref_efu
     The status should be success
     The stdout should equal "'head' 'reference' 'literal' 'tail'"
-    sx_test_setup sx_cfg_set "ARR_REF"
-    sx_test_setup sx_var_unset myarr src
+    sxtest_setup SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
+    sxtest_setup myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 src -- \
+      'sx_var_unset "$@"' myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 src
   End
 
   It '負数でも -efu 下で動作すること'

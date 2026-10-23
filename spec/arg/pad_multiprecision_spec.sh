@@ -17,8 +17,6 @@ Describe 'sx_arg_pad 多倍長対応'
       *) return 64;;
     esac
   }
-
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
 
   select_pad_path() {
@@ -74,7 +72,7 @@ Describe 'sx_arg_pad 多倍長対応'
       calls=''
       cb() {
         calls="${calls}${2}:${3}:${4};"
-        case "$3" in 1) unset "$1";; *) sx_test_setup sx_var_set "${1}=[${2}:${3}:${4}]";; esac
+        case "$3" in 1) unset "$1";; *) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=[${2}:${3}:${4}]";; esac
       }
       When call sx_arg_pad res "$len" cb 1 ::: a b
       The status should be success
@@ -93,8 +91,8 @@ Describe 'sx_arg_pad 多倍長対応'
       calls=0
       cb() {
         calls=$((calls + 1))
-        case "$3" in 2) sx_test_setup sx_var_set "${1}=discard"; return 77;; esac
-        sx_test_setup sx_var_set "${1}=p"
+        case "$3" in 2) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=discard"; return 77;; esac
+        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=p"
       }
       When call sx_arg_pad res "$len" cb 1 ::: a b
       The status should equal 77
@@ -110,7 +108,7 @@ Describe 'sx_arg_pad 多倍長対応'
         left) len=-3 expected="'' '' 'a'";;
         right) len=3 expected="'a' '' ''";;
       esac
-      cb() { sx_test_setup sx_var_set "${1}="; }
+      cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}="; }
       When call sx_arg_pad res "$len" cb 1 ::: a
       The status should be success
       The variable res should equal "$expected"
@@ -125,7 +123,7 @@ Describe 'sx_arg_pad 多倍長対応'
         right) len=5 expected_calls=1 expected_a=a expected_b=p;;
       esac
       calls=0
-      cb() { calls=$((calls + 1)); sx_test_setup sx_var_set "${1}=p"; }
+      cb() { calls=$((calls + 1)); sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=p"; }
       When call sx_arg_pad 'item_a:item_b:' "$len" cb 1 ::: a
       The status should be success
       The variable item_a should equal "$expected_a"
@@ -139,7 +137,7 @@ Describe 'sx_arg_pad 多倍長対応'
       select_pad_path "$2"
       side="$3" res=''
       case "$side" in left) len=-4;; *) len=4;; esac
-      inner_cb() { sx_test_setup sx_var_set "${1}=inner"; }
+      inner_cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=inner"; }
       cb() {
         sx_arg_pad nested_result 2 inner_cb 1 ::: z
         eval "${1}=\${nested_result}"
@@ -173,7 +171,7 @@ Describe 'sx_arg_pad 多倍長対応'
       return 0
     }
     calls=''
-    inner_cb() { sx_test_setup sx_var_set "${1}=inner"; }
+    inner_cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=inner"; }
     cb() {
       calls="${calls}${2}:${3}:${4};"
       sx_arg_pad nested_result 2 inner_cb 1 ::: z
@@ -189,7 +187,7 @@ Describe 'sx_arg_pad 多倍長対応'
     depth=2 res=''
     cb() {
       case "$depth" in
-        0) sx_test_setup sx_var_set "${1}=leaf";;
+        0) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=leaf";;
         *)
           set -- "$1" "nested_result_$depth"
           depth=$((depth - 1))
@@ -216,7 +214,7 @@ Describe 'sx_arg_pad 多倍長対応'
 
   It '再入の結果を採用せず末尾で外側のコールバック結果を代入する'
     load_subject sx_arg_pad
-    inner_cb() { sx_test_setup sx_var_set "${1}=inner"; }
+    inner_cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=inner"; }
     cb() {
       sx_arg_pad nested_result 2 inner_cb 1 ::: z
       eval "${1}=outer"
@@ -246,7 +244,7 @@ Describe 'sx_arg_pad 多倍長対応'
     It 'コールバックでは失敗時に終了し部分的な結果を保持する'
       load_subject sx_arg_pad
       case "$1" in -*) expected="'p' 'a'";; *) expected="'a' 'p'";; esac
-      cb() { case "$3" in 2) return 77;; esac; sx_test_setup sx_var_set "${1}=p"; }
+      cb() { case "$3" in 2) return 77;; esac; sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=p"; }
       When call sx_arg_pad res "$1" cb 1 ::: a
       The status should equal 77
       The variable res should equal "$expected"
@@ -321,7 +319,7 @@ Describe 'sx_arg_pad 多倍長対応'
         *) __sx_num_add1_arith() { return 64; }; __sx_num_sub1_arith() { return 64; };;
       esac
       last_idx=0 last_cnt=0 last_skip=0
-      cb() { last_idx="$2"; last_cnt="$3"; last_skip="$4"; sx_test_setup sx_var_set "${1}=p"; }
+      cb() { last_idx="$2"; last_cnt="$3"; last_skip="$4"; sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=p"; }
       case "$side" in left) len="-$count";; *) len="$count";; esac
       case "$flag" in 0) val=p;; *) val=cb;; esac
       When call __sx_arg_pad res "$len" "$val" "$flag" :::
@@ -360,7 +358,7 @@ Describe 'sx_arg_pad 多倍長対応'
       __sx_num_add1_arith() { return 64; }
       __sx_num_sub1_arith() { return 64; }
       calls=0 last_idx=0
-      cb() { calls=$((calls + 1)); last_idx="$2"; sx_test_setup sx_var_set "${1}=p"; }
+      cb() { calls=$((calls + 1)); last_idx="$2"; sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=p"; }
       When call __sx_arg_pad res "$len" cb 1 ::: "$@"
       The status should be success
       The variable res should equal "$expected"
@@ -382,7 +380,7 @@ Describe 'sx_arg_pad 多倍長対応'
       sxtest_setup SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       __sx_num_add1_arith() { return 64; }
       __sx_num_sub1_arith() { return 64; }
-      cb() { case "$3" in 129) sx_test_setup sx_var_set "${1}=${2}:${3}:${4}";; *) unset "$1";; esac; }
+      cb() { case "$3" in 129) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=${2}:${3}:${4}";; *) unset "$1";; esac; }
       When call __sx_arg_pad res "$len" cb 1 :::
       The status should be success
       The variable res should equal "'1:129:128'"

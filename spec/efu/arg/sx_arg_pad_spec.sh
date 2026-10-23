@@ -2,7 +2,6 @@
 # shellcheck shell=sh disable=SC2329
 # コールバックと検証用の差し替え関数は間接的に呼び出される。
 Describe 'sx_arg_pad -efu 環境検証'
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arg_pad
 
@@ -25,7 +24,7 @@ Describe 'sx_arg_pad -efu 環境検証'
       __sx_num_add1_arith() { return 64; }
       __sx_num_sub1_arith() { return 64; }
       res=''
-      inner_cb() { sx_test_setup sx_var_set "${1}=inner"; }
+      inner_cb() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=inner"; }
       cb() {
         sx_arg_pad nested_result 2 inner_cb 1 ::: z
         eval "${1}=\${nested_result}"

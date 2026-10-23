@@ -18,11 +18,9 @@ Describe 'sx_str_sub 多倍長対応'
       *) return 64;;
     esac
   }
-
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
 
-  cb_replace() { sx_test_setup sx_var_set "${1}=X"; }
+  cb_replace() { sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X"; }
 
   Context '巨大な正負の回数制限'
     Parameters
@@ -233,7 +231,7 @@ Describe 'sx_str_sub 多倍長対応'
       __sx_num_add1_arith() { return 64; }
       stop_at=$4
       cb_stop() {
-        sx_test_setup sx_var_set "${1}=X"
+        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X"
         case "${5}" in "$stop_at") return 77;; esac
       }
       When call sx_str_sub res:cnt abaaba "$2" cb_stop "$1" "$3"
@@ -259,7 +257,7 @@ Describe 'sx_str_sub 多倍長対応'
       }
       cb_outer() {
         sx_str_sub res:cnt zz '' cb_replace '' 2
-        sx_test_setup sx_var_set "${1}=[${5}]"
+        sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=[${5}]"
       }
       When call sx_str_sub res:cnt ababa "$2" cb_outer "$1" "$3"
       The status should be success
@@ -301,7 +299,7 @@ Describe 'sx_str_sub 多倍長対応'
   It '結果未設定のコールバックでは前回の値を使わずマッチ文字列を保持すること'
     load_subject sx_str_sub
     cb_optional() {
-      case "${5}" in 1) sx_test_setup sx_var_set "${1}=X";; esac
+      case "${5}" in 1) sxtest_setup "${1}" -- 'sx_var_set "$@"' "${1}=X";; esac
     }
     When call sx_str_sub res:cnt aba a cb_optional '' 2
     The status should be success

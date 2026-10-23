@@ -6,7 +6,6 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_quote'
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arr_quote
 
@@ -21,7 +20,8 @@ Describe 'sx_arr_quote'
   }
 
   cleanup() {
-    sx_test_setup sx_var_unset arr1 arr2 arr_empty result
+    sxtest_setup arr1 arr1_len arr1_0 arr1_1 arr2 arr2_len arr2_0 arr2_1 arr_empty arr_empty_len result -- \
+      'sx_var_unset "$@"' arr1 arr1_len arr1_0 arr1_1 arr2 arr2_len arr2_0 arr2_1 arr_empty arr_empty_len result
   }
 
   It '単一の配列を安全にエンコードし、eval で復元できること'
@@ -86,7 +86,8 @@ Describe 'sx_arr_quote'
     The variable res2 should equal ""
     The variable res3 should equal "c"
     The variable cnt should equal 3
-    sx_test_setup sx_var_unset sparse_arr result
+    sxtest_setup sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result -- \
+      'sx_var_unset "$@"' sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result
   End
 
   It '疎配列の穴をSX_CFG_ARR_HOLEの値で表すこと'
@@ -101,8 +102,9 @@ Describe 'sx_arr_quote'
     The variable res2 should equal "HOLE"
     The variable res3 should equal "c"
     The variable cnt should equal 3
-    sx_test_setup sx_cfg_set "ARR_HOLE"
-    sx_test_setup sx_var_unset sparse_arr result
+    sxtest_setup SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "ARR_HOLE"
+    sxtest_setup sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result -- \
+      'sx_var_unset "$@"' sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result
   End
 
   It '配列ではない引数が含まれる場合に EX_DATAERR を返すこと'
@@ -123,7 +125,6 @@ Describe 'sx_arr_quote'
 End
 
 Describe 'sx_arr_rquote'
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arr_rquote
 
@@ -138,7 +139,8 @@ Describe 'sx_arr_rquote'
   }
 
   cleanup() {
-    sx_test_setup sx_var_unset arr1 arr2 arr_empty result
+    sxtest_setup arr1 arr1_len arr1_0 arr1_1 arr2 arr2_len arr2_0 arr2_1 arr_empty arr_empty_len result -- \
+      'sx_var_unset "$@"' arr1 arr1_len arr1_0 arr1_1 arr2 arr2_len arr2_0 arr2_1 arr_empty arr_empty_len result
   }
 
   It '単一の配列を逆順で安全にエンコードし、eval で復元できること'
@@ -188,7 +190,8 @@ Describe 'sx_arr_rquote'
     The variable res2 should equal ""
     The variable res3 should equal "a"
     The variable cnt should equal 3
-    sx_test_setup sx_var_unset sparse_arr result
+    sxtest_setup sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result -- \
+      'sx_var_unset "$@"' sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result
   End
 
   It '疎配列の穴をSX_CFG_ARR_HOLEの値で逆順に表すこと'
@@ -203,8 +206,9 @@ Describe 'sx_arr_rquote'
     The variable res2 should equal "HOLE"
     The variable res3 should equal "a"
     The variable cnt should equal 3
-    sx_test_setup sx_cfg_set "ARR_HOLE"
-    sx_test_setup sx_var_unset sparse_arr result
+    sxtest_setup SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "ARR_HOLE"
+    sxtest_setup sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result -- \
+      'sx_var_unset "$@"' sparse_arr sparse_arr_len sparse_arr_0 sparse_arr_1 sparse_arr_2 result
   End
 
   It '結果変数が読み取り専用の場合に EX_NOPERM を返すこと'

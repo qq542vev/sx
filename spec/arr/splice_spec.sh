@@ -4,7 +4,6 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_splice'
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arr_splice
 
@@ -427,8 +426,9 @@ Describe 'sx_arr_splice'
       The variable myarr_1 should equal "reference"
       The variable myarr_2 should equal "literal"
       The variable myarr_3 should equal "tail"
-      sx_test_setup sx_cfg_set "ARR_REF"
-      sx_test_setup sx_var_unset myarr src
+      sxtest_setup SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
+      sxtest_setup myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 src -- \
+        'sx_var_unset "$@"' myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 src
     End
 
     It '参照値・空文字列・穴の混在でも各値が1位置を消費すること'
@@ -449,8 +449,9 @@ Describe 'sx_arr_splice'
       The variable myarr_4 should equal "reference"
       The variable myarr_5 should equal "literal"
       The variable myarr_6 should equal "tail"
-      sx_test_setup sx_cfg_set "ARR_REF" "ARR_HOLE"
-      sx_test_setup sx_var_unset myarr src
+      sxtest_setup SX_CFG_ARR_REF SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "ARR_REF" "ARR_HOLE"
+      sxtest_setup myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 myarr_4 myarr_5 myarr_6 src -- \
+        'sx_var_unset "$@"' myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 myarr_4 myarr_5 myarr_6 src
     End
 
     It '参照形式（@名前）は変数の値をコピーすること'
@@ -465,8 +466,9 @@ Describe 'sx_arr_splice'
       The status should be success
       The variable myarr_len should equal 3
       The variable myarr_1 should equal "hello"
-      sx_test_setup sx_cfg_set "ARR_REF"
-      sx_test_setup sx_var_unset myarr src
+      sxtest_setup SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
+      sxtest_setup myarr myarr_len myarr_0 myarr_1 myarr_2 src -- \
+        'sx_var_unset "$@"' myarr myarr_len myarr_0 myarr_1 myarr_2 src
     End
 
     It '参照先が変数名でない場合はリテラル扱いになること'
@@ -479,8 +481,9 @@ Describe 'sx_arr_splice'
       When call sx_arr_splice myarr2 1 0 "@123"
       The status should be success
       The variable myarr2_1 should equal "@123"
-      sx_test_setup sx_cfg_set "ARR_REF"
-      sx_test_setup sx_var_unset myarr2
+      sxtest_setup SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
+      sxtest_setup myarr2 myarr2_len myarr2_0 myarr2_1 -- \
+        'sx_var_unset "$@"' myarr2 myarr2_len myarr2_0 myarr2_1
     End
 
     It 'ARR_REF が空の場合は参照せずリテラル扱いになること'
@@ -494,7 +497,8 @@ Describe 'sx_arr_splice'
       When call sx_arr_splice myarr3 1 0 "@src"
       The status should be success
       The variable myarr3_1 should equal "@src"
-      sx_test_setup sx_var_unset myarr3 src
+      sxtest_setup myarr3 myarr3_len myarr3_0 myarr3_1 src -- \
+        'sx_var_unset "$@"' myarr3 myarr3_len myarr3_0 myarr3_1 src
     End
   End
 End
