@@ -1,5 +1,8 @@
 # 自己呼び出しによる単独モジュールの依存検証（試作）
 
+通常のspecでは、[sxtest_setup](../support/setup.md) で入力を準備し、対象モジュールを同じShellSpecで検証します。
+この試作は子ShellSpecの失敗状態・診断・集計の伝播自体を検証するため、自己呼び出しを残しています。
+
 ```sh
 make all
 make test-modules SX_SPECS=spec/dep/arr/splice_spec.sh
