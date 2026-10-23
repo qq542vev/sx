@@ -210,7 +210,7 @@ Describe 'sx_num_edivmod_arith'
     End
 
     It "引数列 $* で同じ商と余りを返すこと"
-      sxtest_setup expected_q expected_r -- 'sx_cfg_set "NUM_RANGE=$1"; shift; sx_num_edivmod_int "$@"' "$SX_CFG_NUM_RANGE" 'expected_q:expected_r:' "$@"
+      sxtest_setup "SX_CFG_NUM_RANGE=$SX_CFG_NUM_RANGE" expected_q expected_r -- 'sx_num_edivmod_int "$@"' 'expected_q:expected_r:' "$@"
       type=arith
       When call "sx_num_edivmod_${type}" 'q:r:' "$@"
       The status should be success

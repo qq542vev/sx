@@ -124,7 +124,7 @@ Describe 'sx_cfg_set()'
 		load_subject sx_cfg_set
 		cfg_set_custom
 		SX_SYS_REV=${SX_SYS_REV-0}
-		sxtest_setup cfg_existing SX_SYS_REV -- 'SX_CFG_SIG_ARR=$1; SX_SYS_REV=$2; shift 2; sx_arr_gen "$@"' "$SX_CFG_SIG_ARR" "${SX_SYS_REV-0}" cfg_existing first ''
+		sxtest_setup "SX_CFG_SIG_ARR=$SX_CFG_SIG_ARR" cfg_existing SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" cfg_existing first ''
 		cfg_existing_sig=${cfg_existing}
 		cfg_existing_rev=${SX_SYS_REV}
 		When call sx_cfg_set
@@ -228,11 +228,10 @@ Describe 'sx_cfg_set()'
 	End
 
 	It '独自署名の設定が配列生成に反映されること'
-		Set 'allexport:on'
 		load_subject sx_cfg_set
 		When call sx_cfg_set SIG_ARR=custom-array
 		The status should be success
-		sxtest_setup cfg_custom_arr -- 'sx_arr_gen cfg_custom_arr first second'
+		sxtest_setup "SX_CFG_SIG_ARR=$SX_CFG_SIG_ARR" cfg_custom_arr -- 'sx_arr_gen cfg_custom_arr first second'
 		The variable cfg_custom_arr should start with 'custom-array:'
 		The variable cfg_custom_arr_len should equal 2
 		The variable cfg_custom_arr_0 should equal first

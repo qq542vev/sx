@@ -146,7 +146,7 @@ Describe 'sx_num_divceil_arith'
 
     It "引数列 $* の商がintと一致すること"
       expected=
-      sxtest_setup expected -- 'sx_cfg_set "NUM_RANGE=$1"; shift; sx_num_divceil_int "$@"' "$SX_CFG_NUM_RANGE" expected "$@"
+      sxtest_setup "SX_CFG_NUM_RANGE=$SX_CFG_NUM_RANGE" expected -- 'sx_num_divceil_int "$@"' expected "$@"
       type=arith
       When call "sx_num_divceil_$type" result "$@"
       The status should be success

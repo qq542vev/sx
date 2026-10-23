@@ -38,7 +38,7 @@ Describe 'sx_num_add_arith'
   It 'intとの動的な切り替えで同じ結果を得られること'
     type=arith
     expected=
-    sxtest_setup expected -- 'sx_cfg_set "NUM_RANGE=$1"; shift; sx_num_add_int "$@"' "$SX_CFG_NUM_RANGE" expected 10 -20 30
+    sxtest_setup "SX_CFG_NUM_RANGE=$SX_CFG_NUM_RANGE" expected -- 'sx_num_add_int "$@"' expected 10 -20 30
     When call "sx_num_add_${type}" result 10 -20 30
     The status should be success
     The variable result should equal "${expected}"
