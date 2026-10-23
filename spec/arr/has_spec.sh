@@ -9,7 +9,6 @@ Describe 'sx_arr_has'
     sxtest_setup myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr "a" "b" "c" "d" "e"
   }
 
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
   Include ./spec/support/library.sh sx_arr_has
   BeforeEach setup_myarr_fixture
@@ -181,6 +180,8 @@ Describe 'sx_arr_has'
 
   Context 'getとの等価性 (has真 ⟺ get非空)'
     It '代表spec群で一致すること'
+      # Whenを使わないため、事前に作った入力配列を明示的に子へ渡す。
+      export myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 myarr_4
       mismatch=0
       for spec in 0 4 5 9 -1 -5 -6 -0 +1 0:3 1:1 4:3 7:8 4:3:1 1:2:-1 \
           3:0:-1 0:5:2 5:0:-1 5:3:-2 2: 2::-1 4::-2 5::-2 1::2 \
@@ -191,8 +192,7 @@ Describe 'sx_arr_has'
           4:100000000000000000000000:1 99999999999999999999999:4:-1 :5 ::2 ::-1 : 2:2:-1 4:0:-1 4:0:-2 \
           0:0:-1 5:2:-1 :3 :0:-1 2:0:-2; do
         if sx_arr_has myarr "${spec}"; then hsts=0; else hsts=1; fi
-        sx_test_setup sx_var_unset x
-        sx_test_setup sx_arr_get x myarr "${spec}"
+        sxtest_setup x_len -- 'sx_var_unset x; sx_arr_get x "$@"' myarr "${spec}"
         if [ "${hsts}" -eq 0 ]; then
           # sx_arr_get が参照渡しで x_len を設定する。
           # shellcheck disable=SC2154
@@ -202,10 +202,10 @@ Describe 'sx_arr_has'
         fi
       done
       sxtest_setup empty_arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" empty_arr
+      export empty_arr empty_arr_len
       for spec in 0 -1 0:5 0:1 5:0:-1 3:0 0:-5:-1 2::-1 ::-1 :; do
         if sx_arr_has empty_arr "${spec}"; then hsts=0; else hsts=1; fi
-        sx_test_setup sx_var_unset x
-        sx_test_setup sx_arr_get x empty_arr "${spec}"
+        sxtest_setup x_len -- 'sx_var_unset x; sx_arr_get x "$@"' empty_arr "${spec}"
         if [ "${hsts}" -eq 0 ]; then
           # sx_arr_get が参照渡しで x_len を設定する。
           # shellcheck disable=SC2154

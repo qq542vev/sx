@@ -20,7 +20,6 @@ Describe 'sx_cfg_set()'
 		esac
 	}
 
-	Include ./spec/support/prepare.sh
 	Include ./spec/support/setup.sh
 
 	cfg_set_custom() {
@@ -229,10 +228,11 @@ Describe 'sx_cfg_set()'
 	End
 
 	It '独自署名の設定が配列生成に反映されること'
+		Set 'allexport:on'
 		load_subject sx_cfg_set
 		When call sx_cfg_set SIG_ARR=custom-array
 		The status should be success
-		sx_test_setup sx_arr_gen cfg_custom_arr first second
+		sxtest_setup cfg_custom_arr -- 'sx_arr_gen cfg_custom_arr first second'
 		The variable cfg_custom_arr should start with 'custom-array:'
 		The variable cfg_custom_arr_len should equal 2
 		The variable cfg_custom_arr_0 should equal first

@@ -1,7 +1,7 @@
-# 明示した変数だけを戻すテスト準備
+# 明示した変数だけを戻すテスト補助処理
 
-`setup.sh` の `sxtest_setup` は、別シェルで準備処理を実行し、指定した変数だけを呼び出し元へ戻します。
-事前準備にはこのヘルパーを使います。`prepare.sh` の `sx_test_setup` は、コールバック・事後検証・後始末と旧ヘルパー自身のテストに残しています。
+`setup.sh` の `sxtest_setup` は、別シェルで補助処理を実行し、指定した変数だけを呼び出し元へ戻します。
+事前準備と事後検証にはこのヘルパーを使います。`prepare.sh` の `sx_test_setup` は、コールバック・後始末と旧ヘルパー自身のテストに残しています。
 
 ```sh
 Include ./spec/support/setup.sh
@@ -21,7 +21,7 @@ End
 - `--` と空ではない CMD は必須です。呼出形式が不正なら、CMD を実行せず `64` を返します。
 - CMD は1引数のシェルコードで、複数の関数呼び出しを記述できます。後続の引数は、空文字列・空白・改行を保持して CMD の位置パラメータへ渡します。
 - 準備側は `SHELLSPEC_SHELL` のシェルと起動オプションに `-efu -o pipefail` を追加して起動し、全体版 `sx.sh` を読み込みます。事前にプロジェクトルートで `make all` を実行してください。
-- 親の変数を収集・自動 export しません。通常の export 済み環境変数は継承します。必要な設定やリビジョンの開始値は、引数で渡して CMD 内で設定します。
+- 親の変数を収集・自動 export しません。通常の export 済み環境変数は継承します。事前準備で必要な設定やリビジョンの開始値は、引数で渡して CMD 内で設定します。
 - CMD の標準出力は標準エラーへ送ります。復元用のダンプだけを標準出力から捕捉します。
 - 指定した変数を `sx_var_dump` で保存し、呼び出し元の `eval` で復元します。SX配列は関連要素と入れ子を含み、疎配列の未設定要素も保持します。関数定義や readonly 属性は転送しません。
 - 設定・派生値・リビジョンも、出力名に指定したものだけを戻します。出力が0個なら CMD を実行し、変数は戻しません。
@@ -51,3 +51,44 @@ sxtest_setup items SX_SYS_REV -- '
 ```
 
 検証対象は準備後に検証側で呼び出します。準備側で全体版を読み込んでも、その関数定義を検証側へ持ち込みません。
+
+## 事後検証
+
+検証対象が生成した変数を子で読み取る場合は、ShellSpec の `Set 'allexport:on'` を指定します。
+判定だけなら出力変数を指定せず、`Assert sxtest_setup -- CMD` を使います。
+
+```sh
+Describe 'sx_csv_parse'
+  Include ./spec/support/setup.sh
+  Include ./spec/support/library.sh sx_csv_parse
+
+  It '解析結果をSX配列として保存すること'
+    Set 'allexport:on'
+    When call sx_csv_parse res 'a,b'
+    The status should be success
+    Assert sxtest_setup -- 'sx_var_is_arr res res_0'
+  End
+End
+```
+
+現在の ShellSpec では `Set` のオプションは `When` の実行時に適用されます。
+それ以前に作った変数や、対象の処理で代入されない既存要素は、必要な名前を明示的に export します。
+SX配列ではルート・長さ・各要素、入れ子があればその構成変数も対象です。
+`When` を使わずに整合性を検証する場合も、入力を明示的に export します。
+親で変更した設定を子でも使う場合は、必要な `SX_CFG_*` も export します。
+
+```sh
+# itemsは事前に生成した2要素の配列。変更されない要素も子へ渡す。
+export items items_len items_0 items_1
+```
+
+比較用の値が必要なら、出力名を明示して受け取れます。
+
+```sh
+sxtest_setup result -- 'sx_arr_quote result items'
+The variable result should equal "'a' 'b'"
+```
+
+一般変数の収集や自動 export はヘルパーに追加しません。
+子での判定が `1` を返す場合も、その終了状態を呼び出し元へ返します。
+親の readonly 属性や、親と同じ実行状態での干渉を調べる場合は、検証側で直接確認します。

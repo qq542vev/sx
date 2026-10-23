@@ -18,11 +18,11 @@ Describe 'sx_csv_parse'
     esac
   }
 
-  Include ./spec/support/prepare.sh
   Include ./spec/support/setup.sh
   tab=$(printf '\t')
 
   It 'ヘッダを含む各行を SX 配列として保存する'
+    Set 'allexport:on'
     load_subject sx_csv_parse
     data="name,age${SX_STR_LF}alice,15${SX_STR_LF}bob,13${SX_STR_LF}"
     When call sx_csv_parse res "$data"
@@ -35,7 +35,7 @@ Describe 'sx_csv_parse'
     The variable res_1_1 should equal 15
     The variable res_2_1 should equal 13
     The variable res_3 should be undefined
-    Assert sx_test_setup sx_var_is_arr res res_0 res_1 res_2
+    Assert sxtest_setup -- 'sx_var_is_arr "$@"' res res_0 res_1 res_2
   End
 
   It '引用内の区切り・改行と二重化された引用符を復元する'
@@ -51,12 +51,13 @@ Describe 'sx_csv_parse'
   End
 
   It '空入力は行を作らない'
+    Set 'allexport:on'
     load_subject sx_csv_parse
     When call sx_csv_parse res ''
     The status should be success
     The variable res_len should equal 0
     The variable res_0 should be undefined
-    Assert sx_test_setup sx_var_is_arr res
+    Assert sxtest_setup -- 'sx_var_is_arr "$@"' res
   End
 
   It '途中の空行は空フィールド一つの配列にする'
@@ -296,6 +297,7 @@ Describe 'sx_csv_parse'
       End
 
       It '引用規則を維持し失敗したレコードも0列の配列として残す'
+        Set 'allexport:on'
         load_subject sx_csv_parse
         When call sx_csv_parse res "first,row${SX_STR_LF}$2" '' '' "\"'"
         The status should equal "$1"
@@ -304,7 +306,7 @@ Describe 'sx_csv_parse'
         The variable res_0_0 should equal 'first,row'
         The variable res_1_len should equal 0
         The variable res_1_0 should be undefined
-        Assert sx_test_setup sx_var_is_arr res_1
+        Assert sxtest_setup -- 'sx_var_is_arr "$@"' res_1
       End
     End
 
@@ -469,6 +471,7 @@ Describe 'sx_csv_parse'
   End
 
   It '配列の参照・穴・更新設定にかかわらず文字列と空フィールドを保存する'
+    Set 'allexport:on'
     load_subject sx_csv_parse
     sxtest_setup SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
     src=referenced
@@ -479,7 +482,7 @@ Describe 'sx_csv_parse'
     The variable res_0_0 should equal '@src'
     The variable res_0_1 should equal hole
     The variable res_0_2 should equal ''
-    Assert sx_test_setup sx_var_is_arr res res_0
+    Assert sxtest_setup -- 'sx_var_is_arr "$@"' res res_0
     The variable SX_SYS_REV should not equal "$before_rev"
     The variable res should not equal "$res_0"
     The variable SX_CFG_ARR_REF should equal '@'
@@ -534,6 +537,7 @@ Describe 'sx_csv_parse'
     End
 
     It '完成行と失敗行の確定済みフィールドを残して原因別の終了ステータスを返す'
+      Set 'allexport:on'
       load_subject sx_csv_parse
       setup_command='
         SX_SYS_REV=$1
@@ -550,7 +554,7 @@ Describe 'sx_csv_parse'
       The variable res_1_0 should equal first
       The variable res_1_1 should be undefined
       The variable res_2 should be undefined
-      Assert sx_test_setup sx_var_is_arr res_1
+      Assert sxtest_setup -- 'sx_var_is_arr "$@"' res_1
     End
   End
 
@@ -586,6 +590,7 @@ Describe 'sx_csv_parse'
     End
 
     It '失敗した列を含めず0列の行を残す'
+      Set 'allexport:on'
       load_subject sx_csv_parse
       When call sx_csv_parse res "$2"
       The status should equal "$1"
@@ -593,7 +598,7 @@ Describe 'sx_csv_parse'
       The variable res_0_len should equal 0
       The variable res_0_0 should be undefined
       The variable res_1 should be undefined
-      Assert sx_test_setup sx_var_is_arr res res_0
+      Assert sxtest_setup -- 'sx_var_is_arr "$@"' res res_0
     End
   End
 
@@ -805,13 +810,14 @@ Describe 'sx_csv_parse'
     End
 
     It '各経路で data の省略を空入力として扱う'
+      Set 'allexport:on'
       load_subject "$1"
       sxtest_setup SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
       When call "$1" res
       The status should be success
       The variable res_len should equal 0
       The variable res_0 should be undefined
-      Assert sx_test_setup sx_var_is_arr res
+      Assert sxtest_setup -- 'sx_var_is_arr "$@"' res
     End
 
     It '公開・内部・検証省略の各経路が同じ配列を作る'
@@ -825,6 +831,7 @@ Describe 'sx_csv_parse'
     End
 
     It '各経路で失敗行の参照・穴・空フィールドを文字列として残しリビジョンを更新する'
+      Set 'allexport:on'
       load_subject "$1"
       sxtest_setup SX_CFG_SKIP_CHK SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "SKIP_CHK=$2" 'ARR_REF=@' 'ARR_HOLE=hole' 'ARR_UPDATE=0'
       src=referenced
@@ -842,7 +849,7 @@ Describe 'sx_csv_parse'
       The variable SX_CFG_ARR_REF should equal '@'
       The variable SX_CFG_ARR_HOLE should equal hole
       The variable SX_CFG_ARR_UPDATE should equal 0
-      Assert sx_test_setup sx_var_is_arr res res_0
+      Assert sxtest_setup -- 'sx_var_is_arr "$@"' res res_0
     End
 
     It '各経路で開始引用符をフィールドごとに選び直す'

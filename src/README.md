@@ -83,7 +83,7 @@ End
 `Include ./build/modules/sx_uri_enc.sh` の直接指定も収集対象です。
 複数のグループやファイルで同じ名前を指定しても、生成は重複しません。
 提供名の収集は Python、依存解決は既存の m4 生成器が担当します。
-事前準備は [setup.md](../spec/support/setup.md)、コールバックや事後検証で使う旧ヘルパーは [prepare.md](../spec/support/prepare.md) を参照してください。
+事前準備と事後検証は [setup.md](../spec/support/setup.md)、コールバックや後始末で使う旧ヘルパーは [prepare.md](../spec/support/prepare.md) を参照してください。
 
 全体版との比較には `SX_TEST_MODE=full` を指定し、ShellSpec を起動し直します。
 この場合は先に `make all` で全体版を生成してください。
