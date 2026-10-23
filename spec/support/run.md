@@ -2,7 +2,6 @@
 
 `run.sh` の `sxtest_run` は、別シェルで補助処理を実行し、指定した変数だけを呼び出し元へ戻します。
 事前準備・事後検証・コールバックの補助処理・後始末にはこのヘルパーを使います。
-`prepare.sh` の `sx_test_setup` は、旧ヘルパー自身のテストに残しています。
 
 ```sh
 Include ./spec/support/run.sh

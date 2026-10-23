@@ -57,6 +57,21 @@ last
     The variable items_2_1 should equal ''
   End
 
+  It '明示的にexportした疎配列を子で利用しても穴を保持すること'
+    sxtest_run items -- 'sx_arr_gen items a b c; unset items_1'
+    export items items_len items_0 items_2
+
+    When call sxtest_run encoded items SX_CFG_ARR_HOLE= -- 'sx_arr_quote encoded items'
+    The status should be success
+    The variable encoded should equal "'a' '' 'c'"
+    The variable items_len should equal 3
+    The variable items_0 should equal a
+    The variable items_1 should be undefined
+    The variable items_2 should equal c
+    The stdout should equal ''
+    The stderr should equal ''
+  End
+
   It '親の一般変数・配列・設定・リビジョンを自動転送しないこと'
     unset only_parent parent_items parent_items_len parent_items_0 SX_CFG_ARR_HOLE SX_SYS_REV
     only_parent=parent
@@ -173,6 +188,24 @@ diagnostic'
     When call sxtest_run result -- ':'
     The status should be success
     The variable result should be undefined
+  End
+
+  It '削除した配列の構成変数を明示すると親側からも削除すること'
+    sxtest_run items -- 'sx_arr_gen items a b c'
+    setup_command='
+      sx_arr_gen items a b c
+      sx_var_unset items
+    '
+
+    When call sxtest_run items items_len items_0 items_1 items_2 -- "$setup_command"
+    The status should be success
+    The variable items should be undefined
+    The variable items_len should be undefined
+    The variable items_0 should be undefined
+    The variable items_1 should be undefined
+    The variable items_2 should be undefined
+    The stdout should equal ''
+    The stderr should equal ''
   End
 
   Context '準備・ダンプの失敗'
