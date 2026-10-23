@@ -13,7 +13,7 @@
 ##   modified - 2026-05-08
 ##   copyright - Copyright (C) 2026-2026 qq542vev. All rights reserved.
 ##   license - <GPL-3.0-only at https://www.gnu.org/licenses/gpl-3.0.txt>
-##   depends - awk, chmod, echo, find, m4, mkdir, mv, python3, rm, shellspec
+##   depends - awk, chmod, echo, m4, mkdir, mv, python3, rm, shellspec
 ##
 ## See Also:
 ##
@@ -73,6 +73,7 @@ modules:
 # Test
 # ====
 
+# テストの Include から提供名を収集し、名前ごとに単独モジュールを作成する。
 test-modules:
 	python3 tools/build-spec-modules.py
 
@@ -88,9 +89,6 @@ test:
 clean:
 	rm -f -- sx.sh sx.sh.tmp sx.sh.tmp2
 	rm -f -- build/modules/*.sh build/modules/*.sh.tmp build/modules/*.sh.tmp2
-	if [ -d build/spec-modules ]; then \
-		find build/spec-modules -type f \( -name '*_spec.sh' -o -name '*_spec.sh.tmp' -o -name '*_spec.sh.tmp2' \) -exec rm -f -- {} +; \
-	fi
 
 rebuild: clean
 	$(MAKE)
@@ -111,7 +109,7 @@ help:
 	echo '  bundle  all と同じ生成処理を実行する。'
 	echo '  modules SX_SYMBOLS の各指定名を build/modules/<名前>.sh に個別生成する。'
 	echo '          例: make modules SX_SYMBOLS=sx_uri_enc'
-	echo '  test-modules テストの読み込み宣言から個別のテスト用モジュールを生成する。'
+	echo '  test-modules テストの読み込み宣言から提供名ごとに単独モジュールを生成する。'
 	echo '          SX_SPECS でテストファイルまたはディレクトリを選択できる。'
 	echo '  test    全体版を生成してテストする。'
 	echo '  clean   作成したファイルを削除する。'

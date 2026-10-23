@@ -7,14 +7,14 @@ shellspec spec/dep/arr/splice_spec.sh
 ```
 
 `test-modules` はこのspecの明示的なIncludeから
-`build/modules/sx_arr_splice.sh` を生成する。テスト用バンドルは生成しない。
+`build/modules/sx_arr_splice.sh` を生成する。
 代わりに `make modules SX_SYMBOLS=sx_arr_splice` でも準備できる。
 
-環境変数 `SX_DEP_FIXTURE` が未設定なら、親用の2つのExampleを実行する。
-親はExample実行時に全体版を読み込み、配列を生成して `sx_var_dump` で
-シェルコードにする。新しいShellSpecへその値を渡し、同じspecだけを実行する。
+環境変数 `SXTEST_DEP_FIXTURE` が未設定なら、親用の2つのExampleを実行する。
+親はExample実行時に `sx_test_setup` を使い、別シェルの全体版で配列を生成して
+`sx_var_dump` でシェルコードにする。新しいShellSpecへその値を渡し、同じspecだけを実行する。
 子は対象モジュールだけを読み込み、各Exampleの前に入力を復元する。
-準備用APIの不在も毎回検査する。`spec_helper` の -efu と漏洩検査を共有する。
+`spec_helper` の -efu と漏洩検査を共有する。
 
 親子のContextは `Skip if` で選択する。親の結果は8 examples / 6 skips、
 子の正常結果は8 examples / 2 skipsとなる。親は子の終了状態と集計の両方を

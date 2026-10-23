@@ -1,18 +1,23 @@
 # shellcheck shell=sh
 
-# 第1引数は単独の提供名、またはテストのパス（後続に必要な提供名を列挙する）。
+# 引数は単独の提供名だけを受け取る。
+case "$#" in
+  1) ;;
+  *)
+    printf '%s\n' '単独の提供名を1つ指定してください' >&2
+    exit 1
+    ;;
+esac
+case "$1" in
+  '' | [0-9]* | *[!A-Za-z0-9_]*)
+    printf '%s\n' '提供名の形式が不正です' >&2
+    exit 1
+    ;;
+esac
 case "${SX_TEST_MODE-module}" in
   module)
-    case "$1" in
-      spec/*_spec.sh)
-        # shellcheck source=/dev/null
-        . "./build/spec-modules/${1#spec/}"
-        ;;
-      *)
-        # shellcheck source=/dev/null
-        . "./build/modules/$1.sh"
-        ;;
-    esac
+    # shellcheck source=/dev/null
+    . "./build/modules/$1.sh"
     ;;
   full)
     # shellcheck source=/dev/null

@@ -32,23 +32,25 @@ class SpecModulesTest(unittest.TestCase):
         return path
 
     def test_specs_keep_separate_requirements_and_selection(self):
-        self.write("spec/uri/enc_spec.sh", "Include ./spec/support/library.sh spec/uri/enc_spec.sh sx_uri_enc\n")
-        self.write("spec/uri/combined_spec.sh", "Include ./spec/support/library.sh spec/uri/combined_spec.sh sx_uri_enc sx_uri_is_pct\n")
+        self.write("spec/uri/enc_spec.sh", "Include ./spec/support/library.sh sx_uri_enc\n")
+        self.write("spec/uri/pct_spec.sh", "Include ./build/modules/sx_uri_is_pct.sh\n")
         self.write("spec/other_spec.sh", "Include ./spec/support/library.sh sx_uri_is_pct\n")
         plans = BUILDER.plans(self.root)
-        self.assertEqual(["sx_uri_enc"], plans["build/spec-modules/uri/enc_spec.sh"])
-        self.assertEqual(["sx_uri_enc", "sx_uri_is_pct"], plans["build/spec-modules/uri/combined_spec.sh"])
-        self.assertEqual(["sx_uri_is_pct"], plans["build/modules/sx_uri_is_pct.sh"])
+        self.assertEqual({"build/modules/sx_uri_enc.sh": ["sx_uri_enc"],
+                          "build/modules/sx_uri_is_pct.sh": ["sx_uri_is_pct"]}, plans)
         self.assertEqual(2, len(BUILDER.plans(self.root, ["spec/uri"])))
         self.assertEqual(1, len(BUILDER.plans(self.root, ["spec/uri/enc_spec.sh"])))
 
     def test_invalid_declarations_are_rejected(self):
         cases = (
             "Include ./sx.sh\n",
+            "Include ./spec/support/library.sh\n",
+            "Include ./spec/support/library.sh unknown\n",
+            "Include ./build/modules/unknown.sh\n",
+            "Include ./spec/support/library.sh sx_uri_enc sx_uri_is_pct\n",
             "Include ./spec/support/library.sh spec/uri/other_spec.sh sx_uri_enc\n",
             "Include ./spec/support/library.sh spec/uri/enc_spec.sh\n",
-            "Include ./spec/support/library.sh spec/uri/enc_spec.sh unknown\n",
-            "Include ./spec/support/library.sh spec/uri/enc_spec.sh sx_uri_enc sx_uri_enc\n",
+            "Include ./spec/support/library.sh spec/uri/enc_spec.sh sx_uri_enc\n",
         )
         for body in cases:
             with self.subTest(body=body):
@@ -56,16 +58,17 @@ class SpecModulesTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     BUILDER.plans(self.root)
 
-    def test_multiple_groups_share_one_bundle(self):
-        self.write("spec/uri/enc_spec.sh", "Include ./spec/support/library.sh spec/uri/enc_spec.sh sx_uri_enc\nInclude ./spec/support/library.sh spec/uri/enc_spec.sh sx_uri_is_pct\n")
-        self.assertEqual({"build/spec-modules/uri/enc_spec.sh": ["sx_uri_enc", "sx_uri_is_pct"]},
+    def test_multiple_groups_deduplicate_names_without_combining_modules(self):
+        self.write("spec/uri/enc_spec.sh", "Include ./spec/support/library.sh sx_uri_enc\nInclude ./spec/support/library.sh sx_uri_is_pct\nInclude ./spec/support/library.sh sx_uri_enc\n")
+        self.assertEqual({"build/modules/sx_uri_enc.sh": ["sx_uri_enc"],
+                          "build/modules/sx_uri_is_pct.sh": ["sx_uri_is_pct"]},
                          BUILDER.plans(self.root))
 
-    def test_loader_uses_spec_bundle_without_full_library(self):
+    def test_loader_uses_single_module_without_full_library(self):
         support = self.write("spec/support/library.sh", "")
         shutil.copyfile(ROOT / "spec/support/library.sh", support)
-        self.write("build/spec-modules/uri/enc_spec.sh", "marker=module\n")
-        probe = "set -- spec/uri/enc_spec.sh sx_uri_enc\n. ./spec/support/library.sh\nprintf '%s\\n' \"$marker\"\n"
+        self.write("build/modules/sx_uri_enc.sh", "marker=module\n")
+        probe = "set -- sx_uri_enc\n. ./spec/support/library.sh\nprintf '%s\\n' \"$marker\"\n"
         env = {key: value for key, value in os.environ.items() if key != "SX_TEST_MODE"}
         for mode in (None, "module", "full"):
             with self.subTest(mode=mode):
@@ -76,6 +79,24 @@ class SpecModulesTest(unittest.TestCase):
                                         cwd=self.root, env=selected_env, capture_output=True, text=True)
                 self.assertEqual(0, result.returncode, result.stderr)
                 self.assertEqual("full\n" if mode == "full" else "module\n", result.stdout)
+
+    def test_loader_rejects_invalid_and_old_declarations_in_both_modes(self):
+        support = self.write("spec/support/library.sh", "")
+        shutil.copyfile(ROOT / "spec/support/library.sh", support)
+        self.write("sx.sh", "marker=full\n")
+        for mode in ("module", "full"):
+            for args in ([], [""], ["1invalid"], ["../outside"],
+                         ["spec/uri/enc_spec.sh"],
+                         ["spec/uri/enc_spec.sh", "sx_uri_enc"],
+                         ["sx_uri_enc", "sx_uri_is_pct"]):
+                with self.subTest(mode=mode, args=args):
+                    result = subprocess.run(
+                        ["yash", "-efu", "-o", "posix", "-c",
+                         '. ./spec/support/library.sh', "probe", *args],
+                        cwd=self.root, env=dict(os.environ, SX_TEST_MODE=mode),
+                        capture_output=True, text=True)
+                    self.assertNotEqual(0, result.returncode)
+                    self.assertIn("提供名", result.stderr)
 
 
 if __name__ == "__main__":

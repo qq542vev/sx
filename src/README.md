@@ -60,22 +60,34 @@ shellspec spec/arr/push_spec.sh
 SX_TEST_MODE=full shellspec spec/arr/push_spec.sh
 ```
 
-例えば、配列の準備・設定変更・後始末も行うテストでは次の形式を使います。
+検証側では、対象の提供名を一つ指定します。準備用APIは別シェルで実行し、
+結果の変数だけを復元します。
 
 ```sh
-Include ./spec/support/library.sh spec/arr/push_spec.sh sx_arr_push sx_arr_gen sx_cfg_set sx_var_unset
+Describe 'sx_arr_push'
+  Include ./spec/support/prepare.sh
+  Include ./spec/support/library.sh sx_arr_push
+
+  It '末尾に要素を追加すること'
+    sx_test_setup sx_arr_gen items a b
+    When call sx_arr_push items c
+    The status should be success
+    The variable items_2 should equal c
+  End
+End
 ```
 
-`make test-modules` は各テストの宣言から、必要な提供名と依存先を一つにまとめた
-`build/spec-modules/arr/push_spec.sh` を生成します。
-一つのテスト内で複数のグループが宣言した名前は結合し、出力は一度だけ生成します。
-単独APIだけを使う `Include ./spec/support/library.sh sx_uri_enc` の形式も使えます。
-その場合は従来どおり `build/modules/sx_uri_enc.sh` を読み込みます。
-テスト用の生成を管理する Python は読み込み宣言の収集を行い、依存解決には既存の m4 生成器を使います。
+`make test-modules` は各テストの宣言から提供名を収集し、
+`build/modules/<名前>.sh` を名前ごとに一度だけ生成します。
+各モジュールには対象と宣言済みの依存先を含めます。
+`Include ./build/modules/sx_uri_enc.sh` の直接指定も収集対象です。
+複数のグループやファイルで同じ名前を指定しても、生成は重複しません。
+提供名の収集は Python、依存解決は既存の m4 生成器が担当します。
+準備方法と複数機能のテストの書き方は [prepare.md](../spec/support/prepare.md) を参照してください。
 
 全体版との比較には `SX_TEST_MODE=full` を指定し、ShellSpec を起動し直します。
 この場合は先に `make all` で全体版を生成してください。
-`make test` は全体版と全テスト用モジュールを生成し、全テストを個別版・全体版でそれぞれ実行します。
+`make test` は全体版とテストに必要な単独モジュールを生成し、全テストを個別版・全体版でそれぞれ実行します。
 ShellSpec のオプションは `make test TEST_FLAGS='--jobs 4'` のように指定できます。
 `make clean` はテスト用の生成物も削除します。
 
