@@ -87,6 +87,28 @@ last
     The variable observed should equal 'space quote'
   End
 
+  It '出力名と混在する環境変数指定と位置引数を子へ渡し、親の入力は変更しないこと'
+    export SXT_ENV_INPUT=parent
+    When call sxtest_setup observed 'SXT_ENV_INPUT=child value' args -- 'observed=$SXT_ENV_INPUT; args="$#:$1:$2"' 'a b' ''
+    The status should be success
+    The variable observed should equal 'child value'
+    The variable args should equal '2:a b:'
+    The variable SXT_ENV_INPUT should equal parent
+  End
+
+  It '親のIFSが変更されていてもシェルの起動オプションを分割できること'
+    setup_with_ifs() (
+      IFS=:
+      SHELLSPEC_SHELL="${SHELLSPEC_SHELL} -f"
+      sxtest_setup observed -- 'observed=$1' 'a b'
+      [ "$IFS" = : ] || return 1
+      printf '%s' "$observed"
+    )
+    When call setup_with_ifs
+    The status should be success
+    The stdout should equal 'a b'
+  End
+
   It '設定とリビジョンを引数で渡し、明示した状態だけを戻すこと'
     SX_SYS_REV=7
     setup_command='
@@ -109,6 +131,14 @@ last
     The stdout should equal ''
     The stderr should equal executed
     The variable hidden should be undefined
+  End
+
+  It '空CMDを受け付け、出力0個でも成功すること'
+    When call sxtest_setup -- ''
+    The status should be success
+    The stdout should equal ''
+    The stderr should equal ''
+    The variable SXTEST_SETUP_SCRIPT should be undefined
   End
 
   It 'CMDの標準出力を復元コードと混在させないこと'
@@ -189,7 +219,6 @@ diagnostic'
       ""
       "result"
       "result --"
-      "result -- ''"
       "'' -- ':'"
       "1invalid -- ':'"
       "a:b -- ':'"
