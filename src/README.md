@@ -85,6 +85,9 @@ End
 提供名の収集は Python、依存解決は既存の m4 生成器が担当します。
 事前準備・事後検証・コールバックの補助処理・後始末は [run.md](../spec/support/run.md) を参照してください。
 
+個別モジュールを関数で読み込む `sxtest_load` も利用できます。
+引数と `SXTEST_LOAD_MOD` による指定は [load.md](../spec/support/load.md) を参照してください。
+
 全体版との比較には `SX_TEST_MODE=full` を指定し、ShellSpec を起動し直します。
 この場合は先に `make all` で全体版を生成してください。
 `make test` は全体版とテストに必要な単独モジュールを生成し、全テストを個別版・全体版でそれぞれ実行します。

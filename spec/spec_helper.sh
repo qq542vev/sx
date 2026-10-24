@@ -31,6 +31,43 @@ spec_helper_configure() {
   : import 'support/custom_matcher'
 }
 
+### sxtest_load - 指定した個別モジュールを現在のシェルへ読み込む
+## 使い方: sxtest_load [mod ...]
+## 説明:
+##   mod は build/modules/<mod>.sh の提供名を指定する。
+##   SXTEST_LOAD_MOD が設定済みなら、引数をその値の空白区切りの一覧で置き換える。
+##   空の一覧では何もせず成功する。重複する指定も順番どおり読み込む。
+##   呼び出し元の IFS とパス名展開の設定は、読み込み前に復元する。
+## 終了ステータス: 0 成功、64 提供名不正、1 読込不可、その他は読み込み先の終了状態。
+sxtest_load() {
+  case "${SXTEST_LOAD_MOD+X}" in X)
+    # 位置パラメータに呼び出し元の状態を保存し、空白1文字だけで分割する。
+    set -- "${IFS+x}" "${IFS-}" "$-"
+    IFS=' '
+    set -f
+    # shellcheck disable=SC2086 # 空白での分割を行い、パス名展開は無効にしている。
+    set -- "$1" "$2" "$3" $SXTEST_LOAD_MOD
+    case "$1" in x) IFS=$2;; *) unset IFS;; esac
+    case "$3" in *f*) ;; *) set +f;; esac
+    shift 3
+  esac
+
+  while case "$#" in 0) ! :;; esac; do
+    case "$1" in '' | [0-9]* | *[!A-Za-z0-9_]*)
+      printf '%s\n' '提供名の形式が不正です' >&2
+      return 64
+    esac
+    if [ ! -r "./build/modules/$1.sh" ]; then
+      printf '%s\n' "モジュールを読み込めません: $1" >&2
+      return 1
+    fi
+    # shellcheck source=/dev/null
+    . "./build/modules/$1.sh" || return
+    shift
+  done
+  return 0
+}
+
 # 算術域を設定値に依存せず検査する。致命的な算術エラーはサブシェルに閉じ込め、
 # ラップするシェルでも最大値・最小値の結果が一致しなければ64bit未満と判定する。
 arith_lt64() {
