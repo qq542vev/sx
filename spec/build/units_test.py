@@ -24,21 +24,21 @@ class UnitsTest(unittest.TestCase):
             (self.root / "src" / f"{group}.m4").write_text("", encoding="utf-8")
 
     def test_missing_and_unlisted_file(self):
-        manifest = self.root / "src/constants.m4"
-        line = "M_UNIT([|SX_STR_SAMPLE|], [|src/constants/SX_STR_SAMPLE.m4|])dnl\n"
+        manifest = self.root / "src/const.m4"
+        line = "M_UNIT([|SX_STR_SAMPLE|], [|src/const/SX_STR_SAMPLE.m4|])dnl\n"
         manifest.write_text(line, encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "欠落"):
             CHECKER.check(self.root)
-        (self.root / "src/constants/SX_STR_SAMPLE.m4").write_text("", encoding="utf-8")
+        (self.root / "src/const/SX_STR_SAMPLE.m4").write_text("", encoding="utf-8")
         self.assertEqual(1, CHECKER.check(self.root))
         manifest.write_text("", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "未登録"):
             CHECKER.check(self.root)
 
     def test_duplicate_and_wrong_path(self):
-        manifest = self.root / "src/constants.m4"
-        line = "M_UNIT([|SX_STR_SAMPLE|], [|src/constants/SX_STR_SAMPLE.m4|])dnl\n"
-        (self.root / "src/constants/SX_STR_SAMPLE.m4").write_text("", encoding="utf-8")
+        manifest = self.root / "src/const.m4"
+        line = "M_UNIT([|SX_STR_SAMPLE|], [|src/const/SX_STR_SAMPLE.m4|])dnl\n"
+        (self.root / "src/const/SX_STR_SAMPLE.m4").write_text("", encoding="utf-8")
         manifest.write_text(line * 2, encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "重複"):
             CHECKER.check(self.root)

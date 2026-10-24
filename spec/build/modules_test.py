@@ -110,16 +110,16 @@ class ModuleRulesTest(unittest.TestCase):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / relative, target)
         self.units = {
-            "constants/SX_STR_SAMPLE": 'M_REQUIRE([||])dnl\nreadonly SX_STR_SAMPLE=sample\n',
-            "globals/SX_SYS_SAMPLE": 'M_REQUIRE([|SX_STR_SAMPLE|])dnl\nSX_SYS_SAMPLE=$SX_STR_SAMPLE\n',
-            "functions/__sx_sample": 'M_REQUIRE([|SX_SYS_SAMPLE|])dnl\n__sx_sample() { result=$SX_SYS_SAMPLE; }\n',
-            "functions/sx_sample": 'M_REQUIRE([|__sx_sample|])dnl\nsx_sample() { __sx_sample; }\n',
+            "const/SX_STR_SAMPLE": 'M_REQUIRE([||])dnl\nreadonly SX_STR_SAMPLE=sample\n',
+            "var/SX_SYS_SAMPLE": 'M_REQUIRE([|SX_STR_SAMPLE|])dnl\nSX_SYS_SAMPLE=$SX_STR_SAMPLE\n',
+            "func/__sx_sample": 'M_REQUIRE([|SX_SYS_SAMPLE|])dnl\n__sx_sample() { result=$SX_SYS_SAMPLE; }\n',
+            "func/sx_sample": 'M_REQUIRE([|__sx_sample|])dnl\nsx_sample() { __sx_sample; }\n',
         }
         for relative, body in self.units.items():
             path = self.root / "src" / f"{relative}.m4"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(body, encoding="utf-8")
-        for group in ("constants", "globals", "functions"):
+        for group in ("const", "var", "func"):
             body = "".join(
                 f'M_UNIT([|{relative.split("/")[-1]}|], [|src/{relative}.m4|])dnl\n'
                 for relative in sorted(self.units) if relative.startswith(group + "/"))
@@ -144,7 +144,7 @@ class ModuleRulesTest(unittest.TestCase):
         self.assertEqual({relative.split("/")[-1] + ".sh" for relative in self.units},
                          set(self.outputs()))
         self.assertFalse((self.root / "unused.sh").exists())
-        self.assertFalse((self.root / "build/modules/functions.sh").exists())
+        self.assertFalse((self.root / "build/modules/func.sh").exists())
         self.assertFalse((self.root / "spec").exists())
 
     def test_individual_target_includes_its_dependencies(self):
@@ -172,7 +172,7 @@ class ModuleRulesTest(unittest.TestCase):
         self.assert_make("module")
         before = self.outputs()
         # 定数の生成物も、参照していない公開関数の変更に依存する。
-        (self.root / "src/functions/sx_sample.m4").touch()
+        (self.root / "src/func/sx_sample.m4").touch()
         self.assert_make("-f", "module.mk", "build/modules/sx_sample.sh")
         partial = self.outputs()
         self.assertNotEqual(before["sx_sample.sh"], partial["sx_sample.sh"])
@@ -185,7 +185,7 @@ class ModuleRulesTest(unittest.TestCase):
     def test_common_build_files_and_manifests_trigger_rebuilds(self):
         self.assert_make("module")
         for relative in ("Makefile", "m4/common.m4", "m4/resolve.m4", "tools/compact.awk",
-                         "src/constants.m4", "src/globals.m4", "src/functions.m4"):
+                         "src/const.m4", "src/var.m4", "src/func.m4"):
             with self.subTest(relative=relative):
                 before = self.outputs()
                 (self.root / relative).touch()
@@ -196,11 +196,11 @@ class ModuleRulesTest(unittest.TestCase):
     def test_addition_and_removal_require_explicit_rule_refresh(self):
         self.assert_make("module.mk")
         rules = (self.root / "module.mk").read_bytes()
-        added = self.root / "src/functions/sx_added.m4"
+        added = self.root / "src/func/sx_added.m4"
         added.write_text('M_REQUIRE([||])dnl\nsx_added() { :; }\n', encoding="utf-8")
-        manifest = self.root / "src/functions.m4"
+        manifest = self.root / "src/func.m4"
         original = manifest.read_text(encoding="utf-8")
-        manifest.write_text(original + 'M_UNIT([|sx_added|], [|src/functions/sx_added.m4|])dnl\n',
+        manifest.write_text(original + 'M_UNIT([|sx_added|], [|src/func/sx_added.m4|])dnl\n',
                             encoding="utf-8")
         result = self.make("-f", "module.mk", "build/modules/sx_added.sh")
         self.assertNotEqual(0, result.returncode)
@@ -219,7 +219,7 @@ class ModuleRulesTest(unittest.TestCase):
         original = (self.root / "module.mk").read_bytes()
         for name in ("bad-name", "SX_STR_SAMPLE"):
             with self.subTest(name=name):
-                path = self.root / "src/functions" / f"{name}.m4"
+                path = self.root / "src/func" / f"{name}.m4"
                 path.write_text("", encoding="utf-8")
                 result = self.make("module.mk")
                 self.assertNotEqual(0, result.returncode)
@@ -232,7 +232,7 @@ class ModuleRulesTest(unittest.TestCase):
         self.assert_make("clean")
         self.assertFalse((self.root / "module.mk").exists())
         self.assertEqual({}, self.outputs())
-        self.assertTrue((self.root / "src/functions/sx_sample.m4").exists())
+        self.assertTrue((self.root / "src/func/sx_sample.m4").exists())
         for target in ("modules", "test-modules"):
             with self.subTest(target=target):
                 self.assertNotEqual(0, self.make(target).returncode)

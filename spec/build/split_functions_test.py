@@ -31,15 +31,15 @@ def compact(data):
 class SplitFunctionsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.files = sorted((ROOT / "src/functions").glob("**/*.m4"))
+        cls.files = sorted((ROOT / "src/func").glob("**/*.m4"))
 
     def test_inventory_and_order(self):
         """全関数を一度ずつ収録し、一覧順で展開する。"""
-        expected = UNIT.findall((ROOT / "src/functions.m4").read_text(encoding="utf-8"))
+        expected = UNIT.findall((ROOT / "src/func.m4").read_text(encoding="utf-8"))
         self.assertTrue(expected)
         self.assertEqual(len(expected), len(set(expected)))
         self.assertEqual(sorted(expected), sorted(path.stem for path in self.files))
-        expanded = run(["m4", "--", "m4/common.m4", "src/functions.m4"])
+        expanded = run(["m4", "--", "m4/common.m4", "src/func.m4"])
         self.assertEqual(expected, FUNCTION.findall(expanded.decode()))
         for path in self.files:
             with self.subTest(path=path.relative_to(ROOT)):
@@ -73,14 +73,14 @@ class SplitFunctionsTest(unittest.TestCase):
         )
         for name, base, variable in cases:
             with self.subTest(name=name):
-                expanded = run(["m4", "--", "m4/common.m4", f"src/functions/str/{name}.m4"])
+                expanded = run(["m4", "--", "m4/common.m4", f"src/func/str/{name}.m4"])
                 self.assertIn(f"__sx_{base}_{variable}_".encode(), expanded)
                 self.assertNotIn(f"{name}_{variable}_".encode(), expanded)
 
     def test_complete_assembly(self):
         """全一覧を直接結合すると標準出力とバイト単位で一致する。"""
-        actual = compact(run(["m4", "--", "m4/common.m4", "src/constants.m4",
-                              "src/globals.m4", "src/functions.m4"]))
+        actual = compact(run(["m4", "--", "m4/common.m4", "src/const.m4",
+                              "src/var.m4", "src/func.m4"]))
         self.assertEqual((ROOT / "sx.sh").read_bytes(), b"#!/bin/sh\n" + actual)
 
 

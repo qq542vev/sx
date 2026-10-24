@@ -1,0 +1,13 @@
+M_UNIT([|SX_CFG_SIG_ARR|], [|src/var/cfg/SX_CFG_SIG_ARR.m4|])dnl
+M_UNIT([|SX_CFG_SKIP_CHK|], [|src/var/cfg/SX_CFG_SKIP_CHK.m4|])dnl
+M_UNIT([|SX_CFG_NUM_RANGE|], [|src/var/cfg/SX_CFG_NUM_RANGE.m4|])dnl
+M_UNIT([|SX_CFG_SEP|], [|src/var/cfg/SX_CFG_SEP.m4|])dnl
+M_UNIT([|SX_CFG_ARR_UPDATE|], [|src/var/cfg/SX_CFG_ARR_UPDATE.m4|])dnl
+M_UNIT([|SX_CFG_ARR_HOLE|], [|src/var/cfg/SX_CFG_ARR_HOLE.m4|])dnl
+M_UNIT([|SX_CFG_ARR_REF|], [|src/var/cfg/SX_CFG_ARR_REF.m4|])dnl
+M_UNIT([|SX_SYS_REV|], [|src/var/sys/SX_SYS_REV.m4|])dnl
+M_UNIT([|SX_SYS_NUM_WLEN|], [|src/var/sys/SX_SYS_NUM_WLEN.m4|])dnl
+M_UNIT([|SX_SYS_NUM_QM|], [|src/var/sys/SX_SYS_NUM_QM.m4|])dnl
+M_UNIT([|SX_SYS_NUM_ZR|], [|src/var/sys/SX_SYS_NUM_ZR.m4|])dnl
+M_UNIT([|SX_SYS_NUM_MAX|], [|src/var/sys/SX_SYS_NUM_MAX.m4|])dnl
+M_UNIT([|SX_SYS_NUM_MIN|], [|src/var/sys/SX_SYS_NUM_MIN.m4|])dnl

@@ -10,7 +10,7 @@ from dependency_headers import REQUIRE, declaration, metadata
 
 
 ROOT = Path(__file__).resolve().parent.parent
-UNITS = sorted(path for group in ("constants", "globals", "functions")
+UNITS = sorted(path for group in ("const", "var", "func")
                for path in (ROOT / "src" / group).rglob("*.m4"))
 TOKEN = re.compile(r"(?<![A-Za-z0-9_])(?:__)?sx_[a-z0-9_]+(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])SX_[A-Z0-9_]+(?![A-Za-z0-9_])")
 DYNAMIC_FUNCTION = re.compile(r'"(__sx_num_[a-z0-9_]+_)\$\{')
@@ -28,7 +28,7 @@ def inventory():
 
 
 def references(path, owners):
-    if path.parts[-3] == "constants":
+    if path.parts[-3] == "const":
         # M_CONST の値は文字列データ。説明文中の関数名は呼び出しではない。
         return set()
     result = subprocess.run(["m4", "--", "m4/common.m4", str(path.relative_to(ROOT))],
@@ -55,7 +55,7 @@ def references(path, owners):
             fields = set(re.findall(r"SX_NUM_BASE\$\{[^{}]+\}_(PREFIX|CHARS)", code))
             matches = {name for name in matches if name.rsplit("_", 1)[-1] in fields}
         elif prefix == "SX_CFG_":
-            matches = {name for name in matches if owners[name].parent == ROOT / "src/globals/cfg"}
+            matches = {name for name in matches if owners[name].parent == ROOT / "src/var/cfg"}
         if not matches:
             raise ValueError(f"動的な定数名の提供元がありません: {path}: {prefix}")
         refs.update(matches)

@@ -26,13 +26,13 @@ def snapshot(names):
 class SplitGlobalsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        manifest = (ROOT / "src/globals.m4").read_text(encoding="utf-8")
+        manifest = (ROOT / "src/var.m4").read_text(encoding="utf-8")
         cls.entries = UNIT.findall(manifest)
         cls.configs = [name for name, _ in cls.entries if name.startswith("SX_CFG_")]
         cls.numbers = ["SX_SYS_NUM_" + field for field in NUM_FIELDS]
         cls.names = cls.configs + ["SX_SYS_REV"] + cls.numbers
-        cls.constants = expand("src/constants.m4")
-        cls.library = expand("src/constants.m4", "src/globals.m4", "src/functions.m4")
+        cls.constants = expand("src/const.m4")
+        cls.library = expand("src/const.m4", "src/var.m4", "src/func.m4")
 
     def evaluate(self, code, probe, overrides=None):
         # 呼び出し元の設定を排除し、各ケースで環境継承の有無を指定する。
@@ -59,10 +59,10 @@ class SplitGlobalsTest(unittest.TestCase):
 
     def test_inventory_and_initialization_order(self):
         """一覧の順序で各初期化ファイルを一度ずつ読み込む。"""
-        actual = {path.relative_to(ROOT).as_posix() for path in (ROOT / "src/globals").rglob("*.m4")}
+        actual = {path.relative_to(ROOT).as_posix() for path in (ROOT / "src/var").rglob("*.m4")}
         self.assertEqual({path for _, path in self.entries}, actual)
         self.assertEqual(len(self.entries), len(actual))
-        self.assertEqual(expand(*(path for _, path in self.entries)), expand("src/globals.m4"))
+        self.assertEqual(expand(*(path for _, path in self.entries)), expand("src/var.m4"))
 
     def test_each_numeric_global_is_independent(self):
         """各派生値を対応する定数だけで初期化できる。"""
@@ -70,8 +70,8 @@ class SplitGlobalsTest(unittest.TestCase):
             for field in NUM_FIELDS:
                 with self.subTest(width=width, field=field):
                     name = f"SX_SYS_NUM_{field}"
-                    code = expand(f"src/constants/num/SX_NUM_I{width}_{field}.m4",
-                                  f"src/globals/sys/{name}.m4")
+                    code = expand(f"src/const/num/SX_NUM_I{width}_{field}.m4",
+                                  f"src/var/sys/{name}.m4")
                     value = self.evaluate(code, snapshot([name]),
                                           {"SX_CFG_NUM_RANGE": str(width)})
                     self.assertEqual(self.numeric_constants(width)[NUM_FIELDS.index(field)], value[0])
@@ -80,7 +80,7 @@ class SplitGlobalsTest(unittest.TestCase):
         """設定値の単独展開では、未設定だけを既定値で補い、空値も保持する。"""
         for name, default in zip(self.configs, self.defaults()):
             constant = name.replace("SX_CFG_", "SX_CFG_META_DEF_", 1)
-            code = expand(f"src/constants/cfg/{constant}.m4", f"src/globals/cfg/{name}.m4")
+            code = expand(f"src/const/cfg/{constant}.m4", f"src/var/cfg/{name}.m4")
             for inherited in (None, "", "引用'\" $value\\\n次行"):
                 with self.subTest(name=name, inherited=inherited):
                     env = {} if inherited is None else {name: inherited}

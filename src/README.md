@@ -9,12 +9,12 @@ m4/
 ├── common.m4       共通マクロとビルド時の定数値
 └── resolve.m4      選択と依存解決
 src/
-├── constants.m4    定数の一覧と出力順
-├── constants/      定数ごとのファイル
-├── globals.m4      大域変数の初期化順
-├── globals/        大域変数ごとのファイル
-├── functions.m4    関数の一覧と出力順
-└── functions/      公開・内部関数ごとのファイル
+├── const.m4        定数の一覧と出力順
+├── const/          定数ごとのファイル
+├── var.m4          設定・状態変数の初期化順
+├── var/            設定・状態変数ごとのファイル
+├── func.m4         関数の一覧と出力順
+└── func/           公開・内部関数ごとのファイル
 ```
 
 各一覧には `M_UNIT([|名前|], [|パス|])` を一単位につき一行登録します。
@@ -43,7 +43,7 @@ make -f module.mk build/modules/sx_uri_enc.sh build/modules/sx_uri_is_pct.sh
 shellspec spec/modules/uri_enc_spec.sh
 ```
 
-`make module.mk` は `find` で `src/constants/`・`src/globals/`・`src/functions/`
+`make module.mk` は `find` で `src/const/`・`src/var/`・`src/func/`
 配下の `.m4` を列挙し、対応する `build/modules/<提供名>.sh` のルールを生成します。
 公開関数・内部関数・定数・大域変数の全単位を対象とし、一覧ファイルとREADMEは対象外です。
 各モジュールは対象とその依存先を含め、既存のm4生成器で作成します。

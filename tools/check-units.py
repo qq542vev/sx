@@ -6,8 +6,8 @@ import re
 
 
 ROOT = Path(__file__).resolve().parent.parent
-GROUPS = ("constants", "globals", "functions")
-UNIT = re.compile(r"M_UNIT\(\[\|([A-Za-z_][A-Za-z0-9_]*)\|\], \[\|(src/(?:constants|globals|functions)/[A-Za-z0-9_/]+\.m4)\|\]\)dnl")
+GROUPS = ("const", "var", "func")
+UNIT = re.compile(r"M_UNIT\(\[\|([A-Za-z_][A-Za-z0-9_]*)\|\], \[\|(src/(?:const|var|func)/[A-Za-z0-9_/]+\.m4)\|\]\)dnl")
 
 
 def check(root=ROOT):

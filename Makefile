@@ -61,11 +61,11 @@ module.mk: FORCE
 	@set -efu; \
 	tmp=module.mk.tmp.$$$$; files=$$tmp.files; \
 	trap 'rm -f -- "$$tmp" "$$files"' 0; \
-	find src/constants src/globals src/functions -type f -name '*.m4' -print > "$$files"; \
+	find src/const src/var src/func -type f -name '*.m4' -print > "$$files"; \
 	LC_ALL=C sort -o "$$files" "$$files"; \
 	{ \
 		printf '%s\n' '# Makefile から自動生成。編集せず make module.mk で更新する。' '.POSIX:' '' '.PHONY: all' ''; \
-		printf 'MODULE_SOURCES = src/constants.m4 src/globals.m4 src/functions.m4'; \
+		printf 'MODULE_SOURCES = src/const.m4 src/var.m4 src/func.m4'; \
 		while IFS= read -r path; do printf ' %s' "$$path"; done < "$$files"; \
 		printf '\nMODULE_BUILD_FILES = Makefile m4/common.m4 m4/resolve.m4 %s\n\nall:' '$(COMPACT)'; \
 		seen=; \

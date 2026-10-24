@@ -105,48 +105,48 @@ class BundleTest(unittest.TestCase):
     def test_global_cycle_and_duplicate_name_are_errors(self):
         fixture = Path(self.temp.name)
         (fixture / "m4").mkdir()
-        (fixture / "src/globals").mkdir(parents=True)
+        (fixture / "src/var").mkdir(parents=True)
         shutil.copyfile(ROOT / "m4/common.m4", fixture / "m4/common.m4")
         shutil.copyfile(ROOT / "m4/resolve.m4", fixture / "m4/resolve.m4")
-        (fixture / "src/constants.m4").write_text("", encoding="utf-8")
-        (fixture / "src/functions.m4").write_text("", encoding="utf-8")
-        unit_a = "M_UNIT([|SX_SYS_A|], [|src/globals/SX_SYS_A.m4|])dnl\n"
-        unit_b = "M_UNIT([|SX_SYS_B|], [|src/globals/SX_SYS_B.m4|])dnl\n"
-        (fixture / "src/globals.m4").write_text(unit_a + unit_b, encoding="utf-8")
-        (fixture / "src/globals/SX_SYS_A.m4").write_text(
+        (fixture / "src/const.m4").write_text("", encoding="utf-8")
+        (fixture / "src/func.m4").write_text("", encoding="utf-8")
+        unit_a = "M_UNIT([|SX_SYS_A|], [|src/var/SX_SYS_A.m4|])dnl\n"
+        unit_b = "M_UNIT([|SX_SYS_B|], [|src/var/SX_SYS_B.m4|])dnl\n"
+        (fixture / "src/var.m4").write_text(unit_a + unit_b, encoding="utf-8")
+        (fixture / "src/var/SX_SYS_A.m4").write_text(
             "M_REQUIRE([|SX_SYS_B|])dnl\nSX_SYS_A=1\n", encoding="utf-8")
-        (fixture / "src/globals/SX_SYS_B.m4").write_text(
+        (fixture / "src/var/SX_SYS_B.m4").write_text(
             "M_REQUIRE([|SX_SYS_A|])dnl\nSX_SYS_B=1\n", encoding="utf-8")
         command = ["m4", "-DSX_SYMBOLS=SX_SYS_A", "--", "m4/resolve.m4"]
         result = subprocess.run(command, cwd=fixture, capture_output=True, text=True)
         self.assertNotEqual(0, result.returncode)
         self.assertIn("初期化依存の循環", result.stderr)
 
-        (fixture / "src/globals.m4").write_text(unit_a + unit_a, encoding="utf-8")
+        (fixture / "src/var.m4").write_text(unit_a + unit_a, encoding="utf-8")
         result = subprocess.run(command, cwd=fixture, capture_output=True, text=True)
         self.assertNotEqual(0, result.returncode)
         self.assertIn("定義の重複", result.stderr)
 
-        (fixture / "src/functions").mkdir()
-        (fixture / "src/functions.m4").write_text(
-            "M_UNIT([|sx_util_dummy|], [|src/functions/sx_util_dummy.m4|])dnl\n",
+        (fixture / "src/func").mkdir()
+        (fixture / "src/func.m4").write_text(
+            "M_UNIT([|sx_util_dummy|], [|src/func/sx_util_dummy.m4|])dnl\n",
             encoding="utf-8")
-        (fixture / "src/functions/sx_util_dummy.m4").write_text(
+        (fixture / "src/func/sx_util_dummy.m4").write_text(
             "M_REQUIRE([||])dnl\nsx_util_dummy() { :; }\n", encoding="utf-8")
-        (fixture / "src/globals.m4").write_text(unit_a, encoding="utf-8")
-        (fixture / "src/globals/SX_SYS_A.m4").write_text(
+        (fixture / "src/var.m4").write_text(unit_a, encoding="utf-8")
+        (fixture / "src/var/SX_SYS_A.m4").write_text(
             "M_REQUIRE([|sx_util_dummy|])dnl\nSX_SYS_A=1\n", encoding="utf-8")
         result = subprocess.run(command, cwd=fixture, capture_output=True, text=True)
         self.assertNotEqual(0, result.returncode)
         self.assertIn("初期化から関数への依存", result.stderr)
 
-        (fixture / "src/constants").mkdir()
-        (fixture / "src/constants.m4").write_text(
-            "M_UNIT([|SX_STR_DUMMY|], [|src/constants/SX_STR_DUMMY.m4|])dnl\n",
+        (fixture / "src/const").mkdir()
+        (fixture / "src/const.m4").write_text(
+            "M_UNIT([|SX_STR_DUMMY|], [|src/const/SX_STR_DUMMY.m4|])dnl\n",
             encoding="utf-8")
-        (fixture / "src/constants/SX_STR_DUMMY.m4").write_text(
+        (fixture / "src/const/SX_STR_DUMMY.m4").write_text(
             "M_REQUIRE([|SX_SYS_A|])dnl\nreadonly SX_STR_DUMMY=x\n", encoding="utf-8")
-        (fixture / "src/globals/SX_SYS_A.m4").write_text(
+        (fixture / "src/var/SX_SYS_A.m4").write_text(
             "M_REQUIRE([||])dnl\nSX_SYS_A=1\n", encoding="utf-8")
         result = subprocess.run(["m4", "-DSX_SYMBOLS=SX_STR_DUMMY", "--", "m4/resolve.m4"],
                                 cwd=fixture, capture_output=True, text=True)
@@ -155,7 +155,7 @@ class BundleTest(unittest.TestCase):
 
     def test_all_units_match_normal_build(self):
         names = []
-        for group in ("constants", "globals", "functions"):
+        for group in ("const", "var", "func"):
             manifest = (ROOT / "src" / f"{group}.m4").read_text(encoding="utf-8")
             names.extend(re.findall(r"^M_UNIT\(\[\|([^|]+)\|\],", manifest, re.MULTILINE))
         self.assertEqual(700, len(names))

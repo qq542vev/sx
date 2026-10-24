@@ -14,7 +14,7 @@ Describe '共通マクロと定数の個別展開'
       readonly -p
     ) || return
     split_constants=$(
-      split_script=$(expand_split_constants src/constants.m4) || exit
+      split_script=$(expand_split_constants src/const.m4) || exit
       eval "${split_script}" || exit
       readonly -p
     ) || return
@@ -28,25 +28,25 @@ Describe '共通マクロと定数の個別展開'
   End
 
   It '合成定数だけを出力し、合成元の実行時定数を出力しないこと'
-    When run expand_split_constants src/constants/str/SX_STR_ALNUM.m4
+    When run expand_split_constants src/const/str/SX_STR_ALNUM.m4
     The status should be success
     The output should equal 'readonly SX_STR_ALNUM=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
   End
 
   It '受理パターンを一項目だけ出力すること'
-    When run expand_split_constants src/constants/cfg/SX_CFG_META_PATTERN_NUM_RANGE.m4
+    When run expand_split_constants src/const/cfg/SX_CFG_META_PATTERN_NUM_RANGE.m4
     The status should be success
     The output should equal "readonly SX_CFG_META_PATTERN_NUM_RANGE='32|64|128'"
   End
 
   It 'QM の最終桁の定数だけを出力すること'
-    When run expand_split_constants src/constants/num/SX_NUM_QM_37.m4
+    When run expand_split_constants src/const/num/SX_NUM_QM_37.m4
     The status should be success
     The output should equal "readonly SX_NUM_QM_37='?????????????????????????????????????'"
   End
 
   It 'ZR の最初の桁の定数だけを出力すること'
-    When run expand_split_constants src/constants/num/SX_NUM_ZR_1.m4
+    When run expand_split_constants src/const/num/SX_NUM_ZR_1.m4
     The status should be success
     The output should equal 'readonly SX_NUM_ZR_1=0'
   End
@@ -54,7 +54,7 @@ Describe '共通マクロと定数の個別展開'
   It 'LF を含む定数だけを複数行の宣言として出力すること'
     expected="readonly SX_STR_LF='
 '"
-    When run expand_split_constants src/constants/str/SX_STR_LF.m4
+    When run expand_split_constants src/const/str/SX_STR_LF.m4
     The status should be success
     The output should equal "${expected}"
   End

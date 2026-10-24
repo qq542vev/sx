@@ -33,7 +33,7 @@ def attach(files, root=Path(".")):
     """本体の再生成結果に、各ファイルが所有する依存宣言を挿入する。"""
     result = {}
     for path, body in files.items():
-        if len(path.parts) < 3 or path.parts[1] not in ("constants", "globals", "functions"):
+        if len(path.parts) < 3 or path.parts[1] not in ("const", "var", "func"):
             result[path] = body
             continue
         header_end = body.index("\n") + 1
