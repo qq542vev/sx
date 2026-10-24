@@ -6,7 +6,8 @@ ShellSpec では `.shellspec` によって関数が自動的に利用可能に�
 モジュールは事前に生成してください。
 
 ```sh
-make modules SX_SYMBOLS='sx_uri_enc sx_uri_is_pct'
+make module.mk
+make -f module.mk build/modules/sx_uri_enc.sh build/modules/sx_uri_is_pct.sh
 ```
 
 ```sh
@@ -32,4 +33,4 @@ SXTEST_LOAD_MOD='' sxtest_load sx_uri_enc  # 読み込みなし
 定数や大域変数の初期化も再実行されます。
 従来の `library.sh` と `SX_TEST_MODE` による読み込みは引き続き利用できます。
 新しい関数は `SX_TEST_MODE` にかかわらず指定された個別モジュールを読み込みます。
-既存specの移行と、specに依存しないモジュール生成方式への変更は別途行います。
+モジュールの生成対象は `src` から列挙するため、specの記述には依存しません。

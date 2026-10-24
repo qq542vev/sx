@@ -185,7 +185,7 @@ class BundleTest(unittest.TestCase):
                                 cwd=ROOT, env=self.env, capture_output=True, text=True)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("SX_SYMBOLS= SX_OUT=sx.sh all", result.stdout)
-        self.assertIn("SX_SPECS= test-modules", result.stdout)
+        self.assertIn("make module", result.stdout)
         self.assertIn("SX_TEST_MODE=module shellspec", result.stdout)
         self.assertIn("SX_TEST_MODE=full shellspec", result.stdout)
 

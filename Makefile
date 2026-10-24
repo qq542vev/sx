@@ -13,7 +13,7 @@
 ##   modified - 2026-05-08
 ##   copyright - Copyright (C) 2026-2026 qq542vev. All rights reserved.
 ##   license - <GPL-3.0-only at https://www.gnu.org/licenses/gpl-3.0.txt>
-##   depends - awk, chmod, echo, m4, mkdir, mv, python3, rm, shellspec
+##   depends - awk, chmod, cmp, echo, find, m4, mkdir, mv, printf, python3, rm, shellspec, sort
 ##
 ## See Also:
 ##
@@ -25,7 +25,7 @@
 
 .POSIX:
 
-.PHONY: all bundle modules test-modules test clean rebuild help version
+.PHONY: all bundle module FORCE test clean rebuild help version
 
 .SILENT: help version
 
@@ -56,30 +56,47 @@ bundle:
 	chmod 755 -- "$$compact"; \
 	mv -f -- "$$compact" "$$out"
 
-# 指定名ごとに依存先を含め、単独で読み込めるファイルを作成する。
-modules:
+# 単位ファイルを列挙する。直接 module.mk を使う場合は、この一覧を更新しない。
+module.mk: FORCE
 	@set -efu; \
-	symbols=$${SX_SYMBOLS-}; \
-	case "$$symbols" in '') echo 'modules には SX_SYMBOLS を指定してください' >&2; exit 1;; esac; \
-	case "$$symbols" in *[!A-Za-z0-9_\ ]*|' '*|*' '|*'  '*) echo 'SX_SYMBOLS の形式が不正です' >&2; exit 1;; esac; \
-	IFS=' '; \
-	for symbol in $$symbols; do \
-		case "$$symbol" in [0-9]*) echo 'SX_SYMBOLS の形式が不正です' >&2; exit 1;; esac; \
-	done; \
-	for symbol in $$symbols; do \
-		$(MAKE) SX_SYMBOLS="$$symbol" SX_OUT="build/modules/$$symbol.sh" bundle; \
-	done
+	tmp=module.mk.tmp.$$$$; files=$$tmp.files; \
+	trap 'rm -f -- "$$tmp" "$$files"' 0; \
+	find src/constants src/globals src/functions -type f -name '*.m4' -print > "$$files"; \
+	LC_ALL=C sort -o "$$files" "$$files"; \
+	{ \
+		printf '%s\n' '# Makefile から自動生成。編集せず make module.mk で更新する。' '.POSIX:' '' '.PHONY: all' ''; \
+		printf 'MODULE_SOURCES = src/constants.m4 src/globals.m4 src/functions.m4'; \
+		while IFS= read -r path; do printf ' %s' "$$path"; done < "$$files"; \
+		printf '\nMODULE_BUILD_FILES = Makefile m4/common.m4 m4/resolve.m4 %s\n\nall:' '$(COMPACT)'; \
+		seen=; \
+		while IFS= read -r path; do \
+			name=$${path##*/}; symbol=$${name%.m4}; \
+			case "$$symbol" in '' | [0-9]* | *[!A-Za-z0-9_]*) echo "提供名の形式が不正です: $$path" >&2; exit 1;; esac; \
+			case " $$seen " in *" $$symbol "*) echo "提供名が重複しています: $$symbol" >&2; exit 1;; esac; \
+			seen="$$seen $$symbol"; \
+			printf ' build/modules/%s.sh' "$$symbol"; \
+		done < "$$files"; \
+		printf '\n\n'; \
+		while IFS= read -r path; do \
+			name=$${path##*/}; symbol=$${name%.m4}; \
+			printf 'build/modules/%s.sh: $$(MODULE_SOURCES) $$(MODULE_BUILD_FILES)\n' "$$symbol"; \
+			printf '\t$$(MAKE) -f Makefile bundle SX_SYMBOLS=%s SX_OUT="$$@"\n\n' "$$symbol"; \
+		done < "$$files"; \
+	} > "$$tmp"; \
+	if [ -f module.mk ] && cmp -s "$$tmp" module.mk; then :; else mv -f -- "$$tmp" module.mk; fi
+
+# 全単位を依存先込みで生成する。並列数は make -j で指定できる。
+module: module.mk
+	$(MAKE) -f module.mk
+
+FORCE:
 
 # Test
 # ====
 
-# テストの Include から提供名を収集し、名前ごとに単独モジュールを作成する。
-test-modules:
-	python3 tools/build-spec-modules.py
-
 test:
 	$(MAKE) SX_SYMBOLS= SX_OUT=sx.sh all
-	$(MAKE) SX_SPECS= test-modules
+	$(MAKE) module
 	SX_TEST_MODE=module shellspec $(TEST_FLAGS)
 	SX_TEST_MODE=full shellspec $(TEST_FLAGS)
 
@@ -88,6 +105,7 @@ test:
 
 clean:
 	rm -f -- sx.sh sx.sh.tmp sx.sh.tmp2
+	rm -f -- module.mk module.mk.tmp.*
 	rm -f -- build/modules/*.sh build/modules/*.sh.tmp build/modules/*.sh.tmp2
 
 rebuild: clean
@@ -107,10 +125,10 @@ help:
 	echo '          出力先は SX_OUT（既定 sx.sh）で指定できる。'
 	echo '          例: make SX_SYMBOLS=sx_uri_enc SX_OUT=sx-uri-enc.sh'
 	echo '  bundle  all と同じ生成処理を実行する。'
-	echo '  modules SX_SYMBOLS の各指定名を build/modules/<名前>.sh に個別生成する。'
-	echo '          例: make modules SX_SYMBOLS=sx_uri_enc'
-	echo '  test-modules テストの読み込み宣言から提供名ごとに単独モジュールを生成する。'
-	echo '          SX_SPECS でテストファイルまたはディレクトリを選択できる。'
+	echo '  module  src の全単位を build/modules/<名前>.sh に個別生成する。'
+	echo '  module.mk 個別生成のルールを更新する。ファイル追加・削除時にも実行する。'
+	echo '          例: make -f module.mk build/modules/sx_uri_enc.sh'
+	echo '          make -f module.mk は生成済みの一覧で全単位を生成する。'
 	echo '  test    全体版を生成してテストする。'
 	echo '  clean   作成したファイルを削除する。'
 	echo '  rebuild cleanの実行後にallを実行する。'

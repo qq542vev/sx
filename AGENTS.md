@@ -74,13 +74,14 @@ POSIX sh には `local` が存在しないため、命名規則と `m4` 展開�
 
 - **静的解析**: `shellcheck` を必須とします（個別・全体を問わず毎回実行）。
 - **テスト**: `shellspec`（`--warning-as-failure`、全 Example を `-efu` 下で実行＋`check_no_leak`）をパスすることを必須とします。
-- **個別テスト（日常の原則）**: `make all` と `make test-modules SX_SPECS=対象のspec` でビルド後、変更に関連する spec のみを実行します。既定では個別モジュールを読み込み、`SX_TEST_MODE=full` で全体版に切り替えます。`.shellspec` の警告・`spec_helper`（`-efu`＋`check_no_leak`）は個別実行時も自動継承されます。
+- **個別テスト（日常の原則）**: `make all` と `make module` でビルド後、変更に関連する spec のみを実行します。個別生成は `make module.mk` 後に `make -f module.mk build/modules/<提供名>.sh` を使えます。既定では個別モジュールを読み込み、`SX_TEST_MODE=full` で全体版に切り替えます。`.shellspec` の警告・`spec_helper`（`-efu`＋`check_no_leak`）は個別実行時も自動継承されます。
   ```sh
   # 機能単位（公開 API と -efu 検証の両方を実行）
-  make test-modules SX_SPECS='spec/num/add_nat0_spec.sh spec/efu/num/sx_num_add_nat0_spec.sh'
+  make module.mk
+  make -f module.mk build/modules/sx_num_add_nat0.sh
   shellspec spec/num/add_nat0_spec.sh spec/efu/num/sx_num_add_nat0_spec.sh
   # ディレクトリ単位も可
-  make test-modules SX_SPECS=spec/num/
+  make module
   shellspec spec/num/
   ```
   - 対応関係: `src/functions/` の対象機能 `sx_<領域>_<機能>` は `spec/<領域>/<機能>_spec.sh` と `spec/efu/<領域>/sx_<領域>_<機能>_spec.sh` が対応します。
@@ -94,6 +95,7 @@ POSIX sh には `local` が存在しないため、命名規則と `m4` 展開�
 - **使用言語**: AI とのチャット、コード内のコメント、ドキュメント、Git のコミットメッセージは、原則として**日本語**を使用してください。
 - **ビルドプロセス**: 通常は `make all` を使用してください（`m4` 処理後に行頭 `#` コメント行を除去。shebang は保持）。`shfmt` 等による minify は yash の算術展開の意味を変えるため禁止です。
 - **ビルド選択**: `SX_SYMBOLS` が未指定または空文字列なら全単位、指定時はその単位と依存先を生成します。出力先の既定値は `sx.sh` で、`SX_OUT` で変更できます。`make test` は全体版を生成します。
+- **個別モジュール**: `make module.mk` は `find` で全単位の `.m4` を列挙し、`build/modules/<提供名>.sh` の生成ルールを作成します。公開・内部関数、定数、大域変数をすべて対象とし、各モジュールは依存先も含めます。全単位のソース・一覧・共通ビルドファイルを依存先とし、未変更なら再生成しません。`make module` は一覧更新後に全件生成します。`make -f module.mk` は生成済み一覧による全件生成、ターゲット指定時は個別生成です。ソース追加・削除後は `make module.mk` または `make module` で一覧を更新してください。`module.mk` はGit管理対象外の生成物で、直接編集しません。
 - **生成物のコメント方針**: `sx.sh` にコメントを含めません。仕様は `src/functions/` の `###` ヘッダまたは本書を参照してください。
 - **変更の適用**: `src/*` または `m4/common.m4` を編集し、ビルド（`make all`）後に関連 spec の個別テストを実行してから進めてください。単位を追加したら対応する一覧に登録し、`tools/check-units.py` と `tools/check-dependencies.py` を実行します。全体テスト（`make test`）は §6 に該当する場合にのみ実行します。
 

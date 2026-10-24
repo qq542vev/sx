@@ -37,29 +37,41 @@ make SX_SYMBOLS=sx_uri_enc bundle
 `make test` は選択指定にかかわらず全体版を生成して検証します。
 
 ```sh
-make modules SX_SYMBOLS=sx_uri_enc
-make modules SX_SYMBOLS='sx_uri_enc sx_uri_is_pct'
+make module.mk
+make -f module.mk build/modules/sx_uri_enc.sh
+make -f module.mk build/modules/sx_uri_enc.sh build/modules/sx_uri_is_pct.sh
 shellspec spec/modules/uri_enc_spec.sh
 ```
 
-`modules` は指定名ごとに依存先を含む `build/modules/<名前>.sh` を生成します。
-`SX_SYMBOLS` の明示が必要で、`SX_OUT` は使いません。
-各ファイルは単独で読み込みます。複数の名前を同じシェルで利用するときは、
-通常のバンドルでそれらを一つにまとめてください。
-同じ名前は毎回再生成し、今回指定していない名前のファイルは保持します。
-`make clean` は個別生成物も削除します。
-全ての実行時テストは、既定で個別モジュールを読み込みます。
-テストが補助API・定数・設定値を必要とするときは、読み込み行に名前を明示します。
-製品側の `M_REQUIRE` にはテスト専用の依存を追加しません。
+`make module.mk` は `find` で `src/constants/`・`src/globals/`・`src/functions/`
+配下の `.m4` を列挙し、対応する `build/modules/<提供名>.sh` のルールを生成します。
+公開関数・内部関数・定数・大域変数の全単位を対象とし、一覧ファイルとREADMEは対象外です。
+各モジュールは対象とその依存先を含め、既存のm4生成器で作成します。
+`module.mk` は生成物で、Git管理の対象外です。直接編集しないでください。
+
+`make -f module.mk` は全単位、ターゲット指定時は指定したモジュールを生成します。
+各モジュールは全単位のソース・一覧・共通ビルドファイルに依存します。
+未変更なら再生成せず、いずれかを変更した後の全件生成では全単位を再生成します。
+個別ターゲット指定時は、その対象だけを再生成します。
+生成対象はspecの記述や `SX_SYMBOLS`・`SX_OUT` に依存しません。
 
 ```sh
-make test-modules
-# 対象だけを再生成することもできる。
-make test-modules SX_SPECS=spec/arr/push_spec.sh
+make module
+make -j4 module
 shellspec spec/arr/push_spec.sh
 SX_TEST_MODE=full shellspec spec/arr/push_spec.sh
 ```
 
+`make module` は一覧を更新してから `make -f module.mk` を呼び出します。
+`make -f module.mk` の直接実行は生成済みの一覧を使い、ソースの追加・削除を自動反映しません。
+追加・削除後は `make module.mk` または `make module` を実行してください。
+一覧が同じなら `module.mk` の更新時刻を保持します。
+`make clean` は `module.mk` と個別生成物も削除します。
+
+各ファイルは単独で読み込みます。複数の名前を同じシェルで利用するときは、
+通常のバンドルでそれらを一つにまとめてください。
+全ての実行時テストは、既定で個別モジュールを読み込みます。
+製品側の `M_REQUIRE` にはテスト専用の依存を追加しません。
 検証側では、対象の提供名を一つ指定します。準備用APIは別シェルで実行し、
 結果の変数だけを復元します。
 
@@ -77,12 +89,6 @@ Describe 'sx_arr_push'
 End
 ```
 
-`make test-modules` は各テストの宣言から提供名を収集し、
-`build/modules/<名前>.sh` を名前ごとに一度だけ生成します。
-各モジュールには対象と宣言済みの依存先を含めます。
-`Include ./build/modules/sx_uri_enc.sh` の直接指定も収集対象です。
-複数のグループやファイルで同じ名前を指定しても、生成は重複しません。
-提供名の収集は Python、依存解決は既存の m4 生成器が担当します。
 事前準備・事後検証・コールバックの補助処理・後始末は [run.md](../spec/support/run.md) を参照してください。
 
 個別モジュールを関数で読み込む `sxtest_load` も利用できます。
@@ -90,7 +96,7 @@ End
 
 全体版との比較には `SX_TEST_MODE=full` を指定し、ShellSpec を起動し直します。
 この場合は先に `make all` で全体版を生成してください。
-`make test` は全体版とテストに必要な単独モジュールを生成し、全テストを個別版・全体版でそれぞれ実行します。
+`make test` は全体版と全単位のモジュールを生成し、全テストを個別版・全体版でそれぞれ実行します。
 ShellSpec のオプションは `make test TEST_FLAGS='--jobs 4'` のように指定できます。
 `make clean` はテスト用の生成物も削除します。
 

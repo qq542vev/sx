@@ -10,7 +10,6 @@
 !tools/dependency_headers.py
 !tools/check-dependencies.py
 !tools/check-units.py
-!tools/build-spec-modules.py
 !m4/
 !m4/common.m4
 !m4/resolve.m4
