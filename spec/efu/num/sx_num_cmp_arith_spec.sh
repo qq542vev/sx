@@ -2,7 +2,7 @@
 # shellcheck disable=SC2154 # 結果変数は準備用シェルのダンプから復元する。
 Describe 'sx_num_cmp_arith -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_cmp_arith
+  sxtest_load ./build/modules/sx_num_cmp_arith.sh
 
   setup_num_range() {
     sxtest_run SX_CFG_NUM_RANGE setup_num_min setup_num_max -- \

@@ -1,7 +1,7 @@
 # shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 Describe 'sx_cfg_is_valid -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_cfg_is_valid
+  sxtest_load ./build/modules/sx_cfg_is_valid.sh
 
   It '正常動作'
 

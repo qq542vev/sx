@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_ebind'
-    Include ./spec/support/library.sh sx_var_is_ebind
+    sxtest_load ./build/modules/sx_var_is_ebind.sh
 
     It '基本的なバインドを検証すること'
         When call sx_var_is_ebind "a:b:c"

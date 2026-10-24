@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_float_safe'
-  Include ./spec/support/library.sh sx_num_is_float_safe
+  sxtest_load ./build/modules/sx_num_is_float_safe.sh
 
   It '整数・小数・指数表記を受け付けること'
     When call sx_num_is_float_safe 1 -2.5 3e+4

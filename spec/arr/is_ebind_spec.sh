@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_is_ebind'
-  Include ./spec/support/library.sh sx_arr_is_ebind
+  sxtest_load ./build/modules/sx_arr_is_ebind.sh
 
   It 'scalarとlistを含む拡張バインドを検証すること'
     When call sx_arr_is_ebind 'scalar:0/2list:0/3list'

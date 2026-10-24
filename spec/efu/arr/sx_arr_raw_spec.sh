@@ -4,17 +4,17 @@
 # shellcheck disable=SC2329
 
 Describe '配列 raw 処理 -efu 環境検証'
-  # Exampleごとに対象だけを読み込む。IncludeはExampleの外で宣言する。
+  # Exampleごとに対象だけを読み込む。
   load_subject() {
     case "$1" in
       __sx_arr_push_raw)
-        Include ./spec/support/library.sh __sx_arr_push_raw
+        sxtest_load ./build/modules/__sx_arr_push_raw.sh
         ;;
       __sx_arr_splice_raw)
-        Include ./spec/support/library.sh __sx_arr_splice_raw
+        sxtest_load ./build/modules/__sx_arr_splice_raw.sh
         ;;
       __sx_arr_pop_raw)
-        Include ./spec/support/library.sh __sx_arr_pop_raw
+        sxtest_load ./build/modules/__sx_arr_pop_raw.sh
         ;;
       *) return 64;;
     esac

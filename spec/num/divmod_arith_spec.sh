@@ -7,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_divmod_arith'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_divmod_arith
+  sxtest_load ./build/modules/sx_num_divmod_arith.sh
   Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   Context '商と余り'

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_cycle()'
-    Include ./spec/support/library.sh sx_str_cycle
+    sxtest_load ./build/modules/sx_str_cycle.sh
 
     It '文字列を指定されたシフト量だけ左方向に循環させる'
         When call sx_str_cycle res "ABCDE" 2

@@ -2,7 +2,7 @@
 # shellcheck shell=sh
 
 Describe 'sx_uri_is_pct_safe'
-  Include ./spec/support/library.sh sx_uri_is_pct_safe
+  sxtest_load ./build/modules/sx_uri_is_pct_safe.sh
 
   Context '公開・内部・検証省略'
     Parameters

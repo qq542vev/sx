@@ -7,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_isep'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arg_isep
+  sxtest_load ./build/modules/sx_arg_isep.sh
 
   It 'interval=1 で引数間にセパレータを挿入してクォートすること'
     When call sx_arg_isep res "-" 1 ::: "a" "b" "c"

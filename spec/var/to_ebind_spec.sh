@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_to_ebind'
-    Include ./spec/support/library.sh sx_var_to_ebind
+    sxtest_load ./build/modules/sx_var_to_ebind.sh
 
     It '課題例を変換すること'
         When call sx_var_to_ebind res '2:3a:b:9@c:2a:2d::d'

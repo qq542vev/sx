@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split_ifs'
-  Include ./spec/support/library.sh sx_str_split_ifs
+  sxtest_load ./build/modules/sx_str_split_ifs.sh
 
   Describe 'POSIX Word Splitting 準拠のテスト'
     

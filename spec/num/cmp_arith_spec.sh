@@ -6,7 +6,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_cmp_arith'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_cmp_arith
+  sxtest_load ./build/modules/sx_num_cmp_arith.sh
 
   setup_num_range() {
     sxtest_run SX_CFG_NUM_RANGE setup_num_min setup_num_max -- \

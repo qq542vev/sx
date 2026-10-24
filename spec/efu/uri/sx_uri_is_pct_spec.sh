@@ -1,7 +1,7 @@
 # shellcheck shell=sh
 
 Describe 'sx_uri_is_pct -efu 環境検証'
-  Include ./spec/support/library.sh sx_uri_is_pct
+  sxtest_load ./build/modules/sx_uri_is_pct.sh
 
   Context '公開・内部・検証省略'
     Parameters

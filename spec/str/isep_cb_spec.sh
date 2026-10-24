@@ -7,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_isep (callback)'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_isep
+  sxtest_load ./build/modules/sx_str_isep.sh
 
   It '正方向のコールバックで動的セパレータを挿入すること'
     cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=($4)"; }

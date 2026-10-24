@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_list_set'
-  Include ./spec/support/library.sh sx_var_list_set
+  sxtest_load ./build/modules/sx_var_list_set.sh
 
   It '設定されているすべての変数名の一覧を返すこと'
     MY_VAR_1=a MY_VAR_2=b res=

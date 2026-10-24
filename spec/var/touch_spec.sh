@@ -7,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_touch'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_var_touch
+  sxtest_load ./build/modules/sx_var_touch.sh
   It '変数のリビジョンを更新すること'
     sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a
     old_val="${myarr}"

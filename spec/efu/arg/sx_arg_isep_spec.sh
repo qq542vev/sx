@@ -3,7 +3,7 @@
 # コールバックと経路検証用の差し替え関数は間接的に呼び出される。
 Describe 'sx_arg_isep -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arg_isep
+  sxtest_load ./build/modules/sx_arg_isep.sh
 
   It '正常動作'
 

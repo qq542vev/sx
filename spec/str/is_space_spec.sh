@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_space'
-  Include ./spec/support/library.sh sx_str_is_space
+  sxtest_load ./build/modules/sx_str_is_space.sh
 
   It 'スペースのみの場合、成功を返すこと'
     When call sx_str_is_space "   "

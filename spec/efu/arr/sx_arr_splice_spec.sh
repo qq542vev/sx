@@ -1,7 +1,7 @@
 # shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 Describe 'sx_arr_splice -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arr_splice
+  sxtest_load ./build/modules/sx_arr_splice.sh
 
   It '正常動作し、子シェル内で内部変数が漏洩しないこと'
     sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d

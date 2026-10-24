@@ -3,7 +3,7 @@
 # shellcheck disable=SC2016
 Describe 'sx_str_chunk -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_chunk
+  sxtest_load ./build/modules/sx_str_chunk.sh
 
   It '正常動作'
 

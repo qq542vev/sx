@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_gen'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arr_gen
+  sxtest_load ./build/modules/sx_arr_gen.sh
 
   It '新しい配列を値で初期化すること'
     When call sx_arr_gen myarr "first" "second"

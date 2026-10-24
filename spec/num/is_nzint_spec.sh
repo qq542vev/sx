@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_nzint'
-  Include ./spec/support/library.sh sx_num_is_nzint
+  sxtest_load ./build/modules/sx_num_is_nzint.sh
 
   Context '有効な入力 - 各基数'
     It '10進数の0以外の整数に対して成功を返すこと'

@@ -97,8 +97,8 @@ FORCE:
 test:
 	$(MAKE) SX_SYMBOLS= SX_OUT=sx.sh all
 	$(MAKE) module
-	SX_TEST_MODE=module shellspec $(TEST_FLAGS)
-	SX_TEST_MODE=full shellspec $(TEST_FLAGS)
+	unset SXTEST_LOAD_MOD; shellspec $(TEST_FLAGS)
+	SXTEST_LOAD_MOD=sx.sh shellspec $(TEST_FLAGS)
 
 # Clean
 # =====

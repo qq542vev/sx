@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_join'
-  Include ./spec/support/library.sh sx_arg_join
+  sxtest_load ./build/modules/sx_arg_join.sh
 
   It '引数個数に安全範囲の上限を適用しないこと'
     # 巨大な引数リストを作らず、呼び出し時の個数5を範囲外とする。

@@ -1,5 +1,5 @@
 Describe 'sx_num_divceil_int -efu 環境検証'
-  Include ./spec/support/library.sh sx_num_divceil_int
+  sxtest_load ./build/modules/sx_num_divceil_int.sh
 
   It '正常動作'
 

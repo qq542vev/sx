@@ -10,13 +10,13 @@ Describe 'sx_arg_rfold'
   load_subject() {
     case "$1" in
       sx_arg_rfold)
-        Include ./spec/support/library.sh sx_arg_rfold
+        sxtest_load ./build/modules/sx_arg_rfold.sh
         ;;
       __sx_arg_rfold)
-        Include ./spec/support/library.sh __sx_arg_rfold
+        sxtest_load ./build/modules/__sx_arg_rfold.sh
         ;;
       sx_arg_fold)
-        Include ./spec/support/library.sh sx_arg_fold
+        sxtest_load ./build/modules/sx_arg_fold.sh
         ;;
       *) return 64;;
     esac

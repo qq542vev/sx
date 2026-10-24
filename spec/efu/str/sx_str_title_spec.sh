@@ -1,7 +1,7 @@
 # shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 Describe 'sx_str_title -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_title
+  sxtest_load ./build/modules/sx_str_title.sh
 
   It '正常動作'
     When run efu_run sx_str_title res "aaa bbb ccc"

@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rep'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_rep
+  sxtest_load ./build/modules/sx_str_rep.sh
   It '指定された回数だけ文字列を繰り返すこと'
     When call sx_str_rep res "a" 3
     The variable res should equal "aaa"

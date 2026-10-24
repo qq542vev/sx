@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split bind'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_split
+  sxtest_load ./build/modules/sx_str_split.sh
 
   It '前方分割でバインドができること'
     When call sx_str_split "a:b:rem" "v1:v2:v3:v4" ":"

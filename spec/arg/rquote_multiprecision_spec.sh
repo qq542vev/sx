@@ -5,14 +5,14 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_rquote 多倍長対応'
-  # Exampleごとに対象だけを読み込む。IncludeはExampleの外で宣言する。
+  # Exampleごとに対象だけを読み込む。
   load_subject() {
     case "$1" in
       sx_arg_rquote)
-        Include ./spec/support/library.sh sx_arg_rquote
+        sxtest_load ./build/modules/sx_arg_rquote.sh
         ;;
       __sx_arg_rquote)
-        Include ./spec/support/library.sh __sx_arg_rquote
+        sxtest_load ./build/modules/__sx_arg_rquote.sh
         ;;
       *) return 64;;
     esac

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_nat1'
-  Include ./spec/support/library.sh sx_num_is_nat1
+  sxtest_load ./build/modules/sx_num_is_nat1.sh
 
   Context '有効な入力 - 10進数'
     It '単一の有効な正の整数に対して成功を返すこと'

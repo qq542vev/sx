@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_squish'
-  Include ./spec/support/library.sh sx_str_squish
+  sxtest_load ./build/modules/sx_str_squish.sh
 
   It 'デフォルト（空白文字）で normalize-space 相当の動作をすること'
     sx_str_squish res "  A	B

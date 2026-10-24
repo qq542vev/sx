@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_of'
-  Include ./spec/support/library.sh sx_str_is_of
+  sxtest_load ./build/modules/sx_str_is_of.sh
 
   It 'すべての引数が指定された文字集合のみを含む場合、成功を返すこと'
     When call sx_str_is_of "abc" "a" "ab" "abc" "cba"

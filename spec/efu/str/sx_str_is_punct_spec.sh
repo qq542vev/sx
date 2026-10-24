@@ -1,5 +1,5 @@
 Describe 'sx_str_is_punct -efu 環境検証'
-  Include ./spec/support/library.sh sx_str_is_punct
+  sxtest_load ./build/modules/sx_str_is_punct.sh
 
   It '正常動作'
 

@@ -74,7 +74,7 @@ POSIX sh には `local` が存在しないため、命名規則と `m4` 展開�
 
 - **静的解析**: `shellcheck` を必須とします（個別・全体を問わず毎回実行）。
 - **テスト**: `shellspec`（`--warning-as-failure`、全 Example を `-efu` 下で実行＋`check_no_leak`）をパスすることを必須とします。
-- **個別テスト（日常の原則）**: `make all` と `make module` でビルド後、変更に関連する spec のみを実行します。個別生成は `make module.mk` 後に `make -f module.mk build/modules/<提供名>.sh` を使えます。既定では個別モジュールを読み込み、`SX_TEST_MODE=full` で全体版に切り替えます。`.shellspec` の警告・`spec_helper`（`-efu`＋`check_no_leak`）は個別実行時も自動継承されます。
+- **個別テスト（日常の原則）**: `make all` と `make module` でビルド後、変更に関連する spec のみを実行します。個別生成は `make module.mk` 後に `make -f module.mk build/modules/<提供名>.sh` を使えます。既定では個別モジュールを読み込み、`SXTEST_LOAD_MOD=sx.sh` で全体版に切り替えます。`.shellspec` の警告・`spec_helper`（`-efu`＋`check_no_leak`）は個別実行時も自動継承されます。
   ```sh
   # 機能単位（公開 API と -efu 検証の両方を実行）
   make module.mk
@@ -84,6 +84,7 @@ POSIX sh には `local` が存在しないため、命名規則と `m4` 展開�
   make module
   shellspec spec/num/
   ```
+  - 読み込みは `spec_helper.sh` の `sxtest_load ./build/modules/<提供名>.sh` を使います。全体版は `SXTEST_LOAD_MOD=sx.sh shellspec ...` で指定します。事前準備・事後検証等の補助処理には `sxtest_run` を使い、テスト専用の依存を製品側へ追加しません。
   - 対応関係: `src/functions/` の対象機能 `sx_<領域>_<機能>` は `spec/<領域>/<機能>_spec.sh` と `spec/efu/<領域>/sx_<領域>_<機能>_spec.sh` が対応します。
 - **全体テスト（`make test`）**: 以下のいずれかに該当する場合にのみ必須とします。
   - 共通部品の変更時: `M_*` マクロ、`M_RENAME_Q/QI`、`CLEANUP` 規約、`SX_CFG_*`／`SX_SYS_REV`、`spec_helper.sh`。

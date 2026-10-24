@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_resize'
-  Include ./spec/support/library.sh sx_arg_resize
+  sxtest_load ./build/modules/sx_arg_resize.sh
 
   Describe 'Form 1 (":::" 区切り)'
     It '2D padding: 4要素を2x3=6に拡張'

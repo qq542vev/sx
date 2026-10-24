@@ -31,14 +31,14 @@ spec_helper_configure() {
   : import 'support/custom_matcher'
 }
 
-### sxtest_load - 指定した個別モジュールを現在のシェルへ読み込む
+### sxtest_load - 指定したファイルを現在のシェルへ読み込む
 ## 使い方: sxtest_load [mod ...]
 ## 説明:
-##   mod は build/modules/<mod>.sh の提供名を指定する。
+##   mod は読み込むファイルのパスを指定する。相対パスは作業ディレクトリを基準にする。
 ##   SXTEST_LOAD_MOD が設定済みなら、引数をその値の空白区切りの一覧で置き換える。
 ##   空の一覧では何もせず成功する。重複する指定も順番どおり読み込む。
 ##   呼び出し元の IFS とパス名展開の設定は、読み込み前に復元する。
-## 終了ステータス: 0 成功、64 提供名不正、1 読込不可、その他は読み込み先の終了状態。
+## 終了ステータス: 0 成功、64 空のパス、1 読込不可、その他は読み込み先の終了状態。
 sxtest_load() {
   case "${SXTEST_LOAD_MOD+X}" in X)
     # 位置パラメータに呼び出し元の状態を保存し、空白1文字だけで分割する。
@@ -53,16 +53,25 @@ sxtest_load() {
   esac
 
   while case "$#" in 0) ! :;; esac; do
-    case "$1" in '' | [0-9]* | *[!A-Za-z0-9_]*)
-      printf '%s\n' '提供名の形式が不正です' >&2
+    case "$1" in '')
+      printf '%s\n' '読み込むファイルのパスが空です' >&2
       return 64
     esac
-    if [ ! -r "./build/modules/$1.sh" ]; then
-      printf '%s\n' "モジュールを読み込めません: $1" >&2
+    if [ ! -f "$1" ] || [ ! -r "$1" ]; then
+      printf '%s\n' "ファイルを読み込めません: $1" >&2
       return 1
     fi
-    # shellcheck source=/dev/null
-    . "./build/modules/$1.sh" || return
+    # 名前だけの指定もPATHを検索せず、作業ディレクトリから読み込む。
+    case "$1" in
+      /*)
+        # shellcheck source=/dev/null
+        . "$1" || return
+        ;;
+      *)
+        # shellcheck source=/dev/null
+        . "./$1" || return
+        ;;
+    esac
     shift
   done
   return 0

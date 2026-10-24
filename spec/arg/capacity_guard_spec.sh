@@ -8,16 +8,16 @@ Describe '可変長 sx_arg_* の引数個数ガード'
   load_subject() {
     case "$1" in
       sx_arg_len)
-        Include ./spec/support/library.sh sx_arg_len
+        sxtest_load ./build/modules/sx_arg_len.sh
         ;;
       sx_arg_map)
-        Include ./spec/support/library.sh sx_arg_map
+        sxtest_load ./build/modules/sx_arg_map.sh
         ;;
       sx_arg_pad)
-        Include ./spec/support/library.sh sx_arg_pad
+        sxtest_load ./build/modules/sx_arg_pad.sh
         ;;
       __sx_var_copy_script)
-        Include ./spec/support/library.sh __sx_var_copy_script
+        sxtest_load ./build/modules/__sx_var_copy_script.sh
         ;;
       *) return 64;;
     esac

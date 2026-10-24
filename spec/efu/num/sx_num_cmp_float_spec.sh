@@ -1,5 +1,5 @@
 Describe 'sx_num_cmp_float -efu 環境検証'
-  Include ./spec/support/library.sh sx_num_cmp_float
+  sxtest_load ./build/modules/sx_num_cmp_float.sh
 
   It '正常動作'
     When run efu_run sx_num_cmp_float 1.2 1.2

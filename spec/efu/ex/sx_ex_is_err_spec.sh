@@ -1,5 +1,5 @@
 Describe 'sx_ex_is_err -efu 環境検証'
-  Include ./spec/support/library.sh sx_ex_is_err
+  sxtest_load ./build/modules/sx_ex_is_err.sh
 
   It '正常動作'
 

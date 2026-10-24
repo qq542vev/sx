@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_bind_init'
     Include ./spec/support/run.sh
-    Include ./spec/support/library.sh sx_var_bind_init
+    sxtest_load ./build/modules/sx_var_bind_init.sh
 
     It 'a:b:rest 形式で変数を初期化すること'
         v1="old1"

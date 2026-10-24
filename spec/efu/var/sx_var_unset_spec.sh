@@ -1,5 +1,5 @@
 Describe 'sx_var_unset -efu 環境検証'
-  Include ./spec/support/library.sh sx_var_unset
+  sxtest_load ./build/modules/sx_var_unset.sh
 
   It '正常動作'
 

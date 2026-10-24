@@ -5,7 +5,7 @@
 
 Describe 'sx_num_sub_nat0 -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_sub_nat0
+  sxtest_load ./build/modules/sx_num_sub_nat0.sh
 
   sub_check_value() {
     expected="$1"

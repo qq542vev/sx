@@ -5,35 +5,35 @@
 # shellcheck disable=SC2154
 
 Describe '配列操作とリビジョン更新の分離'
-  # Exampleごとに対象だけを読み込む。IncludeはExampleの外で宣言する。
+  # Exampleごとに対象だけを読み込む。
   load_subject() {
     case "$1" in
       __sx_arr_push_raw)
-        Include ./spec/support/library.sh __sx_arr_push_raw
+        sxtest_load ./build/modules/__sx_arr_push_raw.sh
         ;;
       __sx_arr_splice_raw)
-        Include ./spec/support/library.sh __sx_arr_splice_raw
+        sxtest_load ./build/modules/__sx_arr_splice_raw.sh
         ;;
       __sx_arr_pop_raw)
-        Include ./spec/support/library.sh __sx_arr_pop_raw
+        sxtest_load ./build/modules/__sx_arr_pop_raw.sh
         ;;
       sx_arr_push)
-        Include ./spec/support/library.sh sx_arr_push
+        sxtest_load ./build/modules/sx_arr_push.sh
         ;;
       sx_arr_splice)
-        Include ./spec/support/library.sh sx_arr_splice
+        sxtest_load ./build/modules/sx_arr_splice.sh
         ;;
       sx_arr_pop)
-        Include ./spec/support/library.sh sx_arr_pop
+        sxtest_load ./build/modules/sx_arr_pop.sh
         ;;
       sx_arr_gen)
-        Include ./spec/support/library.sh sx_arr_gen
+        sxtest_load ./build/modules/sx_arr_gen.sh
         ;;
       sx_var_bind)
-        Include ./spec/support/library.sh sx_var_bind
+        sxtest_load ./build/modules/sx_var_bind.sh
         ;;
       sx_var_ubind)
-        Include ./spec/support/library.sh sx_var_ubind
+        sxtest_load ./build/modules/sx_var_ubind.sh
         ;;
       *) return 64;;
     esac

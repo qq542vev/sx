@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_lower'
-  Include ./spec/support/library.sh sx_str_is_lower
+  sxtest_load ./build/modules/sx_str_is_lower.sh
 
   It '小文字のみを含む文字列の場合、成功を返すこと'
     When call sx_str_is_lower "abc" "x" "xyz"

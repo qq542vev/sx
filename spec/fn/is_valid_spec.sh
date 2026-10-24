@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_fn_is_valid'
-	Include ./spec/support/library.sh sx_fn_is_valid
+	sxtest_load ./build/modules/sx_fn_is_valid.sh
 
 	It '有効な定義に対して 0 を返すこと'
 		When call sx_fn_is_valid "f=:" "g=echo hello"

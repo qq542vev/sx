@@ -5,52 +5,52 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_const_check'
-  # readonly属性は同じシェルで検査する。全体モードではここで全体版を一度だけ読み込む。
-  Include ./spec/support/library.sh sx_var_is_ro
+  # readonly属性は同じシェルで検査する。上書き指定のファイルもここで一度だけ読み込む。
+  sxtest_load ./build/modules/sx_var_is_ro.sh
 
   # SX_STR_WORDとSX_CFG_META_DEF_SKIP_CHKは上のモジュールに含まれるため再定義しない。
   # 定数チェックでは、残りの定数の単独モジュールを同じシェルに読み込む。
-  case "${SX_TEST_MODE-module}" in
-    module)
-      Include ./spec/support/library.sh SX_CFG_META_DEF_ARR_HOLE
-      Include ./spec/support/library.sh SX_CFG_META_DEF_ARR_REF
-      Include ./spec/support/library.sh SX_CFG_META_DEF_ARR_UPDATE
-      Include ./spec/support/library.sh SX_CFG_META_DEF_NUM_RANGE
-      Include ./spec/support/library.sh SX_CFG_META_DEF_SEP
-      Include ./spec/support/library.sh SX_CFG_META_DEF_SIG_ARR
-      Include ./spec/support/library.sh SX_CFG_META_DESC_ARR_HOLE
-      Include ./spec/support/library.sh SX_CFG_META_DESC_ARR_REF
-      Include ./spec/support/library.sh SX_CFG_META_DESC_ARR_UPDATE
-      Include ./spec/support/library.sh SX_CFG_META_DESC_NUM_RANGE
-      Include ./spec/support/library.sh SX_CFG_META_DESC_SEP
-      Include ./spec/support/library.sh SX_CFG_META_DESC_SIG_ARR
-      Include ./spec/support/library.sh SX_CFG_META_DESC_SKIP_CHK
-      Include ./spec/support/library.sh SX_CFG_META_NAMES
-      Include ./spec/support/library.sh SX_CFG_META_PATTERN_ARR_HOLE
-      Include ./spec/support/library.sh SX_CFG_META_PATTERN_ARR_REF
-      Include ./spec/support/library.sh SX_CFG_META_PATTERN_ARR_UPDATE
-      Include ./spec/support/library.sh SX_CFG_META_PATTERN_NUM_RANGE
-      Include ./spec/support/library.sh SX_CFG_META_PATTERN_SEP
-      Include ./spec/support/library.sh SX_CFG_META_PATTERN_SIG_ARR
-      Include ./spec/support/library.sh SX_CFG_META_PATTERN_SKIP_CHK
-      Include ./spec/support/library.sh SX_EX_MSG71
-      Include ./spec/support/library.sh SX_EX_MSG73
-      Include ./spec/support/library.sh SX_EX_USAGE
-      Include ./spec/support/library.sh SX_NUM_BASE10_PREFIX
-      Include ./spec/support/library.sh SX_STR_ALNUM
-      Include ./spec/support/library.sh SX_STR_ALPHA
-      Include ./spec/support/library.sh SX_STR_ASCII
-      Include ./spec/support/library.sh SX_STR_BLANK
-      Include ./spec/support/library.sh SX_STR_CNTRL
-      Include ./spec/support/library.sh SX_STR_DEL
-      Include ./spec/support/library.sh SX_STR_FS
-      Include ./spec/support/library.sh SX_STR_GRAPH
-      Include ./spec/support/library.sh SX_STR_LF
-      Include ./spec/support/library.sh SX_STR_PRINT
-      Include ./spec/support/library.sh SX_STR_PUNCT
-      Include ./spec/support/library.sh SX_STR_SOH
-      Include ./spec/support/library.sh SX_STR_SPACE
-      Include ./spec/support/library.sh SX_STR_SWORD
+  case "${SXTEST_LOAD_MOD+x}" in
+    '')
+      sxtest_load ./build/modules/SX_CFG_META_DEF_ARR_HOLE.sh
+      sxtest_load ./build/modules/SX_CFG_META_DEF_ARR_REF.sh
+      sxtest_load ./build/modules/SX_CFG_META_DEF_ARR_UPDATE.sh
+      sxtest_load ./build/modules/SX_CFG_META_DEF_NUM_RANGE.sh
+      sxtest_load ./build/modules/SX_CFG_META_DEF_SEP.sh
+      sxtest_load ./build/modules/SX_CFG_META_DEF_SIG_ARR.sh
+      sxtest_load ./build/modules/SX_CFG_META_DESC_ARR_HOLE.sh
+      sxtest_load ./build/modules/SX_CFG_META_DESC_ARR_REF.sh
+      sxtest_load ./build/modules/SX_CFG_META_DESC_ARR_UPDATE.sh
+      sxtest_load ./build/modules/SX_CFG_META_DESC_NUM_RANGE.sh
+      sxtest_load ./build/modules/SX_CFG_META_DESC_SEP.sh
+      sxtest_load ./build/modules/SX_CFG_META_DESC_SIG_ARR.sh
+      sxtest_load ./build/modules/SX_CFG_META_DESC_SKIP_CHK.sh
+      sxtest_load ./build/modules/SX_CFG_META_NAMES.sh
+      sxtest_load ./build/modules/SX_CFG_META_PATTERN_ARR_HOLE.sh
+      sxtest_load ./build/modules/SX_CFG_META_PATTERN_ARR_REF.sh
+      sxtest_load ./build/modules/SX_CFG_META_PATTERN_ARR_UPDATE.sh
+      sxtest_load ./build/modules/SX_CFG_META_PATTERN_NUM_RANGE.sh
+      sxtest_load ./build/modules/SX_CFG_META_PATTERN_SEP.sh
+      sxtest_load ./build/modules/SX_CFG_META_PATTERN_SIG_ARR.sh
+      sxtest_load ./build/modules/SX_CFG_META_PATTERN_SKIP_CHK.sh
+      sxtest_load ./build/modules/SX_EX_MSG71.sh
+      sxtest_load ./build/modules/SX_EX_MSG73.sh
+      sxtest_load ./build/modules/SX_EX_USAGE.sh
+      sxtest_load ./build/modules/SX_NUM_BASE10_PREFIX.sh
+      sxtest_load ./build/modules/SX_STR_ALNUM.sh
+      sxtest_load ./build/modules/SX_STR_ALPHA.sh
+      sxtest_load ./build/modules/SX_STR_ASCII.sh
+      sxtest_load ./build/modules/SX_STR_BLANK.sh
+      sxtest_load ./build/modules/SX_STR_CNTRL.sh
+      sxtest_load ./build/modules/SX_STR_DEL.sh
+      sxtest_load ./build/modules/SX_STR_FS.sh
+      sxtest_load ./build/modules/SX_STR_GRAPH.sh
+      sxtest_load ./build/modules/SX_STR_LF.sh
+      sxtest_load ./build/modules/SX_STR_PRINT.sh
+      sxtest_load ./build/modules/SX_STR_PUNCT.sh
+      sxtest_load ./build/modules/SX_STR_SOH.sh
+      sxtest_load ./build/modules/SX_STR_SPACE.sh
+      sxtest_load ./build/modules/SX_STR_SWORD.sh
       ;;
   esac
 

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_len'
-  Include ./spec/support/library.sh sx_arg_len
+  sxtest_load ./build/modules/sx_arg_len.sh
 
   It '引数の個数を正しくカウントすること (3個)'
     When call sx_arg_len res "v1" "v2" "v3"

@@ -8,28 +8,28 @@ Describe '命名規則・タイトルケース変換の多倍長対応'
   load_subject() {
     case "$1" in
       sx_str_words)
-        Include ./spec/support/library.sh sx_str_words
+        sxtest_load ./build/modules/sx_str_words.sh
         ;;
       sx_str_title)
-        Include ./spec/support/library.sh sx_str_title
+        sxtest_load ./build/modules/sx_str_title.sh
         ;;
       sx_str_camel)
-        Include ./spec/support/library.sh sx_str_camel
+        sxtest_load ./build/modules/sx_str_camel.sh
         ;;
       sx_str_pascal)
-        Include ./spec/support/library.sh sx_str_pascal
+        sxtest_load ./build/modules/sx_str_pascal.sh
         ;;
       __sx_str_words)
-        Include ./spec/support/library.sh __sx_str_words
+        sxtest_load ./build/modules/__sx_str_words.sh
         ;;
       __sx_str_title)
-        Include ./spec/support/library.sh __sx_str_title
+        sxtest_load ./build/modules/__sx_str_title.sh
         ;;
       __sx_str_camel)
-        Include ./spec/support/library.sh __sx_str_camel
+        sxtest_load ./build/modules/__sx_str_camel.sh
         ;;
       __sx_str_pascal)
-        Include ./spec/support/library.sh __sx_str_pascal
+        sxtest_load ./build/modules/__sx_str_pascal.sh
         ;;
       *) return 64;;
     esac

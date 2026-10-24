@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_oct'
-  Include ./spec/support/library.sh sx_str_is_oct
+  sxtest_load ./build/modules/sx_str_is_oct.sh
 
   It '有効な 8 進数文字列の場合、成功を返すこと'
     When call sx_str_is_oct "01234567"

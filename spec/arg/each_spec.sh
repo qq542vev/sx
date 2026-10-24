@@ -9,10 +9,10 @@ Describe 'sx_arg_each'
   load_subject() {
     case "$1" in
       sx_arg_each)
-        Include ./spec/support/library.sh sx_arg_each
+        sxtest_load ./build/modules/sx_arg_each.sh
         ;;
       __sx_arg_each)
-        Include ./spec/support/library.sh __sx_arg_each
+        sxtest_load ./build/modules/__sx_arg_each.sh
         ;;
       *) return 64;;
     esac

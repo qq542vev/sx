@@ -3,7 +3,7 @@
 # shellcheck disable=SC2286
 Describe 'sx_str_substr -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_substr
+  sxtest_load ./build/modules/sx_str_substr.sh
 
   It '正常動作'
     When run efu_run sx_str_substr res "abcdef" 2 3

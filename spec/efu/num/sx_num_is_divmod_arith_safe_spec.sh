@@ -5,7 +5,7 @@
 
 Describe 'sx_num_is_divmod_arith_safe -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_is_divmod_arith_safe
+  sxtest_load ./build/modules/sx_num_is_divmod_arith_safe.sh
   Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   Context '除算可能性'

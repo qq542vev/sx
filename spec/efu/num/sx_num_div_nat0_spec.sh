@@ -1,5 +1,5 @@
 Describe 'sx_num_div_nat0 -efu 環境検証'
-  Include ./spec/support/library.sh sx_num_div_nat0
+  sxtest_load ./build/modules/sx_num_div_nat0.sh
 
   It '正常動作'
 

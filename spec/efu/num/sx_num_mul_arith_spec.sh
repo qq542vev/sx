@@ -5,7 +5,7 @@
 
 Describe 'sx_num_mul_arith -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_mul_arith
+  sxtest_load ./build/modules/sx_num_mul_arith.sh
   Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   Context '32ビットの乗算'

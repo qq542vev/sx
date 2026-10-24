@@ -6,7 +6,7 @@ Describe 'sx_str_sub -efu 環境検証'
 
   # 共通コールバックと同じ引数を使い、補助代入だけを分離する。
   efu_cb_set2() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=${2}"; }
-  Include ./spec/support/library.sh sx_str_sub
+  sxtest_load ./build/modules/sx_str_sub.sh
 
   It '正常動作'
 

@@ -6,7 +6,7 @@ Describe 'sx_arg_rfold -efu 環境検証'
 
   # 共通コールバックと同じ引数を使い、補助代入だけを分離する。
   efu_cb_set2() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=${2}"; }
-  Include ./spec/support/library.sh sx_arg_rfold
+  sxtest_load ./build/modules/sx_arg_rfold.sh
 
   It '正常動作'
 

@@ -7,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_quote'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arr_quote
+  sxtest_load ./build/modules/sx_arr_quote.sh
 
   setup() {
     setup_command='
@@ -126,7 +126,7 @@ End
 
 Describe 'sx_arr_rquote'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arr_rquote
+  sxtest_load ./build/modules/sx_arr_rquote.sh
 
   setup() {
     setup_command='

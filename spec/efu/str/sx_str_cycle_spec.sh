@@ -1,5 +1,5 @@
 Describe 'sx_str_cycle -efu 環境検証'
-  Include ./spec/support/library.sh sx_str_cycle
+  sxtest_load ./build/modules/sx_str_cycle.sh
 
   It '正常動作'
     When run efu_run sx_str_cycle res "ABCDE" 2

@@ -7,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_substr()'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_substr
+  sxtest_load ./build/modules/sx_str_substr.sh
 
   Context 'IFS=a での動的な数値関数呼び出し'
     # shellcheck disable=SC2329

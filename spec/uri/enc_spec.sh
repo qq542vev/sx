@@ -4,7 +4,7 @@
 # shellcheck disable=SC2154,SC2286,SC2329
 
 Describe 'sx_uri_enc'
-  Include ./spec/support/library.sh sx_uri_enc
+  sxtest_load ./build/modules/sx_uri_enc.sh
 
   It '非予約文字をすべて保持する'
     input='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'

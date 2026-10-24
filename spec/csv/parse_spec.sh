@@ -9,10 +9,10 @@ Describe 'sx_csv_parse'
   load_subject() {
     case "$1" in
       sx_csv_parse)
-        Include ./spec/support/library.sh sx_csv_parse
+        sxtest_load ./build/modules/sx_csv_parse.sh
         ;;
       __sx_csv_parse)
-        Include ./spec/support/library.sh __sx_csv_parse
+        sxtest_load ./build/modules/__sx_csv_parse.sh
         ;;
       *) return 64;;
     esac

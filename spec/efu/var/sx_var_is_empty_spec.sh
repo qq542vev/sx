@@ -1,5 +1,5 @@
 Describe 'sx_var_is_empty -efu 環境検証'
-  Include ./spec/support/library.sh sx_var_is_empty
+  sxtest_load ./build/modules/sx_var_is_empty.sh
 
   It '正常動作'
     a= b=

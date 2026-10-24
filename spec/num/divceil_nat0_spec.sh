@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_divceil_nat0'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_divceil_nat0
+  sxtest_load ./build/modules/sx_num_divceil_nat0.sh
 
   It '小さな数の除算ができること（あまりなし）'
     When call sx_num_divceil_nat0 q 100 4

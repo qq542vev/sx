@@ -1,5 +1,5 @@
 Describe 'sx_arg_join -efu 環境検証'
-  Include ./spec/support/library.sh sx_arg_join
+  sxtest_load ./build/modules/sx_arg_join.sh
 
   It '引数個数が安全範囲外でも-efu下で成功すること'
     __sx_num_is_nat0_safe() {

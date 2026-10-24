@@ -4,7 +4,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_center'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_center
+  sxtest_load ./build/modules/sx_str_center.sh
 
   # shellcheck disable=SC2329
   record_center_sizes() {

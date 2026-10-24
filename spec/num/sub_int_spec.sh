@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_sub_int'
-  Include ./spec/support/library.sh sx_num_sub_int
+  sxtest_load ./build/modules/sx_num_sub_int.sh
 
   It '引数0個で結果が0になること'
     When call sx_num_sub_int result

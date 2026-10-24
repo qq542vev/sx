@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_nnint_base'
-  Include ./spec/support/library.sh sx_num_is_nnint_base
+  sxtest_load ./build/modules/sx_num_is_nnint_base.sh
 
   It '0 以上の整数（符号付き0を含む）で成功すること'
     When call sx_num_is_nnint_base 10 "0" "+0" "-0" "1" "+123"

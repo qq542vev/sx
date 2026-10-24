@@ -7,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_splice'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_splice
+  sxtest_load ./build/modules/sx_str_splice.sh
 
   It '文字列の途中に挿入できること (len=0)'
     sx_str_splice res "abcde" 2 0 "."

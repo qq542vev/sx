@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_etrim'
-  Include ./spec/support/library.sh sx_str_etrim
+  sxtest_load ./build/modules/sx_str_etrim.sh
 
   It '末尾の空白を削除すること (デフォルト)'
     sx_str_etrim res "  hello  "

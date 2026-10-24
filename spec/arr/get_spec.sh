@@ -10,7 +10,7 @@ Describe 'sx_arr_get'
   }
 
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arr_get
+  sxtest_load ./build/modules/sx_arr_get.sh
   BeforeEach setup_myarr_fixture
 
   Context '単体指定'

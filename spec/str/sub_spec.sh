@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_sub'
-  Include ./spec/support/library.sh sx_str_sub
+  sxtest_load ./build/modules/sx_str_sub.sh
   It 'パターンを文字列で置換すること'
     When call sx_str_sub result: "hello world" "world" "earth"
     The status should be success

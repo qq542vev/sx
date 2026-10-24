@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_ubind'
     Include ./spec/support/run.sh
-    Include ./spec/support/library.sh sx_var_ubind
+    sxtest_load ./build/modules/sx_var_ubind.sh
 
     Describe '基本動作'
         It '蓄積スロットにクォートなしで累積すること'

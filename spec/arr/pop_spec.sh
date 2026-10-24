@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_pop'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arr_pop
+  sxtest_load ./build/modules/sx_arr_pop.sh
 
   Describe '基本 pop'
     It '末尾の1要素をスカラーへ取り出し、元配列から削除すること'

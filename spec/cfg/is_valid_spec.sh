@@ -8,7 +8,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_cfg_is_valid()'
 	Include ./spec/support/run.sh
-	Include ./spec/support/library.sh sx_cfg_is_valid
+	sxtest_load ./build/modules/sx_cfg_is_valid.sh
 
 	Context '生成されたパターンによる設定値の検査'
 		Parameters

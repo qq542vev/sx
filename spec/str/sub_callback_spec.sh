@@ -6,7 +6,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_sub (callback)'
-    Include ./spec/support/library.sh sx_str_sub
+    sxtest_load ./build/modules/sx_str_sub.sh
     Include ./spec/support/run.sh
 
     # テスト用コールバック関数

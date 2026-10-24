@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_nat0_base'
-  Include ./spec/support/library.sh sx_num_is_nat0_base
+  sxtest_load ./build/modules/sx_num_is_nat0_base.sh
 
   Describe '基数指定の検証'
     It '有効な基数 (8, 10, 16) で成功すること'

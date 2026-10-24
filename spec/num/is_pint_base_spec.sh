@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_pint_base'
-  Include ./spec/support/library.sh sx_num_is_pint_base
+  sxtest_load ./build/modules/sx_num_is_pint_base.sh
 
   It '1以上の整数（任意で"+"符号）で成功すること'
     When call sx_num_is_pint_base 10 "1" "+123"

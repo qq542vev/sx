@@ -1,5 +1,5 @@
 Describe 'sx_var_copy -efu 環境検証'
-  Include ./spec/support/library.sh sx_var_copy
+  sxtest_load ./build/modules/sx_var_copy.sh
 
   It '正常動作'
 

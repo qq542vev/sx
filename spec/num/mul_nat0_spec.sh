@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_mul_nat0'
-  Include ./spec/support/library.sh sx_num_mul_nat0
+  sxtest_load ./build/modules/sx_num_mul_nat0.sh
 
   It '0を掛けると0になること'
     When call sx_num_mul_nat0 result 0 123

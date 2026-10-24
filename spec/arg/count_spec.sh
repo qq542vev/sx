@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_count'
-	Include ./spec/support/library.sh sx_arg_count
+	sxtest_load ./build/modules/sx_arg_count.sh
 
 	It '単一一致で1を返すこと'
 		When call sx_arg_count res "b" ::: "a" "b" "c"

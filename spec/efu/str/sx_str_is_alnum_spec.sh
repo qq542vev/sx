@@ -1,5 +1,5 @@
 Describe 'sx_str_is_alnum -efu 環境検証'
-  Include ./spec/support/library.sh sx_str_is_alnum
+  sxtest_load ./build/modules/sx_str_is_alnum.sh
 
   It '正常動作'
 

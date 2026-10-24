@@ -7,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rchunk'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_rchunk
+  sxtest_load ./build/modules/sx_str_rchunk.sh
 
   Context '基準方向と結果順'
     Parameters

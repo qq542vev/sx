@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_camel'
-	Include ./spec/support/library.sh sx_str_camel
+	sxtest_load ./build/modules/sx_str_camel.sh
 
 	It 'snake_case を camelCase に変換すること'
 		When call sx_str_camel res "hello_world"

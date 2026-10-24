@@ -10,10 +10,10 @@ Describe 'sx_str_isep 多倍長対応'
   load_subject() {
     case "$1" in
       sx_str_isep)
-        Include ./spec/support/library.sh sx_str_isep
+        sxtest_load ./build/modules/sx_str_isep.sh
         ;;
       __sx_str_isep)
-        Include ./spec/support/library.sh __sx_str_isep
+        sxtest_load ./build/modules/__sx_str_isep.sh
         ;;
       *) return 64;;
     esac

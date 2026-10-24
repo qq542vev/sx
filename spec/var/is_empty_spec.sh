@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_empty'
-  Include ./spec/support/library.sh sx_var_is_empty
+  sxtest_load ./build/modules/sx_var_is_empty.sh
   It 'すべての変数が設定されており、かつ空の場合に成功を返すこと'
     a="" b=""
     When call sx_var_is_empty a b

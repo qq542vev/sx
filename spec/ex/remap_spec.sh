@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_ex_remap'
-  Include ./spec/support/library.sh sx_ex_remap
+  sxtest_load ./build/modules/sx_ex_remap.sh
 
   It '終了ステータスを正常にマッピングすること (1:1)'
     When call sx_ex_remap 1:64 ::: sh -c 'exit 1'

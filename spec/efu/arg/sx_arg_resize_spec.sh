@@ -1,5 +1,5 @@
 Describe 'sx_arg_resize -efu 環境検証'
-  Include ./spec/support/library.sh sx_arg_resize
+  sxtest_load ./build/modules/sx_arg_resize.sh
 
   It '正常動作'
 

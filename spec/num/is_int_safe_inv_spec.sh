@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_int_safe_inv'
-  Include ./spec/support/library.sh sx_num_is_int_safe_inv
+  sxtest_load ./build/modules/sx_num_is_int_safe_inv.sh
 
   It '反転可能な整数を受け入れること'
     When call sx_num_is_int_safe_inv "0" "1" "-1" "123" "-123"

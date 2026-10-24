@@ -1,32 +1,32 @@
 # shellcheck shell=sh
 
 Describe 'arg 関数の第一引数 bind'
-  # Exampleごとに対象だけを読み込む。IncludeはExampleの外で宣言する。
+  # Exampleごとに対象だけを読み込む。
   load_subject() {
     case "$1" in
       sx_arg_find)
-        Include ./spec/support/library.sh sx_arg_find
+        sxtest_load ./build/modules/sx_arg_find.sh
         ;;
       sx_arg_rfind)
-        Include ./spec/support/library.sh sx_arg_rfind
+        sxtest_load ./build/modules/sx_arg_rfind.sh
         ;;
       sx_arg_isep)
-        Include ./spec/support/library.sh sx_arg_isep
+        sxtest_load ./build/modules/sx_arg_isep.sh
         ;;
       sx_arg_pad)
-        Include ./spec/support/library.sh sx_arg_pad
+        sxtest_load ./build/modules/sx_arg_pad.sh
         ;;
       sx_arg_resize)
-        Include ./spec/support/library.sh sx_arg_resize
+        sxtest_load ./build/modules/sx_arg_resize.sh
         ;;
       sx_arg_map)
-        Include ./spec/support/library.sh sx_arg_map
+        sxtest_load ./build/modules/sx_arg_map.sh
         ;;
       sx_arg_quote)
-        Include ./spec/support/library.sh sx_arg_quote
+        sxtest_load ./build/modules/sx_arg_quote.sh
         ;;
       sx_arg_rquote)
-        Include ./spec/support/library.sh sx_arg_rquote
+        sxtest_load ./build/modules/sx_arg_rquote.sh
         ;;
       *) return 64;;
     esac

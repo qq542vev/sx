@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_glob_bracket'
-	Include ./spec/support/library.sh sx_glob_bracket
+	sxtest_load ./build/modules/sx_glob_bracket.sh
 
 	Describe '正常系: 通常の文字セット'
 		It '1文字のセットをブラケット式に変換する'

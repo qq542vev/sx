@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_div_int'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_div_int
+  sxtest_load ./build/modules/sx_num_div_int.sh
 
   It '小数部を求める除算ができること'
     When call sx_num_div_int d 2 100 3

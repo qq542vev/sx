@@ -1,5 +1,5 @@
 Describe 'sx_num_is_pint_base -efu 環境検証'
-  Include ./spec/support/library.sh sx_num_is_pint_base
+  sxtest_load ./build/modules/sx_num_is_pint_base.sh
 
   It '正常動作'
 

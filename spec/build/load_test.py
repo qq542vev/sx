@@ -39,7 +39,7 @@ class LoadTest(unittest.TestCase):
     def test_arguments_load_in_order_and_keep_definitions_in_caller(self):
         result = self.run_shell(
             'set -- parent "a b"\n'
-            'sxtest_load sx_second sx_first\n'
+            'sxtest_load ./build/modules/sx_second.sh ./build/modules/sx_first.sh\n'
             'check_no_leak\n'
             'printf "%s|%s|%s|%s" "$loaded" "$#" "$1" "$2"\n'
             'loaded_fn\n')
@@ -50,7 +50,7 @@ class LoadTest(unittest.TestCase):
         result = self.run_shell(
             'sxtest_load invalid:name\n'
             'printf "%s" "$loaded"\n',
-            {"SXTEST_LOAD_MOD": "  sx_second   sx_first  "})
+            {"SXTEST_LOAD_MOD": "  ./build/modules/sx_second.sh   ./build/modules/sx_first.sh  "})
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual("second first ", result.stdout)
 
@@ -75,7 +75,7 @@ class LoadTest(unittest.TestCase):
                     '[ "$-" = "$before_flags" ]\n'
                     'check_no_leak\n'
                     'printf "%s" "$loaded"\n',
-                    {"SXTEST_LOAD_MOD": "sx_first sx_second"})
+                    {"SXTEST_LOAD_MOD": "./build/modules/sx_first.sh ./build/modules/sx_second.sh"})
                 self.assertEqual(0, result.returncode, result.stderr)
                 self.assertEqual("first second ", result.stdout)
 
@@ -88,34 +88,59 @@ class LoadTest(unittest.TestCase):
             'sxtest_load\n'
             '[ "$observed_ifs" = : ]\n'
             '[ "$observed_flags" = "$before_flags" ]\n',
-            {"SXTEST_LOAD_MOD": "sx_state"})
+            {"SXTEST_LOAD_MOD": "./build/modules/sx_state.sh"})
         self.assertEqual(0, result.returncode, result.stderr)
 
     def test_duplicates_are_loaded_again(self):
         result = self.run_shell(
-            'sxtest_load sx_first sx_first\nprintf "%s" "$loaded"\n')
+            'sxtest_load ./build/modules/sx_first.sh ./build/modules/sx_first.sh\nprintf "%s" "$loaded"\n')
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual("first first ", result.stdout)
 
-    def test_invalid_names_do_not_expand_paths_or_execute_code(self):
-        (self.root / "sx_first").touch()
-        for name in ("", "1invalid", "../sx_first", "sx_first.sh", "sx_*",
-                     "sx_first sx_second", "sx_first\tsx_second", "x;exit 29"):
+    def test_empty_path_argument_is_rejected(self):
+        result = self.run_shell("sxtest_load ''\n")
+        self.assertEqual(64, result.returncode)
+        self.assertIn("パスが空", result.stderr)
+
+    def test_paths_are_literal_and_do_not_expand_globs_or_execute_code(self):
+        (self.root / "sx_first.sh").write_text("loaded=expanded\n", encoding="utf-8")
+        for name in ("sx_*.sh", "x;exit 29", "$(exit 29)", "build/modules"):
             for use_env in (False, True):
-                if use_env and name in ("", "sx_first sx_second"):
-                    continue
                 with self.subTest(name=name, use_env=use_env):
                     env = {"SXTEST_LOAD_MOD": name} if use_env else {}
                     args = "" if use_env else shlex.quote(name)
-                    result = self.run_shell(
-                        f'set +f\nsxtest_load {args}\n', env)
-                    self.assertEqual(64, result.returncode, result.stderr)
-                    self.assertIn("提供名", result.stderr)
+                    result = self.run_shell(f'set +f\nsxtest_load {args}\n', env)
+                    self.assertEqual(1, result.returncode, result.stderr)
+                    self.assertIn(name.split(" ")[0] if use_env else name, result.stderr)
                     self.assertEqual("", result.stdout)
+
+    def test_absolute_parent_and_quoted_paths_with_spaces_are_supported(self):
+        path = self.root / "space quote' *.sh"
+        path.write_text('loaded="${loaded-}path "\n', encoding="utf-8")
+        result = self.run_shell(
+            f'sxtest_load {shlex.quote(str(path))}\n'
+            f'sxtest_load {shlex.quote(path.name)}\n'
+            'cd build\n'
+            f'sxtest_load {shlex.quote("../" + path.name)}\n'
+            'printf "%s" "$loaded"\n')
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("path path path ", result.stdout)
+
+    def test_full_library_override_uses_working_directory_without_path_search(self):
+        (self.root / "sx.sh").write_text("loaded=full\n", encoding="utf-8")
+        shadow = self.root / "shadow"
+        shadow.mkdir()
+        (shadow / "sx.sh").write_text("loaded=wrong\n", encoding="utf-8")
+        result = self.run_shell(
+            f'PATH={shlex.quote(str(shadow))}:$PATH\n'
+            'sxtest_load ./build/modules/sx_first.sh\n'
+            'printf "%s" "$loaded"\n', {"SXTEST_LOAD_MOD": "sx.sh"})
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("full", result.stdout)
 
     def test_missing_module_returns_failure_without_exiting_caller(self):
         result = self.run_shell(
-            'if sxtest_load sx_missing; then exit 99; else status=$?; fi\n'
+            'if sxtest_load ./build/modules/sx_missing.sh; then exit 99; else status=$?; fi\n'
             'printf "%s" "$status"\n')
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual("1", result.stdout)
@@ -123,7 +148,7 @@ class LoadTest(unittest.TestCase):
 
     def test_module_failure_stops_before_next_module(self):
         result = self.run_shell(
-            'if sxtest_load sx_fail sx_first; then exit 99; else status=$?; fi\n'
+            'if sxtest_load ./build/modules/sx_fail.sh ./build/modules/sx_first.sh; then exit 99; else status=$?; fi\n'
             'printf "%s:%s" "$status" "${loaded-unset}"\n')
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual("23:unset", result.stdout)
@@ -135,7 +160,7 @@ class LoadTest(unittest.TestCase):
             cwd=ROOT, capture_output=True, text=True, timeout=30)
         self.assertEqual(0, build.returncode, build.stderr)
         result = self.run_shell(
-            'sxtest_load sx_uri_enc\n'
+            'sxtest_load ./build/modules/sx_uri_enc.sh\n'
             'sx_uri_enc result "a b"\n'
             'check_no_leak\n'
             'printf "%s" "$result"\n')

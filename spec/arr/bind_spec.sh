@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_bind'
     Include ./spec/support/run.sh
-    Include ./spec/support/library.sh sx_arr_bind
+    sxtest_load ./build/modules/sx_arr_bind.sh
 
     Describe '基本動作'
         It '通常のバインドで chain と残り bind を生成すること'

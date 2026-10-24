@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_int_base'
-  Include ./spec/support/library.sh sx_num_is_int_base
+  sxtest_load ./build/modules/sx_num_is_int_base.sh
 
   Context '10進数 (base 10)'
     It '符号付きの整数で成功すること'

@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_sub_nat0'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_sub_nat0
+  sxtest_load ./build/modules/sx_num_sub_nat0.sh
 
   It '引数0個で結果が0になること'
     When call sx_num_sub_nat0 result

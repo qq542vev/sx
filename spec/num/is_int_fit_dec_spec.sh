@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_int_fit_dec'
-	Include ./spec/support/library.sh sx_num_is_int_fit_dec
+	sxtest_load ./build/modules/sx_num_is_int_fit_dec.sh
 
 	Describe '有効な32bit符号付き整数'
 		It '0 を受理すること'

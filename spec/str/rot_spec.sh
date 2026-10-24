@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rot()'
-    Include ./spec/support/library.sh sx_str_rot
+    sxtest_load ./build/modules/sx_str_rot.sh
 
     It '大文字のみ ROT13 が機能する'
         When call sx_str_rot res "HELLO" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" 13

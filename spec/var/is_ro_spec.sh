@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_ro'
-  Include ./spec/support/library.sh sx_var_is_ro
+  sxtest_load ./build/modules/sx_var_is_ro.sh
   It '書き込み可能な変数に対して失敗を返すこと'
     a=1
     When call sx_var_is_ro a

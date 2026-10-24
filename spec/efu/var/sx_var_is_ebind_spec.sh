@@ -1,5 +1,5 @@
 Describe 'sx_var_is_ebind -efu 環境検証'
-  Include ./spec/support/library.sh sx_var_is_ebind
+  sxtest_load ./build/modules/sx_var_is_ebind.sh
 
   It '正常動作'
     When run efu_run sx_var_is_ebind "a:b:c" "0/3a:b"

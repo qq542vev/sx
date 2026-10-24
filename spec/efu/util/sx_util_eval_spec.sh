@@ -1,5 +1,5 @@
 Describe 'sx_util_eval -efu 環境検証'
-  Include ./spec/support/library.sh sx_util_eval
+  sxtest_load ./build/modules/sx_util_eval.sh
 
   It '正常動作'
 

@@ -1,7 +1,7 @@
 # shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 Describe 'sx_arr_cat -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arr_cat
+  sxtest_load ./build/modules/sx_arr_cat.sh
 
   Describe '単一の末尾配列へ連結'
     It '引数が0個の場合は 64 を返す'

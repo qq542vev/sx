@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_ex_yield'
-  Include ./spec/support/library.sh sx_ex_yield
+  sxtest_load ./build/modules/sx_ex_yield.sh
 
   Describe '終了ステータスを返すこと'
     It 'デフォルトで 0 を返すこと'

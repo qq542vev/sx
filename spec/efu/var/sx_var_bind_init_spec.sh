@@ -1,5 +1,5 @@
 Describe 'sx_var_bind_init -efu 環境検証'
-  Include ./spec/support/library.sh sx_var_bind_init
+  sxtest_load ./build/modules/sx_var_bind_init.sh
 
   It '正常動作'
 

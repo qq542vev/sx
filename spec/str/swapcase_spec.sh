@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_swapcase()'
-    Include ./spec/support/library.sh sx_str_swapcase
+    sxtest_load ./build/modules/sx_str_swapcase.sh
 
     It '大文字を小文字に変換する'
         When call sx_str_swapcase res "ABC"

@@ -5,7 +5,7 @@
 
 Describe 'sx_str_rchunk -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_rchunk
+  sxtest_load ./build/modules/sx_str_rchunk.sh
 
   Context '後方基準'
     Parameters

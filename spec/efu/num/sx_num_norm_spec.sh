@@ -1,5 +1,5 @@
 Describe 'sx_num_norm -efu 環境検証'
-  Include ./spec/support/library.sh sx_num_norm
+  sxtest_load ./build/modules/sx_num_norm.sh
 
   It '正常動作'
 

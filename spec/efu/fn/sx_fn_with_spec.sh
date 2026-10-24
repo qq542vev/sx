@@ -1,5 +1,5 @@
 Describe 'sx_fn_with -efu 環境検証'
-  Include ./spec/support/library.sh sx_fn_with
+  sxtest_load ./build/modules/sx_fn_with.sh
   SX_CFG_SEP="--"
 
   It '正常動作'

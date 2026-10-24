@@ -1,5 +1,5 @@
 Describe 'sx_ex_yield -efu 環境検証'
-  Include ./spec/support/library.sh sx_ex_yield
+  sxtest_load ./build/modules/sx_ex_yield.sh
 
   It '正常動作'
 

@@ -2,7 +2,7 @@
 # shellcheck shell=sh
 
 Describe 'sx_uri_is_enc'
-  Include ./spec/support/library.sh sx_uri_is_enc
+  sxtest_load ./build/modules/sx_uri_is_enc.sh
 
   Context '公開・内部・検証省略'
     Parameters

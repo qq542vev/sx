@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_bind'
-    Include ./spec/support/library.sh sx_var_is_bind
+    sxtest_load ./build/modules/sx_var_is_bind.sh
 
     It '基本的なバインドを検証すること'
         When call sx_var_is_bind "a:b:c"

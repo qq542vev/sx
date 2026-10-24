@@ -1,5 +1,5 @@
 Describe 'sx_var_is_bindable -efu 環境検証'
-  Include ./spec/support/library.sh sx_var_is_bindable
+  sxtest_load ./build/modules/sx_var_is_bindable.sh
 
   It '正常動作'
 

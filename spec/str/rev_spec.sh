@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rev()'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_rev
+  sxtest_load ./build/modules/sx_str_rev.sh
 
   BeforeRun 'PATH=""'
 

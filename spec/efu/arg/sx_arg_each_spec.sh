@@ -4,7 +4,7 @@
 
 Describe 'sx_arg_each -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arg_each
+  sxtest_load ./build/modules/sx_arg_each.sh
 
   Context '多倍長経路'
     Parameters

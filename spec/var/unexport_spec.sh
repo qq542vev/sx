@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_unexport'
-  Include ./spec/support/library.sh sx_var_unexport
+  sxtest_load ./build/modules/sx_var_unexport.sh
   It 'エクスポート属性を解除しつつ値を保持すること'
     a_unexport=1
     export a_unexport

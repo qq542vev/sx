@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_tr()'
-	Include ./spec/support/library.sh sx_str_tr
+	sxtest_load ./build/modules/sx_str_tr.sh
 
 	It '基本的な変換ができること'
 		When call sx_str_tr res:cnt "a1b2c3" "abc" "XYZ"

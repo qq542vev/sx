@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 # shellcheck shell=sh
 
 Describe 'sx_str_is_graph'
-  Include ./spec/support/library.sh sx_str_is_graph
+  sxtest_load ./build/modules/sx_str_is_graph.sh
 
   It '英字のみの場合、成功を返すこと'
     When call sx_str_is_graph "abcXYZ"

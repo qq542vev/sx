@@ -8,7 +8,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_isep (recursion support)'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arg_isep
+  sxtest_load ./build/modules/sx_arg_isep.sh
 
   Describe 'Forward Callback Recursion'
     inner_cb() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=>"; }

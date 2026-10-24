@@ -1,5 +1,5 @@
 Describe 'sx_arg_range -efu 環境検証'
-  Include ./spec/support/library.sh sx_arg_range
+  sxtest_load ./build/modules/sx_arg_range.sh
 
   It '正常動作'
 

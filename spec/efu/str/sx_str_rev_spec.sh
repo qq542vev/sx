@@ -1,7 +1,7 @@
 # shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 Describe 'sx_str_rev -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_str_rev
+  sxtest_load ./build/modules/sx_str_rev.sh
 
   It '正常動作'
     When run efu_run sx_str_rev res "hello"

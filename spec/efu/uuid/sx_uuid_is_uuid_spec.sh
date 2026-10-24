@@ -1,5 +1,5 @@
 Describe 'sx_uuid_is_uuid -efu 環境検証'
-  Include ./spec/support/library.sh sx_uuid_is_uuid
+  sxtest_load ./build/modules/sx_uuid_is_uuid.sh
 
   It '正常動作'
 

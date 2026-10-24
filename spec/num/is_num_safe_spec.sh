@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_num_safe'
-  Include ./spec/support/library.sh sx_num_is_num_safe
+  sxtest_load ./build/modules/sx_num_is_num_safe.sh
 
   Context '10進整数'
     It '0, 123, -456 を検証すること'

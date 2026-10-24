@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_bindable'
-    Include ./spec/support/library.sh sx_var_is_bindable
+    sxtest_load ./build/modules/sx_var_is_bindable.sh
 
     # テスト用の定数定義（SX_EX_USAGE=64）
     readonly TEST_RO="ro_var"

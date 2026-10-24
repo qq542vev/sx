@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_cat'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arr_cat
+  sxtest_load ./build/modules/sx_arr_cat.sh
 
   Describe '基本連結'
     It '複数の配列を1つの末尾配列へ順に連結すること'

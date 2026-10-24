@@ -10,10 +10,10 @@ Describe 'sx_arg_find'
 	load_subject() {
 		case "$1" in
 			sx_arg_find)
-				Include ./spec/support/library.sh sx_arg_find
+				sxtest_load ./build/modules/sx_arg_find.sh
 				;;
 			sx_arg_rfind)
-				Include ./spec/support/library.sh sx_arg_rfind
+				sxtest_load ./build/modules/sx_arg_rfind.sh
 				;;
 			*) return 64;;
 		esac

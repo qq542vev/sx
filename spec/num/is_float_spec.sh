@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_float'
-  Include ./spec/support/library.sh sx_num_is_float
+  sxtest_load ./build/modules/sx_num_is_float.sh
 
   It '指数なしの10進実数表記を受け入れること'
     When call sx_num_is_float "0" "123" "-0.5" "1.00000000000"
@@ -27,7 +27,7 @@ Describe 'sx_num_is_float'
 End
 
 Describe 'sx_num_is_float_safe'
-  Include ./spec/support/library.sh sx_num_is_float_safe
+  sxtest_load ./build/modules/sx_num_is_float_safe.sh
 
   It '指数なしの10進実数表記を受け入れること'
     When call sx_num_is_float_safe "0" "123" "-0.5" "1.00000000000"

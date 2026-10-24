@@ -7,14 +7,14 @@ eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_cfg_set()'
-	# Exampleごとに対象だけを読み込む。IncludeはExampleの外で宣言する。
+	# Exampleごとに対象だけを読み込む。
 	load_subject() {
 		case "$1" in
 			sx_cfg_set)
-				Include ./spec/support/library.sh sx_cfg_set
+				sxtest_load ./build/modules/sx_cfg_set.sh
 				;;
 			__sx_cfg_set)
-				Include ./spec/support/library.sh __sx_cfg_set
+				sxtest_load ./build/modules/__sx_cfg_set.sh
 				;;
 			*) return 64;;
 		esac

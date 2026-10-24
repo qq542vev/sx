@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_rfind'
-	Include ./spec/support/library.sh sx_str_rfind
+	sxtest_load ./build/modules/sx_str_rfind.sh
 
 	Context '多倍長経路の境界位置'
 		Parameters

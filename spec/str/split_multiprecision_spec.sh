@@ -6,14 +6,14 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split 多倍長対応'
-  # Exampleごとに対象だけを読み込む。IncludeはExampleの外で宣言する。
+  # Exampleごとに対象だけを読み込む。
   load_subject() {
     case "$1" in
       sx_str_split)
-        Include ./spec/support/library.sh sx_str_split
+        sxtest_load ./build/modules/sx_str_split.sh
         ;;
       __sx_str_split)
-        Include ./spec/support/library.sh __sx_str_split
+        sxtest_load ./build/modules/__sx_str_split.sh
         ;;
       *) return 64;;
     esac

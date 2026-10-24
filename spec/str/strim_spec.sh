@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_strim'
-  Include ./spec/support/library.sh sx_str_strim
+  sxtest_load ./build/modules/sx_str_strim.sh
 
   It '先頭の空白を削除すること (デフォルト)'
     sx_str_strim res "  hello  "

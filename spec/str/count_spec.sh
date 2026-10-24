@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_count'
-	Include ./spec/support/library.sh sx_str_count
+	sxtest_load ./build/modules/sx_str_count.sh
 
 	It '単一一致で1を返すこと'
 		When call sx_str_count res "hello world" "world"

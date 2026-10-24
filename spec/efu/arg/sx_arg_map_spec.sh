@@ -4,7 +4,7 @@
 
 Describe 'sx_arg_map -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arg_map
+  sxtest_load ./build/modules/sx_arg_map.sh
 
   # コールバック本体は検証側に残し、補助代入だけを別シェルで行う。
   cb_set3() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=${3}"; }

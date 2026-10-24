@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_is_chain'
-  Include ./spec/support/library.sh sx_var_is_chain
+  sxtest_load ./build/modules/sx_var_is_chain.sh
 
   It '有効な右方向連鎖式に対して成功を返すこと'
     When call sx_var_is_chain "a-b-c"

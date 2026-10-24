@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_is_spec'
-  Include ./spec/support/library.sh sx_arr_is_spec
+  sxtest_load ./build/modules/sx_arr_is_spec.sh
 
   It '単体指定を検証すること'
     When call sx_arr_is_spec "0" "-1" "+1" "-0" "3"

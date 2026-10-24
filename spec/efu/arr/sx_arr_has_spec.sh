@@ -10,7 +10,7 @@ Describe 'sx_arr_has -efu 環境検証'
     }
 
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arr_has
+  sxtest_load ./build/modules/sx_arr_has.sh
 
   It '正常動作'
 sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_nint_base'
-  Include ./spec/support/library.sh sx_num_is_nint_base
+  sxtest_load ./build/modules/sx_num_is_nint_base.sh
 
   It '-1以下の整数（"-"符号必須）で成功すること'
     When call sx_num_is_nint_base 10 "-1" "-123"

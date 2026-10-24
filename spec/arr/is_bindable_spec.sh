@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arr_is_bindable'
-  Include ./spec/support/library.sh sx_arr_is_bindable
+  sxtest_load ./build/modules/sx_arr_is_bindable.sh
 
   It 'スカラー変数が書き込み可能の場合に成功を返すこと'
     writable=1

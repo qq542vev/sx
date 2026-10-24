@@ -4,7 +4,7 @@
 
 Describe 'sx_arg_fold -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arg_fold
+  sxtest_load ./build/modules/sx_arg_fold.sh
 
   # 再入する対象関数は同じシェル内で呼び、補助代入だけを分離する。
   cb_sum() { sxtest_run "${1}" -- 'sx_var_set "$@"' "${1}=$((${2} + ${3}))"; }

@@ -7,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_bind'
     Include ./spec/support/run.sh
-    Include ./spec/support/library.sh sx_var_bind
+    sxtest_load ./build/modules/sx_var_bind.sh
 
     Describe '基本動作'
         It '単純な代入を実行し、状態を更新すること'

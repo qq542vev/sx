@@ -7,7 +7,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_sub_arith'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_sub_arith
+  sxtest_load ./build/modules/sx_num_sub_arith.sh
   Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- "sx_cfg_set NUM_RANGE=32"'
 
   Context '安全な減算'

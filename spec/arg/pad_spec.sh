@@ -10,10 +10,10 @@ Describe 'sx_arg_pad'
   load_subject() {
     case "$1" in
       sx_arg_pad)
-        Include ./spec/support/library.sh sx_arg_pad
+        sxtest_load ./build/modules/sx_arg_pad.sh
         ;;
       __sx_arg_pad)
-        Include ./spec/support/library.sh __sx_arg_pad
+        sxtest_load ./build/modules/__sx_arg_pad.sh
         ;;
       *) return 64;;
     esac

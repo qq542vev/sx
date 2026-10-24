@@ -5,7 +5,7 @@
 
 ```sh
 Include ./spec/support/run.sh
-Include ./spec/support/library.sh sx_arr_splice
+sxtest_load ./build/modules/sx_arr_splice.sh
 
 It '中間の要素を置換すること'
   sxtest_run items SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen items "$@"' "${SX_SYS_REV-0}" a b c
@@ -77,7 +77,7 @@ sxtest_run items SX_SYS_REV -- '
 ```sh
 Describe 'sx_csv_parse'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_csv_parse
+  sxtest_load ./build/modules/sx_csv_parse.sh
 
   It '解析結果をSX配列として保存すること'
     Set 'allexport:on'

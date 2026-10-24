@@ -89,37 +89,6 @@ class ModulesTest(unittest.TestCase):
         self.assertEqual(original, path.read_bytes())
         self.assertEqual([path], list(self.output.iterdir()))
 
-    def test_library_mode_works_without_full_library_and_selects_explicitly(self):
-        self.assert_build("sx_uri_enc")
-        support = self.root / "spec/support/library.sh"
-        support.parent.mkdir(parents=True)
-        shutil.copyfile(ROOT / "spec/support/library.sh", support)
-        probe = (
-            "set -- sx_uri_enc\n. ./spec/support/library.sh\n"
-            "sx_uri_enc result 'a b'\nprintf '%s\\n' \"$result\"\n"
-        )
-        env = {key: value for key, value in self.env.items() if key != "SX_TEST_MODE"}
-        # sx.sh が存在しなくても、既定と module 指定では個別版だけで動作する。
-        for mode in (None, "module"):
-            with self.subTest(mode=mode):
-                selected_env = env if mode is None else dict(env, SX_TEST_MODE=mode)
-                result = subprocess.run(["yash", "-efu", "-o", "posix", "-c", probe],
-                                        cwd=self.root, env=selected_env, capture_output=True, text=True)
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assertEqual("a%20b\n", result.stdout)
-        # 全体版用の目印を置き、full 指定で読み込み先が切り替わることを検査する。
-        (self.root / "sx.sh").write_text("sx_uri_enc() { result=full; }\n", encoding="utf-8")
-        result = subprocess.run(["yash", "-efu", "-o", "posix", "-c", probe],
-                                cwd=self.root, env=dict(env, SX_TEST_MODE="full"),
-                                capture_output=True, text=True)
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual("full\n", result.stdout)
-        result = subprocess.run(["yash", "-efu", "-o", "posix", "-c", probe],
-                                cwd=self.root, env=dict(env, SX_TEST_MODE="invalid"),
-                                capture_output=True, text=True)
-        self.assertNotEqual(0, result.returncode)
-        self.assertIn("SX_TEST_MODE", result.stderr)
-
     def test_unknown_targets_fail(self):
         for symbols in ("unknown_name", "1invalid"):
             with self.subTest(symbols=symbols):
@@ -127,22 +96,6 @@ class ModulesTest(unittest.TestCase):
                 self.assertNotEqual(0, result.returncode)
                 self.assertFalse(list(self.root.rglob("*.sh")))
 
-    def test_library_rejects_invalid_arguments_in_both_modes(self):
-        support = self.root / "spec/support/library.sh"
-        support.parent.mkdir(parents=True)
-        shutil.copyfile(ROOT / "spec/support/library.sh", support)
-        (self.root / "sx.sh").write_text("marker=full\n", encoding="utf-8")
-        for mode in ("module", "full"):
-            for args in ([], [""], ["1invalid"], ["../outside"],
-                         ["spec/uri/enc_spec.sh"], ["sx_uri_enc", "sx_uri_is_pct"]):
-                with self.subTest(mode=mode, args=args):
-                    result = subprocess.run(
-                        ["yash", "-efu", "-o", "posix", "-c",
-                         '. ./spec/support/library.sh', "probe", *args],
-                        cwd=self.root, env=dict(self.env, SX_TEST_MODE=mode),
-                        capture_output=True, text=True)
-                    self.assertNotEqual(0, result.returncode)
-                    self.assertIn("提供名", result.stderr)
 
 
 class ModuleRulesTest(unittest.TestCase):

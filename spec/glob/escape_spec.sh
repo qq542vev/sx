@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_glob_escape'
-	Include ./spec/support/library.sh sx_glob_escape
+	sxtest_load ./build/modules/sx_glob_escape.sh
 
 	Describe '正常系: 各特殊文字のエスケープ'
 		It '* を [*] にエスケープする'

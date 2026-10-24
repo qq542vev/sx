@@ -9,10 +9,10 @@ Describe 'sx_arg_enough 多倍長対応'
   load_subject() {
     case "$1" in
       sx_arg_enough)
-        Include ./spec/support/library.sh sx_arg_enough
+        sxtest_load ./build/modules/sx_arg_enough.sh
         ;;
       __sx_arg_enough)
-        Include ./spec/support/library.sh __sx_arg_enough
+        sxtest_load ./build/modules/__sx_arg_enough.sh
         ;;
       *) return 64;;
     esac

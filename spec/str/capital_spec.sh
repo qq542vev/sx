@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_capital()'
-    Include ./spec/support/library.sh sx_str_capital
+    sxtest_load ./build/modules/sx_str_capital.sh
 
     It '文頭がアルファベットなら大文字に、残りを小文字に変換する'
         When call sx_str_capital res "aaa bbb ccc"

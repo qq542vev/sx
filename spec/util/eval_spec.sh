@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_util_eval'
-  Include ./spec/support/library.sh sx_util_eval
+  sxtest_load ./build/modules/sx_util_eval.sh
 
   It '文字列をシェルコマンドとして実行すること'
     When call sx_util_eval 'result=success'

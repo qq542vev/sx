@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_min'
-  Include ./spec/support/library.sh sx_num_min
+  sxtest_load ./build/modules/sx_num_min.sh
 
   It '複数の数値から最小値を取得すること'
     When call sx_num_min result 3 5 2

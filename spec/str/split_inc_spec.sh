@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split (SX_STR_SPLIT_INC)'
-  Include ./spec/support/library.sh sx_str_split
+  sxtest_load ./build/modules/sx_str_split.sh
 
   It '通常文字での INC 動作確認（前方分割）'
     When call sx_str_split res "A:B:C" ":" 2147483647 "${SX_STR_SPLIT_INC}"

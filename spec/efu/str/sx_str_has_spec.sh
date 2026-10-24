@@ -1,5 +1,5 @@
 Describe 'sx_str_has -efu 環境検証'
-  Include ./spec/support/library.sh sx_str_has
+  sxtest_load ./build/modules/sx_str_has.sh
 
   It '正常動作'
 

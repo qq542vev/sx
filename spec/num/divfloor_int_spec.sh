@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_divfloor_int'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_divfloor_int
+  sxtest_load ./build/modules/sx_num_divfloor_int.sh
 
   It '小さな数の除算ができること（あまりなし）'
     When call sx_num_divfloor_int q 100 4

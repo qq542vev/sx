@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_title()'
-    Include ./spec/support/library.sh sx_str_title
+    sxtest_load ./build/modules/sx_str_title.sh
 
     It '各単語の先頭を大文字に、残りを小文字に変換する'
         When call sx_str_title res "aaa bbb ccc"

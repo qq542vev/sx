@@ -186,8 +186,8 @@ class BundleTest(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("SX_SYMBOLS= SX_OUT=sx.sh all", result.stdout)
         self.assertIn("make module", result.stdout)
-        self.assertIn("SX_TEST_MODE=module shellspec", result.stdout)
-        self.assertIn("SX_TEST_MODE=full shellspec", result.stdout)
+        self.assertIn("unset SXTEST_LOAD_MOD; shellspec", result.stdout)
+        self.assertIn("SXTEST_LOAD_MOD=sx.sh shellspec", result.stdout)
 
 
 if __name__ == "__main__":

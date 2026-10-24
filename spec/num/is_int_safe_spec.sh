@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_is_int_safe'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_is_int_safe
+  sxtest_load ./build/modules/sx_num_is_int_safe.sh
 
   Context 'デフォルト (32ビット)'
     It '32ビットの境界値を検証すること'

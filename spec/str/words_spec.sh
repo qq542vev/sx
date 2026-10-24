@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_words'
-	Include ./spec/support/library.sh sx_str_words
+	sxtest_load ./build/modules/sx_str_words.sh
 
 	It 'snake_case を分割すること'
 		When call sx_str_words res "hello_world"

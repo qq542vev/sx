@@ -59,7 +59,7 @@ shellspec spec/modules/uri_enc_spec.sh
 make module
 make -j4 module
 shellspec spec/arr/push_spec.sh
-SX_TEST_MODE=full shellspec spec/arr/push_spec.sh
+SXTEST_LOAD_MOD=sx.sh shellspec spec/arr/push_spec.sh
 ```
 
 `make module` は一覧を更新してから `make -f module.mk` を呼び出します。
@@ -72,13 +72,13 @@ SX_TEST_MODE=full shellspec spec/arr/push_spec.sh
 通常のバンドルでそれらを一つにまとめてください。
 全ての実行時テストは、既定で個別モジュールを読み込みます。
 製品側の `M_REQUIRE` にはテスト専用の依存を追加しません。
-検証側では、対象の提供名を一つ指定します。準備用APIは別シェルで実行し、
+検証側では、対象のモジュールファイルを指定します。準備用APIは別シェルで実行し、
 結果の変数だけを復元します。
 
 ```sh
 Describe 'sx_arr_push'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arr_push
+  sxtest_load ./build/modules/sx_arr_push.sh
 
   It '末尾に要素を追加すること'
     sxtest_run items SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen items "$@"' "${SX_SYS_REV-0}" a b
@@ -91,10 +91,10 @@ End
 
 事前準備・事後検証・コールバックの補助処理・後始末は [run.md](../spec/support/run.md) を参照してください。
 
-個別モジュールを関数で読み込む `sxtest_load` も利用できます。
+モジュールファイルの読み込みには `spec_helper.sh` の `sxtest_load` を使います。
 引数と `SXTEST_LOAD_MOD` による指定は [load.md](../spec/support/load.md) を参照してください。
 
-全体版との比較には `SX_TEST_MODE=full` を指定し、ShellSpec を起動し直します。
+全体版との比較には `SXTEST_LOAD_MOD=sx.sh` を指定し、ShellSpec を起動し直します。
 この場合は先に `make all` で全体版を生成してください。
 `make test` は全体版と全単位のモジュールを生成し、全テストを個別版・全体版でそれぞれ実行します。
 ShellSpec のオプションは `make test TEST_FLAGS='--jobs 4'` のように指定できます。

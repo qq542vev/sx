@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_num_cmp_fixed'
-  Include ./spec/support/library.sh sx_num_cmp_fixed
+  sxtest_load ./build/modules/sx_num_cmp_fixed.sh
 
   It 'LHS < RHS の場合に 1 を返すこと (整数)'
     When call sx_num_cmp_fixed 10 20

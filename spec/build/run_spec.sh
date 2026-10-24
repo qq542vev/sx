@@ -293,7 +293,7 @@ End
 
 Describe 'sxtest_run と単独モジュールの組み合わせ'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_arr_splice
+  sxtest_load ./build/modules/sx_arr_splice.sh
 
   It '準備した配列を検証側の対象関数へ渡せること'
     sxtest_run items -- 'sx_arr_gen items "$@"' a b c

@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_ex_is_status'
-  Include ./spec/support/library.sh sx_ex_is_status
+  sxtest_load ./build/modules/sx_ex_is_status.sh
 
   Describe '有効な10進数のステータス'
     It '0 を検証すること'

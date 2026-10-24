@@ -5,7 +5,7 @@
 
 Describe 'sx_num_range -efu 環境検証'
   Include ./spec/support/run.sh
-  Include ./spec/support/library.sh sx_num_range
+  sxtest_load ./build/modules/sx_num_range.sh
 
   range_check_values() {
     expected="$1"

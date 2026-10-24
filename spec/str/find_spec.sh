@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_find'
-	Include ./spec/support/library.sh sx_str_find
+	sxtest_load ./build/modules/sx_str_find.sh
 
 	It '単一一致で index:len を返すこと'
 		When call sx_str_find res "hello world" "world"
