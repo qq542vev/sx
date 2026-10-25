@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK SX_STR_CR SX_STR_LF __sx_csv_parse __sx_var_is_rw_deep sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK SX_STR_CR SX_STR_LF __sx_csv_parse __sx_var_is_name __sx_var_is_rw_deep sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_csv_parse - CSV を行ごとの SX 配列に変換する
 ##
@@ -44,8 +44,8 @@ sx_csv_parse() {
 	case "${#}" in [12345]) ;; *) return M_EX_USAGE;; esac
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
-	case "${3-}" in '') ;; *) sx_var_is_name "${3}" || return M_EX_USAGE;; esac
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
+	case "${3-}" in '') ;; *) __sx_var_is_name "${3}" || return M_EX_USAGE;; esac
 	__sx_var_is_rw_deep "${1}" || return M_EX_NOPERM
 
 	set -- "${1}" "${2-}" "${3-}" "${4-,}" "${5-\"}"

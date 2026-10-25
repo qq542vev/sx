@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_get __sx_arr_is_bind __sx_arr_is_bindable __sx_arr_is_spec __sx_var_is_arr sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_get __sx_arr_is_bind __sx_arr_is_bindable __sx_arr_is_spec __sx_var_is_arr __sx_var_is_name sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_arr_get - 配列から指定要素を順序保持で切り出して分配する
@@ -53,7 +53,7 @@ sx_arr_get() {
 
 	__sx_arr_is_bindable "${1}" || return M_EX_NOPERM
 
-	sx_var_is_name "${2-}" || return M_EX_USAGE
+	__sx_var_is_name "${2-}" || return M_EX_USAGE
 
 	__sx_var_is_arr "${2}" || return M_EX_DATAERR
 

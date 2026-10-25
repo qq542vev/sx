@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_rw sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_is_rw - 変数が書き込み可能か確認する
 ##
@@ -12,7 +12,7 @@ pushdef([|CLEANUP|])dnl
 sx_var_is_rw() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return M_EX_USAGE
+	__sx_var_is_name "${@}" || return M_EX_USAGE
 	__sx_var_is_rw "${@}" || return
 }
 

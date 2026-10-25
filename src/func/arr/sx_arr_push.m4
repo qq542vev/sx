@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_push __sx_var_is_arr __sx_var_is_rw_deep sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_push __sx_var_is_arr __sx_var_is_name __sx_var_is_rw_deep|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arr_push - 配列の末尾に要素を追加する
 ##
@@ -17,7 +17,7 @@ pushdef([|CLEANUP|])dnl
 sx_arr_push() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_push "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 	__sx_var_is_arr "${1}" || return M_EX_DATAERR
 	__sx_var_is_rw_deep "${1}" || return M_EX_NOPERM
 

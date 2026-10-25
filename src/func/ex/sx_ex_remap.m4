@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_ex_remap sx_ex_is_status sx_ex_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_ex_is_status __sx_ex_is_valid __sx_ex_remap|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_ex_remap - 終了ステータスをマッピングしてコマンドを実行する
@@ -39,11 +39,11 @@ sx_ex_remap() {
 
 		case "${Q_src}" in
 			-) ;;
-			*?-) sx_ex_is_status "${Q_src%-}";;
-			-?*) sx_ex_is_status "${Q_src#-}";;
-			*-*) sx_ex_is_status "${Q_src#*-}" "${Q_src%%-*}";;
-			*) sx_ex_is_valid "${Q_src#!}";;
-		esac && sx_ex_is_valid "${Q_arg#*:}" || {
+			*?-) __sx_ex_is_status "${Q_src%-}";;
+			-?*) __sx_ex_is_status "${Q_src#-}";;
+			*-*) __sx_ex_is_status "${Q_src#*-}" "${Q_src%%-*}";;
+			*) __sx_ex_is_valid "${Q_src#!}";;
+		esac && __sx_ex_is_valid "${Q_arg#*:}" || {
 			unset CLEANUP
 			return M_EX_USAGE
 		}

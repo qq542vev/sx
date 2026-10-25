@@ -1,6 +1,4 @@
-M_REQUIRE([||])dnl
-pushdef([|CLEANUP|])dnl
-M_RENAME_Q([|dnl
+M_REQUIRE([|__sx_str_sw|])dnl
 ### sx_str_sw - 第一引数が、第二引数以降のいずれかの文字列で始まっているか確認する
 ##
 ## 使い方:
@@ -13,25 +11,13 @@ M_RENAME_Q([|dnl
 ## - 開始文字列が 1 つも指定されなかった場合は失敗する
 ## - 開始文字列に空文字列が含まれる場合は常に成功する
 ##
+## 説明:
+##   実処理は内部関数 __sx_str_sw に委譲する。
+##
 ## 終了ステータス:
 ##    0  いずれかの開始文字列で始まっている (SX_EX_OK)
 ##    1  一致する開始文字列がない
 
-define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
-
 sx_str_sw() {
-	Q_tgt="${1-}"
-	${1+'shift'}
-
-	for Q_arg in "${@}"; do
-		case "${Q_tgt}" in "${Q_arg}"*)
-			unset CLEANUP
-			return M_EX_OK
-		esac
-	done
-
-	unset CLEANUP
-	return 1
+	__sx_str_sw "${@}" || return
 }
-|], [|str_sw|])dnl
-popdef([|CLEANUP|])dnl

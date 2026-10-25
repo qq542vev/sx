@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_int_base __sx_num_mul_int __sx_var_is_rw sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_int_base __sx_num_mul_int __sx_var_is_name __sx_var_is_rw sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_mul_int - 複数の符号付き整数を乗算する
@@ -21,7 +21,7 @@ define([|CLEANUP|], [|Q_res|])dnl
 sx_num_mul_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_int "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arg_fold __sx_var_is_rw sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arg_fold __sx_var_is_name __sx_var_is_rw sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_fold - 引数リストをコールバックで畳み込む（fold）
 ##
@@ -29,7 +29,7 @@ sx_arg_fold() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 

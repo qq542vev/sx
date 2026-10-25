@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_fn_set sx_fn_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_fn_is_valid __sx_fn_set|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_fn_set - 関数を動的に定義する
 ##
@@ -15,7 +15,7 @@ pushdef([|CLEANUP|])dnl
 sx_fn_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_set "${@}" || return; return 0;; esac
 
-	sx_fn_is_valid "${@}" || return M_EX_USAGE
+	__sx_fn_is_valid "${@}" || return M_EX_USAGE
 
 	__sx_fn_set "${@}"
 }

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_set sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_name __sx_var_is_set|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_is_set - 変数が設定されているか確認する
 ##
@@ -12,7 +12,7 @@ pushdef([|CLEANUP|])dnl
 sx_var_is_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_set "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return M_EX_USAGE
+	__sx_var_is_name "${@}" || return M_EX_USAGE
 	__sx_var_is_set "${@}" || return
 }
 

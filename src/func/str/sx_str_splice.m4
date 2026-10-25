@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_int_base __sx_str_splice __sx_var_is_rw sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_int_base __sx_str_splice __sx_var_is_name __sx_var_is_rw sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_splice - 文字列の一部を削除し、そこに新しい文字列を挿入する
 ##
@@ -26,7 +26,7 @@ sx_str_splice() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_glob_bracket __sx_var_is_rw sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_glob_bracket __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_glob_bracket - 文字セットを glob ブラケット式で安全な形に並べ替える
 ##
@@ -21,7 +21,7 @@ pushdef([|CLEANUP|])dnl
 sx_glob_bracket() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_glob_bracket "${@}"; return 0;; esac
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 	case "${2:+X}" in '')

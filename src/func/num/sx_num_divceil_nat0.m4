@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_divceil_nat0 __sx_num_is_nat0_base __sx_num_is_nat1_base __sx_var_is_rw sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_divceil_nat0 __sx_num_is_nat0_base __sx_num_is_nat1_base __sx_var_is_name __sx_var_is_rw sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_divceil_nat0 - 絶対値の除算で切り上げ商を求める
@@ -25,7 +25,7 @@ sx_num_divceil_nat0() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 

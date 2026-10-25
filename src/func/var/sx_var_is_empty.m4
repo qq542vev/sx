@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_empty sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_empty __sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_is_empty - 変数が設定されており、かつ空か確認する
 ##
@@ -12,7 +12,7 @@ pushdef([|CLEANUP|])dnl
 sx_var_is_empty() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_empty "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return M_EX_USAGE
+	__sx_var_is_name "${@}" || return M_EX_USAGE
 	__sx_var_is_empty "${@}" || return
 }
 

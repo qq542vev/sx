@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_rw __sx_var_unexport sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_name __sx_var_is_rw __sx_var_unexport|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_unexport - 変数のエクスポート属性を解除する
 ##
@@ -19,7 +19,7 @@ pushdef([|CLEANUP|])dnl
 sx_var_unexport() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unexport "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return M_EX_USAGE
+	__sx_var_is_name "${@}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${@}" || return M_EX_NOPERM
 

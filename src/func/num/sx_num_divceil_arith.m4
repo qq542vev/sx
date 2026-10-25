@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_divceil_arith __sx_num_is_divmod_arith_safe __sx_num_is_int_safe __sx_var_is_rw sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_divceil_arith __sx_num_is_divmod_arith_safe __sx_num_is_int_safe __sx_var_is_name __sx_var_is_rw sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_divceil_arith - 算術展開で符号付き整数の切り上げ商を求める
 ##
@@ -24,7 +24,7 @@ sx_num_divceil_arith() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 

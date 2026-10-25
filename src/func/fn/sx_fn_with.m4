@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_quote __sx_fn_with sx_fn_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_quote __sx_fn_is_valid __sx_fn_with|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_fn_with - 一時的な匿名関数を定義してコマンドを実行する
@@ -30,7 +30,7 @@ sx_fn_with() {
 	case "${Q_i}" in [!0]*)
 		__sx_arg_quote "${Q_i}Q_fn:" "${@}"
 
-		eval sx_fn_is_valid "${Q_fn}" || {
+		eval __sx_fn_is_valid "${Q_fn}" || {
 			unset CLEANUP
 			return M_EX_USAGE
 		}

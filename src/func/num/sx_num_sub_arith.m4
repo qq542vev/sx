@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_int_safe __sx_num_is_sub_arith_safe __sx_num_sub_arith __sx_var_is_rw sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_int_safe __sx_num_is_sub_arith_safe __sx_num_sub_arith __sx_var_is_name __sx_var_is_rw sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_sub_arith - 複数の符号付き整数を算術展開で減算する
@@ -27,7 +27,7 @@ define([|CLEANUP|], [|Q_res|])dnl
 sx_num_sub_arith() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_sub_arith "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_div_nat0 __sx_num_is_nat0_base __sx_num_is_nat0_safe __sx_num_is_nat1_base __sx_var_is_rw sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_div_nat0 __sx_num_is_nat0_base __sx_num_is_nat0_safe __sx_num_is_nat1_base __sx_var_is_name __sx_var_is_rw sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_div_nat0 - 絶対値の除算で実数商（整数商 + 小数部）を求める
@@ -28,7 +28,7 @@ define([|CLEANUP|], [|Q_res Q_dp Q_u|])dnl
 sx_num_div_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_nat0 "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 

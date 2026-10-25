@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_copyable __sx_var_is_rw_all __sx_var_move sx_var_is_chain|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_chain __sx_var_is_copyable __sx_var_is_rw_all __sx_var_move|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_var_move - 変数を連鎖移動する
@@ -28,7 +28,7 @@ define([|CLEANUP|], [|Q_src Q_arg|])dnl
 sx_var_move() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_move "${@}" || return; return 0;; esac
 
-	sx_var_is_chain "${@}" || return M_EX_USAGE
+	__sx_var_is_chain "${@}" || return M_EX_USAGE
 
 	__sx_var_is_copyable "${@}" || return M_EX_NOPERM
 

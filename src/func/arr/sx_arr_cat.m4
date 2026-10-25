@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_cat __sx_arr_is_bind __sx_arr_is_bindable __sx_var_is_arr sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_cat __sx_arr_is_bind __sx_arr_is_bindable __sx_var_is_arr __sx_var_is_name sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_arr_cat - 複数の配列を連結する
@@ -52,7 +52,7 @@ sx_arr_cat() {
 	Q_bind="${1}"
 	shift
 
-	sx_var_is_name "${@}" || {
+	__sx_var_is_name "${@}" || {
 		unset CLEANUP
 		return M_EX_USAGE
 	}

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_gen __sx_var_is_rw_deep sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_gen __sx_var_is_name __sx_var_is_rw_deep|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arr_gen - 配列を初期化し、要素を追加する
 ##
@@ -16,7 +16,7 @@ pushdef([|CLEANUP|])dnl
 sx_arr_gen() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_gen "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 	__sx_var_is_rw_deep "${1}" || return M_EX_NOPERM
 
 	__sx_arr_gen "${@}"

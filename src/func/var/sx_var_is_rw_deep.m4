@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_rw_deep sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_name __sx_var_is_rw_deep|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_is_rw_deep - 変数およびその配下のサブ変数がすべて書き込み可能か確認する
 ##
@@ -19,7 +19,7 @@ pushdef([|CLEANUP|])dnl
 sx_var_is_rw_deep() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw_deep "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return M_EX_USAGE
+	__sx_var_is_name "${@}" || return M_EX_USAGE
 
 	__sx_var_is_rw_deep "${@}" || return
 }

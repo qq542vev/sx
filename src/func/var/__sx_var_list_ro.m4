@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_LF SX_STR_SWORD SX_STR_WORD __sx_var_bind_init __sx_var_is_ro __sx_var_is_set __sx_var_ubind sx_var_is_name|])dnl
+M_REQUIRE([|SX_STR_LF SX_STR_SWORD SX_STR_WORD __sx_var_bind_init __sx_var_is_name __sx_var_is_ro __sx_var_is_set __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_list_ro - 読み取り専用変数の一覧を取得する（内部用）
@@ -29,7 +29,7 @@ __sx_var_list_ro() {
 			Q_vn="${Q_list%%[!"${SX_STR_WORD}"]*}"
 
 			if
-				sx_var_is_name "${Q_vn}" &&
+				__sx_var_is_name "${Q_vn}" &&
 				! __sx_var_is_set "Q_v${Q_vn}_" &&
 				__sx_var_is_ro "${Q_vn}"
 			then

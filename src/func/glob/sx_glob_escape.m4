@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_glob_escape __sx_var_is_rw sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_glob_escape __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_glob_escape - 文字列内の glob 特殊文字をエスケープする
 ##
@@ -18,7 +18,7 @@ pushdef([|CLEANUP|])dnl
 sx_glob_escape() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_glob_escape "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 

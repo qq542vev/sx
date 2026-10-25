@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_copy_script __sx_var_is_rw sx_var_is_chain sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_copy_script __sx_var_is_chain __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_copy_script - 変数のコピー用スクリプトを生成する
 ##
@@ -22,9 +22,9 @@ pushdef([|CLEANUP|])dnl
 sx_var_copy_script() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_copy_script "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-	sx_var_is_chain "${@}" || return M_EX_USAGE
+	__sx_var_is_chain "${@}" || return M_EX_USAGE
 
 	__sx_var_copy_script "${@}"
 }

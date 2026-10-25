@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_splice __sx_num_is_int_base __sx_var_is_arr __sx_var_is_rw_deep sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_splice __sx_num_is_int_base __sx_var_is_arr __sx_var_is_name __sx_var_is_rw_deep sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_arr_splice - 配列の一部を削除し、同位置に値を挿入する
@@ -30,7 +30,7 @@ sx_arr_splice() {
 
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
-	sx_var_is_name "${1-}" || return M_EX_USAGE
+	__sx_var_is_name "${1-}" || return M_EX_USAGE
 	__sx_var_is_arr "${1}" || return M_EX_DATAERR
 	__sx_var_is_rw_deep "${1}" || return M_EX_NOPERM
 	__sx_num_is_int_base 10 ${2:+"${2}"} ${3:+"${3}"} || return M_EX_USAGE

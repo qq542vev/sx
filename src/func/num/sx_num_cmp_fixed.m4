@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_cmp_fixed sx_num_is_fixed|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_cmp_fixed __sx_num_is_fixed|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_cmp_fixed - 2つの固定小数点数を比較する
 ##
@@ -17,7 +17,7 @@ pushdef([|CLEANUP|])dnl
 sx_num_cmp_fixed() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_fixed "${@}" || return; return 0;; esac
 
-	sx_num_is_fixed "${1-}" "${2-}" || return M_EX_USAGE
+	__sx_num_is_fixed "${1-}" "${2-}" || return M_EX_USAGE
 
 	__sx_num_cmp_fixed "${1}" "${2}" || return
 }

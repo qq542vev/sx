@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_ALNUM SX_STR_LF __sx_var_is_rw sx_str_is_word|])dnl
+M_REQUIRE([|SX_STR_ALNUM SX_STR_LF __sx_str_is_word __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_is_rw_deep - 変数およびその配下のサブ変数がすべて書き込み可能か確認する（内部用）
@@ -27,7 +27,7 @@ __sx_var_is_rw_deep() {
 				_[${SX_STR_ALNUM}]*)
 					Q_tmp="${Q_rest%%[${SX_STR_LF}=]*}"
 
-					if ! M_STR_MATCH([|${Q_tmp}|], [|*_|]) && sx_str_is_word "${Q_tmp}"; then
+					if ! M_STR_MATCH([|${Q_tmp}|], [|*_|]) && __sx_str_is_word "${Q_tmp}"; then
 						M_STR_APPEND([|Q_out|], [|" ${Q_arg}_${Q_tmp#_}"|])
 					fi
 					;;

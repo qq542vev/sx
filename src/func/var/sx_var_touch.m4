@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_rw __sx_var_touch sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_name __sx_var_is_rw __sx_var_touch|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_touch - リビジョン番号を更新する
 ##
@@ -12,7 +12,7 @@ pushdef([|CLEANUP|])dnl
 sx_var_touch() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_touch "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return M_EX_USAGE
+	__sx_var_is_name "${@}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${@}" || return M_EX_NOPERM
 

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_fit sx_num_is_int|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int __sx_num_is_int_fit|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_is_int_fit - すべての引数が指定されたビット幅の符号付き整数の範囲内か確認する
 ##
@@ -22,7 +22,7 @@ sx_num_is_int_fit() {
 		*) return M_EX_USAGE;;
 	esac
 
-	sx_num_is_int "${@}" || return M_EX_USAGE
+	__sx_num_is_int "${@}" || return M_EX_USAGE
 
 	__sx_num_is_int_fit "${@}" || return
 }

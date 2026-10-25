@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_var_is_bind __sx_var_is_bind_ready __sx_var_is_bindable __sx_var_is_rw __sx_var_ubind sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_var_is_bind __sx_var_is_bind_ready __sx_var_is_bindable __sx_var_is_name __sx_var_is_rw __sx_var_ubind sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし）
 ##
@@ -32,7 +32,7 @@ sx_var_ubind() {
 	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
 	case "${1:+X}" in X)
-		sx_var_is_name "${1-}" || return M_EX_USAGE
+		__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 		__sx_var_is_rw "${1}" || return M_EX_NOPERM
 	esac

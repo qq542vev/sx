@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_is_bind __sx_arr_is_bindable __sx_arr_pop __sx_var_is_arr __sx_var_is_rw_deep sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_is_bind __sx_arr_is_bindable __sx_arr_pop __sx_var_is_arr __sx_var_is_name __sx_var_is_rw_deep sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_arr_pop - 配列の末尾から要素を取り出して割り当てる
@@ -50,7 +50,7 @@ sx_arr_pop() {
 
 	__sx_arr_is_bindable "${1}" || return M_EX_NOPERM
 
-	sx_var_is_name "${2-}" || return M_EX_USAGE
+	__sx_var_is_name "${2-}" || return M_EX_USAGE
 
 	__sx_var_is_arr "${2}" || return M_EX_DATAERR
 

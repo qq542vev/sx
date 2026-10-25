@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_cmp_float sx_num_is_float|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_cmp_float __sx_num_is_float|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_cmp_float - 2つの数値を比較する
 ##
@@ -16,7 +16,7 @@ pushdef([|CLEANUP|])dnl
 sx_num_cmp_float() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_float "${@}" || return; return 0;; esac
 
-	sx_num_is_float "${1-}" "${2-}" || return M_EX_USAGE
+	__sx_num_is_float "${1-}" "${2-}" || return M_EX_USAGE
 
 	__sx_num_cmp_float "${@}"
 }

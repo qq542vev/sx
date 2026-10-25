@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_ex_yield sx_ex_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_ex_is_valid __sx_ex_yield|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_ex_yield - 任意の終了ステータスを発生させる
 ##
@@ -16,7 +16,7 @@ pushdef([|CLEANUP|])dnl
 sx_ex_yield() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_yield "${@}" || return; return 0;; esac
 
-	sx_ex_is_valid "${1-0}" || return M_EX_USAGE
+	__sx_ex_is_valid "${1-0}" || return M_EX_USAGE
 
 	__sx_ex_yield "${@}" || return
 }

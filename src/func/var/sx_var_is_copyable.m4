@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_copyable sx_var_is_chain|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_chain __sx_var_is_copyable|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_is_copyable - コピー先が構造を含めて書き込み可能か確認する
 ##
@@ -19,7 +19,7 @@ pushdef([|CLEANUP|])dnl
 sx_var_is_copyable() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_copyable "${@}" || return; return 0;; esac
 
-	sx_var_is_chain "${@}" || return M_EX_USAGE
+	__sx_var_is_chain "${@}" || return M_EX_USAGE
 
 	__sx_var_is_copyable "${@}" || return
 }

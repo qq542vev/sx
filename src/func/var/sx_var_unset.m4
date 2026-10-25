@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_rw_all __sx_var_unset sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_name __sx_var_is_rw_all __sx_var_unset|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_unset - 変数または配列を関連要素を含めて削除する
 ##
@@ -18,7 +18,7 @@ pushdef([|CLEANUP|])dnl
 sx_var_unset() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unset "${@}" || return; return 0;; esac
 
-	sx_var_is_name "${@}" || return M_EX_USAGE
+	__sx_var_is_name "${@}" || return M_EX_USAGE
 
 	__sx_var_is_rw_all "${@}" || return M_EX_NOPERM
 

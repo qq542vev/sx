@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_fn_anon __sx_var_is_bind __sx_var_is_bindable sx_cfg_is_valid sx_fn_is_valid|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_fn_anon __sx_fn_is_valid __sx_var_is_bind __sx_var_is_bindable sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_fn_anon - 一意な名前を持つ匿名関数を生成して定義する
@@ -35,7 +35,7 @@ sx_fn_anon() {
 		set -- "${@}" "sx_fn_anon_0=${Q_arg}"
 	done
 
-	sx_fn_is_valid "${@}" || {
+	__sx_fn_is_valid "${@}" || {
 		unset CLEANUP
 		return M_EX_USAGE
 	}

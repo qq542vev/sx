@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_quote __sx_var_is_arr __sx_var_is_bind __sx_var_is_bindable sx_cfg_is_valid sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_quote __sx_var_is_arr __sx_var_is_bind __sx_var_is_bindable __sx_var_is_name sx_cfg_is_valid|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_arr_quote - 配列要素をシングルクォートで囲み、スペース区切りで結合する
@@ -35,7 +35,7 @@ sx_arr_quote() {
 	Q_bind="${1-}"
 	shift
 
-	sx_var_is_name "${@}" || {
+	__sx_var_is_name "${@}" || {
 		unset CLEANUP
 		return M_EX_USAGE
 	}

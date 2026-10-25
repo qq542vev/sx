@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_LF SX_STR_SWORD SX_STR_WORD __sx_var_bind_init __sx_var_is_set __sx_var_ubind sx_var_is_name|])dnl
+M_REQUIRE([|SX_STR_LF SX_STR_SWORD SX_STR_WORD __sx_var_bind_init __sx_var_is_name __sx_var_is_set __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_list_set - 設定されている変数の一覧を取得する（内部用）
@@ -30,7 +30,7 @@ __sx_var_list_set() {
 			Q_vn="${Q_ln%%=*}"
 
 			if
-				sx_var_is_name "${Q_vn}" &&
+				__sx_var_is_name "${Q_vn}" &&
 				! __sx_var_is_set "Q_v${Q_vn}_" &&
 				__sx_var_is_set "${Q_vn}"
 			then

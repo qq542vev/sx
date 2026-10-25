@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_num_is_int_safe sx_num_is_float_safe|])dnl
+M_REQUIRE([|__sx_num_is_float_safe __sx_num_is_int_safe|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_num_is_num_safe - すべての引数が有効な数値形式であるか検証する（内部用）
@@ -20,7 +20,7 @@ __sx_num_is_num_safe() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
 			*[Xx]* | [+-]0[0-9]* | 0[0-9]*) __sx_num_is_int_safe "${Q_arg}";;
-			*) sx_num_is_float_safe "${Q_arg}";;
+			*) __sx_num_is_float_safe "${Q_arg}";;
 		esac || {
 			unset CLEANUP
 			return 1

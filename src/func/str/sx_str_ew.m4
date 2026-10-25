@@ -1,6 +1,4 @@
-M_REQUIRE([||])dnl
-pushdef([|CLEANUP|])dnl
-M_RENAME_Q([|dnl
+M_REQUIRE([|__sx_str_ew|])dnl
 ### sx_str_ew - 第一引数が、第二引数以降のいずれかの文字列で終わっているか確認する
 ##
 ## 使い方:
@@ -13,25 +11,13 @@ M_RENAME_Q([|dnl
 ## - 終了文字列が 1 つも指定されなかった場合は失敗する
 ## - 終了文字列に空文字列が含まれる場合は常に成功する
 ##
+## 説明:
+##   実処理は内部関数 __sx_str_ew に委譲する。
+##
 ## 終了ステータス:
 ##    0  いずれかの終了文字列で終わっている (SX_EX_OK)
 ##    1  一致する終了文字列がない
 
-define([|CLEANUP|], [|Q_tgt Q_arg|])dnl
-
 sx_str_ew() {
-	Q_tgt="${1-}"
-	${1+'shift'}
-
-	for Q_arg in "${@}"; do
-		case "${Q_tgt}" in *"${Q_arg}")
-			unset CLEANUP
-			return M_EX_OK
-		esac
-	done
-
-	unset CLEANUP
-	return 1
+	__sx_str_ew "${@}" || return
 }
-|], [|str_ew|])dnl
-popdef([|CLEANUP|])dnl

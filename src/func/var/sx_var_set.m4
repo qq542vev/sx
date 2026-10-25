@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_set sx_var_is_name sx_var_is_rw_all|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_name __sx_var_set sx_var_is_rw_all|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_var_set - 変数に値を設定、または削除する
@@ -30,7 +30,7 @@ sx_var_set() {
 	Q_chk=
 
 	for Q_arg in "${@}"; do
-		sx_var_is_name "${Q_arg%%=*}" || {
+		__sx_var_is_name "${Q_arg%%=*}" || {
 			unset Q_arg Q_chk
 			return M_EX_USAGE
 		}

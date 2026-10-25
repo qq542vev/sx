@@ -1,30 +1,16 @@
-M_REQUIRE([|__sx_num_is_nat1_base|])dnl
-pushdef([|CLEANUP|])dnl
-M_RENAME_Q([|dnl
+M_REQUIRE([|__sx_num_is_nat1|])dnl
 ### sx_num_is_nat1 - すべての引数が 1 以上の自然数（符号なし整数） であるか確認する
 ##
 ## 使い方:
 ##   sx_num_is_nat1 [文字列1 [文字列2 ...]]
 ##
+## 説明:
+##   実処理は内部関数 __sx_num_is_nat1 に委譲する。
+##
 ## 終了ステータス:
 ##    0  すべて 1 以上の自然数である (SX_EX_OK)
 ##    1  1 以上の自然数ではない値が含まれる
 
-define([|CLEANUP|], [|Q_arg|])dnl
-
 sx_num_is_nat1() {
-	for Q_arg in "${@}"; do
-		case "${Q_arg}" in
-			0[Xx]*) __sx_num_is_nat1_base 16 "${Q_arg}";;
-			0?*) __sx_num_is_nat1_base 8 "${Q_arg}";;
-			*) __sx_num_is_nat1_base 10 "${Q_arg}";;
-		esac || {
-			unset CLEANUP
-			return 1
-		}
-	done
-
-	unset CLEANUP
+	__sx_num_is_nat1 "${@}" || return
 }
-|], [|num_is_nat1|])dnl
-popdef([|CLEANUP|])dnl
