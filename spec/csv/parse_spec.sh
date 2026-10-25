@@ -700,12 +700,14 @@ Describe 'sx_csv_parse'
     The variable res should be undefined
   End
 
-  It '余分な引数を拒否し既存結果を保持する'
+  It '第6引数以降を無視して通常どおり解析する'
     load_subject sx_csv_parse
-    sx_csv_parse res original
-    When call sx_csv_parse res a '' ',' '"' extra
-    The status should equal 64
-    The variable res_0_0 should equal original
+    When call sx_csv_parse res 'a,b' '' ',' '"' extra 'ignored;argument'
+    The status should be success
+    The variable res_len should equal 1
+    The variable res_0_len should equal 2
+    The variable res_0_0 should equal a
+    The variable res_0_1 should equal b
   End
 
   Context '区切りと引用符の検証'
@@ -755,12 +757,65 @@ Describe 'sx_csv_parse'
     The variable res should equal original
   End
 
-  It 'コールバック名が不正なら解析前に拒否する'
-    load_subject sx_csv_parse
-    sx_csv_parse res original
-    When call sx_csv_parse res a 'bad;callback'
-    The status should equal 64
-    The variable res_0_0 should equal original
+  Context '変数名には使えないコマンド名の通知'
+    prepare_csv_callback() {
+      csv_callback_dir=$(mktemp -d "${TMPDIR:-/tmp}/sx csv.XXXXXX")
+      printf '%s\n' '#!/bin/sh' 'printf "%s:%s:%s:%s\n" "$#" "$1" "$2" "$3"' 'exit 99' \
+        > "$csv_callback_dir/bad;callback"
+      chmod +x "$csv_callback_dir/bad;callback"
+      PATH="$csv_callback_dir:$PATH"
+      export PATH
+    }
+    cleanup_csv_callback() { rm -rf -- "$csv_callback_dir"; }
+    BeforeEach prepare_csv_callback
+    AfterEach cleanup_csv_callback
+
+    It '成功時にはコマンドを呼び出さない'
+      load_subject sx_csv_parse
+      When call sx_csv_parse res a 'bad;callback'
+      The status should be success
+      The stdout should equal ''
+      The variable res_0_0 should equal a
+    End
+
+    It '構文エラー時にはコマンドへ通知引数を渡して終了ステータスを返す'
+      load_subject sx_csv_parse
+      When call sx_csv_parse res "a,b${SX_STR_LF}x,\"bad" 'bad;callback'
+      The status should equal 99
+      The stdout should equal '3:1:2:2'
+      The variable res_len should equal 2
+      The variable res_0_0 should equal a
+      The variable res_0_1 should equal b
+      The variable res_1_len should equal 1
+      The variable res_1_0 should equal x
+      The variable res_1_1 should be undefined
+    End
+  End
+
+  Context '配列設定の書込可否'
+    Parameters
+      SX_CFG_ARR_HOLE
+      SX_CFG_ARR_REF
+    End
+
+    It "$1 が readonly なら結果・設定・リビジョンを変更せず EX_NOPERM を返す"
+      load_subject sx_csv_parse
+      sxtest_run SX_CFG_ARR_REF SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' 'ARR_REF=@' 'ARR_HOLE=hole'
+      sx_csv_parse res original
+      before_res=$res before_row=$res_0 before_rev=$SX_SYS_REV
+      readonly "$1"
+      When call sx_csv_parse res 'new,value'
+      The status should equal 77
+      The variable res should equal "$before_res"
+      The variable res_len should equal 1
+      The variable res_0 should equal "$before_row"
+      The variable res_0_len should equal 1
+      The variable res_0_0 should equal original
+      The variable res_0_1 should be undefined
+      The variable SX_CFG_ARR_HOLE should equal hole
+      The variable SX_CFG_ARR_REF should equal '@'
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
   End
 
   It 'res 本体が readonly なら EX_NOPERM を返す'

@@ -140,4 +140,18 @@ Describe 'sx_csv_parse -efu 環境検証'
     When run efu_run sx_csv_parse
     The status should equal 64
   End
+
+  Context '配列設定の書込可否'
+    Parameters
+      SX_CFG_ARR_HOLE
+      SX_CFG_ARR_REF
+    End
+
+    It "$1 が readonly でも -efu 下で中断せず EX_NOPERM を返す"
+      load_subject sx_csv_parse
+      readonly "$1"
+      When run efu_run sx_csv_parse res a
+      The status should equal 77
+    End
+  End
 End

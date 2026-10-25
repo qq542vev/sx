@@ -13,6 +13,11 @@ ROOT = Path(__file__).resolve().parent.parent
 UNITS = sorted(path for group in ("const", "var", "func")
                for path in (ROOT / "src" / group).rglob("*.m4"))
 TOKEN = re.compile(r"(?<![A-Za-z0-9_])(?:__)?sx_[a-z0-9_]+(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])SX_[A-Z0-9_]+(?![A-Za-z0-9_])")
+SHELL_NAME = r"[A-Za-z_][A-Za-z0-9_]*"
+RW_LITERAL_NAMES = re.compile(
+    r"(?<![A-Za-z0-9_])(?P<command>__sx_var_is_rw)"
+    rf"(?:[ \t]+(?:{SHELL_NAME}|'{SHELL_NAME}'|\"{SHELL_NAME}\")(?=$|[ \t\n;&|()<>]))+"
+)
 DYNAMIC_FUNCTION = re.compile(r'"(__sx_num_[a-z0-9_]+_)\$\{')
 DYNAMIC_CONSTANT = re.compile(r"(?<![A-Za-z0-9_])(SX_[A-Z0-9_]*)\$\{")
 CFG_CHECK = re.compile(r"M_CFG_CHECK\(\[\|([A-Za-z0-9_]+)\|\]\)")
@@ -43,6 +48,9 @@ def references(path, owners, generated=False):
                             cwd=ROOT, capture_output=True, text=True, check=True).stdout
     # ### ヘッダおよび行コメントは実行時の参照ではない。
     code = re.sub(r"(?m)^[ \t]*#.*(?:\n|$)", "", result)
+    # 書込可否検査に渡すリテラルの変数名は、値の参照ではない。
+    # 引数の出現箇所だけを除き、別の箇所や同じ呼び出しの変数展開は残す。
+    code = RW_LITERAL_NAMES.sub(r"\g<command>", code)
     names = set(owners)
     refs = set(TOKEN.findall(code)) & names
     for prefix in DYNAMIC_FUNCTION.findall(code):
