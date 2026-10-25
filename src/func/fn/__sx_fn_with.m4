@@ -12,7 +12,7 @@ __sx_fn_with() {
 	# 1. エイリアスの解析と関数定義
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			"${SX_CFG_SEP-}") shift; break;;
+			"${SX_CFG_SEP}") shift; break;;
 			*=*)
 				__sx_fn_anon Q_anon "${Q_arg#*=}"
 				M_STR_APPEND([|Q_fns|], [|"${Q_anon} "|])

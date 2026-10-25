@@ -26,7 +26,7 @@ __sx_arr_quote() {
 
 			case "${Q_set}" in
 				X) __sx_var_bind Q_bind "${Q_bind}" "${Q_val}";;
-				*) __sx_var_bind Q_bind "${Q_bind}" "${SX_CFG_ARR_HOLE-}";;
+				*) __sx_var_bind Q_bind "${Q_bind}" "${SX_CFG_ARR_HOLE}";;
 			esac || break 2
 
 			M_NUM_INCRM1([|Q_i|])

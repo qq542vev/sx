@@ -13,7 +13,7 @@
 ##   modified - 2026-05-08
 ##   copyright - Copyright (C) 2026-2026 qq542vev. All rights reserved.
 ##   license - <GPL-3.0-only at https://www.gnu.org/licenses/gpl-3.0.txt>
-##   depends - awk, chmod, cmp, echo, find, m4, mkdir, mv, printf, python3, rm, shellspec, sort
+##   depends - awk, basename, chmod, echo, find, m4, mkdir, mv, printf, rm, shellspec, tr, xargs
 ##
 ## See Also:
 ##

@@ -26,7 +26,7 @@ sx_fn_with() {
 	Q_i=0
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			"${SX_CFG_SEP-}") break;;
+			"${SX_CFG_SEP}") break;;
 			*=*) ;;
 			*) break;;
 		esac
