@@ -67,7 +67,7 @@ __sx_num_divmod_nat0() {
 
 		__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
 			unset CLEANUP
-			return M_EX_OK
+			return
 		}
 	elif
 		# 高速パス 3: 被除数 < 除数なら商 = 0、余り = 被除数
@@ -79,7 +79,7 @@ __sx_num_divmod_nat0() {
 	then
 		__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
 			unset CLEANUP
-			return M_EX_OK
+			return
 		}
 	else
 		# ステップ 4: 末尾ゼロ分解（v = m × 10^k に分解して両者を 10^k で縮小する）
@@ -115,7 +115,7 @@ __sx_num_divmod_nat0() {
 
 		__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
 			unset CLEANUP
-			return M_EX_OK
+			return
 		}
 
 		Q_r="$((Q_u % Q_v))${Q_btail}"
@@ -193,7 +193,7 @@ __sx_num_divmod_nat0() {
 
 		__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
 			unset CLEANUP
-			return M_EX_OK
+			return
 		}
 
 			# 末尾ゼロ分解で縮小した被除数の下位 k 桁（btail）を余りに復元する
@@ -432,7 +432,7 @@ __sx_num_divmod_nat0() {
 
 		__sx_var_ubind Q_bind "${Q_bind}" "${Q_q}" || {
 			unset CLEANUP
-			return M_EX_OK
+			return
 		}
 
 		# ステップ 7.4: 余り抽出 — 位置パラメータに残る末尾 n 語（u_{K-n+1}..u_K）を c 桁ゼロ埋めで連結する

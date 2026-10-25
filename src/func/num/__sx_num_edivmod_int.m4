@@ -43,7 +43,7 @@ __sx_num_edivmod_int() {
 
 			__sx_var_ubind Q_bind "${1}" "${Q_q}" || {
 				unset CLEANUP
-				return M_EX_OK
+				return
 			}
 
 			__sx_num_sub_nat0 Q_r "${3#[+-]}" "${Q_r}"
@@ -52,7 +52,7 @@ __sx_num_edivmod_int() {
 		*)
 			__sx_var_ubind Q_bind "${1}" "${Q_q}" || {
 				unset CLEANUP
-				return M_EX_OK
+				return
 			}
 			;;
 	esac

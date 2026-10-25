@@ -13,7 +13,7 @@ __sx_str_etrim() {
 
 	case "${3:+X}" in '')
 		M_VAR_SET([|${1}|], [|${2}|])
-		return M_EX_OK
+		return
 	esac
 
 	M_VAR_SET([|${1}|], [|M_STR_RTRIM([|2|], [|[!"${3}"]|])|])

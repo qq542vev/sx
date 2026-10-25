@@ -37,7 +37,7 @@ __sx_num_divmod_int() {
 
 	__sx_var_ubind Q_bind "${1}" "${Q_q}" || {
 		unset CLEANUP
-		return M_EX_OK
+		return
 	}
 
 	case "${Q_us}${Q_r}" in 1[!0]*)

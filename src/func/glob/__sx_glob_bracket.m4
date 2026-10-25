@@ -19,11 +19,11 @@ __sx_glob_bracket() {
 		*[!^!]*) ;;
 		!*^* | ^*!*)
 			M_VAR_SET([|${1}|], [|[[.!.]^]|])
-			return M_EX_OK
+			return
 			;;
 		*)
 			M_VAR_SET([|${1}|], [|${2%"${2#?}"}|])
-			return M_EX_OK
+			return
 	esac
 
 	case "${2}" in *']'*)

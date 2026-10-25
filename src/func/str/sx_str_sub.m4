@@ -46,7 +46,7 @@ sx_str_sub() {
 	__sx_num_is_int_base 10 ${5:+"${5}"} && __sx_num_is_nat0_safe ${6:+"${6}"} || return M_EX_USAGE
 
 	__sx_str_sub "${@}" || return
-	return 0
+	return
 }
 
 popdef([|CLEANUP|])dnl

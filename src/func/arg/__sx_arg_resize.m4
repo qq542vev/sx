@@ -30,7 +30,7 @@ __sx_arg_resize() {
 	esac
 	: "${Q_shape:=${#}}" "${Q_flg:=0}"
 	__sx_var_bind_init "${Q_bind}"
-	case "${Q_bind}" in '') unset CLEANUP; return 0;; esac
+	case "${Q_bind}" in '') unset CLEANUP; return;; esac
 
 	# 既知の軸の積を求める。入力値を算術式として展開しない。
 	Q_total=1 Q_tmp="${Q_shape}"
@@ -55,7 +55,7 @@ __sx_arg_resize() {
 		case "${Q_tmp}" in *:*) Q_tmp="${Q_tmp#*:}";; *) break;; esac
 	done
 	Q_outer="${Q_dims%%:*}"
-	case "${Q_outer}" in 0) unset CLEANUP; return 0;; esac
+	case "${Q_outer}" in 0) unset CLEANUP; return;; esac
 
 	# 外側の1要素に必要な個数と、内側からのグループ化手順を保持する。
 	Q_block=1 Q_plan=

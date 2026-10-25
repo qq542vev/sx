@@ -22,7 +22,7 @@ __sx_num_div_int() {
 	case "${Q_u}" in 0 | +0 | -0)
 		M_VAR_SET([|${Q_res}|], [|0|])
 		unset CLEANUP
-		return M_EX_OK
+		return
 	esac
 
 	__sx_num_mul_int Q_den "${@}"
