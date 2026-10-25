@@ -36,7 +36,7 @@ POSIX sh には `local` が存在しないため、命名規則と `m4` 展開�
 
 - **公開関数の定型**:
   ```sh
-  case "${SX_CFG_SKIP_CHK-}" in 1) __sx_xxx "${@}" || return; return 0;; esac
+  case "${SX_CFG_SKIP_CHK-}" in 1) __sx_xxx "${@}" || return; return;; esac
   ```
 - **内部関数の契約**: ヘッダに「引数チェックは行わない」と明記します。状態管理は `set --`＋`for Q_arg in "${@}"` を優先し、結果代入は `M_VAR_SET`（`eval` による直接代入）で行います。
 - **終了ステータス**:

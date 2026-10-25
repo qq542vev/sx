@@ -22,7 +22,7 @@ M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_arg Q_chk|])dnl
 
 sx_cfg_set() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_cfg_set "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_cfg_set "${@}" || return; return;; esac
 
 	case "${#}" in 0)
 		set -- M_CFG_META_NAMES

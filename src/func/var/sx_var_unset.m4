@@ -17,7 +17,7 @@ pushdef([|CLEANUP|])dnl
 ##   77  削除不可能な変数が含まれる (SX_EX_NOPERM)
 ##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_var_unset() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unset "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unset "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_var_unset|])
 

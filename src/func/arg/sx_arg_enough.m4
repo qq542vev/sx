@@ -38,7 +38,7 @@ pushdef([|CLEANUP|])dnl
 ##   64  引数不正 (SX_EX_USAGE)
 ##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_arg_enough() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_enough "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_enough "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_arg_enough|])
 

@@ -13,7 +13,7 @@ pushdef([|CLEANUP|])dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (名前が無効、または '=' がない) (SX_EX_USAGE)
 sx_fn_set() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_set "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_set "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_fn_set|])
 

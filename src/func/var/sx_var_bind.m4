@@ -32,7 +32,7 @@ pushdef([|CLEANUP|])dnl
 ##   77  結果変数名（空でない場合）またはバインド先が読み取り専用 (SX_EX_NOPERM)
 ##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_var_bind() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_bind "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_var_bind|])
 

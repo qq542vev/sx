@@ -15,7 +15,7 @@ pushdef([|CLEANUP|])dnl
 ##   - ステータス値が 0-255 の範囲外、または整数でない場合は SX_EX_USAGE (64) を返す。
 ##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_ex_yield() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_yield "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_yield "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_ex_yield|])
 

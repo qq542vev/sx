@@ -16,7 +16,7 @@ M_RENAME_Q([|dnl
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
 
 sx_num_add1_nat0() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add1_nat0 "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_add1_nat0 "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_num_add1_nat0|])
 

@@ -27,7 +27,7 @@ M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_arg Q_src|])dnl
 
 sx_ex_remap() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_remap "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_remap "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_ex_remap|])
 

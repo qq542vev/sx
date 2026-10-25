@@ -20,7 +20,7 @@ M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_bind|])dnl
 
 sx_var_list_dep() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_dep "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_list_dep "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_var_list_dep|])
 

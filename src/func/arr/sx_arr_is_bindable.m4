@@ -18,7 +18,7 @@ pushdef([|CLEANUP|])dnl
 ##    1  書き込み不可な変数が含まれる (SX_EX_NOPERM)
 ##   64  バインド形式が不正 (SX_EX_USAGE)
 sx_arr_is_bindable() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_bindable "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_bindable "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_arr_is_bindable|])
 

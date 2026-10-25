@@ -20,7 +20,7 @@ pushdef([|CLEANUP|])dnl
 ##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
 ##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_num_divfloor_arith() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_divfloor_arith "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_divfloor_arith "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_num_divfloor_arith|])
 

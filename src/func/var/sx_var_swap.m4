@@ -23,7 +23,7 @@ M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_arg Q_chain|])dnl
 
 sx_var_swap() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_swap "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_swap "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_var_swap|])
 

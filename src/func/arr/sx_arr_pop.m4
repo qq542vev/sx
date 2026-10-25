@@ -42,7 +42,7 @@ M_RENAME_Q([|dnl
 define([|CLEANUP|], [||])dnl
 
 sx_arr_pop() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_pop "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_pop "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_arr_pop|])
 

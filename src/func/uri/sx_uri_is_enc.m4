@@ -16,7 +16,7 @@ pushdef([|CLEANUP|])dnl
 ##    0  すべての入力が非予約文字と正しい %HH だけで構成される (SX_EX_OK)
 ##    1  許可しない文字、または不正なパーセント表記が含まれる
 sx_uri_is_enc() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_is_enc "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_is_enc "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_uri_is_enc|])
 

@@ -31,7 +31,7 @@ M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_cycle Q_cur|])dnl
 
 sx_str_rchunk() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rchunk "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_rchunk "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_str_rchunk|])
 

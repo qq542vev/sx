@@ -25,7 +25,7 @@ M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_arg|])dnl
 
 sx_num_rel() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_rel "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_rel "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_num_rel|])
 

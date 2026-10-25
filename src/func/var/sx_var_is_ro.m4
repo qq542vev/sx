@@ -10,7 +10,7 @@ pushdef([|CLEANUP|])dnl
 ##    1  書き込み可能な変数が含まれる
 ##   64  変数名が無効 (SX_EX_USAGE)
 sx_var_is_ro() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_ro "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_ro "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_var_is_ro|])
 

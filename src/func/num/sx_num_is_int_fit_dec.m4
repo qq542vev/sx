@@ -15,7 +15,7 @@ pushdef([|CLEANUP|])dnl
 ##    1  範囲内に収まらない値が含まれる（ビット幅は正しい）
 ##   64  ビット幅指定が不正、または整数として不正な値が含まれる (SX_EX_USAGE)
 sx_num_is_int_fit_dec() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_fit_dec "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_fit_dec "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_num_is_int_fit_dec|])
 

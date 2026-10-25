@@ -17,7 +17,7 @@ pushdef([|CLEANUP|])dnl
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  読み取り専用などの理由で解除できない変数が含まれる (SX_EX_NOPERM)
 sx_var_unexport() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unexport "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_unexport "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_var_unexport|])
 

@@ -11,7 +11,7 @@ pushdef([|CLEANUP|])dnl
 ##   64  変数名が無効 (SX_EX_USAGE)
 ##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_var_is_rw_all() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw_all "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw_all "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_var_is_rw_all|])
 

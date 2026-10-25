@@ -17,7 +17,7 @@ pushdef([|CLEANUP|])dnl
 ##    1  書き込み不可が含まれる
 ##   64  引数不正 (SX_EX_USAGE)
 sx_var_is_rw_deep() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw_deep "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_rw_deep "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_var_is_rw_deep|])
 

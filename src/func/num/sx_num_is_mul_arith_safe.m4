@@ -18,7 +18,7 @@ pushdef([|CLEANUP|])dnl
 ##   64  整数の形式不正または入力値が設定幅の範囲外 (SX_EX_USAGE)
 ##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_num_is_mul_arith_safe() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_mul_arith_safe "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_mul_arith_safe "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_num_is_mul_arith_safe|])
 

@@ -15,7 +15,7 @@ pushdef([|CLEANUP|])dnl
 ##    1  整数ではない値が含まれる
 ##   64  基数指定が不正 (SX_EX_USAGE)
 sx_num_is_int_base() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_base "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_base "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_num_is_int_base|])
 

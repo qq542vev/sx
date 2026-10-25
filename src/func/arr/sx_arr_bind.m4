@@ -19,7 +19,7 @@ M_RENAME_Q([|dnl
 define([|CLEANUP|], [|Q_bres Q_cres Q_bind|])dnl
 
 sx_arr_bind() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_bind "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_bind "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_arr_bind|])
 

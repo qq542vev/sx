@@ -15,7 +15,7 @@ pushdef([|CLEANUP|])dnl
 ##  64  引数不正 (SX_EX_USAGE)
 ##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_num_cmp_arith() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_arith "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_cmp_arith "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_num_cmp_arith|])
 

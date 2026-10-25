@@ -15,7 +15,7 @@ pushdef([|CLEANUP|])dnl
 ##    0  すべての入力のパーセント表記が正しい (SX_EX_OK)
 ##    1  不正なパーセント表記が含まれる
 sx_uri_is_pct() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_is_pct "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_is_pct "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_uri_is_pct|])
 

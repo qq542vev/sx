@@ -10,7 +10,7 @@ pushdef([|CLEANUP|])dnl
 ##    1  範囲外、または 1 以上の自然数でない値が含まれる
 ##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_num_is_nat1_safe() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat1_safe "${@}" || return; return 0;; esac
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_nat1_safe "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_num_is_nat1_safe|])
 
