@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_ARR_UPDATE __sx_arr_push_raw __sx_var_touch|])dnl
+M_REQUIRE([|__sx_arr_push_raw __sx_var_touch|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arr_push - 配列の末尾に要素を追加する（内部用）
@@ -8,7 +8,8 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   内部実装。引数チェックは行わない。
-##   raw 処理で末尾へ追加し、ARR_UPDATE の設定に従ってリビジョンを一度だけ更新する。
+##   raw 処理で末尾へ追加し、成功時に必ずリビジョンを一度だけ更新する。
+##   追加する値がなくても更新する。
 ##
 ## 終了ステータス:
 ##    0  成功
@@ -16,11 +17,9 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [||])dnl
 
 __sx_arr_push() {
-	__sx_arr_push_raw "${@}"
+	__sx_arr_push_raw "${@}" || return
 
-	case "${SX_CFG_ARR_UPDATE-}" in 1)
-		__sx_var_touch "${1}"
-	esac
+	__sx_var_touch "${1}"
 }
 |], [|arr_push|])dnl
 popdef([|CLEANUP|])dnl

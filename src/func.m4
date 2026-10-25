@@ -412,12 +412,15 @@ M_UNIT([|__sx_arr_cat|], [|src/func/arr/__sx_arr_cat.m4|])dnl
 M_UNIT([|__sx_arr_bind_commit|], [|src/func/arr/__sx_arr_bind_commit.m4|])dnl
 M_UNIT([|sx_arr_pop|], [|src/func/arr/sx_arr_pop.m4|])dnl
 M_UNIT([|__sx_arr_pop|], [|src/func/arr/__sx_arr_pop.m4|])dnl
+M_UNIT([|sx_arr_pop_raw|], [|src/func/arr/sx_arr_pop_raw.m4|])dnl
 M_UNIT([|__sx_arr_pop_raw|], [|src/func/arr/__sx_arr_pop_raw.m4|])dnl
 M_UNIT([|sx_arr_push|], [|src/func/arr/sx_arr_push.m4|])dnl
 M_UNIT([|__sx_arr_push|], [|src/func/arr/__sx_arr_push.m4|])dnl
+M_UNIT([|sx_arr_push_raw|], [|src/func/arr/sx_arr_push_raw.m4|])dnl
 M_UNIT([|__sx_arr_push_raw|], [|src/func/arr/__sx_arr_push_raw.m4|])dnl
 M_UNIT([|sx_arr_splice|], [|src/func/arr/sx_arr_splice.m4|])dnl
 M_UNIT([|__sx_arr_splice|], [|src/func/arr/__sx_arr_splice.m4|])dnl
+M_UNIT([|sx_arr_splice_raw|], [|src/func/arr/sx_arr_splice_raw.m4|])dnl
 M_UNIT([|__sx_arr_splice_raw|], [|src/func/arr/__sx_arr_splice_raw.m4|])dnl
 M_UNIT([|sx_arr_quote|], [|src/func/arr/sx_arr_quote.m4|])dnl
 M_UNIT([|__sx_arr_quote|], [|src/func/arr/__sx_arr_quote.m4|])dnl
