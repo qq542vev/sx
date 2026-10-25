@@ -14,5 +14,7 @@ M_REQUIRE([|__sx_uuid_is_uuid|])dnl
 ##    1  UUID 形式ではない文字列が含まれる
 
 sx_uuid_is_uuid() {
+	M_CFG_CHECK([|sx_uuid_is_uuid|])
+
 	__sx_uuid_is_uuid "${@}" || return
 }

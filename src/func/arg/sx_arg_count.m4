@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_COUNT_CB SX_ARG_COUNT_GLOB SX_CFG_NUM_RANGE SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_count __sx_num_is_nat0_safe __sx_var_is_name __sx_var_is_rw sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_ARG_COUNT_CB SX_ARG_COUNT_GLOB SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_count __sx_num_is_nat0_safe __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_count - 引数リストから指定された値の出現回数を取得する
 ##
@@ -27,11 +27,11 @@ pushdef([|CLEANUP|])dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_arg_count() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_count "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_arg_count|])
 
 	__sx_var_is_name "${1-}" || return M_EX_USAGE
 

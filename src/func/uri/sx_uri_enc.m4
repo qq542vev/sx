@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_uri_enc __sx_var_is_bind __sx_var_is_bindable sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_uri_enc __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_uri_enc - URI の構成要素に入れるバイト列をパーセントエンコードする
 ##
@@ -25,11 +25,12 @@ pushdef([|CLEANUP|])dnl
 ##    0  成功（バインド枯渇による早期終了を含む）(SX_EX_OK)
 ##   64  バインド形式が省略または不正 (SX_EX_USAGE)
 ##   77  バインド先に読み取り専用の変数がある (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_uri_enc() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_enc "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_uri_enc|])
+
 	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 

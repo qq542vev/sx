@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_FIND_CB SX_ARG_FIND_GLOB SX_CFG_NUM_RANGE SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_find __sx_num_is_nat0_safe __sx_var_is_bind __sx_var_is_bindable sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_ARG_FIND_CB SX_ARG_FIND_GLOB SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_find __sx_num_is_nat0_safe __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_find - 引数リストから指定された値を探し、そのインデックスまたは値を取得する
 ##
@@ -35,11 +35,11 @@ pushdef([|CLEANUP|])dnl
 ##    1  一致項目が見つからなかった (不一致)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_arg_find() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_find "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_arg_find|])
 
 		__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 

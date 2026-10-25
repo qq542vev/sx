@@ -17,6 +17,8 @@ pushdef([|CLEANUP|])dnl
 sx_str_quote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_quote "${@}" || return; return 0;; esac
 
+	M_CFG_CHECK([|sx_str_quote|])
+
 	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM

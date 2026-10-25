@@ -13,5 +13,7 @@ M_REQUIRE([|__sx_num_is_npint|])dnl
 ##    1  非正整数ではない値が含まれる
 
 sx_num_is_npint() {
+	M_CFG_CHECK([|sx_num_is_npint|])
+
 	__sx_num_is_npint "${@}" || return
 }

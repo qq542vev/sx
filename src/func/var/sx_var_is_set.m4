@@ -12,6 +12,8 @@ pushdef([|CLEANUP|])dnl
 sx_var_is_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_is_set "${@}" || return; return 0;; esac
 
+	M_CFG_CHECK([|sx_var_is_set|])
+
 	__sx_var_is_name "${@}" || return M_EX_USAGE
 	__sx_var_is_set "${@}" || return
 }

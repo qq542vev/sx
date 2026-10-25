@@ -22,11 +22,14 @@ M_RENAME_Q([|dnl
 ##   実行したコマンドの（マッピング後の）終了ステータスを返す。
 ##   コマンドが指定されていない場合は 0 (SX_EX_OK) を返す。
 ##   マッピングの引数形式またはステータス値が不正な場合は SX_EX_USAGE (64) を返す。
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 
 define([|CLEANUP|], [|Q_arg Q_src|])dnl
 
 sx_ex_remap() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_remap "${@}" || return; return 0;; esac
+
+	M_CFG_CHECK([|sx_ex_remap|])
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in

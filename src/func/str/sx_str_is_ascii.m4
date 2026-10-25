@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_str_is_ascii|])dnl
 ##    1  ASCII文字以外が含まれる、または空文字列が含まれる
 
 sx_str_is_ascii() {
+	M_CFG_CHECK([|sx_str_is_ascii|])
+
 	__sx_str_is_ascii "${@}" || return
 }

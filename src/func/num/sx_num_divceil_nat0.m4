@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_divceil_nat0 __sx_num_is_nat0_base __sx_num_is_nat1_base __sx_var_is_name __sx_var_is_rw sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_divceil_nat0 __sx_num_is_nat0_base __sx_num_is_nat1_base __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_divceil_nat0 - 絶対値の除算で切り上げ商を求める
@@ -18,12 +18,12 @@ M_RENAME_Q([|dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 
 sx_num_divceil_nat0() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_divceil_nat0 "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_num_divceil_nat0|])
 
 	__sx_var_is_name "${1-}" || return M_EX_USAGE
 

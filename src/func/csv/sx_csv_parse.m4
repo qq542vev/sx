@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK SX_STR_CR SX_STR_LF __sx_csv_parse __sx_var_is_name __sx_var_is_rw_deep sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK SX_STR_CR SX_STR_LF __sx_csv_parse __sx_var_is_name __sx_var_is_rw_deep|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_csv_parse - CSV を行ごとの SX 配列に変換する
 ##
@@ -37,12 +37,13 @@ pushdef([|CLEANUP|])dnl
 ##    3  閉じ引用符の後に区切り・改行・入力終了以外が出現
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  res または配下の変数が書き込み不可 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_csv_parse() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_csv_parse "${@}" || return; return 0;; esac
 
+	M_CFG_CHECK([|sx_csv_parse|])
+
 	case "${#}" in [12345]) ;; *) return M_EX_USAGE;; esac
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
 	__sx_var_is_name "${1-}" || return M_EX_USAGE
 	case "${3-}" in '') ;; *) __sx_var_is_name "${3}" || return M_EX_USAGE;; esac

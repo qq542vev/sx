@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arg_rquote __sx_var_is_bind __sx_var_is_bindable sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arg_rquote __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_rquote - 引数を逆順にシングルクォートで囲み、スペース区切りで結合する
 ##
@@ -16,11 +16,11 @@ pushdef([|CLEANUP|])dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数名が読み取り専用 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_arg_rquote() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_rquote "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_arg_rquote|])
 
 	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 

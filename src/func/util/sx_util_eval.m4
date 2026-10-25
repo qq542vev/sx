@@ -13,5 +13,7 @@ M_REQUIRE([|__sx_util_eval|])dnl
 ##    評価したコマンドの終了ステータスを返す
 
 sx_util_eval() {
+	M_CFG_CHECK([|sx_util_eval|])
+
 	__sx_util_eval "${@}" || return
 }

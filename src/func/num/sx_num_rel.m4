@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_num_safe __sx_num_rel sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_num_safe __sx_num_rel|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_rel - 数値間の関係を確認する
@@ -20,14 +20,14 @@ M_RENAME_Q([|dnl
 ##    0  すべての条件を満たす (SX_EX_OK)
 ##    1  条件を満たさない引数が含まれる
 ##   64  引数不正 (SX_EX_USAGE)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 
 define([|CLEANUP|], [|Q_arg|])dnl
 
 sx_num_rel() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_rel "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_num_rel|])
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in

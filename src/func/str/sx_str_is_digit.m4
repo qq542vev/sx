@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_str_is_digit|])dnl
 ##    1  数字以外が含まれる、または空文字列が含まれる
 
 sx_str_is_digit() {
+	M_CFG_CHECK([|sx_str_is_digit|])
+
 	__sx_str_is_digit "${@}" || return
 }

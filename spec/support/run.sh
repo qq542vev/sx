@@ -41,7 +41,10 @@ sxtest_run() {
 						{
 							. ./sx.sh
 							${SXTEST_RUN_ARG}
-							sx_var_dump SXTEST_RUN_DUMP ${SXTEST_RUN_NAMES}
+							# 内部実装の境界試験では公開設定の範囲外の状態も転送する。
+							# 変数名は上で検証済み。出力先の書込可否は明示的に確認する。
+							__sx_var_is_rw SXTEST_RUN_DUMP || exit 77
+							__sx_var_dump SXTEST_RUN_DUMP ${SXTEST_RUN_NAMES}
 						} >&2
 						printf '%s' \"\${SXTEST_RUN_DUMP}\"
 					" "${SHELLSPEC_SHELL_TYPE}"

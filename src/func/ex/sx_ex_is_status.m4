@@ -13,5 +13,7 @@ M_REQUIRE([|__sx_ex_is_status|])dnl
 ##    1  範囲外、または整数でない値が含まれる
 
 sx_ex_is_status() {
+	M_CFG_CHECK([|sx_ex_is_status|])
+
 	__sx_ex_is_status "${@}" || return
 }

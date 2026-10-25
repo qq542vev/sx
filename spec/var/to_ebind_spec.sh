@@ -58,13 +58,14 @@ Describe 'sx_var_to_ebind'
     End
 
     Context 'SX_CFG_NUM_RANGE が不正のとき'
-        It 'EX_CONFIG (78) を返すこと'
+        It '直接参照しない設定を検査せず変換すること'
             check_config() {
                 SX_CFG_NUM_RANGE=99
                 sx_var_to_ebind res 'a:b'
             }
             When call check_config
-            The status should equal 78
+            The status should be success
+            The variable res should equal 'a:0/b'
         End
     End
 End

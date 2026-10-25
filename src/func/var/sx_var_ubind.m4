@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_var_is_bind __sx_var_is_bind_ready __sx_var_is_bindable __sx_var_is_name __sx_var_is_rw __sx_var_ubind sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_bind __sx_var_is_bind_ready __sx_var_is_bindable __sx_var_is_name __sx_var_is_rw __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_ubind - バインド状態に従って値を割り当てる（クォートなし）
 ##
@@ -24,12 +24,13 @@ pushdef([|CLEANUP|])dnl
 ##   64  引数不正 (SX_EX_USAGE)
 ##   65  バインド先が割当て可能な状態にない (SX_EX_DATAERR)
 ##   77  結果変数名（空でない場合）またはバインド先が読み取り専用 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_var_ubind() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_ubind "${@}" || return; return 0;; esac
 
+	M_CFG_CHECK([|sx_var_ubind|])
+
 	# 結果変数名自体の妥当性と書き込み権限をチェック
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
 	case "${1:+X}" in X)
 		__sx_var_is_name "${1-}" || return M_EX_USAGE

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_is_bind __sx_arr_is_bindable sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_is_bind __sx_arr_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arr_is_bindable - バインド形式が有効であり、かつ配列を含む全変数が書き込み可能か確認する
 ##
@@ -17,11 +17,10 @@ pushdef([|CLEANUP|])dnl
 ##    0  成功 (SX_EX_OK)
 ##    1  書き込み不可な変数が含まれる (SX_EX_NOPERM)
 ##   64  バインド形式が不正 (SX_EX_USAGE)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
 sx_arr_is_bindable() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_bindable "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_arr_is_bindable|])
 
 	__sx_arr_is_bind "${@}" || return M_EX_USAGE
 

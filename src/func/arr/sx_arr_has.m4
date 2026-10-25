@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arr_has __sx_arr_is_spec __sx_var_is_arr __sx_var_is_name sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_has __sx_arr_is_spec __sx_var_is_arr __sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_arr_has - 配列の全 spec が1要素以上に一致するか確認する
@@ -26,14 +26,14 @@ M_RENAME_Q([|dnl
 ##    1  1つ以上の spec が空
 ##   64  引数不正（配列名無効・spec 形式不正）(SX_EX_USAGE)
 ##   65  対象が sx 配列ではない (SX_EX_DATAERR)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 
 define([|CLEANUP|], [|Q_arr|])dnl
 
 sx_arr_has() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_has "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_arr_has|])
 
 	__sx_var_is_name "${1-}" || return M_EX_USAGE
 

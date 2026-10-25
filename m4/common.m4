@@ -7,6 +7,53 @@ dnl 分割ファイルの依存メタ情報。全体展開時には実行時コ�
 define([|M_REQUIRE|], [||])dnl
 define([|M_UNIT|], [|include([|$2|])|])dnl
 
+dnl 設定検査用の依存は、関数の明示依存だけから収集する。
+dnl 単独展開でも同じ結果になるよう、最初の利用時に関数一覧を読み込む。
+dnl 収集中は検査マクロを無効にし、生成した検査からの逆流を防ぐ。
+define([|__M_CFG_ERROR|], [|errprint([|sx cfg: $1
+|])m4exit(1)|])dnl
+define([|__M_CFG_EACH|], [|ifelse([|$2|], [||], [||], [|ifelse(index([|$2|], [| |]), -1, [|indir([|$1|], [|$2|], [|$3|])|], [|indir([|$1|], substr([|$2|], 0, index([|$2|], [| |])), [|$3|])[||]__M_CFG_EACH([|$1|], substr([|$2|], incr(index([|$2|], [| |]))), [|$3|])|])|])|])dnl
+define([|__M_CFG_UNIT|], [|define([|__M_cfg_function_$1|], [|1|])dnl
+pushdef([|__M_cfg_current|], [|$1|])dnl
+include([|$2|])dnl
+popdef([|__M_cfg_current|])|])dnl
+define([|__M_CFG_CAPTURE_REQUIRE|], [|define([|__M_cfg_deps_|]defn([|__M_cfg_current|]), [|$1|])|])dnl
+define([|__M_CFG_LOAD|], [|define([|__M_cfg_loaded|], [|1|])dnl
+define([|__M_cfg_query|], [|0|])dnl
+pushdef([|__M_cfg_diversion|], divnum)dnl
+divert(-1)dnl
+pushdef([|M_CFG_CHECK|], [||])dnl
+pushdef([|M_REQUIRE|], defn([|__M_CFG_CAPTURE_REQUIRE|]))dnl
+pushdef([|M_UNIT|], defn([|__M_CFG_UNIT|]))dnl
+include([|src/func.m4|])dnl
+popdef([|M_UNIT|])dnl
+popdef([|M_REQUIRE|])dnl
+popdef([|M_CFG_CHECK|])dnl
+divert(defn([|__M_cfg_diversion|]))dnl
+popdef([|__M_cfg_diversion|])|])dnl
+define([|__M_CFG_MARK|], [|ifelse([|$1|], [|SKIP_CHK|], [||], index([| |]M_CFG_META_NAMES[| |], [| $1 |]), -1, [||], [|ifelse(ifdef([|__M_cfg_mark_$1|], [|indir([|__M_cfg_mark_$1|])|]), defn([|__M_cfg_query|]), [||], [|define([|__M_cfg_mark_$1|], defn([|__M_cfg_query|]))define([|__M_cfg_path_|]defn([|__M_cfg_root|])[|_$1|], [|$2 SX_CFG_$1|])|])|])|])dnl
+define([|__M_CFG_EDGE|], [|ifdef([|__M_cfg_function_$1|], [|__M_CFG_WALK([|$1|], [|$2|])|], [|ifelse(regexp([|$1|], [|^SX_CFG_|]), 0, [|__M_CFG_MARK(substr([|$1|], 7), [|$2|])|])|])|])dnl
+define([|__M_CFG_WALK|], [|ifelse([|$1|], [|sx_cfg_is_valid|], [||], [|$1|], [|__sx_cfg_is_valid|], [||], [|$1|], [|sx_cfg_set|], [||], [|$1|], [|__sx_cfg_set|], [||], [|ifelse(ifdef([|__M_cfg_seen_$1|], [|indir([|__M_cfg_seen_$1|])|]), defn([|__M_cfg_query|]), [||], [|define([|__M_cfg_seen_$1|], defn([|__M_cfg_query|]))__M_CFG_EACH([|__M_CFG_EDGE|], indir([|__M_cfg_deps_$1|]), [|$2$1 |])|])|])|])dnl
+define([|__M_CFG_PICK|], [|ifelse(ifdef([|__M_cfg_mark_$1|], [|indir([|__M_cfg_mark_$1|])|]), defn([|__M_cfg_query|]), [| $1|])|])dnl
+define([|__M_CFG_PREPARE|], [|ifdef([|__M_cfg_loaded|], [||], [|__M_CFG_LOAD()|])dnl
+ifdef([|__M_cfg_function_$1|], [||], [|__M_CFG_ERROR([|未知の関数名: $1|])|])dnl
+ifdef([|__M_cfg_result_$1|], [||], [|define([|__M_cfg_query|], incr(defn([|__M_cfg_query|])))dnl
+pushdef([|__M_cfg_root|], [|$1|])dnl
+__M_CFG_WALK([|$1|], [||])dnl
+define([|__M_cfg_result_$1|], patsubst(__M_CFG_EACH([|__M_CFG_PICK|], M_CFG_META_NAMES), [|^ |], [||]))dnl
+popdef([|__M_cfg_root|])|])|])dnl
+define([|__M_CFG_ARG|], [| "${SX_CFG_$1+$1=${SX_CFG_$1}}"|])dnl
+define([|__M_CFG_DEP|], [| SX_CFG_$1|])dnl
+define([|__M_CFG_REQUIRE_GENERATED|], [||])dnl
+define([|__M_CFG_EMIT|], [|ifelse([|$2|], [||], [||], [|__M_CFG_REQUIRE_GENERATED([|__sx_cfg_is_valid|]__M_CFG_EACH([|__M_CFG_DEP|], [|$2|]))dnl
+__sx_cfg_is_valid[||]__M_CFG_EACH([|__M_CFG_ARG|], [|$2|]) || return M_EX_CONFIG|])|])dnl
+define([|M_CFG_CHECK|], [|ifdef([|SX_CFG_SCAN|], [||], [|ifelse(regexp([|$1|], [|^sx_[a-z0-9_]+$|]), 0, [|__M_CFG_PREPARE([|$1|])[||]__M_CFG_EMIT([|$1|], indir([|__M_cfg_result_$1|]))|], [|__M_CFG_ERROR([|公開関数名が不正です: $1|])|])|])|])dnl
+define([|__M_CFG_DEPS|], [|ifelse([|$1|], [||], [||], [|__sx_cfg_is_valid[||]__M_CFG_EACH([|__M_CFG_DEP|], [|$1|])|])|])dnl
+define([|M_CFG_DEPS|], [|__M_CFG_PREPARE([|$1|])[||]__M_CFG_DEPS(indir([|__M_cfg_result_$1|]))|])dnl
+define([|__M_CFG_REPORT_ITEM|], [|$2	$1	patsubst(indir([|__M_cfg_path_$2_$1|]), [| +|], [| -> |])
+|])dnl
+define([|M_CFG_REPORT|], [|__M_CFG_PREPARE([|$1|])[||]__M_CFG_EACH([|__M_CFG_REPORT_ITEM|], indir([|__M_cfg_result_$1|]), [|$1|])|])dnl
+
 define([|M_STR_NE|], [|case $1 in $2) ! :;; esac|])dnl
 define([|M_VAR_SET|], [|ifelse($#, 1, [|ifelse($1, , [|eval|], [|eval "$1="|])|], [|eval "$1="'"$2"'__M_VAR_SET_REST(shift(shift($@)))|])|])dnl
 define([|__M_VAR_SET_REST|], [|ifelse(eval(1 < $#), 1, [| "$1="'"$2"'ifelse($#, 2, , [|__M_VAR_SET_REST(shift(shift($@)))|])|], [|ifelse($1, , , [| "$1="|])|])|])dnl

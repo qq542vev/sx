@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_str_is_space|])dnl
 ##    1  空白文字以外が含まれる、または空文字列が含まれる
 
 sx_str_is_space() {
+	M_CFG_CHECK([|sx_str_is_space|])
+
 	__sx_str_is_space "${@}" || return
 }

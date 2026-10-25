@@ -15,5 +15,7 @@ M_REQUIRE([|__sx_var_is_chain|])dnl
 ##    1  無効な形式が含まれる
 
 sx_var_is_chain() {
+	M_CFG_CHECK([|sx_var_is_chain|])
+
 	__sx_var_is_chain "${@}" || return
 }

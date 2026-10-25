@@ -26,11 +26,12 @@ Describe '可変長 sx_arg_* の引数個数ガード'
   Include ./spec/support/run.sh
 
   Describe 'sx_arg_len'
-    It 'SX_CFG_NUM_RANGE が不正な値の場合に EX_CONFIG を返すこと'
+    It '直接参照しないNUM_RANGEが不正でも引数個数を取得すること'
       load_subject sx_arg_len
       SX_CFG_NUM_RANGE=bogus
       When call sx_arg_len res "v1" "v2"
-      The status should equal 78
+      The status should be success
+      The variable res should equal 2
     End
 
     It '高速モード (SX_CFG_SKIP_CHK=1) ではガードをバイパスすること'

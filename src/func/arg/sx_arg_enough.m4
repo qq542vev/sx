@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_enough __sx_num_is_nat0_base sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_enough __sx_num_is_nat0_base|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する
 ##
@@ -36,11 +36,11 @@ pushdef([|CLEANUP|])dnl
 ##    0  条件を満たす要素が必要数以上存在する (SX_EX_OK)
 ##    1  条件を満たす要素が必要数未満
 ##   64  引数不正 (SX_EX_USAGE)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_arg_enough() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_enough "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_arg_enough|])
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}" | "${2+X${2}}") ;;

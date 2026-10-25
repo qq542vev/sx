@@ -21,11 +21,14 @@ M_RENAME_Q([|dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  読み取り専用変数への操作失敗 (SX_EX_NOPERM)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 
 define([|CLEANUP|], [|Q_arg Q_chk|])dnl
 
 sx_var_set() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_set "${@}" || return; return 0;; esac
+
+	M_CFG_CHECK([|sx_var_set|])
 
 	Q_chk=
 

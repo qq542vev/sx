@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_int_safe __sx_num_is_mul_arith_safe __sx_num_mul_arith __sx_var_is_name __sx_var_is_rw sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_safe __sx_num_is_mul_arith_safe __sx_num_mul_arith __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_mul_arith - 複数の符号付き整数を算術展開で乗算する
@@ -19,18 +19,18 @@ M_RENAME_Q([|dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正、整数の形式不正、入力値または積が設定幅の範囲外 (SX_EX_USAGE)
 ##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 
 define([|CLEANUP|], [|Q_res|])dnl
 
 sx_num_mul_arith() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_mul_arith "${@}" || return; return 0;; esac
 
+	M_CFG_CHECK([|sx_num_mul_arith|])
+
 	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
 	Q_res="${1}"
 	shift

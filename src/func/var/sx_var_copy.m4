@@ -18,8 +18,11 @@ pushdef([|CLEANUP|])dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  コピー先または関連要素が読み取り専用 (SX_EX_NOPERM)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_var_copy() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_copy "${@}" || return; return 0;; esac
+
+	M_CFG_CHECK([|sx_var_copy|])
 
 	__sx_var_is_chain "${@}" || return M_EX_USAGE
 

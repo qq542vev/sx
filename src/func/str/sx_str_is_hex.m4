@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_str_is_hex|])dnl
 ##    1  16進数文字以外が含まれる、または空文字列が含まれる
 
 sx_str_is_hex() {
+	M_CFG_CHECK([|sx_str_is_hex|])
+
 	__sx_str_is_hex "${@}" || return
 }

@@ -214,7 +214,8 @@ diagnostic'
       'result=changed; false; result=unreachable' 1
       'result=changed; false | :; result=unreachable' 1
       'result=changed; : "$SXT_UNSET_INPUT"' 2
-      'result=changed; sx_var_dump() { return 65; }' 65
+      'result=changed; __sx_var_dump() { return 65; }' 65
+      'result=changed; readonly SXTEST_RUN_DUMP' 77
     End
 
     It '失敗状態を返し、親の値を変更しないこと'
@@ -232,6 +233,14 @@ diagnostic'
       The variable SXTEST_RUN_NAMES should be undefined
       The variable SXTEST_RUN_SCRIPT should be undefined
     End
+  End
+
+  It '内部境界試験用の設定値を公開APIで再検査せず復元すること'
+    When call sxtest_run SX_CFG_NUM_RANGE -- '__sx_cfg_set NUM_RANGE=8'
+    The status should be success
+    The variable SX_CFG_NUM_RANGE should equal 8
+    The stdout should equal ''
+    The stderr should equal ''
   End
 
   It '出力0個でもCMDの失敗状態を返すこと'

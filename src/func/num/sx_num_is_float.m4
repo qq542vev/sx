@@ -14,5 +14,7 @@ M_REQUIRE([|__sx_num_is_float|])dnl
 ##    1  10 進の実数表記ではない値が含まれる
 
 sx_num_is_float() {
+	M_CFG_CHECK([|sx_num_is_float|])
+
 	__sx_num_is_float "${@}" || return
 }

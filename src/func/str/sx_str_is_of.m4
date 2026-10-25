@@ -15,5 +15,7 @@ M_REQUIRE([|__sx_str_is_of|])dnl
 ##    1  指定された文字集合以外が含まれる、または空文字列が含まれる
 
 sx_str_is_of() {
+	M_CFG_CHECK([|sx_str_is_of|])
+
 	__sx_str_is_of "${@}" || return
 }

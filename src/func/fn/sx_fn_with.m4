@@ -10,11 +10,18 @@ M_RENAME_Q([|dnl
 ##   指定されたエイリアス名で一時的な関数を定義し、コマンドを実行する。
 ##   コマンドの引数の中にエイリアス名と一致するものがあれば、生成された一意な名前に置換される。
 ##   コマンドの実行終了後、定義された関数は自動的に削除される。
+##
+## 終了ステータス:
+##   実行したコマンドの終了ステータスを返す。
+##   64  引数不正 (SX_EX_USAGE)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 
 define([|CLEANUP|], [|Q_i Q_arg Q_fn|])dnl
 
 sx_fn_with() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_with "${@}" || return; return;; esac
+
+	M_CFG_CHECK([|sx_fn_with|])
 
 	Q_i=0
 	for Q_arg in "${@}"; do

@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_str_is_print|])dnl
 ##    1  表示可能文字以外が含まれる、または空文字列が含まれる
 
 sx_str_is_print() {
+	M_CFG_CHECK([|sx_str_is_print|])
+
 	__sx_str_is_print "${@}" || return
 }

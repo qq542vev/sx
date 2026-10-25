@@ -19,5 +19,7 @@ M_REQUIRE([|__sx_str_sw|])dnl
 ##    1  一致する開始文字列がない
 
 sx_str_sw() {
+	M_CFG_CHECK([|sx_str_sw|])
+
 	__sx_str_sw "${@}" || return
 }

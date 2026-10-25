@@ -13,5 +13,7 @@ M_REQUIRE([|__sx_num_is_nzint|])dnl
 ##    1  0、または整数ではない値が含まれる
 
 sx_num_is_nzint() {
+	M_CFG_CHECK([|sx_num_is_nzint|])
+
 	__sx_num_is_nzint "${@}" || return
 }

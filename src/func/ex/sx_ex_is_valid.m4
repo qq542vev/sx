@@ -14,5 +14,7 @@ M_REQUIRE([|__sx_ex_is_valid|])dnl
 ##    1  範囲外、または無効な値が含まれる
 
 sx_ex_is_valid() {
+	M_CFG_CHECK([|sx_ex_is_valid|])
+
 	__sx_ex_is_valid "${@}" || return
 }

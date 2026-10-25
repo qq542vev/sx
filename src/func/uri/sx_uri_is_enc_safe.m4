@@ -17,6 +17,8 @@ pushdef([|CLEANUP|])dnl
 sx_uri_is_enc_safe() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_is_enc_safe "${@}" || return; return 0;; esac
 
+	M_CFG_CHECK([|sx_uri_is_enc_safe|])
+
 	__sx_uri_is_enc_safe "${@}" || return
 }
 

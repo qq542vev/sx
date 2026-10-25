@@ -15,5 +15,7 @@ M_REQUIRE([|__sx_num_is_fixed|])dnl
 ##    1  10 進の実数表記ではない値が含まれる
 
 sx_num_is_fixed() {
+	M_CFG_CHECK([|sx_num_is_fixed|])
+
 	__sx_num_is_fixed "${@}" || return
 }

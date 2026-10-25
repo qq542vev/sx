@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_str_is_word|])dnl
 ##    1  単語構成文字以外が含まれる、または空文字列が含まれる
 
 sx_str_is_word() {
+	M_CFG_CHECK([|sx_str_is_word|])
+
 	__sx_str_is_word "${@}" || return
 }

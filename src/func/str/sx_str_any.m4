@@ -18,5 +18,7 @@ M_REQUIRE([|__sx_str_any|])dnl
 ##    1  一つも一致しない
 
 sx_str_any() {
+	M_CFG_CHECK([|sx_str_any|])
+
 	__sx_str_any "${@}" || return
 }

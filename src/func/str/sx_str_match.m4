@@ -18,5 +18,7 @@ M_REQUIRE([|__sx_str_match|])dnl
 ##    1  マッチするパターンがない
 
 sx_str_match() {
+	M_CFG_CHECK([|sx_str_match|])
+
 	__sx_str_match "${@}" || return
 }

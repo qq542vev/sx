@@ -17,6 +17,8 @@ pushdef([|CLEANUP|])dnl
 sx_num_is_int_fit() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_fit "${@}" || return; return 0;; esac
 
+	M_CFG_CHECK([|sx_num_is_int_fit|])
+
 	case "${1-}" in
 		8 | 16 | 32 | 64 | 128) ;;
 		*) return M_EX_USAGE;;

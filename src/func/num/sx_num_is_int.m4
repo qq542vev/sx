@@ -13,5 +13,7 @@ M_REQUIRE([|__sx_num_is_int|])dnl
 ##    1  整数ではない値が含まれる
 
 sx_num_is_int() {
+	M_CFG_CHECK([|sx_num_is_int|])
+
 	__sx_num_is_int "${@}" || return
 }

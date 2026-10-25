@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_div_int __sx_num_is_int_base __sx_num_is_nat0_safe __sx_num_is_nzint_base __sx_var_is_name __sx_var_is_rw sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_div_int __sx_num_is_int_base __sx_num_is_nat0_safe __sx_num_is_nzint_base __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_div_int - 符号付き整数の除算で実数商（整数商 + 小数部）を求める
@@ -21,18 +21,18 @@ M_RENAME_Q([|dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  結果変数が書き込み不可 (SX_EX_NOPERM)
-##   78  SX_CFG_NUM_RANGE が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 
 define([|CLEANUP|], [|Q_res Q_dp Q_u|])dnl
 
 sx_num_div_int() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_div_int "${@}" || return; return 0;; esac
 
+	M_CFG_CHECK([|sx_num_div_int|])
+
 	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
-
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
 
 	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_int_base 10 ${3:+"${3}"} || return M_EX_USAGE
 

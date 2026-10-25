@@ -13,5 +13,7 @@ M_REQUIRE([|__sx_num_is_nint|])dnl
 ##    1  負の整数ではない値が含まれる
 
 sx_num_is_nint() {
+	M_CFG_CHECK([|sx_num_is_nint|])
+
 	__sx_num_is_nint "${@}" || return
 }

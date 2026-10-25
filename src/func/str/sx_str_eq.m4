@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_str_eq|])dnl
 ##    1  一致しない文字列が含まれる
 
 sx_str_eq() {
+	M_CFG_CHECK([|sx_str_eq|])
+
 	__sx_str_eq "${@}" || return
 }

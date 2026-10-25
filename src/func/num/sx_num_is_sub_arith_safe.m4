@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_int_safe __sx_num_is_sub_arith_safe sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_safe __sx_num_is_sub_arith_safe|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_is_sub_arith_safe - 引数順の減算で桁溢れしないか確認する
 ##
@@ -16,11 +16,11 @@ pushdef([|CLEANUP|])dnl
 ##    0  設定幅内で安全に減算できる (SX_EX_OK)
 ##    1  減算途中または最終結果が設定幅の範囲外
 ##   64  整数の形式不正または入力値が設定幅の範囲外 (SX_EX_USAGE)
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_num_is_sub_arith_safe() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_sub_arith_safe "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_num_is_sub_arith_safe|])
 
 	__sx_num_is_int_safe "${@}" || return M_EX_USAGE
 

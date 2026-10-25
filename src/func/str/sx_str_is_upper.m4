@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_str_is_upper|])dnl
 ##    1  大文字英字以外が含まれる、または空文字列が含まれる
 
 sx_str_is_upper() {
+	M_CFG_CHECK([|sx_str_is_upper|])
+
 	__sx_str_is_upper "${@}" || return
 }

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_fn_anon __sx_fn_is_valid __sx_var_is_bind __sx_var_is_bindable sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_fn_anon __sx_fn_is_valid __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_fn_anon - 一意な名前を持つ匿名関数を生成して定義する
@@ -15,13 +15,14 @@ M_RENAME_Q([|dnl
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 ##   64  本体の構文が不正 (SX_EX_USAGE)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 
 define([|CLEANUP|], [|Q_bind Q_arg|])dnl
 
 sx_fn_anon() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_fn_anon "${@}" || return; return;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_fn_anon|])
 
 	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 

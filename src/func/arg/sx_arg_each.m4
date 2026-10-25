@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_arg_each sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arg_each|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_each - 引数リストの各要素に対してコールバック関数を実行する
 ##
@@ -20,11 +20,11 @@ pushdef([|CLEANUP|])dnl
 ## 終了ステータス:
 ##   すべてのコールバックが成功 => 0 (SX_EX_OK)
 ##   コールバックが失敗 => 最初の失敗のステータス
-##   78 => SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_arg_each() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_each "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_arg_each|])
 
 	__sx_arg_each "${@}" || return
 }

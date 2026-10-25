@@ -19,5 +19,7 @@ M_REQUIRE([|__sx_str_ew|])dnl
 ##    1  一致する終了文字列がない
 
 sx_str_ew() {
+	M_CFG_CHECK([|sx_str_ew|])
+
 	__sx_str_ew "${@}" || return
 }

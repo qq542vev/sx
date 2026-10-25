@@ -98,10 +98,10 @@ Describe 'sx_num_sub1_nat0'
     The status should equal 64
   End
 
-  # === 設定エラー ===
-  It 'SX_CFG_NUM_RANGEが不正な場合はエラーになること'
+  It '派生値のみを参照するため現在のNUM_RANGEを検査しないこと'
     SX_CFG_NUM_RANGE=invalid
     When call sx_num_sub1_nat0 result 1
-    The status should equal 78
+    The status should be success
+    The variable result should equal 0
   End
 End

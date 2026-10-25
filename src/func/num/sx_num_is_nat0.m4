@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_num_is_nat0|])dnl
 ##    1  自然数ではない値が含まれる
 
 sx_num_is_nat0() {
+	M_CFG_CHECK([|sx_num_is_nat0|])
+
 	__sx_num_is_nat0 "${@}" || return
 }

@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_str_is_punct|])dnl
 ##    1  区切り記号以外が含まれる、または空文字列が含まれる
 
 sx_str_is_punct() {
+	M_CFG_CHECK([|sx_str_is_punct|])
+
 	__sx_str_is_punct "${@}" || return
 }

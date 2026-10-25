@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_str_is_alpha|])dnl
 ##    1  英字以外が含まれる、または空文字列が含まれる
 
 sx_str_is_alpha() {
+	M_CFG_CHECK([|sx_str_is_alpha|])
+
 	__sx_str_is_alpha "${@}" || return
 }

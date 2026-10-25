@@ -13,5 +13,7 @@ M_REQUIRE([|__sx_ex_is_err|])dnl
 ##    1  範囲外、または整数でない値が含まれる
 
 sx_ex_is_err() {
+	M_CFG_CHECK([|sx_ex_is_err|])
+
 	__sx_ex_is_err "${@}" || return
 }

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_num_is_int_safe_inv sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_safe_inv|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_is_int_safe_inv - 安全に処理できる数値範囲（SX_CFG_NUM_RANGE）で符号反転可能な整数か確認する
 ##
@@ -13,11 +13,11 @@ pushdef([|CLEANUP|])dnl
 ## 終了ステータス:
 ##    0  すべて範囲内の符号反転可能な整数である (SX_EX_OK)
 ##    1  範囲外、または整数でない値が含まれる
-##   78  SX_CFG_NUM_RANGE の値が不正 (SX_EX_CONFIG)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_num_is_int_safe_inv() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_num_is_int_safe_inv "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_num_is_int_safe_inv|])
 
 	__sx_num_is_int_safe_inv "${@}" || return
 }

@@ -22,11 +22,14 @@ M_RENAME_Q([|dnl
 ##    0  成功 (SX_EX_OK)
 ##   64  引数不正 (SX_EX_USAGE)
 ##   77  移動先または削除対象が読み取り専用 (SX_EX_NOPERM)
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 
 define([|CLEANUP|], [|Q_src Q_arg|])dnl
 
 sx_var_move() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_var_move "${@}" || return; return 0;; esac
+
+	M_CFG_CHECK([|sx_var_move|])
 
 	__sx_var_is_chain "${@}" || return M_EX_USAGE
 

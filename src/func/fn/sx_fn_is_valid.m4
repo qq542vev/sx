@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_fn_is_valid|])dnl
 ##    1  無効な名前、または構文エラーが含まれる
 
 sx_fn_is_valid() {
+	M_CFG_CHECK([|sx_fn_is_valid|])
+
 	__sx_fn_is_valid "${@}" || return
 }

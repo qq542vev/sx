@@ -29,6 +29,7 @@ undefine([|__sx_active_$1|])dnl
 |])|], [|__sx_resolve_error([|未定義の名前: $1|])|])|])dnl
 define([|__sx_words|], [|ifelse([|$1|], [||], [||], [|ifelse(index([|$1|], [| |]), -1, [|__sx_visit([|$1|])|], [|__sx_visit(substr([|$1|], 0, index([|$1|], [| |])))__sx_words(substr([|$1|], incr(index([|$1|], [| |]))))|])|])|])dnl
 define([|M_REQUIRE|], [|__sx_words([|$1|])|])dnl
+define([|__M_CFG_REQUIRE_GENERATED|], [|__sx_words([|$1|])|])dnl
 
 ifdef([|SX_SYMBOLS|], [||], [|define([|SX_SYMBOLS|], [||])|])dnl
 ifelse(len(defn([|SX_SYMBOLS|])), 0, [|dnl
@@ -44,6 +45,7 @@ __sx_words(defn([|SX_SYMBOLS|]))dnl
 
 dnl 第3段階: 元の一覧順に選択済み単位だけを出力する。
 define([|M_REQUIRE|], [||])dnl
+define([|__M_CFG_REQUIRE_GENERATED|], [||])dnl
 define([|M_UNIT|], [|ifdef([|__sx_seen_$1|], [|include([|$2|])|])|])dnl
 divert(0)dnl
 include([|src/const.m4|])dnl

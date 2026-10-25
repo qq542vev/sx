@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_str_is_cntrl|])dnl
 ##    1  制御文字以外が含まれる、または空文字列が含まれる
 
 sx_str_is_cntrl() {
+	M_CFG_CHECK([|sx_str_is_cntrl|])
+
 	__sx_str_is_cntrl "${@}" || return
 }

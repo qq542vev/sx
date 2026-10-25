@@ -13,5 +13,7 @@ M_REQUIRE([|__sx_num_is_pint|])dnl
 ##    1  正の整数ではない値が含まれる
 
 sx_num_is_pint() {
+	M_CFG_CHECK([|sx_num_is_pint|])
+
 	__sx_num_is_pint "${@}" || return
 }

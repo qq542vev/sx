@@ -12,5 +12,7 @@ M_REQUIRE([|__sx_var_is_name|])dnl
 ##    1  無効な変数名が含まれる
 
 sx_var_is_name() {
+	M_CFG_CHECK([|sx_var_is_name|])
+
 	__sx_var_is_name "${@}" || return
 }

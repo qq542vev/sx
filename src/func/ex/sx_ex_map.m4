@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SKIP_CHK __sx_ex_map __sx_var_is_bind __sx_var_is_bindable sx_cfg_is_valid|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_ex_map __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_ex_map - 終了ステータスの数値と名前を相互変換、または有効性を確認する
@@ -20,13 +20,14 @@ M_RENAME_Q([|dnl
 ##   - 64 (SX_EX_USAGE): バインド形式が無効、無効なステータス、または対応するマッピングが存在しない。
 ##   - 77 (SX_EX_NOPERM): 書き込み禁止の変数に代入しようとした。
 ##   - 78 (SX_EX_CONFIG): SX_CFG_NUM_RANGE の値が不正。
+##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 
 define([|CLEANUP|], [|Q_bind Q_arg|])dnl
 
 sx_ex_map() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_ex_map "${@}" || return; return 0;; esac
 
-	sx_cfg_is_valid "NUM_RANGE=${SX_CFG_NUM_RANGE-}" || return M_EX_CONFIG
+	M_CFG_CHECK([|sx_ex_map|])
 
 	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 

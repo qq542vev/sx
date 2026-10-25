@@ -18,6 +18,8 @@ pushdef([|CLEANUP|])dnl
 sx_uri_is_enc() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_uri_is_enc "${@}" || return; return 0;; esac
 
+	M_CFG_CHECK([|sx_uri_is_enc|])
+
 	__sx_uri_is_enc "${@}" || return
 }
 
