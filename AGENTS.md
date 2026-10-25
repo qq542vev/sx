@@ -8,7 +8,7 @@
 
 ## 1. 絶対禁止事項 (Strict Prohibitions)
 
-- **sx.sh の直接編集禁止**: 分割ソースを編集し、`make all` で生成してください。
+- **sx.sh の直接編集禁止**: 分割ソースを編集し、`make OUT=sx.sh all` で生成してください。
 - **外部ユーティリティの使用禁止**: `sx.sh` において、`[`, `test`, `echo`, `printf`, `grep`, `sed`, `awk`, `cat` 等、あらゆる外部コマンドの使用を禁止します。
   - `m4` マクロ経由で生成されるコードも同制限に従うこと。`M_*` マクロ（`M_VAR_SET`, `M_STR_*`, `M_NUM_*` 等）を使用し、`test`/`[` を回避してください。
   - 出力は変数への格納（参照渡し）を基本とし、副作用を最小限に抑えてください。
@@ -72,11 +72,11 @@ POSIX sh には `local` が存在しないため、命名規則と `m4` 展開�
 
 ## 6. 検証プロトコル (Validation)
 
-- **静的解析**: `shellcheck` を必須とします（個別・全体を問わず毎回実行）。
 - **テスト**: `shellspec`（`--warning-as-failure`、全 Example を `-efu` 下で実行＋`check_no_leak`）をパスすることを必須とします。
-- **個別テスト（日常の原則）**: `make all` と `make module` でビルド後、変更に関連する spec のみを実行します。個別生成は `make module.mk` 後に `make -f module.mk build/modules/<提供名>.sh` を使えます。既定では個別モジュールを読み込み、`SXTEST_LOAD_MOD=sx.sh` で全体版に切り替えます。`.shellspec` の警告・`spec_helper`（`-efu`＋`check_no_leak`）は個別実行時も自動継承されます。
+- **個別テスト（日常の原則）**: `make OUT=sx.sh all` と `make module` でビルド後、変更に関連する spec のみを実行します。個別生成は `make module.mk` 後に `make -f module.mk build/modules/<提供名>.sh` を使えます。テスト用の個別モジュールは既定の出力先・拡張子で生成します。既定では個別モジュールを読み込み、`SXTEST_LOAD_MOD=sx.sh` で全体版に切り替えます。`.shellspec` の警告・`spec_helper`（`-efu`＋`check_no_leak`）は個別実行時も自動継承されます。
   ```sh
   # 機能単位（公開 API と -efu 検証の両方を実行）
+  make OUT=sx.sh all
   make module.mk
   make -f module.mk build/modules/sx_num_add_nat0.sh
   shellspec spec/num/add_nat0_spec.sh spec/efu/num/sx_num_add_nat0_spec.sh
@@ -85,20 +85,25 @@ POSIX sh には `local` が存在しないため、命名規則と `m4` 展開�
   shellspec spec/num/
   ```
   - 読み込みは `spec_helper.sh` の `sxtest_load ./build/modules/<提供名>.sh` を使います。全体版は `SXTEST_LOAD_MOD=sx.sh shellspec ...` で指定します。事前準備・事後検証等の補助処理には `sxtest_run` を使い、テスト専用の依存を製品側へ追加しません。
+  - 補助処理の詳細は [spec/support/run.md](spec/support/run.md)、読み込み指定の詳細は [spec/support/load.md](spec/support/load.md) を参照してください。個別モジュールは単独で読み込み、同じシェルで複数の機能を利用する場合は `SYMBOLS` で一つのバンドルにまとめてください。
   - 対応関係: `src/func/` の対象機能 `sx_<領域>_<機能>` は `spec/<領域>/<機能>_spec.sh` と `spec/efu/<領域>/sx_<領域>_<機能>_spec.sh` が対応します。
-- **全体テスト（`make test`）**: 以下のいずれかに該当する場合にのみ必須とします。
+- **全体テスト（`make test`）**: 全単位の個別モジュールと全体版 `sx.sh` を生成し、既定の読込対象を個別モジュールとして全 spec を実行します。全体版を読み込むテストは自動実行しないため、必要な場合は別途 `SXTEST_LOAD_MOD=sx.sh shellspec ...` を実行します。`make test` は以下のいずれかに該当する場合にのみ必須とします。
   - 共通部品の変更時: `M_*` マクロ、`M_RENAME_Q/QI`、`CLEANUP` 規約、`SX_CFG_*`／`SX_SYS_REV`、`spec_helper.sh`。
   - 複数領域に跨がる変更（指定された機能の公開 API と内部関数の両方が変わる場合等）。
   - PR 提出・リリース前の最終確認。
+- **テストオプション**: ShellSpec のオプションは `make test TEST_FLAGS='--jobs 4'` のように指定できます。
 
 ## 7. コミュニケーションとワークフロー (Communication & Workflow)
 
 - **使用言語**: AI とのチャット、コード内のコメント、ドキュメント、Git のコミットメッセージは、原則として**日本語**を使用してください。
-- **ビルドプロセス**: 通常は `make all` を使用してください（`m4` 処理後に行頭 `#` コメント行を除去。shebang は保持）。`shfmt` 等による minify は yash の算術展開の意味を変えるため禁止です。
-- **ビルド選択**: `SX_SYMBOLS` が未指定または空文字列なら全単位、指定時はその単位と依存先を生成します。出力先の既定値は `sx.sh` で、`SX_OUT` で変更できます。`make test` は全体版を生成します。
-- **個別モジュール**: `make module.mk` は `find` で全単位の `.m4` を列挙し、`build/modules/<提供名>.sh` の生成ルールを作成します。公開・内部関数、定数、大域変数をすべて対象とし、各モジュールは依存先も含めます。全単位のソース・一覧・共通ビルドファイルを依存先とし、未変更なら再生成しません。`make module` は一覧更新後に全件生成します。`make -f module.mk` は生成済み一覧による全件生成、ターゲット指定時は個別生成です。ソース追加・削除後は `make module.mk` または `make module` で一覧を更新してください。`module.mk` はGit管理対象外の生成物で、直接編集しません。
+- **開発文書の管理**: 開発・ビルド手順は本書に集約します。`src/README.md` は、独立した読者・目的が明確に必要となるまで再作成しません。
+- **ソースの構成と登録**: 定数・大域変数・関数は `src/const/`・`src/var/`・`src/func/` の各 `.m4` に分割し、対応する `src/const.m4`・`src/var.m4`・`src/func.m4` に `M_UNIT([|名前|], [|パス|])dnl` を一単位につき一行登録します。全体版・部分版とも定数、大域変数、関数の順に出力し、大域変数の一覧順が初期化順になります。`m4/resolve.m4` は選択と依存解決を担い、`m4/common.m4` は実行時コードを出力しません。定数の出力には `M_CONST`、シェルの引用が必要な値には `M_SH_QUOTE` を使用します。
+- **依存宣言**: 各単位の先頭に `M_REQUIRE([|直接参照する実行時の名前の一覧|])dnl` を置きます。依存がない場合も `M_REQUIRE([||])dnl` を一行置き、ビルド時マクロ `M_*` は列挙しません。関数間の循環は許容し、初期化を含む循環、未知の名前、名前の重複はエラーとします。依存先は一度だけ出力します。`tools/check-units.py` は一覧と実ファイルの対応、`tools/check-dependencies.py` は依存宣言と展開後の参照を検査します。依存宣言の更新を意図する場合に限り `python3 tools/check-dependencies.py --write` を使用できます。
+- **ビルドプロセス**: 全体版を `sx.sh` に保存するときは `make OUT=sx.sh all` を使用してください。`make all`（既定ターゲットの `make` も同じ）は、`OUT` が未指定または空文字列なら標準出力へ出力します（`m4` 処理後に行頭 `#` コメント行を除去。shebang は保持）。ビルド用シェルには `pipefail` 対応が必要です。既定の `/bin/sh` が未対応の場合は `make SHELL=yash OUT=sx.sh all` のように指定します。`shfmt` 等による minify は yash の算術展開の意味を変えるため禁止です。
+- **ビルド選択**: make の引数 `SYMBOLS` が未指定または空文字列なら全単位、指定時はその単位と依存先を生成します。複数の単位名は `SYMBOLS="sx_uri_enc sx_uri_is_pct"` のように空白で区切ります。make の `SYMBOLS` は m4 の `SX_SYMBOLS` に渡されます。出力先は `OUT` で指定し、未指定または空文字列なら標準出力へ出力します。`all` と `bundle` は同じ生成処理を毎回実行します。`make test` は `SYMBOLS` の指定によらず全体版を `sx.sh` に生成します。
+- **個別モジュール**: `make module.mk` は `find` で全単位の `.m4` を列挙し、`MOD_DIR/<提供名>MOD_EXT` の生成ルールを作成します。`MOD_DIR` の既定値は `build/modules`、`MOD_EXT` の既定値は `.sh` です。公開・内部関数、定数、大域変数をすべて対象とし、各モジュールは依存先も含めます。各ターゲットは `FORCE` に依存し、ソースが未変更でも指定されたモジュールを毎回再生成します。`make module` は一覧更新後に全件生成します。`make -f module.mk` は生成済み一覧による全件生成、ターゲット指定時は個別生成です。ソース追加・削除後は `make module.mk` または `make module` で一覧を更新してください。`module.mk` はGit管理対象外の生成物で、直接編集しません。
 - **生成物のコメント方針**: `sx.sh` にコメントを含めません。仕様は `src/func/` の `###` ヘッダまたは本書を参照してください。
-- **変更の適用**: `src/*` または `m4/common.m4` を編集し、ビルド（`make all`）後に関連 spec の個別テストを実行してから進めてください。単位を追加したら対応する一覧に登録し、`tools/check-units.py` と `tools/check-dependencies.py` を実行します。全体テスト（`make test`）は §6 に該当する場合にのみ実行します。
+- **変更の適用**: `src/*` または `m4/common.m4` を編集し、ビルド（`make OUT=sx.sh all`）後に関連 spec の個別テストを実行してから進めてください。単位を追加したら対応する一覧に登録し、`tools/check-units.py` と `tools/check-dependencies.py` を実行します。全体テスト（`make test`）は §6 に該当する場合にのみ実行します。
 
 ## 8. 判断基準と記録 (Decisions & Lessons)
 

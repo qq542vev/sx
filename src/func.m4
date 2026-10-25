@@ -1,4 +1,5 @@
 M_UNIT([|sx_cfg_is_valid|], [|src/func/cfg/sx_cfg_is_valid.m4|])dnl
+M_UNIT([|__sx_cfg_is_valid|], [|src/func/cfg/__sx_cfg_is_valid.m4|])dnl
 M_UNIT([|sx_cfg_set|], [|src/func/cfg/sx_cfg_set.m4|])dnl
 M_UNIT([|__sx_cfg_set|], [|src/func/cfg/__sx_cfg_set.m4|])dnl
 M_UNIT([|sx_ex_is_err|], [|src/func/ex/sx_ex_is_err.m4|])dnl

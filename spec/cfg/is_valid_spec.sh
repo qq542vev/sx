@@ -155,6 +155,29 @@ Describe 'sx_cfg_is_valid()'
 		The status should be failure
 	End
 
+	Context 'SKIP_CHK によらない妥当性判定'
+		Parameters
+			'NUM_RANGE=64' 0
+			'NUM_RANGE=99' 1
+			'META_NAMES' 1
+		End
+
+		It "SKIP_CHK=1 でも $1 を判定すること"
+			SX_CFG_SKIP_CHK=1
+			When call sx_cfg_is_valid "${1}"
+			The status should equal "${2}"
+			The stderr should equal ''
+		End
+	End
+
+	It 'SKIP_CHK=1 でも引数なしで異常な現在の設定を検知すること'
+		SX_CFG_SKIP_CHK=1
+		SX_CFG_NUM_RANGE=99
+		When call sx_cfg_is_valid
+		The status should equal 1
+		The stderr should equal ''
+	End
+
 	It 'プレフィックスありの指定は不正とみなされること (SX_CFG_...)'
 		# SX_CFG_NUM_RANGE=64 と渡すと SX_CFG_SX_CFG_NUM_RANGE=64 として扱われる
 		When call sx_cfg_is_valid "SX_CFG_NUM_RANGE=64"
