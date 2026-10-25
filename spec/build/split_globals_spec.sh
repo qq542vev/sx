@@ -118,12 +118,12 @@ Describe '大域変数の個別展開と初期化'
 '\\"
     numeric_expected=$(globals_probe constants.sh 'printf "<%s>" "$SX_NUM_I64_WLEN" "$SX_NUM_I64_QM" "$SX_NUM_I64_ZR" "$SX_NUM_I64_MAX" "$SX_NUM_I64_MIN"')
     When run globals_probe full.sh '
-      printf "<%s>" "$SX_CFG_SIG_ARR" "$SX_CFG_SKIP_CHK" "$SX_CFG_NUM_RANGE" "$SX_CFG_SEP" "$SX_CFG_ARR_UPDATE" "$SX_CFG_ARR_HOLE" "$SX_CFG_ARR_REF" "$SX_SYS_REV"
+      printf "<%s>" "$SX_CFG_SIG_ARR" "$SX_CFG_SKIP_CHK" "$SX_CFG_NUM_RANGE" "$SX_CFG_SEP" "$SX_CFG_ARR_HOLE" "$SX_CFG_ARR_REF" "$SX_SYS_REV"
       printf "<%s>" "$SX_SYS_NUM_WLEN" "$SX_SYS_NUM_QM" "$SX_SYS_NUM_ZR" "$SX_SYS_NUM_MAX" "$SX_SYS_NUM_MIN"
-    ' SX_CFG_SKIP_CHK=1 SX_CFG_NUM_RANGE=64 "SX_CFG_SEP=<> ' $" SX_CFG_ARR_UPDATE=1 "SX_CFG_ARR_HOLE=$hole" SX_CFG_ARR_REF= \
+    ' SX_CFG_SKIP_CHK=1 SX_CFG_NUM_RANGE=64 "SX_CFG_SEP=<> ' $" "SX_CFG_ARR_HOLE=$hole" SX_CFG_ARR_REF= \
       SX_SYS_REV=99 SX_SYS_NUM_WLEN=stale SX_SYS_NUM_QM=stale SX_SYS_NUM_ZR=stale SX_SYS_NUM_MAX=stale SX_SYS_NUM_MIN=stale
     The status should be success
-    The stdout should equal "$expected<1><64><<> ' \$><1><$hole><><0>$numeric_expected"
+    The stdout should equal "$expected<1><64><<> ' \$><$hole><><0>$numeric_expected"
     The stderr should equal ''
   End
 

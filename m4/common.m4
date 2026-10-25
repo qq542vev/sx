@@ -337,14 +337,13 @@ define([|M_NUM_BASE16_PREFIX|], [|0[Xx]|])dnl
 define([|M_NUM_BASE16_CHARS|], [|0123456789ABCDEFabcdef|])dnl
 
 # 設定項目名の唯一の一覧。検証・全リセットの引数列もビルド時に生成する。
-define([|M_CFG_META_NAMES|], [|SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_UPDATE ARR_HOLE ARR_REF|])dnl
+define([|M_CFG_META_NAMES|], [|SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_HOLE ARR_REF|])dnl
 
 # 配列を識別するためのシグネチャ。外部コマンドに依存せず、十分に長く複雑な値をデフォルトとする。
 define([|M_CFG_META_DEF_SIG_ARR|], [|array-sx-sig-27c9d9d5-763d-4c3e-862d-a2f270928a38-5f8a2b1c|])dnl
 define([|M_CFG_META_DEF_SKIP_CHK|], [|0|])dnl
 define([|M_CFG_META_DEF_NUM_RANGE|], [|32|])dnl
 define([|M_CFG_META_DEF_SEP|], [|:::|])dnl
-define([|M_CFG_META_DEF_ARR_UPDATE|], [|1|])dnl
 define([|M_CFG_META_DEF_ARR_HOLE|], [||])dnl
 define([|M_CFG_META_DEF_ARR_REF|], [||])dnl
 
@@ -353,7 +352,6 @@ define([|M_CFG_META_PATTERN_SIG_ARR|], [|?*|])dnl
 define([|M_CFG_META_PATTERN_SKIP_CHK|], [|[01]|])dnl
 define([|M_CFG_META_PATTERN_NUM_RANGE|], [|32|64|128|])dnl
 define([|M_CFG_META_PATTERN_SEP|], [|?*|])dnl
-define([|M_CFG_META_PATTERN_ARR_UPDATE|], [|[01]|])dnl
 define([|M_CFG_META_PATTERN_ARR_HOLE|], [|*|])dnl
 define([|M_CFG_META_PATTERN_ARR_REF|], [|*|])dnl
 
@@ -366,7 +364,6 @@ define([|M_CFG_META_DESC_SIG_ARR|], [|配列を識別する署名。|])dnl
 define([|M_CFG_META_DESC_SKIP_CHK|], [|1 で公開 API の引数検査を省略する。|])dnl
 define([|M_CFG_META_DESC_NUM_RANGE|], [|実行シェルの算術域以下で指定する整数のビット幅（32・64・128）。|])dnl
 define([|M_CFG_META_DESC_SEP|], [|設定引数とデータを区切る文字列。|])dnl
-define([|M_CFG_META_DESC_ARR_UPDATE|], [|0 で sx_arr_push・sx_arr_pop によるリビジョン更新を抑制する。|])dnl
 define([|M_CFG_META_DESC_ARR_HOLE|], [|sx_arr_quote・sx_arr_rquote で未設定の配列要素を表す値。|])dnl
 define([|M_CFG_META_DESC_ARR_REF|], [|配列への値指定で変数参照を示す接頭辞。空文字で参照指定を無効にする。|])dnl
 

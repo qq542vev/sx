@@ -12,14 +12,14 @@ Describe 'sx_arr_splice の別シェル隔離実験'
   splice_prepare() (
     cd "$SXTEST_BUILD_PROJECT" || exit
     unset ENV BASH_ENV SX_CFG_SIG_ARR SX_CFG_SKIP_CHK SX_CFG_NUM_RANGE SX_CFG_SEP
-    unset SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF
+    unset SX_CFG_ARR_HOLE SX_CFG_ARR_REF
     yash -efu -o posix ./spec/support/splice_isolated_prepare.sh \
       "$SXTEST_BUILD_DIR/prepare.sh" "$SXTEST_BUILD_DIR/fixture.sh" "$@"
   )
   splice_probe() (
     cd "$SXTEST_BUILD_PROJECT" || exit
     unset ENV BASH_ENV SX_CFG_SIG_ARR SX_CFG_SKIP_CHK SX_CFG_NUM_RANGE SX_CFG_SEP
-    unset SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF
+    unset SX_CFG_ARR_HOLE SX_CFG_ARR_REF
     yash -efu -o posix ./spec/support/splice_isolated_probe.sh \
       "$SXTEST_BUILD_DIR/$1" "$SXTEST_BUILD_DIR/fixture.sh" "$2" "$3" "$4"
   )

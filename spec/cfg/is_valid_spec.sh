@@ -21,10 +21,6 @@ Describe 'sx_cfg_is_valid()'
 			'SKIP_CHK=0' 0
 			'SKIP_CHK=1' 0
 			'SKIP_CHK=01' 1
-			'ARR_UPDATE=0' 0
-			'ARR_UPDATE=1' 0
-			'ARR_UPDATE=2' 1
-			'ARR_UPDATE=01' 1
 			'SIG_ARR=x' 0
 			'SEP=|' 0
 			'ARR_HOLE=' 0
@@ -75,11 +71,15 @@ Describe 'sx_cfg_is_valid()'
 		The status should equal 1
 	End
 
-	Context '廃止された SIG_BASE の拒否'
+	Context '廃止された設定項目の拒否'
 		Parameters
 			'SIG_BASE'
 			'SIG_BASE=custom'
 			'SIG_BASE='
+			'ARR_UPDATE'
+			'ARR_UPDATE=0'
+			'ARR_UPDATE=1'
+			'ARR_UPDATE='
 		End
 
 		It "$1 を設定項目として認めないこと"
@@ -105,7 +105,6 @@ Describe 'sx_cfg_is_valid()'
 			'SX_CFG_SKIP_CHK' 1
 			'SX_CFG_NUM_RANGE' 1
 			'SX_CFG_SEP' 1
-			'SX_CFG_ARR_UPDATE' 1
 			'SX_CFG_ARR_HOLE' 0
 			'SX_CFG_ARR_REF' 0
 		End

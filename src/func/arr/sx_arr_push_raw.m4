@@ -6,7 +6,7 @@ M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_push_raw __sx_var_is_arr __sx_var_is_name _
 ##
 ## 説明:
 ##   sx_arr_push と同じ引数検証を行い、末尾に 0 個以上の値を追加する。
-##   ARR_UPDATE の設定にかかわらず、対象配列のリビジョンは更新しない。
+##   対象配列のリビジョンは更新しない。
 ##   参照・穴の解釈は sx_arr_push と同じである。
 ##
 ## 終了ステータス:

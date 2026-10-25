@@ -6,7 +6,7 @@ Describe 'sx_arr_push_raw -efu 環境検証'
 
   setup_push_raw_efu() {
     unset SX_CFG_SIG_ARR SX_CFG_SKIP_CHK SX_CFG_NUM_RANGE SX_CFG_SEP \
-      SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF
+      SX_CFG_ARR_HOLE SX_CFG_ARR_REF
     sxtest_load ./build/modules/sx_arr_push_raw.sh
     sxtest_run arr SX_SYS_REV -- 'sx_cfg_set; sx_arr_gen arr a b c'
     before_sig=$arr
@@ -22,16 +22,14 @@ Describe 'sx_arr_push_raw -efu 環境検証'
     check_no_leak
   }
 
-  Context '更新設定と検査省略'
+  Context '検査省略の有無'
     Parameters
-      0 0
-      0 1
-      1 0
-      1 1
+      0
+      1
     End
 
     It 'リビジョンを保持し、内部変数を残さず成功する'
-      sxtest_run SX_CFG_ARR_UPDATE SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1" "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       When run checked_push_raw
       The status should be success
     End

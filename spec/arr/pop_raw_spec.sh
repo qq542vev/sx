@@ -8,7 +8,7 @@ Describe 'sx_arr_pop_raw'
 
   setup_pop_raw() {
     unset SX_CFG_SIG_ARR SX_CFG_SKIP_CHK SX_CFG_NUM_RANGE SX_CFG_SEP \
-      SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF
+      SX_CFG_ARR_HOLE SX_CFG_ARR_REF
     sxtest_load ./build/modules/sx_arr_pop_raw.sh
     sxtest_run arr SX_SYS_REV -- 'sx_cfg_set; sx_arr_gen arr a b c'
     before_sig=$arr
@@ -16,16 +16,14 @@ Describe 'sx_arr_pop_raw'
   }
   BeforeEach setup_pop_raw
 
-  Context '更新設定と検査省略'
+  Context '検査省略の有無'
     Parameters
-      0 0
-      0 1
-      1 0
-      1 1
+      0
+      1
     End
 
     It '要素を操作し、元配列の署名とカウンタを保持する'
-      sxtest_run SX_CFG_ARR_UPDATE SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1" "SKIP_CHK=$2"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
       When call sx_arr_pop_raw out: arr
       The status should be success
       The variable arr_len should equal 2
@@ -33,36 +31,6 @@ Describe 'sx_arr_pop_raw'
       The variable arr_2 should be undefined
       The variable arr should equal "$before_sig"
       The variable SX_SYS_REV should equal "$before_rev"
-      The variable SX_CFG_ARR_UPDATE should equal "$1"
-    End
-  End
-
-  Context 'ARR_UPDATE を要求しない'
-    Parameters
-      unset
-      invalid
-    End
-
-    It '未設定または不正でも操作できる'
-      case "$1" in
-        unset) unset SX_CFG_ARR_UPDATE;;
-        invalid) SX_CFG_ARR_UPDATE=invalid;;
-      esac
-      When call sx_arr_pop_raw out: arr
-      The status should be success
-      The variable arr_len should equal 2
-      The variable out should equal c
-      The variable arr_2 should be undefined
-      The variable arr should equal "$before_sig"
-      The variable SX_SYS_REV should equal "$before_rev"
-      case "$1" in
-        unset)
-          The variable SX_CFG_ARR_UPDATE should be undefined
-          ;;
-        invalid)
-          The variable SX_CFG_ARR_UPDATE should equal invalid
-          ;;
-      esac
     End
   End
 
@@ -244,13 +212,8 @@ Describe 'sx_arr_pop_raw'
   End
 
   Context '分配先配列のリビジョン'
-    Parameters
-      0
-      1
-    End
 
     It '元配列の署名を保持し、分配先配列には新しいリビジョンを発行する'
-      sxtest_run SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$1"
       When call sx_arr_pop_raw 2out: arr
       The status should be success
       The variable out should equal "${SX_CFG_SIG_ARR}:$before_rev"

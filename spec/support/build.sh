@@ -65,7 +65,7 @@ build_shell_env() (
   cd "$SXTEST_BUILD_DIR" || exit
   unset ENV BASH_ENV SXTEST_LOAD_MOD
   unset SX_CFG_SIG_ARR SX_CFG_SKIP_CHK SX_CFG_NUM_RANGE SX_CFG_SEP
-  unset SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF
+  unset SX_CFG_ARR_HOLE SX_CFG_ARR_REF
   unset SX_SYS_REV SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX SX_SYS_NUM_MIN
   while [ "$1" != ::: ]; do
     # shellcheck disable=SC2163 # 名前=値を引数として受け取り、環境へ設定する。
@@ -98,7 +98,7 @@ build_unit_paths() {
 # 第2引数は数値域。128bit のケースでも算術演算は要求しない。
 build_probe() (
   unset SX_CFG_SIG_ARR SX_CFG_SKIP_CHK SX_CFG_NUM_RANGE SX_CFG_SEP
-  unset SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF ENV BASH_ENV
+  unset SX_CFG_ARR_HOLE SX_CFG_ARR_REF ENV BASH_ENV
   SX_CFG_NUM_RANGE=${2-64}
   export SX_CFG_NUM_RANGE
   # shellcheck disable=SC2016 # コードは子シェルで展開する。

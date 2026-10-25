@@ -8,7 +8,7 @@ Describe 'sx_var_dump'
   setup_var_dump_fixture() {
     # 対象モジュールと準備用シェルを、ともに既定設定で初期化する。
     unset SX_CFG_SIG_ARR SX_CFG_SKIP_CHK SX_CFG_NUM_RANGE SX_CFG_SEP \
-      SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF
+      SX_CFG_ARR_HOLE SX_CFG_ARR_REF
     sxtest_load ./build/modules/sx_var_dump.sh
     # 各Exampleで配列の初期状態を準備する。
     sxtest_run myarr -- '

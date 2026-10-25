@@ -23,8 +23,8 @@ Describe 'sx_cfg_set()'
 	Include ./spec/support/run.sh
 
 	cfg_set_custom() {
-		sxtest_run SX_CFG_SIG_ARR SX_CFG_NUM_RANGE SX_CFG_SEP SX_CFG_ARR_UPDATE SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_CFG_SKIP_CHK SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- 'sx_cfg_set "$@"' SIG_ARR=custom-array NUM_RANGE=64 \
-			SEP=@@ ARR_UPDATE=0 ARR_HOLE=hole ARR_REF=@ "SKIP_CHK=${1-0}"
+		sxtest_run SX_CFG_SIG_ARR SX_CFG_NUM_RANGE SX_CFG_SEP SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_CFG_SKIP_CHK SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR SX_SYS_NUM_MAX SX_SYS_NUM_MIN -- 'sx_cfg_set "$@"' SIG_ARR=custom-array NUM_RANGE=64 \
+			SEP=@@ ARR_HOLE=hole ARR_REF=@ "SKIP_CHK=${1-0}"
 	}
 
 	cfg_with_ifs() {
@@ -54,7 +54,6 @@ Describe 'sx_cfg_set()'
 			The variable SX_CFG_SKIP_CHK should equal "${SX_CFG_META_DEF_SKIP_CHK}"
 			The variable SX_CFG_NUM_RANGE should equal "${SX_CFG_META_DEF_NUM_RANGE}"
 			The variable SX_CFG_SEP should equal "${SX_CFG_META_DEF_SEP}"
-			The variable SX_CFG_ARR_UPDATE should equal "${SX_CFG_META_DEF_ARR_UPDATE}"
 			The variable SX_CFG_ARR_HOLE should equal "${SX_CFG_META_DEF_ARR_HOLE}"
 			The variable SX_CFG_ARR_REF should equal "${SX_CFG_META_DEF_ARR_REF}"
 			The variable SX_SYS_NUM_WLEN should equal "${SX_NUM_I32_WLEN}"
@@ -90,7 +89,6 @@ Describe 'sx_cfg_set()'
 			The variable SX_CFG_SKIP_CHK should equal "${SX_CFG_META_DEF_SKIP_CHK}"
 			The variable SX_CFG_NUM_RANGE should equal "${SX_CFG_META_DEF_NUM_RANGE}"
 			The variable SX_CFG_SEP should equal "${SX_CFG_META_DEF_SEP}"
-			The variable SX_CFG_ARR_UPDATE should equal "${SX_CFG_META_DEF_ARR_UPDATE}"
 			The variable SX_CFG_ARR_HOLE should equal "${SX_CFG_META_DEF_ARR_HOLE}"
 			The variable SX_CFG_ARR_REF should equal "${SX_CFG_META_DEF_ARR_REF}"
 		End
@@ -142,7 +140,6 @@ Describe 'sx_cfg_set()'
 			'SX_CFG_SKIP_CHK'
 			'SX_CFG_NUM_RANGE'
 			'SX_CFG_SEP'
-			'SX_CFG_ARR_UPDATE'
 			'SX_CFG_ARR_HOLE'
 			'SX_CFG_ARR_REF'
 			'SX_SYS_NUM_WLEN'
@@ -163,7 +160,6 @@ Describe 'sx_cfg_set()'
 			The variable SX_CFG_SKIP_CHK should equal 0
 			The variable SX_CFG_NUM_RANGE should equal 64
 			The variable SX_CFG_SEP should equal @@
-			The variable SX_CFG_ARR_UPDATE should equal 0
 			The variable SX_CFG_ARR_HOLE should equal hole
 			The variable SX_CFG_ARR_REF should equal @
 			The variable SX_SYS_NUM_WLEN should equal "${SX_NUM_I64_WLEN}"
@@ -210,11 +206,15 @@ Describe 'sx_cfg_set()'
 		The variable SX_CFG_SIG_ARR should equal "${SX_CFG_META_DEF_SIG_ARR}"
 	End
 
-	Context '廃止された SIG_BASE の拒否'
+	Context '廃止された設定項目の拒否'
 		Parameters
 			'SIG_BASE'
 			'SIG_BASE=custom'
 			'SIG_BASE='
+			'ARR_UPDATE'
+			'ARR_UPDATE=0'
+			'ARR_UPDATE=1'
+			'ARR_UPDATE='
 		End
 
 		It "$1 を64で拒否し、他の設定も変更しないこと"

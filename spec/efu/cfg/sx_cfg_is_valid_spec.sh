@@ -44,7 +44,6 @@ Describe 'sx_cfg_is_valid -efu 環境検証'
       'SX_CFG_SKIP_CHK'
       'SX_CFG_NUM_RANGE'
       'SX_CFG_SEP'
-      'SX_CFG_ARR_UPDATE'
       'SX_CFG_ARR_HOLE'
       'SX_CFG_ARR_REF'
     End

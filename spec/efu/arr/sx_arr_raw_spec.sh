@@ -56,37 +56,20 @@ Describe '配列のリビジョン更新と raw 処理 -efu 環境検証'
     check_no_leak
   }
 
-  Context '通常版は更新設定を参照しない'
+  Context '通常版のリビジョン更新'
     Parameters
-      sx_arr_push 0
-      sx_arr_push unset
-      sx_arr_push invalid
-      sx_arr_splice 0
-      sx_arr_splice unset
-      sx_arr_splice invalid
-      sx_arr_pop 0
-      sx_arr_pop unset
-      sx_arr_pop invalid
-      __sx_arr_push 0
-      __sx_arr_push unset
-      __sx_arr_push invalid
-      __sx_arr_splice 0
-      __sx_arr_splice unset
-      __sx_arr_splice invalid
-      __sx_arr_pop 0
-      __sx_arr_pop unset
-      __sx_arr_pop invalid
+      sx_arr_push
+      sx_arr_splice
+      sx_arr_pop
+      __sx_arr_push
+      __sx_arr_splice
+      __sx_arr_pop
     End
 
     It '一度だけ更新し、内部変数を残さず成功する'
       load_subject "$1"
       sxtest_run arr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" arr a b c
       before_rev=$SX_SYS_REV
-      case "$2" in
-        unset) unset SX_CFG_ARR_UPDATE;;
-        invalid) SX_CFG_ARR_UPDATE=invalid;;
-        *) sxtest_run SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$2";;
-      esac
       When run updated_checked "$1"
       The status should be success
     End
@@ -111,14 +94,11 @@ Describe '配列のリビジョン更新と raw 処理 -efu 環境検証'
     check_no_leak
   }
 
-  Context '更新設定に依存しない raw 処理'
+  Context 'raw 処理のリビジョン保持'
     Parameters
-      push 0
-      push 1
-      splice 0
-      splice 1
-      pop 0
-      pop 1
+      push
+      splice
+      pop
     End
 
     It '元配列の署名とカウンタを保持し作業変数を残さない'
@@ -134,7 +114,6 @@ Describe '配列のリビジョン更新と raw 処理 -efu 環境検証'
           ;;
         *) return 64;;
       esac
-      sxtest_run SX_CFG_ARR_UPDATE -- 'sx_cfg_set "$@"' "ARR_UPDATE=$2"
       When run raw_checked "$1"
       The status should be success
     End
