@@ -19,8 +19,8 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_charset Q_arg|])dnl
 
 __sx_str_is_of() {
-	Q_charset="${1}"
-	shift
+	Q_charset="${1-}"
+	${1+'shift'}
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in '' | *[!"${Q_charset}"]*)

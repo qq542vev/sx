@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_SPACE __sx_str_is_of|])dnl
+M_REQUIRE([|__sx_str_is_of|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_str_is_space - すべての引数が空白文字（タブ, 改行, 垂直タブ, 改ページ, 復帰, スペース）のみで構成されているか確認する（内部用）
 ##
@@ -13,7 +13,7 @@ pushdef([|CLEANUP|])dnl
 ##    1  空白文字以外が含まれる、または空文字列が含まれる
 
 __sx_str_is_space() {
-	__sx_str_is_of "${SX_STR_SPACE}" "${@}" || return
+	__sx_str_is_of M_SH_QUOTE(M_STR_SPACE) "${@}" || return
 }
 
 popdef([|CLEANUP|])dnl

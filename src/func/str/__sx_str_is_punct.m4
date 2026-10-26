@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_PUNCT __sx_str_is_of|])dnl
+M_REQUIRE([|__sx_str_is_of|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_str_is_punct - すべての引数が区切り記号（!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~）のみで構成されているか確認する（内部用）
 ##
@@ -13,7 +13,7 @@ pushdef([|CLEANUP|])dnl
 ##    1  区切り記号以外が含まれる、または空文字列が含まれる
 
 __sx_str_is_punct() {
-	__sx_str_is_of "${SX_STR_PUNCT}" "${@}" || return
+	__sx_str_is_of M_SH_QUOTE(M_STR_PUNCT) "${@}" || return
 }
 
 popdef([|CLEANUP|])dnl

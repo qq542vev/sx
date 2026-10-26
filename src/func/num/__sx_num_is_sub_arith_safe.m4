@@ -19,7 +19,9 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_acc Q_arg|])dnl
 
 __sx_num_is_sub_arith_safe() {
-	case "${#}" in 0) return 0;; esac
+	case "${#}" in 0)
+		return M_EX_OK
+	esac
 
 	Q_arg="${1}"
 	shift

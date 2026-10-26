@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_OCT __sx_str_is_of|])dnl
+M_REQUIRE([|__sx_str_is_of|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_str_is_oct - すべての引数が8進数文字（0-7）のみで構成されているか確認する（内部用）
 ##
@@ -13,7 +13,7 @@ pushdef([|CLEANUP|])dnl
 ##    1  8進数文字以外が含まれる、または空文字列が含まれる
 
 __sx_str_is_oct() {
-	__sx_str_is_of "${SX_STR_OCT}" "${@}" || return
+	__sx_str_is_of M_SH_QUOTE(M_STR_OCT) "${@}" || return
 }
 
 popdef([|CLEANUP|])dnl

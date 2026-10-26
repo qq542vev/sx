@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_ASCII __sx_str_is_of|])dnl
+M_REQUIRE([|__sx_str_is_of|])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_str_is_ascii - すべての引数がASCII文字（0x00-0x7F）のみで構成されているか確認する（内部用）
 ##
@@ -13,7 +13,7 @@ pushdef([|CLEANUP|])dnl
 ##    1  ASCII文字以外が含まれる、または空文字列が含まれる
 
 __sx_str_is_ascii() {
-	__sx_str_is_of "${SX_STR_ASCII}" "${@}" || return
+	__sx_str_is_of M_SH_QUOTE(M_STR_ASCII) "${@}" || return
 }
 
 popdef([|CLEANUP|])dnl
