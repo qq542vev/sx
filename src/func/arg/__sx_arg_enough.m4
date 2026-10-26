@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SEP __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_cmp_arith __sx_num_cmp_nat0 __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SEP __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_cmp_arith __sx_num_cmp_nat0 __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_num_sub_nat0|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する（内部用）
@@ -10,6 +10,7 @@ M_RENAME_QI([|dnl
 ##   sx_arg_enough の内部実装。引数チェックは行わない。
 ##   SX_CFG_SEP を $1/$2/$3 のいずれかから検出し、cb・need を抽出した上で
 ##   添字・残件数・必要件数・数値経路・コールバックを位置変数で管理する。
+##   負の必要件数は引数個数から絶対値を引いて求め、0以下なら即座に成功する。
 ##   残件数と必要件数が算術域内なら算術、それ以外は多倍長で更新・比較する。
 ##   コールバック呼び出し前には一時変数を解放し、再入時も状態を保持する。
 ##
@@ -38,11 +39,23 @@ __sx_arg_enough() {
 	esac
 
 	Q_left="${#}"
-	Q_need="${Q_need:-${#}}"
+	Q_need="${Q_need:-${Q_left}}"
 
-	case "${Q_need}" in 0)
-		unset CLEANUP
-		return
+	case "${Q_need}" in
+		0 | [+-]0)
+			unset CLEANUP
+			return
+			;;
+		+*) Q_need="${Q_need#+}";;
+		-*)
+			Q_need="${Q_need#-}"
+			__sx_num_cmp_nat0 "${Q_need}" "${Q_left}" || case "${?}" in [23])
+				unset CLEANUP
+				return
+			esac
+
+			__sx_num_sub_nat0 Q_need "${Q_left}" "${Q_need}"
+			;;
 	esac
 
 	case "${Q_left}" in 0)

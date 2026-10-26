@@ -192,14 +192,123 @@ Describe 'sx_arg_enough 多倍長対応'
     End
   End
 
+  Context '負の必要数の算術経路と多倍長経路'
+    Parameters:matrix
+      0 1
+      arith nat0
+    End
+
+    It '不一致を1個許容し必要数に達したところで成功する'
+      load_subject sx_arg_enough
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      select_enough_path "$2"
+      calls=''
+      cb() {
+        calls="${calls}${2}:${1};"
+        case "$1" in skip) return 77;; esac
+        return 0
+      }
+      When call sx_arg_enough cb -1 ::: skip 'a b' "c'd"
+      The status should be success
+      The variable calls should equal "1:skip;2:a b;3:c'd;"
+    End
+
+    It '許容した不一致数を超えたところで失敗する'
+      load_subject sx_arg_enough
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      select_enough_path "$2"
+      calls=''
+      cb() { calls="${calls}${2}:${1};"; return 77; }
+      When call sx_arg_enough cb -1 ::: a b c
+      The status should equal 1
+      The variable calls should equal '1:a;2:b;'
+    End
+
+    It '負の必要数で再入しても外側の状態を保持する'
+      load_subject sx_arg_enough
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      select_enough_path "$2"
+      calls=''
+      inner_cb() { return 0; }
+      cb() {
+        sx_arg_enough inner_cb -1 ::: x y
+        calls="${calls}${2}:${1};"
+        case "$1" in b) return 77;; esac
+        return 0
+      }
+      When call sx_arg_enough cb -2 ::: a b c d
+      The status should be success
+      The variable calls should equal '1:a;2:b;3:c;'
+    End
+  End
+
+  Context '負の必要数による無条件成功'
+    Parameters:matrix
+      sx_arg_enough __sx_arg_enough
+      0 1
+      -3 -4 -9223372036854775808 -18446744073709551616 -10000000000000000000000000000000000000000
+    End
+
+    It '必要数が0以下ならコールバックを呼ばない'
+      subject="$1"
+      load_subject "$subject"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      called=0
+      cb() { called=1; return 77; }
+      When call "$subject" cb "$3" ::: a b c
+      The status should be success
+      The variable called should equal 0
+    End
+
+    It '空リストでもコールバックを呼ばない'
+      subject="$1"
+      load_subject "$subject"
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$2"
+      called=0
+      cb() { called=1; return 77; }
+      When call "$subject" cb "$3" :::
+      The status should be success
+      The variable called should equal 0
+    End
+  End
+
+  Context '正号と符号付きゼロ'
+    Parameters
+      0 '+0' 0
+      1 '+0' 0
+      0 '+1' 1
+      1 '+1' 1
+      0 '+3' 3
+      1 '+3' 3
+      0 '-0' 0
+      1 '-0' 0
+    End
+
+    It '符号なしの必要数と同じ回数で短絡成功する'
+      load_subject sx_arg_enough
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      calls=0
+      cb() { calls=$((calls + 1)); }
+      When call sx_arg_enough cb "$2" ::: a b c
+      The status should be success
+      The variable calls should equal "$3"
+    End
+  End
+
   Context '必要件数の形式検証'
     Parameters
       # ShellSpecのデータ行であり、コマンドとして実行されない。
       # shellcheck disable=SC2286
       ''
       # shellcheck disable=SC2215
-      -1
-      +1
+      -01
+      -00
+      +01
+      +00
+      '-'
+      '+'
+      --1
+      +-1
       00
       07
       08
@@ -230,6 +339,12 @@ Describe 'sx_arg_enough 多倍長対応'
       127 128 1 0 nat0
       128 127 0 127 nat0
       128 default 0 128 nat0
+      127 -1 0 126 arith
+      128 -1 0 127 nat0
+      127 -126 0 1 arith
+      128 -127 0 1 nat0
+      128 -128 0 0 nat0
+      128 -129 0 0 nat0
     End
 
     It '算術域の前後で正しい添字と必要数で短絡終了する'

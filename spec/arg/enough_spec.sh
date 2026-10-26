@@ -137,11 +137,29 @@ Describe 'sx_arg_enough'
     End
   End
 
-  Describe 'エラーケース'
-    It 'count が負数の場合に EX_USAGE を返す'
-      cb() { return 0; }
-      When call sx_arg_enough cb -1 ::: a b
-      The status should equal 64
+  Describe '負の必要数'
+    It '引数3個で -1 なら2個の一致で成功する'
+      call_count=0
+      cb() { : $((call_count += 1)); return 0; }
+      When call sx_arg_enough cb -1 ::: a b c
+      The status should be success
+      The variable call_count should equal 2
+    End
+
+    It '許容した不一致数を超えると失敗する'
+      call_count=0
+      cb() { : $((call_count += 1)); return 1; }
+      When call sx_arg_enough cb -1 ::: a b c
+      The status should equal 1
+      The variable call_count should equal 2
+    End
+
+    It '空リストでは成功してコールバックを呼ばない'
+      called=0
+      cb() { called=1; }
+      When call sx_arg_enough cb -1 :::
+      The status should be success
+      The variable called should equal 0
     End
   End
 

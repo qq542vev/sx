@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_enough __sx_num_is_nat0_base|])dnl
+M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_enough __sx_num_is_int_base|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する
 ##
@@ -16,7 +16,10 @@ pushdef([|CLEANUP|])dnl
 ##     ::: で metadata とデータを分離する。
 ##     need を省略すると data の個数がデフォルト値となる。
 ##     need に 0 を指定すると常に成功する（callback は呼ばれない）。
-##     need は符号なし10進整数を受け付ける（0以外は先頭の0を認めない）。
+##     need は符号付き10進整数を受け付ける（絶対値が0以外は先頭の0を認めない）。
+##     正号は省略でき、+0 と -0 は 0 と同じ意味になる。
+##     負数は data の個数に加算した値を必要数とする（-1 は1個の不一致を許容する）。
+##     加算した必要数が0以下なら常に成功する（callback は呼ばれない）。
 ##
 ##   第2形式（短縮形式）:
 ##     [cb] [arg ...]
@@ -44,7 +47,7 @@ sx_arg_enough() {
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}" | "${2+X${2}}") ;;
-		"${3+X${3}}") __sx_num_is_nat0_base 10 "${2}" || return M_EX_USAGE;;
+		"${3+X${3}}") __sx_num_is_int_base 10 "${2}" || return M_EX_USAGE;;
 	esac
 
 	__sx_arg_enough "${@}" || return

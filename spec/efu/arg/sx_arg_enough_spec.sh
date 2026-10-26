@@ -11,6 +11,23 @@ Describe 'sx_arg_enough -efu 環境検証'
     The status should be success
   End
 
+  It '負の必要数で不一致を1個許容する'
+    calls=0
+    cb() { calls=$((calls + 1)); case "$1" in b) return 77;; esac; }
+    verify() {
+      sx_arg_enough cb -1 ::: a b c
+      [ "$calls" = 3 ]
+    }
+    When run efu_run verify
+    The status should be success
+  End
+
+  It '必要数が0以下ならコールバックを呼ばず成功する'
+    cb() { return 77; }
+    When run efu_run sx_arg_enough cb -18446744073709551616 ::: a b c
+    The status should be success
+  End
+
   Context '多倍長経路'
     Parameters
       0
