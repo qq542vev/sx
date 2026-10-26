@@ -36,20 +36,16 @@ __sx_arr_splice_raw() {
 	Q_hole_end=0
 
 	case "${Q_n}" in
-		-0) Q_n=0;;
+		-0 | +*) Q_n="${Q_n#[+-]}";;
 		-*)
 			Q_n="${Q_n#-}"
 
 			__sx_num_cmp_nat0 "${Q_n}" "${Q_len}" || case "${?}" in
-				1) __sx_num_sub_nat0 Q_n "${Q_len}" "${Q_n}";;
+				3) __sx_num_sub_nat0 Q_gap "${Q_n}" "${Q_len}";&
 				2) Q_n=0;;
-				3)
-					__sx_num_sub_nat0 Q_gap "${Q_n}" "${Q_len}"
-					Q_n=0
-					;;
+				1) __sx_num_sub_nat0 Q_n "${Q_len}" "${Q_n}";;
 			esac
 			;;
-		+*) Q_n="${Q_n#+}";;
 	esac
 
 	# 1) 削除範囲の確定。先頭より前の距離 gap も残り長に含める。
