@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_SWORD __sx_arr_gen __sx_var_copy __sx_var_is_set|])dnl
+M_REQUIRE([|SX_STR_ALUND __sx_arr_gen __sx_var_copy __sx_var_is_set|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arr_bind_commit - 一括書き込みと bind 比較（コミット）を実行する（内部用）
@@ -47,7 +47,7 @@ __sx_arr_bind_commit() {
 		esac
 
 		case "${Q_oseg}" in
-			*/*["${SX_STR_SWORD}"]*)
+			*/*["${SX_STR_ALUND}"]*)
 				Q_frac="${Q_oseg%%[!/0-9]*}"
 				Q_vn="${Q_oseg#"${Q_frac}"}"
 
@@ -66,7 +66,7 @@ __sx_arr_bind_commit() {
 						;;
 				esac
 				;;
-			["${SX_STR_SWORD}"]*)
+			["${SX_STR_ALUND}"]*)
 				case "${Q_fseg:+X}" in X)
 					unset "${Q_oseg}"
 				esac

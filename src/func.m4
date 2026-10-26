@@ -320,8 +320,8 @@ M_UNIT([|sx_str_is_punct|], [|src/func/str/sx_str_is_punct.m4|])dnl
 M_UNIT([|__sx_str_is_punct|], [|src/func/str/__sx_str_is_punct.m4|])dnl
 M_UNIT([|sx_str_is_space|], [|src/func/str/sx_str_is_space.m4|])dnl
 M_UNIT([|__sx_str_is_space|], [|src/func/str/__sx_str_is_space.m4|])dnl
-M_UNIT([|sx_str_is_sword|], [|src/func/str/sx_str_is_sword.m4|])dnl
-M_UNIT([|__sx_str_is_sword|], [|src/func/str/__sx_str_is_sword.m4|])dnl
+M_UNIT([|sx_str_is_alund|], [|src/func/str/sx_str_is_alund.m4|])dnl
+M_UNIT([|__sx_str_is_alund|], [|src/func/str/__sx_str_is_alund.m4|])dnl
 M_UNIT([|sx_str_is_upper|], [|src/func/str/sx_str_is_upper.m4|])dnl
 M_UNIT([|__sx_str_is_upper|], [|src/func/str/__sx_str_is_upper.m4|])dnl
 M_UNIT([|sx_str_is_word|], [|src/func/str/sx_str_is_word.m4|])dnl

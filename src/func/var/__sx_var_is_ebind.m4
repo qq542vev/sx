@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_SWORD SX_STR_WORD __sx_num_cmp_nat0|])dnl
+M_REQUIRE([|SX_STR_ALUND SX_STR_WORD __sx_num_cmp_nat0|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_is_ebind - 文字列が拡張バインド形式として有効か確認する（内部用）
@@ -15,7 +15,7 @@ __sx_var_is_ebind() {
 	for Q_arg in "${@}"; do
 		Q_mark=
 
-		case "${Q_arg}" in *[!":@/${SX_STR_WORD}"]* | 0 | 0[!/]* | *:0[!/]* | /* | *[!0-9]/* | */0* | *@ | *@[!"${SX_STR_SWORD}"]* | @* | *[!/0-9]@*)
+		case "${Q_arg}" in *[!":@/${SX_STR_WORD}"]* | 0 | 0[!/]* | *:0[!/]* | /* | *[!0-9]/* | */0* | *@ | *@[!"${SX_STR_ALUND}"]* | @* | *[!/0-9]@*)
 			eval unset CLEANUP "${Q_mark}"
 			return 1
 		esac

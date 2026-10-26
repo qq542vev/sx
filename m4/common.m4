@@ -209,7 +209,7 @@ define([|M_STR_PUNCT|], [|[|!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~|]|])dnl
 define([|M_STR_ALPHA|], [|M_STR_UPPER()[||]M_STR_LOWER()|])dnl
 define([|M_STR_ALNUM|], [|M_STR_DIGIT()M_STR_ALPHA()|])dnl
 define([|M_STR_WORD|], [|_[||]M_STR_ALNUM()|])dnl
-define([|M_STR_SWORD|], [|_[||]M_STR_ALPHA()|])dnl
+define([|M_STR_ALUND|], [|_[||]M_STR_ALPHA()|])dnl
 define([|M_STR_GRAPH|], [|M_STR_PUNCT()M_STR_ALNUM()|])dnl
 define([|M_STR_PRINT|], [| M_STR_GRAPH()|])dnl
 define([|M_STR_ASCII|], [|M_STR_CNTRL()M_STR_PRINT()|])dnl

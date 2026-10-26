@@ -90,7 +90,7 @@ M_UNIT([|SX_STR_PUNCT|], [|src/const/str/SX_STR_PUNCT.m4|])dnl
 M_UNIT([|SX_STR_ALPHA|], [|src/const/str/SX_STR_ALPHA.m4|])dnl
 M_UNIT([|SX_STR_ALNUM|], [|src/const/str/SX_STR_ALNUM.m4|])dnl
 M_UNIT([|SX_STR_WORD|], [|src/const/str/SX_STR_WORD.m4|])dnl
-M_UNIT([|SX_STR_SWORD|], [|src/const/str/SX_STR_SWORD.m4|])dnl
+M_UNIT([|SX_STR_ALUND|], [|src/const/str/SX_STR_ALUND.m4|])dnl
 M_UNIT([|SX_STR_GRAPH|], [|src/const/str/SX_STR_GRAPH.m4|])dnl
 M_UNIT([|SX_STR_PRINT|], [|src/const/str/SX_STR_PRINT.m4|])dnl
 M_UNIT([|SX_STR_ASCII|], [|src/const/str/SX_STR_ASCII.m4|])dnl

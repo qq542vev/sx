@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_STR_SWORD SX_STR_WORD __sx_num_add1_nat0 __sx_num_add_nat0 __sx_num_cmp_nat0 __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_var_copy __sx_var_copy_script __sx_var_unset|])dnl
+M_REQUIRE([|SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_STR_ALUND SX_STR_WORD __sx_num_add1_nat0 __sx_num_add_nat0 __sx_num_cmp_nat0 __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_var_copy __sx_var_copy_script __sx_var_unset|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arr_splice_raw - リビジョンを更新せず配列要素を挿入・削除する（内部用）
@@ -144,7 +144,7 @@ __sx_arr_splice_raw() {
 		for Q_val in "${@}"; do
 			case "${Q_val}" in
 				"${SX_CFG_ARR_HOLE}" | "${SX_CFG_ARR_REF}"*[!${SX_STR_WORD}]*) ;;
-				"${SX_CFG_ARR_REF}"[${SX_STR_SWORD}]*) M_STR_APPEND([|Q_chain|], [|" ${Q_val#"${SX_CFG_ARR_REF}"}-${Q_arr}_${Q_cnt}"|]);;
+				"${SX_CFG_ARR_REF}"[${SX_STR_ALUND}]*) M_STR_APPEND([|Q_chain|], [|" ${Q_val#"${SX_CFG_ARR_REF}"}-${Q_arr}_${Q_cnt}"|]);;
 			esac
 
 			M_NUM_INCRM1([|Q_cnt|])
@@ -162,7 +162,7 @@ __sx_arr_splice_raw() {
 				continue
 				;;
 			"${SX_CFG_ARR_REF:-"${Q_val}"}" | "${SX_CFG_ARR_REF}"*[!${SX_STR_WORD}]*) ;;
-			"${SX_CFG_ARR_REF}"[${SX_STR_SWORD}]*)
+			"${SX_CFG_ARR_REF}"[${SX_STR_ALUND}]*)
 				# 参照の書込みは一括コピーに任せるが、挿入位置は1要素分進める。
 				M_NUM_INCRM1([|Q_n|])
 				continue

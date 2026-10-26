@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_SWORD SX_STR_WORD|])dnl
+M_REQUIRE([|SX_STR_ALUND SX_STR_WORD|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_is_bind - 文字列が分配代入バインド形式として有効か確認する（内部用）
@@ -15,7 +15,7 @@ __sx_var_is_bind() {
 	for Q_arg in "${@}"; do
 		Q_mark=
 
-		case "${Q_arg}" in *[!":@${SX_STR_WORD}"]* | 0* | *:0* | *@ | *@[!"${SX_STR_SWORD}"]* | @*:* | *[!0-9]@*:*)
+		case "${Q_arg}" in *[!":@${SX_STR_WORD}"]* | 0* | *:0* | *@ | *@[!"${SX_STR_ALUND}"]* | @*:* | *[!0-9]@*:*)
 			eval unset CLEANUP "${Q_mark}"
 			return 1
 		esac
@@ -35,13 +35,13 @@ __sx_var_is_bind() {
 					return 1
 					;;
 				*@*) Q_vn="${Q_seg#*@}" Q_type=arr;;
-				["${SX_STR_SWORD}"]*)
+				["${SX_STR_ALUND}"]*)
 					case "${Q_arg}" in
 						*:*) Q_vn="${Q_seg}" Q_type=scalar;;
 						*) Q_vn="${Q_seg}" Q_type=list;;
 					esac
 					;;
-				*["${SX_STR_SWORD}"]*) Q_vn="M_STR_LTRIM([|Q_seg|], [|[!0-9]|])" Q_type=list;;
+				*["${SX_STR_ALUND}"]*) Q_vn="M_STR_LTRIM([|Q_seg|], [|[!0-9]|])" Q_type=list;;
 			esac
 
 			case "${Q_vn:+X}" in X)

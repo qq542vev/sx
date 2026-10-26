@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_SWORD __sx_var_is_arr __sx_var_is_set|])dnl
+M_REQUIRE([|SX_STR_ALUND __sx_var_is_arr __sx_var_is_set|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_is_bind_ready - バインド形式が直ちにバインド可能な状態か確認する（内部用）
@@ -23,13 +23,13 @@ __sx_var_is_bind_ready() {
 
 			case "${Q_seg}" in
 				*@*) __sx_var_is_arr "${Q_seg#*@}";;
-				[${SX_STR_SWORD}]*)
+				[${SX_STR_ALUND}]*)
 					case "${Q_arg}" in
 						*:*) ! __sx_var_is_set "${Q_seg}";;
 						*) __sx_var_is_set "${Q_seg}";;
 					esac
 					;;
-				*[${SX_STR_SWORD}]*) __sx_var_is_set "M_STR_LTRIM([|Q_seg|], [|[!0-9]|])";;
+				*[${SX_STR_ALUND}]*) __sx_var_is_set "M_STR_LTRIM([|Q_seg|], [|[!0-9]|])";;
 			esac || {
 				unset CLEANUP
 				return 1
