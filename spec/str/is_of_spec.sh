@@ -32,6 +32,21 @@ Describe 'sx_str_is_of'
     The status should be success
   End
 
+  It '文字集合が空で非空の文字列がある場合、1を返すこと'
+    When call sx_str_is_of "" "a"
+    The status should equal 1
+  End
+
+  It '文字集合と判定対象の文字列がともに空の場合、1を返すこと'
+    When call sx_str_is_of "" ""
+    The status should equal 1
+  End
+
+  It '文字集合が空でも判定対象の文字列がない場合、成功を返すこと'
+    When call sx_str_is_of ""
+    The status should be success
+  End
+
   It '文字集合に特殊文字（]や-など）が含まれていても正しく機能すること'
     When call sx_str_is_of "[]-" "]" "[" "-" "][" "---"
     The status should be success

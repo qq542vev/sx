@@ -22,6 +22,11 @@ __sx_str_is_of() {
 	Q_charset="${1-}"
 	${1+'shift'}
 
+	case "${Q_charset:+X}:${1+X}" in :X)
+		unset CLEANUP
+		return 1
+	esac
+
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in '' | *[!"${Q_charset}"]*)
 			unset CLEANUP
