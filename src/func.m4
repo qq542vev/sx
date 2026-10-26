@@ -312,6 +312,8 @@ M_UNIT([|sx_str_is_hex|], [|src/func/str/sx_str_is_hex.m4|])dnl
 M_UNIT([|__sx_str_is_hex|], [|src/func/str/__sx_str_is_hex.m4|])dnl
 M_UNIT([|sx_str_is_lower|], [|src/func/str/sx_str_is_lower.m4|])dnl
 M_UNIT([|__sx_str_is_lower|], [|src/func/str/__sx_str_is_lower.m4|])dnl
+M_UNIT([|sx_str_is_nonempty|], [|src/func/str/sx_str_is_nonempty.m4|])dnl
+M_UNIT([|__sx_str_is_nonempty|], [|src/func/str/__sx_str_is_nonempty.m4|])dnl
 M_UNIT([|sx_str_is_oct|], [|src/func/str/sx_str_is_oct.m4|])dnl
 M_UNIT([|__sx_str_is_oct|], [|src/func/str/__sx_str_is_oct.m4|])dnl
 M_UNIT([|sx_str_is_of|], [|src/func/str/sx_str_is_of.m4|])dnl
