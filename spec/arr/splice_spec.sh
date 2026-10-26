@@ -46,6 +46,29 @@ Describe 'sx_arr_splice'
     The variable myarr_2 should be undefined
   End
 
+  It '穴だけの削除では要素と長さを保持し、リビジョンを一度更新すること'
+    sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; sx_arr_gen myarr a b c' "${SX_SYS_REV-0}"
+    before_rev=$SX_SYS_REV
+    When call sx_arr_splice myarr -5 1
+    The status should be success
+    The variable myarr_len should equal 3
+    The variable myarr_0 should equal a
+    The variable myarr_1 should equal b
+    The variable myarr_2 should equal c
+    The variable myarr should equal "${SX_CFG_SIG_ARR}:$before_rev"
+    The variable SX_SYS_REV should equal "$((before_rev + 1))"
+  End
+
+  It '削除数の省略で指定位置から末尾まで削除すること'
+    sxtest_run myarr SX_SYS_REV -- 'sx_arr_gen myarr a b c'
+    When call sx_arr_splice myarr 1
+    The status should be success
+    The variable myarr_len should equal 1
+    The variable myarr_0 should equal a
+    The variable myarr_1 should be undefined
+    The variable myarr_2 should be undefined
+  End
+
   It '先頭から複数削除すると末尾の変数もすべて解放すること'
     sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c
     When call sx_arr_splice myarr 0 2
@@ -65,12 +88,14 @@ Describe 'sx_arr_splice'
     The variable myarr should start with "array-sx-sig-"
   End
 
-  It 'n が長さを超える場合は末尾扱いに丸めること'
+  It 'n が長さを超える場合は開始位置までの距離を穴として保持すること'
     sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
     When call sx_arr_splice myarr 10 1 TAIL
     The status should be success
-    The variable myarr_len should equal 3
-    The variable myarr_2 should equal "TAIL"
+    The variable myarr_len should equal 11
+    The variable myarr_2 should be undefined
+    The variable myarr_9 should be undefined
+    The variable myarr_10 should equal "TAIL"
   End
 
   It 'del が残りを超える場合は残り全部に丸めること'
@@ -130,13 +155,16 @@ Describe 'sx_arr_splice'
     The variable myarr_3 should equal "X"
   End
 
-  It 'n の絶対値が長さを超える場合は先頭扱いに丸めること'
+  It '先頭より前の穴を削除し、残った距離を保持すること'
     sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
     When call sx_arr_splice myarr -10 1 HEAD
     The status should be success
-    The variable myarr_len should equal 2
+    The variable myarr_len should equal 10
     The variable myarr_0 should equal "HEAD"
-    The variable myarr_1 should equal "b"
+    The variable myarr_1 should be undefined
+    The variable myarr_7 should be undefined
+    The variable myarr_8 should equal "a"
+    The variable myarr_9 should equal "b"
   End
 
   It 'n が -len の場合は先頭になること'
@@ -284,14 +312,16 @@ Describe 'sx_arr_splice'
     The status should equal 64
   End
 
-  It 'n が長さを超える場合は del が負でも末尾追加になること'
+  It 'n が長さを超える場合は del が負でも開始位置を保持すること'
     sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
     When call sx_arr_splice myarr 10 -5 TAIL
     The status should be success
-    The variable myarr_len should equal 3
+    The variable myarr_len should equal 11
     The variable myarr_0 should equal "a"
     The variable myarr_1 should equal "b"
-    The variable myarr_2 should equal "TAIL"
+    The variable myarr_2 should be undefined
+    The variable myarr_9 should be undefined
+    The variable myarr_10 should equal "TAIL"
   End
 
   It 'n が長さと等しい場合は del が負でも末尾追加になること'
@@ -342,25 +372,32 @@ Describe 'sx_arr_splice'
     The variable myarr_0 should equal "X"
   End
 
-  It 'n が巨大数の場合は末尾扱いに丸めること'
+  It 'n が巨大数でも穴の全添字を走査せず開始位置を保持すること'
     sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b
     When call sx_arr_splice myarr 10000000000000000000000 0 TAIL
     The status should be success
-    The variable myarr_len should equal 3
+    The variable myarr_len should equal 10000000000000000000001
     The variable myarr_0 should equal "a"
     The variable myarr_1 should equal "b"
-    The variable myarr_2 should equal "TAIL"
+    The variable myarr_2 should be undefined
+    The variable myarr_9999999999999999999999 should be undefined
+    The variable myarr_10000000000000000000000 should equal "TAIL"
   End
 
-  It 'n の絶対値が巨大数の場合は先頭扱いに丸めること'
+  It '巨大な負の n でも旧範囲内だけを掃除し、残った距離を保持すること'
     sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS_REV-0}" myarr a b c d
     When call sx_arr_splice myarr -10000000000000000000000 1 HEAD
     The status should be success
-    The variable myarr_len should equal 4
+    The variable myarr_len should equal 10000000000000000000000
     The variable myarr_0 should equal "HEAD"
-    The variable myarr_1 should equal "b"
-    The variable myarr_2 should equal "c"
-    The variable myarr_3 should equal "d"
+    The variable myarr_1 should be undefined
+    The variable myarr_2 should be undefined
+    The variable myarr_3 should be undefined
+    The variable myarr_9999999999999999999995 should be undefined
+    The variable myarr_9999999999999999999996 should equal "a"
+    The variable myarr_9999999999999999999997 should equal "b"
+    The variable myarr_9999999999999999999998 should equal "c"
+    The variable myarr_9999999999999999999999 should equal "d"
   End
 
   It 'del の絶対値が巨大数の場合は純挿入になること'

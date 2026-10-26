@@ -80,9 +80,7 @@ Describe '可変長 sx_arg_* の引数個数ガード'
       When call __sx_var_copy_script out "a=b" "c=d"
       The status should be success
       The variable out should include "__sx_var_unset a"
-      The variable out should include "unset -v a"
       The variable out should include "__sx_var_unset c"
-      The variable out should include "unset -v c"
     End
   End
 End

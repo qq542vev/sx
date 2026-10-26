@@ -21,21 +21,17 @@ Describe 'sx_var_copy_script'
   It '右方向連鎖式のコピースクリプトを生成すること'
     When call sx_var_copy_script result "a-b-c"
     The status should be success
-    # a->b, b->c (未設定のため unset -v 形式)
+    # a->b, b->c（未設定のコピー元は宛先の深い掃除だけを生成する）
     The variable result should include "__sx_var_unset b"
-    The variable result should include "unset -v b"
     The variable result should include "__sx_var_unset c"
-    The variable result should include "unset -v c"
   End
 
   It '左方向連鎖式のコピースクリプトを生成すること'
     When call sx_var_copy_script result "a=b=c"
     The status should be success
-    # a<-b, b<-c (未設定のため unset -v 形式)
+    # a<-b, b<-c（未設定のコピー元は宛先の深い掃除だけを生成する）
     The variable result should include "__sx_var_unset b"
-    The variable result should include "unset -v b"
     The variable result should include "__sx_var_unset a"
-    The variable result should include "unset -v a"
   End
 
   It '設定済み変数の値を埋め込んだ代入式を生成すること'
@@ -69,6 +65,29 @@ Describe 'sx_var_copy_script'
     When call eval "$script"
     The status should be success
     The variable edst should equal "va'l"
+  End
+
+  It '未設定のコピー元でも宛先の入れ子配列を関連要素まで削除すること'
+    sxtest_run myarr -- 'sx_arr_gen myarr x y; sx_arr_gen myarr_1 nested value'
+    unset absent_source
+    sx_var_copy_script script absent_source-myarr
+    When call eval "$script"
+    The status should be success
+    The variable myarr should be undefined
+    The variable myarr_len should be undefined
+    The variable myarr_0 should be undefined
+    The variable myarr_1 should be undefined
+    The variable myarr_1_len should be undefined
+    The variable myarr_1_0 should be undefined
+    The variable myarr_1_1 should be undefined
+  End
+
+  It '疎配列の穴に対応する宛先の unset は生成すること'
+    unset myarr_1
+    When call sx_var_copy_script result myarr-newarr
+    The status should be success
+    The variable result should include "newarr_len='2'"
+    The variable result should include "unset -v newarr_1"
   End
 
   It '引数が単一の変数名の場合は空文字列を格納すること'

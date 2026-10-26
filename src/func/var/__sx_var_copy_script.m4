@@ -43,7 +43,13 @@ __sx_var_copy_script() {
 
 							M_STR_APPEND([|Q_expr|], [|"${Q_dest}${Q_vn#"${Q_src}"}=${Q_val} "|])
 							;;
-						*) M_STR_APPEND([|Q_unset|], [|"${Q_dest}${Q_vn#"${Q_src}"} "|]);;
+						*)
+							# 宛先本体は先行する深い掃除で削除するため、重ねて unset しない。
+							case "${Q_vn}" in
+								"${Q_src}") ;;
+								*) M_STR_APPEND([|Q_unset|], [|"${Q_dest}${Q_vn#"${Q_src}"} "|]);;
+							esac
+							;;
 					esac
 				done
 

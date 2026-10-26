@@ -70,6 +70,21 @@ Describe 'sx_arr_gen'
     The variable myarr_seq_0 should equal "second"
   End
 
+  It '再生成時に上書きする入れ子配列の関連要素を残さないこと'
+    sxtest_run myarr_seq -- '
+      sx_arr_gen myarr_seq a b
+      sx_arr_gen myarr_seq_0 old nested
+    '
+    When call sx_arr_gen myarr_seq X Y
+    The status should be success
+    The variable myarr_seq_len should equal 2
+    The variable myarr_seq_0 should equal X
+    The variable myarr_seq_1 should equal Y
+    The variable myarr_seq_0_len should be undefined
+    The variable myarr_seq_0_0 should be undefined
+    The variable myarr_seq_0_1 should be undefined
+  End
+
   It '10個の要素で配列を初期化できること'
     When call sx_arr_gen myarr10 a b c d e f g h i j
     The variable myarr10_len should equal 10

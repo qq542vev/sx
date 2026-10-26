@@ -16,6 +16,19 @@ Describe 'sx_arr_splice_raw'
   }
   BeforeEach setup_splice_raw
 
+  splice_raw_matches() {
+    case "$arr_len" in "$#") ;; *) return 1;; esac
+    slot=0
+    for expected in "$@"; do
+      eval 'actual_set="${arr_'"$slot"'+X}"; actual="${arr_'"$slot"'-}"'
+      case "$expected" in
+        hole) case "$actual_set" in '') ;; *) return 1;; esac;;
+        *) case "$actual_set:$actual" in "X:$expected") ;; *) return 1;; esac;;
+      esac
+      slot=$((slot + 1))
+    done
+  }
+
   Context '検査省略の有無'
     Parameters
       0
@@ -140,17 +153,15 @@ Describe 'sx_arr_splice_raw'
     End
   End
 
-  Context '負数・範囲丸め・整数の符号'
+  Context '負数・削除範囲・整数の符号'
     Parameters
       '-1' 1 3 a b x
-      '-99' 1 3 x b c
-      99 99 4 a b c
       1 -1 3 a x c
       '-0' +1 3 x b c
       +1 99 2 a x ''
     End
 
-    It '位置と削除数を丸め、対象のリビジョンを保持する'
+    It '削除範囲を求め、対象のリビジョンを保持する'
       When call sx_arr_splice_raw arr "$1" "$2" x
       The status should be success
       The variable arr_len should equal "$3"
@@ -173,14 +184,157 @@ Describe 'sx_arr_splice_raw'
     End
   End
 
-  It 'n と del の省略は既存の splice と同じく先頭の1要素を削除する'
+  It 'n と del の省略で全要素を削除する'
     When call sx_arr_splice_raw arr
     The status should be success
-    The variable arr_len should equal 2
-    The variable arr_0 should equal b
-    The variable arr_1 should equal c
+    The variable arr_len should equal 0
+    The variable arr_0 should be undefined
+    The variable arr_1 should be undefined
     The variable arr_2 should be undefined
     The variable arr should equal "$before_sig"
+  End
+
+  Context '元の座標に基づく削除と先頭側の穴'
+    Parameters
+      '-3' 0 X a b c
+      '-4' 0 X hole a b c
+      '-5' 0 X hole hole a b c
+      '-5' 1 X hole a b c
+      '-5' 2 X a b c
+      '-5' 3 X b c
+      '-5' 99 X
+      '-5' '-1' X c
+      '-5' '-4' X hole a b c
+      '-5' '-5' X hole hole a b c
+      '-5' '' X
+      '' '' X
+      '' 1 X b c
+      1 '' a X
+      2 '-4' a b X c
+    End
+
+    It '範囲外の穴も削除数に含め、残った距離を保持する'
+      When call sx_arr_splice_raw arr "$1" "$2" X
+      The status should be success
+      shift 2
+      Assert splice_raw_matches "$@"
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  Context '複数要素を先頭より前へ挿入'
+    Parameters
+      '-3' X Y a b c
+      '-4' X Y hole a b c
+      '-5' X Y hole hole a b c
+    End
+
+    It '挿入数だけ後続をずらしてから全体を平行移動する'
+      When call sx_arr_splice_raw arr "$1" 0 X Y
+      The status should be success
+      shift
+      Assert splice_raw_matches "$@"
+    End
+  End
+
+  Context '挿入値のない範囲外の操作'
+    Parameters
+      '-5' 0 a b c
+      '-5' 1 a b c
+      '-5' 2 a b c
+      '-5' 3 b c
+      '-5' '-1' c
+      '-10000000000000000000000' 1 a b c
+      10000 0 a b c
+      10000 99 a b c
+      10000 '' a b c
+    End
+
+    It '削除対象の実要素だけを取り除き、新たな穴は作らない'
+      When call sx_arr_splice_raw arr "$1" "$2"
+      The status should be success
+      shift 2
+      Assert splice_raw_matches "$@"
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  It '開始位置だけを指定すると、そこから末尾まで削除する'
+    When call sx_arr_splice_raw arr 1
+    The status should be success
+    Assert splice_raw_matches a
+    The variable arr_1 should be undefined
+    The variable arr_2 should be undefined
+  End
+
+  It '末尾より先では開始位置を保持し、途中を穴にする'
+    When call sx_arr_splice_raw arr 10000 0 X Y
+    The status should be success
+    The variable arr_len should equal 10002
+    The variable arr_0 should equal a
+    The variable arr_1 should equal b
+    The variable arr_2 should equal c
+    The variable arr_3 should be undefined
+    The variable arr_9999 should be undefined
+    The variable arr_10000 should equal X
+    The variable arr_10001 should equal Y
+  End
+
+  It '旧範囲外への追加でも穴・空文字列・参照・リテラルの区別を保持する'
+    sxtest_run source SX_CFG_ARR_REF SX_CFG_ARR_HOLE -- '
+      source=reference
+      sx_cfg_set ARR_REF=@ ARR_HOLE=hole
+    '
+    When call sx_arr_splice_raw arr 10000 0 hole '' @source literal
+    The status should be success
+    The variable arr_len should equal 10004
+    The variable arr_0 should equal a
+    The variable arr_1 should equal b
+    The variable arr_2 should equal c
+    The variable arr_9999 should be undefined
+    The variable arr_10000 should be undefined
+    The variable arr_10001 should equal ''
+    The variable arr_10002 should equal reference
+    The variable arr_10003 should equal literal
+    The variable arr should equal "$before_sig"
+    The variable SX_SYS_REV should equal "$before_rev"
+  End
+
+  Context '空配列への挿入'
+    Parameters
+      0 X Y
+      2 hole hole X Y
+      '-2' X Y
+    End
+
+    It '正の開始位置を保持し、負の開始位置でも後ろに穴を残さない'
+      sxtest_run arr arr_0 arr_1 arr_2 SX_SYS_REV -- 'sx_arr_gen arr'
+      When call sx_arr_splice_raw arr "$1" 0 X Y
+      The status should be success
+      shift
+      Assert splice_raw_matches "$@"
+    End
+  End
+
+  It '先頭側の新しい穴と旧配列が重なる部分を入れ子まで掃除する'
+    sxtest_run arr SX_SYS_REV -- 'sx_arr_gen arr a b c; sx_arr_gen arr_1 nested value'
+    When call sx_arr_splice_raw arr -1000 0 X
+    The status should be success
+    The variable arr_len should equal 1001
+    The variable arr_0 should equal X
+    The variable arr_1 should be undefined
+    The variable arr_1_len should be undefined
+    The variable arr_1_0 should be undefined
+    The variable arr_1_1 should be undefined
+    The variable arr_2 should be undefined
+    The variable arr_997 should be undefined
+    The variable arr_998 should equal a
+    The variable arr_999_len should equal 2
+    The variable arr_999_0 should equal nested
+    The variable arr_999_1 should equal value
+    The variable arr_1000 should equal c
   End
 
   It '純挿入は空文字と引用符を保持し、尾部を後方へ移動する'

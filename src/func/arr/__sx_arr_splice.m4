@@ -3,7 +3,7 @@ pushdef([|CLEANUP|])dnl
 ### __sx_arr_splice - 配列の一部を削除し、同位置に値を挿入する（内部用）
 ##
 ## 使い方:
-##   __sx_arr_splice 配列名 n del [値 ...]
+##   __sx_arr_splice 配列名 [n [del [値 ...]]]
 ##
 ## 説明:
 ##   内部実装。引数チェックは行わない。
