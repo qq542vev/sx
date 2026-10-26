@@ -37,6 +37,7 @@ Describe 'sx_const_check'
       sxtest_load ./build/modules/SX_STR_ALNUM.sh
       sxtest_load ./build/modules/SX_STR_ALPHA.sh
       sxtest_load ./build/modules/SX_STR_ASCII.sh
+      sxtest_load ./build/modules/SX_STR_BIN.sh
       sxtest_load ./build/modules/SX_STR_BLANK.sh
       sxtest_load ./build/modules/SX_STR_CNTRL.sh
       sxtest_load ./build/modules/SX_STR_DEL.sh
@@ -55,6 +56,16 @@ Describe 'sx_const_check'
     check() { echo "$SX_EX_USAGE"; }
     When call check
     The stdout should equal "64"
+  End
+
+  It '2進数字の文字集合を保持すること'
+    When call :
+    The variable SX_STR_BIN should equal '01'
+  End
+
+  It '2進数字の文字集合が読み取り専用であること'
+    When call sx_var_is_ro SX_STR_BIN
+    The status should be success
   End
 
   It '合成された文字集合の値と順序を保持すること'

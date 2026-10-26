@@ -27,6 +27,12 @@ Describe '共通マクロと定数の個別展開'
     The output should equal ''
   End
 
+  It '2進数字の定数を単独で出力すること'
+    When run expand_split_constants src/const/str/SX_STR_BIN.m4
+    The status should be success
+    The output should equal 'readonly SX_STR_BIN=01'
+  End
+
   It '合成定数だけを出力し、合成元の実行時定数を出力しないこと'
     When run expand_split_constants src/const/str/SX_STR_ALNUM.m4
     The status should be success

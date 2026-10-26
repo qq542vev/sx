@@ -298,6 +298,8 @@ M_UNIT([|sx_str_is_alpha|], [|src/func/str/sx_str_is_alpha.m4|])dnl
 M_UNIT([|__sx_str_is_alpha|], [|src/func/str/__sx_str_is_alpha.m4|])dnl
 M_UNIT([|sx_str_is_ascii|], [|src/func/str/sx_str_is_ascii.m4|])dnl
 M_UNIT([|__sx_str_is_ascii|], [|src/func/str/__sx_str_is_ascii.m4|])dnl
+M_UNIT([|sx_str_is_bin|], [|src/func/str/sx_str_is_bin.m4|])dnl
+M_UNIT([|__sx_str_is_bin|], [|src/func/str/__sx_str_is_bin.m4|])dnl
 M_UNIT([|sx_str_is_blank|], [|src/func/str/sx_str_is_blank.m4|])dnl
 M_UNIT([|__sx_str_is_blank|], [|src/func/str/__sx_str_is_blank.m4|])dnl
 M_UNIT([|sx_str_is_cntrl|], [|src/func/str/sx_str_is_cntrl.m4|])dnl

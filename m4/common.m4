@@ -200,6 +200,7 @@ define([|M_STR_DEL|], [|format([|%c|], 127)|])dnl
 define([|M_STR_BLANK|], [|M_STR_HT() |])dnl
 define([|M_STR_SPACE|], [|M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR() |])dnl
 define([|M_STR_CNTRL|], [|M_STR_SOH()M_STR_STX()M_STR_ETX()M_STR_EOT()M_STR_ENQ()M_STR_ACK()M_STR_BEL()M_STR_BS()M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR()M_STR_SO()M_STR_SI()M_STR_DLE()M_STR_DC1()M_STR_DC2()M_STR_DC3()M_STR_DC4()M_STR_NAK()M_STR_SYN()M_STR_ETB()M_STR_CAN()M_STR_EM()M_STR_SUB()M_STR_ESC()M_STR_FS()M_STR_GS()M_STR_RS()M_STR_US()M_STR_DEL()|])dnl
+define([|M_STR_BIN|], [|01|])dnl
 define([|M_STR_OCT|], [|01234567|])dnl
 define([|M_STR_DIGIT|], [|0123456789|])dnl
 define([|M_STR_XDIGIT|], [|0123456789ABCDEFabcdef|])dnl
