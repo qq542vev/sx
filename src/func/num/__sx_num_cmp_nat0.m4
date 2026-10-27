@@ -11,8 +11,13 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_l Q_r|])dnl
 
 __sx_num_cmp_nat0() {
-	case "${1}" in "${2}")
-		return 2
+	case "${1}" in
+		"${2}") return 2;;
+		0) return 1;;
+	esac
+
+	case "${2}" in 0)
+		return 3;;
 	esac
 
 	Q_l="${#1}"
