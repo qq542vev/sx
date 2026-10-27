@@ -51,13 +51,13 @@ __sx_arr_splice_raw() {
 	# 1) 削除範囲の確定。先頭より前の距離 gap も残り長に含める。
 	#    n>=len では尾部がなく、値がある場合だけ n+cnt まで拡張する。
 	__sx_num_cmp_nat0 "${Q_n}" "${Q_len}" || case "${?}" in
-		2 | 3)
+		[23])
 			case "${Q_cnt}" in
 				0) ;;
 				*) __sx_num_add_nat0 "${Q_arr}_len" "${Q_n}" "${Q_cnt}";;
 			esac
 			;;
-		1)
+		*)
 			__sx_num_sub_nat0 Q_rest "${Q_len}" "${Q_n}"
 			case "${Q_gap}" in
 				0) ;;
@@ -110,9 +110,9 @@ __sx_arr_splice_raw() {
 					# 新しい穴の掃除は旧配列範囲との交差部分だけに限定する。
 					__sx_num_cmp_nat0 "${Q_hole}" "${Q_len}" || case "${?}" in
 						1)
-							Q_hole_end="${Q_cnt}"
-							__sx_num_cmp_nat0 "${Q_hole_end}" "${Q_len}" || case "${?}" in
+							__sx_num_cmp_nat0 "${Q_cnt}" "${Q_len}" || case "${?}" in
 								3) Q_hole_end="${Q_len}";;
+								*) Q_hole_end="${Q_cnt}";;
 							esac
 							;;
 						*) Q_hole=0;;
@@ -191,9 +191,7 @@ __sx_arr_splice_raw() {
 	# 3) 中央の書込み: 尾部移動後、各挿入位置を深く掃除してから
 	#    直ちに代入する。スロットは互いに独立しているため、掃除と代入を
 	#    一周に統合して添字の多倍長インクリメントを重複させない。
-	case "${#}:${SX_CFG_ARR_REF:+X}" in
-		0:*) ;;
-		*:X)
+	case "${SX_CFG_ARR_REF:+X}" in X)
 		Q_cnt="${Q_n}"
 		Q_chain=
 
@@ -232,7 +230,7 @@ __sx_arr_splice_raw() {
 		M_NUM_INCRM1([|Q_n|])
 	done
 
-	case "${Q_script:+X}" in X) eval "${Q_script}";; esac
+	eval "${Q_script-}"
 
 	unset CLEANUP
 }
