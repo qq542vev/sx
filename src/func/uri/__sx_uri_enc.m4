@@ -22,11 +22,7 @@ __sx_uri_enc() {
 	Q_bind="${1}" Q_safe="${SX_STR_ALNUM}-._~"
 	shift
 
-	for Q_rest in "${@}"; do
-		case "${Q_bind}" in '')
-			break
-		esac
-
+	for Q_rest in ${Q_bind:+"${@}"}; do
 		Q_out=
 
 		while M_STR_NE([|"${Q_rest}"|], [|''|]); do
@@ -49,6 +45,10 @@ __sx_m4_gen_uri_enc_case(1)
 		done
 
 		__sx_var_ubind Q_bind "${Q_bind}" "${Q_out}"
+
+		case "${Q_bind}" in '')
+			break
+		esac
 	done
 
 	unset CLEANUP

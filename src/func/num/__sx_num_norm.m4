@@ -17,7 +17,7 @@ __sx_num_norm() {
 
 	shift
 
-	for Q_arg in "${@}"; do
+	for Q_arg in ${Q_bind:+"${@}"}; do
 		Q_in="${Q_arg#[+-]}"
 
 		case "${Q_in}" in

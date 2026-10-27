@@ -131,7 +131,7 @@ __sx_str_chunk0() {
 				Q_str="${Q_next}"
 			esac
 
-			for Q_qm in "${@}"; do
+			for Q_qm in ${Q_bind:+"${@}"}; do
 				Q_next="${Q_str#${Q_qm}}"
 				__sx_var_bind Q_bind "${Q_bind}" "${Q_str%%"${Q_next}"}" || break
 				Q_str="${Q_next}"
@@ -202,7 +202,7 @@ __sx_str_chunk0() {
 				Q_str="${Q_next}"
 			esac
 
-			for Q_qm in "${@}"; do
+			for Q_qm in ${Q_bind:+"${@}"}; do
 				Q_next="${Q_str%${Q_qm}}"
 				__sx_var_bind Q_bind "${Q_bind}" "${Q_str##"${Q_next}"}" || break
 				Q_str="${Q_next}"

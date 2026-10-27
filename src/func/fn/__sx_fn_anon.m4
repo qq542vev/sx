@@ -16,7 +16,7 @@ __sx_fn_anon() {
 	Q_bind="${1}"
 	shift
 
-	for Q_arg in "${@}"; do
+	for Q_arg in ${Q_bind:+"${@}"}; do
 		Q_name="sx_fn_anon_${SX_SYS_REV}"
 
 		__sx_var_ubind Q_bind "${Q_bind}" "${Q_name}" || break

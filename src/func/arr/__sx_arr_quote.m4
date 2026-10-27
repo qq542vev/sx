@@ -17,7 +17,7 @@ __sx_arr_quote() {
 	Q_bind="${1}"
 	shift
 
-	for Q_arr in "${@}"; do
+	for Q_arr in ${Q_bind:+"${@}"}; do
 		eval "Q_len=\"\${${Q_arr}_len}\""
 		Q_i=0
 

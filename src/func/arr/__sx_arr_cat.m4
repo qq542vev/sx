@@ -19,7 +19,7 @@ __sx_arr_cat() {
 	shift
 
 	# 1) 要素ストリームを1つずつ __sx_arr_bind で処理し、chain を構築する（読み取りのみ）
-	for Q_arr in "${@}"; do
+	for Q_arr in ${Q_bind:+"${@}"}; do
 		eval "Q_len=\"\${${Q_arr}_len}\""
 		Q_i=0
 

@@ -47,7 +47,7 @@ __sx_arr_get() {
 	esac
 
 	# spec を順に処理する。各 spec は独立で、蓄積は spec 順に連結される。
-	for Q_spec in "${@}"; do
+	for Q_spec in ${Q_bind:+"${@}"}; do
 		case "${Q_spec}" in
 			*:*)
 				# 範囲指定: コロンを含むので終点以降を切り出して解析する。
