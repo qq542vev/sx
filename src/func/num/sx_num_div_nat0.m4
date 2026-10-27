@@ -39,7 +39,7 @@ sx_num_div_nat0() {
 	Q_res="${1}"
 	Q_dp="${2:-0}"
 	Q_u="${3:-0}"
-	shift "$((0${2+1} + 0${3+1} + 1))"
+	shift ${2+"$((2 ${3++ 1}))"}
 
 	__sx_num_is_nat1_base 10 "${@}" || {
 		unset CLEANUP

@@ -28,7 +28,7 @@ __sx_arr_splice_raw() {
 	Q_arr="${1}"
 	Q_n="${2:-0}"
 	Q_del="${3-}"
-	shift "$((1 + 0${2+1} + 0${3+1}))"
+	shift ${2+"$((2 ${3++ 1}))"}
 	eval "Q_len=\"\${${Q_arr}_len}\""
 	Q_cnt="${#}"
 	Q_gap=0
