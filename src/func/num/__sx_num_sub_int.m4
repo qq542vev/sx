@@ -19,7 +19,7 @@ __sx_num_sub_int() {
 	Q_first="${2-0}"
 	Q_sign=
 
-	shift "$((1 + 0${2+1}))"
+	shift ${2+'2'}
 
 	# $2...$n の合計（符号付き加算）
 	__sx_num_add_int Q_sum "${@}"

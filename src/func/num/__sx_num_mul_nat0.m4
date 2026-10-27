@@ -18,7 +18,7 @@ __sx_num_mul_nat0() {
 	Q_a="${2-1}"
 	Q_endz=
 	Q_fit=1
-	shift "$((1 + 0${2+1}))"
+	shift ${2+'2'}
 
 	case "${Q_a}" in 0)
 		set --
