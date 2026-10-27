@@ -17,11 +17,12 @@ __sx_num_add_nat0() {
 	Q_res="${1}"
 	Q_rem1="${2-0}"
 
-	shift "$((1 + 0${2+1}))"
+	shift ${2+'2'}
 
 	for Q_rem2 in "${@}"; do
 		case "${Q_rem1}:${Q_rem2}" in
 			*:0) continue;;
+			0:*) Q_rem1="${Q_rem2}"; continue;;
 			${SX_SYS_NUM_QM}?*:* | *:${SX_SYS_NUM_QM}?*) ;;
 			*)
 				M_NUM_INCR([|Q_rem1|], [|Q_rem2|])
