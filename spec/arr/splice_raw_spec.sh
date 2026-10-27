@@ -46,6 +46,71 @@ Describe 'sx_arr_splice_raw'
     End
   End
 
+  Context '同数の複数要素を置換する境界'
+    Parameters
+      0 2 X Y c
+      1 2 a X Y
+      1 +2 a X Y
+      '-2' 2 a X Y
+      2 2 a b X Y
+      2 +2 a b X Y
+      '-1' 2 a b X Y
+      '-4' 2 X Y b c
+    End
+
+    It '範囲内なら長さを保ち、末尾を超える指定は実際の削除数に丸める'
+      When call sx_arr_splice_raw arr "$1" "$2" X Y
+      The status should be success
+      shift 2
+      Assert splice_raw_matches "$@"
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  Context '算術幅を超える添字での等長置換と末尾超過'
+    Parameters
+      10000000000000000000001 10000000000000000000002 10000000000000000000003
+      10000000000000000000002 10000000000000000000003 10000000000000000000004
+    End
+
+    It '終端を文字列数値として比較し、必要な場合だけ長さを増やす'
+      arr_len=10000000000000000000003
+      When call sx_arr_splice_raw arr "$1" +2 X Y
+      The status should be success
+      The variable arr_len should equal "$3"
+      The variable "arr_${1}" should equal X
+      The variable "arr_${2}" should equal Y
+      The variable arr_0 should equal a
+      The variable arr_1 should equal b
+      The variable arr_2 should equal c
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  It '等長置換でも入れ子を掃除し、空文字・穴・文字列を区別する'
+    sxtest_run arr arr_0 arr_0_len arr_0_0 arr_1 arr_1_len arr_1_0 \
+      arr_2 arr_3 arr_3_len arr_3_0 SX_SYS_REV SX_CFG_ARR_HOLE -- \
+      'sx_cfg_set ARR_HOLE=hole; sx_arr_gen arr "" "" "" ""; sx_arr_gen arr_0 old0; sx_arr_gen arr_1 old1; sx_arr_gen arr_3 old3'
+    before_sig=$arr
+    before_rev=$SX_SYS_REV
+    When call sx_arr_splice_raw arr 0 +3 '' hole '@source'
+    The status should be success
+    The variable arr_len should equal 4
+    The variable arr_0 should equal ''
+    The variable arr_0_len should be undefined
+    The variable arr_0_0 should be undefined
+    The variable arr_1 should be undefined
+    The variable arr_1_len should be undefined
+    The variable arr_1_0 should be undefined
+    The variable arr_2 should equal '@source'
+    The variable arr_3_len should equal 1
+    The variable arr_3_0 should equal old3
+    The variable arr should equal "$before_sig"
+    The variable SX_SYS_REV should equal "$before_rev"
+  End
+
   It '引数なしは64を返す'
     When call sx_arr_splice_raw
     The status should equal 64

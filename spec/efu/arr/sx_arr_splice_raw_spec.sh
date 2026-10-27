@@ -65,6 +65,30 @@ Describe 'sx_arr_splice_raw -efu 環境検証'
     End
   End
 
+  Context '等長置換と末尾を超える置換'
+    Parameters
+      0 0 2
+      1 0 2
+      0 1 +2
+      1 1 +2
+      0 '-2' 2
+      1 '-2' 2
+      0 2 2
+      1 2 2
+      0 '-4' 2
+      1 '-4' 2
+    End
+
+    It '未設定の作業変数を参照せず、内部変数を残さず成功する'
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      shift
+      When run checked_splice_raw "$@" X Y
+      The status should be success
+      The stdout should equal ''
+      The stderr should equal ''
+    End
+  End
+
   It '引数不正は64として返る'
     When run efu_run sx_arr_splice_raw
     The status should equal 64
