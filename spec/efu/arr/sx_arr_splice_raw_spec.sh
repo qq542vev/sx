@@ -89,6 +89,25 @@ Describe 'sx_arr_splice_raw -efu 環境検証'
     End
   End
 
+  Context '末尾以降への複数要素の追加'
+    Parameters
+      0 3 0
+      1 3 0
+      0 5 99
+      1 5 99
+    End
+
+    It '穴・空文字・文字列を追加し、内部変数を残さず成功する'
+      sxtest_run SX_CFG_SKIP_CHK SX_CFG_ARR_HOLE -- \
+        'sx_cfg_set "SKIP_CHK=$1" ARR_HOLE=hole' "$1"
+      shift
+      When run checked_splice_raw "$@" hole '' @source "it's"
+      The status should be success
+      The stdout should equal ''
+      The stderr should equal ''
+    End
+  End
+
   It '引数不正は64として返る'
     When run efu_run sx_arr_splice_raw
     The status should equal 64

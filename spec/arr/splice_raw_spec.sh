@@ -373,6 +373,57 @@ Describe 'sx_arr_splice_raw'
     The variable SX_SYS_REV should equal "$before_rev"
   End
 
+  Context '末尾以降へ穴・空文字・文字列をまとめて追加'
+    Parameters
+      3 0 7 4 5 6
+      3 99 7 4 5 6
+      3 '-1' 7 4 5 6
+      5 0 9 6 7 8
+    End
+
+    It '追加値を区別し、既存の入れ子配列とリビジョンを保持する'
+      sxtest_run arr_1 arr_1_len arr_1_0 SX_CFG_ARR_HOLE SX_SYS_REV -- \
+        'sx_cfg_set ARR_HOLE=hole; sx_arr_gen arr_1 nested'
+      before_rev=$SX_SYS_REV
+      When call sx_arr_splice_raw arr "$1" "$2" hole '' @source "it's"
+      The status should be success
+      The variable arr_len should equal "$3"
+      The variable "arr_${1}" should be undefined
+      The variable "arr_${4}" should equal ''
+      The variable "arr_${5}" should equal '@source'
+      The variable "arr_${6}" should equal "it's"
+      The variable arr_0 should equal a
+      The variable arr_1_len should equal 1
+      The variable arr_1_0 should equal nested
+      The variable arr_2 should equal c
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  Context '空配列への穴・空文字・文字列の追加'
+    Parameters
+      0 3 0 1 2
+      2 5 2 3 4
+      '-2' 3 0 1 2
+    End
+
+    It '開始位置を換算し、空文字と穴を区別して追加する'
+      sxtest_run arr arr_0 arr_1 arr_2 SX_CFG_ARR_HOLE SX_SYS_REV -- \
+        'sx_cfg_set ARR_HOLE=hole; sx_arr_gen arr'
+      before_sig=$arr
+      before_rev=$SX_SYS_REV
+      When call sx_arr_splice_raw arr "$1" 0 hole '' "it's"
+      The status should be success
+      The variable arr_len should equal "$2"
+      The variable "arr_${3}" should be undefined
+      The variable "arr_${4}" should equal ''
+      The variable "arr_${5}" should equal "it's"
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
   Context '空配列への挿入'
     Parameters
       0 X Y

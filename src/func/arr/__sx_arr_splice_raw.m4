@@ -19,6 +19,7 @@ M_RENAME_QI([|dnl
 ##   尾部移動は要素単位の __sx_var_copy で行い、拡大時は後方から前方へ、
 ##   縮小時は前方から後方へ処理して未読のソースを保護する。
 ##   尾部移動後に長さと余剰尾部を確定し、中央の各要素を深く掃除してから代入する。
+##   旧配列の末尾以降へ直接追加する場合は、未使用の挿入先の掃除を省く。
 ##   新しい穴と旧配列範囲が重なる箇所も深く掃除する。操作前の範囲外変数は掃除しない。
 ##
 ## 終了ステータス:
@@ -189,7 +190,24 @@ __sx_arr_splice_raw() {
 		*)
 			case "${Q_cnt}" in [!0]*)
 				__sx_num_add_nat0 "${Q_arr}_len" "${Q_n}" "${Q_cnt}"
+
+				# 追加先は旧配列の範囲外で未使用のため、深い掃除は不要。
+				for Q_val in "${@}"; do
+					case "${Q_val}" in
+						'') ;;
+						"${SX_CFG_ARR_HOLE}")
+							M_NUM_INCRM1([|Q_n|])
+							continue
+							;;
+					esac
+
+					M_VAR_SET([|${Q_arr}_${Q_n}|], [|${Q_val}|])
+					M_NUM_INCRM1([|Q_n|])
+				done
 			esac
+
+			unset CLEANUP
+			return
 			;;
 	esac
 
