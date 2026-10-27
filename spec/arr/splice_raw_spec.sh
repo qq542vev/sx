@@ -198,6 +198,8 @@ Describe 'sx_arr_splice_raw'
       '-3' 0 X a b c
       '-4' 0 X hole a b c
       '-5' 0 X hole hole a b c
+      '-5' +0 X hole hole a b c
+      '-5' '-0' X hole hole a b c
       '-5' 1 X hole a b c
       '-5' 2 X a b c
       '-5' 3 X b c
@@ -208,6 +210,9 @@ Describe 'sx_arr_splice_raw'
       '-5' '' X
       '' '' X
       '' 1 X b c
+      1 0 a X b c
+      1 +0 a X b c
+      1 '-0' a X b c
       1 '' a X
       2 '-4' a b X c
     End
@@ -240,6 +245,8 @@ Describe 'sx_arr_splice_raw'
   Context '挿入値のない範囲外の操作'
     Parameters
       '-5' 0 a b c
+      '-5' +0 a b c
+      '-5' '-0' a b c
       '-5' 1 a b c
       '-5' 2 a b c
       '-5' 3 b c

@@ -52,38 +52,43 @@ __sx_arr_splice_raw() {
 	#    n>=len では尾部がなく、値がある場合だけ n+cnt まで拡張する。
 	__sx_num_cmp_nat0 "${Q_n}" "${Q_len}" || case "${?}" in
 		1)
-			__sx_num_sub_nat0 Q_rest "${Q_len}" "${Q_n}"
-			__sx_num_add_nat0 Q_rest "${Q_rest}" "${Q_gap}"
-
+			# 削除数が 0 なら残り長の計算と削除範囲の調整は不要。
 			case "${Q_del}" in
-				'') Q_del="${Q_rest}";;
-				-0) Q_del=0;;
-				-*)
-					Q_del="${Q_del#-}"
-					__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in
-						1) __sx_num_sub_nat0 Q_del "${Q_rest}" "${Q_del}";;
-						*) Q_del=0;;
-					esac
-					;;
-				+*) Q_del="${Q_del#+}";&
+				0 | [+-]0) Q_del=0;;
 				*)
-					# del が残り長を超える場合は、残り全体の削除に丸める。
-					__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in 3)
-						Q_del="${Q_rest}"
-					esac
-					;;
-			esac
+					__sx_num_sub_nat0 Q_rest "${Q_len}" "${Q_n}"
+					__sx_num_add_nat0 Q_rest "${Q_rest}" "${Q_gap}"
 
-			# 先頭より前の穴を先に削除し、旧配列から削除する数と分離する。
-			__sx_num_cmp_nat0 "${Q_del}" "${Q_gap}" || case "${?}" in
-				1)
-					__sx_num_sub_nat0 Q_gap "${Q_gap}" "${Q_del}"
-					Q_del=0
-					;;
-				2) Q_del=0 Q_gap=0;;
-				3)
-					__sx_num_sub_nat0 Q_del "${Q_del}" "${Q_gap}"
-					Q_gap=0
+					case "${Q_del}" in
+						'') Q_del="${Q_rest}";;
+						-*)
+							Q_del="${Q_del#-}"
+							__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in
+								1) __sx_num_sub_nat0 Q_del "${Q_rest}" "${Q_del}";;
+								*) Q_del=0;;
+							esac
+							;;
+						+*) Q_del="${Q_del#+}";&
+						*)
+							# del が残り長を超える場合は、残り全体の削除に丸める。
+							__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in 3)
+								Q_del="${Q_rest}"
+							esac
+							;;
+					esac
+
+					# 先頭より前の穴を先に削除し、旧配列から削除する数と分離する。
+					__sx_num_cmp_nat0 "${Q_del}" "${Q_gap}" || case "${?}" in
+						1)
+							__sx_num_sub_nat0 Q_gap "${Q_gap}" "${Q_del}"
+							Q_del=0
+							;;
+						2) Q_del=0 Q_gap=0;;
+						3)
+							__sx_num_sub_nat0 Q_del "${Q_del}" "${Q_gap}"
+							Q_gap=0
+							;;
+					esac
 					;;
 			esac
 
