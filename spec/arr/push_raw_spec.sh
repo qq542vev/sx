@@ -8,7 +8,7 @@ Describe 'sx_arr_push_raw'
 
   setup_push_raw() {
     unset SX_CFG_SIG_ARR SX_CFG_SKIP_CHK SX_CFG_NUM_RANGE SX_CFG_SEP \
-      SX_CFG_ARR_HOLE SX_CFG_ARR_REF
+      SX_CFG_ARR_HOLE
     sxtest_load ./build/modules/sx_arr_push_raw.sh
     sxtest_run arr SX_SYS_REV -- 'sx_cfg_set; sx_arr_gen arr a b c'
     before_sig=$arr
@@ -82,7 +82,6 @@ Describe 'sx_arr_push_raw'
       SX_CFG_SIG_ARR
       SX_CFG_NUM_RANGE
       SX_CFG_ARR_HOLE
-      SX_CFG_ARR_REF
     End
 
     It '変更前に78を返す'
@@ -142,18 +141,19 @@ last'
     The variable arr should equal "$before_sig"
   End
 
-  It '参照した入れ子配列をコピーし、穴は未設定要素にする'
-    sxtest_run src SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_SYS_REV -- '
+  It '変数参照に見える値は文字列、穴指定は未設定要素にする'
+    sxtest_run src SX_CFG_ARR_HOLE SX_SYS_REV -- '
       SX_SYS_REV=$1
       sx_arr_gen src nested value
-      sx_cfg_set ARR_REF=@ ARR_HOLE=hole
+      sx_cfg_set ARR_HOLE=hole
     ' "$SX_SYS_REV"
     When call sx_arr_push_raw arr @src hole ''
     The status should be success
     The variable arr_len should equal 6
-    The variable arr_3_len should equal 2
-    The variable arr_3_0 should equal nested
-    The variable arr_3_1 should equal value
+    The variable arr_3 should equal '@src'
+    The variable arr_3_len should be undefined
+    The variable arr_3_0 should be undefined
+    The variable arr_3_1 should be undefined
     The variable arr_4 should be undefined
     The variable arr_5 should equal ''
     The variable arr should equal "$before_sig"

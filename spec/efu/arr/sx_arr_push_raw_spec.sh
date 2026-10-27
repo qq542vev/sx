@@ -6,7 +6,7 @@ Describe 'sx_arr_push_raw -efu 環境検証'
 
   setup_push_raw_efu() {
     unset SX_CFG_SIG_ARR SX_CFG_SKIP_CHK SX_CFG_NUM_RANGE SX_CFG_SEP \
-      SX_CFG_ARR_HOLE SX_CFG_ARR_REF
+      SX_CFG_ARR_HOLE
     sxtest_load ./build/modules/sx_arr_push_raw.sh
     sxtest_run arr SX_SYS_REV -- 'sx_cfg_set; sx_arr_gen arr a b c'
     before_sig=$arr

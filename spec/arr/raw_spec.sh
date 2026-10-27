@@ -203,29 +203,29 @@ Describe '配列操作とリビジョン更新の分離'
     End
   End
 
-  It 'raw でも参照と穴の解釈を維持する'
+  It '内部 raw でも変数参照に見える値を文字列として保存し、穴指定は解釈する'
     load_subject __sx_arr_push_raw
     SX_SYS_REV=${SX_SYS_REV-0}
     setup_command='
       SX_SYS_REV=$1
       sx_arr_gen src nested value
       sx_arr_gen arr head
-      sx_cfg_set ARR_REF=@ ARR_HOLE=hole
+      sx_cfg_set ARR_HOLE=hole
     '
-    sxtest_run src arr SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+    sxtest_run src arr SX_CFG_ARR_HOLE SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
     before_sig=$arr
     before_rev=$SX_SYS_REV
     When call __sx_arr_push_raw arr '@src' hole ''
     The status should be success
     The variable arr_len should equal 4
-    The variable arr_1_len should equal 2
-    The variable arr_1_0 should equal nested
-    The variable arr_1_1 should equal value
+    The variable arr_1 should equal '@src'
+    The variable arr_1_len should be undefined
+    The variable arr_1_0 should be undefined
+    The variable arr_1_1 should be undefined
     The variable arr_2 should be undefined
     The variable arr_3 should equal ''
     The variable arr should equal "$before_sig"
     The variable SX_SYS_REV should equal "$before_rev"
-    The variable SX_CFG_ARR_REF should equal '@'
     The variable SX_CFG_ARR_HOLE should equal hole
   End
 

@@ -25,8 +25,6 @@ Describe 'sx_cfg_is_valid()'
 			'SEP=|' 0
 			'ARR_HOLE=' 0
 			'ARR_HOLE=32|64|128' 0
-			'ARR_REF=' 0
-			'ARR_REF=[01]' 0
 			'32' 1
 			'64' 1
 			'128' 1
@@ -73,6 +71,9 @@ Describe 'sx_cfg_is_valid()'
 
 	Context '廃止された設定項目の拒否'
 		Parameters
+			'ARR_REF'
+			'ARR_REF=@'
+			'ARR_REF='
 			'SIG_BASE'
 			'SIG_BASE=custom'
 			'SIG_BASE='
@@ -106,7 +107,6 @@ Describe 'sx_cfg_is_valid()'
 			'SX_CFG_NUM_RANGE' 1
 			'SX_CFG_SEP' 1
 			'SX_CFG_ARR_HOLE' 0
-			'SX_CFG_ARR_REF' 0
 		End
 
 		It "$1 が未設定なら引数なしの検査で1を返すこと"
@@ -127,7 +127,7 @@ Describe 'sx_cfg_is_valid()'
 	End
 
 	It '引数なしの検査で設定値の空白と特殊文字を保持すること'
-		sxtest_run SX_CFG_SIG_ARR SX_CFG_SEP SX_CFG_ARR_HOLE SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' 'SIG_ARR=custom array *' 'SEP=: : *' 'ARR_HOLE=hole *' 'ARR_REF=@ ref'
+		sxtest_run SX_CFG_SIG_ARR SX_CFG_SEP SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' 'SIG_ARR=custom array *' 'SEP=: : *' 'ARR_HOLE=hole *'
 		When call sx_cfg_is_valid
 		The status should be success
 	End

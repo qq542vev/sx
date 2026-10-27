@@ -8,7 +8,7 @@ Describe 'sx_arr_splice_raw'
 
   setup_splice_raw() {
     unset SX_CFG_SIG_ARR SX_CFG_SKIP_CHK SX_CFG_NUM_RANGE SX_CFG_SEP \
-      SX_CFG_ARR_HOLE SX_CFG_ARR_REF
+      SX_CFG_ARR_HOLE
     sxtest_load ./build/modules/sx_arr_splice_raw.sh
     sxtest_run arr SX_SYS_REV -- 'sx_cfg_set; sx_arr_gen arr a b c'
     before_sig=$arr
@@ -95,7 +95,6 @@ Describe 'sx_arr_splice_raw'
       SX_CFG_SIG_ARR
       SX_CFG_NUM_RANGE
       SX_CFG_ARR_HOLE
-      SX_CFG_ARR_REF
     End
 
     It '変更前に78を返す'
@@ -282,10 +281,10 @@ Describe 'sx_arr_splice_raw'
     The variable arr_10001 should equal Y
   End
 
-  It '旧範囲外への追加でも穴・空文字列・参照・リテラルの区別を保持する'
-    sxtest_run source SX_CFG_ARR_REF SX_CFG_ARR_HOLE -- '
+  It '旧範囲外への追加でも穴指定以外の値を文字列として保持する'
+    sxtest_run source SX_CFG_ARR_HOLE -- '
       source=reference
-      sx_cfg_set ARR_REF=@ ARR_HOLE=hole
+      sx_cfg_set ARR_HOLE=hole
     '
     When call sx_arr_splice_raw arr 10000 0 hole '' @source literal
     The status should be success
@@ -296,7 +295,7 @@ Describe 'sx_arr_splice_raw'
     The variable arr_9999 should be undefined
     The variable arr_10000 should be undefined
     The variable arr_10001 should equal ''
-    The variable arr_10002 should equal reference
+    The variable arr_10002 should equal '@source'
     The variable arr_10003 should equal literal
     The variable arr should equal "$before_sig"
     The variable SX_SYS_REV should equal "$before_rev"
@@ -350,11 +349,11 @@ Describe 'sx_arr_splice_raw'
   End
 
   It '入れ子配列の上書きと尾部削除で関連変数を残さない'
-    sxtest_run arr SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_SYS_REV -- '
+    sxtest_run arr SX_CFG_ARR_HOLE SX_SYS_REV -- '
       SX_SYS_REV=$1
-      sx_arr_gen child nested value
-      sx_cfg_set ARR_REF=@ ARR_HOLE=hole
-      sx_arr_gen arr head @child tail
+      sx_cfg_set ARR_HOLE=hole
+      sx_arr_gen arr head old tail
+      sx_arr_gen arr_1 nested value
     ' "$SX_SYS_REV"
     nested_sig=$arr
     When call sx_arr_splice_raw arr 1 2 hole
@@ -369,19 +368,33 @@ Describe 'sx_arr_splice_raw'
     The variable arr should equal "$nested_sig"
   End
 
-  It '参照による挿入で入れ子配列をコピーする'
-    sxtest_run src SX_CFG_ARR_REF SX_SYS_REV -- '
+  It '入れ子配列の名前を含む値も文字列として保存する'
+    sxtest_run src SX_SYS_REV -- '
       SX_SYS_REV=$1
       sx_arr_gen src nested value
-      sx_cfg_set ARR_REF=@
     ' "$SX_SYS_REV"
     When call sx_arr_splice_raw arr 1 1 @src
     The status should be success
     The variable arr_len should equal 3
-    The variable arr_1_len should equal 2
-    The variable arr_1_0 should equal nested
-    The variable arr_1_1 should equal value
+    The variable arr_1 should equal '@src'
+    The variable arr_1_len should be undefined
+    The variable arr_1_0 should be undefined
+    The variable arr_1_1 should be undefined
+    The variable src_len should equal 2
+    The variable src_0 should equal nested
+    The variable src_1 should equal value
     The variable arr_2 should equal c
     The variable arr should equal "$before_sig"
+  End
+
+  It '削除される要素の参照形式も文字列として挿入する'
+    When call sx_arr_splice_raw arr 0 2 '!arr_2'
+    The status should be success
+    The variable arr_len should equal 2
+    The variable arr_0 should equal '!arr_2'
+    The variable arr_1 should equal c
+    The variable arr_2 should be undefined
+    The variable arr should equal "$before_sig"
+    The variable SX_SYS_REV should equal "$before_rev"
   End
 End

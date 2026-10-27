@@ -23,15 +23,13 @@ Describe 'sx_arr_gen'
     The variable empty_arr should start with "array-sx-sig-"
   End
 
-  It '参照値とリテラルを指定順に初期化すること'
+  It '変数参照に見える値も文字列として初期化すること'
     src="reference"
-    sxtest_run SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF=@"
     When call sx_arr_gen myarr_ref "@src" literal
     The status should be success
     The variable myarr_ref_len should equal 2
-    The variable myarr_ref_0 should equal "reference"
+    The variable myarr_ref_0 should equal "@src"
     The variable myarr_ref_1 should equal "literal"
-    sxtest_run SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
     sxtest_run myarr_ref myarr_ref_len myarr_ref_0 myarr_ref_1 src -- \
       'sx_var_unset "$@"' myarr_ref myarr_ref_len myarr_ref_0 myarr_ref_1 src
   End

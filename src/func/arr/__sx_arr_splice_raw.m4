@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_STR_ALUND SX_STR_WORD __sx_num_add1_nat0 __sx_num_add_nat0 __sx_num_cmp_nat0 __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_var_copy __sx_var_copy_script __sx_var_unset|])dnl
+M_REQUIRE([|SX_CFG_ARR_HOLE __sx_num_add1_nat0 __sx_num_add_nat0 __sx_num_cmp_nat0 __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_var_copy __sx_var_unset|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arr_splice_raw - リビジョンを更新せず配列要素を挿入・削除する（内部用）
@@ -8,7 +8,7 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   内部実装。引数チェックは行わない。
-##   元配列のリビジョンは変更しない。参照・穴の解釈は従来どおり行う。
+##   元配列のリビジョンは変更しない。挿入値は穴指定を除き文字列として保存する。
 ##   長さ・添字・値個数は文字列数値関数で処理し、シェルの算術幅に依存しない。
 ##   負の n は len との和に換算し、範囲外の距離は穴として保持する。
 ##   del は先頭より前の穴も数え、省略・空文字列は末尾まで、負数は末尾からの除外とする。
@@ -22,7 +22,7 @@ M_RENAME_QI([|dnl
 ## 終了ステータス:
 ##    0  成功
 
-define([|CLEANUP|], [|Q_arr Q_len Q_n Q_del Q_rest Q_cnt Q_gap Q_hole Q_hole_end Q_new Q_src Q_end Q_val Q_chain Q_script|])dnl
+define([|CLEANUP|], [|Q_arr Q_len Q_n Q_del Q_rest Q_cnt Q_gap Q_hole Q_hole_end Q_new Q_src Q_end Q_val|])dnl
 
 __sx_arr_splice_raw() {
 	Q_arr="${1}"
@@ -191,35 +191,11 @@ __sx_arr_splice_raw() {
 	# 3) 中央の書込み: 尾部移動後、各挿入位置を深く掃除してから
 	#    直ちに代入する。スロットは互いに独立しているため、掃除と代入を
 	#    一周に統合して添字の多倍長インクリメントを重複させない。
-	case "${SX_CFG_ARR_REF:+X}" in X)
-		Q_cnt="${Q_n}"
-		Q_chain=
-
-		for Q_val in "${@}"; do
-			case "${Q_val}" in
-				"${SX_CFG_ARR_HOLE}" | "${SX_CFG_ARR_REF}"*[!${SX_STR_WORD}]*) ;;
-				"${SX_CFG_ARR_REF}"[${SX_STR_ALUND}]*) M_STR_APPEND([|Q_chain|], [|" ${Q_val#"${SX_CFG_ARR_REF}"}-${Q_arr}_${Q_cnt}"|]);;
-			esac
-
-			M_NUM_INCRM1([|Q_cnt|])
-		done
-
-		case "${Q_chain:+X}" in X)
-			eval __sx_var_copy_script Q_script "${Q_chain}"
-		esac
-	esac
-
 	for Q_val in "${@}"; do
 		case "${Q_val}" in
 			'') ;;
 			"${SX_CFG_ARR_HOLE}")
 				__sx_var_unset "${Q_arr}_${Q_n}"
-				M_NUM_INCRM1([|Q_n|])
-				continue
-				;;
-			"${SX_CFG_ARR_REF:-"${Q_val}"}" | "${SX_CFG_ARR_REF}"*[!${SX_STR_WORD}]*) ;;
-			"${SX_CFG_ARR_REF}"[${SX_STR_ALUND}]*)
-				# 参照の書込みは一括コピーに任せるが、挿入位置は1要素分進める。
 				M_NUM_INCRM1([|Q_n|])
 				continue
 				;;
@@ -229,8 +205,6 @@ __sx_arr_splice_raw() {
 		eval "${Q_arr}_${Q_n}=\"\${Q_val}\""
 		M_NUM_INCRM1([|Q_n|])
 	done
-
-	eval "${Q_script-}"
 
 	unset CLEANUP
 }

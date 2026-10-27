@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_ARR_HOLE SX_CFG_ARR_REF SX_STR_CR SX_STR_LF __sx_arr_gen __sx_num_add1_nat0|])dnl
+M_REQUIRE([|SX_CFG_ARR_HOLE SX_STR_CR SX_STR_LF __sx_arr_gen __sx_num_add1_nat0|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_csv_parse - CSV を解析し、行ごとの確定フィールドを保存する（内部用）
@@ -21,7 +21,7 @@ M_RENAME_QI([|dnl
 ##   通常文字をまとめて消費し、引用内の区切り・改行をそのまま保持する。
 ##   CRLF の CR は、非引用フィールドを LF で確定するときだけ除く。
 ##   引用内の通常文字と直後の引用符を同じ反復で処理し、閉じ引用符なら続けて境界を判定する。
-##   配列の生成は __sx_arr_gen に委譲する。行の生成時だけ参照・穴の解釈を無効にする。
+##   配列の生成は __sx_arr_gen に委譲する。行の生成時だけ穴の解釈を無効にする。
 ##   生成処理で使う配列設定は保存し、成功・エラーのどちらでも通知前に復元する。
 ##   各行と外側の配列のリビジョンは必ず更新する。
 ##   既存配列の削除は行わない。再代入前の削除は呼び出し側の責任とする。
@@ -35,11 +35,11 @@ M_RENAME_QI([|dnl
 ##    2  非引用フィールド内に引用符が出現
 ##    3  閉じ引用符の後に不正な文字が出現
 
-define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_open Q_field Q_state Q_err Q_chunk Q_kind Q_ref Q_hole|])dnl
+define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_open Q_field Q_state Q_err Q_chunk Q_kind Q_hole|])dnl
 
 __sx_csv_parse() {
 	Q_res="${1}" Q_data="${2-}" Q_cb="${3-}" Q_sep="${4:-${4-,}${4+${SX_STR_LF}}}" Q_quote="${5-\"}"
-	Q_ref="${SX_CFG_ARR_REF}" Q_hole="${SX_CFG_ARR_HOLE}"
+	Q_hole="${SX_CFG_ARR_HOLE}"
 
 	# Q_data は未消費の入力、Q_field は現在組み立てているフィールド。
 	# 結果配列の長さを保存済み行数と次の行の0始まりの添字に使う。
@@ -134,8 +134,8 @@ __sx_csv_parse() {
 
 		# 完成フィールド一覧を一行の配列にし、その行が保存できてから外側の長さを増やす。
 		# 構文エラーによる未完成行はループ終了後に確定済みフィールドだけを保存する。
-		# フィールドを文字列のまま保存するため、行生成時だけ参照・穴の解釈を無効にする。
-		eval SX_CFG_ARR_REF= SX_CFG_ARR_HOLE= __sx_arr_gen "${Q_res}_\${${Q_res}_len}" '"${@}"' ';' __sx_num_add1_nat0 "${Q_res}_len" "\"\${${Q_res}_len}\""
+		# フィールドを文字列のまま保存するため、行生成時だけ穴の解釈を無効にする。
+		eval SX_CFG_ARR_HOLE= __sx_arr_gen "${Q_res}_\${${Q_res}_len}" '"${@}"' ';' __sx_num_add1_nat0 "${Q_res}_len" "\"\${${Q_res}_len}\""
 		# 現在行の一覧を空にして次の行へ。入力終了の場合は、この行を保存してから抜ける。
 		set --
 
@@ -149,11 +149,11 @@ __sx_csv_parse() {
 	# 失敗したフィールドは Q_field に残したまま、確定済みの列だけで失敗行を保存する。
 	# 第1列で失敗した場合も0列の行を作り、失敗行も結果配列の長さに含める。
 	case "${Q_err}" in [1-9]*)
-		eval SX_CFG_ARR_REF= SX_CFG_ARR_HOLE= __sx_arr_gen "${Q_res}_\${${Q_res}_len}" '"${@}"' ';' __sx_num_add1_nat0 "${Q_res}_len" "\"\${${Q_res}_len}\""
+		eval SX_CFG_ARR_HOLE= __sx_arr_gen "${Q_res}_\${${Q_res}_len}" '"${@}"' ';' __sx_num_add1_nat0 "${Q_res}_len" "\"\${${Q_res}_len}\""
 	esac
 
 	# 成功・エラーとも元の設定に戻し、コールバックにも呼び出し時の設定を見せる。
-	SX_CFG_ARR_REF="${Q_ref}" SX_CFG_ARR_HOLE="${Q_hole}"
+	SX_CFG_ARR_HOLE="${Q_hole}"
 
 	# 解析は完了したので、位置パラメータを完成フィールド一覧から最後に実行するコマンドへ変える。
 	# エラーかつコールバック指定ありの場合だけ通知し、それ以外は解析ステータスを返す。

@@ -18,7 +18,7 @@ Describe '書込可否検査に渡す名前と値の参照の区別'
     build_prepare_fixture
     cp tools/check-dependencies.py tools/dependency_headers.py "$SXTEST_BUILD_DIR/tools/"
     build_add_unit var SX_CFG_ARR_HOLE '' 'SX_CFG_ARR_HOLE='
-    build_add_unit var SX_CFG_ARR_REF '' 'SX_CFG_ARR_REF='
+    build_add_unit var SX_CFG_SEP '' 'SX_CFG_SEP='
     build_add_unit func __sx_var_is_rw '' '__sx_var_is_rw() { :; }'
   }
   check_dependencies() { python3 "$SXTEST_BUILD_DIR/tools/check-dependencies.py"; }
@@ -27,9 +27,9 @@ Describe '書込可否検査に渡す名前と値の参照の区別'
 
   Context 'リテラルの変数名'
     Parameters
-      'SX_CFG_ARR_HOLE SX_CFG_ARR_REF'
-      '"SX_CFG_ARR_HOLE" "SX_CFG_ARR_REF"'
-      "'SX_CFG_ARR_HOLE' 'SX_CFG_ARR_REF'"
+      'SX_CFG_ARR_HOLE SX_CFG_SEP'
+      '"SX_CFG_ARR_HOLE" "SX_CFG_SEP"'
+      "'SX_CFG_ARR_HOLE' 'SX_CFG_SEP'"
     End
 
     It '書込可否検査の引数だけに現れる名前を依存に含めないこと'
@@ -47,13 +47,13 @@ Describe '書込可否検査に渡す名前と値の参照の区別'
       ': "$SX_CFG_ARR_HOLE"'
       ': "$((SX_CFG_ARR_HOLE + 1))"'
       '__sx_var_is_rw "${SX_CFG_ARR_HOLE}"'
-      '__sx_var_is_rw SX_CFG_ARR_REF "${SX_CFG_ARR_HOLE}"'
-      '__sx_var_is_rw "SX_CFG_ARR_REF${SX_CFG_ARR_HOLE}"'
+      '__sx_var_is_rw SX_CFG_SEP "${SX_CFG_ARR_HOLE}"'
+      '__sx_var_is_rw "SX_CFG_SEP${SX_CFG_ARR_HOLE}"'
     End
 
     It '名前を検査していても値の参照に必要な依存の不足を検出すること'
       build_add_unit func __sx_probe __sx_var_is_rw "__sx_probe() {
-  __sx_var_is_rw SX_CFG_ARR_HOLE SX_CFG_ARR_REF; $1
+  __sx_var_is_rw SX_CFG_ARR_HOLE SX_CFG_SEP; $1
 }"
       When run check_dependencies
       The status should be failure

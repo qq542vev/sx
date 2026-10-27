@@ -18,7 +18,7 @@ pushdef([|CLEANUP|])dnl
 ##   レコード区切りは CRLF または LF。引用内の改行、空白、数値表記は保持する。
 ##   空入力は0行、空行は空フィールド一つ。末尾改行だけでは余分な行を追加しない。
 ##   ヘッダは通常の行として保存し、行ごとの列数の違いを許可する。
-##   ARR_REF・ARR_HOLE による解釈を行わず、全フィールドを文字列として保存する。
+##   ARR_HOLE による解釈を行わず、全フィールドを文字列として保存する。
 ##   検証成功後に res を初期化する。配列を再代入する前は呼び出し側で sx_var_unset res を行う。
 ##   パースエラーでは完成行に加え、失敗行の確定済みフィールドだけを残す。
 ##   エラーになったフィールドは含めず、確定済みフィールドがなければ0列の行を残す。
@@ -37,14 +37,14 @@ pushdef([|CLEANUP|])dnl
 ##    2  非引用フィールド内に引用符が出現
 ##    3  閉じ引用符の後に区切り・改行・入力終了以外が出現
 ##   64  引数不正 (SX_EX_USAGE)
-##   77  res・配下の変数・SX_CFG_ARR_HOLE・SX_CFG_ARR_REF が書き込み不可 (SX_EX_NOPERM)
+##   77  res・配下の変数・SX_CFG_ARR_HOLE が書き込み不可 (SX_EX_NOPERM)
 ##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
 sx_csv_parse() {
 	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_csv_parse "${@}" || return; return;; esac
 
 	M_CFG_CHECK([|sx_csv_parse|])
 
-	__sx_var_is_rw SX_CFG_ARR_HOLE SX_CFG_ARR_REF || return M_EX_NOPERM
+	__sx_var_is_rw SX_CFG_ARR_HOLE || return M_EX_NOPERM
 
 	__sx_var_is_name "${1-}" || return M_EX_USAGE
 	__sx_var_is_rw_deep "${1}" || return M_EX_NOPERM

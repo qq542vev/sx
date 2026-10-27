@@ -14,6 +14,8 @@ Describe 'sx_cfg_is_valid -efu 環境検証'
       'NUM_RANGE=32' 0
       'NUM_RANGE=64' 0
       'NUM_RANGE=128' 0
+      'ARR_REF' 1
+      'ARR_REF=!' 1
       '64' 1
       '128' 1
     End
@@ -26,7 +28,7 @@ Describe 'sx_cfg_is_valid -efu 環境検証'
   End
 
   It '設定値の空白と空文字を保持して全項目を検査すること'
-    sxtest_run SX_CFG_SIG_ARR SX_CFG_ARR_HOLE SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' 'SIG_ARR=custom array *' 'ARR_HOLE=' 'ARR_REF=@ ref'
+    sxtest_run SX_CFG_SIG_ARR SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' 'SIG_ARR=custom array *' 'ARR_HOLE='
     When run efu_run sx_cfg_is_valid
     The status should be success
     The stderr should equal ''
@@ -45,7 +47,6 @@ Describe 'sx_cfg_is_valid -efu 環境検証'
       'SX_CFG_NUM_RANGE'
       'SX_CFG_SEP'
       'SX_CFG_ARR_HOLE'
-      'SX_CFG_ARR_REF'
     End
 
     It "$1 が未設定なら未設定変数の展開エラーを起こさず1を返すこと"

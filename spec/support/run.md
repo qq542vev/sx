@@ -138,7 +138,7 @@ sum_cb() {
 設定を既定値に戻す場合は、戻す設定変数だけを出力に指定します。
 
 ```sh
-sxtest_run SX_CFG_ARR_REF -- 'sx_cfg_set ARR_REF'
+sxtest_run SX_CFG_ARR_HOLE -- 'sx_cfg_set ARR_HOLE'
 ```
 
 構成が固定された配列を削除する場合は、ルートだけでなく長さと各要素も出力に指定し、子で削除します。

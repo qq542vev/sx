@@ -30,7 +30,7 @@ Describe 'sx_cfg_set -efu 環境検証'
   Context 'readonly を含む全設定リセット'
     Parameters
       'SX_CFG_SIG_ARR'
-      'SX_CFG_ARR_REF'
+      'SX_CFG_ARR_HOLE'
       'SX_SYS_NUM_MIN'
     End
 
@@ -43,8 +43,10 @@ Describe 'sx_cfg_set -efu 環境検証'
     End
   End
 
-  Context '廃止された SIG_BASE の拒否'
+  Context '廃止された設定項目の拒否'
     Parameters
+      'ARR_REF'
+      'ARR_REF=!'
       'SIG_BASE'
       'SIG_BASE=custom'
     End

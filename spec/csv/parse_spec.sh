@@ -470,10 +470,10 @@ Describe 'sx_csv_parse'
     The variable csv_executed should be undefined
   End
 
-  It '配列の参照・穴の設定にかかわらず文字列と空フィールドを保存する'
+  It '配列の穴の設定にかかわらず文字列と空フィールドを保存する'
     Set 'allexport:on'
     load_subject sx_csv_parse
-    sxtest_run SX_CFG_ARR_REF SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' 'ARR_REF=@' 'ARR_HOLE=hole'
+    sxtest_run SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' 'ARR_HOLE=hole'
     src=referenced
     before_rev=$SX_SYS_REV
     When call sx_csv_parse res '@src,hole,'
@@ -485,7 +485,6 @@ Describe 'sx_csv_parse'
     Assert sxtest_run -- 'sx_var_is_arr "$@"' res res_0
     The variable SX_SYS_REV should not equal "$before_rev"
     The variable res should not equal "$res_0"
-    The variable SX_CFG_ARR_REF should equal '@'
     The variable SX_CFG_ARR_HOLE should equal hole
   End
 
@@ -636,10 +635,10 @@ Describe 'sx_csv_parse'
 
   It 'エラーでも配列設定を保持しコールバックにも元の設定を渡す'
     load_subject sx_csv_parse
-    sxtest_run SX_CFG_ARR_REF SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' 'ARR_REF=@' 'ARR_HOLE=hole'
+    sxtest_run SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' 'ARR_HOLE=hole'
     src=referenced
     csv_error() {
-      csv_error_cfg="${SX_CFG_ARR_REF}:${SX_CFG_ARR_HOLE}"
+      csv_error_cfg="${SX_CFG_ARR_HOLE}"
     }
     When call sx_csv_parse res "@src,hole${SX_STR_LF}\"bad" csv_error
     The status should be success
@@ -648,8 +647,7 @@ Describe 'sx_csv_parse'
     The variable res_0_1 should equal hole
     The variable res_1_len should equal 0
     The variable res_1_0 should be undefined
-    The variable csv_error_cfg should equal '@:hole'
-    The variable SX_CFG_ARR_REF should equal '@'
+    The variable csv_error_cfg should equal hole
     The variable SX_CFG_ARR_HOLE should equal hole
   End
 
@@ -795,12 +793,11 @@ Describe 'sx_csv_parse'
   Context '配列設定の書込可否'
     Parameters
       SX_CFG_ARR_HOLE
-      SX_CFG_ARR_REF
     End
 
     It "$1 が readonly なら結果・設定・リビジョンを変更せず EX_NOPERM を返す"
       load_subject sx_csv_parse
-      sxtest_run SX_CFG_ARR_REF SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' 'ARR_REF=@' 'ARR_HOLE=hole'
+      sxtest_run SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' 'ARR_HOLE=hole'
       sx_csv_parse res original
       before_res=$res before_row=$res_0 before_rev=$SX_SYS_REV
       readonly "$1"
@@ -813,7 +810,6 @@ Describe 'sx_csv_parse'
       The variable res_0_0 should equal original
       The variable res_0_1 should be undefined
       The variable SX_CFG_ARR_HOLE should equal hole
-      The variable SX_CFG_ARR_REF should equal '@'
       The variable SX_SYS_REV should equal "$before_rev"
     End
   End
@@ -883,10 +879,10 @@ Describe 'sx_csv_parse'
       The variable res_0_1 should equal ''
     End
 
-    It '各経路で失敗行の参照・穴・空フィールドを文字列として残しリビジョンを更新する'
+    It '各経路で失敗行の全フィールドを文字列として残しリビジョンを更新する'
       Set 'allexport:on'
       load_subject "$1"
-      sxtest_run SX_CFG_SKIP_CHK SX_CFG_ARR_REF SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "SKIP_CHK=$2" 'ARR_REF=@' 'ARR_HOLE=hole'
+      sxtest_run SX_CFG_SKIP_CHK SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "SKIP_CHK=$2" 'ARR_HOLE=hole'
       src=referenced
       before_rev=$SX_SYS_REV
       When call "$1" res '@src||hole||||"bad' '' '||'
@@ -899,7 +895,6 @@ Describe 'sx_csv_parse'
       The variable res_0_3 should be undefined
       The variable SX_SYS_REV should not equal "$before_rev"
       The variable res should not equal "$res_0"
-      The variable SX_CFG_ARR_REF should equal '@'
       The variable SX_CFG_ARR_HOLE should equal hole
       Assert sxtest_run -- 'sx_var_is_arr "$@"' res res_0
     End

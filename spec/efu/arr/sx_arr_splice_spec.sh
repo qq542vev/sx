@@ -17,15 +17,14 @@ Describe 'sx_arr_splice -efu 環境検証'
     The stderr should equal ''
   End
 
-  It '参照値とリテラルの混在でも -efu 下で値と順序を保持すること'
+  It '変数参照に見える値も -efu 下で文字列と順序を保持すること'
     Set 'allexport:on'
     src="reference"
     setup_command='
       SX_SYS_REV=$1
       sx_arr_gen myarr head tail
-      sx_cfg_set "ARR_REF=@"
     '
-    sxtest_run myarr SX_CFG_ARR_REF SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+    sxtest_run myarr SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
     # spliceで変更されない要素も、事後検証用の子シェルへ渡す。
     export myarr myarr_len myarr_0 myarr_1
     splice_ref_efu() {
@@ -36,8 +35,7 @@ Describe 'sx_arr_splice -efu 環境検証'
     }
     When run efu_run splice_ref_efu
     The status should be success
-    The stdout should equal "'head' 'reference' 'literal' 'tail'"
-    sxtest_run SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
+    The stdout should equal "'head' '@src' 'literal' 'tail'"
     sxtest_run myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 src -- \
       'sx_var_unset "$@"' myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 src
   End

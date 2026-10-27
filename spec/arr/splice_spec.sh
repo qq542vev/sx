@@ -457,95 +457,39 @@ Describe 'sx_arr_splice'
     End
   End
 
-  Describe 'SX_CFG_ARR_REF'
-    It '参照値の後のリテラルを次の位置に挿入すること'
-      src="reference"
-      setup_command='
-        SX_SYS_REV=$1
-        sx_arr_gen myarr head tail
-        sx_cfg_set "ARR_REF=@"
-      '
-      sxtest_run myarr SX_CFG_ARR_REF SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
-      When call sx_arr_splice myarr 1 0 "@src" literal
-      The status should be success
-      The variable myarr_len should equal 4
-      The variable myarr_0 should equal "head"
-      The variable myarr_1 should equal "reference"
-      The variable myarr_2 should equal "literal"
-      The variable myarr_3 should equal "tail"
-      sxtest_run SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
-      sxtest_run myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 src -- \
-        'sx_var_unset "$@"' myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 src
+  Context '変数参照に見える文字列の挿入'
+    Parameters
+      '!myarr_2'
+      '@myarr_2'
     End
 
-    It '参照値・空文字列・穴の混在でも各値が1位置を消費すること'
-      src="reference"
-      setup_command='
-        SX_SYS_REV=$1
-        sx_arr_gen myarr head old0 old1 old2 old3 tail
-        sx_cfg_set "ARR_REF=@" "ARR_HOLE=hole"
-      '
-      sxtest_run myarr SX_CFG_ARR_REF SX_CFG_ARR_HOLE SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
-      When call sx_arr_splice myarr 1 4 "@src" "" hole "@src" literal
+    It '尾部の移動・削除にかかわらず指定した文字列を保存すること'
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; sx_arr_gen myarr a b c' "${SX_SYS_REV-0}"
+      When call sx_arr_splice myarr 0 2 "$1"
       The status should be success
-      The variable myarr_len should equal 7
-      The variable myarr_0 should equal "head"
-      The variable myarr_1 should equal "reference"
-      The variable myarr_2 should equal ""
-      The variable myarr_3 should be undefined
-      The variable myarr_4 should equal "reference"
-      The variable myarr_5 should equal "literal"
-      The variable myarr_6 should equal "tail"
-      sxtest_run SX_CFG_ARR_REF SX_CFG_ARR_HOLE -- 'sx_cfg_set "$@"' "ARR_REF" "ARR_HOLE"
-      sxtest_run myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 myarr_4 myarr_5 myarr_6 src -- \
-        'sx_var_unset "$@"' myarr myarr_len myarr_0 myarr_1 myarr_2 myarr_3 myarr_4 myarr_5 myarr_6 src
+      The variable myarr_len should equal 2
+      The variable myarr_0 should equal "$1"
+      The variable myarr_1 should equal c
+      The variable myarr_2 should be undefined
     End
+  End
 
-    It '参照形式（@名前）は変数の値をコピーすること'
-      src="hello"
-      setup_command='
-        SX_SYS_REV=$1
-        sx_arr_gen myarr a b
-        sx_cfg_set "ARR_REF=@"
-      '
-      sxtest_run myarr SX_CFG_ARR_REF SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
-      When call sx_arr_splice myarr 1 0 "@src"
-      The status should be success
-      The variable myarr_len should equal 3
-      The variable myarr_1 should equal "hello"
-      sxtest_run SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
-      sxtest_run myarr myarr_len myarr_0 myarr_1 myarr_2 src -- \
-        'sx_var_unset "$@"' myarr myarr_len myarr_0 myarr_1 myarr_2 src
-    End
-
-    It '参照先が変数名でない場合はリテラル扱いになること'
-      setup_command='
-        SX_SYS_REV=$1
-        sx_arr_gen myarr2 x
-        sx_cfg_set "ARR_REF=@"
-      '
-      sxtest_run myarr2 SX_CFG_ARR_REF SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
-      When call sx_arr_splice myarr2 1 0 "@123"
-      The status should be success
-      The variable myarr2_1 should equal "@123"
-      sxtest_run SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
-      sxtest_run myarr2 myarr2_len myarr2_0 myarr2_1 -- \
-        'sx_var_unset "$@"' myarr2 myarr2_len myarr2_0 myarr2_1
-    End
-
-    It 'ARR_REF が空の場合は参照せずリテラル扱いになること'
-      src="hello"
-      setup_command='
-        SX_SYS_REV=$1
-        sx_arr_gen myarr3 x
-        sx_cfg_set "ARR_REF"
-      '
-      sxtest_run myarr3 SX_CFG_ARR_REF SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
-      When call sx_arr_splice myarr3 1 0 "@src"
-      The status should be success
-      The variable myarr3_1 should equal "@src"
-      sxtest_run myarr3 myarr3_len myarr3_0 myarr3_1 src -- \
-        'sx_var_unset "$@"' myarr3 myarr3_len myarr3_0 myarr3_1 src
-    End
+  It '文字列・空文字列・穴の混在でも各値が1位置を消費すること'
+    src=reference
+    sxtest_run myarr SX_CFG_ARR_HOLE SX_SYS_REV -- '
+      SX_SYS_REV=$1
+      sx_arr_gen myarr head old0 old1 old2 old3 tail
+      sx_cfg_set ARR_HOLE=hole
+    ' "${SX_SYS_REV-0}"
+    When call sx_arr_splice myarr 1 4 '@src' '' hole '!src' literal
+    The status should be success
+    The variable myarr_len should equal 7
+    The variable myarr_0 should equal head
+    The variable myarr_1 should equal '@src'
+    The variable myarr_2 should equal ''
+    The variable myarr_3 should be undefined
+    The variable myarr_4 should equal '!src'
+    The variable myarr_5 should equal literal
+    The variable myarr_6 should equal tail
   End
 End

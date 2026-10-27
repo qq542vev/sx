@@ -73,37 +73,33 @@ Describe 'sx_arr_push'
     The variable myarr_mul_5 should equal "last"
   End
 
-  It 'ARR_REF 設定時は参照をコピーしてプッシュすること'
+  It '変数参照に見える値も文字列として追加すること'
     src="hello"
     setup_command='
       SX_SYS_REV=$1
       sx_arr_gen myarr_push_ref
-      sx_cfg_set "ARR_REF=@"
     '
-    sxtest_run myarr_push_ref SX_CFG_ARR_REF SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+    sxtest_run myarr_push_ref SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
     When call sx_arr_push myarr_push_ref "@src"
     The status should be success
-    The variable myarr_push_ref_0 should equal "hello"
-    sxtest_run SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
+    The variable myarr_push_ref_0 should equal "@src"
     sxtest_run myarr_push_ref myarr_push_ref_len myarr_push_ref_0 src -- \
       'sx_var_unset "$@"' myarr_push_ref myarr_push_ref_len myarr_push_ref_0 src
   End
 
-  It '参照値とリテラルを指定順に末尾へ追加すること'
+  It '感嘆符で始まる値も指定順に末尾へ追加すること'
     src="reference"
     setup_command='
       SX_SYS_REV=$1
       sx_arr_gen myarr_push_mixed head
-      sx_cfg_set "ARR_REF=@"
     '
-    sxtest_run myarr_push_mixed SX_CFG_ARR_REF SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
-    When call sx_arr_push myarr_push_mixed "@src" literal
+    sxtest_run myarr_push_mixed SX_SYS_REV -- "$setup_command" "${SX_SYS_REV-0}"
+    When call sx_arr_push myarr_push_mixed "!src" literal
     The status should be success
     The variable myarr_push_mixed_len should equal 3
     The variable myarr_push_mixed_0 should equal "head"
-    The variable myarr_push_mixed_1 should equal "reference"
+    The variable myarr_push_mixed_1 should equal "!src"
     The variable myarr_push_mixed_2 should equal "literal"
-    sxtest_run SX_CFG_ARR_REF -- 'sx_cfg_set "$@"' "ARR_REF"
     sxtest_run myarr_push_mixed myarr_push_mixed_len myarr_push_mixed_0 myarr_push_mixed_1 myarr_push_mixed_2 src -- \
       'sx_var_unset "$@"' myarr_push_mixed myarr_push_mixed_len myarr_push_mixed_0 myarr_push_mixed_1 myarr_push_mixed_2 src
   End
