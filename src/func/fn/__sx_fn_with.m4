@@ -23,8 +23,8 @@ __sx_fn_with() {
 		esac
 	done
 
-	# 2. コマンド引数の置換とクォート処理
-	for Q_arg in "${@}"; do
+	# 2. エイリアスがある場合だけコマンド引数を置換
+	for Q_arg in ${Q_fns:+"${@}"}; do
 		case "${Q_map}" in *" ${Q_arg}:"*)
 			Q_tmp="${Q_map#*" ${Q_arg}:"}"
 			Q_arg="${Q_tmp%% *}"

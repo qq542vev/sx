@@ -38,7 +38,7 @@ __sx_arr_bind() {
 					# seg: M/
 					:)
 						__sx_num_add_nat0 Q_cnt "${Q_cnt}" "${#}"
-						shift "${#}"
+						set --
 						;;
 					# seg: M/vn
 					:*)
@@ -47,7 +47,7 @@ __sx_arr_bind() {
 							M_NUM_INCRM1([|Q_cnt|])
 						done
 
-						shift "${#}"
+						set --
 						;;
 					# seg: M/N
 					*:)
@@ -59,7 +59,7 @@ __sx_arr_bind() {
 						esac
 
 						__sx_num_add_nat0 Q_cnt "${Q_cnt}" "${#}"
-						shift "${#}"
+						set --
 						;;
 					*)
 						for Q_arg in "${@}"; do

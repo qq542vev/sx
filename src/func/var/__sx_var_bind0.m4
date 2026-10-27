@@ -42,7 +42,7 @@ __sx_var_bind0() {
 						esac
 
 						__sx_num_sub_nat0 Q_lim "${Q_lim}" "${#}"
-						shift "${#}"
+						set --
 						;;
 					@*)
 						Q_tmp="${Q_vn#@}"
