@@ -296,6 +296,19 @@ Describe 'sx_arr_splice_raw'
     End
   End
 
+  It '縮小後の長さが桁境界でも、尾部と余剰要素を正しく確定する'
+    arr_len=10000000000000000000001
+    arr_10000000000000000000000=tail
+    When call sx_arr_splice_raw arr 9999999999999999999998 2 X
+    The status should be success
+    The variable arr_len should equal 10000000000000000000000
+    The variable arr_9999999999999999999998 should equal X
+    The variable arr_9999999999999999999999 should equal tail
+    The variable arr_10000000000000000000000 should be undefined
+    The variable arr should equal "$before_sig"
+    The variable SX_SYS_REV should equal "$before_rev"
+  End
+
   It '等長置換でも入れ子を掃除し、空文字・穴・文字列を区別する'
     sxtest_run arr arr_0 arr_0_len arr_0_0 arr_1 arr_1_len arr_1_0 \
       arr_2 arr_3 arr_3_len arr_3_0 SX_SYS_REV SX_CFG_ARR_HOLE -- \

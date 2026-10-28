@@ -24,6 +24,7 @@ M_RENAME_QI([|dnl
 ##   この場合の残り長は開始位置の絶対値に等しいため、入力を保持して削除・除外数の上限に使う。
 ##   尾部移動は要素単位の __sx_var_copy で行い、拡大時は後方から前方へ、
 ##   縮小時は前方から後方へ処理して未読のソースを保護する。
+##   縮小後の長さは移動終了時の宛先添字から得て、事前の減算・加算を省く。
 ##   尾部移動後に長さと余剰尾部を確定し、中央の各要素を深く掃除してから代入する。
 ##   旧配列の末尾以降へ直接追加する場合は、未使用の挿入先の掃除を省く。
 ##   新しい穴と旧配列範囲が重なる箇所も深く掃除する。操作前の範囲外変数は掃除しない。
@@ -190,19 +191,14 @@ __sx_arr_splice_raw() {
 				__sx_num_cmp_nat0 "${Q_end}" "${Q_src}" || case "${?}" in
 					1)
 						# 縮小: ソースと宛先を前方へ進め、未読のソースを保護する。
-						case "${Q_src}" in
-							"${Q_len}") Q_new="${Q_end}";;
-							*)
-								__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_src}"
-								__sx_num_add_nat0 Q_new "${Q_new}" "${Q_end}"
+						while M_STR_NE([|"${Q_src}"|], [|"${Q_len}"|]); do
+							__sx_var_copy "${Q_arr}_${Q_src}-${Q_arr}_${Q_end}"
+							M_NUM_INCRM1([|Q_src|])
+							M_NUM_INCRM1([|Q_end|])
+						done
 
-								while M_STR_NE([|"${Q_src}"|], [|"${Q_len}"|]); do
-									__sx_var_copy "${Q_arr}_${Q_src}-${Q_arr}_${Q_end}"
-									M_NUM_INCRM1([|Q_src|])
-									M_NUM_INCRM1([|Q_end|])
-								done
-								;;
-						esac
+						# 移動が0回の場合も、終了時の宛先が新しい長さに一致する。
+						Q_new="${Q_end}"
 
 						# 長さを確定し、余剰尾部を深く掃除する。
 						M_VAR_SET([|${Q_arr}_len|], [|${Q_new}|])
