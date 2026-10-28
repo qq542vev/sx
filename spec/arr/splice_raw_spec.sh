@@ -310,16 +310,20 @@ Describe 'sx_arr_splice_raw'
     The variable SX_SYS_REV should equal "$before_rev"
   End
 
-  Context '負の削除数で算術幅を超える配列を拡大'
+  Context '正負の削除数で算術幅を超える配列を拡大'
     Parameters
-      9999999999999999999996
-      '-3'
+      9999999999999999999996 '-1'
+      '-3' '-1'
+      9999999999999999999996 2
+      9999999999999999999996 +2
+      '-3' 2
+      '-3' +2
     End
 
-    It '末尾の除外数を保ち、桁が増える長さと尾部を正しく確定する'
+    It '削除範囲を調整し、桁が増える長さと尾部を正しく確定する'
       arr_len=9999999999999999999999
       arr_9999999999999999999998=tail
-      When call sx_arr_splice_raw arr "$1" -1 X Y Z
+      When call sx_arr_splice_raw arr "$1" "$2" X Y Z
       The status should be success
       The variable arr_len should equal 10000000000000000000000
       The variable arr_9999999999999999999996 should equal X
@@ -576,6 +580,22 @@ Describe 'sx_arr_splice_raw'
       The status should be success
       shift
       Assert splice_raw_matches "$@"
+    End
+  End
+
+  Context '先頭前の穴を削除してから拡大'
+    Parameters
+      '-5' 3
+      '-10000000000000000000003' +10000000000000000000001
+      '-10000000000000000000003' '-2'
+    End
+
+    It '入力の削除指定を実要素の削除数に調整し、長さと尾部を保持する'
+      When call sx_arr_splice_raw arr "$1" "$2" X Y Z
+      The status should be success
+      Assert splice_raw_matches X Y Z b c
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
     End
   End
 
