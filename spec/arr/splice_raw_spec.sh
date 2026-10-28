@@ -46,6 +46,115 @@ Describe 'sx_arr_splice_raw'
     End
   End
 
+  Context '削除数0で挿入値なし'
+    Parameters
+      0 0
+      1 0
+      3 0
+      10000 0
+      '-1' 0
+      '-5' 0
+      '-10000000000000000000000' 0
+      1 +0
+      1 '-0'
+      '-10000000000000000000000' +0
+      '-10000000000000000000000' '-0'
+      '' 0
+      +0 +0
+      '-0' '-0'
+    End
+
+    It '開始位置や符号によらず配列とリビジョンを保持する'
+      When call sx_arr_splice_raw arr "$1" "$2"
+      The status should be success
+      Assert splice_raw_matches a b c
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  Context '空配列で削除数0かつ挿入値なし'
+    Parameters
+      0
+      +0
+      '-0'
+    End
+
+    It '巨大な負の開始位置でも空配列とリビジョンを保持する'
+      sxtest_run arr arr_0 arr_1 arr_2 SX_SYS_REV -- 'sx_arr_gen arr'
+      before_sig=$arr
+      before_rev=$SX_SYS_REV
+      When call sx_arr_splice_raw arr -10000000000000000000000 "$1"
+      The status should be success
+      Assert splice_raw_matches
+      The variable arr_0 should be undefined
+      The variable arr_1 should be undefined
+      The variable arr_2 should be undefined
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  It '変更なしの呼出しで疎な要素と入れ子配列を保持する'
+    sxtest_run arr_1 arr_1_len arr_1_0 SX_SYS_REV -- 'sx_arr_gen arr_1 nested'
+    unset arr_2
+    before_rev=$SX_SYS_REV
+    When call sx_arr_splice_raw arr -10000000000000000000000 -0
+    The status should be success
+    The variable arr_len should equal 3
+    The variable arr_0 should equal a
+    The variable arr_1_len should equal 1
+    The variable arr_1_0 should equal nested
+    The variable arr_2 should be undefined
+    The variable arr should equal "$before_sig"
+    The variable SX_SYS_REV should equal "$before_rev"
+  End
+
+  It '変更なしでも無効な開始位置は64を返す'
+    When call sx_arr_splice_raw arr bad 0
+    The status should equal 64
+    Assert splice_raw_matches a b c
+  End
+
+  It '変更なしでも配下のreadonlyは77を返す'
+    readonly arr_1
+    When call sx_arr_splice_raw arr 1 0
+    The status should equal 77
+    Assert splice_raw_matches a b c
+  End
+
+  It '変更なしでも必要設定の未設定は78を返す'
+    unset SX_CFG_ARR_HOLE
+    When call sx_arr_splice_raw arr 1 0
+    The status should equal 78
+    Assert splice_raw_matches a b c
+  End
+
+  Context '削除数0でも空文字の挿入は変更なしと区別する'
+    Parameters
+      0
+      +0
+      '-0'
+    End
+
+    It '空文字を1要素として挿入する'
+      When call sx_arr_splice_raw arr 1 "$1" ''
+      The status should be success
+      Assert splice_raw_matches a '' b c
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  It '削除数0でも穴指定の挿入は変更なしと区別する'
+    sxtest_run SX_CFG_ARR_HOLE -- 'sx_cfg_set ARR_HOLE=hole'
+    When call sx_arr_splice_raw arr 3 0 hole
+    The status should be success
+    Assert splice_raw_matches a b c hole
+    The variable arr should equal "$before_sig"
+    The variable SX_SYS_REV should equal "$before_rev"
+  End
+
   Context '同数の複数要素を置換する境界'
     Parameters
       0 2 X Y c

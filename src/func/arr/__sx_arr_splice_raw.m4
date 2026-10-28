@@ -9,6 +9,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   内部実装。引数チェックは行わない。
 ##   元配列のリビジョンは変更しない。挿入値は穴指定を除き文字列として保存する。
+##   del が 0・+0・-0 で挿入値がなければ、作業変数を設定せず直ちに成功する。
 ##   長さ・添字・値個数は文字列数値関数で処理し、シェルの算術幅に依存しない。
 ##   負の n は len との和に換算し、範囲外の距離は穴として保持する。
 ##   del は先頭より前の穴も数え、省略・空文字列は末尾まで、負数は末尾からの除外とする。
@@ -29,6 +30,10 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_arr Q_len Q_n Q_del Q_rest Q_cnt Q_gap Q_hole Q_hole_end Q_new Q_src Q_end Q_val|])dnl
 
 __sx_arr_splice_raw() {
+	case "${#}:${3-}" in 3:0 | 3:[+-]0)
+		return M_EX_OK
+	esac
+
 	Q_arr="${1}"
 	Q_n="${2:-0}"
 	Q_del="${3-}"

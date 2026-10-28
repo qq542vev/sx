@@ -59,6 +59,30 @@ Describe 'sx_arr_splice'
     The variable SX_SYS_REV should equal "$((before_rev + 1))"
   End
 
+  Context '削除数0で挿入値なしのリビジョン更新'
+    Parameters
+      1 0
+      1 +0
+      1 '-0'
+      '-10000000000000000000000' 0
+      '-10000000000000000000000' +0
+      '-10000000000000000000000' '-0'
+    End
+
+    It '要素を保持し、リビジョンを一度更新すること'
+      sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; sx_arr_gen myarr a b c' "${SX_SYS_REV-0}"
+      before_rev=$SX_SYS_REV
+      When call sx_arr_splice myarr "$1" "$2"
+      The status should be success
+      The variable myarr_len should equal 3
+      The variable myarr_0 should equal a
+      The variable myarr_1 should equal b
+      The variable myarr_2 should equal c
+      The variable myarr should equal "${SX_CFG_SIG_ARR}:$before_rev"
+      The variable SX_SYS_REV should equal "$((before_rev + 1))"
+    End
+  End
+
   It '削除数の省略で指定位置から末尾まで削除すること'
     sxtest_run myarr SX_SYS_REV -- 'sx_arr_gen myarr a b c'
     When call sx_arr_splice myarr 1
