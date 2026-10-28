@@ -18,6 +18,7 @@ M_RENAME_QI([|dnl
 ##   先頭前の穴がなく削除指定数と挿入数が等しければ、削除範囲の調整と尾部移動の準備を省く。
 ##   この置換が末尾を超える場合は、挿入後の終端まで長さを拡張する。
 ##   del の省略・空文字列では尾部が残らないため、新しい長さと余剰尾部の掃除だけを確定する。
+##   先頭前の穴がなければ、尾部の開始位置を直接求め、残り長と実削除数の計算を省く。
 ##   尾部移動は要素単位の __sx_var_copy で行い、拡大時は後方から前方へ、
 ##   縮小時は前方から後方へ処理して未読のソースを保護する。
 ##   尾部移動後に長さと余剰尾部を確定し、中央の各要素を深く掃除してから代入する。
@@ -57,7 +58,7 @@ __sx_arr_splice_raw() {
 			;;
 	esac
 
-	# 1) 削除範囲の確定。先頭より前の距離 gap も残り長に含める。
+	# 1) 削除範囲の確定。先頭より前の穴がある場合だけ gap を残り長に含める。
 	#    n>=len では尾部がなく、値がある場合だけ n+cnt まで拡張する。
 	__sx_num_cmp_nat0 "${Q_n}" "${Q_len}" || case "${?}" in
 		1)
@@ -87,80 +88,104 @@ __sx_arr_splice_raw() {
 					esac
 					;;
 				*)
-					case "${Q_del}" in
-						0 | [+-]0) Q_del=0;;
-						*)
-							__sx_num_sub_nat0 Q_rest "${Q_len}" "${Q_n}"
-							__sx_num_add_nat0 Q_rest "${Q_rest}" "${Q_gap}"
-
+					case "${Q_gap}" in
+						0)
+							# 削除数へ換算せず、残る尾部の開始位置を直接求める。
 							case "${Q_del}" in
+								0 | [+-]0) Q_src="${Q_n}";;
 								-*)
 									Q_del="${Q_del#-}"
-									__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in
-										1) __sx_num_sub_nat0 Q_del "${Q_rest}" "${Q_del}";;
-										*) Q_del=0;;
+									__sx_num_cmp_nat0 "${Q_del}" "${Q_len}" || case "${?}" in
+										1)
+											__sx_num_sub_nat0 Q_src "${Q_len}" "${Q_del}"
+											__sx_num_cmp_nat0 "${Q_src}" "${Q_n}" || case "${?}" in
+												1) Q_src="${Q_n}";;
+											esac
+											;;
+										*) Q_src="${Q_n}";;
 									esac
 									;;
-								+*) Q_del="${Q_del#+}";&
 								*)
-									# del が残り長を超える場合は、残り全体の削除に丸める。
-									__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in 3)
-										Q_del="${Q_rest}"
+									__sx_num_add_nat0 Q_src "${Q_n}" "${Q_del#+}"
+									__sx_num_cmp_nat0 "${Q_src}" "${Q_len}" || case "${?}" in
+										3) Q_src="${Q_len}";;
+									esac
+									;;
+							esac
+							__sx_num_add_nat0 Q_end "${Q_n}" "${Q_cnt}"
+							;;
+						*)
+							case "${Q_del}" in
+								0 | [+-]0) Q_del=0;;
+								*)
+									__sx_num_sub_nat0 Q_rest "${Q_len}" "${Q_n}"
+									__sx_num_add_nat0 Q_rest "${Q_rest}" "${Q_gap}"
+
+									case "${Q_del}" in
+										-*)
+											Q_del="${Q_del#-}"
+											__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in
+												1) __sx_num_sub_nat0 Q_del "${Q_rest}" "${Q_del}";;
+												*) Q_del=0;;
+											esac
+											;;
+										+*) Q_del="${Q_del#+}";&
+										*)
+											# del が残り長を超える場合は、残り全体の削除に丸める。
+											__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in 3)
+												Q_del="${Q_rest}"
+											esac
+											;;
+									esac
+
+									# 先頭より前の穴を先に削除し、旧配列から削除する数と分離する。
+									__sx_num_cmp_nat0 "${Q_del}" "${Q_gap}" || case "${?}" in
+										1)
+											__sx_num_sub_nat0 Q_gap "${Q_gap}" "${Q_del}"
+											Q_del=0
+											;;
+										2) Q_del=0 Q_gap=0;;
+										3)
+											__sx_num_sub_nat0 Q_del "${Q_del}" "${Q_gap}"
+											Q_gap=0
+											;;
 									esac
 									;;
 							esac
 
-							# 先頭より前の穴を先に削除し、旧配列から削除する数と分離する。
-							__sx_num_cmp_nat0 "${Q_del}" "${Q_gap}" || case "${?}" in
-								1)
-									__sx_num_sub_nat0 Q_gap "${Q_gap}" "${Q_del}"
-									Q_del=0
-									;;
-								2) Q_del=0 Q_gap=0;;
-								3)
-									__sx_num_sub_nat0 Q_del "${Q_del}" "${Q_gap}"
-									Q_gap=0
-									;;
+							# 挿入値がなければ残った尾部を先頭へ平行移動し、穴は作らない。
+							case "${Q_cnt}:${Q_gap}" in [!0]*:[!0]*)
+								Q_hole="${Q_cnt}"
+								__sx_num_add_nat0 Q_cnt "${Q_cnt}" "${Q_gap}"
+
+								# 新しい穴の掃除は旧配列範囲との交差部分だけに限定する。
+								__sx_num_cmp_nat0 "${Q_hole}" "${Q_len}" || case "${?}" in
+									1)
+										__sx_num_cmp_nat0 "${Q_cnt}" "${Q_len}" || case "${?}" in
+											3) Q_hole_end="${Q_len}";;
+											*) Q_hole_end="${Q_cnt}";;
+										esac
+										;;
+									*) Q_hole=0;;
+								esac
 							esac
+
+							# 先頭前からの操作では n=0 のため、加算せず開始位置を使える。
+							Q_src="${Q_del}"
+							Q_end="${Q_cnt}"
 							;;
 					esac
 
-					# 挿入値がなければ残った尾部を先頭へ平行移動し、穴は作らない。
-					case "${Q_cnt}:${Q_gap}" in [!0]*:[!0]*)
-						Q_hole="${Q_cnt}"
-						__sx_num_add_nat0 Q_cnt "${Q_cnt}" "${Q_gap}"
-
-						# 新しい穴の掃除は旧配列範囲との交差部分だけに限定する。
-						__sx_num_cmp_nat0 "${Q_hole}" "${Q_len}" || case "${?}" in
-							1)
-								__sx_num_cmp_nat0 "${Q_cnt}" "${Q_len}" || case "${?}" in
-									3) Q_hole_end="${Q_len}";;
-									*) Q_hole_end="${Q_cnt}";;
-								esac
-								;;
-							*) Q_hole=0;;
-						esac
-					esac
-
-					# 2) 尾部の移動 (要素ごと): 削除範囲の後ろ [n+del, len) を
-					#    挿入後の位置 [n+cnt, new) へずらす。1要素ずつ __sx_var_copy
-					#    で移すことで、巨大配列でも生成スクリプトを1要素ぶんに抑える。
-					#    n>=len の末尾追加パスは尾部が空で len 確定済みのため、
-					#    上の分岐で終了しここへは到達しない。cnt は先頭側の穴も含む。
-					__sx_num_cmp_nat0 "${Q_cnt}" "${Q_del}" || case "${?}" in
+					# 2) 尾部 [src, len) を [end, new) へ移す。
+					#    両開始位置の比較で移動方向が決まり、実削除数は不要。
+					__sx_num_cmp_nat0 "${Q_end}" "${Q_src}" || case "${?}" in
 						1)
-							# 縮小 (cnt < del): ソースと宛先を前方へ進める。
-							# src=n+del、end=n+cnt とし、尾部を重複しない順序で移動する。
-							__sx_num_add_nat0 Q_src "${Q_n}" "${Q_del}"
-							__sx_num_add_nat0 Q_end "${Q_n}" "${Q_cnt}"
-
+							# 縮小: ソースと宛先を前方へ進め、未読のソースを保護する。
 							case "${Q_src}" in
-								# 尾部がない場合は new=n+cnt=end を再利用する。
 								"${Q_len}") Q_new="${Q_end}";;
 								*)
-									# 通常の縮小では new=len-del+cnt を求めてから尾部を移動する。
-									__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}"
-									__sx_num_add_nat0 Q_new "${Q_new}" "${Q_cnt}"
+									__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_src}"
+									__sx_num_add_nat0 Q_new "${Q_new}" "${Q_end}"
 
 									while M_STR_NE([|"${Q_src}"|], [|"${Q_len}"|]); do
 										__sx_var_copy "${Q_arr}_${Q_src}-${Q_arr}_${Q_end}"
@@ -170,28 +195,26 @@ __sx_arr_splice_raw() {
 									;;
 							esac
 
-							# 長さを確定し、new 以降に残った旧要素を深く掃除する。
-							eval "${Q_arr}_len=${Q_new}"
-
+							# 長さを確定し、余剰尾部を深く掃除する。
+							M_VAR_SET([|${Q_arr}_len|], [|${Q_new}|])
 							while M_STR_NE([|"${Q_new}"|], [|"${Q_len}"|]); do
 								__sx_var_unset "${Q_arr}_${Q_new}"
 								M_NUM_INCRM1([|Q_new|])
 							done
 							;;
 						3)
-							# 拡大 (cnt > del): src=n+del を起点に、末尾から逆順で移動する。
-							__sx_num_add_nat0 Q_src "${Q_n}" "${Q_del}"
-
+							# 拡大: 末尾から逆順で移す。削除なしなら旧長さを再利用する。
 							case "${Q_src}" in
-								# 尾部がない場合は new=n+cnt を直接求める。
-								"${Q_len}") __sx_num_add_nat0 "${Q_arr}_len" "${Q_n}" "${Q_cnt}";;
+								"${Q_len}") M_VAR_SET([|${Q_arr}_len|], [|${Q_end}|]);;
 								*)
-									# 通常の拡大では new=len-del+cnt を求めてから尾部を移動する。
-									__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_del}"
-									__sx_num_add_nat0 Q_new "${Q_new}" "${Q_cnt}"
-
-									# 長さを確定する。拡大では余剰尾部の掃除は発生しない。
-									eval "${Q_arr}_len=${Q_new}"
+									case "${Q_src}" in
+										"${Q_n}") __sx_num_add_nat0 Q_new "${Q_len}" "${Q_cnt}";;
+										*)
+											__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_src}"
+											__sx_num_add_nat0 Q_new "${Q_new}" "${Q_end}"
+											;;
+									esac
+									M_VAR_SET([|${Q_arr}_len|], [|${Q_new}|])
 
 									while M_STR_NE([|"${Q_len}"|], [|"${Q_src}"|]); do
 										M_NUM_DECRM1([|Q_len|])

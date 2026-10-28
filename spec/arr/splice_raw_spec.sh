@@ -198,6 +198,86 @@ Describe 'sx_arr_splice_raw'
     End
   End
 
+  Context '先頭前の穴がない削除範囲の境界'
+    Parameters
+      1 1 a X Y c d e f
+      1 +3 a X Y e f
+      '-5' 3 a X Y e f
+      1 5 a X Y
+      1 99 a X Y
+      1 '-1' a X Y f
+      1 '-3' a X Y d e f
+      1 '-4' a X Y c d e f
+      1 '-5' a X Y b c d e f
+      1 '-6' a X Y b c d e f
+      1 '-99' a X Y b c d e f
+      1 '-10000000000000000000000' a X Y b c d e f
+    End
+
+    It '正負の削除数から縮小・同長・拡大と削除なしを区別する'
+      sxtest_run arr arr_0 arr_1 arr_2 arr_3 arr_4 arr_5 SX_SYS_REV -- \
+        'sx_arr_gen arr a b c d e f'
+      before_sig=$arr
+      before_rev=$SX_SYS_REV
+      When call sx_arr_splice_raw arr "$1" "$2" X Y
+      The status should be success
+      shift 2
+      Assert splice_raw_matches "$@"
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  Context '尾部の開始位置を直接求める移動で入れ子と穴を保持'
+    Parameters
+      1 2 7 6
+      3 4 5 4
+    End
+
+    It '拡大・縮小とも未読の入れ子を保護し、古い子変数を残さない'
+      sxtest_run arr arr_0 arr_1 arr_2 arr_2_len arr_2_0 arr_3 \
+        arr_4 arr_4_len arr_4_0 arr_5 SX_SYS_REV -- \
+        'sx_arr_gen arr a b c d e f; sx_arr_gen "arr_$1" nested; unset arr_5' "$2"
+      before_sig=$arr
+      before_rev=$SX_SYS_REV
+      When call sx_arr_splice_raw arr 1 "$1" X Y
+      The status should be success
+      The variable arr_len should equal "$3"
+      The variable arr_0 should equal a
+      The variable arr_1 should equal X
+      The variable arr_2 should equal Y
+      The variable arr_2_len should be undefined
+      The variable arr_2_0 should be undefined
+      The variable arr_3_len should equal 1
+      The variable arr_3_0 should equal nested
+      The variable arr_4_len should be undefined
+      The variable arr_4_0 should be undefined
+      The variable "arr_$4" should be undefined
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  Context '算術幅を超える削除範囲で尾部を移動'
+    Parameters
+      2
+      '-1'
+    End
+
+    It '正負の削除数を同じ終端へ換算し、残った1要素を移す'
+      arr_len=10000000000000000000004
+      arr_10000000000000000000003=tail
+      When call sx_arr_splice_raw arr 10000000000000000000001 "$1" X
+      The status should be success
+      The variable arr_len should equal 10000000000000000000003
+      The variable arr_10000000000000000000001 should equal X
+      The variable arr_10000000000000000000002 should equal tail
+      The variable arr_10000000000000000000003 should be undefined
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
   It '等長置換でも入れ子を掃除し、空文字・穴・文字列を区別する'
     sxtest_run arr arr_0 arr_0_len arr_0_0 arr_1 arr_1_len arr_1_0 \
       arr_2 arr_3 arr_3_len arr_3_0 SX_SYS_REV SX_CFG_ARR_HOLE -- \
