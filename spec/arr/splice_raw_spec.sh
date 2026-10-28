@@ -583,6 +583,28 @@ Describe 'sx_arr_splice_raw'
     End
   End
 
+  Context '巨大な先頭前の距離を負の削除数で保持'
+    Parameters
+      '-10000000000000000000002' 10000000000000000000003 10000000000000000000000 10000000000000000000001 10000000000000000000002
+      '-10000000000000000000003' 10000000000000000000004 10000000000000000000001 10000000000000000000002 10000000000000000000003
+      '-10000000000000000000004' 10000000000000000000004 10000000000000000000001 10000000000000000000002 10000000000000000000003
+    End
+
+    It '除外数が元の範囲未満・同じ・超過でも、必要な穴と旧要素だけを残す'
+      When call sx_arr_splice_raw arr -10000000000000000000003 "$1" X
+      The status should be success
+      The variable arr_len should equal "$2"
+      The variable arr_0 should equal X
+      The variable arr_1 should be undefined
+      The variable arr_2 should be undefined
+      The variable "arr_${3}" should equal a
+      The variable "arr_${4}" should equal b
+      The variable "arr_${5}" should equal c
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
   Context '先頭前の穴を削除してから拡大'
     Parameters
       '-5' 3
