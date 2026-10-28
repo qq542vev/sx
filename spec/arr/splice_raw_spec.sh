@@ -340,6 +340,103 @@ Describe 'sx_arr_splice_raw'
     The variable arr_2 should be undefined
   End
 
+  Context '空の削除数で末尾まで削除して挿入'
+    Parameters
+      0 X Y
+      1 a X Y
+      2 a b X Y
+      '-1' a b X Y
+      '-2' a X Y
+      '-3' X Y
+      '-5' X Y
+      '' X Y
+      3 a b c X Y
+      5 a b c hole hole X Y
+    End
+
+    It '先頭前の穴も削除し、縮小・同じ長さ・拡大を区別して置き換える'
+      When call sx_arr_splice_raw arr "$1" '' X Y
+      The status should be success
+      shift
+      Assert splice_raw_matches "$@"
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  Context '空の削除数で末尾まで純削除'
+    Parameters
+      0
+      1 a
+      2 a b
+      '-5'
+    End
+
+    It '挿入値がなければ開始位置より前の要素だけを保持する'
+      When call sx_arr_splice_raw arr "$1" ''
+      The status should be success
+      shift
+      Assert splice_raw_matches "$@"
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  It '末尾までの置換で上書き部分と余剰尾部の入れ子を掃除する'
+    sxtest_run arr arr_0 arr_1 arr_1_len arr_1_0 arr_2 arr_2_len arr_2_0 \
+      arr_3 arr_3_len arr_3_0 SX_CFG_ARR_HOLE SX_SYS_REV -- \
+      'sx_cfg_set ARR_HOLE=hole; sx_arr_gen arr head old old old; sx_arr_gen arr_1 nested1; sx_arr_gen arr_2 nested2; sx_arr_gen arr_3 nested3'
+    before_sig=$arr
+    before_rev=$SX_SYS_REV
+    When call sx_arr_splice_raw arr 1 '' '' hole
+    The status should be success
+    Assert splice_raw_matches head '' hole
+    The variable arr_1_len should be undefined
+    The variable arr_1_0 should be undefined
+    The variable arr_2_len should be undefined
+    The variable arr_2_0 should be undefined
+    The variable arr_3 should be undefined
+    The variable arr_3_len should be undefined
+    The variable arr_3_0 should be undefined
+    The variable arr should equal "$before_sig"
+    The variable SX_SYS_REV should equal "$before_rev"
+  End
+
+  Context '算術幅を超える添字から末尾まで置換'
+    Parameters
+      10000000000000000000001 10000000000000000000002 10000000000000000000003
+      10000000000000000000002 10000000000000000000003 10000000000000000000004
+    End
+
+    It '末尾までの距離を求めず、挿入後の終端を長さにする'
+      arr_len=10000000000000000000003
+      When call sx_arr_splice_raw arr "$1" '' X Y
+      The status should be success
+      The variable arr_len should equal "$3"
+      The variable "arr_${1}" should equal X
+      The variable "arr_${2}" should equal Y
+      The variable arr_0 should equal a
+      The variable arr_1 should equal b
+      The variable arr_2 should equal c
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  It '巨大な添字からの末尾削除でも余剰要素を掃除する'
+    arr_len=10000000000000000000003
+    arr_10000000000000000000002=tail
+    When call sx_arr_splice_raw arr 10000000000000000000002
+    The status should be success
+    The variable arr_len should equal 10000000000000000000002
+    The variable arr_10000000000000000000002 should be undefined
+    The variable arr_0 should equal a
+    The variable arr_1 should equal b
+    The variable arr_2 should equal c
+    The variable arr should equal "$before_sig"
+    The variable SX_SYS_REV should equal "$before_rev"
+  End
+
   It '末尾より先では開始位置を保持し、途中を穴にする'
     When call sx_arr_splice_raw arr 10000 0 X Y
     The status should be success

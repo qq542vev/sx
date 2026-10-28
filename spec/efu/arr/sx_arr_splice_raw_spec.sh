@@ -108,6 +108,43 @@ Describe 'sx_arr_splice_raw -efu 環境検証'
     End
   End
 
+  Context '末尾までの置換と検査省略の有無'
+    Parameters
+      0 0
+      1 0
+      0 1
+      1 1
+      0 2
+      1 2
+      0 '-5'
+      1 '-5'
+    End
+
+    It '空の削除数で末尾まで置換し、内部変数を残さず成功する'
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      shift
+      When run checked_splice_raw "$@" '' X Y
+      The status should be success
+      The stdout should equal ''
+      The stderr should equal ''
+    End
+  End
+
+  Context '削除数の省略と検査省略の有無'
+    Parameters
+      0
+      1
+    End
+
+    It '末尾まで純削除し、内部変数を残さず成功する'
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      When run checked_splice_raw 1
+      The status should be success
+      The stdout should equal ''
+      The stderr should equal ''
+    End
+  End
+
   It '引数不正は64として返る'
     When run efu_run sx_arr_splice_raw
     The status should equal 64
