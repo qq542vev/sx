@@ -19,6 +19,8 @@ M_RENAME_QI([|dnl
 ##   この置換が末尾を超える場合は、挿入後の終端まで長さを拡張する。
 ##   del の省略・空文字列では尾部が残らないため、新しい長さと余剰尾部の掃除だけを確定する。
 ##   先頭前の穴がなければ、尾部の開始位置を直接求め、残り長と実削除数の計算を省く。
+##   先頭前からの操作でも、削除数を穴の距離または旧長さと比較し、残る穴と移動元を直接求める。
+##   この場合の残り長は開始位置の絶対値に等しいため、入力を保持して削除・除外数の上限に使う。
 ##   尾部移動は要素単位の __sx_var_copy で行い、拡大時は後方から前方へ、
 ##   縮小時は前方から後方へ処理して未読のソースを保護する。
 ##   尾部移動後に長さと余剰尾部を確定し、中央の各要素を深く掃除してから代入する。
@@ -51,14 +53,17 @@ __sx_arr_splice_raw() {
 			Q_n="${Q_n#-}"
 
 			__sx_num_cmp_nat0 "${Q_n}" "${Q_len}" || case "${?}" in
-				3) __sx_num_sub_nat0 Q_gap "${Q_n}" "${Q_len}";&
+				3)
+					Q_rest="${Q_n}"
+					__sx_num_sub_nat0 Q_gap "${Q_n}" "${Q_len}"
+					;&
 				2) Q_n=0;;
 				1) __sx_num_sub_nat0 Q_n "${Q_len}" "${Q_n}";;
 			esac
 			;;
 	esac
 
-	# 1) 削除範囲の確定。先頭より前の穴がある場合だけ gap を残り長に含める。
+	# 1) 削除範囲の確定。先頭より前の穴と旧配列から削除する数を分離する。
 	#    n>=len では尾部がなく、値がある場合だけ n+cnt まで拡張する。
 	__sx_num_cmp_nat0 "${Q_n}" "${Q_len}" || case "${?}" in
 		1)
@@ -108,36 +113,44 @@ __sx_arr_splice_raw() {
 					esac
 					;;
 				*:[1-9]* | *:[+-][1-9]*)
-					__sx_num_sub_nat0 Q_rest "${Q_len}" "${Q_n}"
-					__sx_num_add_nat0 Q_rest "${Q_rest}" "${Q_gap}"
-
+					# n=0、gap>0。残り長は入力から保持済みであり、丸めた総削除数も求めない。
 					case "${Q_del}" in
 						-*)
+							# 末尾から除外する数が旧長さ未満なら、穴をすべて削除する。
 							Q_del="${Q_del#-}"
-							__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in
-								1) __sx_num_sub_nat0 Q_del "${Q_rest}" "${Q_del}";;
-								*) Q_del=0;;
+							__sx_num_cmp_nat0 "${Q_del}" "${Q_len}" || case "${?}" in
+								1)
+									__sx_num_sub_nat0 Q_del "${Q_len}" "${Q_del}"
+									Q_gap=0
+									;;
+								2) Q_del=0 Q_gap=0;;
+								3)
+									# 全体を除外する場合は穴を保持し、それ以外は旧長さとの差だけ残す。
+									__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in 1)
+										__sx_num_sub_nat0 Q_gap "${Q_del}" "${Q_len}"
+									esac
+									Q_del=0
+									;;
 							esac
 							;;
 						+*) Q_del="${Q_del#+}";&
 						*)
-							# del が残り長を超える場合は、残り全体の削除に丸める。
-							__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in 3)
-								Q_del="${Q_rest}"
+							# 穴の距離との差から、残る穴と旧配列の削除数を直接求める。
+							__sx_num_cmp_nat0 "${Q_del}" "${Q_gap}" || case "${?}" in
+								1)
+									__sx_num_sub_nat0 Q_gap "${Q_gap}" "${Q_del}"
+									Q_del=0
+									;;
+								2) Q_del=0 Q_gap=0;;
+								3)
+									# 末尾を超える巨大数は、差分を計算せず旧長さに丸める。
+									__sx_num_cmp_nat0 "${Q_del}" "${Q_rest}" || case "${?}" in
+										1) __sx_num_sub_nat0 Q_del "${Q_del}" "${Q_gap}";;
+										*) Q_del="${Q_len}";;
+									esac
+									Q_gap=0
+									;;
 							esac
-							;;
-					esac
-
-					# 先頭より前の穴を先に削除し、旧配列から削除する数と分離する。
-					__sx_num_cmp_nat0 "${Q_del}" "${Q_gap}" || case "${?}" in
-						1)
-							__sx_num_sub_nat0 Q_gap "${Q_gap}" "${Q_del}"
-							Q_del=0
-							;;
-						2) Q_del=0 Q_gap=0;;
-						3)
-							__sx_num_sub_nat0 Q_del "${Q_del}" "${Q_gap}"
-							Q_gap=0
 							;;
 					esac
 					;&

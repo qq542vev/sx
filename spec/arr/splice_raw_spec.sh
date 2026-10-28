@@ -459,8 +459,15 @@ Describe 'sx_arr_splice_raw'
       '-5' 3 X b c
       '-5' 99 X
       '-5' '-1' X c
+      '-5' '-2' X b c
+      '-5' '-3' X a b c
       '-5' '-4' X hole a b c
       '-5' '-5' X hole hole a b c
+      '-5' '-6' X hole hole a b c
+      '-5' +1 X hole a b c
+      '-5' +2 X a b c
+      '-5' +3 X b c
+      '-5' +99 X
       '-5' '' X
       '' '' X
       '' 1 X b c
@@ -475,6 +482,28 @@ Describe 'sx_arr_splice_raw'
       When call sx_arr_splice_raw arr "$1" "$2" X
       The status should be success
       shift 2
+      Assert splice_raw_matches "$@"
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
+  Context '算術幅を超える先頭前の距離と削除範囲の境界'
+    Parameters
+      9999999999999999999999 X hole a b c
+      10000000000000000000000 X a b c
+      +10000000000000000000001 X b c
+      10000000000000000000003 X
+      10000000000000000000004 X
+      '-2' X b c
+      '-3' X a b c
+      '-4' X hole a b c
+    End
+
+    It '巨大な距離を保ったまま、残る穴と旧配列の削除範囲を求める'
+      When call sx_arr_splice_raw arr -10000000000000000000003 "$1" X
+      The status should be success
+      shift
       Assert splice_raw_matches "$@"
       The variable arr should equal "$before_sig"
       The variable SX_SYS_REV should equal "$before_rev"
