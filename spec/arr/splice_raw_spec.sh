@@ -249,6 +249,7 @@ Describe 'sx_arr_splice_raw'
   Context '尾部の開始位置を直接求める移動で入れ子と穴を保持'
     Parameters
       1 2 7 6
+      '-4' 2 7 6
       3 4 5 4
     End
 
@@ -307,6 +308,28 @@ Describe 'sx_arr_splice_raw'
     The variable arr_10000000000000000000000 should be undefined
     The variable arr should equal "$before_sig"
     The variable SX_SYS_REV should equal "$before_rev"
+  End
+
+  Context '負の削除数で算術幅を超える配列を拡大'
+    Parameters
+      9999999999999999999996
+      '-3'
+    End
+
+    It '末尾の除外数を保ち、桁が増える長さと尾部を正しく確定する'
+      arr_len=9999999999999999999999
+      arr_9999999999999999999998=tail
+      When call sx_arr_splice_raw arr "$1" -1 X Y Z
+      The status should be success
+      The variable arr_len should equal 10000000000000000000000
+      The variable arr_9999999999999999999996 should equal X
+      The variable arr_9999999999999999999997 should equal Y
+      The variable arr_9999999999999999999998 should equal Z
+      The variable arr_9999999999999999999999 should equal tail
+      The variable arr_10000000000000000000000 should be undefined
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
   End
 
   It '等長置換でも入れ子を掃除し、空文字・穴・文字列を区別する'

@@ -25,6 +25,7 @@ M_RENAME_QI([|dnl
 ##   尾部移動は要素単位の __sx_var_copy で行い、拡大時は後方から前方へ、
 ##   縮小時は前方から後方へ処理して未読のソースを保護する。
 ##   縮小後の長さは移動終了時の宛先添字から得て、事前の減算・加算を省く。
+##   先頭前の穴がなく負の del で拡大する場合は、除外数を尾部長として再利用する。
 ##   尾部移動後に長さと余剰尾部を確定し、中央の各要素を深く掃除してから代入する。
 ##   旧配列の末尾以降へ直接追加する場合は、未使用の挿入先の掃除を省く。
 ##   新しい穴と旧配列範囲が重なる箇所も深く掃除する。操作前の範囲外変数は掃除しない。
@@ -102,10 +103,10 @@ __sx_arr_splice_raw() {
 				# 削除数へ換算せず、残る尾部の開始位置を直接求める。
 				0:0 | 0:[+-]0) Q_src="${Q_n}";;
 				0:-*)
-					Q_del="${Q_del#-}"
-					__sx_num_cmp_nat0 "${Q_del}" "${Q_len}" || case "${?}" in
+					# 負号を保持し、拡大時にも末尾の除外数を再利用できるようにする。
+					__sx_num_cmp_nat0 "${Q_del#-}" "${Q_len}" || case "${?}" in
 						1)
-							__sx_num_sub_nat0 Q_src "${Q_len}" "${Q_del}"
+							__sx_num_sub_nat0 Q_src "${Q_len}" "${Q_del#-}"
 							__sx_num_cmp_nat0 "${Q_src}" "${Q_n}" || case "${?}" in 1)
 								Q_src="${Q_n}"
 							esac
@@ -215,8 +216,13 @@ __sx_arr_splice_raw() {
 								case "${Q_src}" in
 									"${Q_n}") __sx_num_add_nat0 Q_new "${Q_len}" "${Q_cnt}";;
 									*)
-										__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_src}"
-										__sx_num_add_nat0 Q_new "${Q_new}" "${Q_end}"
+										case "${Q_del}" in
+											-*) __sx_num_add_nat0 Q_new "${Q_end}" "${Q_del#-}";;
+											*)
+												__sx_num_sub_nat0 Q_new "${Q_len}" "${Q_src}"
+												__sx_num_add_nat0 Q_new "${Q_new}" "${Q_end}"
+												;;
+										esac
 										;;
 								esac
 
