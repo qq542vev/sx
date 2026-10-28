@@ -198,6 +198,24 @@ Describe 'sx_arr_splice_raw'
     End
   End
 
+  Context '算術幅を超える長さと負の開始位置'
+    Parameters
+      '-1' 10000000000000000000002
+      '-2' 10000000000000000000001
+      '-10000000000000000000003' 0
+    End
+
+    It '負の開始位置を正規化し、指定位置だけを同数置換する'
+      arr_len=10000000000000000000003
+      When call sx_arr_splice_raw arr "$1" 1 X
+      The status should be success
+      The variable arr_len should equal 10000000000000000000003
+      The variable "arr_${2}" should equal X
+      The variable arr should equal "$before_sig"
+      The variable SX_SYS_REV should equal "$before_rev"
+    End
+  End
+
   Context '先頭前の穴がない削除範囲の境界'
     Parameters
       1 1 a X Y c d e f
@@ -742,7 +760,10 @@ Describe 'sx_arr_splice_raw'
   Context '空配列への挿入'
     Parameters
       0 X Y
+      +0 X Y
+      '-0' X Y
       2 hole hole X Y
+      '-1' X Y
       '-2' X Y
     End
 

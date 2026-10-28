@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_ARR_HOLE __sx_num_add1_nat0 __sx_num_add_nat0 __sx_num_cmp_nat0 __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_var_copy __sx_var_unset|])dnl
+M_REQUIRE([|SX_CFG_ARR_HOLE __sx_ex_yield __sx_num_add1_nat0 __sx_num_add_nat0 __sx_num_cmp_nat0 __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_var_copy __sx_var_unset|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arr_splice_raw - リビジョンを更新せず配列要素を挿入・削除する（内部用）
@@ -12,6 +12,7 @@ M_RENAME_QI([|dnl
 ##   del が 0・+0・-0 で挿入値がなければ、作業変数を設定せず直ちに成功する。
 ##   長さ・添字・値個数は文字列数値関数で処理し、シェルの算術幅に依存しない。
 ##   負の n は len との和に換算し、範囲外の距離は穴として保持する。
+##   非空配列の負の開始位置は正規化後に範囲内と確定するため、長さとの再比較を省く。
 ##   del は先頭より前の穴も数え、省略・空文字列は末尾まで、負数は末尾からの除外とする。
 ##   削除後に残る先頭側の穴は挿入数に加え、添字を非負に平行移動して尾部を移す。
 ##   挿入値がなければ範囲外の穴を作らず、空配列への負位置の挿入でも末尾に穴を作らない。
@@ -47,25 +48,30 @@ __sx_arr_splice_raw() {
 	Q_hole=0
 	Q_hole_end=0
 
+	# 1) 開始位置と削除範囲の確定。先頭より前の穴と旧配列から削除する数を分離する。
+	#    n>=len では尾部がなく、値がある場合だけ n+cnt まで拡張する。
 	case "${Q_n}" in
-		-0 | +*) Q_n="${Q_n#[+-]}";;
-		-*)
+		-[!0]*)
 			Q_n="${Q_n#-}"
 
 			__sx_num_cmp_nat0 "${Q_n}" "${Q_len}" || case "${?}" in
 				3)
 					Q_rest="${Q_n}"
 					__sx_num_sub_nat0 Q_gap "${Q_n}" "${Q_len}"
-					;&
-				2) Q_n=0;;
-				1) __sx_num_sub_nat0 Q_n "${Q_len}" "${Q_n}";;
+					# この分岐だけは空配列の可能性がある。
+					case "${Q_len}" in
+						0) Q_n=0; __sx_ex_yield 2;;
+						*) ! Q_n=0;;
+					esac
+					;;
+				# 非空配列と n<len が最初の比較から確定している。
+				2) ! Q_n=0;;
+				1) ! __sx_num_sub_nat0 Q_n "${Q_len}" "${Q_n}";;
 			esac
 			;;
-	esac
-
-	# 1) 削除範囲の確定。先頭より前の穴と旧配列から削除する数を分離する。
-	#    n>=len では尾部がなく、値がある場合だけ n+cnt まで拡張する。
-	__sx_num_cmp_nat0 "${Q_n}" "${Q_len}" || case "${?}" in
+		[+-]*) Q_n="${Q_n#[+-]}";&
+		*) __sx_num_cmp_nat0 "${Q_n}" "${Q_len}";;
+	esac || case "${?}" in
 		1)
 			# 先頭前の穴がない同数置換は、準備計算を飛ばして書込みへ進む。
 			# 末尾を超える場合も尾部は残らず、新しい終端まで長さを拡張するだけでよい。
