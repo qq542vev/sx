@@ -126,9 +126,7 @@ __sx_arr_splice_raw() {
 				*)
 					# n=0、先頭前の操作。穴の距離はまだ求めていない。
 					case "${Q_del}" in
-						0 | [+-]0)
-							__sx_num_sub_nat0 Q_gap "${Q_rest}" "${Q_len}"
-							;;
+						0 | [+-]0) __sx_num_sub_nat0 Q_gap "${Q_rest}" "${Q_len}";;
 						-*)
 							# 末尾から除外する数が旧長さ未満なら、穴をすべて削除する。
 							Q_del="${Q_del#-}"
