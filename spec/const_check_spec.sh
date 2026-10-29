@@ -35,6 +35,35 @@ Describe 'sx_const_check'
       sxtest_load ./build/modules/SX_STR_ALPHA.sh
       sxtest_load ./build/modules/SX_STR_ASCII.sh
       sxtest_load ./build/modules/SX_STR_NONASCII.sh
+      sxtest_load ./build/modules/SX_STR_BPH.sh
+      sxtest_load ./build/modules/SX_STR_NBH.sh
+      sxtest_load ./build/modules/SX_STR_NEL.sh
+      sxtest_load ./build/modules/SX_STR_SSA.sh
+      sxtest_load ./build/modules/SX_STR_ESA.sh
+      sxtest_load ./build/modules/SX_STR_HTS.sh
+      sxtest_load ./build/modules/SX_STR_HTJ.sh
+      sxtest_load ./build/modules/SX_STR_VTS.sh
+      sxtest_load ./build/modules/SX_STR_PLD.sh
+      sxtest_load ./build/modules/SX_STR_PLU.sh
+      sxtest_load ./build/modules/SX_STR_RI.sh
+      sxtest_load ./build/modules/SX_STR_SS2.sh
+      sxtest_load ./build/modules/SX_STR_SS3.sh
+      sxtest_load ./build/modules/SX_STR_DCS.sh
+      sxtest_load ./build/modules/SX_STR_PU1.sh
+      sxtest_load ./build/modules/SX_STR_PU2.sh
+      sxtest_load ./build/modules/SX_STR_STS.sh
+      sxtest_load ./build/modules/SX_STR_CCH.sh
+      sxtest_load ./build/modules/SX_STR_MW.sh
+      sxtest_load ./build/modules/SX_STR_SPA.sh
+      sxtest_load ./build/modules/SX_STR_EPA.sh
+      sxtest_load ./build/modules/SX_STR_SOS.sh
+      sxtest_load ./build/modules/SX_STR_SCI.sh
+      sxtest_load ./build/modules/SX_STR_CSI.sh
+      sxtest_load ./build/modules/SX_STR_ST.sh
+      sxtest_load ./build/modules/SX_STR_OSC.sh
+      sxtest_load ./build/modules/SX_STR_PM.sh
+      sxtest_load ./build/modules/SX_STR_APC.sh
+      sxtest_load ./build/modules/SX_STR_C1.sh
       sxtest_load ./build/modules/SX_STR_BIN.sh
       sxtest_load ./build/modules/SX_STR_BLANK.sh
       sxtest_load ./build/modules/SX_STR_CNTRL.sh
@@ -96,6 +125,50 @@ Describe 'sx_const_check'
   It '非ASCII集合が読み取り専用であること'
     When call sx_var_is_ro SX_STR_NONASCII
     The status should be success
+  End
+
+  Context 'C1制御コードと領域全体の集合'
+    Parameters
+      SX_STR_BPH $'\202'
+      SX_STR_NBH $'\203'
+      SX_STR_NEL $'\205'
+      SX_STR_SSA $'\206'
+      SX_STR_ESA $'\207'
+      SX_STR_HTS $'\210'
+      SX_STR_HTJ $'\211'
+      SX_STR_VTS $'\212'
+      SX_STR_PLD $'\213'
+      SX_STR_PLU $'\214'
+      SX_STR_RI $'\215'
+      SX_STR_SS2 $'\216'
+      SX_STR_SS3 $'\217'
+      SX_STR_DCS $'\220'
+      SX_STR_PU1 $'\221'
+      SX_STR_PU2 $'\222'
+      SX_STR_STS $'\223'
+      SX_STR_CCH $'\224'
+      SX_STR_MW $'\225'
+      SX_STR_SPA $'\226'
+      SX_STR_EPA $'\227'
+      SX_STR_SOS $'\230'
+      SX_STR_SCI $'\232'
+      SX_STR_CSI $'\233'
+      SX_STR_ST $'\234'
+      SX_STR_OSC $'\235'
+      SX_STR_PM $'\236'
+      SX_STR_APC $'\237'
+      SX_STR_C1 $'\200\201\202\203\204\205\206\207\210\211\212\213\214\215\216\217\220\221\222\223\224\225\226\227\230\231\232\233\234\235\236\237'
+    End
+
+    It '対応する8ビット表現の値を保持すること'
+      When call :
+      The variable "$1" should equal "$2"
+    End
+
+    It '読み取り専用であること'
+      When call sx_var_is_ro "$1"
+      The status should be success
+    End
   End
 
   It '引用符を含む定数と空の定数を保持すること'

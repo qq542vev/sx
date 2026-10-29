@@ -149,6 +149,12 @@ Describe 'm4 による定数値の生成と引用'
     The variable constant_value should equal '0000000000000000000000000000000000000'
   End
 
+  It 'C1領域のマクロ値をエスケープ列のまま保持すること'
+    When run quote_source 'M_STR_C1'
+    The status should be success
+    The output should equal '\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\x8E\x8F\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9A\x9B\x9C\x9D\x9E\x9F'
+  End
+
   It '整数定数を算術評価せずに置換できること'
     When call expand_constant 'M_NUM_I128_MIN'
     The status should be success

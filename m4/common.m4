@@ -203,6 +203,42 @@ define([|M_STR_RS|], [|format([|%c|], 30)|])dnl
 define([|M_STR_US|], [|format([|%c|], 31)|])dnl
 define([|M_STR_DEL|], [|format([|%c|], 127)|])dnl
 
+# C1の名前付き制御コード。ECMA-48第5版 5.3 表2b の8ビット表現を採用する。
+# https://ecma-international.org/wp-content/uploads/ECMA-48_5th_edition_june_1991.pdf
+# 値は単一バイト用のエスケープ列として保持し、ドル単一引用符で出力する。
+# yash 2.60のUTF-8環境で高位バイトがUTF-8化される挙動は、実装差として扱う。
+define([|M_STR_BPH|], [|\x82|])dnl
+define([|M_STR_NBH|], [|\x83|])dnl
+define([|M_STR_NEL|], [|\x85|])dnl
+define([|M_STR_SSA|], [|\x86|])dnl
+define([|M_STR_ESA|], [|\x87|])dnl
+define([|M_STR_HTS|], [|\x88|])dnl
+define([|M_STR_HTJ|], [|\x89|])dnl
+define([|M_STR_VTS|], [|\x8A|])dnl
+define([|M_STR_PLD|], [|\x8B|])dnl
+define([|M_STR_PLU|], [|\x8C|])dnl
+define([|M_STR_RI|], [|\x8D|])dnl
+define([|M_STR_SS2|], [|\x8E|])dnl
+define([|M_STR_SS3|], [|\x8F|])dnl
+define([|M_STR_DCS|], [|\x90|])dnl
+define([|M_STR_PU1|], [|\x91|])dnl
+define([|M_STR_PU2|], [|\x92|])dnl
+define([|M_STR_STS|], [|\x93|])dnl
+define([|M_STR_CCH|], [|\x94|])dnl
+define([|M_STR_MW|], [|\x95|])dnl
+define([|M_STR_SPA|], [|\x96|])dnl
+define([|M_STR_EPA|], [|\x97|])dnl
+define([|M_STR_SOS|], [|\x98|])dnl
+define([|M_STR_SCI|], [|\x9A|])dnl
+define([|M_STR_CSI|], [|\x9B|])dnl
+define([|M_STR_ST|], [|\x9C|])dnl
+define([|M_STR_OSC|], [|\x9D|])dnl
+define([|M_STR_PM|], [|\x9E|])dnl
+define([|M_STR_APC|], [|\x9F|])dnl
+
+# C1領域全体の0x80～0x9Fを昇順に保持する。未割当・削除済みの位置も含む。
+define([|M_STR_C1|], [|\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\x8E\x8F\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9A\x9B\x9C\x9D\x9E\x9F|])dnl
+
 define([|M_STR_BLANK|], [|M_STR_HT() |])dnl
 define([|M_STR_SPACE|], [|M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR() |])dnl
 define([|M_STR_CNTRL|], [|M_STR_SOH()M_STR_STX()M_STR_ETX()M_STR_EOT()M_STR_ENQ()M_STR_ACK()M_STR_BEL()M_STR_BS()M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR()M_STR_SO()M_STR_SI()M_STR_DLE()M_STR_DC1()M_STR_DC2()M_STR_DC3()M_STR_DC4()M_STR_NAK()M_STR_SYN()M_STR_ETB()M_STR_CAN()M_STR_EM()M_STR_SUB()M_STR_ESC()M_STR_FS()M_STR_GS()M_STR_RS()M_STR_US()M_STR_DEL()|])dnl

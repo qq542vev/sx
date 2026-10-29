@@ -39,6 +39,21 @@ Describe '共通マクロと定数の個別展開'
     The output should equal 'readonly SX_STR_ALNUM=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
   End
 
+  Context 'C1定数の単独展開'
+    Parameters
+      BPH '\x82'
+      CSI '\x9B'
+      APC '\x9F'
+      C1 '\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\x8E\x8F\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9A\x9B\x9C\x9D\x9E\x9F'
+    End
+
+    It '生の高位バイトを埋め込まずドル単一引用符で一つだけ宣言すること'
+      When run expand_split_constants "src/const/str/SX_STR_${1}.m4"
+      The status should be success
+      The output should equal "readonly SX_STR_${1}=\$'${2}'"
+    End
+  End
+
   It '受理パターンを一項目だけ出力すること'
     When run expand_split_constants src/const/cfg/SX_CFG_META_PATTERN_NUM_RANGE.m4
     The status should be success
