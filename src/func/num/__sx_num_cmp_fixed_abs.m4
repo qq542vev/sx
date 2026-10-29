@@ -17,11 +17,11 @@ __sx_num_cmp_fixed_abs() {
 		*) set -- "${1}" "${2}" "${3}" '';;
 	esac
 
-	__sx_num_cmp_nat0 "${1}" "${2}" || case "${?}" in 1 | 3)
-		return "${?}"
+	__sx_num_cmp_nat0 "${1}" "${2}" || case "${?}" in [13])
+		return
 	esac
 
-	__sx_num_cmp_fixed_frac "${3}" "${4}" || return "${?}"
+	__sx_num_cmp_fixed_frac "${3}" "${4}" || return
 }
 
 popdef([|CLEANUP|])dnl

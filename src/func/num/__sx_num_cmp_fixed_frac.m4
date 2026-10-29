@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_SYS_NUM_QM SX_SYS_NUM_ZR __sx_num_cmp_arith_digit|])dnl
+M_REQUIRE([|SX_SYS_NUM_QM SX_SYS_NUM_ZR __sx_num_cmp_arith|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_num_cmp_fixed_frac - 小数部を左から比較する（内部用）
@@ -26,15 +26,15 @@ __sx_num_cmp_fixed_frac() {
 	# 両方の文字列が窓幅以上の間、チャンクごとに比較
 	while M_STR_MATCH([|"${1}"|], [|${SX_SYS_NUM_QM}?*|]) && M_STR_MATCH([|"${2}"|], [|${SX_SYS_NUM_QM}?*|]); do
 		set -- "${1#${SX_SYS_NUM_QM}}" "${2#${SX_SYS_NUM_QM}}" "${1}" "${2}"
-		__sx_num_cmp_arith_digit "${3%"${1}"}" "${4%"${2}"}" || case "${?}" in
-			1 | 3) return "${?}";;
+		__sx_num_cmp_arith "1${3%"${1}"}" "1${4%"${2}"}" || case "${?}" in [13])
+			return
 		esac
 	done
 
 	# 接頭辞の関係にない（＝どこかの桁で異なる）残りの部分をパディングして最後の比較
 	set -- "${1}${SX_SYS_NUM_ZR}" "${2}${SX_SYS_NUM_ZR}"
 
-	__sx_num_cmp_arith_digit "${1%"${1#${SX_SYS_NUM_QM}}"}" "${2%"${2#${SX_SYS_NUM_QM}}"}" || return "${?}"
+	__sx_num_cmp_arith "1${1%"${1#${SX_SYS_NUM_QM}}"}" "1${2%"${2#${SX_SYS_NUM_QM}}"}" || return
 }
 |], [|num_cmp_fixed_frac|])dnl
 popdef([|CLEANUP|])dnl

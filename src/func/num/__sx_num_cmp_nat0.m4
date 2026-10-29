@@ -26,7 +26,7 @@ __sx_num_cmp_nat0() {
 	case "${Q_l}" in "${Q_r}")
 		while M_STR_MATCH([|"${1}"|], [|${SX_SYS_NUM_QM}?*|]); do
 			set -- "${1#${SX_SYS_NUM_QM}}" "${2#${SX_SYS_NUM_QM}}" "${1}" "${2}"
-			__sx_num_cmp_arith "1${3%"${1}"}" "1${4%"${2}"}" || case "${?}" in 1 | 3)
+			__sx_num_cmp_arith "1${3%"${1}"}" "1${4%"${2}"}" || case "${?}" in [13])
 				set -- "${?}"
 				unset CLEANUP
 				return "${1}"
@@ -35,7 +35,7 @@ __sx_num_cmp_nat0() {
 
 		unset CLEANUP
 
-	__sx_num_cmp_arith "1${1}" "1${2}" || return "${?}"
+	__sx_num_cmp_arith "1${1}" "1${2}" || return
 	esac
 
 	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_l}" "${Q_r}"; then
