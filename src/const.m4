@@ -95,6 +95,7 @@ M_UNIT([|SX_STR_ALUND|], [|src/const/str/SX_STR_ALUND.m4|])dnl
 M_UNIT([|SX_STR_GRAPH|], [|src/const/str/SX_STR_GRAPH.m4|])dnl
 M_UNIT([|SX_STR_PRINT|], [|src/const/str/SX_STR_PRINT.m4|])dnl
 M_UNIT([|SX_STR_ASCII|], [|src/const/str/SX_STR_ASCII.m4|])dnl
+M_UNIT([|SX_STR_NONASCII|], [|src/const/str/SX_STR_NONASCII.m4|])dnl
 M_UNIT([|SX_STR_SPLIT_GLOB|], [|src/const/str/SX_STR_SPLIT_GLOB.m4|])dnl
 M_UNIT([|SX_STR_SPLIT_INC|], [|src/const/str/SX_STR_SPLIT_INC.m4|])dnl
 M_UNIT([|SX_STR_SUB_GLOB|], [|src/const/str/SX_STR_SUB_GLOB.m4|])dnl

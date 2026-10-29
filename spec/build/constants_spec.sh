@@ -22,6 +22,11 @@ Describe 'm4 による定数値の生成と引用'
       m4 -- m4/common.m4 -
   }
 
+  const_escaped_source() {
+    printf 'define([|M_TEST_VALUE|], [|[|%s|]|])dnl\nM_CONST_ESC([|TEST_VALUE|])\n' "$1" |
+      m4 -- m4/common.m4 -
+  }
+
   load_declaration() {
     constant_script=$(quote_source "$1") || return
     eval "${constant_script}" || return
@@ -190,6 +195,31 @@ Describe 'm4 による定数値の生成と引用'
     When run const_source 'M_SH_QUOTE'
     The status should be success
     The output should equal 'readonly SX_TEST_VALUE=M_SH_QUOTE'
+  End
+
+  Context 'エスケープ列を保持する定数宣言'
+    Parameters
+      # shellcheck disable=SC2286 # 空文字列も入力データとして検査する。
+      '' "readonly SX_TEST_VALUE=\$''"
+      '\x80\xFE\xFF' "readonly SX_TEST_VALUE=\$'\x80\xFE\xFF'"
+      '\x41\n\047\134' "readonly SX_TEST_VALUE=\$'\x41\n\047\134'"
+      'M_EX_USAGE,$(exit 99)' "readonly SX_TEST_VALUE=\$'M_EX_USAGE,\$(exit 99)'"
+    End
+
+    It '値を再展開せずドル単一引用符で宣言すること'
+      When run const_escaped_source "${1}"
+      The status should be success
+      The output should equal "${2}"
+    End
+  End
+
+  It 'エスケープ列を実行時に復号し、シェル構文は値として保持すること'
+    expected="A
+'\M_EX_USAGE,\$(exit 99)"
+    When call load_declaration 'define([|M_TEST_VALUE|], [|[|\x41\n\047\134M_EX_USAGE,$(exit 99)|]|])dnl
+M_CONST_ESC([|TEST_VALUE|])'
+    The status should be success
+    The variable SX_TEST_VALUE should equal "${expected}"
   End
 
   It '数値定数も算術評価せず宣言すること'

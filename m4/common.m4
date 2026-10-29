@@ -81,6 +81,12 @@ define([|__M_SH_QUOTE_JOIN|], [|ifelse(regexp([|$1|], [|\\'''\\'|]), -1, [|[|$1|
 define([|M_CONST|], [|readonly SX_$1=__M_CONST_VALUE(indir([|M_$1|]))|])dnl
 define([|__M_CONST_VALUE|], [|ifelse([|$1|], [||], [|M_SH_QUOTE([||])|], len(translit([|[|$1|]|], [|ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-|])), 0, [|[|$1|]|], [|M_SH_QUOTE([|$1|])|])|])dnl
 
+# M_* に保持したエスケープ列を POSIX.1-2024 のドル単一引用符で宣言する。
+# 入力は引用済みの値ではなく、\xHH 等のエスケープ列（単一引用符は \'）とする。
+# 通常の定数宣言とは異なり、バックスラッシュは実行時に解釈される。
+define([|M_CONST_ESC|], [|readonly SX_$1=__M_CONST_ESC_VALUE(indir([|M_$1|]))|])dnl
+define([|__M_CONST_ESC_VALUE|], [|$'[|$1|]'|])dnl
+
 define([|M_EX_OK|], [|0|])dnl
 define([|M_EX_USAGE|], [|64|])dnl
 define([|M_EX_DATAERR|], [|65|])dnl
@@ -214,6 +220,10 @@ define([|M_STR_ALUND|], [|_[||]M_STR_ALPHA()|])dnl
 define([|M_STR_GRAPH|], [|M_STR_PUNCT()M_STR_ALNUM()|])dnl
 define([|M_STR_PRINT|], [| M_STR_GRAPH()|])dnl
 define([|M_STR_ASCII|], [|M_STR_CNTRL()M_STR_PRINT()|])dnl
+
+# 0x80～0xFF の非ASCIIバイトを昇順に保持する。Unicodeの文字集合ではない。
+# ソース・生成物に生の非ASCIIバイトを埋め込まないよう、エスケープ列として出力する。
+define([|M_STR_NONASCII|], [|\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\x8E\x8F\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9A\x9B\x9C\x9D\x9E\x9F\xA0\xA1\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xAA\xAB\xAC\xAD\xAE\xAF\xB0\xB1\xB2\xB3\xB4\xB5\xB6\xB7\xB8\xB9\xBA\xBB\xBC\xBD\xBE\xBF\xC0\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xCA\xCB\xCC\xCD\xCE\xCF\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7\xD8\xD9\xDA\xDB\xDC\xDD\xDE\xDF\xE0\xE1\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xEA\xEB\xEC\xED\xEE\xEF\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF|])dnl
 
 # sx_str_split 等で使用するフラグ
 define([|M_STR_SPLIT_GLOB|], [|1|])dnl
