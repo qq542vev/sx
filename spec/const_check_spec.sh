@@ -64,6 +64,8 @@ Describe 'sx_const_check'
       sxtest_load ./build/modules/SX_STR_PM.sh
       sxtest_load ./build/modules/SX_STR_APC.sh
       sxtest_load ./build/modules/SX_STR_C1.sh
+      sxtest_load ./build/modules/SX_STR_CONTROL.sh
+      sxtest_load ./build/modules/SX_STR_GR.sh
       sxtest_load ./build/modules/SX_STR_BIN.sh
       sxtest_load ./build/modules/SX_STR_BLANK.sh
       sxtest_load ./build/modules/SX_STR_CNTRL.sh
@@ -124,6 +126,27 @@ Describe 'sx_const_check'
 
   It '非ASCII集合が読み取り専用であること'
     When call sx_var_is_ro SX_STR_NONASCII
+    The status should be success
+  End
+
+  It '制御文字全体の集合をC0・DEL、C1の順に保持すること'
+    When call :
+    The variable SX_STR_CONTROL should equal "${SX_STR_CNTRL}${SX_STR_C1}"
+  End
+
+  It '制御文字全体の集合が読み取り専用であること'
+    When call sx_var_is_ro SX_STR_CONTROL
+    The status should be success
+  End
+
+  It 'GR集合が0xA0～0xFFの96値を昇順に含むこと'
+    When call :
+    The variable SX_STR_GR should equal $'\240\241\242\243\244\245\246\247\250\251\252\253\254\255\256\257\260\261\262\263\264\265\266\267\270\271\272\273\274\275\276\277\300\301\302\303\304\305\306\307\310\311\312\313\314\315\316\317\320\321\322\323\324\325\326\327\330\331\332\333\334\335\336\337\340\341\342\343\344\345\346\347\350\351\352\353\354\355\356\357\360\361\362\363\364\365\366\367\370\371\372\373\374\375\376\377'
+    The variable SX_STR_NONASCII should equal "${SX_STR_C1}${SX_STR_GR}"
+  End
+
+  It 'GR集合が読み取り専用であること'
+    When call sx_var_is_ro SX_STR_GR
     The status should be success
   End
 

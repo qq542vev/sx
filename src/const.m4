@@ -110,6 +110,8 @@ M_UNIT([|SX_STR_BLANK|], [|src/const/str/SX_STR_BLANK.m4|])dnl
 M_UNIT([|SX_STR_SPACE|], [|src/const/str/SX_STR_SPACE.m4|])dnl
 M_UNIT([|SX_STR_CNTRL|], [|src/const/str/SX_STR_CNTRL.m4|])dnl
 M_UNIT([|SX_STR_C1|], [|src/const/str/SX_STR_C1.m4|])dnl
+M_UNIT([|SX_STR_CONTROL|], [|src/const/str/SX_STR_CONTROL.m4|])dnl
+M_UNIT([|SX_STR_GR|], [|src/const/str/SX_STR_GR.m4|])dnl
 M_UNIT([|SX_STR_BIN|], [|src/const/str/SX_STR_BIN.m4|])dnl
 M_UNIT([|SX_STR_OCT|], [|src/const/str/SX_STR_OCT.m4|])dnl
 M_UNIT([|SX_STR_DIGIT|], [|src/const/str/SX_STR_DIGIT.m4|])dnl

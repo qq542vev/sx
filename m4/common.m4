@@ -239,9 +239,15 @@ define([|M_STR_APC|], [|\x9F|])dnl
 # C1領域全体の0x80～0x9Fを昇順に保持する。未割当・削除済みの位置も含む。
 define([|M_STR_C1|], [|\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\x8E\x8F\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9A\x9B\x9C\x9D\x9E\x9F|])dnl
 
+# GR（Graphic Right）領域の0xA0～0xFFを昇順に保持する。
+# 高位バイトはエスケープ列で記述し、定数の出力時にドル単一引用符で復号する。
+define([|M_STR_GR|], [|\xA0\xA1\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xAA\xAB\xAC\xAD\xAE\xAF\xB0\xB1\xB2\xB3\xB4\xB5\xB6\xB7\xB8\xB9\xBA\xBB\xBC\xBD\xBE\xBF\xC0\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xCA\xCB\xCC\xCD\xCE\xCF\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7\xD8\xD9\xDA\xDB\xDC\xDD\xDE\xDF\xE0\xE1\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xEA\xEB\xEC\xED\xEE\xEF\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF|])dnl
+
 define([|M_STR_BLANK|], [|M_STR_HT() |])dnl
 define([|M_STR_SPACE|], [|M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR() |])dnl
 define([|M_STR_CNTRL|], [|M_STR_SOH()M_STR_STX()M_STR_ETX()M_STR_EOT()M_STR_ENQ()M_STR_ACK()M_STR_BEL()M_STR_BS()M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR()M_STR_SO()M_STR_SI()M_STR_DLE()M_STR_DC1()M_STR_DC2()M_STR_DC3()M_STR_DC4()M_STR_NAK()M_STR_SYN()M_STR_ETB()M_STR_CAN()M_STR_EM()M_STR_SUB()M_STR_ESC()M_STR_FS()M_STR_GS()M_STR_RS()M_STR_US()M_STR_DEL()|])dnl
+# C0・DELの実文字列とC1のエスケープ列を連結し、ドル単一引用符で復号する。
+define([|M_STR_CONTROL|], [|M_STR_CNTRL()M_STR_C1()|])dnl
 define([|M_STR_BIN|], [|01|])dnl
 define([|M_STR_OCT|], [|01234567|])dnl
 define([|M_STR_DIGIT|], [|0123456789|])dnl
