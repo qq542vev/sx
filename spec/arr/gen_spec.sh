@@ -60,18 +60,22 @@ Describe 'sx_arr_gen'
     The variable myarr_q_1 should equal "test"
   End
 
-  It '連続してgenを呼び出しても毎回正しく初期化されること'
-    sxtest_run myarr_seq -- 'sx_var_set myarr_seq'
-    sx_arr_gen myarr_seq first
+  It '既存配列を明示的に削除してから再生成できること'
+    sxtest_run myarr_seq myarr_seq_len myarr_seq_0 -- '
+      sx_arr_gen myarr_seq first
+      sx_var_unset myarr_seq
+    '
     When call sx_arr_gen myarr_seq second
     The variable myarr_seq_len should equal 1
     The variable myarr_seq_0 should equal "second"
   End
 
-  It '再生成時に上書きする入れ子配列の関連要素を残さないこと'
-    sxtest_run myarr_seq -- '
+  It '入れ子配列を明示的に削除してから再生成すると関連要素が残らないこと'
+    sxtest_run myarr_seq myarr_seq_len myarr_seq_0 myarr_seq_1 \
+      myarr_seq_0_len myarr_seq_0_0 myarr_seq_0_1 -- '
       sx_arr_gen myarr_seq a b
       sx_arr_gen myarr_seq_0 old nested
+      sx_var_unset myarr_seq
     '
     When call sx_arr_gen myarr_seq X Y
     The status should be success
