@@ -75,6 +75,12 @@ define([|M_SH_QUOTE|], [|'__M_SH_QUOTE_JOIN(__M_SH_QUOTE_APOS([|$1|]))'|])dnl
 define([|__M_SH_QUOTE_APOS|], [|patsubst([|[|$1|]|], [|'|], [|'\\''|])|])dnl
 define([|__M_SH_QUOTE_JOIN|], [|ifelse(regexp([|$1|], [|\\'''\\'|]), -1, [|[|$1|]|], [|__M_SH_QUOTE_JOIN(patsubst([|[|$1|]|], [|\\'''\\'|], [|\\'\\'|]))|])|])dnl
 
+# 生の文字列をドル単一引用符の内側用に変換する。引用符自体は付けない。
+# バックスラッシュを先に二重化し、次に単一引用符をエスケープする。$ はそのまま保持する。
+# 各段階で m4 の引用を保持し、値に含まれるマクロ名・カンマ・括弧の再解釈を防ぐ。
+define([|M_SH_ESCAPE|], [|__M_SH_ESCAPE_APOS(patsubst([|[|$1|]|], [|\\|], [|\\\\|]))|])dnl
+define([|__M_SH_ESCAPE_APOS|], [|patsubst([|[|$1|]|], [|'|], [|\\'|])|])dnl
+
 # 接頭辞なしの定数名から M_* の値を展開し、readonly SX_* の宣言を生成する。
 # 非空で Portable Filename Character Set の文字だけを含む値は引用を省略する。
 # それ以外は M_SH_QUOTE に渡す。判定中と出力時も m4 の引用を保持する。
@@ -261,11 +267,17 @@ define([|M_STR_WORD|], [|_[||]M_STR_ALNUM()|])dnl
 define([|M_STR_ALUND|], [|_[||]M_STR_ALPHA()|])dnl
 define([|M_STR_GRAPH|], [|M_STR_PUNCT()M_STR_ALNUM()|])dnl
 define([|M_STR_PRINT|], [| M_STR_GRAPH()|])dnl
+# ASCII印字集合だけをエスケープし、GRのエスケープ列をそのまま連結する。
+define([|M_STR_PRINTABLE|], [|M_SH_ESCAPE(M_STR_PRINT)[||]M_STR_GR()|])dnl
 define([|M_STR_ASCII|], [|M_STR_CNTRL()M_STR_PRINT()|])dnl
 
 # 0x80～0xFF の非ASCIIバイトを昇順に保持する。Unicodeの文字集合ではない。
 # ソース・生成物に生の非ASCIIバイトを埋め込まないよう、エスケープ列として出力する。
 define([|M_STR_NONASCII|], [|\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\x8E\x8F\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9A\x9B\x9C\x9D\x9E\x9F\xA0\xA1\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xAA\xAB\xAC\xAD\xAE\xAF\xB0\xB1\xB2\xB3\xB4\xB5\xB6\xB7\xB8\xB9\xBA\xBB\xBC\xBD\xBE\xBF\xC0\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xCA\xCB\xCC\xCD\xCE\xCF\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7\xD8\xD9\xDA\xDB\xDC\xDD\xDE\xDF\xE0\xE1\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xEA\xEB\xEC\xED\xEE\xEF\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF|])dnl
+
+# NULを除く0x01～0xFFの全255値。ASCII集合の順序を保ち、非ASCII集合を連結する。
+# ASCII側だけをエスケープし、非ASCII側のエスケープ列はそのまま保持する。
+define([|M_STR_BYTE|], [|M_SH_ESCAPE(M_STR_ASCII)[||]M_STR_NONASCII()|])dnl
 
 # sx_str_split 等で使用するフラグ
 define([|M_STR_SPLIT_GLOB|], [|1|])dnl

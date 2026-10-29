@@ -302,6 +302,8 @@ M_UNIT([|sx_str_is_bin|], [|src/func/str/sx_str_is_bin.m4|])dnl
 M_UNIT([|__sx_str_is_bin|], [|src/func/str/__sx_str_is_bin.m4|])dnl
 M_UNIT([|sx_str_is_blank|], [|src/func/str/sx_str_is_blank.m4|])dnl
 M_UNIT([|__sx_str_is_blank|], [|src/func/str/__sx_str_is_blank.m4|])dnl
+M_UNIT([|sx_str_is_byte|], [|src/func/str/sx_str_is_byte.m4|])dnl
+M_UNIT([|__sx_str_is_byte|], [|src/func/str/__sx_str_is_byte.m4|])dnl
 M_UNIT([|sx_str_is_c1|], [|src/func/str/sx_str_is_c1.m4|])dnl
 M_UNIT([|__sx_str_is_c1|], [|src/func/str/__sx_str_is_c1.m4|])dnl
 M_UNIT([|sx_str_is_cntrl|], [|src/func/str/sx_str_is_cntrl.m4|])dnl
@@ -328,6 +330,8 @@ M_UNIT([|sx_str_is_of|], [|src/func/str/sx_str_is_of.m4|])dnl
 M_UNIT([|__sx_str_is_of|], [|src/func/str/__sx_str_is_of.m4|])dnl
 M_UNIT([|sx_str_is_print|], [|src/func/str/sx_str_is_print.m4|])dnl
 M_UNIT([|__sx_str_is_print|], [|src/func/str/__sx_str_is_print.m4|])dnl
+M_UNIT([|sx_str_is_printable|], [|src/func/str/sx_str_is_printable.m4|])dnl
+M_UNIT([|__sx_str_is_printable|], [|src/func/str/__sx_str_is_printable.m4|])dnl
 M_UNIT([|sx_str_is_punct|], [|src/func/str/sx_str_is_punct.m4|])dnl
 M_UNIT([|__sx_str_is_punct|], [|src/func/str/__sx_str_is_punct.m4|])dnl
 M_UNIT([|sx_str_is_space|], [|src/func/str/sx_str_is_space.m4|])dnl

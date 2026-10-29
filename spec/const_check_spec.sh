@@ -35,6 +35,7 @@ Describe 'sx_const_check'
       sxtest_load ./build/modules/SX_STR_ALPHA.sh
       sxtest_load ./build/modules/SX_STR_ASCII.sh
       sxtest_load ./build/modules/SX_STR_NONASCII.sh
+      sxtest_load ./build/modules/SX_STR_BYTE.sh
       sxtest_load ./build/modules/SX_STR_BPH.sh
       sxtest_load ./build/modules/SX_STR_NBH.sh
       sxtest_load ./build/modules/SX_STR_NEL.sh
@@ -74,6 +75,7 @@ Describe 'sx_const_check'
       sxtest_load ./build/modules/SX_STR_GRAPH.sh
       sxtest_load ./build/modules/SX_STR_LF.sh
       sxtest_load ./build/modules/SX_STR_PRINT.sh
+      sxtest_load ./build/modules/SX_STR_PRINTABLE.sh
       sxtest_load ./build/modules/SX_STR_PUNCT.sh
       sxtest_load ./build/modules/SX_STR_SOH.sh
       sxtest_load ./build/modules/SX_STR_SPACE.sh
@@ -147,6 +149,26 @@ Describe 'sx_const_check'
 
   It 'GR集合が読み取り専用であること'
     When call sx_var_is_ro SX_STR_GR
+    The status should be success
+  End
+
+  It '印字集合をASCIIの95値、GRの96値の順に保持すること'
+    When call :
+    The variable SX_STR_PRINTABLE should equal "${SX_STR_PRINT}${SX_STR_GR}"
+  End
+
+  It '印字集合が読み取り専用であること'
+    When call sx_var_is_ro SX_STR_PRINTABLE
+    The status should be success
+  End
+
+  It 'バイト集合をASCII、非ASCIIの順に保持すること'
+    When call :
+    The variable SX_STR_BYTE should equal "${SX_STR_ASCII}${SX_STR_NONASCII}"
+  End
+
+  It 'バイト集合が読み取り専用であること'
+    When call sx_var_is_ro SX_STR_BYTE
     The status should be success
   End
 
