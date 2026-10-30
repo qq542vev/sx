@@ -252,11 +252,6 @@ Describe 'sx_glob_bracket'
 			The variable result should equal '[]x[]'
 		End
 
-		It '[: が先頭以外にあればリテラル'
-			When call sx_glob_bracket result ']x[:'
-			The variable result should equal '[]x[:]'
-		End
-
 		It '英数字との混合（!abc123）'
 			When call sx_glob_bracket result '!abc123'
 			The variable result should equal '[abc123!]'
@@ -349,6 +344,34 @@ Describe 'sx_glob_bracket'
 		It '通常文字と \ の混合'
 			When call sx_glob_bracket result 'a\b\c'
 			The variable result should equal '[abc\\]'
+		End
+	End
+
+	Describe '生成パターンによる文字集合の保存'
+		Parameters:matrix
+			'abc' ']x[' '!^-' '\]-' ':[]' '=[]' '.[]' ']x[:' ']x[=' ']x[.' '[[:digit:]]' '[[=a=]]' '[[.a.]]' ']x[=.:!-'
+			':' '=' '.' '[' ']' 'x' 'a' 'b' 'd' '5' '!' '^' '-' '\' '' 'aa' '[]'
+		End
+
+		It '元の集合に含まれる1文字だけに一致すること'
+			probe=$2
+			expected=1
+			# 期待値は元の集合から求め、ブラケット式を組み立てない。
+			# 引用したプローブは、[ などを含んでも文字列として照合される。
+			case "$probe" in ?)
+				case "$1" in *"$probe"*) expected=0;; esac
+			esac
+
+			When call sx_glob_bracket result "$1"
+			The status should be success
+			case "$expected" in
+				0)
+					The variable probe should match pattern "$result"
+					;;
+				1)
+					The variable probe should not match pattern "$result"
+					;;
+			esac
 		End
 	End
 

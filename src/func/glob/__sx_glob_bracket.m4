@@ -24,6 +24,7 @@ __sx_glob_bracket() {
 		*)
 			M_VAR_SET([|${1}|], [|${2%"${2#?}"}|])
 			return
+			;;
 	esac
 
 	case "${2}" in *']'*)
@@ -34,13 +35,14 @@ __sx_glob_bracket() {
 		Q_suf='\\'
 	esac
 
-	for Q_c in = . : '!' '^' -; do
+	# [ は = . : より後ろへ移し、括弧式の途中にも [= [. [: を作らない。
+	for Q_c in = . : '[' '!' '^' -; do
 		case "${2}" in *"${Q_c}"*)
 			Q_suf="${Q_suf-}${Q_c}"
 		esac
 	done
 
-	 __sx_str_tr Q_rest: "${2}" ']\.:=!^-'
+	__sx_str_tr Q_rest: "${2}" '][\.:=!^-'
 
 	M_STR_WRAP([|Q_rest|], [|"${Q_pre-}"|], [|"${Q_suf-}"|])
 
