@@ -51,12 +51,11 @@ __sx_str_tr() {
 				Q_suf="${Q_str##*["${Q_from}"]}"
 				Q_str="${Q_str%"${Q_suf}"}"
 				Q_pre="${Q_str%?}"
-				Q_from_pre="${Q_from%%"${Q_str#"${Q_pre}"}"*}"
+				Q_from_pre=" ${Q_from%%"${Q_str#"${Q_pre}"}"*}"
 				Q_idx="${#Q_from_pre}"
 
 				"__sx_num_cmp_${Q_type}" "${Q_idx}" "${Q_n}" || case "${?}" in
-					1)
-						"__sx_num_add1_${Q_type}" Q_idx "${Q_idx}"
+					[12])
 						eval "Q_out=\"\${${Q_idx}}\${Q_suf}\${Q_out}\""
 						;;
 					*) M_STR_PREPEND([|Q_out|], [|"${Q_suf}"|]);;
@@ -79,12 +78,11 @@ __sx_str_tr() {
 				Q_pre="${Q_str%%["${Q_from}"]*}"
 				Q_str="${Q_str#"${Q_pre}"}"
 				Q_suf="${Q_str#?}"
-				Q_from_pre="${Q_from%%"${Q_str%"${Q_suf}"}"*}"
+				Q_from_pre=" ${Q_from%%"${Q_str%"${Q_suf}"}"*}"
 				Q_idx="${#Q_from_pre}"
 
 				"__sx_num_cmp_${Q_type}" "${Q_idx}" "${Q_n}" || case "${?}" in
-					1)
-						"__sx_num_add1_${Q_type}" Q_idx "${Q_idx}"
+					[12])
 						eval "Q_out=\"\${Q_out}\${Q_pre}\${${Q_idx}}\""
 						;;
 					*) M_STR_APPEND([|Q_out|], [|"${Q_pre}"|]);;
