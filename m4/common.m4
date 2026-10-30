@@ -251,7 +251,9 @@ define([|M_STR_GR|], [|\xA0\xA1\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xAA\xAB\xAC\xAD\
 
 define([|M_STR_BLANK|], [|M_STR_HT() |])dnl
 define([|M_STR_SPACE|], [|M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR() |])dnl
-define([|M_STR_CNTRL|], [|M_STR_SOH()M_STR_STX()M_STR_ETX()M_STR_EOT()M_STR_ENQ()M_STR_ACK()M_STR_BEL()M_STR_BS()M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR()M_STR_SO()M_STR_SI()M_STR_DLE()M_STR_DC1()M_STR_DC2()M_STR_DC3()M_STR_DC4()M_STR_NAK()M_STR_SYN()M_STR_ETB()M_STR_CAN()M_STR_EM()M_STR_SUB()M_STR_ESC()M_STR_FS()M_STR_GS()M_STR_RS()M_STR_US()M_STR_DEL()|])dnl
+# C0領域のうちシェル変数で保持できる0x01～0x1Fを昇順に保持する。
+define([|M_STR_C0|], [|M_STR_SOH()M_STR_STX()M_STR_ETX()M_STR_EOT()M_STR_ENQ()M_STR_ACK()M_STR_BEL()M_STR_BS()M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR()M_STR_SO()M_STR_SI()M_STR_DLE()M_STR_DC1()M_STR_DC2()M_STR_DC3()M_STR_DC4()M_STR_NAK()M_STR_SYN()M_STR_ETB()M_STR_CAN()M_STR_EM()M_STR_SUB()M_STR_ESC()M_STR_FS()M_STR_GS()M_STR_RS()M_STR_US()|])dnl
+define([|M_STR_CNTRL|], [|M_STR_C0()M_STR_DEL()|])dnl
 # C0・DELの実文字列とC1のエスケープ列を連結し、ドル単一引用符で復号する。
 define([|M_STR_CONTROL|], [|M_STR_CNTRL()M_STR_C1()|])dnl
 define([|M_STR_BIN|], [|01|])dnl
@@ -266,6 +268,8 @@ define([|M_STR_ALNUM|], [|M_STR_DIGIT()M_STR_ALPHA()|])dnl
 define([|M_STR_WORD|], [|_[||]M_STR_ALNUM()|])dnl
 define([|M_STR_ALUND|], [|_[||]M_STR_ALPHA()|])dnl
 define([|M_STR_GRAPH|], [|M_STR_PUNCT()M_STR_ALNUM()|])dnl
+# ASCII図形集合だけをエスケープし、GRのエスケープ列をそのまま連結する。
+define([|M_STR_GRAPHIC|], [|M_SH_ESCAPE(M_STR_GRAPH)[||]M_STR_GR()|])dnl
 define([|M_STR_PRINT|], [| M_STR_GRAPH()|])dnl
 # ASCII印字集合だけをエスケープし、GRのエスケープ列をそのまま連結する。
 define([|M_STR_PRINTABLE|], [|M_SH_ESCAPE(M_STR_PRINT)[||]M_STR_GR()|])dnl

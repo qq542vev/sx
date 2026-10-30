@@ -109,6 +109,7 @@ M_UNIT([|SX_STR_APC|], [|src/const/str/SX_STR_APC.m4|])dnl
 M_UNIT([|SX_STR_BLANK|], [|src/const/str/SX_STR_BLANK.m4|])dnl
 M_UNIT([|SX_STR_SPACE|], [|src/const/str/SX_STR_SPACE.m4|])dnl
 M_UNIT([|SX_STR_CNTRL|], [|src/const/str/SX_STR_CNTRL.m4|])dnl
+M_UNIT([|SX_STR_C0|], [|src/const/str/SX_STR_C0.m4|])dnl
 M_UNIT([|SX_STR_C1|], [|src/const/str/SX_STR_C1.m4|])dnl
 M_UNIT([|SX_STR_CONTROL|], [|src/const/str/SX_STR_CONTROL.m4|])dnl
 M_UNIT([|SX_STR_GR|], [|src/const/str/SX_STR_GR.m4|])dnl
@@ -124,6 +125,7 @@ M_UNIT([|SX_STR_ALNUM|], [|src/const/str/SX_STR_ALNUM.m4|])dnl
 M_UNIT([|SX_STR_WORD|], [|src/const/str/SX_STR_WORD.m4|])dnl
 M_UNIT([|SX_STR_ALUND|], [|src/const/str/SX_STR_ALUND.m4|])dnl
 M_UNIT([|SX_STR_GRAPH|], [|src/const/str/SX_STR_GRAPH.m4|])dnl
+M_UNIT([|SX_STR_GRAPHIC|], [|src/const/str/SX_STR_GRAPHIC.m4|])dnl
 M_UNIT([|SX_STR_PRINT|], [|src/const/str/SX_STR_PRINT.m4|])dnl
 M_UNIT([|SX_STR_PRINTABLE|], [|src/const/str/SX_STR_PRINTABLE.m4|])dnl
 M_UNIT([|SX_STR_ASCII|], [|src/const/str/SX_STR_ASCII.m4|])dnl

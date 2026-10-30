@@ -39,6 +39,13 @@ Describe '共通マクロと定数の個別展開'
     The output should equal 'readonly SX_STR_ALNUM=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
   End
 
+  It 'C0集合を実文字列として単独で宣言すること'
+    expected=$(printf '\001\002\003\004\005\006\007\010\011\012\013\014\015\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037')
+    When run expand_split_constants src/const/str/SX_STR_C0.m4
+    The status should be success
+    The output should equal "readonly SX_STR_C0='${expected}'"
+  End
+
   Context 'C1定数の単独展開'
     Parameters
       BPH '\x82'
@@ -59,6 +66,14 @@ Describe '共通マクロと定数の個別展開'
     When run expand_split_constants src/const/str/SX_STR_GR.m4
     The status should be success
     The output should equal "${expected}"
+  End
+
+  It '図形集合をドル単一引用符で一つだけ宣言すること'
+    ascii='!"#$%&\'\''()*+,-./:;<=>?@[\\]^_`{|}~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+    gr='\xA0\xA1\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xAA\xAB\xAC\xAD\xAE\xAF\xB0\xB1\xB2\xB3\xB4\xB5\xB6\xB7\xB8\xB9\xBA\xBB\xBC\xBD\xBE\xBF\xC0\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xCA\xCB\xCC\xCD\xCE\xCF\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7\xD8\xD9\xDA\xDB\xDC\xDD\xDE\xDF\xE0\xE1\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xEA\xEB\xEC\xED\xEE\xEF\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF'
+    When run expand_split_constants src/const/str/SX_STR_GRAPHIC.m4
+    The status should be success
+    The output should equal "readonly SX_STR_GRAPHIC=\$'${ascii}${gr}'"
   End
 
   It '印字集合をドル単一引用符で一つだけ宣言すること'

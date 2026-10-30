@@ -65,6 +65,7 @@ Describe 'sx_const_check'
       sxtest_load ./build/modules/SX_STR_PM.sh
       sxtest_load ./build/modules/SX_STR_APC.sh
       sxtest_load ./build/modules/SX_STR_C1.sh
+      sxtest_load ./build/modules/SX_STR_C0.sh
       sxtest_load ./build/modules/SX_STR_CONTROL.sh
       sxtest_load ./build/modules/SX_STR_GR.sh
       sxtest_load ./build/modules/SX_STR_BIN.sh
@@ -73,6 +74,7 @@ Describe 'sx_const_check'
       sxtest_load ./build/modules/SX_STR_DEL.sh
       sxtest_load ./build/modules/SX_STR_FS.sh
       sxtest_load ./build/modules/SX_STR_GRAPH.sh
+      sxtest_load ./build/modules/SX_STR_GRAPHIC.sh
       sxtest_load ./build/modules/SX_STR_LF.sh
       sxtest_load ./build/modules/SX_STR_PRINT.sh
       sxtest_load ./build/modules/SX_STR_PRINTABLE.sh
@@ -152,6 +154,17 @@ Describe 'sx_const_check'
     The status should be success
   End
 
+  It '図形集合をASCIIの94値、GRの96値の順に保持すること'
+    When call :
+    The variable SX_STR_GRAPHIC should equal "${SX_STR_GRAPH}${SX_STR_GR}"
+    The variable SX_STR_PRINTABLE should equal " ${SX_STR_GRAPHIC}"
+  End
+
+  It '図形集合が読み取り専用であること'
+    When call sx_var_is_ro SX_STR_GRAPHIC
+    The status should be success
+  End
+
   It '印字集合をASCIIの95値、GRの96値の順に保持すること'
     When call :
     The variable SX_STR_PRINTABLE should equal "${SX_STR_PRINT}${SX_STR_GR}"
@@ -169,6 +182,17 @@ Describe 'sx_const_check'
 
   It 'バイト集合が読み取り専用であること'
     When call sx_var_is_ro SX_STR_BYTE
+    The status should be success
+  End
+
+  It 'C0集合がNULを除く0x01～0x1Fの31値を昇順に含むこと'
+    When call :
+    The variable SX_STR_C0 should equal $'\001\002\003\004\005\006\007\010\011\012\013\014\015\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037'
+    The variable SX_STR_CNTRL should equal "${SX_STR_C0}${SX_STR_DEL}"
+  End
+
+  It 'C0集合が読み取り専用であること'
+    When call sx_var_is_ro SX_STR_C0
     The status should be success
   End
 
