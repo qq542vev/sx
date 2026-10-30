@@ -29,8 +29,8 @@ __sx_str_tr() {
 	Q_abs="${Q_lim#[+-]}"
 	Q_cnt=0
 
-	case "${Q_str:+${Q_from:+X}}" in '')
-		__sx_var_bind '' "${Q_bind}" "${Q_str}" "${Q_cnt}" || :
+	case "${Q_abs}:${Q_str}" in ${Q_from:+[!0]*:*["${Q_from}"]*}) ;; *)
+		__sx_var_bind '' "${Q_bind}" "${Q_str}" 0 || :
 		unset CLEANUP
 		return
 	esac
@@ -47,7 +47,7 @@ __sx_str_tr() {
 
 	case "${Q_lim}" in
 		-*)
-			while M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_abs}"|]); do
+			while
 				Q_suf="${Q_str##*["${Q_from}"]}"
 				Q_str="${Q_str%"${Q_suf}"}"
 				Q_pre="${Q_str%?}"
@@ -64,12 +64,18 @@ __sx_str_tr() {
 
 				Q_str="${Q_pre}"
 				"__sx_num_add1_${Q_type}" Q_cnt "${Q_cnt}"
-			done
+
+				if M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_abs}"|]); then
+					continue
+				fi
+
+				break
+			do :; done
 
 			__sx_var_bind '' "${Q_bind}" "${Q_str}${Q_out}" "${Q_cnt}"
 			;;
 		*)
-			while M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_abs}"|]); do
+			while
 				Q_pre="${Q_str%%["${Q_from}"]*}"
 				Q_str="${Q_str#"${Q_pre}"}"
 				Q_suf="${Q_str#?}"
@@ -86,7 +92,13 @@ __sx_str_tr() {
 
 				Q_str="${Q_suf}"
 				"__sx_num_add1_${Q_type}" Q_cnt "${Q_cnt}"
-			done
+
+				if M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_abs}"|]); then
+					continue
+				fi
+
+				break
+			do :; done
 
 			__sx_var_bind '' "${Q_bind}" "${Q_out}${Q_str}" "${Q_cnt}"
 			;;
