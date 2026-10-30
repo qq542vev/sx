@@ -1,0 +1,2 @@
+M_REQUIRE([||])dnl
+M_CONST_ESC([|STR_B8F|])

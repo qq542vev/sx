@@ -62,6 +62,18 @@ Describe 'm4 による定数値の生成と引用'
     The output should equal "''"
   End
 
+  It '開き角括弧だけの値を引用できること'
+    When call expand_constant 'M_SH_QUOTE(format([|%c|], 91))'
+    The status should be success
+    The variable constant_value should equal '['
+  End
+
+  It '末尾の開き角括弧をm4の引用開始として解釈しないこと'
+    When call expand_constant 'M_SH_QUOTE(format([|%s%c|], [|tail|], 91))'
+    The status should be success
+    The variable constant_value should equal 'tail['
+  End
+
   It '連続する単一引用符をまとめて引用の外でエスケープすること'
     When run quote_source "M_SH_QUOTE([|あ''う|])"
     The status should be success
@@ -264,6 +276,13 @@ Describe 'm4 による定数値の生成と引用'
     When run const_source 'M_SH_QUOTE'
     The status should be success
     The output should equal 'readonly SX_TEST_VALUE=M_SH_QUOTE'
+  End
+
+  It '開き角括弧だけの定数値を宣言できること'
+    When call load_declaration 'define([|M_TEST_VALUE|], [|format([|%c|], 91)|])dnl
+M_CONST([|TEST_VALUE|])'
+    The status should be success
+    The variable SX_TEST_VALUE should equal '['
   End
 
   Context 'エスケープ列を保持する定数宣言'

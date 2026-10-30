@@ -71,7 +71,10 @@ define([|M_STR_RTRIM|], [|${$1%"${$1##*$2}"}|])dnl
 # 生の文字列をシェルの単一引用符で囲む。バックスラッシュ・制御文字もそのまま保持する。
 # 単一引用符は引用の外でエスケープし、連続部分の間に生じる空の引用をまとめて除く。
 # 各段階で m4 の引用を保持し、値に含まれるマクロ名・カンマ・括弧の再解釈を防ぐ。
-define([|M_SH_QUOTE|], [|'__M_SH_QUOTE_JOIN(__M_SH_QUOTE_APOS([|$1|]))'|])dnl
+# 末尾に番兵を付け、値末尾の [ が m4 の引用終端 |] と重ならないようにする。
+define([|M_SH_QUOTE|], [|__M_SH_QUOTE_PADDED([|$1X|])|])dnl
+define([|__M_SH_QUOTE_PADDED|], [|__M_SH_QUOTE_END(__M_SH_QUOTE_JOIN(__M_SH_QUOTE_APOS([|$1|])))|])dnl
+define([|__M_SH_QUOTE_END|], [|patsubst([|[|'$1'|]|], [|X'\(..\)$|], [|'\1|])|])dnl
 define([|__M_SH_QUOTE_APOS|], [|patsubst([|[|$1|]|], [|'|], [|'\\''|])|])dnl
 define([|__M_SH_QUOTE_JOIN|], [|ifelse(regexp([|$1|], [|\\'''\\'|]), -1, [|[|$1|]|], [|__M_SH_QUOTE_JOIN(patsubst([|[|$1|]|], [|\\'''\\'|], [|\\'\\'|]))|])|])dnl
 
@@ -83,9 +86,11 @@ define([|__M_SH_ESCAPE_APOS|], [|patsubst([|[|$1|]|], [|'|], [|\\'|])|])dnl
 
 # 接頭辞なしの定数名から M_* の値を展開し、readonly SX_* の宣言を生成する。
 # 非空で Portable Filename Character Set の文字だけを含む値は引用を省略する。
-# それ以外は M_SH_QUOTE に渡す。判定中と出力時も m4 の引用を保持する。
+# それ以外は通常の単一引用符で囲む。判定中と出力時も m4 の引用を保持する。
 define([|M_CONST|], [|readonly SX_$1=__M_CONST_VALUE(indir([|M_$1|]))|])dnl
-define([|__M_CONST_VALUE|], [|ifelse([|$1|], [||], [|M_SH_QUOTE([||])|], len(translit([|[|$1|]|], [|ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-|])), 0, [|[|$1|]|], [|M_SH_QUOTE([|$1|])|])|])dnl
+# 判定・出力の両方で値末尾を保護する。番兵は m4 の引用を保持したまま除去する。
+define([|__M_CONST_BARE|], [|patsubst([|[|$1|]|], [|X\(..\)$|], [|\1|])|])dnl
+define([|__M_CONST_VALUE|], [|ifelse(regexp([|$1!|], [|^[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-]+!$|]), 0, [|__M_CONST_BARE([|$1X|])|], [|__M_SH_QUOTE_PADDED([|$1X|])|])|])dnl
 
 # M_* に保持したエスケープ列を POSIX.1-2024 のドル単一引用符で宣言する。
 # 入力は引用済みの値ではなく、\xHH 等のエスケープ列（単一引用符は \'）とする。
@@ -282,6 +287,13 @@ define([|M_STR_NONASCII|], [|\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8
 # NULを除く0x01～0xFFの全255値。ASCII集合の順序を保ち、非ASCII集合を連結する。
 # ASCII側だけをエスケープし、非ASCII側のエスケープ列はそのまま保持する。
 define([|M_STR_BYTE|], [|M_SH_ESCAPE(M_STR_ASCII)[||]M_STR_NONASCII()|])dnl
+
+# NULを除く0x01～0xFFの単一文字。名前の末尾は大文字2桁の16進数とする。
+# 7ビット側は実文字、8ビット側はドル単一引用符で復号するエスケープ列を保持する。
+# B5B（[）だけは引用終端との衝突を避け、使用時に実文字へ展開する。
+define([|__sx_m4_gen_byte|], [|define(format([|[|M_STR_B%02X|]|], $1), ifelse($1, 91, [|format([|format([|%%c|], %d)|], $1)|], eval($1 < 128), 1, [|format([|[|[|%c|]|]|], $1)|], [|format([|[|[|\x%02X|]|]|], $1)|]))dnl
+ifelse($1, 255, [||], [|__sx_m4_gen_byte(incr($1))|])|])dnl
+__sx_m4_gen_byte(1)dnl
 
 # sx_str_split 等で使用するフラグ
 define([|M_STR_SPLIT_GLOB|], [|1|])dnl
