@@ -167,7 +167,7 @@ Describe 'sx_str_tr()'
     End
   End
 
-  Context '多倍長経路の回数と対応位置'
+  Context '符号付き limit の回数と対応位置'
     Parameters
       2 X1Y2c3 "'2'"
       -2 a1Y2Z3 "'2'"
@@ -177,12 +177,7 @@ Describe 'sx_str_tr()'
       '' X1Y2Z3 "'3'"
     End
 
-    It '文字列長が範囲外でも前後の置換回数を制限できること'
-      # tr の経路判定だけを多倍長側にし、下位演算は実際の算術域を使う。
-      __sx_num_is_int_fit_dec() {
-        case "${#}:${2-}:${3-}:${4-}" in 5:6:3:3) return 1;; esac
-        return 0
-      }
+    It '前後の置換回数と符号付きゼロを扱うこと'
       When call sx_str_tr res:cnt a1b2c3 abc XYZ "$1"
       The status should be success
       The variable res should equal "$2"
@@ -190,13 +185,13 @@ Describe 'sx_str_tr()'
     End
   End
 
-  Context '多倍長経路の重複と削除'
+  Context '算術域を超える limit での重複と削除'
   Parameters
     999999999999999999999999999999
     -999999999999999999999999999999
   End
 
-  It '多倍長経路でも重複の最初の位置と超過文字の削除を扱うこと'
+  It '重複の最初の位置と超過文字の削除を扱うこと'
     When call sx_str_tr res:cnt abca aabc XY "$1"
     The status should be success
     The variable res should equal XX
