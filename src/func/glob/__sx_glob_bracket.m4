@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_str_tr|])dnl
+M_REQUIRE([|__sx_str_sub|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_glob_bracket - 文字セットを glob ブラケット式で安全な形に並べ替える（内部用）
@@ -42,7 +42,8 @@ __sx_glob_bracket() {
 		esac
 	done
 
-	__sx_str_tr Q_rest: "${2}" '][\.:=!^-'
+	# 削除用の固定括弧式も、[ を = . : より後ろへ置いて特殊構文を避ける。
+	__sx_str_sub Q_rest: "${2}" '[]\\=.:[!^-]' '' '' M_STR_SUB_GLOB
 
 	M_STR_WRAP([|Q_rest|], [|"${Q_pre-}"|], [|"${Q_suf-}"|])
 
