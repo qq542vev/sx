@@ -64,7 +64,25 @@ Describe 'sx_str_title()'
 
     It '途中に-がある区切り文字セットでレンジ誤解釈が起きないこと'
         When call sx_str_title res "abc-def-ghi" "a-z"
-        The variable res should equal "Abc-Def-Ghi"
+        # a・-・z はそれぞれ区切り文字なので、a の直後の b も単語の先頭となる。
+        The variable res should equal "ABc-Def-Ghi"
+    End
+
+    Context '英字を含む区切り集合'
+        Parameters
+            helloXworld X HelloxWorld
+            HELLOxWORLD x HelloxWorld
+            aaa a AAA
+            aAa A AaA
+            aXxB X AxXb
+            'ab]cd' 'b]' 'Ab]Cd'
+        End
+
+        It '元の文字集合から境界を判定して隣接する境界も処理すること'
+            When call sx_str_title res "$1" "$2"
+            The status should be success
+            The variable res should equal "$3"
+        End
     End
 
     It '改行区切りの単語を変換できること'
