@@ -7,29 +7,26 @@ M_RENAME_QI([|dnl
 ##   __sx_arr_rquote バインド形式 配列名1 [配列名2 ...]
 ##
 ## 説明:
-##   sx_arr_rquote の内部実装。
-##   引数チェックは行わない。
+##   内部実装。引数チェックは行わない。
+##   未設定要素は SX_CFG_ARR_HOLE で表し、設定済みの空文字列はそのまま保持する。
+##
+## 終了ステータス:
+##    0  成功（バインド枯渇による早期終了を含む）
 
-define([|CLEANUP|], [|Q_bind Q_argi Q_arr Q_arri Q_set Q_val|])dnl
+define([|CLEANUP|], [|Q_bind Q_argi Q_arr Q_arri|])dnl
 
 __sx_arr_rquote() {
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
-	shift
 	Q_argi="${#}"
 
-	while M_STR_NE([|"${Q_argi}"|], [|0|]); do
+	while M_STR_NE([|"${Q_argi}"|], [|1|]); do
 		eval "Q_arr=\"\${${Q_argi}}\""
 		eval "Q_arri=\"\${${Q_arr}_len}\""
 
 		while M_STR_NE([|"${Q_arri}"|], [|0|]); do
 			M_NUM_DECRM1([|Q_arri|])
-			eval "Q_set=\"\${${Q_arr}_${Q_arri}+X}\" Q_val=\"\${${Q_arr}_${Q_arri}-}\""
-
-			case "${Q_set}" in
-				X) __sx_var_bind Q_bind "${Q_bind}" "${Q_val}";;
-				*) __sx_var_bind Q_bind "${Q_bind}" "${SX_CFG_ARR_HOLE}";;
-			esac || break 2
+			eval __sx_var_bind Q_bind '"${Q_bind}"' "\"\${${Q_arr}_${Q_arri}-\${SX_CFG_ARR_HOLE}}\"" || break 2
 		done
 
 		M_NUM_DECRM1([|Q_argi|])
