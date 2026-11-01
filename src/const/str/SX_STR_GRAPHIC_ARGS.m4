@@ -1,0 +1,2 @@
+M_REQUIRE([||])dnl
+M_CONST([|STR_GRAPHIC_ARGS|])

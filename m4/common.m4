@@ -254,39 +254,70 @@ define([|M_STR_C1|], [|\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\
 # 高位バイトはエスケープ列で記述し、定数の出力時にドル単一引用符で復号する。
 define([|M_STR_GR|], [|\xA0\xA1\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xAA\xAB\xAC\xAD\xAE\xAF\xB0\xB1\xB2\xB3\xB4\xB5\xB6\xB7\xB8\xB9\xBA\xBB\xBC\xBD\xBE\xBF\xC0\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xCA\xCB\xCC\xCD\xCE\xCF\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7\xD8\xD9\xDA\xDB\xDC\xDD\xDE\xDF\xE0\xE1\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xEA\xEB\xEC\xED\xEE\xEF\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF|])dnl
 
+# 文字集合は通常版・引数列版ともにバイト値の昇順で保持する。
+# 引数列は手動定義。7ビットは通常の単一引用符（単一引用符自身だけ二重引用符）、
+# 8ビットはドル単一引用符の16進表記とし、要素間をスペース1文字で区切る。
+# 制御文字は既存の単一文字マクロで実文字に展開し、合成集合も元の順序で連結する。
+define([|M_STR_C1_ARGS|], [|$'\x80' $'\x81' $'\x82' $'\x83' $'\x84' $'\x85' $'\x86' $'\x87' $'\x88' $'\x89' $'\x8A' $'\x8B' $'\x8C' $'\x8D' $'\x8E' $'\x8F' $'\x90' $'\x91' $'\x92' $'\x93' $'\x94' $'\x95' $'\x96' $'\x97' $'\x98' $'\x99' $'\x9A' $'\x9B' $'\x9C' $'\x9D' $'\x9E' $'\x9F'|])dnl
+define([|M_STR_GR_ARGS|], [|$'\xA0' $'\xA1' $'\xA2' $'\xA3' $'\xA4' $'\xA5' $'\xA6' $'\xA7' $'\xA8' $'\xA9' $'\xAA' $'\xAB' $'\xAC' $'\xAD' $'\xAE' $'\xAF' $'\xB0' $'\xB1' $'\xB2' $'\xB3' $'\xB4' $'\xB5' $'\xB6' $'\xB7' $'\xB8' $'\xB9' $'\xBA' $'\xBB' $'\xBC' $'\xBD' $'\xBE' $'\xBF' $'\xC0' $'\xC1' $'\xC2' $'\xC3' $'\xC4' $'\xC5' $'\xC6' $'\xC7' $'\xC8' $'\xC9' $'\xCA' $'\xCB' $'\xCC' $'\xCD' $'\xCE' $'\xCF' $'\xD0' $'\xD1' $'\xD2' $'\xD3' $'\xD4' $'\xD5' $'\xD6' $'\xD7' $'\xD8' $'\xD9' $'\xDA' $'\xDB' $'\xDC' $'\xDD' $'\xDE' $'\xDF' $'\xE0' $'\xE1' $'\xE2' $'\xE3' $'\xE4' $'\xE5' $'\xE6' $'\xE7' $'\xE8' $'\xE9' $'\xEA' $'\xEB' $'\xEC' $'\xED' $'\xEE' $'\xEF' $'\xF0' $'\xF1' $'\xF2' $'\xF3' $'\xF4' $'\xF5' $'\xF6' $'\xF7' $'\xF8' $'\xF9' $'\xFA' $'\xFB' $'\xFC' $'\xFD' $'\xFE' $'\xFF'|])dnl
 define([|M_STR_BLANK|], [|M_STR_HT() |])dnl
+define([|M_STR_BLANK_ARGS|], [|'M_STR_HT()' ' '|])dnl
 define([|M_STR_SPACE|], [|M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR() |])dnl
+define([|M_STR_SPACE_ARGS|], [|'M_STR_HT()' 'M_STR_LF()' 'M_STR_VT()' 'M_STR_FF()' 'M_STR_CR()' ' '|])dnl
 # C0領域のうちシェル変数で保持できる0x01～0x1Fを昇順に保持する。
 define([|M_STR_C0|], [|M_STR_SOH()M_STR_STX()M_STR_ETX()M_STR_EOT()M_STR_ENQ()M_STR_ACK()M_STR_BEL()M_STR_BS()M_STR_HT()M_STR_LF()M_STR_VT()M_STR_FF()M_STR_CR()M_STR_SO()M_STR_SI()M_STR_DLE()M_STR_DC1()M_STR_DC2()M_STR_DC3()M_STR_DC4()M_STR_NAK()M_STR_SYN()M_STR_ETB()M_STR_CAN()M_STR_EM()M_STR_SUB()M_STR_ESC()M_STR_FS()M_STR_GS()M_STR_RS()M_STR_US()|])dnl
+define([|M_STR_C0_ARGS|], [|'M_STR_SOH()' 'M_STR_STX()' 'M_STR_ETX()' 'M_STR_EOT()' 'M_STR_ENQ()' 'M_STR_ACK()' 'M_STR_BEL()' 'M_STR_BS()' 'M_STR_HT()' 'M_STR_LF()' 'M_STR_VT()' 'M_STR_FF()' 'M_STR_CR()' 'M_STR_SO()' 'M_STR_SI()' 'M_STR_DLE()' 'M_STR_DC1()' 'M_STR_DC2()' 'M_STR_DC3()' 'M_STR_DC4()' 'M_STR_NAK()' 'M_STR_SYN()' 'M_STR_ETB()' 'M_STR_CAN()' 'M_STR_EM()' 'M_STR_SUB()' 'M_STR_ESC()' 'M_STR_FS()' 'M_STR_GS()' 'M_STR_RS()' 'M_STR_US()'|])dnl
 define([|M_STR_CNTRL|], [|M_STR_C0()M_STR_DEL()|])dnl
+define([|M_STR_CNTRL_ARGS|], [|M_STR_C0_ARGS() 'M_STR_DEL()'|])dnl
 # C0・DELの実文字列とC1のエスケープ列を連結し、ドル単一引用符で復号する。
 define([|M_STR_CONTROL|], [|M_STR_CNTRL()M_STR_C1()|])dnl
+define([|M_STR_CONTROL_ARGS|], [|M_STR_CNTRL_ARGS() M_STR_C1_ARGS()|])dnl
 define([|M_STR_BIN|], [|01|])dnl
+define([|M_STR_BIN_ARGS|], [|'0' '1'|])dnl
 define([|M_STR_OCT|], [|01234567|])dnl
+define([|M_STR_OCT_ARGS|], [|'0' '1' '2' '3' '4' '5' '6' '7'|])dnl
 define([|M_STR_DIGIT|], [|0123456789|])dnl
+define([|M_STR_DIGIT_ARGS|], [|'0' '1' '2' '3' '4' '5' '6' '7' '8' '9'|])dnl
 define([|M_STR_XDIGIT|], [|0123456789ABCDEFabcdef|])dnl
+define([|M_STR_XDIGIT_ARGS|], [|'0' '1' '2' '3' '4' '5' '6' '7' '8' '9' 'A' 'B' 'C' 'D' 'E' 'F' 'a' 'b' 'c' 'd' 'e' 'f'|])dnl
 define([|M_STR_UPPER|], [|ABCDEFGHIJKLMNOPQRSTUVWXYZ|])dnl
+# 大文字を一文字ずつ引用した引数列。要素間はスペース1文字とする。
+define([|M_STR_UPPER_ARGS|], [|'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z'|])dnl
 define([|M_STR_LOWER|], [|abcdefghijklmnopqrstuvwxyz|])dnl
+define([|M_STR_LOWER_ARGS|], [|'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z'|])dnl
 define([|M_STR_PUNCT|], [|[|!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~|]|])dnl
+define([|M_STR_PUNCT_ARGS|], [|[|'!' '"' '#' '$' '%' '&' "'" '(' ')' '*' '+' ',' '-' '.' '/' ':' ';' '<' '=' '>' '?' '@' '[' '\' ']' '^' '_' '`' '{' '|' '}' '~'|]|])dnl
 define([|M_STR_ALPHA|], [|M_STR_UPPER()[||]M_STR_LOWER()|])dnl
+define([|M_STR_ALPHA_ARGS|], [|M_STR_UPPER_ARGS() M_STR_LOWER_ARGS()|])dnl
 define([|M_STR_ALNUM|], [|M_STR_DIGIT()M_STR_ALPHA()|])dnl
-define([|M_STR_WORD|], [|_[||]M_STR_ALNUM()|])dnl
-define([|M_STR_ALUND|], [|_[||]M_STR_ALPHA()|])dnl
-define([|M_STR_GRAPH|], [|M_STR_PUNCT()M_STR_ALNUM()|])dnl
+define([|M_STR_ALNUM_ARGS|], [|M_STR_DIGIT_ARGS() M_STR_ALPHA_ARGS()|])dnl
+define([|M_STR_WORD|], [|M_STR_DIGIT()M_STR_UPPER()_[||]M_STR_LOWER()|])dnl
+define([|M_STR_WORD_ARGS|], [|M_STR_DIGIT_ARGS() M_STR_UPPER_ARGS() '_' M_STR_LOWER_ARGS()|])dnl
+define([|M_STR_ALUND|], [|M_STR_UPPER()_[||]M_STR_LOWER()|])dnl
+define([|M_STR_ALUND_ARGS|], [|M_STR_UPPER_ARGS() '_' M_STR_LOWER_ARGS()|])dnl
+define([|M_STR_GRAPH|], [|[|!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~|]|])dnl
+define([|M_STR_GRAPH_ARGS|], [|[|'!' '"' '#' '$' '%' '&' "'" '(' ')' '*' '+' ',' '-' '.' '/' '0' '1' '2' '3' '4' '5' '6' '7' '8' '9' ':' ';' '<' '=' '>' '?' '@' 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' '[' '\' ']' '^' '_' '`' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z' '{' '|' '}' '~'|]|])dnl
 # ASCII図形集合だけをエスケープし、GRのエスケープ列をそのまま連結する。
 define([|M_STR_GRAPHIC|], [|M_SH_ESCAPE(M_STR_GRAPH)[||]M_STR_GR()|])dnl
+define([|M_STR_GRAPHIC_ARGS|], [|M_STR_GRAPH_ARGS() M_STR_GR_ARGS()|])dnl
 define([|M_STR_PRINT|], [| M_STR_GRAPH()|])dnl
+define([|M_STR_PRINT_ARGS|], [|' ' M_STR_GRAPH_ARGS()|])dnl
 # ASCII印字集合だけをエスケープし、GRのエスケープ列をそのまま連結する。
 define([|M_STR_PRINTABLE|], [|M_SH_ESCAPE(M_STR_PRINT)[||]M_STR_GR()|])dnl
-define([|M_STR_ASCII|], [|M_STR_CNTRL()M_STR_PRINT()|])dnl
+define([|M_STR_PRINTABLE_ARGS|], [|M_STR_PRINT_ARGS() M_STR_GR_ARGS()|])dnl
+define([|M_STR_ASCII|], [|M_STR_C0()M_STR_PRINT()M_STR_DEL()|])dnl
+define([|M_STR_ASCII_ARGS|], [|M_STR_C0_ARGS() M_STR_PRINT_ARGS() 'M_STR_DEL()'|])dnl
 
 # 0x80～0xFF の非ASCIIバイトを昇順に保持する。Unicodeの文字集合ではない。
 # ソース・生成物に生の非ASCIIバイトを埋め込まないよう、エスケープ列として出力する。
 define([|M_STR_NONASCII|], [|\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\x8E\x8F\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9A\x9B\x9C\x9D\x9E\x9F\xA0\xA1\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xAA\xAB\xAC\xAD\xAE\xAF\xB0\xB1\xB2\xB3\xB4\xB5\xB6\xB7\xB8\xB9\xBA\xBB\xBC\xBD\xBE\xBF\xC0\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xCA\xCB\xCC\xCD\xCE\xCF\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7\xD8\xD9\xDA\xDB\xDC\xDD\xDE\xDF\xE0\xE1\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xEA\xEB\xEC\xED\xEE\xEF\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF|])dnl
 
-# NULを除く0x01～0xFFの全255値。ASCII集合の順序を保ち、非ASCII集合を連結する。
+define([|M_STR_NONASCII_ARGS|], [|M_STR_C1_ARGS() M_STR_GR_ARGS()|])dnl
+
+# NULを除く0x01～0xFFの全255値をバイト値の昇順に保持する。
 # ASCII側だけをエスケープし、非ASCII側のエスケープ列はそのまま保持する。
 define([|M_STR_BYTE|], [|M_SH_ESCAPE(M_STR_ASCII)[||]M_STR_NONASCII()|])dnl
+define([|M_STR_BYTE_ARGS|], [|M_STR_ASCII_ARGS() M_STR_NONASCII_ARGS()|])dnl
 
 # NULを除く0x01～0xFFの単一文字。名前の末尾は大文字2桁の16進数とする。
 # 7ビット側は実文字、8ビット側はドル単一引用符で復号するエスケープ列を保持する。
@@ -294,6 +325,15 @@ define([|M_STR_BYTE|], [|M_SH_ESCAPE(M_STR_ASCII)[||]M_STR_NONASCII()|])dnl
 define([|__sx_m4_gen_byte|], [|define(format([|[|M_STR_B%02X|]|], $1), ifelse($1, 91, [|format([|format([|%%c|], %d)|], $1)|], eval($1 < 128), 1, [|format([|[|[|%c|]|]|], $1)|], [|format([|[|[|\x%02X|]|]|], $1)|]))dnl
 ifelse($1, 255, [||], [|__sx_m4_gen_byte(incr($1))|])|])dnl
 __sx_m4_gen_byte(1)dnl
+
+# glob の特殊文字一覧。通常版・引数列版ともにバイト値の昇順で保持する。
+# パターンではなく、バックスラッシュは1文字として保持する。
+# 通常部分で注意が必要な文字。
+define([|M_GLOB_SP_NORM|], [|[|*?[\|]|])dnl
+define([|M_GLOB_SP_NORM_ARGS|], [|[|'*' '?' '[' '\'|]|])dnl
+# ブラケット式の内側で、位置や組合せによって注意が必要な文字。
+define([|M_GLOB_SP_BRKT|], [|[|!-.:=[\]^|]|])dnl
+define([|M_GLOB_SP_BRKT_ARGS|], [|[|'!' '-' '.' ':' '=' '[' '\' ']' '^'|]|])dnl
 
 # sx_str_split 等で使用するフラグ
 define([|M_STR_SPLIT_GLOB|], [|1|])dnl

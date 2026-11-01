@@ -105,11 +105,11 @@ Describe 'sx_const_check'
     When call :
     The variable SX_STR_ALPHA should equal 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
     The variable SX_STR_ALNUM should equal '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-    The variable SX_STR_WORD should equal '_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-    The variable SX_STR_ALUND should equal '_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-    The variable SX_STR_GRAPH should equal "${SX_STR_PUNCT}${SX_STR_ALNUM}"
+    The variable SX_STR_WORD should equal '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz'
+    The variable SX_STR_ALUND should equal 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz'
+    The variable SX_STR_GRAPH should equal '!"#$%&'\''()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
     The variable SX_STR_PRINT should equal " ${SX_STR_GRAPH}"
-    The variable SX_STR_ASCII should equal "${SX_STR_CNTRL}${SX_STR_PRINT}"
+    The variable SX_STR_ASCII should equal "${SX_STR_C0}${SX_STR_PRINT}${SX_STR_DEL}"
   End
 
   It '制御文字の値を保持すること'
