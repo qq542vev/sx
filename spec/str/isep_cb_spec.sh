@@ -209,6 +209,22 @@ Describe 'sx_str_isep (callback)'
   End
 
   Context '再入呼び出し (コールバック内で sx_str_isep を呼ぶ場合)'
+    Context 'コールバックの結果変数に再入呼び出しの結果を直接格納する場合'
+      Parameters
+        1 'aaXbbaXbc'
+        -1 'aaXbbaXbc'
+      End
+
+      It '内側の後始末でコールバックの結果を消さないこと'
+        leaf() { eval "${1}=X"; }
+        cb() { sx_str_isep "${1}:" ab leaf 1 '' 1; }
+        When call sx_str_isep res:cnt abc cb "$1" '' 1
+        The status should be success
+        The variable res should equal "$2"
+        The variable cnt should equal "'2'"
+      End
+    End
+
     It 'コールバック内のリテラル挿入が外側の結果・回数を壊さないこと'
       cb() {
         sx_str_isep inner: "ab" "-" 1

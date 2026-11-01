@@ -9,6 +9,16 @@ Describe 'sx_str_sub (callback)'
     sxtest_load ./build/modules/sx_str_sub.sh
     Include ./spec/support/run.sh
 
+    It '空パターンのコールバックで挿入処理の結果を直接返せること'
+        # sub の空パターン処理に含まれる内部実装を使い、テスト用の依存を追加しない。
+        leaf() { eval "${1}=X"; }
+        cb_nested() { __sx_str_isep "${1}:" ab leaf 1 '' 1; }
+        When call sx_str_sub res:cnt abc '' cb_nested '' "$SX_STR_SUB_CB"
+        The status should be success
+        The variable res should equal 'aXbaaXbbaXbcaXb'
+        The variable cnt should equal "'4'"
+    End
+
     # テスト用コールバック関数
     # 数字に [ ] を付ける
     cb_bracket() {

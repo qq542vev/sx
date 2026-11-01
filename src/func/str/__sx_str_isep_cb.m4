@@ -72,6 +72,8 @@ __sx_str_isep_cb() {
 		}
 	done
 
+	# コールバックの結果変数へ再入しても、バインド後の値を cleanup で消さない。
+	unset CLEANUP
 	# 再入呼び出しで同名の結果変数が使われても、外側の結果で初期化する。
 	__sx_var_bind_init "${1}"
 
@@ -79,8 +81,6 @@ __sx_str_isep_cb() {
 		0) __sx_var_bind '' "${1}" "${11}${2}" "${12}";;
 		1) __sx_var_bind '' "${1}" "${2}${11}" "${12}";;
 	esac || :
-
-	unset CLEANUP
 
 	return "${16-0}"
 }
