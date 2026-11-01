@@ -104,7 +104,7 @@ Describe 'sx_str_rep'
     End
 
     It "回数 $1 を受理して空文字列を繰り返せること"
-      # 巨大な出力を生成せず、回数の受理と多倍長処理の終了を検証する。
+      # 巨大な出力を生成せず、回数の受理と空の結果を検証する。
       When call sx_str_rep res "" "$1"
       The status should be success
       The variable res should equal ""

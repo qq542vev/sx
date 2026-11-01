@@ -14,7 +14,7 @@ define([|CLEANUP|], [|Q_rotated|])dnl
 __sx_str_rot() {
 	set -- "${1}" "${2-}" "${3-${SX_STR_ALPHA}}" "${4:-13}"
 
-	case '' in "${2}" | "${3}")
+	case "${2:+${3:+${4}}}" in '' | 0 | [+-]0)
 		M_VAR_SET([|${1}|], [|${2}|])
 		return
 	esac

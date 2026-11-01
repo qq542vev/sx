@@ -95,6 +95,57 @@ Describe 'sx_str_count'
 		The variable res should equal 4
 	End
 
+	Context '空検索とアスタリスクのみの検索'
+		Parameters
+			'' 0 7
+			'' 1 7
+			'' 2 7
+			'' 3 7
+			'' 4 7
+			'' 5 7
+			'' 6 7
+			'' 7 7
+			'*' 1 7
+			'*' 3 7
+			'*' 5 7
+			'*' 7 7
+			'***' 1 7
+			'***' 3 7
+			'***' 5 7
+			'***' 7 7
+			'*' 0 3
+			'*' 2 3
+			'*' 4 3
+			'*' 6 3
+			'**' 0 1
+			'***' 0 0
+		End
+
+		It 'フラグに従って境界またはリテラルの出現回数を返すこと'
+			When call sx_str_count res 'a*b**c' "$1" "$2"
+			The status should be success
+			The variable res should equal "$3"
+		End
+	End
+
+	It '空入力で複数のアスタリスクだけのglobを検索すると1を返すこと'
+		When call sx_str_count res '' '***' 7
+		The status should be success
+		The variable res should equal 1
+	End
+
+	It '多バイト文字の空検索でも文字数に基づく境界数を返すこと'
+		When call sx_str_count res 'あいう' ''
+		The status should be success
+		The variable res should equal 4
+	End
+
+	It '元文字列と検索文字列の省略時に1を返すこと'
+		When call sx_str_count res
+		The status should be success
+		The variable res should equal 1
+	End
+
 	It 'globモードで一致なしは0を返すこと'
 		When call sx_str_count res "abc" "x*" 1
 		The status should be success
