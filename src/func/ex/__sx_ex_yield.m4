@@ -16,7 +16,7 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_s|])dnl
 
 __sx_ex_yield() {
-	case "${1-0}" in [!0-9]*)
+	case "${1-}" in [!0-9]*)
 		__sx_ex_map Q_s "${1}"
 		set -- "${Q_s}"
 		unset CLEANUP
