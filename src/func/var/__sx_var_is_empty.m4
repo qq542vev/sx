@@ -14,15 +14,15 @@ define([|CLEANUP|], [|Q_arg Q_e|])dnl
 
 __sx_var_is_empty() {
 	for Q_arg in "${@}"; do
-		eval "Q_e=\"\${${Q_arg}+X}\${${Q_arg}-}\""
+		eval "Q_e=\"\${${Q_arg}+X}\${${Q_arg}:+X}\""
 
 		case "${Q_e}" in '' | X?*)
 			unset CLEANUP
 			return 1
 		esac
-
-		unset CLEANUP
 	done
+
+	unset CLEANUP
 }
 |], [|var_is_empty|])dnl
 popdef([|CLEANUP|])dnl

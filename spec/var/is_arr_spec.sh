@@ -27,4 +27,34 @@ Describe 'sx_var_is_arr'
     When call sx_var_is_arr regular_var
     The status should be failure
   End
+
+  It '長さ0の配列に対して成功を返すこと'
+    myarr_len=0
+    When call sx_var_is_arr myarr
+    The status should be success
+  End
+
+  It '長さが空なら数値検査を呼ばずに失敗を返すこと'
+    myarr_len=
+    numeric_checks=0
+    __sx_num_is_nat0_base() { numeric_checks=$((numeric_checks + 1)); }
+    When call sx_var_is_arr myarr
+    The status should equal 1
+    The variable numeric_checks should equal 0
+  End
+
+  It '長さが未設定なら数値検査を呼ばずに失敗を返すこと'
+    unset myarr_len
+    numeric_checks=0
+    __sx_num_is_nat0_base() { numeric_checks=$((numeric_checks + 1)); }
+    When call sx_var_is_arr myarr
+    The status should equal 1
+    The variable numeric_checks should equal 0
+  End
+
+  It '長さが数値でなければ失敗を返すこと'
+    myarr_len=invalid
+    When call sx_var_is_arr myarr
+    The status should equal 1
+  End
 End

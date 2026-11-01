@@ -18,9 +18,9 @@ __sx_var_is_ro() {
 			unset CLEANUP
 			return 1
 		fi
-
-		unset CLEANUP
 	done
+
+	unset CLEANUP
 }
 |], [|var_is_ro|])dnl
 popdef([|CLEANUP|])dnl

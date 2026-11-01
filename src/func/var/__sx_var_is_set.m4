@@ -20,9 +20,9 @@ __sx_var_is_set() {
 			unset CLEANUP
 			return 1
 		esac
-
-		unset CLEANUP
 	done
+
+	unset CLEANUP
 }
 |], [|var_is_set|])dnl
 popdef([|CLEANUP|])dnl

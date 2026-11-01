@@ -21,7 +21,7 @@ define([|CLEANUP|], [|Q_arg Q_vn|])dnl
 __sx_var_set() {
 	for Q_arg in "${@}"; do
 		Q_vn="${Q_arg%%=*}"
-		__sx_var_unset "${Q_vn%%=*}"
+		__sx_var_unset "${Q_vn}"
 
 		case "${Q_arg}" in *=*)
 			eval "${Q_vn}="'"${Q_arg#*=}"'

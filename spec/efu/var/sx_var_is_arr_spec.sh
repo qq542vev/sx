@@ -17,4 +17,16 @@ Describe 'sx_var_is_arr -efu 環境検証'
     When run efu_run sx_var_is_arr myarr
     The status should be success
   End
+
+  It '長さが空でも異常終了せず1を返すこと'
+    myarr_len=
+    When run efu_run sx_var_is_arr myarr
+    The status should equal 1
+  End
+
+  It '長さが未設定でも異常終了せず1を返すこと'
+    unset myarr_len
+    When run efu_run sx_var_is_arr myarr
+    The status should equal 1
+  End
 End
