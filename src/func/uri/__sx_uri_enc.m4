@@ -31,7 +31,7 @@ __sx_uri_enc() {
 			Q_rest="${Q_rest#"${Q_chunk}"}"
 
 			while M_STR_NE([|"${Q_chunk}"|], [|''|]); do
-				case "${Q_chunk%"${Q_chunk#?}"}" in
+				case "${Q_chunk%%"${Q_chunk#?}"}" in
 __sx_m4_gen_uri_enc_case(1)
 				esac
 

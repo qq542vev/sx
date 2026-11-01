@@ -30,7 +30,7 @@ __sx_str_title() {
 
 	__sx_glob_bracket Q_gs "${3}"
 	__sx_str_tr Q_tmp: "${2-}" "M_STR_UPPER()" "M_STR_LOWER()"
-	__sx_str_sub Q_tmp: "${3%"${3#?}"}${Q_tmp}" "${Q_gs}[M_STR_LOWER()]" __sx_str_title_cb '' "$((M_STR_SUB_GLOB | M_STR_SUB_CB))"
+	__sx_str_sub Q_tmp: "${3%%"${3#?}"}${Q_tmp}" "${Q_gs}[M_STR_LOWER()]" __sx_str_title_cb '' "$((M_STR_SUB_GLOB | M_STR_SUB_CB))"
 
 	M_VAR_SET([|${1}|], [|${Q_tmp#?}|])
 	unset CLEANUP

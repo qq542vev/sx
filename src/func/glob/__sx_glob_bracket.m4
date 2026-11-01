@@ -27,7 +27,7 @@ __sx_glob_bracket() {
 			return
 			;;
 		*)
-			M_VAR_SET([|${1}|], [|${2%"${2#?}"}|])
+			M_VAR_SET([|${1}|], [|${2%%"${2#?}"}|])
 			return
 			;;
 	esac

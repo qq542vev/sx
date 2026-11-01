@@ -19,7 +19,7 @@ __sx_str_capital() {
 	case "$(((${3} & M_STR_CAPITAL_SENT) != 0))${2}" in 0["M_STR_ALPHA()"]* | 1*["M_STR_ALPHA()"]*)
 		Q_out="${2%%["M_STR_ALPHA()"]*}"
 		Q_str="${2#"${Q_out}"}"
-		__sx_str_upper_cb Q_tmp "${Q_str%"${Q_str#?}"}"
+		__sx_str_upper_cb Q_tmp "${Q_str%%"${Q_str#?}"}"
 		M_STR_APPEND([|Q_out|], [|"${Q_tmp}"|])
 		Q_str="${Q_str#?}"
 	esac

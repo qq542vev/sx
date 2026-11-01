@@ -50,7 +50,7 @@ __sx_str_tr() {
 				Q_suf="${Q_str##*["${Q_from}"]}"
 				Q_str="${Q_str%"${Q_suf}"}"
 				Q_pre="${Q_str%?}"
-				Q_from_pre=" ${Q_from%%"${Q_str#"${Q_pre}"}"*}"
+				Q_from_pre=" ${Q_from%%"${Q_str##"${Q_pre}"}"*}"
 				Q_idx="${#Q_from_pre}"
 				Q_str="${Q_pre}"
 
@@ -72,7 +72,7 @@ __sx_str_tr() {
 				Q_pre="${Q_str%%["${Q_from}"]*}"
 				Q_str="${Q_str#"${Q_pre}"}"
 				Q_suf="${Q_str#?}"
-				Q_from_pre=" ${Q_from%%"${Q_str%"${Q_suf}"}"*}"
+				Q_from_pre=" ${Q_from%%"${Q_str%%"${Q_suf}"}"*}"
 				Q_idx="${#Q_from_pre}"
 				Q_str="${Q_suf}"
 

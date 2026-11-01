@@ -107,7 +107,7 @@ __sx_csv_parse() {
 
 					# Q_quote は候補の集合、Q_open は今回のフィールドを開始した一文字。
 					# quoted の間は Q_open だけを閉じ引用符・エスケープとして認識する。
-					Q_open="${Q_data%"${Q_data#?}"}"
+					Q_open="${Q_data%%"${Q_data#?}"}"
 					Q_state=quoted Q_data="${Q_data#?}"
 					continue
 				esac

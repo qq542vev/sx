@@ -17,7 +17,7 @@ define([|CLEANUP|], [|Q_tmp Q_cb_c|])dnl
 __sx_str_words() {
 	set -- "${1}" "${2-}" "${3:- }" "${4:-"_-/.:M_STR_SPACE()"}"
 
-	Q_cb_c="${4%"${4#?}"}" __sx_str_sub Q_tmp: "${2}" "[M_STR_UPPER()]" __sx_str_words_cb '' "$((M_STR_SUB_GLOB | M_STR_SUB_CB))"
+	Q_cb_c="${4%%"${4#?}"}" __sx_str_sub Q_tmp: "${2}" "[M_STR_UPPER()]" __sx_str_words_cb '' "$((M_STR_SUB_GLOB | M_STR_SUB_CB))"
 	__sx_str_squish Q_tmp "${Q_tmp}" "${4}" "${3}"
 	__sx_str_lower "${1}" "${Q_tmp}"
 
