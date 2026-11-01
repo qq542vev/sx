@@ -400,6 +400,9 @@ M_UNIT([|__sx_str_title|], [|src/func/str/__sx_str_title.m4|])dnl
 M_UNIT([|__sx_str_title_cb|], [|src/func/str/__sx_str_title_cb.m4|])dnl
 M_UNIT([|sx_str_tr|], [|src/func/str/sx_str_tr.m4|])dnl
 M_UNIT([|__sx_str_tr|], [|src/func/str/__sx_str_tr.m4|])dnl
+M_UNIT([|__sx_str_tr0|], [|src/func/str/__sx_str_tr0.m4|])dnl
+M_UNIT([|sx_str_tr_args|], [|src/func/str/sx_str_tr_args.m4|])dnl
+M_UNIT([|__sx_str_tr_args|], [|src/func/str/__sx_str_tr_args.m4|])dnl
 M_UNIT([|sx_str_trim|], [|src/func/str/sx_str_trim.m4|])dnl
 M_UNIT([|__sx_str_trim|], [|src/func/str/__sx_str_trim.m4|])dnl
 M_UNIT([|sx_str_upper|], [|src/func/str/sx_str_upper.m4|])dnl
