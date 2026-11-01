@@ -5,6 +5,34 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_str_rfind'
 	sxtest_load ./build/modules/sx_str_rfind.sh
 
+	Context 'glob 検索で一致の前後にパターン文字がある場合'
+		Parameters
+			'a*' '0:1'
+			'*aX' '1:1'
+			'a[ab]' '2:1 0:1'
+			'[ab]a' '4:1 1:1'
+			'a\' '0:1'
+		End
+
+		It '前後の文字列をリテラルとして除いて位置と長さを求めること'
+			When call sx_str_rfind res "$1" a "$SX_STR_RFIND_GLOB"
+			The status should be success
+			The variable res should equal "$2"
+		End
+
+		It 'TEXT モードで実際に一致した文字だけを返すこと'
+			When call sx_str_rfind res: "$1" a "$((SX_STR_RFIND_GLOB | SX_STR_RFIND_TEXT))"
+			The status should be success
+			The variable res should equal a
+		End
+	End
+
+	It 'glob と重複フラグの併用でも同じ位置を重ねて返さないこと'
+		When call sx_str_rfind res 'a*' a "$((SX_STR_RFIND_GLOB | SX_STR_RFIND_OVERLAP))"
+		The status should be success
+		The variable res should equal '0:1'
+	End
+
 	Context '多倍長経路の境界位置'
 		Parameters
 			0 '' '3:0 2:0 1:0 0:0'
