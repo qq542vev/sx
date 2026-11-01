@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_num_add1_nat0 __sx_str_chunk __sx_var_bind __sx_var_bind_init|])dnl
+M_REQUIRE([|__sx_num_add1_nat0 __sx_var_bind __sx_var_bind_init|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_tr - 文字列内の文字を対応する文字で変換する（内部用）
@@ -37,8 +37,12 @@ __sx_str_tr() {
 		return
 	esac
 
-	__sx_str_chunk Q_to "${4-}" 1
-	eval set -- "${Q_to}"
+	Q_to="${4-}"
+	set --
+	while M_STR_NE([|"${Q_to:+X}"|], [|''|]); do
+		set -- "${@}" "${Q_to%%"${Q_to#?}"}"
+		Q_to="${Q_to#?}"
+	done
 
 	case "${Q_lim}" in
 		-*)
@@ -54,7 +58,7 @@ __sx_str_tr() {
 
 				__sx_num_add1_nat0 Q_cnt "${Q_cnt}"
 
-				if M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_abs}"|]); then
+				if M_STR_NE([|"${Q_cnt}"|], [|"${Q_abs}"|]) && M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]); then
 					continue
 				fi
 
@@ -76,7 +80,7 @@ __sx_str_tr() {
 
 				__sx_num_add1_nat0 Q_cnt "${Q_cnt}"
 
-				if M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]) && M_STR_NE([|"${Q_cnt}"|], [|"${Q_abs}"|]); then
+				if M_STR_NE([|"${Q_cnt}"|], [|"${Q_abs}"|]) && M_STR_HAS([|"${Q_str}"|], [|["${Q_from}"]|]); then
 					continue
 				fi
 
