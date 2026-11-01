@@ -15,7 +15,12 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_pre Q_suf Q_c Q_rest|])dnl
 
 __sx_glob_bracket() {
+	# 特殊文字がなければ展開結果は元の文字列、含まれていれば空になる。
 	case "${2}" in
+		"${2##*[]\\=.:[!^-]*}")
+			M_VAR_SET([|${1}|], [|${2:+[${2}]}|])
+			return
+			;;
 		*[!^!]*) ;;
 		!*^* | ^*!*)
 			M_VAR_SET([|${1}|], [|[[.!.]^]|])

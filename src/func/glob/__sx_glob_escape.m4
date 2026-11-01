@@ -8,11 +8,6 @@ pushdef([|CLEANUP|])dnl
 ## 説明:
 ##   sx_glob_escape の内部実装。引数チェックは行わない。
 __sx_glob_escape() {
-	__sx_str_escape "${1}" "${2-}" '*?[' '[' ']' || return
+	__sx_str_escape "${1}" "${2-}" '*?[' '[' ']'
 }
-
-# ========================================
-#  ARR (Array Operations)
-# ========================================
-
 popdef([|CLEANUP|])dnl
