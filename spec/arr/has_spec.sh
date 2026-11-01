@@ -13,6 +13,25 @@ Describe 'sx_arr_has'
   sxtest_load ./build/modules/sx_arr_has.sh
   BeforeEach setup_myarr_fixture
 
+  Context '算術幅を超える長さの疎配列'
+    Parameters:matrix
+      2147483648 9223372036854775808 10000000000000000000000
+      0 1
+      '0:1' '1:0:-1' '2:1' '0:1:-1'
+    End
+
+    It '検査省略の有無によらず、正方向・逆方向・空範囲の有無を判定すること'
+      myarr_len=$1
+      SX_CFG_SKIP_CHK=$2
+      case "$3" in
+        '0:1' | '1:0:-1') expected=0;;
+        *) expected=1;;
+      esac
+      When call sx_arr_has myarr "$3"
+      The status should equal "$expected"
+    End
+  End
+
   Context '単体指定'
     It '存在するインデックスに対して成功を返すこと'
       When call sx_arr_has myarr 0

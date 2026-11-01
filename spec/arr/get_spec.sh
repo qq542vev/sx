@@ -13,6 +13,27 @@ Describe 'sx_arr_get'
   sxtest_load ./build/modules/sx_arr_get.sh
   BeforeEach setup_myarr_fixture
 
+  Context '算術幅を超える長さの疎配列'
+    Parameters:matrix
+      2147483648 9223372036854775808 10000000000000000000000
+      0 1
+      '0:1' '1:0:-1' '2:1' '0:1:-1'
+    End
+
+    It '検査省略の有無によらず、正方向・逆方向・空範囲を取得すること'
+      myarr_len=$1
+      SX_CFG_SKIP_CHK=$2
+      case "$3" in
+        '0:1') expected='1:a:UNSET';;
+        '1:0:-1') expected='2:b:a';;
+        *) expected='0:UNSET:UNSET';;
+      esac
+      When call sx_arr_get x myarr "$3"
+      The status should be success
+      The value "$x_len:${x_0-UNSET}:${x_1-UNSET}" should equal "$expected"
+    End
+  End
+
   Context '単体指定'
     It '先頭要素を取得できること'
       When call sx_arr_get x myarr 0

@@ -33,6 +33,33 @@ sxtest_run myarr SX_SYS_REV -- 'SX_SYS_REV=$1; shift; sx_arr_gen "$@"' "${SX_SYS
     The status should be success
   End
 
+  Context '算術幅を超える長さの疎配列'
+    Parameters:matrix
+      0 1
+      '0:1' '1:0:-1' '2:1' '0:1:-1'
+    End
+
+    It '算術エラーでシェルを終了せず、内部変数を残さないこと'
+      sxtest_run myarr SX_SYS_REV -- 'sx_arr_gen myarr a b'
+      myarr_len=10000000000000000000000
+      SX_CFG_SKIP_CHK=$1
+      case "$2" in
+        '0:1' | '1:0:-1') expected=0;;
+        *) expected=1;;
+      esac
+      has_large_range() {
+        status=0
+        sx_arr_has myarr "$1" || status=$?
+        check_no_leak
+        return "$status"
+      }
+      When run efu_run has_large_range "$2"
+      The status should equal "$expected"
+      The stdout should equal ''
+      The stderr should equal ''
+    End
+  End
+
   Context '32bit算術シェル専用の算術域境界 (NUM_RANGE=32)'
     Skip if '32bit算術シェル専用のため' arith_not32
     Before 'sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_WLEN SX_SYS_NUM_QM SX_SYS_NUM_ZR -- "sx_cfg_set NUM_RANGE=32"'

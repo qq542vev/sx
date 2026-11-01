@@ -53,7 +53,7 @@ __sx_arr_has() {
 					case "${Q_e}" in -*) Q_e=0;; esac
 					Q_t="${Q_t#-}"
 
-					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}"; then
+					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len}" "${Q_s}" "${Q_e}" "${Q_t}"; then
 						# 定義域内の元の始点と同じ剰余を持つ最大の値へ寄せる。
 						case "$((Q_len <= Q_s))" in 1)
 							Q_s=$((Q_len - Q_t + ((Q_s - Q_len) % Q_t)))
@@ -84,7 +84,7 @@ __sx_arr_has() {
 					# 正方向の終点は排他的。0 以下なら必ず空となる。
 					case "${Q_e}" in [-0]*) unset CLEANUP; return 1;; esac
 
-					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_s}" "${Q_e}" "${Q_t}"; then
+					if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_len}" "${Q_s}" "${Q_e}" "${Q_t}"; then
 						# 負の始点を位相を保って 0 以上へ寄せる。MIN の反転を避ける。
 						case "${Q_s}" in -*)
 							Q_s=$((Q_t - 1 + ((Q_s + 1) % Q_t)))
