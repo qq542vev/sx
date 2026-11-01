@@ -28,13 +28,14 @@ __sx_num_div_nat0() {
 	Q_res="${1}"
 	Q_dp="${2:-0}"
 	Q_u="${3:-0}"
-	shift 3
 
 	case "${Q_u}" in 0 | +0 | -0)
 		M_VAR_SET([|${Q_res}|], [|0|])
 		unset CLEANUP
 		return
 	esac
+
+	shift 3
 
 	# ステップ 2: すべての除数を乗算して単一の除数にする（除数が無い場合は 1）
 	__sx_num_mul_nat0 Q_den "${@}"

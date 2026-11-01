@@ -57,7 +57,7 @@ __sx_num_edivmod_int() {
 			;;
 	esac
 
-	__sx_var_ubind Q_bind "${Q_bind}" "${Q_r}" || :
+	__sx_var_ubind '' "${Q_bind}" "${Q_r}" || :
 
 	unset CLEANUP
 }

@@ -67,6 +67,29 @@ Describe 'sx_num_div_nat0'
     The variable d should equal "0"
   End
 
+  Context '検査省略の有無によらない省略引数'
+    Parameters
+      0
+      1
+    End
+
+    It '小数桁数と被除数を省略しても診断を出さず0を返すこと'
+      SX_CFG_SKIP_CHK=$1
+      When call sx_num_div_nat0 d
+      The status should be success
+      The variable d should equal 0
+      The stderr should equal ''
+    End
+
+    It '被除数だけを省略しても診断を出さず0を返すこと'
+      SX_CFG_SKIP_CHK=$1
+      When call sx_num_div_nat0 d 2
+      The status should be success
+      The variable d should equal 0
+      The stderr should equal ''
+    End
+  End
+
   It '複数の除数を乗算して除算できること'
     When call sx_num_div_nat0 d 3 100 2 5
     The status should be success

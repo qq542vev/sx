@@ -460,7 +460,7 @@ __sx_num_divmod_nat0() {
 		esac
 	fi
 
-	__sx_var_ubind Q_bind "${Q_bind}" "${Q_r:-0}" || :
+	__sx_var_ubind '' "${Q_bind}" "${Q_r:-0}" || :
 
 	unset CLEANUP
 }

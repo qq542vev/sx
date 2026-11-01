@@ -44,7 +44,7 @@ __sx_num_divmod_int() {
 		M_STR_PREPEND([|Q_r|], [|-|])
 	esac
 
-	__sx_var_ubind Q_bind "${Q_bind}" "${Q_r}" || :
+	__sx_var_ubind '' "${Q_bind}" "${Q_r}" || :
 
 	unset CLEANUP
 }

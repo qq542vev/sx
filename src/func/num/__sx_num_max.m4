@@ -8,10 +8,19 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   sx_num_max の内部実装。引数チェックは行わない。
+##   数値が1つの場合は、正規化せず元の表記を直接返す。
+##
+## 終了ステータス:
+##    0  成功
 
 define([|CLEANUP|], [|Q_res Q_win Q_wnorm Q_arg Q_anorm|])dnl
 
 __sx_num_max() {
+	case "${#}" in 2)
+		M_VAR_SET([|${1}|], [|${2}|])
+		return
+	esac
+
 	Q_res="${1}"
 	Q_win="${2}"
 	shift 2
