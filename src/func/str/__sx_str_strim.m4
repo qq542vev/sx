@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_SPACE|])dnl
+M_REQUIRE([||])dnl
 pushdef([|CLEANUP|])dnl
 ### __sx_str_strim - 文字列の先頭から指定された文字セットを削除する（内部用）
 ##
@@ -9,7 +9,7 @@ pushdef([|CLEANUP|])dnl
 ##   sx_str_strim の内部実装。
 ##   引数チェックは行わない。
 __sx_str_strim() {
-	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
+	set -- "${1}" "${2-}" "${3-M_STR_SPACE()}"
 
 	case "${3:+X}" in '')
 		M_VAR_SET([|${1}|], [|${2}|])

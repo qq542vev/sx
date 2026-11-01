@@ -3,6 +3,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_resize'
+  Include ./spec/support/run.sh
+  # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_ARG_RESIZE_PAD_LEFT -- ''
   sxtest_load ./build/modules/sx_arg_resize.sh
 
   Describe 'Form 1 (":::" 区切り)'

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_WORD __sx_var_is_name|])dnl
+M_REQUIRE([|__sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_is_chain - 文字列が有効な連鎖式であるか確認する（内部用）
@@ -21,8 +21,8 @@ define([|CLEANUP|], [|Q_arg|])dnl
 __sx_var_is_chain() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			*=*) ! M_STR_MATCH([|"${Q_arg}"|], [|*[!"${SX_STR_WORD}"=]*|], [|*==*|], [|=*|], [|*=|], [|[0-9]*|], [|*=[0-9]*|]);;
-			*-*) ! M_STR_MATCH([|"${Q_arg}"|], [|*[!"${SX_STR_WORD}"-]*|], [|*--*|], [|-*|], [|*-|], [|[0-9]*|], [|*-[0-9]*|]);;
+			*=*) ! M_STR_MATCH([|"${Q_arg}"|], [|*[!"M_STR_WORD()"=]*|], [|*==*|], [|=*|], [|*=|], [|[0-9]*|], [|*=[0-9]*|]);;
+			*-*) ! M_STR_MATCH([|"${Q_arg}"|], [|*[!"M_STR_WORD()"-]*|], [|*--*|], [|-*|], [|*-|], [|[0-9]*|], [|*-[0-9]*|]);;
 			*) __sx_var_is_name "${Q_arg}";;
 		esac || {
 			unset CLEANUP

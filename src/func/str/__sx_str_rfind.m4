@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_STR_RFIND_GLOB SX_STR_RFIND_OVERLAP SX_STR_RFIND_TEXT __sx_num_is_int_fit_dec __sx_num_sub_arith __sx_num_sub_nat0 __sx_var_bind __sx_var_bind_init __sx_var_ubind|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_is_int_fit_dec __sx_num_sub_arith __sx_num_sub_nat0 __sx_var_bind __sx_var_bind_init __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_rfind - 文字列から指定された文字列を後方一致で探す（内部用）
@@ -18,12 +18,12 @@ __sx_str_rfind() {
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
 	Q_tgt="${2}"
-	Q_text=$((${4} & SX_STR_RFIND_TEXT))
-	Q_overlap=$((${4} & SX_STR_RFIND_OVERLAP))
+	Q_text=$((${4} & M_STR_RFIND_TEXT))
+	Q_overlap=$((${4} & M_STR_RFIND_OVERLAP))
 
 	if
 		M_STR_EQ([|"${3}"|], [|''|]) ||
-		{ M_NUM_BOOL([|${4} & SX_STR_RFIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
+		{ M_NUM_BOOL([|${4} & M_STR_RFIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
 	then
 		Q_off="${#Q_tgt}"
 		Q_sts=M_EX_OK
@@ -48,7 +48,7 @@ __sx_str_rfind() {
 			"__sx_num_sub_${Q_type}" Q_off "${Q_off}" 1
 			continue
 		do :; done
-	elif M_NUM_BOOL([|${4} & SX_STR_RFIND_GLOB|]); then
+	elif M_NUM_BOOL([|${4} & M_STR_RFIND_GLOB|]); then
 		# ==== グロブモード ====
 		while M_STR_HAS([|"${Q_tgt}"|], [|${3}|]); do
 			Q_pre="${Q_tgt%${3}*}"

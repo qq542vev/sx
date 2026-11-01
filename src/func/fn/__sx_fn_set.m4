@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_LF|])dnl
+M_REQUIRE([||])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_fn_set - 関数を実際に定義する（内部用）
@@ -11,7 +11,7 @@ define([|CLEANUP|], [|Q_arg Q_body|])dnl
 __sx_fn_set() {
 	for Q_arg in "${@}"; do
 		Q_body="${Q_arg#*=}"
-		eval "${Q_arg%%=*}() { ${Q_body:-:}${SX_STR_LF}}"
+		eval "${Q_arg%%=*}() { ${Q_body:-:}M_STR_LF()}"
 	done
 
 	unset CLEANUP

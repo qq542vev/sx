@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_SPACE __sx_str_squish __sx_str_title __sx_str_words|])dnl
+M_REQUIRE([|__sx_str_squish __sx_str_title __sx_str_words|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_pascal - さまざまな命名規則を PascalCase に変換する（内部用）
@@ -14,7 +14,7 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_tmp|])dnl
 
 __sx_str_pascal() {
-	set -- "${1}" "${2-}" "${3:-"_-/.:${SX_STR_SPACE}"}"
+	set -- "${1}" "${2-}" "${3:-"_-/.:M_STR_SPACE()"}"
 
 	__sx_str_words Q_tmp "${2}" ' ' "${3}"
 	__sx_str_title Q_tmp "${Q_tmp}" ' '

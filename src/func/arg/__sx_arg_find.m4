@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_FIND_CB SX_CFG_SEP __sx_arg_find_cb __sx_arg_find_lit __sx_var_bind_init|])dnl
+M_REQUIRE([|SX_CFG_SEP __sx_arg_find_cb __sx_arg_find_lit __sx_var_bind_init|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_find - 引数リストから指定された値を探す（内部用: ディスパッチャ）
@@ -47,7 +47,7 @@ __sx_arg_find() {
 		return 1
 	esac
 
-	case "$((${3} & SX_ARG_FIND_CB))" in
+	case "$((${3} & M_ARG_FIND_CB))" in
 		0) __sx_arg_find_lit "${@}";;
 		*) __sx_arg_find_cb "${@}";;
 	esac || return

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_FIND_GLOB SX_ARG_FIND_TEXT SX_CFG_NUM_RANGE __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_var_bind __sx_var_ubind|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_var_bind __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_find_lit - 引数リストから指定された値を探す（内部用: リテラル/glob照合）
@@ -21,8 +21,8 @@ define([|CLEANUP|], [|Q_bind Q_tgt Q_glob Q_text Q_i Q_arg Q_sts Q_type|])dnl
 __sx_arg_find_lit() {
 	Q_bind="${1}"
 	Q_tgt="${2}"
-	Q_glob=$(((${3} & SX_ARG_FIND_GLOB) != 0))
-	Q_text=$(((${3} & SX_ARG_FIND_TEXT) != 0))
+	Q_glob=$(((${3} & M_ARG_FIND_GLOB) != 0))
+	Q_text=$(((${3} & M_ARG_FIND_TEXT) != 0))
 	Q_i=0
 
 	shift 3

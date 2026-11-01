@@ -426,9 +426,9 @@ define([|__sx_m4_gen_zr|], [|define([|M_NUM_ZR_$1|], [|$2|])dnl
 ifelse([|$1|], [|37|], [||], [|__sx_m4_gen_zr(incr($1), $2[|0|])|])|])dnl
 
 # __sx_str_qm / __sx_str_zr 用の 37 分岐 case を生成する（定数生成と同一の 37 境界）
-define([|__sx_m4_gen_qm_case|], [|	$1) __sx_str_qm_out_="${SX_NUM_QM_$1}";;
+define([|__sx_m4_gen_qm_case|], [|	$1) __sx_str_qm_out_="indir([|M_NUM_QM_$1|])";;
 ifelse([|$1|], [|37|], [||], [|__sx_m4_gen_qm_case(incr($1))|])|])dnl
-define([|__sx_m4_gen_zr_case|], [|	$1) __sx_str_zr_out_="${SX_NUM_ZR_$1}";;
+define([|__sx_m4_gen_zr_case|], [|	$1) __sx_str_zr_out_="indir([|M_NUM_ZR_$1|])";;
 ifelse([|$1|], [|37|], [||], [|__sx_m4_gen_zr_case(incr($1))|])|])dnl
 
 # 浮動小数点数限界 (IEEE 754 準拠)

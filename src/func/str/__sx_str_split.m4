@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_STR_SPLIT_GLOB SX_STR_SPLIT_INC __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_str_split_empty __sx_var_bind __sx_var_bind_init|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_str_split_empty __sx_var_bind __sx_var_bind_init|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_split - 方向・回数を準備して文字列を分割する（内部用）
@@ -41,8 +41,8 @@ __sx_str_split() {
 	Q_dir=$((${Q_lim%%[0-9]*}1))
 	Q_lim="${Q_lim#[+-]}"
 	Q_flg="${5-0}"
-	Q_glob=$((Q_flg & SX_STR_SPLIT_GLOB))
-	Q_inc=$(((Q_flg & SX_STR_SPLIT_INC) != 0))
+	Q_glob=$((Q_flg & M_STR_SPLIT_GLOB))
+	Q_inc=$(((Q_flg & M_STR_SPLIT_INC) != 0))
 
 	# 空区切り、および GLOB で * だけからなる区切りは、文字間と両端の境界を扱う。
 	if

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_ALNUM __sx_var_bind_init __sx_var_ubind|])dnl
+M_REQUIRE([|__sx_var_bind_init __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_uri_enc - バイト列をパーセントエンコードする（内部用）
@@ -19,7 +19,7 @@ define([|CLEANUP|], [|Q_bind Q_rest Q_out Q_safe Q_chunk|])dnl
 
 __sx_uri_enc() {
 	__sx_var_bind_init "${1}"
-	Q_bind="${1}" Q_safe="${SX_STR_ALNUM}-._~"
+	Q_bind="${1}" Q_safe="M_STR_ALNUM()-._~"
 	shift
 
 	for Q_rest in ${Q_bind:+"${@}"}; do

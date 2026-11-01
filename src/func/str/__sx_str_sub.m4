@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_STR_ISEP_CB SX_STR_ISEP_POST SX_STR_ISEP_PRE SX_STR_SUB_CB SX_STR_SUB_GLOB __sx_num_is_int_fit_dec __sx_str_isep __sx_str_sub_cb __sx_str_sub_isep_adapt __sx_str_sub_lit __sx_var_bind __sx_var_bind_init|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_is_int_fit_dec __sx_str_isep __sx_str_sub_cb __sx_str_sub_isep_adapt __sx_str_sub_lit __sx_var_bind __sx_var_bind_init|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_sub - 方向・上限・数値経路を準備して置換を振り分ける（内部用）
@@ -35,14 +35,14 @@ __sx_str_sub() {
 
 	if
 		M_STR_EQ([|"${3}"|], [|''|]) ||
-		{ M_NUM_BOOL([|Q_flags & SX_STR_SUB_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
+		{ M_NUM_BOOL([|Q_flags & M_STR_SUB_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
 	then
-		set -- "${1}" "${2}" "${4}" "${Q_dir}" "${Q_abs}" "$((Q_flags & SX_STR_SUB_CB))"
+		set -- "${1}" "${2}" "${4}" "${Q_dir}" "${Q_abs}" "$((Q_flags & M_STR_SUB_CB))"
 		unset CLEANUP
 
 		case "${6}" in
-			0) __sx_str_isep "${1}" "${2}" "${3}" "${4}" "${5}" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST))";;
-			*) Q_cb="${3}" __sx_str_isep "${1}" "${2}" __sx_str_sub_isep_adapt "${4}" "${5}" "$((SX_STR_ISEP_PRE | SX_STR_ISEP_POST | SX_STR_ISEP_CB))";;
+			0) __sx_str_isep "${1}" "${2}" "${3}" "${4}" "${5}" "$((M_STR_ISEP_PRE | M_STR_ISEP_POST))";;
+			*) Q_cb="${3}" __sx_str_isep "${1}" "${2}" __sx_str_sub_isep_adapt "${4}" "${5}" "$((M_STR_ISEP_PRE | M_STR_ISEP_POST | M_STR_ISEP_CB))";;
 		esac || {
 			set -- "${?}"
 			unset Q_cb
@@ -59,7 +59,7 @@ __sx_str_sub() {
 		Q_type=nat0
 	fi
 
-	set -- "${1}" "${2}" "${3}" "${4}" "${Q_abs}" "$((Q_flags & SX_STR_SUB_GLOB))" "${Q_type}" "${Q_dir}" "$((Q_flags & SX_STR_SUB_CB))"
+	set -- "${1}" "${2}" "${3}" "${4}" "${Q_abs}" "$((Q_flags & M_STR_SUB_GLOB))" "${Q_type}" "${Q_dir}" "$((Q_flags & M_STR_SUB_CB))"
 	unset CLEANUP
 
 	case "${9}" in

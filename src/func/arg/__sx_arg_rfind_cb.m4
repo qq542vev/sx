@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_RFIND_TEXT SX_CFG_NUM_RANGE __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_var_bind __sx_var_ubind|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_var_bind __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_rfind_cb - 引数リストから指定された値をコールバックで検索する（内部用）
@@ -25,7 +25,7 @@ define([|CLEANUP|], [|Q_bind Q_cb Q_text Q_i Q_pos Q_cnt Q_type|])dnl
 
 __sx_arg_rfind_cb() {
 	Q_bind="${1}" Q_cb="${2}"
-	Q_text=$(((${3} & SX_ARG_RFIND_TEXT) != 0))
+	Q_text=$(((${3} & M_ARG_RFIND_TEXT) != 0))
 
 	# 管理用の7項目を含む最大の位置番号を、算術を使わずに取得する。
 	set -- 0 0 0 0 "${@}"

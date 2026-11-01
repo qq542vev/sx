@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_SPACE SX_STR_SUB_CB SX_STR_SUB_GLOB SX_STR_UPPER __sx_str_lower __sx_str_squish __sx_str_sub __sx_str_words_cb|])dnl
+M_REQUIRE([|__sx_str_lower __sx_str_squish __sx_str_sub __sx_str_words_cb|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_words - 命名規則を自動検出して単語に分割する（内部用）
@@ -15,9 +15,9 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_tmp Q_cb_c|])dnl
 
 __sx_str_words() {
-	set -- "${1}" "${2-}" "${3:- }" "${4:-"_-/.:${SX_STR_SPACE}"}"
+	set -- "${1}" "${2-}" "${3:- }" "${4:-"_-/.:M_STR_SPACE()"}"
 
-	Q_cb_c="${4%"${4#?}"}" __sx_str_sub Q_tmp: "${2}" "[${SX_STR_UPPER}]" __sx_str_words_cb '' "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+	Q_cb_c="${4%"${4#?}"}" __sx_str_sub Q_tmp: "${2}" "[M_STR_UPPER()]" __sx_str_words_cb '' "$((M_STR_SUB_GLOB | M_STR_SUB_CB))"
 	__sx_str_squish Q_tmp "${Q_tmp}" "${4}" "${3}"
 	__sx_str_lower "${1}" "${Q_tmp}"
 

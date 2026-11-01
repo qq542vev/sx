@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_ARR_HOLE SX_STR_CR SX_STR_LF __sx_arr_gen __sx_num_add1_nat0|])dnl
+M_REQUIRE([|SX_CFG_ARR_HOLE __sx_arr_gen __sx_num_add1_nat0|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_csv_parse - CSV を解析し、行ごとの確定フィールドを保存する（内部用）
@@ -38,7 +38,7 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_res Q_data Q_cb Q_sep Q_quote Q_open Q_field Q_state Q_err Q_chunk Q_kind Q_hole|])dnl
 
 __sx_csv_parse() {
-	Q_res="${1}" Q_data="${2-}" Q_cb="${3-}" Q_sep="${4:-${4-,}${4+${SX_STR_LF}}}" Q_quote="${5-\"}"
+	Q_res="${1}" Q_data="${2-}" Q_cb="${3-}" Q_sep="${4:-${4-,}${4+M_STR_LF()}}" Q_quote="${5-\"}"
 	Q_hole="${SX_CFG_ARR_HOLE}"
 
 	# Q_data は未消費の入力、Q_field は現在組み立てているフィールド。
@@ -81,11 +81,11 @@ __sx_csv_parse() {
 
 				Q_kind=eof
 				;;
-			"${SX_STR_CR}${SX_STR_LF}"*) Q_data="${Q_data#??}" Q_kind=row;;
-			"${SX_STR_LF}"*)
+			"M_STR_CR()M_STR_LF()"*) Q_data="${Q_data#??}" Q_kind=row;;
+			"M_STR_LF()"*)
 				# 非引用フィールドだけ、行区切りに属する末尾の CR を除く。
 				case "${Q_state}" in plain)
-					Q_field="${Q_field%"${SX_STR_CR}"}"
+					Q_field="${Q_field%"M_STR_CR()"}"
 				esac
 
 				Q_data="${Q_data#?}" Q_kind=row
@@ -116,7 +116,7 @@ __sx_csv_parse() {
 				# 境界自体は残し、次の反復で上の判定に処理させる。
 				# 通常文字の切り出しは一度だけなので、空の Q_field へ直接格納する。
 				Q_field="${Q_data%%"${Q_sep}"*}"
-				Q_field="${Q_field%%["${SX_STR_LF}${Q_quote}"]*}"
+				Q_field="${Q_field%%["M_STR_LF()${Q_quote}"]*}"
 				Q_state=plain Q_data="${Q_data#"${Q_field}"}"
 				continue
 				;;

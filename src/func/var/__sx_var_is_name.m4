@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_WORD|])dnl
+M_REQUIRE([||])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_is_name - 変数名として有効か確認する（内部用）
@@ -17,7 +17,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_var_is_name() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in '' | [0-9]* | *[!"${SX_STR_WORD}"]*)
+		case "${Q_arg}" in '' | [0-9]* | *[!"M_STR_WORD()"]*)
 			unset CLEANUP
 			return 1
 		esac

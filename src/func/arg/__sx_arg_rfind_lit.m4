@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_RFIND_GLOB SX_ARG_RFIND_TEXT SX_CFG_NUM_RANGE __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_var_bind __sx_var_ubind|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_var_bind __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_rfind_lit - 引数リストから指定された値を後ろ向きに探す（内部用: リテラル/Glob）
@@ -20,8 +20,8 @@ define([|CLEANUP|], [|Q_bind Q_match Q_glob Q_text Q_i Q_arg Q_sts Q_type|])dnl
 __sx_arg_rfind_lit() {
 	Q_bind="${1}"
 	Q_match="${2}"
-	Q_glob=$(((${3} & SX_ARG_RFIND_GLOB) != 0))
-	Q_text=$(((${3} & SX_ARG_RFIND_TEXT) != 0))
+	Q_glob=$(((${3} & M_ARG_RFIND_GLOB) != 0))
+	Q_text=$(((${3} & M_ARG_RFIND_TEXT) != 0))
 
 	shift 3
 	Q_i="${#}"

@@ -8,7 +8,7 @@ Describe 'sx_const_check'
   # readonly属性は同じシェルで検査する。上書き指定のファイルもここで一度だけ読み込む。
   sxtest_load ./build/modules/sx_var_is_ro.sh
 
-  # SX_STR_WORDとSX_CFG_META_DEF_SKIP_CHKは上のモジュールに含まれるため再定義しない。
+  # SX_CFG_META_DEF_SKIP_CHKは上のモジュールに含まれるため再定義しない。
   # 定数チェックでは、残りの定数の単独モジュールを同じシェルに読み込む。
   case "${SXTEST_LOAD_MOD+x}" in
     '')
@@ -82,6 +82,7 @@ Describe 'sx_const_check'
       sxtest_load ./build/modules/SX_STR_SOH.sh
       sxtest_load ./build/modules/SX_STR_SPACE.sh
       sxtest_load ./build/modules/SX_STR_ALUND.sh
+      sxtest_load ./build/modules/SX_STR_WORD.sh
       ;;
   esac
 

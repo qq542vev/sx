@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_ALUND __sx_num_add1_nat0 __sx_num_add_nat0 __sx_num_sub_nat0|])dnl
+M_REQUIRE([|__sx_num_add1_nat0 __sx_num_add_nat0 __sx_num_sub_nat0|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arr_bind - 配列対応バインドで変数を順次割り当てる（内部用）
@@ -79,7 +79,7 @@ __sx_arr_bind() {
 
 				Q_bind="${Q_cnt}/${Q_lim}${Q_vn}:${Q_bind#*:}"
 				;;
-			["${SX_STR_ALUND}"]*) M_STR_APPEND([|Q_chain|], [|" ${1}-${Q_bind%%:*}"|]);&
+			["M_STR_ALUND()"]*) M_STR_APPEND([|Q_chain|], [|" ${1}-${Q_bind%%:*}"|]);&
 			:*)
 				Q_bind="${Q_bind#*:}"
 				shift

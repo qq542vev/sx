@@ -1,4 +1,7 @@
 Describe 'sx_str_rfind -efu 環境検証'
+  Include ./spec/support/run.sh
+  # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_STR_RFIND_GLOB SX_STR_RFIND_OVERLAP -- ''
   sxtest_load ./build/modules/sx_str_rfind.sh
 
   It '正常動作'

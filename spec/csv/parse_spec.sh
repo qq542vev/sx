@@ -5,6 +5,9 @@
 # shellcheck disable=SC2016,SC2154,SC2286,SC2288,SC2317,SC2329
 
 Describe 'sx_csv_parse'
+  Include ./spec/support/run.sh
+  # 検証用の文字定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_STR_CR SX_STR_LF -- ''
   # Exampleごとに対象だけを読み込み、再入とスタブは検証側に残す。
   load_subject() {
     case "$1" in
@@ -18,7 +21,6 @@ Describe 'sx_csv_parse'
     esac
   }
 
-  Include ./spec/support/run.sh
   tab=$(printf '\t')
 
   It 'ヘッダを含む各行を SX 配列として保存する'

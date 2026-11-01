@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_STR_FIND_GLOB SX_STR_FIND_OVERLAP SX_STR_FIND_TEXT __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_add_arith __sx_num_add_nat0 __sx_num_is_int_fit_dec __sx_var_bind __sx_var_bind_init __sx_var_ubind|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_add_arith __sx_num_add_nat0 __sx_num_is_int_fit_dec __sx_var_bind __sx_var_bind_init __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_find - 文字列から指定された文字列を前方一致で探す（内部用）
@@ -16,8 +16,8 @@ __sx_str_find() {
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
 	Q_tgt="${2}"
-	Q_text=$((${4} & SX_STR_FIND_TEXT))
-	Q_overlap=$((${4} & SX_STR_FIND_OVERLAP))
+	Q_text=$((${4} & M_STR_FIND_TEXT))
+	Q_overlap=$((${4} & M_STR_FIND_OVERLAP))
 	Q_off=0
 
 	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#Q_tgt}"; then
@@ -28,7 +28,7 @@ __sx_str_find() {
 
 	if
 		M_STR_EQ([|"${3}"|], [|''|]) ||
-		{ M_NUM_BOOL([|${4} & SX_STR_FIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
+		{ M_NUM_BOOL([|${4} & M_STR_FIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
 	then
 		Q_sts=M_EX_OK
 		Q_len="${#Q_tgt}"
@@ -47,7 +47,7 @@ __sx_str_find() {
 			"__sx_num_add1_${Q_type}" Q_off "${Q_off}"
 			continue
 		do :; done
-	elif M_NUM_BOOL([|${4} & SX_STR_FIND_GLOB|]); then
+	elif M_NUM_BOOL([|${4} & M_STR_FIND_GLOB|]); then
 		# ==== グロブモード ====
 		while M_STR_HAS([|"${Q_tgt}"|], [|${3}|]); do
 			# マッチ文字列を抽出（__sx_str_sub_cb と同じ手法）

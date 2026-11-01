@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_ALUND __sx_var_is_rw_deep|])dnl
+M_REQUIRE([|__sx_var_is_rw_deep|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arr_is_bindable - バインド形式に含まれる変数が書き込み可能か確認する（内部用）
@@ -27,7 +27,7 @@ __sx_arr_is_bindable() {
 				[1-9]*)
 					Q_name="${Q_arg%%:*}"
 
-					case "${Q_name}" in *["${SX_STR_ALUND}"]*)
+					case "${Q_name}" in *["M_STR_ALUND()"]*)
 						Q_name="M_STR_LTRIM([|Q_name|], [|[!0-9/]|])"
 						M_STR_APPEND([|Q_chk|], [|" ${Q_name}"|])
 					esac

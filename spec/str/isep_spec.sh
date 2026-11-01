@@ -3,6 +3,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_isep'
+  Include ./spec/support/run.sh
+  # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_STR_ISEP_POST SX_STR_ISEP_PRE -- ''
   sxtest_load ./build/modules/sx_str_isep.sh
 
   It 'interval=1 で文字列の各文字間にセパレータを挿入すること'

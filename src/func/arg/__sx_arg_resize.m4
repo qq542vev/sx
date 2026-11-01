@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_RESIZE_PAD_LEFT SX_CFG_NUM_RANGE SX_CFG_SEP __sx_arg_quote __sx_num_cmp_arith __sx_num_cmp_nat0 __sx_num_divceil_nat0 __sx_num_is_int_fit_dec __sx_num_mul_nat0 __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_num_sub_arith __sx_num_sub_nat0 __sx_str_sub __sx_var_bind __sx_var_bind_init|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SEP __sx_arg_quote __sx_num_cmp_arith __sx_num_cmp_nat0 __sx_num_divceil_nat0 __sx_num_is_int_fit_dec __sx_num_mul_nat0 __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_num_sub_arith __sx_num_sub_nat0 __sx_str_sub __sx_var_bind __sx_var_bind_init|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_resize - 引数リストをリサイズする（内部用）
@@ -73,7 +73,7 @@ __sx_arg_resize() {
 		Q_type=arith
 	fi
 	Q_left=0
-	case "$((Q_flg & SX_ARG_RESIZE_PAD_LEFT))" in 0) ;; *)
+	case "$((Q_flg & M_ARG_RESIZE_PAD_LEFT))" in 0) ;; *)
 		"__sx_num_cmp_${Q_type}" "${Q_total}" "${#}" || case "${?}" in 3)
 			"__sx_num_sub_${Q_type}" Q_left "${Q_total}" "${#}"
 		esac

@@ -7,6 +7,8 @@ eval "$(shellspec - -c) exit 1"
 
 Describe "sx_str_chunk"
   Include ./spec/support/run.sh
+  # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_STR_CHUNK_SKIP_LONG SX_STR_CHUNK_SKIP_SHORT -- ''
   sxtest_load ./build/modules/sx_str_chunk.sh
 
   Context 'IFS=a での動的な数値関数呼び出し'

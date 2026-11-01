@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK SX_STR_CR SX_STR_LF __sx_csv_parse __sx_var_is_name __sx_var_is_rw __sx_var_is_rw_deep|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_csv_parse __sx_var_is_name __sx_var_is_rw __sx_var_is_rw_deep|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_csv_parse - CSV を行ごとの SX 配列に変換する
 ##
@@ -51,7 +51,7 @@ sx_csv_parse() {
 
 	set -- "${1}" "${2-}" "${3-}" "${4-,}" "${5-\"}"
 
-	case "${4}${5}" in *["${SX_STR_CR}${SX_STR_LF}"]*)
+	case "${4}${5}" in *["M_STR_CR()M_STR_LF()"]*)
 		return M_EX_USAGE
 	esac
 

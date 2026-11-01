@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_SPACE __sx_str_etrim __sx_str_strim|])dnl
+M_REQUIRE([|__sx_str_etrim __sx_str_strim|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_trim - 文字列の前後から指定された文字セットを削除する（内部用）
@@ -13,7 +13,7 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_tmp|])dnl
 
 __sx_str_trim() {
-	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}"
+	set -- "${1}" "${2-}" "${3-M_STR_SPACE()}"
 
 	__sx_str_strim Q_tmp "${2}" "${3}"
 	__sx_str_etrim "${1}" "${Q_tmp}" "${3}"

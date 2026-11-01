@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_FIND_CB SX_ARG_FIND_GLOB SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_find __sx_num_is_nat0_safe __sx_var_is_bind __sx_var_is_bindable|])dnl
+M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_find __sx_num_is_nat0_safe __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_find - 引数リストから指定された値を探し、そのインデックスまたは値を取得する
 ##
@@ -50,7 +50,7 @@ sx_arg_find() {
 		"${4+X${4}}")
 			__sx_num_is_nat0_safe "${3}" || return M_EX_USAGE
 
-			case "$(((${3} & SX_ARG_FIND_GLOB) * (${3} & SX_ARG_FIND_CB)))" in [!0])
+			case "$(((${3} & M_ARG_FIND_GLOB) * (${3} & M_ARG_FIND_CB)))" in [!0])
 				return M_EX_USAGE
 			esac
 			;;

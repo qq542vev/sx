@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_XDIGIT|])dnl
+M_REQUIRE([||])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_uri_is_pct - パーセント表記の構文を確認する（内部用）
@@ -18,7 +18,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_uri_is_pct() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in *%[!"${SX_STR_XDIGIT}"]* | *%?[!"${SX_STR_XDIGIT}"]* | *% | *%?)
+		case "${Q_arg}" in *%[!"M_STR_XDIGIT()"]* | *%?[!"M_STR_XDIGIT()"]* | *% | *%?)
 			unset CLEANUP
 			return 1
 		esac

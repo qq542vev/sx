@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_LF __sx_var_is_name|])dnl
+M_REQUIRE([|__sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_fn_is_valid - 関数定義の妥当性（名前および構文）を確認する（内部用）
@@ -30,7 +30,7 @@ __sx_fn_is_valid() {
 	(
 		for Q_arg in "${@}"; do
 			Q_body="${Q_arg#*=}"
-			eval "${Q_arg%%=*}() { ${Q_body:-:}${SX_STR_LF}}" || exit 1
+			eval "${Q_arg%%=*}() { ${Q_body:-:}M_STR_LF()}" || exit 1
 		done
 	) 2>&- || return 1
 }

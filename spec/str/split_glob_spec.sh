@@ -3,6 +3,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split (glob)'
+    Include ./spec/support/run.sh
+    # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+    sxtest_run SX_STR_SPLIT_GLOB -- ''
     sxtest_load ./build/modules/sx_str_split.sh
 
     It 'glob パターンによる分割ができること'

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_STR_ISEP_CB SX_STR_ISEP_POST SX_STR_ISEP_PRE SX_SYS_NUM_MAX __sx_num_cmp_arith __sx_num_cmp_nat0 __sx_num_is_int_fit_dec __sx_str_isep_cb __sx_str_isep_lit __sx_str_qm __sx_var_bind __sx_var_bind_init|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_SYS_NUM_MAX __sx_num_cmp_arith __sx_num_cmp_nat0 __sx_num_is_int_fit_dec __sx_str_isep_cb __sx_str_isep_lit __sx_str_qm __sx_var_bind __sx_var_bind_init|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_isep - 挿入方向・上限・数値経路とパターンを準備する（内部用）
@@ -40,15 +40,15 @@ __sx_str_isep() {
 	fi
 
 	case "${Q_dir}" in
-		0) Q_start=$((${6} & SX_STR_ISEP_PRE)) Q_end=$(((${6} & SX_STR_ISEP_POST) && 0${2:+1}));;
-		1) Q_start=$((${6} & SX_STR_ISEP_POST)) Q_end=$(((${6} & SX_STR_ISEP_PRE) && 0${2:+1}));;
+		0) Q_start=$((${6} & M_STR_ISEP_PRE)) Q_end=$(((${6} & M_STR_ISEP_POST) && 0${2:+1}));;
+		1) Q_start=$((${6} & M_STR_ISEP_POST)) Q_end=$(((${6} & M_STR_ISEP_PRE) && 0${2:+1}));;
 	esac
 
 	"__sx_num_cmp_${Q_type}" "${Q_abs}" "${Q_len}" || case "${?}" in 1)
 		__sx_str_qm Q_qm "${Q_abs}"
 	esac
 
-	set -- "${1}" "${2}" "${3}" "${Q_abs}" "${5}" "${Q_type}" "${Q_qm-}" "${Q_dir}" "${Q_start}" "${Q_end}" "$((${6} & SX_STR_ISEP_CB))"
+	set -- "${1}" "${2}" "${3}" "${Q_abs}" "${5}" "${Q_type}" "${Q_qm-}" "${Q_dir}" "${Q_start}" "${Q_end}" "$((${6} & M_STR_ISEP_CB))"
 	unset CLEANUP
 
 	case "${11}" in

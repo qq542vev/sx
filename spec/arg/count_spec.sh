@@ -3,6 +3,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_count'
+	Include ./spec/support/run.sh
+	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+	sxtest_run SX_ARG_COUNT_CB SX_ARG_COUNT_GLOB SX_ARG_FIND_TEXT -- ''
 	sxtest_load ./build/modules/sx_arg_count.sh
 
 	It '単一一致で1を返すこと'

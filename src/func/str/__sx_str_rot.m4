@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_ALPHA __sx_str_cycle __sx_str_tr|])dnl
+M_REQUIRE([|__sx_str_cycle __sx_str_tr|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_rot - sx_str_rot の内部実装（内部用）
@@ -12,7 +12,7 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_rotated|])dnl
 
 __sx_str_rot() {
-	set -- "${1}" "${2-}" "${3-${SX_STR_ALPHA}}" "${4:-13}"
+	set -- "${1}" "${2-}" "${3-M_STR_ALPHA()}" "${4:-13}"
 
 	case "${2:+${3:+${4}}}" in '' | 0 | [+-]0)
 		M_VAR_SET([|${1}|], [|${2}|])

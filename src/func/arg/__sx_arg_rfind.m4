@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_RFIND_CB SX_CFG_SEP __sx_arg_rfind_cb __sx_arg_rfind_lit __sx_var_bind_init|])dnl
+M_REQUIRE([|SX_CFG_SEP __sx_arg_rfind_cb __sx_arg_rfind_lit __sx_var_bind_init|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_rfind - 引数リストから指定された値を後ろ向きに探す（内部用: ディスパッチャ）
@@ -46,7 +46,7 @@ __sx_arg_rfind() {
 		return 1
 	esac
 
-	case "$((${3} & SX_ARG_RFIND_CB))" in
+	case "$((${3} & M_ARG_RFIND_CB))" in
 		0) __sx_arg_rfind_lit "${@}";;
 		*) __sx_arg_rfind_cb "${@}";;
 	esac || return

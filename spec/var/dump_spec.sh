@@ -4,6 +4,8 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_var_dump'
   Include ./spec/support/run.sh
+  # 検証用の文字定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_STR_LF -- ''
 
   setup_var_dump_fixture() {
     # 対象モジュールと準備用シェルを、ともに既定設定で初期化する。

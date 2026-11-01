@@ -3,6 +3,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_squish'
+  Include ./spec/support/run.sh
+  # 検証用の文字定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_STR_SPACE -- ''
   sxtest_load ./build/modules/sx_str_squish.sh
 
   It 'デフォルト（空白文字）で normalize-space 相当の動作をすること'

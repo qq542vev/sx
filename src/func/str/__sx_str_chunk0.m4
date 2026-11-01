@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE SX_STR_CHUNK_SKIP_LONG SX_STR_CHUNK_SKIP_SHORT __sx_num_cmp_arith __sx_num_cmp_nat0 __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_num_sub_arith __sx_num_sub_nat0 __sx_str_qm __sx_var_bind __sx_var_bind_init|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_cmp_arith __sx_num_cmp_nat0 __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_num_sub_arith __sx_num_sub_nat0 __sx_str_qm __sx_var_bind __sx_var_bind_init|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_chunk0 - 基準方向を指定して文字列を一定の長さで区切る（内部用）
@@ -120,7 +120,7 @@ __sx_str_chunk0() {
 						;;
 				esac
 
-				case "${Q_cmp}:$((Q_flg & SX_STR_CHUNK_SKIP_SHORT)):$((Q_flg & SX_STR_CHUNK_SKIP_LONG))" in 1:0:* | 2:* | 3:*:0)
+				case "${Q_cmp}:$((Q_flg & M_STR_CHUNK_SKIP_SHORT)):$((Q_flg & M_STR_CHUNK_SKIP_LONG))" in 1:0:* | 2:* | 3:*:0)
 					__sx_var_bind Q_bind "${Q_bind}" "${Q_chunk}" || {
 						unset CLEANUP
 						return
@@ -191,7 +191,7 @@ __sx_str_chunk0() {
 						;;
 				esac
 
-				case "${Q_cmp}:$((Q_flg & SX_STR_CHUNK_SKIP_SHORT)):$((Q_flg & SX_STR_CHUNK_SKIP_LONG))" in 1:0:* | 2:* | 3:*:0)
+				case "${Q_cmp}:$((Q_flg & M_STR_CHUNK_SKIP_SHORT)):$((Q_flg & M_STR_CHUNK_SKIP_LONG))" in 1:0:* | 2:* | 3:*:0)
 					__sx_var_bind Q_bind "${Q_bind}" "${Q_chunk}" || {
 						unset CLEANUP
 						return

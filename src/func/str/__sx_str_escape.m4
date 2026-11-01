@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_SUB_CB SX_STR_SUB_GLOB __sx_glob_bracket __sx_str_escape_cb __sx_str_sub|])dnl
+M_REQUIRE([|__sx_glob_bracket __sx_str_escape_cb __sx_str_sub|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_escape - 文字列内の指定された文字をエスケープする（内部用）
@@ -21,7 +21,7 @@ __sx_str_escape() {
 
 	__sx_glob_bracket Q_gs "${3}"
 
-	Q_cb_se="${4}" Q_cb_ee="${5}" __sx_str_sub "${1}:" "${2}" "${Q_gs}" __sx_str_escape_cb '' "$((SX_STR_SUB_GLOB | SX_STR_SUB_CB))"
+	Q_cb_se="${4}" Q_cb_ee="${5}" __sx_str_sub "${1}:" "${2}" "${Q_gs}" __sx_str_escape_cb '' "$((M_STR_SUB_GLOB | M_STR_SUB_CB))"
 
 	unset CLEANUP
 }

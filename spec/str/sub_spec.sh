@@ -3,6 +3,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_sub'
+  Include ./spec/support/run.sh
+  # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_STR_SUB_GLOB -- ''
   sxtest_load ./build/modules/sx_str_sub.sh
   It 'パターンを文字列で置換すること'
     When call sx_str_sub result: "hello world" "world" "earth"

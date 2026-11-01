@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_ALPHA SX_STR_CAPITAL_KEEP SX_STR_CAPITAL_SENT __sx_str_lower __sx_str_upper_cb|])dnl
+M_REQUIRE([|__sx_str_lower __sx_str_upper_cb|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_capital - sx_str_capital の内部実装（内部用）
@@ -16,15 +16,15 @@ __sx_str_capital() {
 	Q_str="${2}"
 	Q_out=
 
-	case "$(((${3} & SX_STR_CAPITAL_SENT) != 0))${2}" in 0["${SX_STR_ALPHA}"]* | 1*["${SX_STR_ALPHA}"]*)
-		Q_out="${2%%["${SX_STR_ALPHA}"]*}"
+	case "$(((${3} & M_STR_CAPITAL_SENT) != 0))${2}" in 0["M_STR_ALPHA()"]* | 1*["M_STR_ALPHA()"]*)
+		Q_out="${2%%["M_STR_ALPHA()"]*}"
 		Q_str="${2#"${Q_out}"}"
 		__sx_str_upper_cb Q_tmp "${Q_str%"${Q_str#?}"}"
 		M_STR_APPEND([|Q_out|], [|"${Q_tmp}"|])
 		Q_str="${Q_str#?}"
 	esac
 
-	case "$((${3} & SX_STR_CAPITAL_KEEP))" in 0)
+	case "$((${3} & M_STR_CAPITAL_KEEP))" in 0)
 		__sx_str_lower Q_str "${Q_str}"
 	esac
 

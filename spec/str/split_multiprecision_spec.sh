@@ -6,6 +6,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split 多倍長対応'
+  Include ./spec/support/run.sh
+  # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_STR_SPLIT_INC -- ''
   # Exampleごとに対象だけを読み込む。
   load_subject() {
     case "$1" in
@@ -18,8 +21,6 @@ Describe 'sx_str_split 多倍長対応'
       *) return 64;;
     esac
   }
-
-  Include ./spec/support/run.sh
 
   Context '算術域を超える回数'
     Parameters

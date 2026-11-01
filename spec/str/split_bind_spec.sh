@@ -5,6 +5,8 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_split bind'
   Include ./spec/support/run.sh
+  # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_STR_SPLIT_GLOB SX_STR_SPLIT_INC -- ''
   sxtest_load ./build/modules/sx_str_split.sh
 
   It '前方分割でバインドができること'

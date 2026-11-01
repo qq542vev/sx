@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_ALUND __sx_arr_gen|])dnl
+M_REQUIRE([|__sx_arr_gen|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_bind_init - バインド形式に基づき変数を初期化する（内部用）
@@ -22,8 +22,8 @@ __sx_var_bind_init() {
 
 			case "${Q_seg}" in
 				*@*) __sx_arr_gen "${Q_seg#*@}";;
-				["${SX_STR_ALUND}"]*) unset "${Q_seg}";;
-				*["${SX_STR_ALUND}"]*) eval "M_STR_LTRIM([|Q_seg|], [|[!0-9]|])=";;
+				["M_STR_ALUND()"]*) unset "${Q_seg}";;
+				*["M_STR_ALUND()"]*) eval "M_STR_LTRIM([|Q_seg|], [|[!0-9]|])=";;
 			esac
 
 			case "${Q_arg}" in
@@ -34,7 +34,7 @@ __sx_var_bind_init() {
 			continue
 		do :; done
 
-		case "${Q_seg}" in ["${SX_STR_ALUND}"]*)
+		case "${Q_seg}" in ["M_STR_ALUND()"]*)
 			eval "${Q_seg}="
 		esac
 	done

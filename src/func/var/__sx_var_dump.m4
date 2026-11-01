@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_LF __sx_str_quote __sx_var_list_dep|])dnl
+M_REQUIRE([|__sx_str_quote __sx_var_list_dep|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_dump - 変数や配列の状態を文字列として取得する（内部用）
@@ -27,9 +27,9 @@ __sx_var_dump() {
 			X)
 			__sx_str_quote Q_val "${Q_val}"
 
-				M_STR_APPEND([|Q_out|], [|"${Q_vn}=${Q_val}${SX_STR_LF}"|])
+				M_STR_APPEND([|Q_out|], [|"${Q_vn}=${Q_val}M_STR_LF()"|])
 				;;
-			*) M_STR_APPEND([|Q_out|], [|"unset -v ${Q_vn}${SX_STR_LF}"|]);;
+			*) M_STR_APPEND([|Q_out|], [|"unset -v ${Q_vn}M_STR_LF()"|]);;
 		esac
 	done
 

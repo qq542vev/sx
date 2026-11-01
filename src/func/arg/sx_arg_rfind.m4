@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_RFIND_CB SX_ARG_RFIND_GLOB SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_rfind __sx_num_is_nat0_safe __sx_var_is_bind __sx_var_is_bindable|])dnl
+M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_rfind __sx_num_is_nat0_safe __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_rfind - 引数リストから指定された値を末尾から探し、そのインデックスまたは値を取得する
 ##
@@ -40,7 +40,7 @@ sx_arg_rfind() {
 		"${4+X${4}}")
 			__sx_num_is_nat0_safe "${3}" || return M_EX_USAGE
 
-			case "$(((${3} & SX_ARG_RFIND_GLOB) * (${3} & SX_ARG_RFIND_CB)))" in [!0])
+			case "$(((${3} & M_ARG_RFIND_GLOB) * (${3} & M_ARG_RFIND_CB)))" in [!0])
 				return M_EX_USAGE
 			esac
 			;;

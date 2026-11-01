@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_COUNT_GLOB __sx_arg_len __sx_str_find|])dnl
+M_REQUIRE([|__sx_arg_len __sx_str_find|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_count - 文字列から指定された文字列の出現回数を取得する（内部用）
@@ -19,7 +19,7 @@ define([|CLEANUP|], [|Q_tmp|])dnl
 __sx_str_count() {
 	if
 		M_STR_EQ([|"${3-}"|], [|''|]) ||
-		{ M_NUM_BOOL([|${4:-0} & SX_STR_COUNT_GLOB|]) && ! M_STR_HAS([|"${3-}"|], [|*[!*]*|]); }
+		{ M_NUM_BOOL([|${4:-0} & M_STR_COUNT_GLOB|]) && ! M_STR_HAS([|"${3-}"|], [|*[!*]*|]); }
 	then
 		set -- "${1}" " ${2-}"
 		M_VAR_SET([|${1}|], [|${#2}|])

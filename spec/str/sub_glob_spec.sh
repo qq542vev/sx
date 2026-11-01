@@ -3,6 +3,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_sub (glob)'
+  Include ./spec/support/run.sh
+  # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_STR_SUB_GLOB -- ''
   sxtest_load ./build/modules/sx_str_sub.sh
 
   It 'globパターン（文字クラス）で置換すること'

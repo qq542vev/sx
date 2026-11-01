@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_SPACE __sx_str_trim|])dnl
+M_REQUIRE([|__sx_str_trim|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_squish - XSLT normalize-space 相当（内部用）
@@ -13,7 +13,7 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_str Q_out|])dnl
 
 __sx_str_squish() {
-	set -- "${1}" "${2-}" "${3-${SX_STR_SPACE}}" "${4- }"
+	set -- "${1}" "${2-}" "${3-M_STR_SPACE()}" "${4- }"
 
 	case "${3:+X}" in '')
 		M_VAR_SET([|${1}|], [|${2}|])

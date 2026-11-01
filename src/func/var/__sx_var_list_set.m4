@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_LF SX_STR_ALUND SX_STR_WORD __sx_var_bind_init __sx_var_is_name __sx_var_is_set __sx_var_ubind|])dnl
+M_REQUIRE([|SX_STR_LF __sx_var_bind_init __sx_var_is_name __sx_var_is_set __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_list_set - 設定されている変数の一覧を取得する（内部用）
@@ -13,16 +13,16 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_list Q_bind Q_mark Q_ln Q_vn|])dnl
 
 __sx_var_list_set() {
-	Q_list="$(set)${SX_STR_LF}"
+	Q_list="$(set)M_STR_LF()"
 	__sx_var_bind_init "${1-}"
 	Q_bind="${1-}"
 	Q_mark=
 
-	while M_STR_HAS([|"${Q_list}"|], [|"${SX_STR_LF}"|]); do
+	while M_STR_HAS([|"${Q_list}"|], [|"M_STR_LF()"|]); do
 		Q_ln="${Q_list%%${SX_STR_LF}*}"
 		Q_list="${Q_list#*${SX_STR_LF}}"
 
-		case "${Q_ln}" in ["${SX_STR_ALUND}"]=* | ["${SX_STR_ALUND}"]*["${SX_STR_WORD}"]=*)
+		case "${Q_ln}" in ["M_STR_ALUND()"]=* | ["M_STR_ALUND()"]*["M_STR_WORD()"]=*)
 			case "${Q_bind:+X}" in '')
 				break
 			esac

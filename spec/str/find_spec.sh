@@ -3,6 +3,9 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_find'
+	Include ./spec/support/run.sh
+	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+	sxtest_run SX_STR_FIND_GLOB SX_STR_FIND_OVERLAP SX_STR_FIND_TEXT -- ''
 	sxtest_load ./build/modules/sx_str_find.sh
 
 	It '単一一致で index:len を返すこと'

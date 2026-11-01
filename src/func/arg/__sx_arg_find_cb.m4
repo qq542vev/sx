@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_FIND_TEXT SX_CFG_NUM_RANGE __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_var_bind __sx_var_ubind|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_var_bind __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_find_cb - 引数リストからコールバックで値を検索する（内部用）
@@ -24,9 +24,9 @@ define([|CLEANUP|], [|Q_arg Q_bind Q_next|])dnl
 __sx_arg_find_cb() {
 	# $1: 添字、$2: 一致数、$3: TEXT、$4: 数値経路、$5: バインド、$6: コールバック
 	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#}"; then
-		set -- -7 0 "$(((${3} & SX_ARG_FIND_TEXT) != 0))" arith "${@}"
+		set -- -7 0 "$(((${3} & M_ARG_FIND_TEXT) != 0))" arith "${@}"
 	else
-		set -- -7 0 "$(((${3} & SX_ARG_FIND_TEXT) != 0))" nat0 "${@}"
+		set -- -7 0 "$(((${3} & M_ARG_FIND_TEXT) != 0))" nat0 "${@}"
 	fi
 
 	for Q_arg in "${@}"; do

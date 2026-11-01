@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_ALUND __sx_arr_push_raw __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_str_quote|])dnl
+M_REQUIRE([|__sx_arr_push_raw __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_str_quote|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_bind0 - 複数の値をバインド状態に従って順次割り当てる
@@ -90,7 +90,7 @@ __sx_var_bind0() {
 				Q_bind="${Q_lim}${Q_vn}:${Q_bind#*:}"
 				break
 				;;
-			["${SX_STR_ALUND}"]*:*) M_VAR_SET([|${Q_bind%%:*}|], [|${1}|]);&
+			["M_STR_ALUND()"]*:*) M_VAR_SET([|${Q_bind%%:*}|], [|${1}|]);&
 			:*)
 				Q_bind="${Q_bind#*:}"
 				shift

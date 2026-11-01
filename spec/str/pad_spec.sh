@@ -4,6 +4,8 @@ eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_pad'
   Include ./spec/support/run.sh
+  # 検証用の文字定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_STR_LF -- ''
   sxtest_load ./build/modules/sx_str_pad.sh
 
   Context 'IFS=a での動的な数値関数呼び出し'

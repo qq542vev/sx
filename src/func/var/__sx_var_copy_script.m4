@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_LF __sx_str_quote __sx_var_list_dep __sx_var_unset|])dnl
+M_REQUIRE([|__sx_str_quote __sx_var_list_dep __sx_var_unset|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_copy_script - 変数のコピー用スクリプトを生成する（内部用）
@@ -53,7 +53,7 @@ __sx_var_copy_script() {
 					esac
 				done
 
-				M_STR_APPEND([|Q_out|], [|"__sx_var_unset ${Q_dest}${SX_STR_LF}${Q_expr}${SX_STR_LF}${Q_unset:+unset -v ${Q_unset}${SX_STR_LF}}"|])
+				M_STR_APPEND([|Q_out|], [|"__sx_var_unset ${Q_dest}M_STR_LF()${Q_expr}M_STR_LF()${Q_unset:+unset -v ${Q_unset}M_STR_LF()}"|])
 			esac
 
 			case "${Q_chain:+X}" in '')

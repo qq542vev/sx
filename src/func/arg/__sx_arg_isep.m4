@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_ISEP_CB SX_ARG_ISEP_POST SX_ARG_ISEP_PRE SX_CFG_NUM_RANGE SX_CFG_SEP SX_SYS_NUM_MAX __sx_arg_isep_cb __sx_arg_isep_lit __sx_arg_isep_rcb __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_cmp_arith __sx_num_cmp_nat0 __sx_num_divmod_arith __sx_num_divmod_nat0 __sx_num_is_int_fit_dec __sx_num_mul_arith __sx_num_mul_nat0 __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_num_sub_arith __sx_num_sub_nat0 __sx_var_bind __sx_var_bind_init|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE SX_CFG_SEP SX_SYS_NUM_MAX __sx_arg_isep_cb __sx_arg_isep_lit __sx_arg_isep_rcb __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_cmp_arith __sx_num_cmp_nat0 __sx_num_divmod_arith __sx_num_divmod_nat0 __sx_num_is_int_fit_dec __sx_num_mul_arith __sx_num_mul_nat0 __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_num_sub_arith __sx_num_sub_nat0 __sx_var_bind __sx_var_bind_init|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_isep - 引数間にセパレータを挿入する（ディスパッチャ、内部用）
@@ -66,8 +66,8 @@ __sx_arg_isep() {
 	fi
 
 	case "${Q_int}" in
-		-*) Q_dir=1 Q_start=$(((Q_flg & SX_ARG_ISEP_POST) != 0)) Q_end=$(((Q_flg & SX_ARG_ISEP_PRE) != 0));;
-		*) Q_dir=0 Q_start=$(((Q_flg & SX_ARG_ISEP_PRE) != 0)) Q_end=$(((Q_flg & SX_ARG_ISEP_POST) != 0));;
+		-*) Q_dir=1 Q_start=$(((Q_flg & M_ARG_ISEP_POST) != 0)) Q_end=$(((Q_flg & M_ARG_ISEP_PRE) != 0));;
+		*) Q_dir=0 Q_start=$(((Q_flg & M_ARG_ISEP_PRE) != 0)) Q_end=$(((Q_flg & M_ARG_ISEP_POST) != 0));;
 	esac
 
 	# 商から内部境界数を求める。反対側の端は、空でなく余り0の場合だけ有効。
@@ -99,7 +99,7 @@ __sx_arg_isep() {
 		11) Q_pos="${Q_size}";;
 	esac
 
-	case "$((Q_flg & SX_ARG_ISEP_CB))" in
+	case "$((Q_flg & M_ARG_ISEP_CB))" in
 		0)
 			# リテラルは左から直接バインドするため、選択された最左の境界に換算する。
 			case "${Q_dir}" in 1)

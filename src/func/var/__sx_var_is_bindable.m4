@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_ALUND __sx_var_is_rw __sx_var_is_rw_deep|])dnl
+M_REQUIRE([|__sx_var_is_rw __sx_var_is_rw_deep|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_is_bindable - バインド形式に含まれる変数が書き込み可能か確認する（内部用）
@@ -26,8 +26,8 @@ __sx_var_is_bindable() {
 
 			case "${Q_seg}" in
 				*@*) M_STR_APPEND([|Q_arr|], [|"${Q_seg#*@} "|]);;
-				["${SX_STR_ALUND}"]*) M_STR_APPEND([|Q_str|], [|"${Q_seg} "|]);;
-				*["${SX_STR_ALUND}"]*) M_STR_APPEND([|Q_str|], [|"M_STR_LTRIM([|Q_seg|], [|[!0-9]|]) "|]);;
+				["M_STR_ALUND()"]*) M_STR_APPEND([|Q_str|], [|"${Q_seg} "|]);;
+				*["M_STR_ALUND()"]*) M_STR_APPEND([|Q_str|], [|"M_STR_LTRIM([|Q_seg|], [|[!0-9]|]) "|]);;
 			esac
 
 			case "${Q_arg}" in

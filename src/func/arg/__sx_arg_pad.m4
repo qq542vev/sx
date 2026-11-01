@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_ARG_PAD_CB SX_CFG_SEP __sx_arg_pad_cb __sx_arg_pad_lit __sx_var_bind_init|])dnl
+M_REQUIRE([|SX_CFG_SEP __sx_arg_pad_cb __sx_arg_pad_lit __sx_var_bind_init|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_pad - 引数リストをパディングスキーマで整形する（内部用）
@@ -49,7 +49,7 @@ __sx_arg_pad() {
 		return
 	esac
 
-	case "$((${4} & SX_ARG_PAD_CB))" in
+	case "$((${4} & M_ARG_PAD_CB))" in
 		0) __sx_arg_pad_lit "${@}";;
 		*) __sx_arg_pad_cb "${@}";;
 	esac || return
