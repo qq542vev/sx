@@ -10,6 +10,11 @@ Describe 'sx_arr_bind -efu 環境検証'
     The status should be success
   End
 
+  It '算術幅を超える読み飛ばしでも途中で終了しないこと'
+    When run efu_run sx_arr_bind br cr '0/1000000000000000000000000000000' a b
+    The status should be success
+  End
+
   It 'バインドが空で対象が残っている場合に 1 を返すこと'
     br=
     cr=

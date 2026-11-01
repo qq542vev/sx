@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_ALUND __sx_num_add1_nat0 __sx_num_add_nat0 __sx_num_cmp_nat0 __sx_num_sub_nat0|])dnl
+M_REQUIRE([|SX_STR_ALUND __sx_num_add1_nat0 __sx_num_add_nat0 __sx_num_sub_nat0|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arr_bind - 配列対応バインドで変数を順次割り当てる（内部用）
@@ -7,16 +7,18 @@ M_RENAME_QI([|dnl
 ##   __sx_arr_bind bind_res chain_res bind varname1 [varname2 ...]
 ##
 ## 説明:
+##   内部実装。引数チェックは行わない。
 ##   bind文字列を逐次解析し、chain (src-dst) と残りbindを生成する。
 ##   バインド先が枯渇し、未処理の変数名が残る場合は終了ステータス 1 を返し、
 ##   bind_res に残りのバインド形式（枯渇時は空文字列）、chain_res に途中までの
 ##   chain を書き込む。
+##   個数指定の読み飛ばしは command shift の成否で判定し、事前の多倍長比較を省く。
 ##
 ## 終了ステータス:
 ##    0  全て割り当て、残りのバインド形式と chain を各結果変数に格納した
 ##    1  バインド先が枯渇したまま変数名が残っている。bind_res へ空文字列を書き込む
 
-define([|CLEANUP|], [|Q_bres Q_cres Q_bind Q_chain Q_seg Q_frac Q_cnt Q_lim Q_vn Q_arg Q_tmp|])dnl
+define([|CLEANUP|], [|Q_bres Q_cres Q_bind Q_chain Q_seg Q_frac Q_cnt Q_lim Q_vn Q_arg Q_tmp Q_size|])dnl
 
 __sx_arr_bind() {
 	Q_bres="${1}"
@@ -29,7 +31,7 @@ __sx_arr_bind() {
 		case "${Q_bind}" in
 			[0-9]*)
 				Q_seg="${Q_bind%%:*}"
-				Q_frac="${Q_bind%%[!/0-9]*}"
+				Q_frac="${Q_seg%%[!/0-9]*}"
 				Q_cnt="${Q_frac%/*}"
 				Q_lim="${Q_frac#*/}"
 				Q_vn="${Q_seg#"${Q_frac}"}"
@@ -52,13 +54,13 @@ __sx_arr_bind() {
 					# seg: M/N
 					*:)
 						__sx_num_sub_nat0 Q_tmp "${Q_lim}" "${Q_cnt}"
-						__sx_num_cmp_nat0 "${Q_tmp}" "${#}" || case "${?}" in [12])
-							shift "${Q_tmp}"
+						Q_size="${#}"
+						if command shift "${Q_tmp}" 2>&-; then
 							Q_bind="${Q_bind#*:}"
 							continue
-						esac
+						fi
 
-						__sx_num_add_nat0 Q_cnt "${Q_cnt}" "${#}"
+						__sx_num_add_nat0 Q_cnt "${Q_cnt}" "${Q_size}"
 						set --
 						;;
 					*)

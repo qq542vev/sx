@@ -7,6 +7,25 @@ Describe 'sx_var_ubind'
     Include ./spec/support/run.sh
     sxtest_load ./build/modules/sx_var_ubind.sh
 
+    Describe '個数指定の読み飛ばし'
+        Parameters
+            '1:' '' 1
+            '2:' '' 0
+            '3:' '1:' 0
+            '1:1:' '' 0
+            '2147483648:' '2147483646:' 0
+            '9223372036854775808:' '9223372036854775806:' 0
+            '1000000000000000000000000000000:' '999999999999999999999999999998:' 0
+        End
+
+        It '消費数に応じて残りのバインドと終了ステータスを返すこと'
+            unset res
+            When call sx_var_ubind res "$1" a b
+            The status should equal "$3"
+            The variable res should equal "$2"
+        End
+    End
+
     Describe '基本動作'
         It '蓄積スロットにクォートなしで累積すること'
             sxtest_run out -- 'sx_var_bind_init "$@"' out

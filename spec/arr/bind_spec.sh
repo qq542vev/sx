@@ -105,6 +105,27 @@ Describe 'sx_arr_bind'
         End
     End
 
+    Describe '個数指定の読み飛ばし'
+        Parameters
+            '0/1' '' 1
+            '0/2' '' 0
+            '0/3' '2/3' 0
+            '1/3' '' 0
+            '0/1:0/1' '' 0
+            '0/2147483648' '2/2147483648' 0
+            '0/9223372036854775808' '2/9223372036854775808' 0
+            '0/1000000000000000000000000000000' '2/1000000000000000000000000000000' 0
+        End
+
+        It '消費数に応じて残りのバインドと終了ステータスを返すこと'
+            unset br cr
+            When call sx_arr_bind br cr "$1" a b
+            The status should equal "$3"
+            The variable br should equal "$2"
+            The variable cr should equal ''
+        End
+    End
+
     Describe 'バリデーション'
         It 'バインドが空で対象が残っている場合に 1 を返すこと'
             unset br cr

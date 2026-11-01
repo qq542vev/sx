@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_ALUND __sx_arr_push_raw __sx_num_cmp_nat0 __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_str_quote|])dnl
+M_REQUIRE([|SX_STR_ALUND __sx_arr_push_raw __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_str_quote|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_bind0 - 複数の値をバインド状態に従って順次割り当てる
@@ -7,11 +7,13 @@ M_RENAME_QI([|dnl
 ##   __sx_var_bind0 エスケープフラグ(1/0) 結果変数名（空文字列可） バインド形式 [値1 [値2 ...]]
 ##
 ## 説明:
+##   内部実装。引数チェックは行わない。
 ##   sx_var_bind / sx_var_ubind の共通コア実装。
 ##   データ列を for で巡回し、1 データにつきバインド状態を 1 セグメント分
 ##   進める。蓄積スロット（数値プレフィックス付き・最後の変数）は
 ##   Q_esc に応じて値をクォートして累積する。
 ##   @name / N@name 形式の要素は sx 配列へ値を追加し、クォートは行わない。
+##   個数指定の読み飛ばしは command shift の成否で判定し、事前の多倍長比較を省く。
 ##   結果変数名が空文字列の場合は残りのバインド形式を破棄する。
 ##   バインド先が枯渇した場合は Q_res が空でない場合に限り空の残りバインドを書き込んで 1 を返す。
 ##
@@ -30,18 +32,18 @@ __sx_var_bind0() {
 		case "${Q_bind}" in
 			[1-9]*:*)
 				Q_seg="${Q_bind%%:*}"
-				Q_lim="${Q_bind%%[!0-9]*}"
+				Q_lim="${Q_seg%%[!0-9]*}"
 				Q_vn="${Q_seg#"${Q_lim}"}"
 
 				case "${Q_vn}" in
 					'')
-						__sx_num_cmp_nat0 "${Q_lim}" "${#}" || case "${?}" in [12])
-							shift "${Q_lim}"
+						Q_tmp="${#}"
+						if command shift "${Q_lim}" 2>&-; then
 							Q_bind="${Q_bind#*:}"
 							continue
-						esac
+						fi
 
-						__sx_num_sub_nat0 Q_lim "${Q_lim}" "${#}"
+						__sx_num_sub_nat0 Q_lim "${Q_lim}" "${Q_tmp}"
 						set --
 						;;
 					@*)
@@ -83,7 +85,6 @@ __sx_var_bind0() {
 
 						eval "${Q_vn}=\"\${${Q_vn}-}\${${Q_vn}:+ }\${Q_tmp# }\""
 						;;
-					'')
 				esac
 
 				Q_bind="${Q_lim}${Q_vn}:${Q_bind#*:}"

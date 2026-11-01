@@ -22,6 +22,11 @@ Describe 'sx_var_ubind -efu 環境検証'
     The status should be success
   End
 
+  It '算術幅を超える読み飛ばしでも途中で終了しないこと'
+    When run efu_run sx_var_ubind res '1000000000000000000000000000000:' a b
+    The status should be success
+  End
+
   It 'バインド先の枯渇で 1 を返すこと'
     sxtest_run v1 -- '
       sx_cfg_set
