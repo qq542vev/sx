@@ -37,6 +37,14 @@ Describe 'sx_glob_esc_icase'
     The variable result should equal '[Aa][*][Bb]'
   End
 
+  It '第3引数の追加文字をエスケープし、英字の大小を区別しない'
+    input='a!^z]-' result=''
+    When call sx_glob_esc_icase result "$input" '!^]-'
+    The status should be success
+    The variable result should equal '[Aa][[.!.]][[.^.]][Zz][]][-]'
+    The variable input should match pattern "${result}"
+  End
+
   It '引用符・ドル記号・改行をデータとして保持する'
     input="a'\"\$\`;
 B"
