@@ -14,7 +14,7 @@ pushdef([|__sx_m4_gen_glob_esc_icase_args|], [|'[substr(M_STR_UPPER, $1, 1)[||]s
 ##    0  成功 (SX_EX_OK)
 __sx_glob_esc_icase() {
 	__sx_str_tr0 "${1}:" "${2-}" M_SH_QUOTE(M_GLOB_SP_NORM[||]M_STR_ALPHA) '' \
-		'[*]' '[?]' '[[]' '[\\]' \
+		M_GLOB_SP_NORM_ESC_ARGS \
 		__sx_m4_gen_glob_esc_icase_args(0) \
 		__sx_m4_gen_glob_esc_icase_args(0)
 }

@@ -448,6 +448,7 @@ M_UNIT([|SX_STR_RCHUNK_SKIP_SHORT|], [|src/const/str/SX_STR_RCHUNK_SKIP_SHORT.m4
 M_UNIT([|SX_STR_RCHUNK_SKIP_LONG|], [|src/const/str/SX_STR_RCHUNK_SKIP_LONG.m4|])dnl
 M_UNIT([|SX_GLOB_SP_NORM|], [|src/const/glob/SX_GLOB_SP_NORM.m4|])dnl
 M_UNIT([|SX_GLOB_SP_NORM_ARGS|], [|src/const/glob/SX_GLOB_SP_NORM_ARGS.m4|])dnl
+M_UNIT([|SX_GLOB_SP_NORM_ESC_ARGS|], [|src/const/glob/SX_GLOB_SP_NORM_ESC_ARGS.m4|])dnl
 M_UNIT([|SX_GLOB_SP_BRKT|], [|src/const/glob/SX_GLOB_SP_BRKT.m4|])dnl
 M_UNIT([|SX_GLOB_SP_BRKT_ARGS|], [|src/const/glob/SX_GLOB_SP_BRKT_ARGS.m4|])dnl
 M_UNIT([|SX_NUM_I8_MAX|], [|src/const/num/SX_NUM_I8_MAX.m4|])dnl

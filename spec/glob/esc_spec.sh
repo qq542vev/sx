@@ -78,6 +78,28 @@ Describe 'sx_glob_esc'
 			The status should be success
 			The variable result should equal '[\\][*][?][\\][[]'
 		End
+
+		It '第3引数で指定した追加文字をエスケープする'
+			When call sx_glob_esc result 'a-b+c' '-+'
+			The status should be success
+			The variable result should equal 'a[-]b[+]c'
+		End
+
+		It '追加文字の ] と - を case パターンでリテラルマッチできる'
+			input='a]-z' ge_p=''
+			When call sx_glob_esc ge_p "$input" ']-'
+			The status should be success
+			The variable ge_p should equal 'a[]][-]z'
+			The variable input should match pattern "${ge_p}"
+		End
+
+		It '! と ^ を照合記号のブラケット式にして case パターンで一致させる'
+			input='a!^z' ge_p=''
+			When call sx_glob_esc ge_p "$input" '!^'
+			The status should be success
+			The variable ge_p should equal 'a[[.!.]][[.^.]]z'
+			The variable input should match pattern "${ge_p}"
+		End
 	End
 
 	Describe '正常系: case パターン内でのリテラルマッチ'

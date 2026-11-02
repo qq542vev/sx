@@ -331,6 +331,7 @@ __sx_m4_gen_byte(1)dnl
 # 通常部分で注意が必要な文字。
 define([|M_GLOB_SP_NORM|], [|[|*?[\|]|])dnl
 define([|M_GLOB_SP_NORM_ARGS|], [|[|'*' '?' '[' '\'|]|])dnl
+define([|M_GLOB_SP_NORM_ESC_ARGS|], [|[|'[*]' '[?]' '[[]' '[\\]'|]|])dnl
 # ブラケット式の内側で、位置や組合せによって注意が必要な文字。
 define([|M_GLOB_SP_BRKT|], [|[|!-.:=[\]^|]|])dnl
 define([|M_GLOB_SP_BRKT_ARGS|], [|[|'!' '-' '.' ':' '=' '[' '\' ']' '^'|]|])dnl
