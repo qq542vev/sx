@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_glob_bracket __sx_str_sub __sx_str_title_cb __sx_str_tr|])dnl
+M_REQUIRE([|__sx_glob_bracket __sx_str_sub __sx_str_title_cb __sx_str_tr0|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する（内部用）
@@ -8,7 +8,7 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   sx_str_title の内部実装。引数チェックは行わない。
-##   sx_str_tr で一括小文字化した後、セパレータ+小文字のペアを
+##   __sx_str_tr0 で一括小文字化した後、セパレータ+小文字のペアを
 ##   sx_str_sub のコールバックモードで検出して大文字化する。
 ##   区切り集合が英字を含む場合は、元文字列の各文字と直前の文字から変換を決める。
 ##   これにより小文字化による境界の消失と、隣接する境界の取りこぼしを避ける。
@@ -29,7 +29,7 @@ __sx_str_title() {
 	esac
 
 	__sx_glob_bracket Q_gs "${3}"
-	__sx_str_tr Q_tmp: "${2-}" "M_STR_UPPER()" "M_STR_LOWER()"
+	__sx_str_tr0 Q_tmp: "${2-}" "M_STR_UPPER()" '' M_STR_LOWER_ARGS()
 	__sx_str_sub Q_tmp: "${3%%"${3#?}"}${Q_tmp}" "${Q_gs}[M_STR_LOWER()]" __sx_str_title_cb '' "$((M_STR_SUB_GLOB | M_STR_SUB_CB))"
 
 	M_VAR_SET([|${1}|], [|${Q_tmp#?}|])

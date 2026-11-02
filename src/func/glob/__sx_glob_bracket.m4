@@ -36,27 +36,27 @@ __sx_glob_bracket() {
 		Q_pre=']'
 	esac
 
-	case "${2}" in *'\'*)
-		Q_suf='\\'
+	case "${2}" in
+		*'\'*) Q_suf='\\';;
+		*) Q_suf=;;
 	esac
 
 	# [ は = . : より後ろへ移し、括弧式の途中にも [= [. [: を作らない。
 	for Q_c in = . : '[' '!' '^' -; do
 		case "${2}" in *"${Q_c}"*)
-			Q_suf="${Q_suf-}${Q_c}"
+			Q_suf="${Q_suf}${Q_c}"
 		esac
 	done
 
 	# 削除用の固定括弧式も、[ を = . : より後ろへ置いて特殊構文を避ける。
 	__sx_str_sub Q_rest: "${2}" '[]\\=.:[!^-]' '' '' M_STR_SUB_GLOB
 
-	M_STR_WRAP([|Q_rest|], [|"${Q_pre-}"|], [|"${Q_suf-}"|])
+	M_STR_WRAP([|Q_rest|], [|"${Q_pre-}"|], [|"${Q_suf}"|])
 
-	case "${Q_rest}" in '!-' | '^-' | '!^-')
-		Q_rest="-${Q_rest%-}"
+	case "${Q_rest}" in
+		'!-' | '^-' | '!^-') M_VAR_SET([|${1}|], [|[-${Q_rest%-}]|]);;
+		*) M_VAR_SET([|${1}|], [|[${Q_rest}]|]);;
 	esac
-
-	M_VAR_SET([|${1}|], [|[${Q_rest}]|])
 
 	unset CLEANUP
 }
