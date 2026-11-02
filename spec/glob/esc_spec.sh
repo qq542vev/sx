@@ -2,64 +2,88 @@
 
 eval "$(shellspec - -c) exit 1"
 
-Describe 'sx_glob_escape'
-	sxtest_load ./build/modules/sx_glob_escape.sh
+Describe 'sx_glob_esc'
+	sxtest_load ./build/modules/sx_glob_esc.sh
 
 	Describe '正常系: 各特殊文字のエスケープ'
 		It '* を [*] にエスケープする'
-			When call sx_glob_escape result 'a*b'
+			When call sx_glob_esc result 'a*b'
 			The variable result should equal 'a[*]b'
 		End
 
 		It '? を [?] にエスケープする'
-			When call sx_glob_escape result 'a?b'
+			When call sx_glob_esc result 'a?b'
 			The variable result should equal 'a[?]b'
 		End
 
 		It '[ を [[] にエスケープする'
-			When call sx_glob_escape result 'a[b'
+			When call sx_glob_esc result 'a[b'
 			The variable result should equal 'a[[]b'
 		End
 
 		It '] はエスケープ不要（そのまま）'
-			When call sx_glob_escape result 'a]b'
+			When call sx_glob_esc result 'a]b'
 			The variable result should equal 'a]b'
+		End
+
+		It 'バックスラッシュをブラケット式にエスケープする'
+			When call sx_glob_esc result 'a\b'
+			The status should be success
+			The variable result should equal 'a[\\]b'
+		End
+
+		It '末尾のバックスラッシュを保持する'
+			When call sx_glob_esc result 'abc\'
+			The status should be success
+			The variable result should equal 'abc[\\]'
+		End
+
+		It '連続するバックスラッシュを一文字ずつエスケープする'
+			When call sx_glob_esc result '\\'
+			The status should be success
+			The variable result should equal '[\\][\\]'
 		End
 	End
 
 	Describe '正常系: 特殊文字を含まない文字列'
 		It '英数字のみはそのまま'
-			When call sx_glob_escape result 'hello'
+			When call sx_glob_esc result 'hello'
 			The variable result should equal 'hello'
 		End
 
 		It '空文字列は空のまま'
-			When call sx_glob_escape result ''
+			When call sx_glob_esc result ''
 			The variable result should equal ''
 		End
 	End
 
 	Describe '正常系: 複合パターン'
 		It '複数の特殊文字を同時にエスケープする'
-			When call sx_glob_escape result '*?['
+			When call sx_glob_esc result '*?['
 			The variable result should equal '[*][?][[]'
 		End
 
 		It '特殊文字と通常文字の混合'
-			When call sx_glob_escape result 'a*b?c[d'
+			When call sx_glob_esc result 'a*b?c[d'
 			The variable result should equal 'a[*]b[?]c[[]d'
 		End
 
 		It '特殊文字のみの文字列'
-			When call sx_glob_escape result '***'
+			When call sx_glob_esc result '***'
 			The variable result should equal '[*][*][*]'
+		End
+
+		It 'バックスラッシュと他の特殊文字を同時にエスケープする'
+			When call sx_glob_esc result '\*?\['
+			The status should be success
+			The variable result should equal '[\\][*][?][\\][[]'
 		End
 	End
 
 	Describe '正常系: case パターン内でのリテラルマッチ'
 		It 'エスケープした文字列を case パターンでリテラルマッチできる'
 			input='f*o' ge_p=''
-			When call sx_glob_escape ge_p "$input"
+			When call sx_glob_esc ge_p "$input"
 			The status should be success
 			The variable input should match pattern "${ge_p}"
 			unset ge_p
@@ -67,7 +91,7 @@ Describe 'sx_glob_escape'
 
 		It 'エスケープなしの glob 文字を含む文字列をリテラルマッチできる'
 			input='*?[abc]' ge_p=''
-			When call sx_glob_escape ge_p "$input"
+			When call sx_glob_esc ge_p "$input"
 			The status should be success
 			The variable input should match pattern "${ge_p}"
 			unset ge_p
@@ -75,7 +99,23 @@ Describe 'sx_glob_escape'
 
 		It 'エスケープされたパターンは glob として解釈されない'
 			probe='foo' ge_p=''
-			When call sx_glob_escape ge_p 'f*o'
+			When call sx_glob_esc ge_p 'f*o'
+			The status should be success
+			The variable probe should not match pattern "${ge_p}"
+			unset ge_p
+		End
+
+		It 'バックスラッシュを含む元の文字列とリテラルマッチできる'
+			input='\*?\[' ge_p=''
+			When call sx_glob_esc ge_p "$input"
+			The status should be success
+			The variable input should match pattern "${ge_p}"
+			unset ge_p
+		End
+
+		It 'バックスラッシュを省いた別の文字列には一致しない'
+			probe=ab ge_p=''
+			When call sx_glob_esc ge_p 'a\b'
 			The status should be success
 			The variable probe should not match pattern "${ge_p}"
 			unset ge_p
@@ -85,7 +125,7 @@ Describe 'sx_glob_escape'
 	Describe '異常系'
 		It '読み取り専用変数に対して EX_NOPERM を返す'
 			readonly MYRO_GE='const'
-			When call sx_glob_escape MYRO_GE 'abc'
+			When call sx_glob_esc MYRO_GE 'abc'
 			The status should equal 77
 		End
 	End
@@ -93,7 +133,7 @@ Describe 'sx_glob_escape'
 	Describe '高速モード (SX_CFG_SKIP_CHK=1)'
 		It 'チェックをバイパスして結果を返す'
 			SX_CFG_SKIP_CHK=1
-			When call sx_glob_escape result 'a*b?c[d'
+			When call sx_glob_esc result 'a*b?c[d'
 			The variable result should equal 'a[*]b[?]c[[]d'
 		End
 	End
