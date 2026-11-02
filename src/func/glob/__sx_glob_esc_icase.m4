@@ -17,7 +17,7 @@ M_RENAME_QI([|dnl
 ##    0  成功 (SX_EX_OK)
 define([|CLEANUP|], [|Q_bind Q_str Q_extra Q_rem Q_char|])dnl
 __sx_glob_esc_icase() {
-	case "${3:+X}" in '')
+	case "${3:+${2-}}" in *["${3-}"]*) ;; *)
 		__sx_str_tr0 "${1}:" "${2-}" M_SH_QUOTE(M_GLOB_SP_NORM[||]M_STR_ALPHA) '' \
 			M_GLOB_SP_NORM_ESC_ARGS \
 			__sx_m4_gen_glob_esc_icase_args(0) \
