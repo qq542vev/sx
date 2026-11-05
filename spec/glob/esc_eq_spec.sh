@@ -19,6 +19,18 @@ Describe 'sx_glob_esc_eq'
     End
   End
 
+  It '等価クラス化する文字が入力になくても glob 特殊文字をエスケープする'
+    When call sx_glob_esc_eq result '*' a
+    The status should be success
+    The variable result should equal '[*]'
+  End
+
+  It '追加エスケープ文字が入力になくても glob 特殊文字をエスケープする'
+    When call sx_glob_esc_eq result '*' '' +
+    The status should be success
+    The variable result should equal '[*]'
+  End
+
   It '等価クラス化を既定の glob エスケープと追加エスケープより優先する'
     When call sx_glob_esc_eq result '*!' '*!' '*!'
     The status should be success
