@@ -75,7 +75,6 @@ M4
 
   Context '親と共有するコールバックの名前空間'
     Parameters
-      __sx_str_escape_cb str_escape cb_se
       __sx_str_sub_isep_adapt str_sub cb
     End
     It "$1 が親 $2 の名前空間を使うこと"

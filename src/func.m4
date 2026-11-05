@@ -283,7 +283,6 @@ M_UNIT([|sx_str_eq|], [|src/func/str/sx_str_eq.m4|])dnl
 M_UNIT([|__sx_str_eq|], [|src/func/str/__sx_str_eq.m4|])dnl
 M_UNIT([|sx_str_escape|], [|src/func/str/sx_str_escape.m4|])dnl
 M_UNIT([|__sx_str_escape|], [|src/func/str/__sx_str_escape.m4|])dnl
-M_UNIT([|__sx_str_escape_cb|], [|src/func/str/__sx_str_escape_cb.m4|])dnl
 M_UNIT([|__sx_str_escape_all|], [|src/func/str/__sx_str_escape_all.m4|])dnl
 M_UNIT([|sx_str_etrim|], [|src/func/str/sx_str_etrim.m4|])dnl
 M_UNIT([|__sx_str_etrim|], [|src/func/str/__sx_str_etrim.m4|])dnl
