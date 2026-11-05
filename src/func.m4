@@ -284,6 +284,7 @@ M_UNIT([|__sx_str_eq|], [|src/func/str/__sx_str_eq.m4|])dnl
 M_UNIT([|sx_str_escape|], [|src/func/str/sx_str_escape.m4|])dnl
 M_UNIT([|__sx_str_escape|], [|src/func/str/__sx_str_escape.m4|])dnl
 M_UNIT([|__sx_str_escape_cb|], [|src/func/str/__sx_str_escape_cb.m4|])dnl
+M_UNIT([|__sx_str_escape_all|], [|src/func/str/__sx_str_escape_all.m4|])dnl
 M_UNIT([|sx_str_etrim|], [|src/func/str/sx_str_etrim.m4|])dnl
 M_UNIT([|__sx_str_etrim|], [|src/func/str/__sx_str_etrim.m4|])dnl
 M_UNIT([|sx_str_ew|], [|src/func/str/sx_str_ew.m4|])dnl
@@ -417,6 +418,8 @@ M_UNIT([|sx_glob_esc|], [|src/func/glob/sx_glob_esc.m4|])dnl
 M_UNIT([|__sx_glob_esc|], [|src/func/glob/__sx_glob_esc.m4|])dnl
 M_UNIT([|sx_glob_esc_icase|], [|src/func/glob/sx_glob_esc_icase.m4|])dnl
 M_UNIT([|__sx_glob_esc_icase|], [|src/func/glob/__sx_glob_esc_icase.m4|])dnl
+M_UNIT([|sx_glob_esc_eq|], [|src/func/glob/sx_glob_esc_eq.m4|])dnl
+M_UNIT([|__sx_glob_esc_eq|], [|src/func/glob/__sx_glob_esc_eq.m4|])dnl
 M_UNIT([|sx_arr_has|], [|src/func/arr/sx_arr_has.m4|])dnl
 M_UNIT([|__sx_arr_has|], [|src/func/arr/__sx_arr_has.m4|])dnl
 M_UNIT([|sx_arr_is_spec|], [|src/func/arr/sx_arr_is_spec.m4|])dnl
