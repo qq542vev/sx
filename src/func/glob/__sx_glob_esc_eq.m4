@@ -15,7 +15,7 @@ M_RENAME_QI([|dnl
 ##
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
-define([|CLEANUP|], [|Q_bind Q_str Q_eq Q_extra Q_from Q_rem Q_char|])dnl
+define([|CLEANUP|], [|Q_bind Q_str Q_eq Q_extra Q_from Q_char|])dnl
 __sx_glob_esc_eq() {
 	case "${3:+${2-}}" in '' | *[!"${3-}"]*) ;; *)
 		__sx_str_escape_all "${1}" "${2}" '[[=' '=]]'

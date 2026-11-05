@@ -12,7 +12,7 @@ M_RENAME_QI([|dnl
 ##
 ## 終了ステータス:
 ##    0  成功
-define([|CLEANUP|], [|Q_bind Q_str Q_extra Q_rem Q_char|])dnl
+define([|CLEANUP|], [|Q_bind Q_str Q_extra Q_from Q_char|])dnl
 __sx_glob_esc() {
 	case "${3:+${2-}}" in *["${3-}"]*) ;; *)
 		__sx_str_tr0 "${1}:" "${2-}" M_SH_QUOTE(M_GLOB_SP_NORM) '' M_GLOB_SP_NORM_ESC_ARGS "${@}"
@@ -22,13 +22,13 @@ __sx_glob_esc() {
 	Q_bind="${1}:"
 	Q_str="${2-}"
 	Q_extra="${3}"
-	Q_rem="${Q_extra}"
+	Q_from=M_SH_QUOTE(M_GLOB_SP_NORM)"${Q_extra}"
 
 	set --
 
-	while M_STR_NE([|"${Q_rem}"|], [|''|]); do
-		Q_char="${Q_rem%%"${Q_rem#?}"}"
-		Q_rem="${Q_rem#?}"
+	while M_STR_NE([|"${Q_extra}"|], [|''|]); do
+		Q_char="${Q_extra%%"${Q_extra#?}"}"
+		Q_extra="${Q_extra#?}"
 
 		case "${Q_char}" in
 			'!' | '^') set -- "${@}" "[[.${Q_char}.]]";;
@@ -36,7 +36,7 @@ __sx_glob_esc() {
 		esac
 	done
 
-	__sx_str_tr0 "${Q_bind}" "${Q_str}" M_SH_QUOTE(M_GLOB_SP_NORM)"${Q_extra}" '' M_GLOB_SP_NORM_ESC_ARGS "${@}"
+	__sx_str_tr0 "${Q_bind}" "${Q_str}" "${Q_from}" '' M_GLOB_SP_NORM_ESC_ARGS "${@}"
 	unset CLEANUP
 }
 |], [|glob_esc|])dnl
