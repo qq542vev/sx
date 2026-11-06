@@ -20,7 +20,7 @@ define([|CLEANUP|], [|Q_slen Q_plen Q_needed Q_cnt Q_rep Q_fill Q_type|])dnl
 __sx_str_pad() {
 	set -- "${1}" "${2-}" "${3-0}" "${4- }"
 
-	case "${4:+${3}}" in '' | 0 | [+-]0*)
+	case "${4:+${3}}" in '' | 0 | [+-]0)
 		M_VAR_SET([|${1}|], [|${2}|])
 		return
 	esac
@@ -44,9 +44,15 @@ __sx_str_pad() {
 	esac
 
 	"__sx_num_sub_${Q_type}" Q_needed "${Q_needed}" "${Q_slen}"
-	"__sx_num_divceil_${Q_type}" Q_cnt "${Q_needed}" "${Q_plen}"
-	__sx_str_rep Q_rep "${4}" "${Q_cnt}"
-	__sx_str_substr Q_fill "${Q_rep}" 0 "${Q_needed}"
+
+	case "${4}" in
+		?) __sx_str_rep Q_fill "${4}" "${Q_needed}";;
+		*)
+			"__sx_num_divceil_${Q_type}" Q_cnt "${Q_needed}" "${Q_plen}"
+			__sx_str_rep Q_rep "${4}" "${Q_cnt}"
+			__sx_str_substr Q_fill "${Q_rep}" 0 "${Q_needed}"
+			;;
+	esac
 
 	case "${3}" in
 		-*) M_VAR_SET([|${1}|], [|${2}${Q_fill}|]);;

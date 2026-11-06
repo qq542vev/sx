@@ -18,5 +18,4 @@ M_REQUIRE([|__sx_cfg_is_valid|])dnl
 
 sx_cfg_is_valid() {
 	__sx_cfg_is_valid "${@}" || return
-	return
 }

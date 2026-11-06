@@ -67,8 +67,6 @@ __sx_arg_map() {
 
 			set -- "${Q_sts-${1}}" "${2}" "${3}" "${Q_fmt}" "${5}"
 		esac
-
-		unset Q_ret Q_fmt Q_sts
 	done
 
 	unset CLEANUP

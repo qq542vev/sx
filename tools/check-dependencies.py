@@ -20,6 +20,10 @@ RW_LITERAL_NAMES = re.compile(
 )
 DYNAMIC_FUNCTION = re.compile(r'"(__sx_num_[a-z0-9_]+_)\$\{')
 DYNAMIC_CONSTANT = re.compile(r"(?<![A-Za-z0-9_])(SX_[A-Z0-9_]*)\$\{")
+DYNAMIC_CONSTS = re.compile(
+    r"M_DYNAMIC_CONSTS\(\[\|(?P<prefix>SX_[A-Z0-9_]+)\|\], "
+    r"\[\|(?P<suffixes>[A-Z][A-Z0-9_]*(?: [A-Z][A-Z0-9_]*)*)\|\]\)"
+)
 CFG_CHECK = re.compile(r"M_CFG_CHECK\(\[\|([A-Za-z0-9_]+)\|\]\)")
 CFG_EXEMPT = {"sx_cfg_is_valid", "sx_cfg_set"}
 
@@ -37,6 +41,32 @@ def inventory():
             raise ValueError(f"提供名が重複しています: {name}")
         owners[name] = path
     return owners
+
+
+def dynamic_constant_dependencies(path, code, owners):
+    """有限動的定数の依存メタ情報を検証して接頭辞ごとの名前を返す。"""
+    source = path.read_text(encoding="utf-8")
+    declarations = list(DYNAMIC_CONSTS.finditer(source))
+    if source.count("M_DYNAMIC_CONSTS(") != len(declarations):
+        raise ValueError(f"動的定数の依存メタ情報の書式が不正です: {path}")
+    dynamic_prefixes = set(DYNAMIC_CONSTANT.findall(code))
+    declarations_by_prefix = {}
+    for declaration in declarations:
+        prefix = declaration.group("prefix")
+        suffixes = declaration.group("suffixes").split()
+        if (not prefix.endswith("_") or prefix in declarations_by_prefix
+                or len(suffixes) != len(set(suffixes))):
+            raise ValueError(f"動的定数の依存メタ情報が不正です: {path}: {prefix}")
+        if prefix not in dynamic_prefixes:
+            raise ValueError(f"未使用の動的定数依存メタ情報です: {path}: {prefix}")
+        names = {prefix + suffix for suffix in suffixes}
+        missing = names - set(owners)
+        if missing:
+            raise ValueError(
+                f"動的定数の依存先に提供元がありません: {path}: {sorted(missing)}"
+            )
+        declarations_by_prefix[prefix] = names
+    return declarations_by_prefix
 
 
 def references(path, owners, generated=False):
@@ -59,18 +89,22 @@ def references(path, owners, generated=False):
         if not matches:
             raise ValueError(f"動的な関数名の提供元がありません: {path}: {prefix}")
         refs.update(matches)
-    for prefix in DYNAMIC_CONSTANT.findall(code):
+    declared_constants = dynamic_constant_dependencies(path, code, owners)
+    for prefix in set(DYNAMIC_CONSTANT.findall(code)):
         # 例: SX_NUM_I${...}_MAX、SX_CFG_META_DEF_${...}。
-        matches = {name for name in names if name.startswith(prefix)}
-        if prefix == "SX_NUM_I":
+        if prefix in declared_constants:
+            matches = declared_constants[prefix]
+        else:
+            matches = {name for name in names if name.startswith(prefix)}
+        if prefix == "SX_NUM_I" and prefix not in declared_constants:
             fields = set(re.findall(r"SX_NUM_I\$\{[^{}]+\}_(WLEN|QM|ZR|MAX|MIN)", code))
             matches = {name for name in matches
                        if name.startswith(("SX_NUM_I32_", "SX_NUM_I64_", "SX_NUM_I128_"))
                        and name.rsplit("_", 1)[-1] in fields}
-        elif prefix == "SX_NUM_BASE":
+        elif prefix == "SX_NUM_BASE" and prefix not in declared_constants:
             fields = set(re.findall(r"SX_NUM_BASE\$\{[^{}]+\}_(PREFIX|CHARS)", code))
             matches = {name for name in matches if name.rsplit("_", 1)[-1] in fields}
-        elif prefix == "SX_CFG_":
+        elif prefix == "SX_CFG_" and prefix not in declared_constants:
             matches = {name for name in matches if owners[name].parent == ROOT / "src/var/cfg"}
         if not matches:
             raise ValueError(f"動的な定数名の提供元がありません: {path}: {prefix}")

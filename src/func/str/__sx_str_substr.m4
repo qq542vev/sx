@@ -15,29 +15,30 @@ M_RENAME_QI([|dnl
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 
-define([|CLEANUP|], [|Q_str Q_off Q_len Q_off_abs Q_len_abs Q_qm Q_type|])dnl
+define([|CLEANUP|], [|Q_str Q_slen Q_off Q_len Q_off_abs Q_len_abs Q_qm Q_type|])dnl
 
 __sx_str_substr() {
-	case "${2-}" in '')
+	case "${2:+X${4-}}" in '' | X0 | X[+-]0)
 		M_VAR_SET([|${1}|])
 		return
 	esac
 
-	case "${4-}" in 0 | [+-]0)
-		M_VAR_SET([|${1}|])
+	case "${3:+${4:+X}${3}}" in '' | 0 | [+-]0)
+		M_VAR_SET([|${1}|], [|${2}|])
 		return
 	esac
 
 	Q_str="${2-}"
-	Q_off="${3:-0}"
-	Q_len="${4:-${#Q_str}}"
+	Q_slen="${#Q_str}"
+	Q_off="${3}"
+	Q_len="${4-${Q_slen}}"
 
 	# 元の符号は保持し、絶対値と補正後の文字数は _abs 側で管理する。
 	Q_off_abs="${Q_off#[+-]}"
 	Q_len_abs="${Q_len#[+-]}"
 
 	# 絶対値で判定し、負の最小値も多倍長演算に回す。
-	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#Q_str}" "${Q_off_abs}" "${Q_len_abs}"; then
+	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_slen}" "${Q_off_abs}" ${4:+"${Q_len_abs}"}; then
 		Q_type=arith
 	else
 		Q_type=nat0
@@ -46,7 +47,7 @@ __sx_str_substr() {
 	case "${Q_off}" in
 		0 | [+-]0) ;;
 		-*)
-			"__sx_num_cmp_${Q_type}" "${Q_off_abs}" "${#Q_str}" || case "${?}${4-}" in
+			"__sx_num_cmp_${Q_type}" "${Q_off_abs}" "${Q_slen}" || case "${?}${4-}" in
 				1*)
 					__sx_str_qm Q_qm "${Q_off_abs}"
 					Q_str="${Q_str#"${Q_str%${Q_qm}}"}"
@@ -62,7 +63,7 @@ __sx_str_substr() {
 			esac
 			;;
 		*)
-			"__sx_num_cmp_${Q_type}" "${Q_off_abs}" "${#Q_str}" || case "${?}" in
+			"__sx_num_cmp_${Q_type}" "${Q_off_abs}" "${Q_slen}" || case "${?}" in
 				1)
 					__sx_str_qm Q_qm "${Q_off_abs}"
 					Q_str="${Q_str#${Q_qm}}"
@@ -75,16 +76,16 @@ __sx_str_substr() {
 	"__sx_num_cmp_${Q_type}" "${Q_len_abs}" "${#Q_str}" || case "${?}${Q_len}" in
 		1-*)
 			__sx_str_qm Q_qm "${Q_len_abs}"
-			Q_str="${Q_str%${Q_qm}}"
+			M_VAR_SET([|${1}|], [|${Q_str%${Q_qm}}|])
 			;;
-		?-*) Q_str=;;
+		?-*) M_VAR_SET([|${1}|]);;
 		1*)
 			__sx_str_qm Q_qm "${Q_len_abs}"
-			Q_str="${Q_str%"${Q_str#${Q_qm}}"}"
+			M_VAR_SET([|${1}|], [|${Q_str%"${Q_str#${Q_qm}}"}|])
 			;;
+		*) M_VAR_SET([|${1}|], [|${Q_str}|]);;
 	esac
 
-	M_VAR_SET([|${1}|], [|${Q_str}|])
 	unset CLEANUP
 }
 |], [|str_substr|])dnl

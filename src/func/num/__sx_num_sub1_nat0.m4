@@ -12,7 +12,7 @@ M_RENAME_QI([|dnl
 
 __sx_num_sub1_nat0() {
 	case "${2}" in
-		${SX_SYS_NUM_QM}*) __sx_num_sub_nat0 "${1}" "${2}" 1;;
+		${SX_SYS_NUM_QM}?*) __sx_num_sub_nat0 "${1}" "${2}" 1;;
 		*) : "$((${1} = ${2} - 1))";;
 	esac
 }
