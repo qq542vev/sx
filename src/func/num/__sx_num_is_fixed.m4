@@ -19,6 +19,11 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_fixed() {
+	case "${IFS-}${*}" in *.*) ;; *)
+		__sx_num_is_int_base 10 "${@}" || return
+		return
+	esac
+
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in *.*)
 			__sx_str_is_digit "${Q_arg#*.}"
