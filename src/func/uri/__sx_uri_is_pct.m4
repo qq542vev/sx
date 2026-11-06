@@ -17,6 +17,10 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_uri_is_pct() {
+	case "${IFS-}${*}" in *%*) ;; *)
+		return 0
+	esac
+
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in *%[!"M_STR_XDIGIT()"]* | *%?[!"M_STR_XDIGIT()"]* | *% | *%?)
 			unset CLEANUP

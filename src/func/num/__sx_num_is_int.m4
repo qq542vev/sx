@@ -17,6 +17,11 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_int() {
+	case "${IFS-}${*}" in *[+-]*) ;; *)
+		__sx_num_is_nat0 "${@}" || return
+		return
+	esac
+
 	for Q_arg in "${@}"; do
 		__sx_num_is_nat0 "${Q_arg#[+-]}" || {
 			unset CLEANUP
