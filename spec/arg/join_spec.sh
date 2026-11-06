@@ -3,6 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_arg_join'
+  Include ./spec/support/run.sh
   sxtest_load ./build/modules/sx_arg_join.sh
 
   It '引数個数に安全範囲の上限を適用しないこと'
@@ -44,6 +45,53 @@ Describe 'sx_arg_join'
     When call sx_arg_join result "," "a b" "c'd" 'e"f'
     The status should be success
     The variable result should equal "a b,c'd,e\"f"
+  End
+
+  It 'IFSの先頭文字と区切り文字が一致する場合に結合できること'
+    with_ifs_colon() { IFS='::' "${@}"; }
+    When call with_ifs_colon sx_arg_join result ":" "a" "" "b"
+    The status should be success
+    The variable result should equal "a::b"
+  End
+
+  It 'IFSの先頭文字がパターン記号でも正しく結合できること'
+    with_ifs_pattern() { IFS='*?' "${@}"; }
+    When call with_ifs_pattern sx_arg_join result "*" "a" "b"
+    The status should be success
+    The variable result should equal "a*b"
+  End
+
+  It 'IFSが空で区切り文字も空の場合に結合できること'
+    with_ifs_empty() { IFS= "${@}"; }
+    When call with_ifs_empty sx_arg_join result "" "a" "" "b"
+    The status should be success
+    The variable result should equal "ab"
+  End
+
+  It 'IFSが1文字で区切り文字が空の場合は区切りなしで結合すること'
+    with_ifs_single_colon() { IFS=: "${@}"; }
+    When call with_ifs_single_colon sx_arg_join result "" "a" "b"
+    The status should be success
+    The variable result should equal "ab"
+  End
+
+  It 'IFSが同じ文字の繰り返しで区切り文字が空の場合は区切りなしで結合すること'
+    with_ifs_colon() { IFS='::' "${@}"; }
+    When call with_ifs_colon sx_arg_join result "" "a" "b"
+    The status should be success
+    The variable result should equal "ab"
+  End
+
+  It 'IFSが未設定で空白区切りの場合に結合できること'
+    sxtest_run result -- 'unset IFS; sx_arg_join result " " "a" "" "b"'
+    The variable result should equal "a  b"
+  End
+
+  It 'IFSの先頭文字と異なる区切り文字では指定どおり結合すること'
+    with_ifs_colon() { IFS='::' "${@}"; }
+    When call with_ifs_colon sx_arg_join result "/" "a" "b"
+    The status should be success
+    The variable result should equal "a/b"
   End
 
   It '結果変数が読み取り専用の場合に EX_NOPERM を返すこと'

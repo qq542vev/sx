@@ -17,6 +17,12 @@ __sx_arg_join() {
 	Q_out=
 	shift ${2+'2'}
 
+	case "${IFS+X${IFS:+Y}}:${Q_sep}" in X: | ': ' | XY:${IFS:+"${IFS%%"${IFS#?}"}"})
+		M_VAR_SET([|${Q_res}|], [|${*}|])
+		unset CLEANUP
+		return
+	esac
+
 	for Q_arg in "${@}"; do
 		M_STR_APPEND([|Q_out|], [|"${Q_sep}${Q_arg}"|])
 	done
