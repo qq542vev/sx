@@ -17,7 +17,11 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_arr_is_bind() {
-	__sx_var_is_bind "${@}" || return 1
+	__sx_var_is_bind "${@}" || return
+
+	case "${IFS-}${*}" in *@*) ;; *)
+		return
+	esac
 
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in *@*)
