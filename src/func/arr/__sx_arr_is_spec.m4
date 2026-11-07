@@ -13,6 +13,11 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_spec Q_rest Q_part|])dnl
 
 __sx_arr_is_spec() {
+	case "${IFS-}${*}" in *:*) ;; *)
+		__sx_num_is_int_base 10 "${@}" || return
+		return
+	esac
+
 	for Q_spec in "${@}"; do
 		case "${Q_spec}" in
 			*:*:*)
