@@ -19,6 +19,13 @@ define([|CLEANUP|], [|Q_left Q_suffix Q_del|])dnl
 __sx_str_splice() {
 	# 開始位置を先頭・末尾に収めた前半を取得する。
 	__sx_str_substr Q_left "${2-}" 0 "${3:-0}"
+
+	case "${4-}" in '')
+		M_VAR_SET([|${1}|], [|${Q_left}${5-}|])
+		unset CLEANUP
+		return
+	esac
+
 	Q_suffix="${2:+"${2#"${Q_left}"}"}"
 
 	# 元文字列を基準に削除範囲を求め、先頭より前の分も長さに反映する。

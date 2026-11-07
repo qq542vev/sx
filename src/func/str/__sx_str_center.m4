@@ -47,13 +47,12 @@ __sx_str_center() {
 	"__sx_num_sub_${Q_type}" Q_needed "${Q_needed}" "${Q_slen}"
 	# Q_cnt は長い側の文字数。先に1を加算せず、切り上げ除算で求める。
 	"__sx_num_divceil_${Q_type}" Q_cnt "${Q_needed}" 2
+	"__sx_num_sub_${Q_type}" Q_rpad "${Q_needed}" "${Q_cnt}"
 
 	case "${3}" in
 		-*) Q_lpad="${Q_cnt}";;
-		*) "__sx_num_sub_${Q_type}" Q_lpad "${Q_needed}" "${Q_cnt}";;
+		*) Q_lpad="${Q_rpad}" Q_rpad="${Q_cnt}";;
 	esac
-
-	"__sx_num_sub_${Q_type}" Q_rpad "${Q_needed}" "${Q_lpad}"
 
 	case "${4:+X}" in X)
 		"__sx_num_divceil_${Q_type}" Q_cnt "${Q_cnt}" "${Q_llen}"
@@ -61,7 +60,7 @@ __sx_str_center() {
 	esac
 
 	case "${5}" in
-		"${4}") Q_rrep="${Q_lrep}";;
+		"${4}") Q_rrep="${Q_lrep-}";;
 		?*)
 			"__sx_num_divceil_${Q_type}" Q_cnt "${Q_rpad}" "${Q_rlen}"
 			__sx_str_rep Q_rrep "${5}" "${Q_cnt}"

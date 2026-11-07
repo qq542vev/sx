@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_NUM_BASE10_CHARS SX_NUM_BASE10_PREFIX SX_NUM_BASE16_CHARS SX_NUM_BASE16_PREFIX SX_NUM_BASE8_CHARS SX_NUM_BASE8_PREFIX|])dnl
+M_REQUIRE([||])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_num_is_nat1_base - 指定された基数で1以上の自然数か確認する（内部用）
@@ -12,10 +12,12 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_arg Q_pfix Q_char|])dnl
 
 __sx_num_is_nat1_base() {
-	eval "
-		Q_pfix=\"\${SX_NUM_BASE${1}_PREFIX}\"
-		Q_char=\"\${SX_NUM_BASE${1}_CHARS}\"
-	"
+	case "${1}" in
+		8) Q_pfix=M_SH_QUOTE(M_NUM_BASE8_PREFIX) Q_char=M_SH_QUOTE(M_NUM_BASE8_CHARS);;
+		10) Q_pfix=M_SH_QUOTE(M_NUM_BASE10_PREFIX) Q_char=M_SH_QUOTE(M_NUM_BASE10_CHARS);;
+		16) Q_pfix=M_SH_QUOTE(M_NUM_BASE16_PREFIX) Q_char=M_SH_QUOTE(M_NUM_BASE16_CHARS);;
+	esac
+
 	shift
 
 	for Q_arg in "${@}"; do

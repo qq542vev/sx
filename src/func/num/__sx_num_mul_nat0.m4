@@ -28,10 +28,13 @@ __sx_num_mul_nat0() {
 	Q_safe=$((SX_SYS_NUM_MAX - SX_SYS_NUM_WLEN + 2))
 
 	for Q_b in "${@}"; do
-		case "${Q_b}" in 0)
-			Q_a=0
-			Q_endz=
-			break
+		case "${Q_b}" in
+			0)
+				Q_a=0
+				Q_endz=
+				break
+				;;
+			1) continue;;
 		esac
 
 		# 高速パス: 両因数が1語に収まればシェル算術で直接乗算

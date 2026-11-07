@@ -25,6 +25,13 @@ __sx_num_norm() {
 			*[Ee]*)
 				# 指数表記の展開
 				Q_mnt="${Q_in%%[Ee]*}"
+
+				# ゼロの仮数は指数によらずゼロ
+				case "${Q_mnt}" in *[1-9]*) ;; *)
+					__sx_var_ubind Q_bind "${Q_bind}" 0 || break
+					continue
+				esac
+
 				Q_dig="${Q_mnt%%.*}"
 
 				case "${Q_mnt}" in
@@ -36,7 +43,7 @@ __sx_num_norm() {
 				esac
 
 				Q_shift=$((${Q_in#*[Ee]} - Q_flen))
-					Q_dlen="${#Q_dig}"
+				Q_dlen="${#Q_dig}"
 
 				if M_NUM_LE([|0|], [|Q_shift|]); then
 					__sx_str_pad Q_in "${Q_dig}" "-$((Q_dlen + Q_shift))" 0
