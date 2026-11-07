@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_glob_bracket __sx_str_sub __sx_str_title_cb __sx_str_tr0|])dnl
+M_REQUIRE([|__sx_str_capital __sx_str_lower|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_title - 各単語の先頭を大文字、残りを小文字に変換する（内部用）
@@ -8,31 +8,39 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   sx_str_title の内部実装。引数チェックは行わない。
-##   __sx_str_tr0 で一括小文字化した後、セパレータ+小文字のペアを
-##   sx_str_sub のコールバックモードで検出して大文字化する。
-##   区切り集合が英字を含む場合は、元文字列の各文字と直前の文字から変換を決める。
-##   これにより小文字化による境界の消失と、隣接する境界の取りこぼしを避ける。
-##   両処理とも固定の回数上限を設けず、委譲先の多倍長対応を利用する。
+##   単語ごとのケース変換を内部の capital・lower 関数に委譲し、区切り文字は元のまま出力する。
 ##
 ## 終了ステータス:
 ##    0  成功
 
-define([|CLEANUP|], [|Q_tmp Q_gs Q_cb_sep|])dnl
+define([|CLEANUP|], [|Q_str Q_sep Q_out Q_tmp Q_conv|])dnl
 
 __sx_str_title() {
-	set -- "${1}" "${2-}" "${3:-M_STR_SPACE()}"
+	Q_str="${2-}"
+	Q_sep="${3:-M_STR_SPACE()}"
+	Q_out=
 
-	case "${3}" in *["M_STR_ALPHA()"]*)
-		Q_cb_sep="${3}" __sx_str_sub "${1}:" "${2}" '?' __sx_str_title_cb '' "$((M_STR_SUB_GLOB | M_STR_SUB_CB))"
-		unset CLEANUP
-		return
-	esac
+	while
+		Q_tmp="${Q_str%%["${Q_sep}"]*}"
 
-	__sx_glob_bracket Q_gs "${3}"
-	__sx_str_tr0 Q_tmp: "${2-}" "M_STR_UPPER()" '' M_STR_LOWER_ARGS()
-	__sx_str_sub Q_tmp: "${3%%"${3#?}"}${Q_tmp}" "${Q_gs}[M_STR_LOWER()]" __sx_str_title_cb '' "$((M_STR_SUB_GLOB | M_STR_SUB_CB))"
+		case "${Q_tmp}" in
+			[M_STR_ALPHA()]*) __sx_str_capital Q_conv "${Q_tmp}";;
+			*[M_STR_UPPER()]*) __sx_str_lower Q_conv "${Q_tmp}";;
+			*) Q_conv="${Q_tmp}";;
+		esac
 
-	M_VAR_SET([|${1}|], [|${Q_tmp#?}|])
+		case "${Q_str}" in *["${Q_sep}"]*)
+			Q_str="${Q_str#"${Q_tmp}"}"
+			M_STR_APPEND([|Q_out|], [|"${Q_conv}${Q_str%%"${Q_str#?}"}"|])
+			Q_str="${Q_str#?}"
+
+			continue
+		esac
+
+		break
+	do :; done
+
+	M_VAR_SET([|${1}|], [|${Q_out}${Q_conv}|])
 	unset CLEANUP
 }
 |], [|str_title|])dnl

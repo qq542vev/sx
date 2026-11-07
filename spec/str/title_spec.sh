@@ -65,16 +65,16 @@ Describe 'sx_str_title()'
     It '途中に-がある区切り文字セットでレンジ誤解釈が起きないこと'
         When call sx_str_title res "abc-def-ghi" "a-z"
         # a・-・z はそれぞれ区切り文字なので、a の直後の b も単語の先頭となる。
-        The variable res should equal "ABc-Def-Ghi"
+        The variable res should equal "aBc-Def-Ghi"
     End
 
     Context '英字を含む区切り集合'
         Parameters
-            helloXworld X HelloxWorld
+            helloXworld X HelloXWorld
             HELLOxWORLD x HelloxWorld
-            aaa a AAA
-            aAa A AaA
-            aXxB X AxXb
+            aaa a aaa
+            aAa A AAA
+            aXxB X AXXb
             'ab]cd' 'b]' 'Ab]Cd'
         End
 

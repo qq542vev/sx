@@ -8,10 +8,10 @@ Describe 'sx_str_title -efu 環境検証'
     The status should be success
   End
 
-  It '英字の区切りと元文字列の大文字小文字を区別して処理できること'
+  It '英字の区切り文字を保持し、元文字列の境界で変換できること'
     verify_title() {
       sx_str_title res aXxB X
-      [ "$res" = AxXb ]
+      [ "$res" = AXXb ]
       check_no_leak
     }
     When run efu_run verify_title

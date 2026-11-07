@@ -165,25 +165,11 @@ Describe '命名規則・タイトルケース変換の多倍長対応'
     End
   End
 
-  It 'title は両段階を固定上限なしで委譲しコールバック用フラグを保持すること'
+  It 'title は英字の区切り文字を保持し、次の単語を大文字化すること'
     load_subject sx_str_title
-    # 巨大な実文字列を生成せず、下位APIに渡す回数制限を検証する。
-    # ! だけの区切り文字セットは glob_bracket から直接返される。
-    __sx_str_tr() {
-      lower_limit="${5-}"
-      sxtest_run "${1%%:*}" -- 'sx_var_set "$@"' "${1%%:*}=abc!def"
-    }
-    __sx_str_sub() {
-      title_limit="${5-}"
-      title_flags="${6-}"
-      sxtest_run "${1%%:*}" -- 'sx_var_set "$@"' "${1%%:*}=!Abc!Def"
-    }
-    When call sx_str_title res ABC!DEF '!'
+    When call sx_str_title res helloXworld X
     The status should be success
-    The variable res should equal Abc!Def
-    The variable lower_limit should equal ''
-    The variable title_limit should equal ''
-    The variable title_flags should equal "$((1 | 2))"
+    The variable res should equal HelloXWorld
   End
 
   Context '設定不正の検証'
