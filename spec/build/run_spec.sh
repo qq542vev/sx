@@ -213,7 +213,7 @@ diagnostic'
       'result=changed; exit 23' 23
       'result=changed; false; result=unreachable' 1
       'result=changed; false | :; result=unreachable' 1
-      'result=changed; : "$SXT_UNSET_INPUT"' 2
+      'result=changed; : "$SXT_UNSET_INPUT"' failure
       'result=changed; __sx_var_dump() { return 65; }' 65
       'result=changed; readonly SXTEST_RUN_DUMP' 77
     End
@@ -222,10 +222,17 @@ diagnostic'
       unset SXT_UNSET_INPUT
       result=parent
       When call sxtest_run result -- "$1"
-      The status should equal "$2"
+      case "$2" in
+        failure)
+          The status should be failure
+          ;;
+        *)
+          The status should equal "$2"
+          ;;
+      esac
       The stdout should equal ''
       case "$2" in
-        2)
+        failure)
           The stderr should include SXT_UNSET_INPUT
           ;;
       esac

@@ -23,18 +23,18 @@ sxtest_run() {
 			shift
 
 			case "${SXTEST_RUN_STEP}" in
-				var)
+				(var)
 					case "${SXTEST_RUN_ARG}" in
 						--) SXTEST_RUN_STEP=cmd; continue;;
 						*=*) set -- "${@}" "${SXTEST_RUN_ARG}";;
-						*) SXTEST_RUN_NAMES="${SXTEST_RUN_NAMES} '${SXTEST_RUN_ARG}'"
+						*) SXTEST_RUN_NAMES="${SXTEST_RUN_NAMES} '${SXTEST_RUN_ARG}'";;
 					esac
 
 					case "${SXTEST_RUN_ARG%%=*}" in '' | [0-9]* | *[!A-Za-z0-9_]* | SXTEST_*)
 						exit 64
 					esac
 					;;
-				cmd)
+				(cmd)
 					# SHELLSPEC_SHELLには起動オプションも含まれるため、意図的に分割する。
 					# shellcheck disable=SC2086
 					set -- "${@}" ${SHELLSPEC_SHELL} -efu -o pipefail -c "
@@ -50,7 +50,7 @@ sxtest_run() {
 					" "${SHELLSPEC_SHELL_TYPE}"
 					SXTEST_RUN_STEP=arg
 					;;
-				arg) set -- "${@}" "${SXTEST_RUN_ARG}";;
+				(arg) set -- "${@}" "${SXTEST_RUN_ARG}";;
 			esac
 		done
 
