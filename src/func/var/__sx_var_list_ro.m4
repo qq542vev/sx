@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_LF __sx_var_bind_init __sx_var_is_name __sx_var_is_ro __sx_var_is_set __sx_var_ubind|])dnl
+M_REQUIRE([|__sx_var_bind_init __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_list_ro - 読み取り専用変数の一覧を取得する（内部用）
@@ -10,38 +10,25 @@ M_RENAME_QI([|dnl
 ##   sx_var_list_ro の内部実装。
 ##   引数チェックは行わない。
 
-define([|CLEANUP|], [|Q_list Q_bind Q_mark Q_vn|])dnl
+define([|CLEANUP|], [|Q_bind Q_list Q_vars Q_alias|])dnl
 
 __sx_var_list_ro() {
-	Q_list="M_STR_LF()$(readonly -p)M_STR_LF()"
-	__sx_var_bind_init "${1-}"
-	Q_bind="${1-}"
-	Q_mark=
+	__sx_var_bind_init "${1}"
+	Q_bind="${1}"
+	Q_list=$(readonly -p)
+	Q_vars=
+	Q_alias="alias $(alias readonly 2>&-)" || Q_alias='unalias readonly'
 
-	while M_STR_HAS([|"${Q_list}"|], [|"M_STR_LF()readonly "|]); do
-		Q_list="${Q_list#*${SX_STR_LF}readonly }"
+	alias readonly=__sx_var_list_ro_cb
 
-		case "${Q_list}" in ["M_STR_ALUND()"]*)
-			case "${Q_bind:+X}" in '')
-				break
-			esac
+	eval "${Q_list}M_STR_LF()${Q_alias}"
+	eval __sx_var_ubind '""' '"${Q_bind}"' "${Q_vars}" || :
 
-			Q_vn="${Q_list%%[!"M_STR_WORD()"]*}"
+	unset CLEANUP
+}
 
-			if
-				__sx_var_is_name "${Q_vn}" &&
-				! __sx_var_is_set "Q_v${Q_vn}_" &&
-				__sx_var_is_ro "${Q_vn}"
-			then
-				__sx_var_ubind Q_bind "${Q_bind}" "${Q_vn}"
-
-				eval "Q_v${Q_vn}_="
-				M_STR_APPEND([|Q_mark|], [|"Q_v${Q_vn}_ "|])
-			fi
-		esac
-	done
-
-	eval unset CLEANUP "${Q_mark}"
+__sx_var_list_ro_cb() {
+	M_STR_APPEND([|Q_vars|], [|" ${1%%=*}"|])
 }
 |], [|var_list_ro|])dnl
 popdef([|CLEANUP|])dnl
