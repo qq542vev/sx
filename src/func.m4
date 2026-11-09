@@ -24,6 +24,8 @@ M_UNIT([|sx_fn_anon|], [|src/func/fn/sx_fn_anon.m4|])dnl
 M_UNIT([|__sx_fn_anon|], [|src/func/fn/__sx_fn_anon.m4|])dnl
 M_UNIT([|sx_util_eval|], [|src/func/util/sx_util_eval.m4|])dnl
 M_UNIT([|__sx_util_eval|], [|src/func/util/__sx_util_eval.m4|])dnl
+M_UNIT([|sx_arg_between|], [|src/func/arg/sx_arg_between.m4|])dnl
+M_UNIT([|__sx_arg_between|], [|src/func/arg/__sx_arg_between.m4|])dnl
 M_UNIT([|sx_arg_count|], [|src/func/arg/sx_arg_count.m4|])dnl
 M_UNIT([|__sx_arg_count|], [|src/func/arg/__sx_arg_count.m4|])dnl
 M_UNIT([|sx_arg_each|], [|src/func/arg/sx_arg_each.m4|])dnl
