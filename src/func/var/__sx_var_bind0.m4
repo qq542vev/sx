@@ -37,58 +37,67 @@ __sx_var_bind0() {
 
 				case "${Q_vn}" in
 					'')
-						Q_tmp="${#}"
 						if command shift "${Q_lim}" 2>&-; then
-							Q_bind="${Q_bind#*:}"
-							continue
+							Q_lim=0
+						else
+							__sx_num_sub_nat0 Q_lim "${Q_lim}" "${#}"
+							set --
 						fi
-
-						__sx_num_sub_nat0 Q_lim "${Q_lim}" "${Q_tmp}"
-						set --
 						;;
 					@*)
 						Q_tmp="${Q_vn#@}"
 
-						for Q_val in "${@}"; do
-							shift
-
+						if __sx_arg_bitween '' "${Q_lim}"; then
 							__sx_arr_push_raw "${Q_tmp}" "${Q_val}"
+							set --
+							__sx_num_sub_nat0 Q_lim "${Q_lim}" "${#}"
+						else
+							for Q_val in "${@}"; do
+								shift
 
-							case "${Q_lim}" in 1)
-								Q_bind="${Q_bind#*:}"
-								continue 2
-							esac
+								__sx_arr_push_raw "${Q_tmp}" "${Q_val}"
 
-							M_NUM_DECRM1([|Q_lim|])
-						done
+								M_NUM_DECRM1([|Q_lim|])
+
+								case "${Q_lim}" in 0)
+									break
+								esac
+							done
+						fi
 						;;
 					*)
-						Q_tmp=
+						if M_STR_MATCH([|"${Q_esc}${IFS- }"|], [|'0 '*|]) && __sx_arg_bitween '' "${Q_lim}"; then
+							eval "${Q_vn}=\"\${${Q_vn}-}\${${Q_vn}:+ }\${*}\""
+							set --
+							__sx_num_sub_nat0 Q_lim "${Q_lim}" "${#}"
+						else
+							Q_tmp=
 
-						for Q_val in "${@}"; do
-							shift
+							for Q_val in "${@}"; do
+								shift
 
-							case "${Q_esc}" in 1)
-								__sx_str_quote Q_val "${Q_val}"
-							esac
+								case "${Q_esc}" in 1)
+									__sx_str_quote Q_val "${Q_val}"
+								esac
 
-							Q_tmp="${Q_tmp} ${Q_val}"
+								Q_tmp="${Q_tmp} ${Q_val}"
 
-							case "${Q_lim}" in 1)
-								eval "${Q_vn}=\"\${${Q_vn}-}\${${Q_vn}:+ }\${Q_tmp# }\""
-								Q_bind="${Q_bind#*:}"
-								continue 2
-							esac
+								M_NUM_DECRM1([|Q_lim|])
 
-							M_NUM_DECRM1([|Q_lim|])
-						done
+								case "${Q_lim}" in 0)
+									break
+								esac
+							done
 
-						eval "${Q_vn}=\"\${${Q_vn}-}\${${Q_vn}:+ }\${Q_tmp# }\""
+							eval "${Q_vn}=\"\${${Q_vn}-}\${${Q_vn}:+ }\${Q_tmp# }\""
+						fi
 						;;
 				esac
 
-				Q_bind="${Q_lim}${Q_vn}:${Q_bind#*:}"
-				break
+				case "${Q_lim}" in
+					0) Q_bind="${Q_bind#*:}";;
+					*) Q_bind="${Q_lim}${Q_vn}:${Q_bind#*:}";;
+				esac
 				;;
 			["M_STR_ALUND()"]*:*) M_VAR_SET([|${Q_bind%%:*}|], [|${1}|]);&
 			:*)

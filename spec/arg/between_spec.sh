@@ -135,11 +135,18 @@ Describe 'sx_arg_between'
       The status should equal 64
     End
 
-    It '引数が1個だけの場合は 64 を返すこと'
+    It '数値境界が1個だけの場合は 64 を返すこと'
       When call sx_arg_between 1
       The status should equal 64
     End
 
+    It '空の境界が1個だけの場合も 64 を返すこと'
+      When call sx_arg_between ""
+      The status should equal 64
+    End
+  End
+
+  Describe '境界値の形式エラー (EX_USAGE: 64)'
     It 'min が負数の場合は 64 を返すこと'
       When call sx_arg_between -1 5 a
       The status should equal 64
@@ -160,23 +167,23 @@ Describe 'sx_arg_between'
       The status should equal 64
     End
 
-    It 'min > max の場合は 64 を返すこと'
+    It 'min > max の場合は範囲外として 1 を返すこと'
       When call sx_arg_between 3 2 a b
-      The status should equal 64
+      The status should equal 1
     End
   End
 
-  Describe '設定エラー (EX_CONFIG: 78)'
-    It 'SX_CFG_NUM_RANGE が不正なら78を返すこと'
+  Describe 'SX_CFG_NUM_RANGE を参照しないこと'
+    It 'SX_CFG_NUM_RANGE が不正でも判定すること'
       SX_CFG_NUM_RANGE=bogus
       When call sx_arg_between 1 2 a
-      The status should equal 78
+      The status should be success
     End
 
-    It 'SX_CFG_NUM_RANGE が未設定なら78を返すこと'
+    It 'SX_CFG_NUM_RANGE が未設定でも判定すること'
       unset SX_CFG_NUM_RANGE
       When call sx_arg_between 1 2 a
-      The status should equal 78
+      The status should be success
     End
   End
 

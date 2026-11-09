@@ -11,8 +11,8 @@ Describe 'sx_arg_between -efu 環境検証'
     The status should equal 1
   End
 
-  It '不正な境界を64で返す'
+  It '逆転した境界を範囲外として1で返す'
     When run efu_run sx_arg_between 3 2 "v1" "v2"
-    The status should equal 64
+    The status should equal 1
   End
 End
