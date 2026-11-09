@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_arr_push_raw __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_str_quote|])dnl
+M_REQUIRE([|__sx_arg_between __sx_arr_push_raw __sx_num_sub1_nat0 __sx_num_sub_nat0 __sx_str_quote|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_bind0 - 複数の値をバインド状態に従って順次割り当てる
@@ -47,29 +47,30 @@ __sx_var_bind0() {
 					@*)
 						Q_tmp="${Q_vn#@}"
 
-						if __sx_arg_bitween '' "${Q_lim}"; then
-							__sx_arr_push_raw "${Q_tmp}" "${Q_val}"
-							set --
+						if __sx_arg_between '' "${Q_lim}" "${@}"; then
+							__sx_arr_push_raw "${Q_tmp}" "${@}"
 							__sx_num_sub_nat0 Q_lim "${Q_lim}" "${#}"
+							set --
 						else
 							for Q_val in "${@}"; do
 								shift
 
 								__sx_arr_push_raw "${Q_tmp}" "${Q_val}"
 
-								M_NUM_DECRM1([|Q_lim|])
-
-								case "${Q_lim}" in 0)
+								case "${Q_lim}" in 1)
+									Q_lim=0
 									break
 								esac
+
+								M_NUM_DECRM1([|Q_lim|])
 							done
 						fi
 						;;
 					*)
-						if M_STR_MATCH([|"${Q_esc}${IFS- }"|], [|'0 '*|]) && __sx_arg_bitween '' "${Q_lim}"; then
+						if M_STR_MATCH([|"${Q_esc}${IFS- }"|], [|'0 '*|]) && __sx_arg_between '' "${Q_lim}" "${@}"; then
 							eval "${Q_vn}=\"\${${Q_vn}-}\${${Q_vn}:+ }\${*}\""
-							set --
 							__sx_num_sub_nat0 Q_lim "${Q_lim}" "${#}"
+							set --
 						else
 							Q_tmp=
 
@@ -82,11 +83,12 @@ __sx_var_bind0() {
 
 								Q_tmp="${Q_tmp} ${Q_val}"
 
-								M_NUM_DECRM1([|Q_lim|])
-
-								case "${Q_lim}" in 0)
+								case "${Q_lim}" in 1)
+									Q_lim=0
 									break
 								esac
+
+								M_NUM_DECRM1([|Q_lim|])
 							done
 
 							eval "${Q_vn}=\"\${${Q_vn}-}\${${Q_vn}:+ }\${Q_tmp# }\""
