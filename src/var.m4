@@ -9,3 +9,5 @@ M_UNIT([|SX_SYS_NUM_QM|], [|src/var/sys/SX_SYS_NUM_QM.m4|])dnl
 M_UNIT([|SX_SYS_NUM_ZR|], [|src/var/sys/SX_SYS_NUM_ZR.m4|])dnl
 M_UNIT([|SX_SYS_NUM_MAX|], [|src/var/sys/SX_SYS_NUM_MAX.m4|])dnl
 M_UNIT([|SX_SYS_NUM_MIN|], [|src/var/sys/SX_SYS_NUM_MIN.m4|])dnl
+M_UNIT([|SX_SYS_CACHE_VAR_RO_RAW|], [|src/var/sys/SX_SYS_CACHE_VAR_RO_RAW.m4|])dnl
+M_UNIT([|SX_SYS_CACHE_VAR_RO_NAMES|], [|src/var/sys/SX_SYS_CACHE_VAR_RO_NAMES.m4|])dnl
