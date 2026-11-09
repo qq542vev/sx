@@ -100,6 +100,11 @@ __sx_var_bind0() {
 				break
 				;;
 			?*)
+				case "${Q_esc}${IFS- }" in '0 '*)
+					eval "${Q_bind}=\"\${${Q_bind}-}\${${Q_bind}:+ }\${*}\""
+					break
+				esac
+
 				Q_tmp=
 
 				for Q_val in "${@}";do
