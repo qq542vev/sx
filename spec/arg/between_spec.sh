@@ -36,6 +36,11 @@ Describe 'sx_arg_between'
       The status should be success
     End
 
+    It '対象引数が0個で min と max がともに0の場合に成功すること'
+      When call sx_arg_between 0 0
+      The status should be success
+    End
+
     It '対象引数が0個で min が 1 の場合に 1 を返すこと'
       When call sx_arg_between 1 2
       The status should equal 1
@@ -80,6 +85,39 @@ Describe 'sx_arg_between'
 
     It '両方空文字列で引数0個の場合も成功すること'
       When call sx_arg_between "" ""
+      The status should be success
+    End
+
+    It 'max が0で引数0個の場合に成功すること'
+      When call sx_arg_between "" 0
+      The status should be success
+    End
+
+    It 'max が0で引数が1個の場合に範囲外を返すこと'
+      When call sx_arg_between "" 0 x
+      The status should equal 1
+    End
+
+    It '二桁の残り個数も上限超過として判定すること'
+      When call sx_arg_between "" 0 a b c d e f g h
+      The status should equal 1
+    End
+
+    It 'min が1で引数が1個の場合に成功すること'
+      When call sx_arg_between 1 "" x
+      The status should be success
+    End
+  End
+
+  Describe '大きな境界値'
+    It '算術域を超える min で引数不足を判定すること'
+      When call sx_arg_between 999999999999999999999999 "" x
+      The status should equal 1
+      The stderr should equal ''
+    End
+
+    It '算術域を超える max で引数が範囲内と判定されること'
+      When call sx_arg_between "" 999999999999999999999999 x
       The status should be success
     End
   End
@@ -128,6 +166,20 @@ Describe 'sx_arg_between'
     End
   End
 
+  Describe '設定エラー (EX_CONFIG: 78)'
+    It 'SX_CFG_NUM_RANGE が不正なら78を返すこと'
+      SX_CFG_NUM_RANGE=bogus
+      When call sx_arg_between 1 2 a
+      The status should equal 78
+    End
+
+    It 'SX_CFG_NUM_RANGE が未設定なら78を返すこと'
+      unset SX_CFG_NUM_RANGE
+      When call sx_arg_between 1 2 a
+      The status should equal 78
+    End
+  End
+
   Describe '高速モード (SX_CFG_SKIP_CHK=1)'
     It '引数検証をスキップして正しく判定すること'
       SX_CFG_SKIP_CHK=1
@@ -139,6 +191,13 @@ Describe 'sx_arg_between'
       SX_CFG_SKIP_CHK=1
       When call sx_arg_between 1 2 a b c
       The status should equal 1
+    End
+
+    It '高速モードでは不正な設定値の検査も省略すること'
+      SX_CFG_SKIP_CHK=1
+      SX_CFG_NUM_RANGE=bogus
+      When call sx_arg_between 1 3 a b
+      The status should be success
     End
   End
 End
