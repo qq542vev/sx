@@ -20,8 +20,8 @@ define([|CLEANUP|], [|Q_bind Q_match Q_glob Q_text Q_i Q_arg Q_sts Q_type|])dnl
 __sx_arg_rfind_lit() {
 	Q_bind="${1}"
 	Q_match="${2}"
-	Q_glob=$(((${3} & M_ARG_RFIND_GLOB) != 0))
-	Q_text=$(((${3} & M_ARG_RFIND_TEXT) != 0))
+	Q_glob=$((${3} & M_ARG_RFIND_GLOB))
+	Q_text=$((${3} & M_ARG_RFIND_TEXT))
 
 	shift 3
 	Q_i="${#}"
@@ -32,10 +32,10 @@ __sx_arg_rfind_lit() {
 		Q_type=nat0
 	fi
 
-	while M_STR_NE([|"${Q_i}"|], [|0|]) && M_STR_NE([|"${Q_bind}"|], [|''|]); do
+	while
 		eval Q_arg=\"\${${Q_i}}\"
 
-		case "${Q_glob}${Q_arg}" in "0${Q_match}" | 1${Q_match})
+		case "${Q_glob}${Q_arg}" in "0${Q_match}" | M_ARG_RFIND_GLOB${Q_match})
 			case "${Q_text}" in
 				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_i}";;
 				*) __sx_var_bind Q_bind "${Q_bind}" "${Q_arg}";;
@@ -44,8 +44,13 @@ __sx_arg_rfind_lit() {
 			Q_sts=M_EX_OK
 		esac
 
+		case "${Q_bind:+${Q_i}}" in '' | 1)
+			break
+		esac
+
 		"__sx_num_sub1_${Q_type}" Q_i "${Q_i}"
-	done
+		continue
+	do :; done
 
 	set -- "${Q_sts-1}"
 

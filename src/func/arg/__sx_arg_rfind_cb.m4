@@ -24,8 +24,9 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_bind Q_cb Q_text Q_i Q_pos Q_cnt Q_type|])dnl
 
 __sx_arg_rfind_cb() {
-	Q_bind="${1}" Q_cb="${2}"
-	Q_text=$(((${3} & M_ARG_RFIND_TEXT) != 0))
+	Q_bind="${1}"
+	Q_cb="${2}"
+	Q_text=$((${3} & M_ARG_RFIND_TEXT))
 
 	# 管理用の7項目を含む最大の位置番号を、算術を使わずに取得する。
 	set -- 0 0 0 0 "${@}"
@@ -38,31 +39,38 @@ __sx_arg_rfind_cb() {
 	fi
 
 	shift 7
-	Q_i="${#}"
 
-	# $1: 添字、$2: 位置番号、$3: 一致数、$4: 数値経路、$5: バインド、$6: コールバック、$7: TEXT
-	set -- "${Q_i}" "${Q_pos}" 0 "${Q_type}" "${Q_bind}" "${Q_cb}" "${Q_text}" "${@}"
+	# $1: 添字、$2: 位置番号、$3: 一致数、$4: バインド、$5: 数値経路、$6: コールバック、$7: TEXT
+	set -- "${#}" "${Q_pos}" 0 "${Q_bind}" "${Q_type}" "${Q_cb}" "${Q_text}" "${@}"
 
-	while M_STR_NE([|"${1}"|], [|0|]) && M_STR_NE([|"${5}"|], [|''|]); do
+	while
 		unset CLEANUP
 
 		if eval '"${6}"' "\"\${${2}}\"" "${1}" "${3}"; then
 			case "${7}" in
-				0) __sx_var_ubind Q_bind "${5}" "${1}";;
-				*) eval __sx_var_bind Q_bind '"${5}"' "\"\${${2}}\"";;
+				0) __sx_var_ubind Q_bind "${4}" "${1}";;
+				*) eval __sx_var_bind Q_bind '"${4}"' "\"\${${2}}\"";;
 			esac
 
-			"__sx_num_add1_${4}" Q_cnt "${3}"
-		else
+			case "${Q_bind:+${1}}" in '' | 1)
+				set -- 0 0 1
+				unset CLEANUP
+				break
+			esac
+
+			"__sx_num_add1_${5}" Q_cnt "${3}"
+		elif M_STR_NE([|"${1}"|], [|1|]); then
 			Q_bind="${5}" Q_cnt="${3}"
+		else
+			break
 		fi
 
-		"__sx_num_sub1_${4}" Q_i "${1}"
-		"__sx_num_sub1_${4}" Q_pos "${2}"
-		eval 'shift 5;' set -- "${Q_i}" "${Q_pos}" "${Q_cnt}" "${4}" '"${Q_bind}"' '"${@}"'
-	done
-
-	unset CLEANUP
+		"__sx_num_sub1_${5}" Q_i "${1}"
+		"__sx_num_sub1_${5}" Q_pos "${2}"
+		shift 4
+		set -- "${Q_i}" "${Q_pos}" "${Q_cnt}" "${Q_bind}" "${@}"
+		continue
+	do :; done
 
 	case "${3}" in 0)
 		return 1

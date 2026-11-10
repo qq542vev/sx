@@ -51,10 +51,10 @@ __sx_arg_reach() {
 			return
 		esac
 
-		Q_cb="${4}"
 		"__sx_num_sub1_${3}" Q_i "${1}"
 		"__sx_num_sub1_${3}" Q_pos "${2}"
-		eval 'shift 4; set -- ' "${Q_i}" "${Q_pos}" "${3}" '"${Q_cb}"' '"${@}"'
+		shift 2
+		set -- "${Q_i}" "${Q_pos}" "${@}"
 		continue
 	do :; done
 }

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0 __sx_num_sub_arith __sx_num_sub_nat0|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_is_int_fit_dec __sx_num_sub1_arith __sx_num_sub1_nat0|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_rfold - 引数リストを右からコールバックで畳み込む（内部用）
@@ -18,7 +18,7 @@ M_RENAME_QI([|dnl
 ##   非0  最初に失敗したコールバックの終了ステータス
 ##
 
-define([|CLEANUP|], [|Q_ret Q_cb Q_i Q_pos Q_type|])dnl
+define([|CLEANUP|], [|Q_res Q_cb Q_acc Q_i Q_pos Q_type Q_ret|])dnl
 
 __sx_arg_rfold() {
 	case "${4+X}" in '')
@@ -28,8 +28,11 @@ __sx_arg_rfold() {
 
 	# 管理用の6項目を含む最大の位置番号を、算術を使わずに取得する。
 	set -- 0 0 0 "${@}"
+	Q_res="${4}"
+	Q_cb="${5}"
+	Q_acc="${6}"
 	Q_pos="${#}"
-	shift 3
+	shift 6
 
 	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_pos}"; then
 		Q_type=arith
@@ -37,31 +40,33 @@ __sx_arg_rfold() {
 		Q_type=nat0
 	fi
 
-	"__sx_num_sub_${Q_type}" Q_i "${Q_pos}" 6
+	# $1: 添字、$2: 位置番号、$3: アキュムレータ、$4: 数値経路、$5: 結果変数、$6: コールバック
+	set -- "${#}" "${Q_pos}" "${Q_acc}" "${Q_type}" "${Q_res}" "${Q_cb}" "${@}"
 
-	# $1: 添字、$2: 位置番号、$3: 数値経路、$4: 結果変数、$5: コールバック、$6: アキュムレータ
-	set -- "${Q_i}" "${Q_pos}" "${Q_type}" "${@}"
-
-	while M_STR_NE([|"${1}"|], [|0|]); do
+	while
 		unset CLEANUP
 
-		eval '"${5}"' Q_ret '"${6}"' "\"\${${2}}\"" "${1}" || {
-			set -- "${?}" "${4}" "${6}"
+		eval '"${6}"' Q_ret '"${3}"' "\"\${${2}}\"" "${1}" || {
+			set -- "${?}" "${5}" "${3}"
 			unset CLEANUP
 			M_VAR_SET([|${2}|], [|${3}|])
 			return "${1}"
 		}
 
-		Q_cb="${5}"
-		Q_ret="${Q_ret-${6}}"
-		"__sx_num_sub1_${3}" Q_i "${1}"
-		"__sx_num_sub1_${3}" Q_pos "${2}"
+		Q_ret="${Q_ret-${3}}"
 
-		eval 'shift 6;' set -- "${Q_i}" "${Q_pos}" "${3}" "${4}" '"${Q_cb}"' '"${Q_ret}"' '"${@}"'
-	done
+		case "${1}" in 1)
+			M_VAR_SET([|${5}|], [|${Q_ret}|])
+			unset CLEANUP
+			return
+		esac
 
-	unset CLEANUP
-	M_VAR_SET([|${4}|], [|${6}|])
+		"__sx_num_sub1_${4}" Q_i "${1}"
+		"__sx_num_sub1_${4}" Q_pos "${2}"
+		shift 3
+		set -- "${Q_i}" "${Q_pos}" "${Q_ret}" "${@}"
+		continue
+	do :; done
 }
 |], [|arg_rfold|])dnl
 popdef([|CLEANUP|])dnl
