@@ -30,9 +30,9 @@ __sx_var_list_ro() {
 	eval "${Q_list}M_STR_LF()${Q_alias}"
 
 	SX_SYS_CACHE_VAR_RO_RAW="${Q_list}"
-	SX_SYS_CACHE_VAR_RO_NAMES="${Q_names}"
+	SX_SYS_CACHE_VAR_RO_NAMES="${Q_names# }"
 
-	eval __sx_var_ubind '""' '"${1}"' "${Q_names}" || :
+	eval __sx_var_ubind '""' '"${1}"' "${SX_SYS_CACHE_VAR_RO_NAMES}" || :
 
 	unset CLEANUP
 }
