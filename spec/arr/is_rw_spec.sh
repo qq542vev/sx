@@ -70,12 +70,12 @@ Describe 'sx_var_is_rw_deep'
     The status should be failure
   End
 
-  It '末尾がアンダースコアのサブ変数（_foo_ 等）は読み取り専用として誤検知しないこと'
+  It '末尾がアンダースコアのサブ変数（_foo_ 等）も読み取り専用として検知すること'
     arr_len=1 arr_0=a
     arr_foo_=scalar
     readonly arr_foo_
     When call sx_var_is_rw_deep arr
-    The status should be success
+    The status should be failure
   End
 
   It '別変数が変数名の前方一致でも誤検知しないこと（rlen と rl）'
