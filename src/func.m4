@@ -96,6 +96,8 @@ M_UNIT([|sx_var_to_ebind|], [|src/func/var/sx_var_to_ebind.m4|])dnl
 M_UNIT([|__sx_var_to_ebind|], [|src/func/var/__sx_var_to_ebind.m4|])dnl
 M_UNIT([|sx_var_is_empty|], [|src/func/var/sx_var_is_empty.m4|])dnl
 M_UNIT([|__sx_var_is_empty|], [|src/func/var/__sx_var_is_empty.m4|])dnl
+M_UNIT([|sx_var_is_export|], [|src/func/var/sx_var_is_export.m4|])dnl
+M_UNIT([|__sx_var_is_export|], [|src/func/var/__sx_var_is_export.m4|])dnl
 M_UNIT([|sx_var_is_name|], [|src/func/var/sx_var_is_name.m4|])dnl
 M_UNIT([|__sx_var_is_name|], [|src/func/var/__sx_var_is_name.m4|])dnl
 M_UNIT([|sx_var_is_ro|], [|src/func/var/sx_var_is_ro.m4|])dnl
