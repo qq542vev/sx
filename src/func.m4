@@ -59,6 +59,8 @@ M_UNIT([|sx_arg_resize|], [|src/func/arg/sx_arg_resize.m4|])dnl
 M_UNIT([|__sx_arg_resize|], [|src/func/arg/__sx_arg_resize.m4|])dnl
 M_UNIT([|sx_arg_range|], [|src/func/arg/sx_arg_range.m4|])dnl
 M_UNIT([|__sx_arg_range|], [|src/func/arg/__sx_arg_range.m4|])dnl
+M_UNIT([|sx_arg_reach|], [|src/func/arg/sx_arg_reach.m4|])dnl
+M_UNIT([|__sx_arg_reach|], [|src/func/arg/__sx_arg_reach.m4|])dnl
 M_UNIT([|sx_arg_rfind|], [|src/func/arg/sx_arg_rfind.m4|])dnl
 M_UNIT([|__sx_arg_rfind|], [|src/func/arg/__sx_arg_rfind.m4|])dnl
 M_UNIT([|__sx_arg_rfind_cb|], [|src/func/arg/__sx_arg_rfind_cb.m4|])dnl
