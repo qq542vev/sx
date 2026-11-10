@@ -414,6 +414,8 @@ M_UNIT([|SX_STR_BFE|], [|src/const/str/SX_STR_BFE.m4|])dnl
 M_UNIT([|SX_STR_BFF|], [|src/const/str/SX_STR_BFF.m4|])dnl
 M_UNIT([|SX_STR_SPLIT_GLOB|], [|src/const/str/SX_STR_SPLIT_GLOB.m4|])dnl
 M_UNIT([|SX_STR_SPLIT_INC|], [|src/const/str/SX_STR_SPLIT_INC.m4|])dnl
+M_UNIT([|SX_STR_SPLIT_ICASE|], [|src/const/str/SX_STR_SPLIT_ICASE.m4|])dnl
+M_UNIT([|SX_STR_SPLIT_EQ|], [|src/const/str/SX_STR_SPLIT_EQ.m4|])dnl
 M_UNIT([|SX_STR_SUB_GLOB|], [|src/const/str/SX_STR_SUB_GLOB.m4|])dnl
 M_UNIT([|SX_STR_SUB_CB|], [|src/const/str/SX_STR_SUB_CB.m4|])dnl
 M_UNIT([|SX_STR_CAPITAL_KEEP|], [|src/const/str/SX_STR_CAPITAL_KEEP.m4|])dnl

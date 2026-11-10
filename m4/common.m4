@@ -342,6 +342,8 @@ define([|M_GLOB_SP_BRKT_ARGS|], [|[|'!' '-' '.' ':' '=' '[' '\' ']' '^'|]|])dnl
 # sx_str_split 等で使用するフラグ
 define([|M_STR_SPLIT_GLOB|], [|1|])dnl
 define([|M_STR_SPLIT_INC|], [|2|])dnl
+define([|M_STR_SPLIT_ICASE|], [|4|])dnl
+define([|M_STR_SPLIT_EQ|], [|8|])dnl
 define([|M_STR_SUB_GLOB|], [|1|])dnl
 define([|M_STR_SUB_CB|], [|2|])dnl
 define([|M_STR_CAPITAL_KEEP|], [|1|])dnl

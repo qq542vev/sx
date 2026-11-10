@@ -114,6 +114,8 @@ M_UNIT([|sx_var_list_dep|], [|src/func/var/sx_var_list_dep.m4|])dnl
 M_UNIT([|__sx_var_list_dep|], [|src/func/var/__sx_var_list_dep.m4|])dnl
 M_UNIT([|sx_var_list_ro|], [|src/func/var/sx_var_list_ro.m4|])dnl
 M_UNIT([|__sx_var_list_ro|], [|src/func/var/__sx_var_list_ro.m4|])dnl
+M_UNIT([|sx_var_list_export|], [|src/func/var/sx_var_list_export.m4|])dnl
+M_UNIT([|__sx_var_list_export|], [|src/func/var/__sx_var_list_export.m4|])dnl
 M_UNIT([|sx_var_list_set|], [|src/func/var/sx_var_list_set.m4|])dnl
 M_UNIT([|__sx_var_list_set|], [|src/func/var/__sx_var_list_set.m4|])dnl
 M_UNIT([|sx_var_move|], [|src/func/var/sx_var_move.m4|])dnl
