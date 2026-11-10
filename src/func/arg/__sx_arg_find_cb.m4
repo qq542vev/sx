@@ -19,30 +19,28 @@ M_RENAME_QI([|dnl
 ##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
 ##    1  一致項目が見つからなかった
 
-define([|CLEANUP|], [|Q_arg Q_bind Q_next|])dnl
+define([|CLEANUP|], [|Q_bind Q_cb Q_text Q_type Q_arg Q_next|])dnl
 
 __sx_arg_find_cb() {
-	# $1: 添字、$2: 一致数、$3: TEXT、$4: 数値経路、$5: バインド、$6: コールバック
+	Q_bind="${1}"
+	Q_cb="${2}"
+	Q_text=$((${3} & M_ARG_FIND_TEXT))
+	shift 3
+
 	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#}"; then
-		set -- -7 0 "$(((${3} & M_ARG_FIND_TEXT) != 0))" arith "${@}"
+		Q_type=arith
 	else
-		set -- -7 0 "$(((${3} & M_ARG_FIND_TEXT) != 0))" nat0 "${@}"
+		Q_type=nat0
 	fi
 
 	for Q_arg in "${@}"; do
-		case "${1}" in
-			-*) Q_next=$((${1} + 1));;
-			*) "__sx_num_add1_${4}" Q_next "${1}";;
-		esac
-
-		set -- "${Q_next}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_arg}"
-
-		case "${1}" in -* | 0)
-			continue
-		esac
-
-		case "${5:+X}" in '')
-			break
+		case "${Q_type-}" in
+			'')
+				"__sx_num_add1_${4}" Q_next "${1}"
+				set -- "${Q_next}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_arg}"
+				;;
+				# $1: 添字、$2: 一致数、$3: TEXT、$4: 数値経路、$5: バインド、$6: コールバック
+			*) set -- 1 0 "${Q_text}" "${Q_type}" "${Q_bind}" "${Q_cb}" "${Q_arg}";;
 		esac
 
 		unset CLEANUP
@@ -51,6 +49,11 @@ __sx_arg_find_cb() {
 			case "${3}" in
 				0) __sx_var_ubind Q_bind "${5}" "${1}";;
 				*) __sx_var_bind Q_bind "${5}" "${7}";;
+			esac
+
+			case "${Q_bind}" in '')
+				unset CLEANUP
+				return
 			esac
 
 			"__sx_num_add1_${4}" Q_next "${2}"

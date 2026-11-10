@@ -242,7 +242,7 @@ Describe 'sx_arg_find 多倍長対応'
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
       sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
       case "${expected_idx}:${flags}" in
-        124:* | 127:0 | 127:1) __sx_num_add1_nat0() { return 64; };;
+        124:* | 127:*) __sx_num_add1_nat0() { return 64; };;
         *) __sx_num_add1_arith() { return 64; };;
       esac
       last_idx=0 last_count=0

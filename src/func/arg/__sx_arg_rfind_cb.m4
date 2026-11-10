@@ -53,14 +53,13 @@ __sx_arg_rfind_cb() {
 			esac
 
 			case "${Q_bind:+${1}}" in '' | 1)
-				set -- 0 0 1
 				unset CLEANUP
-				break
+				return
 			esac
 
 			"__sx_num_add1_${5}" Q_cnt "${3}"
 		elif M_STR_NE([|"${1}"|], [|1|]); then
-			Q_bind="${5}" Q_cnt="${3}"
+			Q_bind="${4}" Q_cnt="${3}"
 		else
 			break
 		fi
