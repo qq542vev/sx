@@ -11,7 +11,9 @@ M_RENAME_QI([|dnl
 ##   コールバックシグネチャ: callback value index count
 ##     0 を返すと一致、非0 は不一致としてスキップ。
 ##   引数は正規化済み。引数チェックは行わない。
-##   状態は位置変数で管理し、__sx_var_bind でバインドする。
+##   走査状態は $1: 添字、$2: 一致数、$3: 数値経路、$4: バインド、
+##   $5: コールバック、$6: TEXT、$7: 現在の値の順で位置変数に管理する。
+##   __sx_var_bind でバインドする。
 ##   正規化後の引数個数が算術域内なら算術、それ以外は多倍長で添字と一致数を更新する。
 ##   コールバック呼び出し前に一時変数を解放し、再入時も状態を保持する。
 ##
@@ -36,19 +38,18 @@ __sx_arg_find_cb() {
 	for Q_arg in "${@}"; do
 		case "${Q_type-}" in
 			'')
-				"__sx_num_add1_${4}" Q_next "${1}"
+				"__sx_num_add1_${3}" Q_next "${1}"
 				set -- "${Q_next}" "${2}" "${3}" "${4}" "${5}" "${6}" "${Q_arg}"
 				;;
-				# $1: 添字、$2: 一致数、$3: TEXT、$4: 数値経路、$5: バインド、$6: コールバック
-			*) set -- 1 0 "${Q_text}" "${Q_type}" "${Q_bind}" "${Q_cb}" "${Q_arg}";;
+			*) set -- 1 0 "${Q_type}" "${Q_bind}" "${Q_cb}" "${Q_text}" "${Q_arg}";;
 		esac
 
 		unset CLEANUP
 
-		if "${6}" "${7}" "${1}" "${2}"; then
-			case "${3}" in
-				0) __sx_var_ubind Q_bind "${5}" "${1}";;
-				*) __sx_var_bind Q_bind "${5}" "${7}";;
+		if "${5}" "${7}" "${1}" "${2}"; then
+			case "${6}" in
+				0) __sx_var_ubind Q_bind "${4}" "${1}";;
+				*) __sx_var_bind Q_bind "${4}" "${7}";;
 			esac
 
 			case "${Q_bind}" in '')
@@ -56,8 +57,8 @@ __sx_arg_find_cb() {
 				return
 			esac
 
-			"__sx_num_add1_${4}" Q_next "${2}"
-			set -- "${1}" "${Q_next}" "${3}" "${4}" "${Q_bind}" "${6}"
+			"__sx_num_add1_${3}" Q_next "${2}"
+			set -- "${1}" "${Q_next}" "${3}" "${Q_bind}" "${5}" "${6}"
 		fi
 	done
 
