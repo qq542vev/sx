@@ -18,7 +18,7 @@ M_RENAME_QI([|dnl
 ##   非0  最初に失敗したコールバックの終了ステータス
 ##
 
-define([|CLEANUP|], [|Q_arg Q_next Q_ret|])dnl
+define([|CLEANUP|], [|Q_res Q_cb Q_ret Q_arg Q_next Q_type|])dnl
 
 __sx_arg_fold() {
 	case "${4+X}" in '')
@@ -26,39 +26,40 @@ __sx_arg_fold() {
 		return
 	esac
 
+	Q_res="${1}"
+	Q_cb="${2}"
+	Q_ret="${3}"
+	shift 3
+
 	# $1: 添字、$2: 数値経路、$3: 結果変数、$4: コールバック、$5: アキュムレータ
 	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${#}"; then
-		set -- -5 arith "${@}"
+		Q_type=arith
 	else
-		set -- -5 nat0 "${@}"
+		Q_type=nat0
 	fi
 
 	for Q_arg in "${@}"; do
-		case "${1}" in
-			-*) Q_next=$((${1} + 1));;
-			*) "__sx_num_add1_${2}" Q_next "${1}";;
-		esac
-
-		set -- "${Q_next}" "${2}" "${3}" "${4}" "${5}" "${Q_arg}"
-
-		case "${1}" in -* | 0)
-			continue
+		case "${Q_type-}" in
+			'')
+				"__sx_num_add1_${2}" Q_next "${1}"
+				set -- "${Q_next}" "${2}" "${3}" "${4}" "${Q_ret-${5}}" "${Q_arg}"
+				;;
+			*) set -- 1 "${Q_type}" "${Q_res}" "${Q_cb}" "${Q_ret}" "${Q_arg}"
 		esac
 
 		unset CLEANUP
 
 		"${4}" Q_ret "${5}" "${6}" "${1}" || {
-			set -- "${@}" "${?}"
+			set -- "${?}" "${3}" "${5}"
 			unset CLEANUP
-			M_VAR_SET([|${3}|], [|${5}|])
-			return "${7}"
+			M_VAR_SET([|${2}|], [|${3}|])
+			return "${1}"
 		}
-
-		set -- "${1}" "${2}" "${3}" "${4}" "${Q_ret-${5}}"
 	done
 
+	set -- "${3}" "${Q_ret-${5}}"
 	unset CLEANUP
-	M_VAR_SET([|${3}|], [|${5}|])
+	M_VAR_SET([|${1}|], [|${2}|])
 }
 |], [|arg_fold|])dnl
 popdef([|CLEANUP|])dnl

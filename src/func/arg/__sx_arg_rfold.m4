@@ -18,7 +18,7 @@ M_RENAME_QI([|dnl
 ##   非0  最初に失敗したコールバックの終了ステータス
 ##
 
-define([|CLEANUP|], [|Q_res Q_cb Q_acc Q_i Q_pos Q_type Q_ret|])dnl
+define([|CLEANUP|], [|Q_res Q_cb Q_ret Q_i Q_pos Q_type|])dnl
 
 __sx_arg_rfold() {
 	case "${4+X}" in '')
@@ -30,7 +30,7 @@ __sx_arg_rfold() {
 	set -- 0 0 0 "${@}"
 	Q_res="${4}"
 	Q_cb="${5}"
-	Q_acc="${6}"
+	Q_ret="${6}"
 	Q_pos="${#}"
 	shift 6
 
@@ -41,7 +41,7 @@ __sx_arg_rfold() {
 	fi
 
 	# $1: 添字、$2: 位置番号、$3: アキュムレータ、$4: 数値経路、$5: 結果変数、$6: コールバック
-	set -- "${#}" "${Q_pos}" "${Q_acc}" "${Q_type}" "${Q_res}" "${Q_cb}" "${@}"
+	set -- "${#}" "${Q_pos}" "${Q_ret}" "${Q_type}" "${Q_res}" "${Q_cb}" "${@}"
 
 	while
 		unset CLEANUP
@@ -56,8 +56,9 @@ __sx_arg_rfold() {
 		Q_ret="${Q_ret-${3}}"
 
 		case "${1}" in 1)
-			M_VAR_SET([|${5}|], [|${Q_ret}|])
+			set -- "${5}" "${Q_ret}"
 			unset CLEANUP
+			M_VAR_SET([|${1}|], [|${2}|])
 			return
 		esac
 
