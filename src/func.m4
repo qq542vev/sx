@@ -356,6 +356,8 @@ M_UNIT([|sx_str_is_alund|], [|src/func/str/sx_str_is_alund.m4|])dnl
 M_UNIT([|__sx_str_is_alund|], [|src/func/str/__sx_str_is_alund.m4|])dnl
 M_UNIT([|sx_str_is_upper|], [|src/func/str/sx_str_is_upper.m4|])dnl
 M_UNIT([|__sx_str_is_upper|], [|src/func/str/__sx_str_is_upper.m4|])dnl
+M_UNIT([|sx_str_is_within|], [|src/func/str/sx_str_is_within.m4|])dnl
+M_UNIT([|__sx_str_is_within|], [|src/func/str/__sx_str_is_within.m4|])dnl
 M_UNIT([|sx_str_is_word|], [|src/func/str/sx_str_is_word.m4|])dnl
 M_UNIT([|__sx_str_is_word|], [|src/func/str/__sx_str_is_word.m4|])dnl
 M_UNIT([|sx_str_isep|], [|src/func/str/sx_str_isep.m4|])dnl
