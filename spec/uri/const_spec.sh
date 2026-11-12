@@ -24,6 +24,9 @@ Describe 'SX_URI_* 定数'
       sxtest_load ./build/modules/SX_URI_USERINFO_ARGS.sh
       sxtest_load ./build/modules/SX_URI_REG_NAME.sh
       sxtest_load ./build/modules/SX_URI_REG_NAME_ARGS.sh
+      sxtest_load ./build/modules/SX_URI_PORT.sh
+      sxtest_load ./build/modules/SX_URI_PORT_ARGS.sh
+      sxtest_load ./build/modules/SX_STR_DIGIT.sh
       sxtest_load ./build/modules/SX_URI_SEGMENT_NZ_NC.sh
       sxtest_load ./build/modules/SX_URI_SEGMENT_NZ_NC_ARGS.sh
       sxtest_load ./build/modules/SX_URI_QUERY.sh
@@ -43,6 +46,12 @@ Describe 'SX_URI_* 定数'
     The variable SX_URI_GEN_DELIMS should equal '#/:?@[]'
     The variable SX_URI_SUB_DELIMS should equal "!\$&'()*+,;="
     The variable SX_URI_RESERVED should equal "!#\$&'()*+,/:;=?@[]"
+  End
+
+  It 'port を DIGIT と同じ集合として保持すること'
+    When call :
+    The variable SX_URI_PORT should equal "${SX_STR_DIGIT}"
+    The variable SX_URI_PORT should equal '0123456789'
   End
 
   It 'pchar・userinfo・reg-name・segment-nz-nc を ASCII 順に保持すること'
@@ -74,6 +83,7 @@ Describe 'SX_URI_* 定数'
       SX_URI_PCHAR SX_URI_PCHAR_ARGS \
       SX_URI_USERINFO SX_URI_USERINFO_ARGS \
       SX_URI_REG_NAME SX_URI_REG_NAME_ARGS \
+      SX_URI_PORT SX_URI_PORT_ARGS \
       SX_URI_SEGMENT_NZ_NC SX_URI_SEGMENT_NZ_NC_ARGS \
       SX_URI_QUERY SX_URI_QUERY_ARGS \
       SX_URI_FRAGMENT SX_URI_FRAGMENT_ARGS \

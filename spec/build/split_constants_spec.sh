@@ -147,6 +147,12 @@ Describe '共通マクロと定数の個別展開'
     The output should equal 'readonly SX_URI_SCHEME_FIRST=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
   End
 
+  It 'URI のポート集合を DIGIT と同じ値で単独で出力すること'
+    When run expand_split_constants src/const/uri/SX_URI_PORT.m4
+    The status should be success
+    The output should equal 'readonly SX_URI_PORT=0123456789'
+  End
+
   It '複数行の定数を含む全定数の値が元の展開結果と一致すること'
     When call compare_split_constants
     The status should be success
