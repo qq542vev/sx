@@ -221,13 +221,13 @@ Describe 'sx_var_is_bindable'
             The status should be success
         End
 
-        It 'SX_CFG_NUM_RANGE が不正でも成功すること'
+        It 'SX_CFG_NUM_RANGE が不正な場合に EX_CONFIG を返すこと'
             check_invalid_config_bindable() {
                 SX_CFG_NUM_RANGE=99
                 sx_var_is_bindable "a:b"
             }
             When call check_invalid_config_bindable
-            The status should be success
+            The status should equal 78
         End
     End
 

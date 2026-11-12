@@ -67,6 +67,8 @@ M_UNIT([|__sx_arg_rfind_cb|], [|src/func/arg/__sx_arg_rfind_cb.m4|])dnl
 M_UNIT([|__sx_arg_rfind_lit|], [|src/func/arg/__sx_arg_rfind_lit.m4|])dnl
 M_UNIT([|sx_arg_rfold|], [|src/func/arg/sx_arg_rfold.m4|])dnl
 M_UNIT([|__sx_arg_rfold|], [|src/func/arg/__sx_arg_rfold.m4|])dnl
+M_UNIT([|sx_arg_rjoin|], [|src/func/arg/sx_arg_rjoin.m4|])dnl
+M_UNIT([|__sx_arg_rjoin|], [|src/func/arg/__sx_arg_rjoin.m4|])dnl
 M_UNIT([|sx_arg_rquote|], [|src/func/arg/sx_arg_rquote.m4|])dnl
 M_UNIT([|__sx_arg_rquote|], [|src/func/arg/__sx_arg_rquote.m4|])dnl
 M_UNIT([|sx_var_bind|], [|src/func/var/sx_var_bind.m4|])dnl

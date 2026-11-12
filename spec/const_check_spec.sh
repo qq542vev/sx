@@ -8,14 +8,10 @@ Describe 'sx_const_check'
   # readonly属性は同じシェルで検査する。上書き指定のファイルもここで一度だけ読み込む。
   sxtest_load ./build/modules/sx_var_is_ro.sh
 
-  # SX_CFG_META_DEF_SKIP_CHKは上のモジュールに含まれるため再定義しない。
-  # 定数チェックでは、残りの定数の単独モジュールを同じシェルに読み込む。
+  # sx_var_is_ro の依存には全 SX_CFG_META_DEF_* と SX_EX_USAGE が含まれるため、
+  # これらの単独モジュールは再読込しない。
   case "${SXTEST_LOAD_MOD+x}" in
     '')
-      sxtest_load ./build/modules/SX_CFG_META_DEF_ARR_HOLE.sh
-      sxtest_load ./build/modules/SX_CFG_META_DEF_NUM_RANGE.sh
-      sxtest_load ./build/modules/SX_CFG_META_DEF_SEP.sh
-      sxtest_load ./build/modules/SX_CFG_META_DEF_SIG_ARR.sh
       sxtest_load ./build/modules/SX_CFG_META_DESC_ARR_HOLE.sh
       sxtest_load ./build/modules/SX_CFG_META_DESC_NUM_RANGE.sh
       sxtest_load ./build/modules/SX_CFG_META_DESC_SEP.sh
@@ -29,7 +25,6 @@ Describe 'sx_const_check'
       sxtest_load ./build/modules/SX_CFG_META_PATTERN_SKIP_CHK.sh
       sxtest_load ./build/modules/SX_EX_MSG71.sh
       sxtest_load ./build/modules/SX_EX_MSG73.sh
-      sxtest_load ./build/modules/SX_EX_USAGE.sh
       sxtest_load ./build/modules/SX_NUM_BASE10_PREFIX.sh
       sxtest_load ./build/modules/SX_STR_ALNUM.sh
       sxtest_load ./build/modules/SX_STR_ALPHA.sh
