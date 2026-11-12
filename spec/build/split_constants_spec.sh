@@ -128,6 +128,25 @@ Describe '共通マクロと定数の個別展開'
     The output should equal "${expected}"
   End
 
+  It 'URI の基本集合を単独で出力すること'
+    When run expand_split_constants src/const/uri/SX_URI_UNRESERVED.m4
+    The status should be success
+    The output should equal "readonly SX_URI_UNRESERVED='-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~'"
+  End
+
+  It 'URI の区切り文字集合を引用して単独で出力すること'
+    expected="readonly SX_URI_SUB_DELIMS='!\$&'\\''()*+,;='"
+    When run expand_split_constants src/const/uri/SX_URI_SUB_DELIMS.m4
+    The status should be success
+    The output should equal "${expected}"
+  End
+
+  It 'URI の英字集合をクォートせず単独で出力すること'
+    When run expand_split_constants src/const/uri/SX_URI_SCHEME_FIRST.m4
+    The status should be success
+    The output should equal 'readonly SX_URI_SCHEME_FIRST=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+  End
+
   It '複数行の定数を含む全定数の値が元の展開結果と一致すること'
     When call compare_split_constants
     The status should be success

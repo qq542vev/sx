@@ -377,6 +377,60 @@ define([|M_STR_CHUNK_SKIP_LONG|], [|2|])dnl
 define([|M_STR_RCHUNK_SKIP_SHORT|], [|1|])dnl
 define([|M_STR_RCHUNK_SKIP_LONG|], [|2|])dnl
 
+# RFC 3986 の URI 構成要素の文字集合。通常版・引数列版ともにバイト値の昇順で保持する。
+# pct-encoded (%HH) は文字集合ではなく並びであるため含めない。% の検査には
+# SX_STR_XDIGIT と sx_uri_is_pct を使用する。
+# 値はデータ集合であり、case のブラケット式に直接埋め込むパターンではない。
+# ブラケット式で使う場合は - を先頭、] を先頭、! を末尾へ呼び出し側で並べ替える。
+# unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~" (RFC 3986 2.3)。
+define([|M_URI_UNRESERVED|], [|[|-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~|]|])dnl
+# UNRESERVED を1文字ずつ引数化した一覧。
+define([|M_URI_UNRESERVED_ARGS|], [|[|'-' '.' '0' '1' '2' '3' '4' '5' '6' '7' '8' '9' 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' '_' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z' '~'|]|])dnl
+# gen-delims = ":" / "/" / "?" / "#" / "[" / "]" / "@" (RFC 3986 2.2)。
+define([|M_URI_GEN_DELIMS|], [|[|#/:?@[]|]|])dnl
+# GEN_DELIMS を1文字ずつ引数化した一覧。
+define([|M_URI_GEN_DELIMS_ARGS|], [|[|'#' '/' ':' '?' '@' '[' ']'|]|])dnl
+# sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "=" (RFC 3986 2.2)。
+define([|M_URI_SUB_DELIMS|], [|[|!$&'()*+,;=|]|])dnl
+# SUB_DELIMS を1文字ずつ引数化した一覧。
+define([|M_URI_SUB_DELIMS_ARGS|], [|[|'!' '$' '&' "'" '(' ')' '*' '+' ',' ';' '='|]|])dnl
+# reserved = gen-delims / sub-delims (RFC 3986 2.2)。
+define([|M_URI_RESERVED|], [|[|!#$&'()*+,/:;=?@[]|]|])dnl
+# RESERVED を1文字ずつ引数化した一覧。
+define([|M_URI_RESERVED_ARGS|], [|[|'!' '#' '$' '&' "'" '(' ')' '*' '+' ',' '/' ':' ';' '=' '?' '@' '[' ']'|]|])dnl
+# pchar = unreserved / pct-encoded / sub-delims / ":" / "@" (RFC 3986 3.3)。
+define([|M_URI_PCHAR|], [|[|!$&'()*+,-.0123456789:;=@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~|]|])dnl
+# PCHAR を1文字ずつ引数化した一覧。
+define([|M_URI_PCHAR_ARGS|], [|[|'!' '$' '&' "'" '(' ')' '*' '+' ',' '-' '.' '0' '1' '2' '3' '4' '5' '6' '7' '8' '9' ':' ';' '=' '@' 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' '_' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z' '~'|]|])dnl
+# userinfo = *( unreserved / pct-encoded / sub-delims / ":" ) (RFC 3986 3.2.1)。
+define([|M_URI_USERINFO|], [|[|!$&'()*+,-.0123456789:;=ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~|]|])dnl
+# USERINFO を1文字ずつ引数化した一覧。
+define([|M_URI_USERINFO_ARGS|], [|[|'!' '$' '&' "'" '(' ')' '*' '+' ',' '-' '.' '0' '1' '2' '3' '4' '5' '6' '7' '8' '9' ':' ';' '=' 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' '_' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z' '~'|]|])dnl
+# reg-name = *( unreserved / pct-encoded / sub-delims ) (RFC 3986 3.2.2)。
+define([|M_URI_REG_NAME|], [|[|!$&'()*+,-.0123456789;=ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~|]|])dnl
+# REG_NAME を1文字ずつ引数化した一覧。
+define([|M_URI_REG_NAME_ARGS|], [|[|'!' '$' '&' "'" '(' ')' '*' '+' ',' '-' '.' '0' '1' '2' '3' '4' '5' '6' '7' '8' '9' ';' '=' 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' '_' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z' '~'|]|])dnl
+# segment-nz-nc = 1*( unreserved / pct-encoded / sub-delims / "@" ) (RFC 3986 3.3)。
+define([|M_URI_SEGMENT_NZ_NC|], [|[|!$&'()*+,-.0123456789;=@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~|]|])dnl
+# SEGMENT_NZ_NC を1文字ずつ引数化した一覧。
+define([|M_URI_SEGMENT_NZ_NC_ARGS|], [|[|'!' '$' '&' "'" '(' ')' '*' '+' ',' '-' '.' '0' '1' '2' '3' '4' '5' '6' '7' '8' '9' ';' '=' '@' 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' '_' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z' '~'|]|])dnl
+# query = *( pchar / "/" / "?" ) (RFC 3986 3.4)。
+define([|M_URI_QUERY|], [|[|!$&'()*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~|]|])dnl
+# QUERY を1文字ずつ引数化した一覧。
+define([|M_URI_QUERY_ARGS|], [|[|'!' '$' '&' "'" '(' ')' '*' '+' ',' '-' '.' '/' '0' '1' '2' '3' '4' '5' '6' '7' '8' '9' ':' ';' '=' '?' '@' 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' '_' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z' '~'|]|])dnl
+# fragment = *( pchar / "/" / "?" ) (RFC 3986 3.5)。QUERY と同値。
+define([|M_URI_FRAGMENT|], [|[|!$&'()*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~|]|])dnl
+# FRAGMENT を1文字ずつ引数化した一覧。
+define([|M_URI_FRAGMENT_ARGS|], [|[|'!' '$' '&' "'" '(' ')' '*' '+' ',' '-' '.' '/' '0' '1' '2' '3' '4' '5' '6' '7' '8' '9' ':' ';' '=' '?' '@' 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' '_' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z' '~'|]|])dnl
+# scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) (RFC 3986 3.1) の2文字目以降。
+define([|M_URI_SCHEME|], [|[|+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz|]|])dnl
+# SCHEME を1文字ずつ引数化した一覧。
+define([|M_URI_SCHEME_ARGS|], [|[|'+' '-' '.' '0' '1' '2' '3' '4' '5' '6' '7' '8' '9' 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z'|]|])dnl
+# scheme の1文字目 = ALPHA (RFC 3986 3.1)。
+define([|M_URI_SCHEME_FIRST|], [|[|ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz|]|])dnl
+# SCHEME_FIRST を1文字ずつ引数化した一覧。
+define([|M_URI_SCHEME_FIRST_ARGS|], [|[|'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z'|]|])dnl
+
 # 数値定数 (8bit / 16bit / 32bit / 64bit / 128bit 整数限界)
 define([|M_NUM_I8_MAX|], [|127|])dnl
 define([|M_NUM_I8_MIN|], [|-128|])dnl

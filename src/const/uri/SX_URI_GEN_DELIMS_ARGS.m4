@@ -1,0 +1,2 @@
+M_REQUIRE([||])dnl
+M_CONST([|URI_GEN_DELIMS_ARGS|])
