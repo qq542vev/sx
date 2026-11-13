@@ -153,6 +153,19 @@ Describe '共通マクロと定数の個別展開'
     The output should equal 'readonly SX_URI_PORT=0123456789'
   End
 
+  It 'URI の 16進数集合を XDIGIT と同じ値で単独で出力すること'
+    When run expand_split_constants src/const/uri/SX_URI_HEXDEC.m4
+    The status should be success
+    The output should equal 'readonly SX_URI_HEXDEC=0123456789ABCDEFabcdef'
+  End
+
+  It 'URI の 16進数引数列集合を XDIGIT_ARGS と同じ値で単独で出力すること'
+    expected="readonly SX_URI_HEXDEC_ARGS='0' '1' '2' '3' '4' '5' '6' '7' '8' '9' 'A' 'B' 'C' 'D' 'E' 'F' 'a' 'b' 'c' 'd' 'e' 'f'"
+    When run expand_split_constants src/const/uri/SX_URI_HEXDEC_ARGS.m4
+    The status should be success
+    The output should equal "${expected}"
+  End
+
   It '複数行の定数を含む全定数の値が元の展開結果と一致すること'
     When call compare_split_constants
     The status should be success

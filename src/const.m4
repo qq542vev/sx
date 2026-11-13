@@ -469,6 +469,8 @@ M_UNIT([|SX_URI_REG_NAME|], [|src/const/uri/SX_URI_REG_NAME.m4|])dnl
 M_UNIT([|SX_URI_REG_NAME_ARGS|], [|src/const/uri/SX_URI_REG_NAME_ARGS.m4|])dnl
 M_UNIT([|SX_URI_PORT|], [|src/const/uri/SX_URI_PORT.m4|])dnl
 M_UNIT([|SX_URI_PORT_ARGS|], [|src/const/uri/SX_URI_PORT_ARGS.m4|])dnl
+M_UNIT([|SX_URI_HEXDEC|], [|src/const/uri/SX_URI_HEXDEC.m4|])dnl
+M_UNIT([|SX_URI_HEXDEC_ARGS|], [|src/const/uri/SX_URI_HEXDEC_ARGS.m4|])dnl
 M_UNIT([|SX_URI_SEGMENT_NZ_NC|], [|src/const/uri/SX_URI_SEGMENT_NZ_NC.m4|])dnl
 M_UNIT([|SX_URI_SEGMENT_NZ_NC_ARGS|], [|src/const/uri/SX_URI_SEGMENT_NZ_NC_ARGS.m4|])dnl
 M_UNIT([|SX_URI_QUERY|], [|src/const/uri/SX_URI_QUERY.m4|])dnl

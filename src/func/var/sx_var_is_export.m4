@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_name __sx_var_is_export|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_var_is_export __sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_var_is_export - 変数がエクスポート属性を持つか確認する
 ##

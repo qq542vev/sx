@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_SYS_CACHE_VAR_EXPORT_RAW SX_SYS_CACHE_VAR_EXPORT_NAMES __sx_var_bind_init __sx_var_list_export_cb __sx_var_ubind|])dnl
+M_REQUIRE([|SX_SYS_CACHE_VAR_EXPORT_NAMES SX_SYS_CACHE_VAR_EXPORT_RAW __sx_var_bind_init __sx_var_list_export_cb __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_list_export - エクスポート属性付き変数の一覧を取得する（内部用）
