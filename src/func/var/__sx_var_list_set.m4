@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_STR_LF __sx_var_bind_init __sx_var_is_name __sx_var_is_set __sx_var_ubind|])dnl
+M_REQUIRE([|__sx_var_bind_init __sx_var_is_name __sx_var_is_set __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_list_set - 設定されている変数の一覧を取得する（内部用）
@@ -19,8 +19,8 @@ __sx_var_list_set() {
 	Q_mark=
 
 	while M_STR_HAS([|"${Q_list}"|], [|"M_STR_LF()"|]); do
-		Q_ln="${Q_list%%${SX_STR_LF}*}"
-		Q_list="${Q_list#*${SX_STR_LF}}"
+		Q_ln="${Q_list%%M_STR_LF()*}"
+		Q_list="${Q_list#*M_STR_LF()}"
 
 		case "${Q_ln}" in ["M_STR_ALUND()"]=* | ["M_STR_ALUND()"]*["M_STR_WORD()"]=*)
 			case "${Q_bind:+X}" in '')
