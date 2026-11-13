@@ -22,7 +22,7 @@ __sx_uri_is_pct() {
 	esac
 
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in *%[!"M_STR_XDIGIT()"]* | *%?[!"M_STR_XDIGIT()"]* | *% | *%?)
+		case "${Q_arg}" in *%[!'M_URI_HEXDIG()']* | *%?[!'M_URI_HEXDIG()']* | *% | *%?)
 			unset CLEANUP
 			return 1
 		esac

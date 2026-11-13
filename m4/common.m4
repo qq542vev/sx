@@ -415,10 +415,10 @@ define([|M_URI_REG_NAME_ARGS|], [|[|'!' '$' '&' "'" '(' ')' '*' '+' ',' '-' '.' 
 define([|M_URI_PORT|], [|M_STR_DIGIT()|])dnl
 # PORT を1文字ずつ引数化した一覧。
 define([|M_URI_PORT_ARGS|], [|M_STR_DIGIT_ARGS()|])dnl
-# hexdec = HEXDIG (RFC 3986 2.1 pct-encoded 等)。SX_STR_XDIGIT と同じ集合。
-define([|M_URI_HEXDEC|], [|M_STR_XDIGIT()|])dnl
-# HEXDEC を1文字ずつ引数化した一覧。
-define([|M_URI_HEXDEC_ARGS|], [|M_STR_XDIGIT_ARGS()|])dnl
+# hexdig = HEXDIG (RFC 3986 2.1 pct-encoded 等)。SX_STR_XDIGIT と同じ集合。
+define([|M_URI_HEXDIG|], [|M_STR_XDIGIT()|])dnl
+# HEXDIG を1文字ずつ引数化した一覧。
+define([|M_URI_HEXDIG_ARGS|], [|M_STR_XDIGIT_ARGS()|])dnl
 # segment-nz-nc = 1*( unreserved / pct-encoded / sub-delims / "@" ) (RFC 3986 3.3)。
 define([|M_URI_SEGMENT_NZ_NC|], [|[|!$&'()*+,-.0123456789;=@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~|]|])dnl
 # SEGMENT_NZ_NC を1文字ずつ引数化した一覧。

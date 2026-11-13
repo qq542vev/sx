@@ -154,14 +154,14 @@ Describe '共通マクロと定数の個別展開'
   End
 
   It 'URI の 16進数集合を XDIGIT と同じ値で単独で出力すること'
-    When run expand_split_constants src/const/uri/SX_URI_HEXDEC.m4
+    When run expand_split_constants src/const/uri/SX_URI_HEXDIG.m4
     The status should be success
-    The output should equal 'readonly SX_URI_HEXDEC=0123456789ABCDEFabcdef'
+    The output should equal 'readonly SX_URI_HEXDIG=0123456789ABCDEFabcdef'
   End
 
   It 'URI の 16進数引数列集合を XDIGIT_ARGS と同じ値で単独で出力すること'
-    expected="readonly SX_URI_HEXDEC_ARGS='0' '1' '2' '3' '4' '5' '6' '7' '8' '9' 'A' 'B' 'C' 'D' 'E' 'F' 'a' 'b' 'c' 'd' 'e' 'f'"
-    When run expand_split_constants src/const/uri/SX_URI_HEXDEC_ARGS.m4
+    expected="readonly SX_URI_HEXDIG_ARGS='0' '1' '2' '3' '4' '5' '6' '7' '8' '9' 'A' 'B' 'C' 'D' 'E' 'F' 'a' 'b' 'c' 'd' 'e' 'f'"
+    When run expand_split_constants src/const/uri/SX_URI_HEXDIG_ARGS.m4
     The status should be success
     The output should equal "${expected}"
   End

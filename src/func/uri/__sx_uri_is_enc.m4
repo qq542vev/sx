@@ -18,7 +18,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_uri_is_enc() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in *[!"M_STR_ALNUM()"%._~-]*)
+		case "${Q_arg}" in *[!%M_SH_QUOTE(M_URI_UNRESERVED)]*)
 			unset CLEANUP
 			return 1
 		esac

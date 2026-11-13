@@ -15,11 +15,11 @@ M_RENAME_QI([|dnl
 ##
 ## 終了ステータス:
 ##    0  成功（バインド枯渇による早期終了を含む）
-define([|CLEANUP|], [|Q_bind Q_rest Q_out Q_safe Q_chunk|])dnl
+define([|CLEANUP|], [|Q_bind Q_rest Q_out Q_chunk|])dnl
 
 __sx_uri_enc() {
 	__sx_var_bind_init "${1}"
-	Q_bind="${1}" Q_safe="M_STR_ALNUM()-._~"
+	Q_bind="${1}"
 	shift
 
 	for Q_rest in ${Q_bind:+"${@}"}; do
@@ -27,7 +27,7 @@ __sx_uri_enc() {
 
 		while M_STR_NE([|"${Q_rest}"|], [|''|]); do
 			# 最初の非予約文字より前にある変換対象区間を切り出す。
-			Q_chunk="${Q_rest%%["${Q_safe}"]*}"
+			Q_chunk="${Q_rest%%[M_SH_QUOTE(M_URI_UNRESERVED)]*}"
 			Q_rest="${Q_rest#"${Q_chunk}"}"
 
 			while M_STR_NE([|"${Q_chunk}"|], [|''|]); do
@@ -39,7 +39,7 @@ __sx_m4_gen_uri_enc_case(1)
 			done
 
 			# 後続の非予約文字は一文字ずつ調べず、まとめて結果へ追加する。
-			Q_chunk="${Q_rest%%[!"${Q_safe}"]*}"
+			Q_chunk="${Q_rest%%[!M_SH_QUOTE(M_URI_UNRESERVED)]*}"
 			M_STR_APPEND([|Q_out|], [|"${Q_chunk}"|])
 			Q_rest="${Q_rest#"${Q_chunk}"}"
 		done
