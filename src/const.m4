@@ -481,6 +481,7 @@ M_UNIT([|SX_URI_SCHEME|], [|src/const/uri/SX_URI_SCHEME.m4|])dnl
 M_UNIT([|SX_URI_SCHEME_ARGS|], [|src/const/uri/SX_URI_SCHEME_ARGS.m4|])dnl
 M_UNIT([|SX_URI_SCHEME_FIRST|], [|src/const/uri/SX_URI_SCHEME_FIRST.m4|])dnl
 M_UNIT([|SX_URI_SCHEME_FIRST_ARGS|], [|src/const/uri/SX_URI_SCHEME_FIRST_ARGS.m4|])dnl
+M_UNIT([|SX_URI_PCT_ENCODED_GLOB|], [|src/const/uri/SX_URI_PCT_ENCODED_GLOB.m4|])dnl
 M_UNIT([|SX_NUM_I8_MAX|], [|src/const/num/SX_NUM_I8_MAX.m4|])dnl
 M_UNIT([|SX_NUM_I8_MIN|], [|src/const/num/SX_NUM_I8_MIN.m4|])dnl
 M_UNIT([|SX_NUM_I8_WLEN|], [|src/const/num/SX_NUM_I8_WLEN.m4|])dnl
