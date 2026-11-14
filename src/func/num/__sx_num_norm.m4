@@ -21,7 +21,11 @@ __sx_num_norm() {
 		Q_in="${Q_arg#[+-]}"
 
 		case "${Q_in}" in
-			0[Xx]* | 0[0-9]*) Q_in=$((Q_in));;
+			0[Xx]* | 0[0-9]*)
+				__sx_var_ubind Q_bind "${Q_bind}" "$((Q_arg))" || break
+				continue
+				;;
+			*[Ee]0 | *[Ee][+-]0) Q_in="${Q_in%%[Ee]*}";;
 			*[Ee]*)
 				# 指数表記の展開
 				Q_mnt="${Q_in%%[Ee]*}"
@@ -67,16 +71,16 @@ __sx_num_norm() {
 		esac
 
 		# 小数点以下のクリーンアップ
-		case "${Q_in}" in *.*)
+		case "${Q_in}" in *.*0)
 			Q_in="M_STR_RTRIM([|Q_in|], [|[!0]|])"
 			Q_in="${Q_in%.}"
 		esac
 
-		case "${Q_in}" in '' | 0)
+		case "${Q_in}" in 0)
 			Q_arg=
 		esac
 
-		__sx_var_ubind Q_bind "${Q_bind}" "${Q_arg%%[!-]*}${Q_in:-0}" || break
+		__sx_var_ubind Q_bind "${Q_bind}" "${Q_arg%%[!-]*}${Q_in}" || break
 	done
 
 	unset CLEANUP
