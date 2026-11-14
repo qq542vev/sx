@@ -68,6 +68,18 @@ Describe 'sx_num_norm'
     Assert [ "$r1" = "0.1" ]
   End
 
+  It '指数表記で小数点を移動しない場合に整数部の先頭の0を削除すること'
+    When call sx_num_norm res 0.01e2
+    The status should be success
+    The variable res should equal 1
+  End
+
+  It '指数表記で小数点を右へ移動する場合に整数部の先頭の0を削除すること'
+    When call sx_num_norm res 0.01e3
+    The status should be success
+    The variable res should equal 10
+  End
+
   It '不正な10進数形式（先頭の0など）を拒否すること'
     When call sx_num_norm res 00.1
     The status should equal 64
