@@ -304,6 +304,8 @@ M_UNIT([|sx_str_find|], [|src/func/str/sx_str_find.m4|])dnl
 M_UNIT([|__sx_str_find|], [|src/func/str/__sx_str_find.m4|])dnl
 M_UNIT([|sx_str_has|], [|src/func/str/sx_str_has.m4|])dnl
 M_UNIT([|__sx_str_has|], [|src/func/str/__sx_str_has.m4|])dnl
+M_UNIT([|sx_str_incl|], [|src/func/str/sx_str_incl.m4|])dnl
+M_UNIT([|__sx_str_incl|], [|src/func/str/__sx_str_incl.m4|])dnl
 M_UNIT([|sx_str_is_alnum|], [|src/func/str/sx_str_is_alnum.m4|])dnl
 M_UNIT([|__sx_str_is_alnum|], [|src/func/str/__sx_str_is_alnum.m4|])dnl
 M_UNIT([|sx_str_is_alpha|], [|src/func/str/sx_str_is_alpha.m4|])dnl
@@ -364,6 +366,10 @@ M_UNIT([|sx_str_isep|], [|src/func/str/sx_str_isep.m4|])dnl
 M_UNIT([|__sx_str_isep|], [|src/func/str/__sx_str_isep.m4|])dnl
 M_UNIT([|__sx_str_isep_cb|], [|src/func/str/__sx_str_isep_cb.m4|])dnl
 M_UNIT([|__sx_str_isep_lit|], [|src/func/str/__sx_str_isep_lit.m4|])dnl
+M_UNIT([|sx_str_len|], [|src/func/str/sx_str_len.m4|])dnl
+M_UNIT([|__sx_str_len|], [|src/func/str/__sx_str_len.m4|])dnl
+M_UNIT([|sx_str_len_cmp|], [|src/func/str/sx_str_len_cmp.m4|])dnl
+M_UNIT([|__sx_str_len_cmp|], [|src/func/str/__sx_str_len_cmp.m4|])dnl
 M_UNIT([|sx_str_lower|], [|src/func/str/sx_str_lower.m4|])dnl
 M_UNIT([|__sx_str_lower|], [|src/func/str/__sx_str_lower.m4|])dnl
 M_UNIT([|__sx_str_lower_cb|], [|src/func/str/__sx_str_lower_cb.m4|])dnl
