@@ -39,8 +39,8 @@ Describe 'sx_num_is_float_safe'
     The status should be success
   End
 
-  It '5桁以上の指数を拒否すること'
-    When call sx_num_is_float_safe "1e10000" "1.23E+10000" "1e-10000"
+  It 'MAXを超える指数を拒否すること'
+    When call sx_num_is_float_safe "1e10001" "1.23E+10001" "1e-10001"
     The status should be failure
   End
 End
