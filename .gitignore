@@ -11,4 +11,7 @@
 !src/**
 !spec/
 !spec/**
+!.github
+!.github/workflows
+!.github/workflows/test.yml
 **/__pycache__/
