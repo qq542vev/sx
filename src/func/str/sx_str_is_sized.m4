@@ -1,8 +1,8 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_nat0_base __sx_str_is_within|])dnl
-### sx_str_is_within - すべての引数が指定された文字数の範囲内か確認する
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_nat0_base __sx_str_is_sized|])dnl
+### sx_str_is_sized - すべての引数が指定された文字数の範囲内か確認する
 ##
 ## 使い方:
-##   sx_str_is_within 最小文字数 最大文字数 [文字列1 [文字列2 ...]]
+##   sx_str_is_sized 最小文字数 最大文字数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
 ##   第3引数以降のすべての文字列について、${#} による文字数が
@@ -21,10 +21,10 @@ M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_nat0_base __sx_str_is_within|])dnl
 ##    1  範囲外の文字列がある、または最小文字数が最大文字数を超える
 ##   64  境界引数が不足、または最小文字数・最大文字数が不正 (SX_EX_USAGE)
 ##   78  参照する設定値が不正または未設定 (SX_EX_CONFIG)
-sx_str_is_within() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_is_within "${@}" || return; return;; esac
+sx_str_is_sized() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_str_is_sized "${@}" || return; return;; esac
 
-	M_CFG_CHECK([|sx_str_is_within|])
+	M_CFG_CHECK([|sx_str_is_sized|])
 
 	case "${#}" in [01])
 		return M_EX_USAGE
@@ -32,5 +32,5 @@ sx_str_is_within() {
 
 	__sx_num_is_nat0_base 10 ${1:+"${1}"} ${2:+"${2}"} || return M_EX_USAGE
 
-	__sx_str_is_within "${@}"
+	__sx_str_is_sized "${@}"
 }

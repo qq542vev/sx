@@ -1,10 +1,10 @@
-Describe 'sx_str_is_within / __sx_str_is_within -efu 環境検証'
-	sxtest_load ./build/modules/sx_str_is_within.sh
+Describe 'sx_str_is_sized / __sx_str_is_sized -efu 環境検証'
+	sxtest_load ./build/modules/sx_str_is_sized.sh
 
 	Context '範囲判定'
 		Parameters
-			sx_str_is_within
-			__sx_str_is_within
+			sx_str_is_sized
+			__sx_str_is_sized
 		End
 
 		It '範囲内の文字列で成功すること'
@@ -41,17 +41,17 @@ Describe 'sx_str_is_within / __sx_str_is_within -efu 環境検証'
 
 	Context '公開関数の引数検証'
 		It '引数がない場合は64を返すこと'
-			When run efu_run sx_str_is_within
+			When run efu_run sx_str_is_sized
 			The status should equal 64
 		End
 
 		It '境界引数が1つだけの場合は64を返すこと'
-			When run efu_run sx_str_is_within 1
+			When run efu_run sx_str_is_sized 1
 			The status should equal 64
 		End
 
 		It '不正な境界値の場合は64を返すこと'
-			When run efu_run sx_str_is_within -1 20 "abc"
+			When run efu_run sx_str_is_sized -1 20 "abc"
 			The status should equal 64
 		End
 	End

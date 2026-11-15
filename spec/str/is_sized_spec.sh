@@ -4,14 +4,14 @@ eval "$(shellspec - -c) exit 1"
 
 # shellcheck shell=sh
 
-Describe 'sx_str_is_within / __sx_str_is_within'
+Describe 'sx_str_is_sized / __sx_str_is_sized'
 	Include ./spec/support/run.sh
-	sxtest_load ./build/modules/sx_str_is_within.sh
+	sxtest_load ./build/modules/sx_str_is_sized.sh
 
 	Context '範囲判定'
 		Parameters
-			sx_str_is_within
-			__sx_str_is_within
+			sx_str_is_sized
+			__sx_str_is_sized
 		End
 
 		It 'すべての文字列が範囲内なら成功すること'
@@ -154,80 +154,80 @@ Describe 'sx_str_is_within / __sx_str_is_within'
 
 	Context '公開関数の引数検証'
 		It '引数がない場合は64を返すこと'
-			When call sx_str_is_within
+			When call sx_str_is_sized
 			The status should equal 64
 		End
 
 		It '境界引数が1つだけの場合は64を返すこと'
-			When call sx_str_is_within 1
+			When call sx_str_is_sized 1
 			The status should equal 64
 		End
 
 		It '最小文字数が負数の場合は64を返すこと'
-			When call sx_str_is_within -1 20 "abc"
+			When call sx_str_is_sized -1 20 "abc"
 			The status should equal 64
 		End
 
 		It '最小文字数に符号が付いている場合は64を返すこと'
-			When call sx_str_is_within +1 20 "abc"
+			When call sx_str_is_sized +1 20 "abc"
 			The status should equal 64
 		End
 
 		It '最小文字数に先行する0がある場合は64を返すこと'
-			When call sx_str_is_within 01 20 "abc"
+			When call sx_str_is_sized 01 20 "abc"
 			The status should equal 64
 		End
 
 		It '最小文字数が小数の場合は64を返すこと'
-			When call sx_str_is_within 1.5 20 "abc"
+			When call sx_str_is_sized 1.5 20 "abc"
 			The status should equal 64
 		End
 
 		It '最小文字数が数字以外を含む場合は64を返すこと'
-			When call sx_str_is_within abc 20 "abc"
+			When call sx_str_is_sized abc 20 "abc"
 			The status should equal 64
 		End
 
 		It '最大文字数が負数の場合は64を返すこと'
-			When call sx_str_is_within 1 -1 "abc"
+			When call sx_str_is_sized 1 -1 "abc"
 			The status should equal 64
 		End
 
 		It '最大文字数に符号が付いている場合は64を返すこと'
-			When call sx_str_is_within 1 +20 "abc"
+			When call sx_str_is_sized 1 +20 "abc"
 			The status should equal 64
 		End
 
 		It '最大文字数に先行する0がある場合は64を返すこと'
-			When call sx_str_is_within 1 020 "abc"
+			When call sx_str_is_sized 1 020 "abc"
 			The status should equal 64
 		End
 
 		It '最大文字数が小数の場合は64を返すこと'
-			When call sx_str_is_within 1 20.5 "abc"
+			When call sx_str_is_sized 1 20.5 "abc"
 			The status should equal 64
 		End
 
 		It '最大文字数が数字以外を含む場合は64を返すこと'
-			When call sx_str_is_within 1 abc "abc"
+			When call sx_str_is_sized 1 abc "abc"
 			The status should equal 64
 		End
 
 		It '不正な NUM_RANGE の場合は78を返すこと'
 			SX_CFG_NUM_RANGE=99
-			When call sx_str_is_within 1 20 "abc"
+			When call sx_str_is_sized 1 20 "abc"
 			The status should equal 78
 		End
 
 		It 'SX_CFG_SKIP_CHK=1 の場合は範囲判定のみを行うこと'
 			sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
-			When call sx_str_is_within 1 20 "abc"
+			When call sx_str_is_sized 1 20 "abc"
 			The status should be success
 		End
 
 		It 'SX_CFG_SKIP_CHK=1 でも範囲外なら1を返すこと'
 			sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' SKIP_CHK=1
-			When call sx_str_is_within 10 5 "abc"
+			When call sx_str_is_sized 10 5 "abc"
 			The status should equal 1
 		End
 	End

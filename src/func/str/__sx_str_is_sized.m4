@@ -1,10 +1,10 @@
 M_REQUIRE([|__sx_num_cmp_nat0|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
-### __sx_str_is_within - すべての引数が指定された文字数の範囲内か確認する（内部用）
+### __sx_str_is_sized - すべての引数が指定された文字数の範囲内か確認する（内部用）
 ##
 ## 使い方:
-##   __sx_str_is_within 最小文字数 最大文字数 [文字列1 [文字列2 ...]]
+##   __sx_str_is_sized 最小文字数 最大文字数 [文字列1 [文字列2 ...]]
 ##
 ## 説明:
 ##   内部実装。引数チェックは行わない。
@@ -19,7 +19,7 @@ M_RENAME_QI([|dnl
 
 define([|CLEANUP|], [|Q_min Q_max Q_len Q_arg|])dnl
 
-__sx_str_is_within() {
+__sx_str_is_sized() {
 	Q_min="${1-}"
 	Q_max="${2-}"
 	shift 2
@@ -29,7 +29,7 @@ __sx_str_is_within() {
 	esac
 
 	# 下限も上限もない場合は、すべての文字列が条件を満たす。
-	case "${Q_min:+${Q_max:+X}}" in '')
+	case "${Q_min:+X}${Q_max:+X}" in '')
 		unset CLEANUP
 		return
 	esac
@@ -62,5 +62,5 @@ __sx_str_is_within() {
 
 	unset CLEANUP
 }
-|], [|str_is_within|])dnl
+|], [|str_is_sized|])dnl
 popdef([|CLEANUP|])dnl
