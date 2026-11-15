@@ -366,6 +366,8 @@ M_UNIT([|sx_str_is_prefixed|], [|src/func/str/sx_str_is_prefixed.m4|])dnl
 M_UNIT([|__sx_str_is_prefixed|], [|src/func/str/__sx_str_is_prefixed.m4|])dnl
 M_UNIT([|sx_str_is_suffixed|], [|src/func/str/sx_str_is_suffixed.m4|])dnl
 M_UNIT([|__sx_str_is_suffixed|], [|src/func/str/__sx_str_is_suffixed.m4|])dnl
+M_UNIT([|sx_str_is_containing|], [|src/func/str/sx_str_is_containing.m4|])dnl
+M_UNIT([|__sx_str_is_containing|], [|src/func/str/__sx_str_is_containing.m4|])dnl
 M_UNIT([|sx_str_isep|], [|src/func/str/sx_str_isep.m4|])dnl
 M_UNIT([|__sx_str_isep|], [|src/func/str/__sx_str_isep.m4|])dnl
 M_UNIT([|__sx_str_isep_cb|], [|src/func/str/__sx_str_isep_cb.m4|])dnl
