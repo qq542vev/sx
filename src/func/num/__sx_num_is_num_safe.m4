@@ -19,7 +19,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 __sx_num_is_num_safe() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
-			*[Xx]* | [+-]0[0-9]* | 0[0-9]*) __sx_num_is_int_safe "${Q_arg}";;
+			0[0-9Xx]* | [+-]0[0-9Xx]*) __sx_num_is_int_safe "${Q_arg}";;
 			*) __sx_num_is_float_safe "${Q_arg}";;
 		esac || {
 			unset CLEANUP
