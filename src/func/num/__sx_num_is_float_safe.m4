@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_num_is_float __sx_num_cmp_nat0 SX_CFG_FLOAT_EXP_MAX|])dnl
+M_REQUIRE([|__sx_num_is_float __sx_num_is_fixed __sx_num_cmp_nat0 SX_CFG_FLOAT_EXP_MAX|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_num_is_float_safe - すべての引数が安全な範囲の 10 進の実数表記であるか確認する（内部用）
@@ -9,7 +9,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   内部実装。引数チェックは行わない。
 ##   sx_num_is_float による形式検証に加えて、設定項目 SX_CFG_FLOAT_EXP_MAX で
-##   指数の絶対値を制限する（|指数| < SX_CFG_FLOAT_EXP_MAX を受理、それ以上を拒否）。
+##   指数の絶対値を制限する（|指数| <= SX_CFG_FLOAT_EXP_MAX を受理、それより大きいものを拒否）。
 ##
 ## 終了ステータス:
 ##    0  すべて安全な 10 進の実数表記である (SX_EX_OK)
@@ -18,24 +18,16 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_arg Q_exp|])dnl
 
 __sx_num_is_float_safe() {
+	case "${*}" in *[Ee]*) ;; *)
+		__sx_num_is_fixed "${@}" || return
+		return
+	esac
+
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in
-			*[Ee]*)
-				Q_exp="${Q_arg#*[Ee]}"
-				case "${Q_exp}" in
-					-*) Q_exp="${Q_exp#-}";;
-					+*) Q_exp="${Q_exp#+}";;
-				esac
-				__sx_num_cmp_nat0 "${Q_exp}" "${SX_CFG_FLOAT_EXP_MAX}" || case "${?}" in
-					1) :;;
-					*)
-						unset CLEANUP
-						return 1
-						;;
-				esac
-				;;
-		esac
-		__sx_num_is_float "${Q_arg}" || {
+		__sx_num_is_float "${Q_arg}" && case "${Q_arg}" in *[Ee]*)
+			Q_exp="${Q_arg#*[Ee]}"
+			__sx_num_cmp_nat0 "${Q_exp#[+-]}" "${SX_CFG_FLOAT_EXP_MAX}" || case "${?}" in 3) ! :;; esac
+		esac || {
 			unset CLEANUP
 			return 1
 		}
