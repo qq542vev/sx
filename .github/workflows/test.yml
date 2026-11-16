@@ -21,7 +21,7 @@ jobs:
           set -efu -o pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends m4 make
-          curl -fsSL 'https://git.io/shellspec' | sh -s -- --yes --prefix /usr/local
+          curl -fsSL 'https://git.io/shellspec' | sh -s -- f2d13f991885ef44e6b54e571e0842222251b111 --yes --prefix /usr/local
           ver=2.61 arc_name="yash-${ver}-linux-$(uname -m)"
           curl -fsSL "https://gitlab.com/qq542vev/build-yash/-/releases/${ver}/downloads/${arc_name}.tar.gz" \
             | tar -xzC / --strip-components=1 "${arc_name}/usr/local/bin/yash"
