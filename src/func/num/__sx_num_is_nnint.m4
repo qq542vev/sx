@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_num_is_pint|])dnl
+M_REQUIRE([||])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_num_is_nnint - すべての引数が非負整数（0以上の整数）であるか確認する（内部用）
@@ -18,14 +18,10 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_nnint() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in
-			00 | [+-]00 | 0 | [+-]0 | 0[Xx]0 | [+-]0[Xx]0) continue;;
-		esac
-
-		__sx_num_is_pint "${Q_arg}" || {
+		case "${Q_arg}" in M_NUM_PATTERN_NOT_NNINT)
 			unset CLEANUP
 			return 1
-		}
+		esac
 	done
 
 	unset CLEANUP

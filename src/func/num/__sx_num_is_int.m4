@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_num_is_nat0|])dnl
+M_REQUIRE([||])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_num_is_int - すべての引数が整数であるか確認する（内部用）
@@ -17,16 +17,11 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_int() {
-	case "${IFS-}${*}" in *[+-]*) ;; *)
-		__sx_num_is_nat0 "${@}" || return
-		return
-	esac
-
 	for Q_arg in "${@}"; do
-		__sx_num_is_nat0 "${Q_arg#[+-]}" || {
+		case "${Q_arg}" in M_NUM_PATTERN_NOT_INT)
 			unset CLEANUP
 			return 1
-		}
+		esac
 	done
 
 	unset CLEANUP

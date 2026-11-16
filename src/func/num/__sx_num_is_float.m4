@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_num_is_fixed __sx_num_is_int_base|])dnl
+M_REQUIRE([|__sx_num_is_fixed|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_num_is_float - すべての引数が 10 進の実数表記（浮動小数点形式）であるか確認する（内部用）
@@ -18,18 +18,16 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_float() {
-	case "${IFS-}${*}" in *[Ee]*) ;; *)
+	case "${*}" in *[Ee]*) ;; *)
 		__sx_num_is_fixed "${@}" || return
 		return
 	esac
 
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in *[Ee]*)
-			__sx_num_is_int_base 10 "${Q_arg#*[Ee]}"
-		esac && __sx_num_is_fixed "${Q_arg%%[Ee]*}" || {
+		case "${Q_arg}" in M_NUM_PATTERN_NOT_FLOAT)
 			unset CLEANUP
 			return 1
-		}
+		esac
 	done
 
 	unset CLEANUP

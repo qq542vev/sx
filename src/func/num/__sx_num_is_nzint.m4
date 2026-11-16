@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_num_is_int|])dnl
+M_REQUIRE([||])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_num_is_nzint - すべての引数が 0 以外の整数であるか確認する（内部用）
@@ -18,13 +18,10 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_nzint() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in
-			0 | [+-]0 | 00 | [+-]00 | 0[Xx]0 | [+-]0[Xx]0) ! :;;
-			*) __sx_num_is_int "${Q_arg}";;
-		esac || {
+		case "${Q_arg}" in M_NUM_PATTERN_NOT_NZINT)
 			unset CLEANUP
 			return 1
-		}
+		esac
 	done
 
 	unset CLEANUP
