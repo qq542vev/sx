@@ -600,6 +600,11 @@ define([|M_NUM_PATTERN_NOT_NINT_BASE8|], [|''|*[!0-7]|[!-]*|*[!0-7]?|*[!0-7][!0]
 define([|M_NUM_PATTERN_NOT_NINT_BASE10|], [|''|?|[!-]*|*[!0-9][!1-9]*|?*[!0-9]*|])dnl
 define([|M_NUM_PATTERN_NOT_NINT_BASE16|], [|''|*[!0-9ABCDEFabcdef]|??|[!-]*|*[!0-9A-FXa-fx]?[!Xx]*|*[!0-]*[!0-9ABCDEFabcdef]*|*?*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*|])dnl
 
+
+define([|M_NUM_PATTERN_NOT_FIXED|], [|''|*[!0-9]|[!1-9+-][!.]*|*?[!0-9.]*|[!0-9][!1-9][!.]*|*[!0-9+-]*[!0-9]*|])dnl
+
+define([|M_NUM_PATTERN_NOT_FLOAT|], [|''|*[!0-9]|[!1-9+-][!.Ee]*|*[!0-9][!0-9+-]*|*[!Ee][!0-9Ee.]*|*[!0-9.+-]*[!0-9+-]*|*[!0-9+-]*[!0-9Ee+-]*|*[!0-9.][!1-9+-][!Ee.]*|])dnl
+
 M_RENAME_QI([|dnl
 define([|__sx_m4_gen_uri_enc_case|], [|dnl
 ifelse(eval(($1 >= 48 && $1 <= 57) || ($1 >= 65 && $1 <= 90) || ($1 >= 97 && $1 <= 122) || $1 == 45 || $1 == 46 || $1 == 95 || $1 == 126), 0, [|dnl
