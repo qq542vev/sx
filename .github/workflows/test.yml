@@ -25,7 +25,6 @@ jobs:
           ver=2.61 arc_name="yash-${ver}-linux-$(uname -m)"
           curl -fsSL "https://gitlab.com/qq542vev/build-yash/-/releases/${ver}/downloads/${arc_name}.tar.gz" \
             | tar -xzC / --strip-components=1 "${arc_name}/usr/local/bin/yash"
-          ln -sf "$(command -v yash)" /usr/local/bin/sh
 
       - name: Run full test
         run: SHELL=yash make test TEST_FLAGS='--warning-as-failure'
