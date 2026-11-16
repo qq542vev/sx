@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# yash 2.61 を shellspec に POSIX シェルとして誤認させるラッパー
+# 検査スクリプトが呼ばれたら、機能サポートなしを返してエラーを回避
+case "${*}" in
+	*inspection*) exit;;
+esac
+
+exec "$(command -v yash)" "${@}"

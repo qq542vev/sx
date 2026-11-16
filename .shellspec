@@ -1,3 +1,3 @@
---shell sh
+--shell '.local/bin/yash -o posixlycorrect'
 --warning-as-failure
 --require spec_helper
