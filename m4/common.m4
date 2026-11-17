@@ -379,7 +379,7 @@ define([|M_STR_RCHUNK_SKIP_LONG|], [|2|])dnl
 
 # RFC 3986 の URI 構成要素の文字集合。通常版・引数列版ともにバイト値の昇順で保持する。
 # pct-encoded (%HH) は文字集合ではなく並びであるためここには含めず、
-# glob パターン用の *_GLOB 定数（SX_URI_PCT_ENCODED_GLOB）として別管理する。
+# glob パターン用の *_ACCEPT_PCT_ENCODED 定数（SX_URI_ACCEPT_PCT_ENCODED）として別管理する。
 # % の検査には SX_STR_XDIGIT と sx_uri_is_pct も使用する。
 # 値はデータ集合であり、case のブラケット式に直接埋め込むパターンではない。
 # ブラケット式で使う場合は - を先頭、] を先頭、! を末尾へ呼び出し側で並べ替える。
@@ -441,7 +441,7 @@ define([|M_URI_SCHEME_FIRST|], [|[|ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrs
 define([|M_URI_SCHEME_FIRST_ARGS|], [|[|'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H' 'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P' 'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X' 'Y' 'Z' 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p' 'q' 'r' 's' 't' 'u' 'v' 'w' 'x' 'y' 'z'|]|])dnl
 # pct-encoded = "%" HEXDIG HEXDIG (RFC 3986 2.1)。
 # シェルの glob パターンであり、case やパラメータ展開ではクォートせずに展開する。
-define([|M_URI_PCT_ENCODED_GLOB|], [|%[M_STR_XDIGIT()][M_STR_XDIGIT()]|])dnl
+define([|M_URI_ACCEPT_PCT_ENCODED|], [|%[M_STR_XDIGIT()][M_STR_XDIGIT()]|])dnl
 
 # 数値定数 (8bit / 16bit / 32bit / 64bit / 128bit 整数限界)
 define([|M_NUM_I8_MAX|], [|127|])dnl

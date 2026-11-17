@@ -37,7 +37,7 @@ Describe 'SX_URI_* 定数'
       sxtest_load ./build/modules/SX_URI_SCHEME_ARGS.sh
       sxtest_load ./build/modules/SX_URI_SCHEME_FIRST.sh
       sxtest_load ./build/modules/SX_URI_SCHEME_FIRST_ARGS.sh
-      sxtest_load ./build/modules/SX_URI_PCT_ENCODED_GLOB.sh
+      sxtest_load ./build/modules/SX_URI_ACCEPT_PCT_ENCODED.sh
       ;;
   esac
 
@@ -77,13 +77,13 @@ Describe 'SX_URI_* 定数'
 
   It 'pct-encoded の glob パターンを保持すること'
     When call :
-    The variable SX_URI_PCT_ENCODED_GLOB should equal '%[0123456789ABCDEFabcdef][0123456789ABCDEFabcdef]'
+    The variable SX_URI_ACCEPT_PCT_ENCODED should equal '%[0123456789ABCDEFabcdef][0123456789ABCDEFabcdef]'
   End
 
-  It 'SX_URI_PCT_ENCODED_GLOB をクォートなしで展開して %HH に一致判定できること'
+  It 'SX_URI_ACCEPT_PCT_ENCODED をクォートなしで展開して %HH に一致判定できること'
     check_pct_glob() {
       case "${1}" in
-        ${SX_URI_PCT_ENCODED_GLOB}) return 0 ;;
+        ${SX_URI_ACCEPT_PCT_ENCODED}) return 0 ;;
         *) return 1 ;;
       esac
     }
@@ -91,10 +91,10 @@ Describe 'SX_URI_* 定数'
     The status should be success
   End
 
-  It 'SX_URI_PCT_ENCODED_GLOB が不正なパーセント表記に一致しないこと'
+  It 'SX_URI_ACCEPT_PCT_ENCODED が不正なパーセント表記に一致しないこと'
     check_pct_glob() {
       case "${1}" in
-        ${SX_URI_PCT_ENCODED_GLOB}) return 0 ;;
+        ${SX_URI_ACCEPT_PCT_ENCODED}) return 0 ;;
         *) return 1 ;;
       esac
     }
@@ -117,7 +117,7 @@ Describe 'SX_URI_* 定数'
       SX_URI_FRAGMENT SX_URI_FRAGMENT_ARGS \
       SX_URI_SCHEME SX_URI_SCHEME_ARGS \
       SX_URI_SCHEME_FIRST SX_URI_SCHEME_FIRST_ARGS \
-      SX_URI_PCT_ENCODED_GLOB
+      SX_URI_ACCEPT_PCT_ENCODED
     The status should be success
   End
 End
