@@ -191,6 +191,10 @@ M_UNIT([|sx_num_is_float|], [|src/func/num/sx_num_is_float.m4|])dnl
 M_UNIT([|__sx_num_is_float|], [|src/func/num/__sx_num_is_float.m4|])dnl
 M_UNIT([|sx_num_is_float_safe|], [|src/func/num/sx_num_is_float_safe.m4|])dnl
 M_UNIT([|__sx_num_is_float_safe|], [|src/func/num/__sx_num_is_float_safe.m4|])dnl
+M_UNIT([|sx_num_is_ufixed|], [|src/func/num/sx_num_is_ufixed.m4|])dnl
+M_UNIT([|__sx_num_is_ufixed|], [|src/func/num/__sx_num_is_ufixed.m4|])dnl
+M_UNIT([|sx_num_is_ufloat|], [|src/func/num/sx_num_is_ufloat.m4|])dnl
+M_UNIT([|__sx_num_is_ufloat|], [|src/func/num/__sx_num_is_ufloat.m4|])dnl
 M_UNIT([|sx_num_is_int|], [|src/func/num/sx_num_is_int.m4|])dnl
 M_UNIT([|__sx_num_is_int|], [|src/func/num/__sx_num_is_int.m4|])dnl
 M_UNIT([|sx_num_is_int_base|], [|src/func/num/sx_num_is_int_base.m4|])dnl
