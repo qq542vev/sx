@@ -159,11 +159,15 @@ Describe '共通マクロと定数の個別展開'
     The output should equal 'readonly SX_URI_HEXDIG=0123456789ABCDEFabcdef'
   End
 
-  It 'URI の 16進数引数列集合を XDIGIT_ARGS と同じ値で単独で出力すること'
-    expected="readonly SX_URI_HEXDIG_ARGS='0' '1' '2' '3' '4' '5' '6' '7' '8' '9' 'A' 'B' 'C' 'D' 'E' 'F' 'a' 'b' 'c' 'd' 'e' 'f'"
-    When run expand_split_constants src/const/uri/SX_URI_HEXDIG_ARGS.m4
+  It 'URI の 16進数引数列集合は eval set -- で 1 文字ずつ展開して連結値を取得できること'
+    When run ./.local/bin/yash -o posixlycorrect -c '
+      split_script=$(m4 -- m4/common.m4 src/const/uri/SX_URI_HEXDIG_ARGS.m4) || exit
+      eval "${split_script}" || exit
+      eval set -- "${SX_URI_HEXDIG_ARGS}"
+      IFS=""
+      [ "${*}" = "0123456789ABCDEFabcdef" ]
+    '
     The status should be success
-    The output should equal "${expected}"
   End
 
   It '複数行の定数を含む全定数の値が元の展開結果と一致すること'
