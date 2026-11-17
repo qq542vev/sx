@@ -7,7 +7,7 @@ M_REQUIRE([|__sx_num_is_float_safe|])dnl
 ## 説明:
 ##   実処理は内部関数 __sx_num_is_float_safe に委譲する。
 ##   sx_num_is_float による形式検証に加えて、設定項目 SX_CFG_NUM_FLOAT_EXP_MAX で
-##   指数の絶対値を制限する（|指数| < SX_CFG_NUM_FLOAT_EXP_MAX を受理、それ以上を拒否）。
+##   指数の絶対値を制限する（|指数| <= SX_CFG_NUM_FLOAT_EXP_MAX を受理、それ以上を拒否）。
 ##
 ## 終了ステータス:
 ##    0  すべて安全な 10 進の実数表記である (SX_EX_OK)

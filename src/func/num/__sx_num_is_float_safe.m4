@@ -15,7 +15,7 @@ M_RENAME_QI([|dnl
 ##    0  すべて安全な 10 進の実数表記である (SX_EX_OK)
 ##    1  安全ではない、または 10 進の実数表記ではない値が含まれる
 
-define([|CLEANUP|], [|Q_arg Q_exp|])dnl
+define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_float_safe() {
 	case "${*}" in *[Ee]*) ;; *)
@@ -24,9 +24,14 @@ __sx_num_is_float_safe() {
 	esac
 
 	for Q_arg in "${@}"; do
-		__sx_num_is_float "${Q_arg}" && case "${Q_arg}" in *[Ee]*)
-			Q_exp="${Q_arg#*[Ee]}"
-			__sx_num_cmp_nat0 "${Q_exp#[+-]}" "${SX_CFG_NUM_FLOAT_EXP_MAX}" || case "${?}" in 3) ! :;; esac
+		case "${Q_arg}" in
+			*[Ee]*)
+				__sx_num_is_float "${Q_arg}" && {
+					Q_arg="${Q_arg#*[Ee]}"
+					__sx_num_cmp_nat0 "${Q_arg#[+-]}" "${SX_CFG_NUM_FLOAT_EXP_MAX}" || case "${?}" in 3) ! :;; esac
+				}
+				;;
+			*) __sx_num_is_fixed "${Q_arg}";;
 		esac || {
 			unset CLEANUP
 			return 1
