@@ -17,7 +17,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_nat1_base8() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in M_NUM_PATTERN_NOT_NAT1_BASE8)
+		case "${Q_arg}" in M_NUM_REJECT_NAT1_BASE8)
 			unset CLEANUP
 			return 1
 		esac

@@ -25,7 +25,7 @@ __sx_num_is_ufloat() {
 	esac
 
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in M_NUM_PATTERN_NOT_UFLOAT)
+		case "${Q_arg}" in M_NUM_REJECT_UFLOAT)
 			unset CLEANUP
 			return 1
 		esac

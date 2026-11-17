@@ -18,7 +18,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_int() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in M_NUM_PATTERN_NOT_INT)
+		case "${Q_arg}" in M_NUM_REJECT_INT)
 			unset CLEANUP
 			return 1
 		esac

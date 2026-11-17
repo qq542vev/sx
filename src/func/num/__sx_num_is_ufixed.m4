@@ -20,7 +20,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_ufixed() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in M_NUM_PATTERN_NOT_UFIXED)
+		case "${Q_arg}" in M_NUM_REJECT_UFIXED)
 			unset CLEANUP
 			return 1
 		esac

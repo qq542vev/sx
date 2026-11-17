@@ -18,7 +18,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_pint() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in M_NUM_PATTERN_NOT_PINT)
+		case "${Q_arg}" in M_NUM_REJECT_PINT)
 			unset CLEANUP
 			return 1
 		esac

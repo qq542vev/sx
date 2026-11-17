@@ -17,7 +17,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_nzint_base16() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in M_NUM_PATTERN_NOT_NZINT_BASE16)
+		case "${Q_arg}" in M_NUM_REJECT_NZINT_BASE16)
 			unset CLEANUP
 			return 1
 		esac

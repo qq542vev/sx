@@ -18,7 +18,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_num_is_nint() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in M_NUM_PATTERN_NOT_NINT)
+		case "${Q_arg}" in M_NUM_REJECT_NINT)
 			unset CLEANUP
 			return 1
 		esac
