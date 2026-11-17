@@ -18,11 +18,13 @@ Describe 'sx_const_check'
       sxtest_load ./build/modules/SX_CFG_META_DESC_SIG_ARR.sh
       sxtest_load ./build/modules/SX_CFG_META_DESC_SKIP_CHK.sh
       sxtest_load ./build/modules/SX_CFG_META_NAMES.sh
-      sxtest_load ./build/modules/SX_CFG_META_PATTERN_ARR_HOLE.sh
-      sxtest_load ./build/modules/SX_CFG_META_PATTERN_NUM_RANGE.sh
-      sxtest_load ./build/modules/SX_CFG_META_PATTERN_SEP.sh
-      sxtest_load ./build/modules/SX_CFG_META_PATTERN_SIG_ARR.sh
-      sxtest_load ./build/modules/SX_CFG_META_PATTERN_SKIP_CHK.sh
+      sxtest_load ./build/modules/SX_CFG_META_ACCEPT_ARR_HOLE.sh
+      sxtest_load ./build/modules/SX_CFG_META_ACCEPT_NUM_FLOAT_EXP_MAX.sh
+      sxtest_load ./build/modules/SX_CFG_META_ACCEPT_NUM_RANGE.sh
+      sxtest_load ./build/modules/SX_CFG_META_ACCEPT_SEP.sh
+      sxtest_load ./build/modules/SX_CFG_META_ACCEPT_SIG_ARR.sh
+      sxtest_load ./build/modules/SX_CFG_META_ACCEPT_SKIP_CHK.sh
+      sxtest_load ./build/modules/SX_CFG_META_REJECT_NUM_FLOAT_EXP_MAX.sh
       sxtest_load ./build/modules/SX_EX_MSG71.sh
       sxtest_load ./build/modules/SX_EX_MSG73.sh
       sxtest_load ./build/modules/SX_NUM_BASE10_PREFIX.sh
@@ -252,24 +254,27 @@ Describe 'sx_const_check'
 
   It '設定項目名の一覧を公開すること'
     When call :
-    The variable SX_CFG_META_NAMES should equal 'SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_HOLE'
+    The variable SX_CFG_META_NAMES should equal 'SIG_ARR SKIP_CHK NUM_RANGE SEP ARR_HOLE NUM_FLOAT_EXP_MAX'
   End
 
   It '設定値の受理パターンを公開すること'
     When call :
-    The variable SX_CFG_META_PATTERN_SIG_ARR should equal '?*'
-    The variable SX_CFG_META_PATTERN_SKIP_CHK should equal '[01]'
-    The variable SX_CFG_META_PATTERN_NUM_RANGE should equal '32|64|128'
-    The variable SX_CFG_META_PATTERN_SEP should equal '?*'
-    The variable SX_CFG_META_PATTERN_ARR_HOLE should equal '*'
+    The variable SX_CFG_META_ACCEPT_SIG_ARR should equal '?*'
+    The variable SX_CFG_META_ACCEPT_SKIP_CHK should equal '[01]'
+    The variable SX_CFG_META_ACCEPT_NUM_RANGE should equal '32|64|128'
+    The variable SX_CFG_META_ACCEPT_SEP should equal '?*'
+    The variable SX_CFG_META_ACCEPT_ARR_HOLE should equal '*'
+    The variable SX_CFG_META_ACCEPT_NUM_FLOAT_EXP_MAX should equal '*'
+    The variable SX_CFG_META_REJECT_NUM_FLOAT_EXP_MAX should equal "''|*[!0-9]*|[!1-9]?*"
   End
 
   It '設定のメタ情報が読み取り専用であること'
     When call sx_var_is_ro SX_CFG_META_NAMES \
       SX_CFG_META_DEF_SIG_ARR SX_CFG_META_DEF_SKIP_CHK SX_CFG_META_DEF_NUM_RANGE \
       SX_CFG_META_DEF_SEP SX_CFG_META_DEF_ARR_HOLE \
-      SX_CFG_META_PATTERN_SIG_ARR SX_CFG_META_PATTERN_SKIP_CHK SX_CFG_META_PATTERN_NUM_RANGE \
-      SX_CFG_META_PATTERN_SEP SX_CFG_META_PATTERN_ARR_HOLE \
+      SX_CFG_META_ACCEPT_SIG_ARR SX_CFG_META_ACCEPT_SKIP_CHK SX_CFG_META_ACCEPT_NUM_RANGE \
+      SX_CFG_META_ACCEPT_SEP SX_CFG_META_ACCEPT_ARR_HOLE \
+      SX_CFG_META_REJECT_NUM_FLOAT_EXP_MAX \
       SX_CFG_META_DESC_SIG_ARR SX_CFG_META_DESC_SKIP_CHK SX_CFG_META_DESC_NUM_RANGE \
       SX_CFG_META_DESC_SEP SX_CFG_META_DESC_ARR_HOLE
     The status should be success

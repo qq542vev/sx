@@ -14,6 +14,14 @@ Describe 'sx_cfg_is_valid -efu 環境検証'
       'NUM_RANGE=32' 0
       'NUM_RANGE=64' 0
       'NUM_RANGE=128' 0
+      'NUM_FLOAT_EXP_MAX=1' 0
+      'NUM_FLOAT_EXP_MAX=10000' 0
+      'NUM_FLOAT_EXP_MAX=0' 0
+      'NUM_FLOAT_EXP_MAX=00' 1
+      'NUM_FLOAT_EXP_MAX=01' 1
+      'NUM_FLOAT_EXP_MAX=abc' 1
+      'NUM_FLOAT_EXP_MAX=' 1
+      'NUM_FLOAT_EXP_MAX=-1' 1
       'ARR_REF' 1
       'ARR_REF=!' 1
       '64' 1

@@ -541,16 +541,25 @@ define([|M_CFG_META_DEF_ARR_HOLE|], [||])dnl
 define([|M_CFG_META_DEF_NUM_FLOAT_EXP_MAX|], [|10000|])dnl
 
 # 受理する glob パターンを | で区切る。各選択肢に設定名を付けて case を生成する。
-define([|M_CFG_META_PATTERN_SIG_ARR|], [|?*|])dnl
-define([|M_CFG_META_PATTERN_SKIP_CHK|], [|[01]|])dnl
-define([|M_CFG_META_PATTERN_NUM_RANGE|], [|32|64|128|])dnl
-define([|M_CFG_META_PATTERN_SEP|], [|?*|])dnl
-define([|M_CFG_META_PATTERN_ARR_HOLE|], [|*|])dnl
-define([|M_CFG_META_PATTERN_NUM_FLOAT_EXP_MAX|], [|[0-9][0-9]*|])dnl
+# パターンに一致すれば妥当、それ以外は不正。
+define([|M_CFG_META_ACCEPT_SIG_ARR|], [|?*|])dnl
+define([|M_CFG_META_ACCEPT_SKIP_CHK|], [|[01]|])dnl
+define([|M_CFG_META_ACCEPT_NUM_RANGE|], [|32|64|128|])dnl
+define([|M_CFG_META_ACCEPT_SEP|], [|?*|])dnl
+define([|M_CFG_META_ACCEPT_ARR_HOLE|], [|*|])dnl
+define([|M_CFG_META_ACCEPT_NUM_FLOAT_EXP_MAX|], [|*|])dnl
 
-define([|__sx_m4_gen_cfg_pattern|], [|M_CONST([|CFG_META_PATTERN_$1|])
+# 拒否する glob パターンを | で区切る。各選択肢に設定名を付けて case を生成する。
+# パターンに一致すれば不正、それ以外は妥当。
+define([|M_CFG_META_REJECT_NUM_FLOAT_EXP_MAX|], [|''|*[!0-9]*|[!1-9]?*|])dnl
+
+# ACCEPT パターンから case 節を生成する。定義されていない項目は空展開（未定義 ACCEPT のフォールバックは廃止）。
+define([|__sx_m4_gen_cfg_case_accept|], [|ifdef([|M_CFG_META_ACCEPT_$1|], [|$1=patsubst(defn([|M_CFG_META_ACCEPT_$1|]), [|||], [| | $1=|])) ;;|])dnl
 |])dnl
-define([|__sx_m4_gen_cfg_case|], [|$1=patsubst(defn([|M_CFG_META_PATTERN_$1|]), [|||], [| | $1=|])) ;;
+
+# REJECT パターンから case 節を生成する。パターンに一致すれば不正（return 1）、
+# 一致しなければ妥当（キャッチオールで許容）。定義されていない項目は空展開。
+define([|__sx_m4_gen_cfg_case_reject|], [|ifdef([|M_CFG_META_REJECT_$1|], [|$1=patsubst(defn([|M_CFG_META_REJECT_$1|]), [|||], [| | $1=|])) unset CLEANUP; return 1 ;;|])dnl
 |])dnl
 
 define([|M_CFG_META_DESC_SIG_ARR|], [|配列を識別する署名。|])dnl

@@ -10,7 +10,7 @@ M_REQUIRE([|__sx_cfg_is_valid|])dnl
 ##   引数がない場合は、現在の SX_CFG_* 変数の値をすべて検査する。
 ##   未設定の項目は不正とする。設定済みの空文字は項目ごとの規則に従って検査する。
 ##   設定項目名は SX_CFG_META_NAMES に列挙する。META_ で始まる名前は設定項目として認めない。
-##   各設定値の受理パターンは SX_CFG_META_PATTERN_* に公開する。
+##   各設定値の受理パターンは SX_CFG_META_ACCEPT_* に、拒否パターンは SX_CFG_META_REJECT_* に公開する。
 ##
 ## 終了ステータス:
 ##    0  すべて妥当 (SX_EX_OK)

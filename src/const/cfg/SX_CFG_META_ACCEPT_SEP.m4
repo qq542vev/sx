@@ -1,0 +1,2 @@
+M_REQUIRE([||])dnl
+M_CONST([|CFG_META_ACCEPT_SEP|])

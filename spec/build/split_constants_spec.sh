@@ -95,9 +95,9 @@ Describe '共通マクロと定数の個別展開'
   End
 
   It '受理パターンを一項目だけ出力すること'
-    When run expand_split_constants src/const/cfg/SX_CFG_META_PATTERN_NUM_RANGE.m4
+    When run expand_split_constants src/const/cfg/SX_CFG_META_ACCEPT_NUM_RANGE.m4
     The status should be success
-    The output should equal "readonly SX_CFG_META_PATTERN_NUM_RANGE='32|64|128'"
+    The output should equal "readonly SX_CFG_META_ACCEPT_NUM_RANGE='32|64|128'"
   End
 
   It '制御文字全体の集合をドル単一引用符で一つだけ宣言すること'
