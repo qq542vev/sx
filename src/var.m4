@@ -1,7 +1,7 @@
 M_UNIT([|SX_CFG_SIG_ARR|], [|src/var/cfg/SX_CFG_SIG_ARR.m4|])dnl
 M_UNIT([|SX_CFG_SKIP_CHK|], [|src/var/cfg/SX_CFG_SKIP_CHK.m4|])dnl
 M_UNIT([|SX_CFG_NUM_RANGE|], [|src/var/cfg/SX_CFG_NUM_RANGE.m4|])dnl
-M_UNIT([|SX_CFG_FLOAT_EXP_MAX|], [|src/var/cfg/SX_CFG_FLOAT_EXP_MAX.m4|])dnl
+M_UNIT([|SX_CFG_NUM_FLOAT_EXP_MAX|], [|src/var/cfg/SX_CFG_NUM_FLOAT_EXP_MAX.m4|])dnl
 M_UNIT([|SX_CFG_SEP|], [|src/var/cfg/SX_CFG_SEP.m4|])dnl
 M_UNIT([|SX_CFG_ARR_HOLE|], [|src/var/cfg/SX_CFG_ARR_HOLE.m4|])dnl
 M_UNIT([|SX_SYS_REV|], [|src/var/sys/SX_SYS_REV.m4|])dnl

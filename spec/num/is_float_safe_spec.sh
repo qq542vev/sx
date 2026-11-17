@@ -31,20 +31,20 @@ Describe 'sx_num_is_float_safe'
     The status should be success
   End
 
-  It 'SX_CFG_FLOAT_EXP_MAX=10 なら指数の絶対値が10以下を受理すること'
-    sxtest_run r_ok r_ok2 -- 'sx_cfg_set FLOAT_EXP_MAX=10; sx_num_is_float_safe 1e9; r_ok=$?; sx_num_is_float_safe 1e10; r_ok2=$?'
+  It 'SX_CFG_NUM_FLOAT_EXP_MAX=10 なら指数の絶対値が10以下を受理すること'
+    sxtest_run r_ok r_ok2 -- 'sx_cfg_set NUM_FLOAT_EXP_MAX=10; sx_num_is_float_safe 1e9; r_ok=$?; sx_num_is_float_safe 1e10; r_ok2=$?'
     The variable r_ok should equal 0
     The variable r_ok2 should equal 0
   End
 
   It '符号付き指数の絶対値で判定すること'
-    sxtest_run r_ok r_ok2 -- 'sx_cfg_set FLOAT_EXP_MAX=10; sx_num_is_float_safe 1e-9; r_ok=$?; sx_num_is_float_safe 1e-10; r_ok2=$?'
+    sxtest_run r_ok r_ok2 -- 'sx_cfg_set NUM_FLOAT_EXP_MAX=10; sx_num_is_float_safe 1e-9; r_ok=$?; sx_num_is_float_safe 1e-10; r_ok2=$?'
     The variable r_ok should equal 0
     The variable r_ok2 should equal 0
   End
 
   It 'sx_cfg_set で実行時に閾値を変更できること'
-    sxtest_run r1 r2 r3 r4 -- 'sx_cfg_set FLOAT_EXP_MAX=10; sx_num_is_float_safe 1e9; r1=$?; sx_cfg_set FLOAT_EXP_MAX=100; sx_num_is_float_safe 1e99; r2=$?; sx_cfg_set FLOAT_EXP_MAX=100; sx_num_is_float_safe 1e100; r3=$?; sx_cfg_set FLOAT_EXP_MAX=10000; sx_num_is_float_safe 1e9999; r4=$?'
+    sxtest_run r1 r2 r3 r4 -- 'sx_cfg_set NUM_FLOAT_EXP_MAX=10; sx_num_is_float_safe 1e9; r1=$?; sx_cfg_set NUM_FLOAT_EXP_MAX=100; sx_num_is_float_safe 1e99; r2=$?; sx_cfg_set NUM_FLOAT_EXP_MAX=100; sx_num_is_float_safe 1e100; r3=$?; sx_cfg_set NUM_FLOAT_EXP_MAX=10000; sx_num_is_float_safe 1e9999; r4=$?'
     The variable r1 should equal 0
     The variable r2 should equal 0
     The variable r3 should equal 0
