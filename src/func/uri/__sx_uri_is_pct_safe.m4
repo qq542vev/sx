@@ -17,7 +17,7 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_uri_is_pct_safe() {
-	case "${IFS-} ${*}" in *%00*)
+	case "${*}" in *%00*)
 		for Q_arg in "${@}"; do
 			case "${Q_arg}" in *%00*)
 				unset CLEANUP

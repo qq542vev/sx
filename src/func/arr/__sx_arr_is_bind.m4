@@ -19,7 +19,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 __sx_arr_is_bind() {
 	__sx_var_is_bind "${@}" || return
 
-	case "${IFS-}${*}" in *@*) ;; *)
+	case "${*}" in *@*) ;; *)
 		return
 	esac
 
