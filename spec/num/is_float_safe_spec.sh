@@ -16,8 +16,8 @@ Describe 'sx_num_is_float_safe'
     The status should be success
   End
 
-  It '指数が5桁（MAXと等しい）なら受け付けること'
-    When call sx_num_is_float_safe 1e10000
+  It '既定上限65536と等しい指数を受け付けること'
+    When call sx_num_is_float_safe 1e65536
     The status should be success
   End
 

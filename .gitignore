@@ -6,6 +6,7 @@
 !.shellcheckrc
 !.shellspec
 !tools/**
+!m4/
 !m4/**
 !.local/
 !.local/**

@@ -8,6 +8,7 @@ build_prepare_fixture() {
     "$SXTEST_BUILD_DIR/src/const" "$SXTEST_BUILD_DIR/src/var" "$SXTEST_BUILD_DIR/src/func"
   cp Makefile "$SXTEST_BUILD_DIR/Makefile"
   cp m4/common.m4 m4/resolve.m4 "$SXTEST_BUILD_DIR/m4/"
+  cp -R m4/const "$SXTEST_BUILD_DIR/m4/"
   cp tools/compact.awk "$SXTEST_BUILD_DIR/tools/compact.awk"
   : > "$SXTEST_BUILD_DIR/src/const.m4"
   : > "$SXTEST_BUILD_DIR/src/var.m4"
