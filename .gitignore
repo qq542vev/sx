@@ -15,4 +15,6 @@
 !spec/**
 !.github
 !.github/**
+!Dockerfile
+!docker-compose.yml
 **/__pycache__/

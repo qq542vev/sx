@@ -1,0 +1,22 @@
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USER_UID: ${USER_UID:-1001}
+        USER_GID: ${USER_GID:-1001}
+    image: sx-dev-agent
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - ~/.config/opencode:/home/agent/.config/opencode
+      - ~/.local/share/opencode:/home/agent/.local/share/opencode
+      - ~/.config/kilo:/home/agent/.config/kilo
+      - ~/.local/share/kilo:/home/agent/.local/share/kilo
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    stdin_open: true
+    tty: true
+    command: bash
