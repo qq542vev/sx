@@ -538,7 +538,7 @@ define([|M_CFG_META_DEF_SKIP_CHK|], [|0|])dnl
 define([|M_CFG_META_DEF_NUM_RANGE|], [|32|])dnl
 define([|M_CFG_META_DEF_SEP|], [|:::|])dnl
 define([|M_CFG_META_DEF_ARR_HOLE|], [||])dnl
-define([|M_CFG_META_DEF_NUM_FLOAT_EXP_MAX|], [|10000|])dnl
+define([|M_CFG_META_DEF_NUM_FLOAT_EXP_MAX|], [|65536|])dnl
 
 # 受理する glob パターンを | で区切る。各選択肢に設定名を付けて case を生成する。
 # パターンに一致すれば妥当、それ以外は不正。
@@ -567,7 +567,7 @@ define([|M_CFG_META_DESC_SKIP_CHK|], [|1 で公開 API の引数検査を省略�
 define([|M_CFG_META_DESC_NUM_RANGE|], [|実行シェルの算術域以下で指定する整数のビット幅（32・64・128）。|])dnl
 define([|M_CFG_META_DESC_SEP|], [|設定引数とデータを区切る文字列。|])dnl
 define([|M_CFG_META_DESC_ARR_HOLE|], [|sx_arr_quote・sx_arr_rquote で未設定の配列要素を表す値。|])dnl
-define([|M_CFG_META_DESC_NUM_FLOAT_EXP_MAX|], [|sx_num_is_float_safe で受理する指数の絶対値の上限（未満の値を受理）。|])dnl
+define([|M_CFG_META_DESC_NUM_FLOAT_EXP_MAX|], [|sx_num_is_float_safe で受理する指数の絶対値の上限（以下の値を受理）。|])dnl
 
 define([|M_NUM_REJECT_NAT0|], [|''|[!0-9]*|[!1-9][!0-7]|[!0]*[!0-9]*|[!1-9][!1-7Xx]*?|*[!0]*[!0-9ABCDEFabcdef]*|[!1-9][!Xx]*[!0-7]*|?[!0-9][!1-9ABCDEFabcdef]*?*|])dnl
 define([|M_NUM_REJECT_NAT0_BASE8|], [|''|?|[!0]*|*[!0-7]*|?[!1-7]*?*|])dnl
