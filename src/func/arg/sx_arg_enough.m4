@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_enough __sx_num_is_int_base|])dnl
+M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_enough __sx_num_is_int_base10|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_enough - 引数リストから callback の条件を満たす要素が指定数以上あるか確認する
 ##
@@ -47,7 +47,7 @@ sx_arg_enough() {
 
 	case "X${SX_CFG_SEP}" in
 		"${1+X${1}}" | "${2+X${2}}") ;;
-		"${3+X${3}}") __sx_num_is_int_base 10 "${2}" || return M_EX_USAGE;;
+		"${3+X${3}}") __sx_num_is_int_base10 "${2}" || return M_EX_USAGE;;
 	esac
 
 	__sx_arg_enough "${@}" || return

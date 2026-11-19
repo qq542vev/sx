@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_base __sx_num_is_int_fit_dec|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_base10 __sx_num_is_int_fit_dec|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_is_int_fit_dec - すべての引数が指定されたビット幅の符号付き10進整数の範囲内か確認する
 ##
@@ -24,7 +24,7 @@ sx_num_is_int_fit_dec() {
 		*) return M_EX_USAGE;;
 	esac
 
-	__sx_num_is_int_base 10 "${@}" || return M_EX_USAGE
+	__sx_num_is_int_base10 "${@}" || return M_EX_USAGE
 
 	__sx_num_is_int_fit_dec "${@}" || return
 }

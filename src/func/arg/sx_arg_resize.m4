@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_resize __sx_num_is_nat0_base __sx_num_is_nat0_safe __sx_var_is_bind __sx_var_is_bindable|])dnl
+M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_resize __sx_num_is_nat0_base10 __sx_num_is_nat0_safe __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_arg_resize - 引数リストを指定された形状にリサイズする
@@ -71,7 +71,7 @@ sx_arg_resize() {
 		Q_dim="${Q_shape%%:*}"
 		case "${Q_dim}:${Q_inferred}" in
 			-1:0) Q_inferred=1;;
-			*) __sx_num_is_nat0_base 10 "${Q_dim}" || {
+			*) __sx_num_is_nat0_base10 "${Q_dim}" || {
 				unset CLEANUP
 				return M_EX_USAGE
 			};;

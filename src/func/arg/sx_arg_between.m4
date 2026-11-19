@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arg_between __sx_num_is_nat0_base|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arg_between __sx_num_is_nat0_base10|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_between - 引数の個数が指定範囲内か確認する
 ##
@@ -27,7 +27,7 @@ sx_arg_between() {
 		return M_EX_USAGE
 	esac
 
-	__sx_num_is_nat0_base 10 ${1:+"${1}"} ${2:+"${2}"} || return M_EX_USAGE
+	__sx_num_is_nat0_base10 ${1:+"${1}"} ${2:+"${2}"} || return M_EX_USAGE
 
 	__sx_arg_between "${@}"
 }

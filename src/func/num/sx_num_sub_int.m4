@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_base __sx_num_sub_int __sx_var_is_name __sx_var_is_rw|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_base10 __sx_num_sub_int __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_sub_int - 複数の符号付き整数を減算する
@@ -30,7 +30,7 @@ sx_num_sub_int() {
 	Q_res="${1}"
 	shift
 
-	__sx_num_is_int_base 10 "${@}" || {
+	__sx_num_is_int_base10 "${@}" || {
 		unset CLEANUP
 		return M_EX_USAGE
 	}

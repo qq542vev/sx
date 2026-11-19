@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_cmp_nat0 __sx_num_is_nat0_base __sx_num_sub_nat0 __sx_var_is_name __sx_var_is_rw|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_cmp_nat0 __sx_num_is_nat0_base10 __sx_num_sub_nat0 __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_sub_nat0 - 2つの絶対値の差（被減数 - 減数）を計算する
@@ -30,7 +30,7 @@ sx_num_sub_nat0() {
 	Q_res="${1}"
 	shift
 
-	__sx_num_is_nat0_base 10 "${@}" || {
+	__sx_num_is_nat0_base10 "${@}" || {
 		unset CLEANUP
 		return M_EX_USAGE
 	}

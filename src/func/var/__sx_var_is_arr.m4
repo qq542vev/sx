@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SIG_ARR __sx_num_is_nat0_base|])dnl
+M_REQUIRE([|SX_CFG_SIG_ARR __sx_num_is_nat0_base10|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_var_is_arr - 指定された変数がsx配列であるか確認する（内部用）
@@ -17,7 +17,7 @@ __sx_var_is_arr() {
 	for Q_arg in "${@}"; do
 		if
 			eval "case \"\${${Q_arg}_len:+\${${Q_arg}-}}\" in \"\${SX_CFG_SIG_ARR}\":*) ! :;; esac" ||
-			! eval __sx_num_is_nat0_base 10 "\"\${${Q_arg}_len}\""
+			! eval __sx_num_is_nat0_base10 "\"\${${Q_arg}_len}\""
 		then
 			unset CLEANUP
 			return 1

@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_num_is_float __sx_num_is_fixed __sx_num_cmp_nat0 SX_CFG_NUM_FLOAT_EXP_MAX|])dnl
+M_REQUIRE([|SX_CFG_NUM_FLOAT_EXP_MAX __sx_num_cmp_nat0 __sx_num_is_fixed __sx_num_is_float|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_num_is_float_safe - すべての引数が安全な範囲の 10 進の実数表記であるか確認する（内部用）

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_base __sx_str_swapcase __sx_var_is_name __sx_var_is_rw|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_base10 __sx_str_swapcase __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_swapcase - ラテン文字の大文字と小文字を反転する
 ##
@@ -28,7 +28,7 @@ sx_str_swapcase() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_int_base 10 ${3:+"${3}"} || return M_EX_USAGE
+	__sx_num_is_int_base10 ${3:+"${3}"} || return M_EX_USAGE
 
 	__sx_str_swapcase "${@}"
 }

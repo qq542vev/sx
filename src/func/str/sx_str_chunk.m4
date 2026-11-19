@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_base __sx_num_is_nat0_base __sx_num_is_nat0_safe __sx_str_chunk __sx_var_is_bind __sx_var_is_bindable|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_base10 __sx_num_is_nat0_base10 __sx_num_is_nat0_safe __sx_str_chunk __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_str_chunk - 文字列を一定の長さで区切って結果変数（またはバインドチェーン）に格納する
@@ -51,7 +51,7 @@ sx_str_chunk() {
 
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_base 10 ${4:+"${4}"} || return M_EX_USAGE
+	__sx_num_is_nat0_base10 ${4:+"${4}"} || return M_EX_USAGE
 	__sx_num_is_nat0_safe ${5:+"${5}"} || return M_EX_USAGE
 
 	case "${3:-1}" in
@@ -64,7 +64,7 @@ sx_str_chunk() {
 	while M_STR_HAS([|"${Q_cycle}"|], [|:|]); do
 		Q_cur="${Q_cycle%%:*}"
 		Q_cycle="${Q_cycle#*:}"
-		__sx_num_is_int_base 10 "${Q_cur}" || {
+		__sx_num_is_int_base10 "${Q_cur}" || {
 			unset CLEANUP
 			return M_EX_USAGE
 		}

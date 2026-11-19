@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_isep __sx_num_is_int_base __sx_num_is_nat0_base __sx_num_is_nat0_safe __sx_var_is_bind __sx_var_is_bindable|])dnl
+M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_isep __sx_num_is_int_base10 __sx_num_is_nat0_base10 __sx_num_is_nat0_safe __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_arg_isep - 引数間にセパレータを挿入し、すべてをクォートして結合する
@@ -62,8 +62,8 @@ sx_arg_isep() {
 		"${6+X${6}}") Q_int="${3}" Q_lim="${4}" Q_flg="${5}";;
 	esac
 
-	if ! __sx_num_is_int_base 10 ${Q_int:+"${Q_int}"} ||
-		! __sx_num_is_nat0_base 10 ${Q_lim:+"${Q_lim}"} ||
+	if ! __sx_num_is_int_base10 ${Q_int:+"${Q_int}"} ||
+		! __sx_num_is_nat0_base10 ${Q_lim:+"${Q_lim}"} ||
 		! __sx_num_is_nat0_safe ${Q_flg:+"${Q_flg}"}; then
 		unset CLEANUP
 		return M_EX_USAGE

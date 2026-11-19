@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_cmp_nat0 __sx_num_is_nat0_base|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_cmp_nat0 __sx_num_is_nat0_base10|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_cmp_nat0 - 2つの符号なし10進整数を比較する
 ##
@@ -20,7 +20,7 @@ sx_num_cmp_nat0() {
 
 	M_CFG_CHECK([|sx_num_cmp_nat0|])
 
-	__sx_num_is_nat0_base 10 "${1-}" "${2-}" || return M_EX_USAGE
+	__sx_num_is_nat0_base10 "${1-}" "${2-}" || return M_EX_USAGE
 
 	__sx_num_cmp_nat0 "${1}" "${2}" || return
 }

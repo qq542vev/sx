@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_num_cmp_nat0 __sx_num_sub_int __sx_num_sub_nat0 __sx_str_zr __sx_str_splice __sx_var_bind_init __sx_var_ubind|])dnl
+M_REQUIRE([|__sx_num_cmp_nat0 __sx_num_sub_int __sx_num_sub_nat0 __sx_str_splice __sx_str_zr __sx_var_bind_init __sx_var_ubind|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_num_norm - 数値を10進固定小数点形式に正規化する（内部用）

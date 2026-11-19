@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_pad __sx_num_is_int_base __sx_num_is_int_safe_inv __sx_var_is_bind __sx_var_is_bindable|])dnl
+M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_arg_pad __sx_num_is_int_base10 __sx_num_is_int_safe_inv __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_arg_pad - 引数リストを指定された長さになるようパディングする
 ##
@@ -57,9 +57,9 @@ sx_arg_pad() {
 
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}") ;;
-		"${3+X${3}}" | "${4+X${4}}") __sx_num_is_int_base 10 "${2}";;
-		"${5+X${5}}") __sx_num_is_int_base 10 "${2}" && __sx_num_is_int_safe_inv "${4}";;
-		*) __sx_num_is_int_base 10 ${2:+"${2}"};;
+		"${3+X${3}}" | "${4+X${4}}") __sx_num_is_int_base10 "${2}";;
+		"${5+X${5}}") __sx_num_is_int_base10 "${2}" && __sx_num_is_int_safe_inv "${4}";;
+		*) __sx_num_is_int_base10 ${2:+"${2}"};;
 	esac || return M_EX_USAGE
 
 	__sx_arg_pad "${@}" || return

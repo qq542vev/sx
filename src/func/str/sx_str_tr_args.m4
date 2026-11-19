@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_num_is_int_base __sx_str_tr_args __sx_var_is_bind __sx_var_is_bindable|])dnl
+M_REQUIRE([|SX_CFG_SEP SX_CFG_SKIP_CHK __sx_num_is_int_base10 __sx_str_tr_args __sx_var_is_bind __sx_var_is_bindable|])dnl
 ### sx_str_tr_args - 文字列内の文字を引数で指定した文字列へ置換する
 ##
 ## 使い方:
@@ -37,7 +37,7 @@ sx_str_tr_args() {
 
 	case "X${SX_CFG_SEP}" in
 		"${4+X${4}}") ;;
-		"${5+X${5}}") __sx_num_is_int_base 10 ${4:+"${4}"} || return M_EX_USAGE;;
+		"${5+X${5}}") __sx_num_is_int_base10 ${4:+"${4}"} || return M_EX_USAGE;;
 	esac
 
 	__sx_str_tr_args "${@}"

@@ -1,4 +1,4 @@
-M_REQUIRE([|__sx_num_is_int_base __sx_num_is_nzint_base|])dnl
+M_REQUIRE([|__sx_num_is_int_base10 __sx_num_is_nzint_base10|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arr_is_spec - 文字列が配列要素指定 spec として有効か確認する（内部用）
@@ -14,7 +14,7 @@ define([|CLEANUP|], [|Q_spec Q_rest Q_part|])dnl
 
 __sx_arr_is_spec() {
 	case "${*}" in *:*) ;; *)
-		__sx_num_is_int_base 10 "${@}" || return
+		__sx_num_is_int_base10 "${@}" || return
 		return
 	esac
 
@@ -24,14 +24,14 @@ __sx_arr_is_spec() {
 				Q_part="${Q_spec%%:*}"
 				Q_spec="${Q_spec#*:}"
 				Q_rest="${Q_spec%%:*}"
-				__sx_num_is_int_base 10 ${Q_part:+"${Q_part}"} ${Q_rest:+"${Q_rest}"} && __sx_num_is_nzint_base 10 "${Q_spec#*:}"
+				__sx_num_is_int_base10 ${Q_part:+"${Q_part}"} ${Q_rest:+"${Q_rest}"} && __sx_num_is_nzint_base10 "${Q_spec#*:}"
 				;;
 			*:*)
 				Q_part="${Q_spec%:*}"
 				Q_rest="${Q_spec#*:}"
-				__sx_num_is_int_base 10 ${Q_part:+"${Q_part}"} ${Q_rest:+"${Q_rest}"}
+				__sx_num_is_int_base10 ${Q_part:+"${Q_part}"} ${Q_rest:+"${Q_rest}"}
 				;;
-			*) __sx_num_is_int_base 10 "${Q_spec}";;
+			*) __sx_num_is_int_base10 "${Q_spec}";;
 		esac || {
 			unset CLEANUP
 			return 1

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_nat0_base __sx_str_is_sized|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_nat0_base10 __sx_str_is_sized|])dnl
 ### sx_str_is_sized - すべての引数が指定された文字数の範囲内か確認する
 ##
 ## 使い方:
@@ -30,7 +30,7 @@ sx_str_is_sized() {
 		return M_EX_USAGE
 	esac
 
-	__sx_num_is_nat0_base 10 ${1:+"${1}"} ${2:+"${2}"} || return M_EX_USAGE
+	__sx_num_is_nat0_base10 ${1:+"${1}"} ${2:+"${2}"} || return M_EX_USAGE
 
 	__sx_str_is_sized "${@}"
 }

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_divmod_int __sx_num_is_int_base __sx_num_is_nzint_base __sx_var_is_bind __sx_var_is_bindable|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_divmod_int __sx_num_is_int_base10 __sx_num_is_nzint_base10 __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_num_divmod_int - 符号付き整数の除算で整数商と余剰を同時に求める（Truncated）
 ##
@@ -28,7 +28,7 @@ sx_num_divmod_int() {
 
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_int_base 10 ${2:+"${2}"} && __sx_num_is_nzint_base 10 ${3:+"${3}"} || return M_EX_USAGE
+	__sx_num_is_int_base10 ${2:+"${2}"} && __sx_num_is_nzint_base10 ${3:+"${3}"} || return M_EX_USAGE
 
 	__sx_num_divmod_int "${@}"
 }

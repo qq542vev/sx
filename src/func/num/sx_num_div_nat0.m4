@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_div_nat0 __sx_num_is_nat0_base __sx_num_is_nat0_safe __sx_num_is_nat1_base __sx_var_is_name __sx_var_is_rw|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_div_nat0 __sx_num_is_nat0_base10 __sx_num_is_nat0_safe __sx_num_is_nat1_base10 __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_div_nat0 - 絶対値の除算で実数商（整数商 + 小数部）を求める
@@ -34,14 +34,14 @@ sx_num_div_nat0() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_nat0_base 10 ${3:+"${3}"} || return M_EX_USAGE
+	__sx_num_is_nat0_safe ${2:+"${2}"} && __sx_num_is_nat0_base10 ${3:+"${3}"} || return M_EX_USAGE
 
 	Q_res="${1}"
 	Q_dp="${2:-0}"
 	Q_u="${3:-0}"
 	shift ${2+"$((2 ${3++ 1}))"}
 
-	__sx_num_is_nat1_base 10 "${@}" || {
+	__sx_num_is_nat1_base10 "${@}" || {
 		unset CLEANUP
 		return M_EX_USAGE
 	}

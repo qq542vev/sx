@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_nat1_base __sx_num_sub1_nat0 __sx_var_is_name __sx_var_is_rw|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_nat1_base10 __sx_num_sub1_nat0 __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_num_sub1_nat0 - 正の整数から1を減算する
@@ -24,7 +24,7 @@ sx_num_sub1_nat0() {
 
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_nat1_base 10 "${2-}" || return M_EX_USAGE
+	__sx_num_is_nat1_base10 "${2-}" || return M_EX_USAGE
 
 	__sx_num_sub1_nat0 "${1}" "${2}"
 }

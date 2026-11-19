@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_base __sx_num_is_int_safe_inv __sx_str_split __sx_var_is_bind __sx_var_is_bindable|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_base10 __sx_num_is_int_safe_inv __sx_str_split __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_split - 文字列を分割して結果変数に格納する
 ##
@@ -41,7 +41,7 @@ sx_str_split() {
 
 	# 回数は空指定を省略扱いにし、桁数を制限せず10進表記だけを検査する。
 	# フラグはビット演算を行うため、シェルの算術で安全に扱える整数に制限する。
-	__sx_num_is_int_base 10 ${4:+"${4}"} && __sx_num_is_int_safe_inv ${5+"${5}"} || return M_EX_USAGE
+	__sx_num_is_int_base10 ${4:+"${4}"} && __sx_num_is_int_safe_inv ${5+"${5}"} || return M_EX_USAGE
 
 	__sx_str_split "${@}"
 }

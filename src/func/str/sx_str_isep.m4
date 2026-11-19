@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_base __sx_num_is_nat0_base __sx_num_is_nat0_safe __sx_str_isep __sx_var_is_bind __sx_var_is_bindable|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_num_is_int_base10 __sx_num_is_nat0_base10 __sx_num_is_nat0_safe __sx_str_isep __sx_var_is_bind __sx_var_is_bindable|])dnl
 pushdef([|CLEANUP|])dnl
 ### sx_str_isep - 文字列に一定の間隔でセパレータを挿入する
 ##
@@ -43,7 +43,7 @@ sx_str_isep() {
 
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
-	__sx_num_is_int_base 10 ${4:+"${4}"} && __sx_num_is_nat0_base 10 ${5:+"${5}"} || return M_EX_USAGE
+	__sx_num_is_int_base10 ${4:+"${4}"} && __sx_num_is_nat0_base10 ${5:+"${5}"} || return M_EX_USAGE
 	__sx_num_is_nat0_safe ${6:+"${6}"} || return M_EX_USAGE
 
 	case "${4:-1}" in 0 | [+-]0)
