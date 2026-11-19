@@ -24,9 +24,6 @@ disable=SC1003
 # warning: Remove space after = if trying to assign a value (or for empty string, use var="" ... ).
 disable=SC1007
 
-# warning: This {/} is literal. Check if ; is missing or quote the expression.
-disable=SC1083
-
 # error: Shells disambiguate $(( differently or not at all. For $(command substitution), add space after $( . For $((arithmetics)), fix parsing errors.
 disable=SC1102
 
@@ -42,9 +39,6 @@ disable=SC2015
 # warning: foo appears unused. Verify it or export it.
 disable=SC2034
 
-# warning: In POSIX sh, something is undefined.
-disable=SC2039
-
 # warning: Use "$@" (with quotes) to prevent whitespace problems.
 disable=SC2048
 
@@ -56,9 +50,6 @@ disable=SC2127
 
 # warning: var is referenced but not assigned.
 disable=SC2154
-
-# warning: This word is constant. Did you forget the $ on a variable?
-disable=SC2194
 
 # warning: Quote expansions in case patterns to match literally rather than as a glob.
 disable=SC2254
