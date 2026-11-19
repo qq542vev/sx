@@ -26,7 +26,7 @@ __sx_arr_pop_raw() {
 	eval "Q_len=\"\${${2}_len}\""
 
 	# 1) 要素ストリームを末尾から1つずつ __sx_arr_bind で処理し、chain を構築する（読み取りのみ）
-	while M_STR_NE([|0|], [|"${Q_len}"|]); do
+	while M_STR_NE([|"${Q_len}"|], [|0|]); do
 		__sx_num_sub1_nat0 Q_tmp "${Q_len}"
 		__sx_arr_bind Q_bind Q_chain "${Q_bind}" "${2}_${Q_tmp}" || break
 
