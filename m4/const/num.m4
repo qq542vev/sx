@@ -87,41 +87,65 @@ define([|M_NUM_REJECT_NAT0|], [|''|[!0-9]*|[!1-9][!0-7]|[!0]*[!0-9]*|[!1-9][!1-7
 define([|M_NUM_REJECT_NAT0_BASE8|], [|''|?|[!0]*|*[!0-7]*|?[!1-7]*?*|])dnl
 define([|M_NUM_REJECT_NAT0_BASE10|], [|''|*[!0-9]*|[!1-9]?*|])dnl
 define([|M_NUM_REJECT_NAT0_BASE16|], [|''|?|*[!0-9ABCDEFabcdef]|?[!Xx]*|*[!0]*[!0-9ABCDEFabcdef]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*?*|])dnl
+define([|M_NUM_REJECT_NAT0_BASE8OR10|], [|''|*[!0-9]*|[!1-9]*[!0-7]*|[!1-9][!1-7]?*|])dnl
+define([|M_NUM_REJECT_NAT0_BASE8OR16|], [|''|?|?[!0-7]|[!0]*|?[!1-7Xx]?*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]?*|?[!Xx]*[!0-7]*|*?*?[!0-9ABCDEFabcdef]*|])dnl
+define([|M_NUM_REJECT_NAT0_BASE10OR16|], [|''|?[!0-9]|[!0-9]*|[!1-9][!Xx]*|[!0]*[!0-9]*|*[!0]*[!0-9ABCDEFabcdef]*|?[!0-9][!1-9ABCDEFabcdef]*?|])dnl
 
 define([|M_NUM_REJECT_NAT1|], [|''|[!1-9]|?[!0-9]|[!0-9]*|[!1-9][!1-7Xx]*|?[!0-9][!1-9ABCDEFabcdef]*|[!0]*[!0-9]*|*[!0]*[!0-9ABCDEFabcdef]*|[!1-9][!Xx]*[!0-7]*|])dnl
 define([|M_NUM_REJECT_NAT1_BASE8|], [|''|?|[!0]*|*[!0-7]*|?[!1-7]*|])dnl
 define([|M_NUM_REJECT_NAT1_BASE10|], [|''|[!1-9]*|*[!0-9]*|])dnl
 define([|M_NUM_REJECT_NAT1_BASE16|], [|''|?|*[!0-9ABCDEFabcdef]|?[!Xx]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*|*[!0]*[!0-9ABCDEFabcdef]*|])dnl
+define([|M_NUM_REJECT_NAT1_BASE8OR10|], [|''|[!1-9]|*[!0-9]*|[!1-9][!1-7]*|[!1-9]*[!0-7]*|])dnl
+define([|M_NUM_REJECT_NAT1_BASE8OR16|], [|''|?|*[!0-9ABCDEFabcdef]|[!0]*|?[!1-7Xx]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*|?[!Xx]*[!0-7]*|*?*?[!0-9ABCDEFabcdef]*|])dnl
+define([|M_NUM_REJECT_NAT1_BASE10OR16|], [|''|[!1-9]|?[!0-9]|[!1-9][!Xx]*|?[!0-9][!1-9ABCDEFabcdef]*|[!0]*[!0-9]*|*[!0]*[!0-9ABCDEFabcdef]*|])dnl
 
-define([|M_NUM_REJECT_INT|], [|''|*[!0-9ABCDEFabcdef]|[!+0-9-]*|[!+1-9-][!0-7]|[!0][!0-9]*|[!+1-9-][!1-7Xx]?*|[!0]?[!0-9Xx]*|*[!+0-]*[!0-9ABCDEFabcdef]*|*[!0-9A-FXa-fx][!1-9][!0-7Xx]*|[!+1-9-][!Xx]*[!0-7]*|[!0-9][!1-9][!1-7Xx]*?|[!0-9][!1-9][!Xx]*[!0-7]*|[!0]?[!Xx]*[!0-9]*|?*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*?*|])dnl
+define([|M_NUM_REJECT_INT|], [|''|*[!0-9ABCDEFabcdef]|[!+0-9-]*|[!+1-9-][!0-7]|[!0][!0-9]*|[!+1-9-][!1-7Xx]?*|[!0]?[!0-9Xx]*|*[!+0-]*[!0-9ABCDEFabcdef]*|*[!0-9ABCDEFXabcdefx][!1-9][!0-7Xx]*|[!+1-9-][!Xx]*[!0-7]*|[!0-9][!1-9][!1-7Xx]*?|[!0-9][!1-9][!Xx]*[!0-7]*|[!0]?[!Xx]*[!0-9]*|?*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*?*|])dnl
 define([|M_NUM_REJECT_INT_BASE8|], [|''|?|[!0]?|[!0][!0]*|?*[!0-7]*|[!+-][!1-7]?*|[!0]?[!1-7]*?*|])dnl
 define([|M_NUM_REJECT_INT_BASE10|], [|''|*[!0-9]|?*[!0-9]*|[!+1-9-]*?*|*[!0-9][!1-9]*?|])dnl
 define([|M_NUM_REJECT_INT_BASE16|], [|''|?|??|[!+-][!Xx]*|[!0]??|[!0]?[!Xx]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!Xx]*|*?[!0]*[!0-9ABCDEFabcdef]*|])dnl
+define([|M_NUM_REJECT_INT_BASE8OR10|], [|''|*[!0-9]|*[!+0-9-]*|*?[!0-9]*|[!+1-9-]*[!0-7]*|[!+1-9-][!1-7]*?|*[!0-9][!1-9]*[!0-7]*|[!1-9][!1-9][!1-7]*?*|])dnl
+define([|M_NUM_REJECT_INT_BASE8OR16|], [|''|?|?[!0-7]|[!0]?|[!0][!0]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!0-7]|?[!0Xx]*[!0-7]*|[!+-][!1-7Xx]*?*|*[!+-]?*[!0-9ABCDEFabcdef]*|[!0]?[!1-7Xx]*?*|[!0]?[!Xx]*[!0-7]*|*?*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]?*|])dnl
+define([|M_NUM_REJECT_INT_BASE10OR16|], [|''|[!0-9]|*[!0-9ABCDEFabcdef]|[!+1-9-][!Xx]*|*[!0-9ABCDEFXabcdefx][!0-9]*|[!+0-]*[!0-9]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!Xx]*|[!0][!0]*[!0-9]*|*??*?[!0-9ABCDEFabcdef]*|])dnl
 
 define([|M_NUM_REJECT_NZINT|], [|''|[!1-9]|[!+0-9-]*|[!1-9][!1-9]|[!+1-9-][!1-7Xx]*|[!0][!0-9]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!1-7]|[!+0-]*[!0-9]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!1-7Xx]*|?*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*|[!+1-9-][!Xx]*[!0-7]*|[!0][!0]*[!0-9]*|[!0-9][!1-9][!Xx]*[!0-7]*|*?*[!0]*[!0-9ABCDEFabcdef]*|])dnl
 define([|M_NUM_REJECT_NZINT_BASE8|], [|''|?|[!0]?|[!+-][!1-7]*|[!0][!0]*|?*[!0-7]*|*[!0-7]?[!1-7]*|])dnl
 define([|M_NUM_REJECT_NZINT_BASE10|], [|''|[!1-9]|[!+1-9-]*|[!1-9][!1-9]*|?*[!0-9]*|])dnl
-define([|M_NUM_REJECT_NZINT_BASE16|], [|''|?|*[!0-9ABCDEFabcdef]|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]|[!+-][!Xx]*|*[!0-9A-FXa-fx][!0]*|*[!+0-]*[!0-9ABCDEFabcdef]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!Xx]*|])dnl
+define([|M_NUM_REJECT_NZINT_BASE16|], [|''|?|*[!0-9ABCDEFabcdef]|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]|[!+-][!Xx]*|*[!0-9ABCDEFXabcdefx][!0]*|*[!+0-]*[!0-9ABCDEFabcdef]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!Xx]*|])dnl
+define([|M_NUM_REJECT_NZINT_BASE8OR10|], [|''|[!1-9]|[!1-9][!1-9]|*[!+0-9-]*|[!+1-9-][!1-7]*|*?[!0-9]*|[!+1-9-]*[!0-7]*|*[!0-9][!1-9][!1-7]*|*[!0-9][!1-9]*[!0-7]*|])dnl
+define([|M_NUM_REJECT_NZINT_BASE8OR16|], [|''|?|*[!0-9ABCDEFabcdef]|?[!1-7]|[!+-][!1-7Xx]*|[!0][!0]*|?[!Xx][!0-7Xx]*|*?[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!1-7Xx]*|*[!+-]?*[!0-9ABCDEFabcdef]*|?[!Xx][!Xx]*[!0-7]*|])dnl
+define([|M_NUM_REJECT_NZINT_BASE10OR16|], [|''|[!1-9]|[!1-9][!1-9]|[!+1-9-][!Xx]*|[!1-9][!1-9][!1-9ABCDEFabcdef]|[!+0-]*[!0-9]*|*?[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*|*[!0-9ABCDEFXabcdefx][!1-9][!Xx]*|[!0][!0]*[!0-9]*|*[!+-]?*[!0-9ABCDEFabcdef]*|])dnl
 
-define([|M_NUM_REJECT_NNINT|], [|''|*[!0-9ABCDEFabcdef]|[!+0-9-]*|[!+1-9][!0-7Xx]*|[!0][!0-9]*|[!+0-]*[!0-9]*|*[!+0-9A-FXa-fx]*[!0Xx]*|*[!+0-]*[!0-9ABCDEFabcdef]*|*[!0-9A-FXa-fx][!1-9][!0-7Xx]*|[!+1-9-][!1-7Xx]*?*|[!+1-9][!Xx]*[!0-7Xx]*|[!0][!0]*[!0-9]*|[!0-9][!1-9][!Xx]*[!0-7]*|[!1-9][!1-9][!1-9A-FXa-fx]*?*|[!0-9][!1-9][!1-7][!1-9ABCDEFabcdef]*?*|])dnl
+define([|M_NUM_REJECT_NNINT|], [|''|*[!0-9ABCDEFabcdef]|[!+0-9-]*|[!+1-9][!0-7Xx]*|[!0][!0-9]*|[!+0-]*[!0-9]*|*[!+0-9ABCDEFXabcdefx]*[!0Xx]*|*[!+0-]*[!0-9ABCDEFabcdef]*|*[!0-9ABCDEFXabcdefx][!1-9][!0-7Xx]*|[!+1-9-][!1-7Xx]*?*|[!+1-9][!Xx]*[!0-7Xx]*|[!0][!0]*[!0-9]*|[!0-9][!1-9][!Xx]*[!0-7]*|[!1-9][!1-9][!1-9ABCDEFXabcdefx]*?*|[!0-9][!1-9][!1-7][!1-9ABCDEFabcdef]*?*|])dnl
 define([|M_NUM_REJECT_NNINT_BASE8|], [|''|?|[!0]?|[!0][!0]*|?*[!0-7]*|[!+0]*[!0]*|[!+-][!1-7]*?*|[!0]?[!1-7]?*|])dnl
 define([|M_NUM_REJECT_NNINT_BASE10|], [|''|*[!0-9]|?*[!0-9]*|[!+1-9-]*?*|[!+1-9]*[!0]*|*[!0-9][!1-9]*?*|])dnl
 define([|M_NUM_REJECT_NNINT_BASE16|], [|''|?|??|[!0]??|[!0][!0]*|?[!Xx][!Xx]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!Xx]*|*[!+0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*[!0Xx]*|*[!+-]*?*[!0-9ABCDEFabcdef]*|])dnl
+define([|M_NUM_REJECT_NNINT_BASE8OR10|], [|''|*[!0-9]|*[!+0-9-]*|[!+1-9-][!1-7]*?|[!+1-9]*[!0-7]*|*?*[!0-9]*|*[!+0-9]*[!0]*|[!1-9][!1-9]*[!0-7]*|[!1-9][!1-9][!1-7]*?|])dnl
+define([|M_NUM_REJECT_NNINT_BASE8OR16|], [|''|?|*[!0-9ABCDEFabcdef]|[!0]?|?[!0-7Xx]*|[!0][!0]*|?[!Xx][!0-7Xx]*|[!+-][!1-7Xx]?*|[!+0]*[!0Xx]*|*[!+0-]*[!0-9ABCDEFabcdef]*|*[!+0-9ABCDEFabcdef-][!1-9ABCDEFabcdef]*?*|?[!Xx][!Xx]*[!0-7]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!1-7Xx]*?*|])dnl
+define([|M_NUM_REJECT_NNINT_BASE10OR16|], [|''|[!0-9]|*[!0-9ABCDEFabcdef]|[!+1-9-][!Xx]*|[!0][!0-9]*|[!+0-]*[!0-9]*|*[!+0-9ABCDEFXabcdefx]*[!0Xx]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!Xx]*|*?[!0]*[!0-9ABCDEFabcdef]*|*[!0-9ABCDEFXabcdefx][!0]*[!0-9]*|])dnl
 
-define([|M_NUM_REJECT_NPINT|], [|''|*[!0-9ABCDEFabcdef]|[!+0-]*|?[!1-9][!0-7]|*[!0-9A-FXa-fx][!0-9]*|[!-]*[!0Xx]*|?[!0]*[!0-9]*|[!+-]*[!Xx]*?|?[!1-9][!1-7Xx]*?*|?[!1-9][!Xx]*[!0-7]*|*?*[!0]*[!0-9ABCDEFabcdef]*|*?*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*?*|])dnl
+define([|M_NUM_REJECT_NPINT|], [|''|*[!0-9ABCDEFabcdef]|[!+0-]*|?[!1-9][!0-7]|*[!0-9ABCDEFXabcdefx][!0-9]*|[!-]*[!0Xx]*|?[!0]*[!0-9]*|[!+-]*[!Xx]*?|?[!1-9][!1-7Xx]*?*|?[!1-9][!Xx]*[!0-7]*|*?*[!0]*[!0-9ABCDEFabcdef]*|*?*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*?*|])dnl
 define([|M_NUM_REJECT_NPINT_BASE8|], [|''|?|[!0]?|?[!0]*|?*[!0-7]*|[!+-]?*?|*[!0-7-]*[!0]*|??[!1-7]*?|])dnl
 define([|M_NUM_REJECT_NPINT_BASE10|], [|''|[!0]|[!+-]?*|?*[!0-9]*|*[!0-9-]*[!0]*|?[!1-9]*?*|])dnl
-define([|M_NUM_REJECT_NPINT_BASE16|], [|''|?|??|[!+-][!Xx]*|[!0]??|[!-]*[!0Xx]*|*[!+0-]*[!0-9ABCDEFabcdef]*|*[!0-9A-FXa-fx]?[!Xx]*|*?*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]?*|])dnl
+define([|M_NUM_REJECT_NPINT_BASE16|], [|''|?|??|[!+-][!Xx]*|[!0]??|[!-]*[!0Xx]*|*[!+0-]*[!0-9ABCDEFabcdef]*|*[!0-9ABCDEFXabcdefx]?[!Xx]*|*?*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]?*|])dnl
+define([|M_NUM_REJECT_NPINT_BASE8OR10|], [|''|[!0]|[!+0-]*|*?[!0-9]*|[!-]*[!0]*|?[!1-9]*[!0-7]*|?[!1-9][!1-7]?*|[!+-]*?*?|])dnl
+define([|M_NUM_REJECT_NPINT_BASE8OR16|], [|''|?|[!0]?|??[!0-7]|[!-]*[!0]|[!0][!0]*|*[!+0-]*[!0-9ABCDEFabcdef]*|??[!1-7Xx]?*|[!+-]*[!Xx]*?|*[!+0-9ABCDEFabcdef-][!1-9ABCDEFabcdef]*?*|*[!0-9ABCDEFabcdef-][!1-9ABCDEFabcdef]*[!0Xx]*|??[!Xx]*[!0-7]*|])dnl
+define([|M_NUM_REJECT_NPINT_BASE10OR16|], [|''|[!0]|*[!0-9ABCDEFabcdef]|[!+-][!Xx]*|*[!0-9ABCDEFXabcdefx][!0-9]*|[!-]*[!0Xx]*|*[!+0-]*[!0-9ABCDEFabcdef]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!Xx]*|?[!0]*[!0-9]*|])dnl
 
 define([|M_NUM_REJECT_PINT|], [|''|[!1-9]|[!+0-9]*|[!1-9][!1-9]|[!+1-9][!1-7Xx]*|[!0][!0-9]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!1-7]|[!+0]*[!0-9]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!1-7Xx]*|?*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*|[!+1-9][!Xx]*[!0-7]*|[!0][!0]*[!0-9]*|[!0-9][!1-9][!Xx]*[!0-7]*|*?*[!0]*[!0-9ABCDEFabcdef]*|])dnl
 define([|M_NUM_REJECT_PINT_BASE8|], [|''|?|[!0]?|[!+][!1-7]*|[!0][!0]*|?*[!0-7]*|*[!0-7]?[!1-7]*|])dnl
 define([|M_NUM_REJECT_PINT_BASE10|], [|''|[!1-9]|[!+1-9]*|[!1-9][!1-9]*|?*[!0-9]*|])dnl
-define([|M_NUM_REJECT_PINT_BASE16|], [|''|?|*[!0-9ABCDEFabcdef]|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]|[!+][!Xx]*|*[!0-9A-FXa-fx][!0]*|*[!+0]*[!0-9ABCDEFabcdef]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!Xx]*|])dnl
+define([|M_NUM_REJECT_PINT_BASE16|], [|''|?|*[!0-9ABCDEFabcdef]|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]|[!+][!Xx]*|*[!0-9ABCDEFXabcdefx][!0]*|*[!+0]*[!0-9ABCDEFabcdef]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!Xx]*|])dnl
+define([|M_NUM_REJECT_PINT_BASE8OR10|], [|''|[!1-9]|[!1-9][!1-9]|*[!+0-9]*|[!+1-9][!1-7]*|*?[!0-9]*|[!+1-9]*[!0-7]*|*[!0-9][!1-9][!1-7]*|*[!0-9][!1-9]*[!0-7]*|])dnl
+define([|M_NUM_REJECT_PINT_BASE8OR16|], [|''|?|*[!0-9ABCDEFabcdef]|?[!1-7]|[!+][!1-7Xx]*|[!0][!0]*|?[!Xx][!0-7Xx]*|*?[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!1-7Xx]*|*[!+]?*[!0-9ABCDEFabcdef]*|?[!Xx][!Xx]*[!0-7]*|])dnl
+define([|M_NUM_REJECT_PINT_BASE10OR16|], [|''|[!1-9]|[!1-9][!1-9]|[!+1-9][!Xx]*|[!1-9][!1-9][!1-9ABCDEFabcdef]|[!+0]*[!0-9]*|*?[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*|*[!0-9ABCDEFXabcdefx][!1-9][!Xx]*|[!0][!0]*[!0-9]*|*[!+]?*[!0-9ABCDEFabcdef]*|])dnl
 
-define([|M_NUM_REJECT_NINT|], [|''|*[!0-9ABCDEFabcdef]|[!-]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]|*[!0-9A-FXa-fx][!0-9]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!1-7Xx]*|?[!0]*[!0-9]*|?[!1-9][!1-7][!1-9ABCDEFabcdef]*|?[!1-9][!Xx]*[!0-7]*|*?*[!0]*[!0-9ABCDEFabcdef]*|])dnl
+define([|M_NUM_REJECT_NINT|], [|''|*[!0-9ABCDEFabcdef]|[!-]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]|*[!0-9ABCDEFXabcdefx][!0-9]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!1-7Xx]*|?[!0]*[!0-9]*|?[!1-9][!1-7][!1-9ABCDEFabcdef]*|?[!1-9][!Xx]*[!0-7]*|*?*[!0]*[!0-9ABCDEFabcdef]*|])dnl
 define([|M_NUM_REJECT_NINT_BASE8|], [|''|*[!0-7]|[!-]*|*[!0-7]?|*[!0-7][!0]*|?*[!0-7]*|*[!0-7]?[!1-7]*|])dnl
 define([|M_NUM_REJECT_NINT_BASE10|], [|''|?|[!-]*|*[!0-9][!1-9]*|?*[!0-9]*|])dnl
-define([|M_NUM_REJECT_NINT_BASE16|], [|''|*[!0-9ABCDEFabcdef]|??|[!-]*|*[!0-9A-FXa-fx]?[!Xx]*|*[!0-]*[!0-9ABCDEFabcdef]*|*?*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*|])dnl
+define([|M_NUM_REJECT_NINT_BASE16|], [|''|*[!0-9ABCDEFabcdef]|??|[!-]*|*[!0-9ABCDEFXabcdefx]?[!Xx]*|*[!0-]*[!0-9ABCDEFabcdef]*|*?*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]*|])dnl
+define([|M_NUM_REJECT_NINT_BASE8OR10|], [|''|?|?[!1-9]|[!-]*|?[!1-9][!1-7]*|*?*[!0-9]*|?[!1-9]*[!0-7]*|])dnl
+define([|M_NUM_REJECT_NINT_BASE8OR16|], [|''|*[!0-9ABCDEFabcdef]|[!-]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef]|*[!0-9ABCDEFXabcdefx][!0]*|*[!0-9ABCDEFabcdef][!1-9ABCDEFabcdef][!1-7Xx]*|??[!1-7][!1-9ABCDEFabcdef]*|??[!Xx]*[!0-7]*|*?*[!0]*[!0-9ABCDEFabcdef]*|])dnl
+define([|M_NUM_REJECT_NINT_BASE10OR16|], [|''|*[!0-9ABCDEFabcdef]|[!-]*|*[!0-9ABCDEFXabcdefx][!1-9]|*[!0-9ABCDEFXabcdefx][!1-9][!Xx]*|?[!0]*[!0-9]*|?[!1-9]?[!1-9ABCDEFabcdef]*|*?*[!0]*[!0-9ABCDEFabcdef]*|])dnl
 
 define([|M_NUM_REJECT_FIXED|], [|''|*[!0-9]|[!1-9+-][!.]*|*?[!0-9.]*|[!0-9][!1-9][!.]*|*[!0-9+-]*[!0-9]*|])dnl
 define([|M_NUM_REJECT_UFIXED|], [|''|*[!0-9]|*[!.0-9]*|[!1-9][!.]*|*[!0-9]*[!0-9]*|])dnl
