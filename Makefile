@@ -42,7 +42,10 @@ MOD_EXT = .sh
 # Build
 # =====
 
-all: bundle
+all: sx.sh module
+
+sx.sh: FORCE
+	$(MAKE) SYMBOLS= OUT=sx.sh bundle
 
 # SYMBOLS と OUT は make のコマンド行で指定できる。
 # OUT が未指定または空文字列なら標準出力へ出力する。
@@ -106,8 +109,7 @@ FORCE:
 # Test
 # ====
 
-test: module
-	$(MAKE) SYMBOLS= OUT=sx.sh all
+test: all
 	unset SXTEST_LOAD_MOD; shellspec $(TEST_FLAGS)
 
 # Clean
