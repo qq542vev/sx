@@ -25,8 +25,8 @@ __sx_cfg_is_valid() {
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in
 			patsubst(M_CFG_META_NAMES, [| |], [| | |])) ;;
-patsubst(M_CFG_META_NAMES, [|\([_A-Z][_A-Z0-9]*\)|], [|__sx_m4_gen_cfg_case_reject(\1)|])dnl
-patsubst(M_CFG_META_NAMES, [|\([_A-Z][_A-Z0-9]*\)|], [|__sx_m4_gen_cfg_case_accept(\1)|])dnl
+			__M_CFG_EACH([|__sx_m4_gen_cfg_case_reject|], M_CFG_META_NAMES, [||]) ) unset CLEANUP; return 1 ;;
+			patsubst(patsubst(M_CFG_META_NAMES, [|\([_A-Z][_A-Z0-9]*\)|], [|__sx_m4_gen_cfg_case_accept(\1)|]), [| |], [| | |])) ;;
 			*)
 				unset CLEANUP
 				return 1

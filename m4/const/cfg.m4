@@ -17,10 +17,10 @@ define([|M_CFG_META_ACCEPT_NUM_FLOAT_EXP_MAX|], [|*|])dnl
 
 define([|M_CFG_META_REJECT_NUM_FLOAT_EXP_MAX|], [|''|*[!0-9]*|[!1-9]?*|])dnl
 
-define([|__sx_m4_gen_cfg_case_accept|], [|ifdef([|M_CFG_META_ACCEPT_$1|], [|$1=patsubst(defn([|M_CFG_META_ACCEPT_$1|]), [|||], [| | $1=|])) ;;|])dnl
+define([|__sx_m4_gen_cfg_case_accept|], [|ifdef([|M_CFG_META_ACCEPT_$1|], [|$1=patsubst(defn([|M_CFG_META_ACCEPT_$1|]), [|||], [||$1=|])|])dnl
 |])dnl
 
-define([|__sx_m4_gen_cfg_case_reject|], [|ifdef([|M_CFG_META_REJECT_$1|], [|$1=patsubst(defn([|M_CFG_META_REJECT_$1|]), [|||], [| | $1=|])) unset CLEANUP; return 1 ;;|])dnl
+define([|__sx_m4_gen_cfg_case_reject|], [|ifdef([|M_CFG_META_REJECT_$1|], [|$1=patsubst(defn([|M_CFG_META_REJECT_$1|]), [|||], [| | $1=|])|])dnl
 |])dnl
 
 define([|M_CFG_META_DESC_SIG_ARR|], [|配列を識別する署名。|])dnl
