@@ -33,7 +33,7 @@ __sx_arg_rfind_lit() {
 	fi
 
 	while
-		eval Q_arg=\"\${${Q_i}}\"
+		eval "Q_arg=\"\${${Q_i}}\""
 
 		case "${Q_glob}${Q_arg}" in "0${Q_match}" | M_ARG_RFIND_GLOB${Q_match})
 			case "${Q_text}" in
