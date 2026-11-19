@@ -1,3 +1,70 @@
-disable=SC2034
-disable=SC2039
 shell=sh
+
+# enable
+# ======
+
+# info: Notify when set -e is suppressed during function invocation
+enable=check-set-e-suppressed
+
+# warning: Warn when uppercase variables are unassigned
+enable=check-unassigned-uppercase
+
+# style: Suggest quoting variables without metacharacters
+enable=quote-safe-variables
+
+# style: Suggest putting braces around all variable references
+enable=require-variable-braces
+
+# disable
+# =======
+
+# info: Want to escape a single quote? echo 'This is how it'\''s done'.
+disable=SC1003
+
+# warning: Remove space after = if trying to assign a value (or for empty string, use var="" ... ).
+disable=SC1007
+
+# warning: This {/} is literal. Check if ; is missing or quote the expression.
+disable=SC1083
+
+# error: Shells disambiguate $(( differently or not at all. For $(command substitution), add space after $( . For $((arithmetics)), fix parsing errors.
+disable=SC1102
+
+# style: $/${} is unnecessary on arithmetic variables.
+disable=SC2004
+
+# info: Note that A && B || C is not if-then-else. C may run when A is true.
+disable=SC2015
+
+# info: Expressions don't expand in single quotes, use double quotes for that.
+#disable=SC2016
+
+# warning: foo appears unused. Verify it or export it.
+disable=SC2034
+
+# warning: In POSIX sh, something is undefined.
+disable=SC2039
+
+# warning: Use "$@" (with quotes) to prevent whitespace problems.
+disable=SC2048
+
+# info: Double quote to prevent globbing and word splitting.
+#disable=SC2086
+
+# error: To use ${ ..; }, specify #!/usr/bin/env ksh.
+disable=SC2127
+
+# warning: var is referenced but not assigned.
+disable=SC2154
+
+# warning: This word is constant. Did you forget the $ on a variable?
+disable=SC2194
+
+# warning: Quote expansions in case patterns to match literally rather than as a glob.
+disable=SC2254
+
+# info: Expansions inside ${..} need to be quoted separately, otherwise they will match as a pattern.
+disable=SC2295
+
+# warning: In POSIX sh, $'..' is undefined.
+disable=SC3003
