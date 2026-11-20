@@ -1,3 +1,4 @@
 --shell '.local/bin/yash -o posixlycorrect'
 --warning-as-failure
 --require spec_helper
+--jobs "$(getconf NPROCESSORS_ONLN || printf 1)"
