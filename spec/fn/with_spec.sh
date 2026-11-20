@@ -33,8 +33,7 @@ Describe 'sx_fn_with'
 
   It '実行後に匿名関数が削除されていること'
     sx_fn_with 'temp_fn=:' -- :
-    # type コマンドの stderr を抑制
-    When call sh -c 'type __sx_anon_ 2>/dev/null'
+    When call sh -c 'type __sx_anon_ >/dev/null 2>&1'
     The status should be failure
   End
 
