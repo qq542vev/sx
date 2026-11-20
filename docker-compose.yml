@@ -12,6 +12,7 @@ services:
       - .:/workspace
       - ~/.config/opencode:/home/agent/.config/opencode
       - ~/.local/share/opencode:/home/agent/.local/share/opencode
+      - ~/.local/state/opencode:/home/agent/.local/state/opencode
       - ~/.config/kilo:/home/agent/.config/kilo
       - ~/.local/share/kilo:/home/agent/.local/share/kilo
     cap_drop: [ALL]
