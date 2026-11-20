@@ -189,7 +189,7 @@ SH
 
   It '実物の個別モジュールを読み込んで実行できること'
     cp -R "$SXTEST_BUILD_PROJECT/src/." "$SXTEST_BUILD_DIR/src/"
-    build_make SYMBOLS=sx_uri_enc OUT=build/modules/sx_uri_enc.sh
+    build_bundle SYMBOLS=sx_uri_enc OUT=build/modules/sx_uri_enc.sh
     When run build_shell 'sxtest_load ./build/modules/sx_uri_enc.sh; sx_uri_enc result "a b"; printf "%s" "$result"'
     The status should be success
     The stdout should equal 'a%20b'

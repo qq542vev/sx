@@ -37,7 +37,7 @@ SXTEST_LOAD_MOD='' sxtest_load ./build/modules/sx_uri_enc.sh  # 読み込みな�
 モジュールの生成対象は `src` から列挙するため、specの記述には依存しません。
 
 全体版の検証では、読み込み先を `sx.sh` に置き換えます。
-事前に `make all` で全体版を生成してください。
+事前に `make sx.sh` で全体版を生成してください。
 
 ```sh
 SXTEST_LOAD_MOD=sx.sh shellspec

@@ -131,8 +131,9 @@ help:
 	echo '  make [OPTION...] [MACRO=VALUE...] [TARGET...]'
 	echo
 	echo 'TARGET:'
-	echo '  all     全体版、または SYMBOLS で選択した部分版を生成する（既定）。'
-	echo '  bundle  all と同じ生成処理を実行する。'
+	echo '  all     全体版 sx.sh と全個別モジュールを生成する（既定）。SYMBOLS、OUT は無視する。'
+	echo '  sx.sh   全体版を sx.sh に生成する。'
+	echo '  bundle  SYMBOLS で選択した部分版（未指定なら全体版）を OUT に生成する。'
 	echo '  module  src の全単位を MOD_DIR/<名前>MOD_EXT に個別生成する。'
 	echo '  module.mk 個別生成のルールを更新する。ファイル追加・削除時にも実行する。'
 	echo '          例: make -f module.mk build/modules/sx_uri_enc.sh'
@@ -145,15 +146,15 @@ help:
 	echo
 	echo 'MACRO:'
 	echo '  SYMBOLS 生成する単位名。複数指定は空白で区切る。未指定・空文字列なら全単位。'
-	echo '  OUT     出力先。未指定・空文字列なら標準出力（all、bundle）。'
+	echo '  OUT     出力先。未指定・空文字列なら標準出力（bundle）。'
 	echo '  MOD_DIR 個別モジュールの出力ディレクトリ（既定 build/modules）。'
 	echo '  MOD_EXT 個別モジュールの拡張子（既定 .sh）。'
 	echo '  TEST_FLAGS shellspec に渡すオプション。'
 	echo
 	echo 'EXAMPLE:'
-	echo '  make OUT=sx.sh'
-	echo '  make SYMBOLS=sx_uri_enc OUT=sx-uri-enc.sh'
-	echo '  make SYMBOLS="sx_uri_enc sx_uri_is_pct"'
+	echo '  make sx.sh'
+	echo '  make bundle SYMBOLS=sx_uri_enc OUT=sx-uri-enc.sh'
+	echo '  make bundle SYMBOLS="sx_uri_enc sx_uri_is_pct"'
 	echo '  make MOD_DIR=build/custom MOD_EXT=.sh module'
 
 version:

@@ -195,7 +195,7 @@ Describe '公開 API の検査と生成形式の一致'
   AfterEach build_cleanup
 
   It 'sx_var_is_name の個別生成には設定検査関数を含めないこと'
-    build_make SYMBOLS=sx_var_is_name OUT=selected.sh
+    build_bundle SYMBOLS=sx_var_is_name OUT=selected.sh
     When run build_probe 'sx_var_is_name answer'
     The status should be success
     The stdout should equal ''
@@ -204,7 +204,7 @@ Describe '公開 API の検査と生成形式の一致'
   End
 
   It 'sx_var_bind は下位で使う ARR_HOLE が未設定なら代入前に78を返すこと'
-    build_make SYMBOLS=sx_var_bind OUT=selected.sh
+    build_bundle SYMBOLS=sx_var_bind OUT=selected.sh
     function_names=$(build_function_names "$SXTEST_BUILD_DIR/selected.sh")
     When run build_probe '
       remainder=unchanged
@@ -220,8 +220,8 @@ Describe '公開 API の検査と生成形式の一致'
   End
 
   It '全体版・選択版・個別モジュールで同じ設定検査を生成すること'
-    build_make OUT=full.sh
-    build_make SYMBOLS=sx_var_bind OUT=selected.sh
+    build_bundle OUT=full.sh
+    build_bundle SYMBOLS=sx_var_bind OUT=selected.sh
     build_make module.mk
     build_make -f module.mk build/modules/sx_var_bind.sh
     awk '/^sx_var_bind\(\) \{/ { active=1 } active { print } active && /^}/ { exit }' \

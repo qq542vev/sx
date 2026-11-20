@@ -6,8 +6,8 @@ Include ./spec/support/build.sh
 Describe 'sx_arr_splice の別シェル隔離実験'
   prepare_splice() {
     build_prepare_project
-    build_make 'SYMBOLS=sx_arr_gen sx_var_dump' OUT=prepare.sh
-    build_make SYMBOLS=sx_arr_splice OUT=splice.sh
+    build_bundle 'SYMBOLS=sx_arr_gen sx_var_dump' OUT=prepare.sh
+    build_bundle SYMBOLS=sx_arr_splice OUT=splice.sh
   }
   splice_prepare() (
     cd "$SXTEST_BUILD_PROJECT" || exit

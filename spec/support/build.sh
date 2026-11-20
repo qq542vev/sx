@@ -32,6 +32,10 @@ build_make() (
   LC_ALL=C make -s --no-print-directory SHELL=yash "$@"
 )
 
+# 選択（SYMBOLS）や出力先（OUT）を指定して生成する。
+# all と既定ターゲットは SYMBOLS・OUT によらず全体版と個別モジュールを生成するため、bundle を明示する。
+build_bundle() { build_make bundle "$@"; }
+
 build_resolve() (
   cd "$SXTEST_BUILD_DIR" || exit
   LC_ALL=C m4 "-DSX_SYMBOLS=$1" -- m4/resolve.m4

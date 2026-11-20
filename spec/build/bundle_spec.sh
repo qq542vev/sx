@@ -10,27 +10,18 @@ Describe 'make による全体版・部分版の生成'
   BeforeEach build_prepare_project
   AfterEach build_cleanup
 
-  Context '既定ターゲット・all・bundle の選択生成'
-    Parameters
-      ''
-      all
-      bundle
-    End
-
-    It "${1:-既定ターゲット} で指定した機能だけを生成すること"
-      case "$1" in '') set --;; esac
-      build_make SYMBOLS=sx_uri_enc OUT=selected.sh "$@"
-      function_names=$(build_function_names "$SXTEST_BUILD_DIR/selected.sh")
-      When run build_probe 'sx_uri_enc answer "a b"; printf "%s" "$answer"'
-      The status should be success
-      The stdout should equal 'a%20b'
-      The stderr should equal ''
-      The variable function_names should not include 'sx_uri_is_pct'
-    End
+  It 'bundle で指定した機能だけを生成すること'
+    build_bundle SYMBOLS=sx_uri_enc OUT=selected.sh
+    function_names=$(build_function_names "$SXTEST_BUILD_DIR/selected.sh")
+    When run build_probe 'sx_uri_enc answer "a b"; printf "%s" "$answer"'
+    The status should be success
+    The stdout should equal 'a%20b'
+    The stderr should equal ''
+    The variable function_names should not include 'sx_uri_is_pct'
   End
 
   It '代表生成物が shebang を持ち、POSIX モードで構文検査に通ること'
-    build_make SYMBOLS=sx_uri_enc OUT=selected.sh
+    build_bundle SYMBOLS=sx_uri_enc OUT=selected.sh
     When run yash -o posix -n "$SXTEST_BUILD_DIR/selected.sh"
     The status should be success
     The stdout should equal ''
@@ -39,7 +30,7 @@ Describe 'make による全体版・部分版の生成'
   End
 
   It '複数の機能を指定して両方を実行できること'
-    build_make 'SYMBOLS=sx_uri_enc sx_uri_is_pct' OUT=selected.sh
+    build_bundle 'SYMBOLS=sx_uri_enc sx_uri_is_pct' OUT=selected.sh
     When run build_probe 'sx_uri_enc answer "a b"; sx_uri_is_pct "$answer"; printf "%s" "$answer"'
     The status should be success
     The stdout should equal 'a%20b'
@@ -47,8 +38,8 @@ Describe 'make による全体版・部分版の生成'
   End
 
   It '選択を変えて再生成すると以前の機能が残らないこと'
-    build_make 'SYMBOLS=sx_uri_enc sx_uri_is_pct' OUT=selected.sh
-    build_make SYMBOLS=sx_uri_enc OUT=selected.sh
+    build_bundle 'SYMBOLS=sx_uri_enc sx_uri_is_pct' OUT=selected.sh
+    build_bundle SYMBOLS=sx_uri_enc OUT=selected.sh
     function_names=$(build_function_names "$SXTEST_BUILD_DIR/selected.sh")
     When run build_probe 'sx_uri_enc answer "a b"; printf "%s" "$answer"'
     The status should be success
@@ -58,8 +49,8 @@ Describe 'make による全体版・部分版の生成'
   End
 
   It '同じ名前を重複指定しても生成結果が変わらないこと'
-    build_make SYMBOLS=sx_uri_enc OUT=single.sh
-    build_make 'SYMBOLS=sx_uri_enc sx_uri_enc' OUT=duplicate.sh
+    build_bundle SYMBOLS=sx_uri_enc OUT=single.sh
+    build_bundle 'SYMBOLS=sx_uri_enc sx_uri_enc' OUT=duplicate.sh
     When run cmp "$SXTEST_BUILD_DIR/single.sh" "$SXTEST_BUILD_DIR/duplicate.sh"
     The status should be success
     The stdout should equal ''
@@ -74,7 +65,7 @@ Describe 'make による全体版・部分版の生成'
     End
 
     It "数値域 $1 で必要な定数を参照でき、最小値を含まないこと"
-      build_make SYMBOLS=SX_SYS_NUM_MAX OUT=selected.sh
+      build_bundle SYMBOLS=SX_SYS_NUM_MAX OUT=selected.sh
       When run build_probe '
         case $SX_CFG_NUM_RANGE in
           32) expected=$SX_NUM_I32_MAX;;
@@ -101,13 +92,13 @@ Describe 'make による全体版・部分版の生成'
     End
 
     It "$1 で同じ全体版を生成すること"
-      build_make OUT=expected.sh all
+      build_bundle OUT=expected.sh
       case "$1" in
         未指定) set --;;
         空文字列) set -- 'SYMBOLS=';;
         全単位を明示) set -- "SYMBOLS=$(build_symbols)";;
       esac
-      build_make "$@" > "$SXTEST_BUILD_DIR/actual.sh"
+      build_bundle "$@" > "$SXTEST_BUILD_DIR/actual.sh"
       When run cmp "$SXTEST_BUILD_DIR/expected.sh" "$SXTEST_BUILD_DIR/actual.sh"
       The status should be success
       The stdout should equal ''
@@ -117,22 +108,17 @@ Describe 'make による全体版・部分版の生成'
 
   Context 'OUT が未指定・空文字列の場合'
     Parameters
-      '' 未指定
-      '' 空文字列
-      all 未指定
-      all 空文字列
-      bundle 未指定
-      bundle 空文字列
+      未指定
+      空文字列
     End
 
-    It "${1:-既定ターゲット} で OUT が $2 なら標準出力へ生成すること"
-      build_make SYMBOLS=sx_uri_enc OUT=expected.sh
-      case "$2" in
-        未指定) set -- "$1";;
-        空文字列) set -- "$1" 'OUT=';;
+    It "OUT が $1 なら標準出力へ生成すること"
+      build_bundle SYMBOLS=sx_uri_enc OUT=expected.sh
+      case "$1" in
+        未指定) set --;;
+        空文字列) set -- 'OUT=';;
       esac
-      case "$1" in '') shift;; esac
-      build_make SYMBOLS=sx_uri_enc "$@" > "$SXTEST_BUILD_DIR/actual.sh"
+      build_bundle SYMBOLS=sx_uri_enc "$@" > "$SXTEST_BUILD_DIR/actual.sh"
       When run cmp "$SXTEST_BUILD_DIR/expected.sh" "$SXTEST_BUILD_DIR/actual.sh"
       The status should be success
       The stdout should equal ''
@@ -141,8 +127,18 @@ Describe 'make による全体版・部分版の生成'
     End
   End
 
+  It 'sx.sh ターゲットは SYMBOLS・OUT の指定によらず全体版を sx.sh に生成すること'
+    build_bundle OUT=expected.sh
+    build_make SYMBOLS=sx_uri_enc OUT=ignored.sh sx.sh
+    When run cmp "$SXTEST_BUILD_DIR/expected.sh" "$SXTEST_BUILD_DIR/sx.sh"
+    The status should be success
+    The stdout should equal ''
+    The stderr should equal ''
+    The path "$SXTEST_BUILD_DIR/ignored.sh" should not exist
+  End
+
   It 'OUT の親ディレクトリを作成し、空白を含むパスへ保存できること'
-    When run build_make SYMBOLS=sx_uri_enc 'OUT=nested path/selected.sh'
+    When run build_bundle SYMBOLS=sx_uri_enc 'OUT=nested path/selected.sh'
     The status should be success
     The stdout should equal ''
     The stderr should equal ''
@@ -158,7 +154,7 @@ Describe 'make による全体版・部分版の生成'
 
     It "$1 を拒否し、既存の出力を保持すること"
       printf '%s\n' '既存の内容' > "$SXTEST_BUILD_DIR/selected.sh"
-      When run build_make "SYMBOLS=$1" OUT=selected.sh
+      When run build_bundle "SYMBOLS=$1" OUT=selected.sh
       The status should be failure
       The stdout should equal ''
       The stderr should include "$2"
@@ -169,7 +165,7 @@ Describe 'make による全体版・部分版の生成'
   It '生成に失敗しても作業ディレクトリに不要なファイルを残さないこと'
     printf '%s\n' '既存の内容' > "$SXTEST_BUILD_DIR/selected.sh"
     build_inventory > "$SHELLSPEC_WORKDIR/bundle-before"
-    When run build_make SYMBOLS=unknown_name OUT=selected.sh
+    When run build_bundle SYMBOLS=unknown_name OUT=selected.sh
     The status should be failure
     The stdout should equal ''
     The stderr should include '未定義の名前'
