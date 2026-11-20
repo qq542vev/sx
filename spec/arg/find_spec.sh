@@ -6,6 +6,10 @@ eval "$(shellspec - -c) exit 1"
 
 
 Describe 'sx_arg_find'
+	Include ./spec/support/run.sh
+	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+	sxtest_run SX_ARG_FIND_NOT SX_ARG_FIND_GLOB SX_ARG_FIND_TEXT SX_ARG_FIND_CB -- ''
+
 	# Exampleごとに対象だけを読み込み、再入とスタブは検証側に残す。
 	load_subject() {
 		case "$1" in
@@ -145,6 +149,66 @@ Describe 'sx_arg_find'
 		It 'GLOB + CALLBACK 同時指定は Usage Error'
 			load_subject sx_arg_find
 			When call sx_arg_find res cb $((1 | 2)) ::: a b
+			The status should equal "64"
+		End
+	End
+
+	Describe '否定一致 (SX_ARG_FIND_NOT)'
+		It '一致しない要素のインデックスを返す'
+			load_subject sx_arg_find
+			sx_arg_find res "b" "$SX_ARG_FIND_NOT" ::: "a" "b" "c" "b" "d"
+			Assert [ "$res" = "1 3 5" ]
+		End
+
+		It 'TEXT と併用して一致しない値を返す'
+			load_subject sx_arg_find
+			sx_arg_find res "b" $((SX_ARG_FIND_NOT | SX_ARG_FIND_TEXT)) ::: "a" "b" "c"
+			eval "set -- ${res}"
+			Assert [ "$*" = "a c" ]
+		End
+
+		It 'GLOB と併用する'
+			load_subject sx_arg_find
+			sx_arg_find res "*.txt" $((SX_ARG_FIND_NOT | SX_ARG_FIND_GLOB)) ::: "file.txt" "readme.md" "data.txt"
+			Assert [ "$res" = "2" ]
+		End
+
+		It 'CB と併用する'
+			load_subject sx_arg_find
+			is_even() { [ $(($2 % 2)) -eq 0 ]; }
+			sx_arg_find res is_even $((SX_ARG_FIND_NOT | SX_ARG_FIND_CB)) ::: 1 2 3 4 5
+			Assert [ "$res" = "1 3 5" ]
+		End
+
+		It 'bind 件数制限と併用する'
+			load_subject sx_arg_find
+			sx_arg_find "2res:" "b" "$SX_ARG_FIND_NOT" ::: "a" "b" "c" "d"
+			Assert [ "$res" = "1 3" ]
+		End
+
+		It '全件一致なら 1 を返し空になる'
+			load_subject sx_arg_find
+			When call sx_arg_find res "a" "$SX_ARG_FIND_NOT" ::: "a" "a"
+			The status should be failure
+			The variable res should equal ""
+		End
+
+		It '空データなら 1 を返す'
+			load_subject sx_arg_find
+			When call sx_arg_find res "a" "$SX_ARG_FIND_NOT" :::
+			The status should be failure
+			The variable res should equal ""
+		End
+
+		It '空の検索対象では空でない要素を返す'
+			load_subject sx_arg_find
+			sx_arg_find res "" "$SX_ARG_FIND_NOT" ::: "a" "" "c"
+			Assert [ "$res" = "1 3" ]
+		End
+
+		It 'GLOB + CB + NOT は Usage Error'
+			load_subject sx_arg_find
+			When call sx_arg_find res cb $((SX_ARG_FIND_GLOB | SX_ARG_FIND_CB | SX_ARG_FIND_NOT)) ::: a b
 			The status should equal "64"
 		End
 	End

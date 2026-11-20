@@ -56,5 +56,25 @@ Describe 'sx_arg_find -efu 環境検証'
       When run efu_run sx_arg_find res cb 2 ::: a b
       The status should equal 1
     End
+
+    It 'NOT 指定でも再入時に状態を保持する'
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      __sx_num_is_nat0_safe() { return 0; }
+      __sx_num_is_int_fit_dec() { return 1; }
+      __sx_num_add1_arith() { return 64; }
+      res='' nested_result=''
+      inner_cb() { return 0; }
+      cb() {
+        sx_arg_find nested_result inner_cb 2 ::: x y
+        case "$1" in b) return 0;; esac
+        return 77
+      }
+      verify() {
+        sx_arg_find '2res:' cb 10 ::: a b c b d
+        [ "$res" = '1 3' ] && [ "$nested_result" = '1 2' ]
+      }
+      When run efu_run verify
+      The status should be success
+    End
   End
 End

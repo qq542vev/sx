@@ -9,6 +9,7 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   __sx_arg_find から呼ばれる。先頭から末尾に向かって検索する。
 ##   引数は正規化済み。引数チェックは行わない。
+##   NOT フラグ指定時は一致しない要素を対象にする。
 ##   データ個数が算術域内なら算術、それ以外は多倍長で添字を更新する。
 ##   添字を0から開始し、各要素の処理前に増やして末尾の余分な加算を避ける。
 ##
@@ -16,13 +17,14 @@ M_RENAME_QI([|dnl
 ##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
 ##    1  一致項目が見つからなかった
 
-define([|CLEANUP|], [|Q_bind Q_tgt Q_glob Q_text Q_i Q_arg Q_sts Q_type|])dnl
+define([|CLEANUP|], [|Q_bind Q_tgt Q_glob Q_text Q_not Q_i Q_arg Q_sts Q_type|])dnl
 
 __sx_arg_find_lit() {
 	Q_bind="${1}"
 	Q_tgt="${2}"
 	Q_glob=$((${3} & M_ARG_FIND_GLOB))
 	Q_text=$((${3} & M_ARG_FIND_TEXT))
+	Q_not=$((${3} & M_ARG_FIND_NOT))
 	Q_i=0
 
 	shift 3
@@ -36,14 +38,17 @@ __sx_arg_find_lit() {
 	for Q_arg in "${@}"; do
 		"__sx_num_add1_${Q_type}" Q_i "${Q_i}"
 
-		case "${Q_glob}${Q_arg}" in "0${Q_tgt}" | M_ARG_FIND_GLOB${Q_tgt})
-			case "${Q_text}" in
-				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_i}";;
-				*) __sx_var_bind Q_bind "${Q_bind}" "${Q_arg}";;
-			esac
-
-			Q_sts=M_EX_OK
+		case "${Q_glob}${Q_arg}" in
+			"0${Q_tgt}" | M_ARG_FIND_GLOB${Q_tgt}) case "${Q_not}" in [!0]*) continue;; esac;;
+			*) case "${Q_not}" in 0) continue;; esac;;
 		esac
+
+		case "${Q_text}" in
+			0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_i}";;
+			*) __sx_var_bind Q_bind "${Q_bind}" "${Q_arg}";;
+		esac
+
+		Q_sts=M_EX_OK
 
 		case "${Q_bind:+X}" in '')
 			break

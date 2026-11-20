@@ -14,6 +14,7 @@ M_RENAME_QI([|dnl
 ##    引数は正規化済み。引数チェックは行わない。
 ##    状態は位置変数で管理し、__sx_var_bind でバインドする。
 ##    添字と実際の位置番号を保持し、毎回オフセットを加算せず両方を減らす。
+##    NOT フラグ指定時は、コールバックが非0を返した要素を対象にする。
 ##    最大の位置番号が算術域内なら算術、それ以外は多倍長で添字・位置番号・一致数を更新する。
 ##    コールバック呼び出し前には一時変数を解放し、再入時も状態を保持する。
 ##
@@ -21,15 +22,20 @@ M_RENAME_QI([|dnl
 ##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
 ##    1  一致項目が見つからなかった
 
-define([|CLEANUP|], [|Q_bind Q_cb Q_text Q_i Q_pos Q_cnt Q_type|])dnl
+define([|CLEANUP|], [|Q_bind Q_cb Q_text Q_not Q_i Q_pos Q_cnt Q_type|])dnl
 
 __sx_arg_rfind_cb() {
 	Q_bind="${1}"
 	Q_cb="${2}"
 	Q_text=$((${3} & M_ARG_RFIND_TEXT))
 
-	# 管理用の7項目を含む最大の位置番号を、算術を使わずに取得する。
-	set -- 0 0 0 0 "${@}"
+	case "$((${3} & M_ARG_RFIND_NOT))" in
+		0) Q_not=;;
+		*) Q_not='! ';;
+	esac
+
+	# 管理用の8項目を含む最大の位置番号を、算術を使わずに取得する。
+	set -- 0 0 0 0 0 "${@}"
 	Q_pos="${#}"
 
 	if __sx_num_is_int_fit_dec "${SX_CFG_NUM_RANGE}" "${Q_pos}"; then
@@ -38,15 +44,15 @@ __sx_arg_rfind_cb() {
 		Q_type=nat0
 	fi
 
-	shift 7
+	shift 8
 
-	# $1: 添字、$2: 位置番号、$3: 一致数、$4: バインド、$5: 数値経路、$6: コールバック、$7: TEXT
-	set -- "${#}" "${Q_pos}" 0 "${Q_bind}" "${Q_type}" "${Q_cb}" "${Q_text}" "${@}"
+	# $1: 添字、$2: 位置番号、$3: 一致数、$4: バインド、$5: 数値経路、$6: コールバック、$7: TEXT、$8: NOT
+	set -- "${#}" "${Q_pos}" 0 "${Q_bind}" "${Q_type}" "${Q_cb}" "${Q_text}" "${Q_not}" "${@}"
 
 	while
 		unset CLEANUP
 
-		if eval '"${6}"' "\"\${${2}}\"" "${1}" "${3}"; then
+		if eval "${8}"'"${6}"' "\"\${${2}}\"" "${1}" "${3}"; then
 			case "${7}" in
 				0) __sx_var_ubind Q_bind "${4}" "${1}";;
 				*) eval __sx_var_bind Q_bind '"${4}"' "\"\${${2}}\"";;
@@ -70,6 +76,8 @@ __sx_arg_rfind_cb() {
 		set -- "${Q_i}" "${Q_pos}" "${Q_cnt}" "${Q_bind}" "${@}"
 		continue
 	do :; done
+
+	unset CLEANUP
 
 	case "${3}" in 0)
 		return 1

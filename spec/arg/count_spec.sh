@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_arg_count'
 	Include ./spec/support/run.sh
 	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
-	sxtest_run SX_ARG_COUNT_CB SX_ARG_COUNT_GLOB SX_ARG_FIND_TEXT -- ''
+	sxtest_run SX_ARG_COUNT_CB SX_ARG_COUNT_GLOB SX_ARG_COUNT_NOT SX_ARG_FIND_TEXT -- ''
 	sxtest_load ./build/modules/sx_arg_count.sh
 
 	It '単一一致で1を返すこと'
@@ -103,6 +103,39 @@ Describe 'sx_arg_count'
 			When call sx_arg_count res is_ge_min "$SX_ARG_COUNT_CB" ::: 1 2 3 4 5
 			The status should be success
 			The variable res should equal 3
+		End
+	End
+
+	Describe '否定一致 (SX_ARG_COUNT_NOT)'
+		It '一致しない要素の個数を返す'
+			When call sx_arg_count res "b" "$SX_ARG_COUNT_NOT" ::: "a" "b" "c" "b"
+			The status should be success
+			The variable res should equal 2
+		End
+
+		It 'GLOB と併用する'
+			When call sx_arg_count res "*.txt" $((SX_ARG_COUNT_NOT | SX_ARG_COUNT_GLOB)) ::: "a.txt" "b.md" "c.txt"
+			The status should be success
+			The variable res should equal 1
+		End
+
+		It 'CB と併用する'
+			is_even() { [ $(($1 % 2)) -eq 0 ]; }
+			When call sx_arg_count res is_even $((SX_ARG_COUNT_NOT | SX_ARG_COUNT_CB)) ::: 1 2 3 4 5
+			The status should be success
+			The variable res should equal 3
+		End
+
+		It '全件一致なら0を返す'
+			When call sx_arg_count res "a" "$SX_ARG_COUNT_NOT" ::: "a" "a"
+			The status should be success
+			The variable res should equal 0
+		End
+
+		It '空データなら0を返す'
+			When call sx_arg_count res "a" "$SX_ARG_COUNT_NOT" :::
+			The status should be success
+			The variable res should equal 0
 		End
 	End
 

@@ -117,9 +117,9 @@ Describe 'sx_arg_rfind 多倍長対応'
 
   It '再入呼び出しが別の数値経路を選んでも外側の経路を保持する'
     load_subject sx_arg_rfind
-    # 外側の最大位置11は多倍長、内側の最大位置9は算術を選ぶ。
+    # 外側の最大位置12は多倍長、内側の最大位置10は算術を選ぶ。
     __sx_num_is_int_fit_dec() {
-      case "${#}:${2-}" in 2:11) return 1;; esac
+      case "${#}:${2-}" in 2:12) return 1;; esac
       return 0
     }
     calls=''
@@ -239,7 +239,7 @@ Describe 'sx_arg_rfind 多倍長対応'
   Context '8bit範囲の境界'
     Parameters:matrix
       120 121 127 128
-      0 1 2 4 5 6
+      0 1 2 4 5 6 8 9 10 12 13 14
     End
 
     It '管理用の位置番号と一致数が算術域を超えても全件を逆順に検索する'
@@ -250,13 +250,14 @@ Describe 'sx_arg_rfind 多倍長対応'
         idx=$((idx + 1))
         set -- "$@" x
         case "$flags" in
-          0 | 1 | 2) expected="${idx}${expected:+ }${expected}";;
+          0 | 1 | 2 | 8 | 9 | 10) expected="${idx}${expected:+ }${expected}";;
           *) expected="'x'${expected:+ }${expected}";;
         esac
       done
       # 公開設定の対象外である8bit幅を内部実装の境界検証に使う。
       sxtest_run SX_CFG_NUM_RANGE SX_SYS_NUM_QM SX_SYS_NUM_ZR -- '__sx_cfg_set "$@"' NUM_RANGE=8
-      case "$flags" in 2 | 6) bound=120;; *) bound=127;; esac
+      # CB 経路は管理用の NOT を含む8項目、リテラル経路は添字のみで境界を判定する。
+      case "$flags" in 2 | 6 | 10 | 14) bound=119;; *) bound=127;; esac
       if [ "$count" -le "$bound" ]; then
         __sx_num_sub1_nat0() { return 64; }
         __sx_num_add1_nat0() { return 64; }
@@ -267,11 +268,18 @@ Describe 'sx_arg_rfind 多倍長対応'
       expected_prior=$((count - 1))
       last_idx=0 last_count=0
       cb() { last_idx="$2"; last_count="$3"; case "$1" in x) return 0;; esac; return 77; }
-      case "$flags" in 2 | 6) target=cb;; *) target=x;; esac
+      # NOT 指定では全件を対象にするため、一致しない検索対象とコールバックを使う。
+      never_cb() { last_idx="$2"; last_count="$3"; return 77; }
+      case "$flags" in
+        2 | 6) target=cb;;
+        8 | 9 | 12 | 13) target=y;;
+        10 | 14) target=never_cb;;
+        *) target=x;;
+      esac
       When call __sx_arg_rfind res "$target" "$flags" ::: "$@"
       The status should be success
       The variable res should equal "$expected"
-      case "$flags" in 2 | 6)
+      case "$flags" in 2 | 6 | 10 | 14)
         The variable last_idx should equal 1
         The variable last_count should equal "$expected_prior"
       esac

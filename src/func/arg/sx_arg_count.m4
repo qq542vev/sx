@@ -8,11 +8,13 @@ pushdef([|CLEANUP|])dnl
 ##
 ## 説明:
 ##   引数リストから検索対象と一致する値の出現回数を数え、結果変数に非負整数で格納する。
-##   フラグの意味は sx_arg_find と同一（SX_ARG_COUNT_GLOB, SX_ARG_COUNT_CB）。
+##   フラグの意味は sx_arg_find と同一（SX_ARG_COUNT_GLOB, SX_ARG_COUNT_CB, SX_ARG_COUNT_NOT）。
 ##   SX_ARG_COUNT_CB (2) を指定すると、検索対象をコールバック関数として扱う。
+##   SX_ARG_COUNT_NOT (8) を指定すると、一致しない要素の個数を数える。
 ##   コールバックシグネチャ: callback 値 インデックス 一致数
 ##     0 を返すと一致、非0 は不一致としてスキップ。
 ##     一致数は現在の要素より前で一致した件数（0開始）。
+##     NOT 指定時は、一致数はそれまでに採用された不一致要素の件数となる。
 ##   実質的に __sx_arg_find に委譲し、結果のスペース区切り件数を __sx_arg_len で取得する。
 ##   引数個数・インデックス・一致数に SX_CFG_NUM_RANGE による上限は設けない。
 ##

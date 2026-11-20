@@ -8,7 +8,7 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_arg_rfind'
 	Include ./spec/support/run.sh
 	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
-	sxtest_run SX_ARG_RFIND_CB SX_ARG_RFIND_GLOB SX_ARG_RFIND_TEXT -- ''
+	sxtest_run SX_ARG_RFIND_CB SX_ARG_RFIND_GLOB SX_ARG_RFIND_TEXT SX_ARG_RFIND_NOT -- ''
 	sxtest_load ./build/modules/sx_arg_rfind.sh
 
 	Describe '後ろ向き検索 (sx_arg_rfind)'
@@ -116,6 +116,42 @@ Describe 'sx_arg_rfind'
 		It 'GLOB + CALLBACK 同時指定は Usage Error'
 			When call sx_arg_rfind res cb $((SX_ARG_RFIND_GLOB | SX_ARG_RFIND_CB)) ::: a b
 			The status should equal 64
+		End
+	End
+
+	Describe '否定一致 (SX_ARG_RFIND_NOT)'
+		It '一致しない要素のインデックスを末尾から返す'
+			sx_arg_rfind res "b" "$SX_ARG_RFIND_NOT" ::: "a" "b" "c" "b" "d"
+			Assert [ "$res" = "5 3 1" ]
+		End
+
+		It 'TEXT と併用して一致しない値を返す'
+			sx_arg_rfind res "b" $((SX_ARG_RFIND_NOT | SX_ARG_RFIND_TEXT)) ::: "a" "b" "c"
+			eval "set -- ${res}"
+			Assert [ "$*" = "c a" ]
+		End
+
+		It 'GLOB と併用する'
+			sx_arg_rfind res "*.txt" $((SX_ARG_RFIND_NOT | SX_ARG_RFIND_GLOB)) ::: "a.txt" "b.md" "c.txt"
+			Assert [ "$res" = "2" ]
+		End
+
+		It 'CB と併用する'
+			is_even() { [ $(($2 % 2)) -eq 0 ]; }
+			sx_arg_rfind res is_even $((SX_ARG_RFIND_NOT | SX_ARG_RFIND_CB)) ::: 1 2 3 4 5
+			Assert [ "$res" = "5 3 1" ]
+		End
+
+		It '全件一致なら 1 を返し空になる'
+			When call sx_arg_rfind res "a" "$SX_ARG_RFIND_NOT" ::: "a" "a"
+			The status should be failure
+			The variable res should equal ""
+		End
+
+		It '空データなら 1 を返す'
+			When call sx_arg_rfind res "a" "$SX_ARG_RFIND_NOT" :::
+			The status should be failure
+			The variable res should equal ""
 		End
 	End
 
