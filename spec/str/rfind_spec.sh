@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_str_rfind'
 	Include ./spec/support/run.sh
 	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
-	sxtest_run SX_STR_RFIND_GLOB SX_STR_RFIND_OVERLAP SX_STR_RFIND_TEXT -- ''
+	sxtest_run SX_STR_RFIND_GLOB SX_STR_RFIND_OVERLAP SX_STR_RFIND_TEXT SX_STR_RFIND_POS SX_STR_RFIND_LEN -- ''
 	sxtest_load ./build/modules/sx_str_rfind.sh
 
 	Context 'glob 検索で一致の前後にパターン文字がある場合'
@@ -361,5 +361,55 @@ Describe 'sx_str_rfind'
 	It 'TEXT+glob+overlapモードで全フラグを組み合わせられること'
 		sx_str_rfind "3fst:" "aaa" "a*" "$(($SX_STR_RFIND_GLOB | $SX_STR_RFIND_OVERLAP | $SX_STR_RFIND_TEXT))"
 		Assert [ "$fst" = "'a' 'a' 'a'" ]
+	End
+
+	Context '出力形式フラグ'
+		It 'POS のみで位置のみを後方から返すこと'
+			When call sx_str_rfind res "a_b_c" "_" "$SX_STR_RFIND_POS"
+			The status should be success
+			The variable res should equal "3 1"
+		End
+
+		It 'LEN のみで一致長のみを返すこと'
+			When call sx_str_rfind res "a_b_c" "_" "$SX_STR_RFIND_LEN"
+			The status should be success
+			The variable res should equal "1 1"
+		End
+
+		It 'POS|TEXT で pos:text を返すこと'
+			sx_str_rfind "fst:snd:" "a_b_c" "_" "$(($SX_STR_RFIND_POS | $SX_STR_RFIND_TEXT))"
+			Assert [ "$fst" = "3:_" ]
+			Assert [ "$snd" = "1:_" ]
+		End
+
+		It 'LEN|POS でも pos:len の順で返すこと'
+			When call sx_str_rfind res "a_b_c" "_" "$(($SX_STR_RFIND_LEN | $SX_STR_RFIND_POS))"
+			The status should be success
+			The variable res should equal "3:1 1:1"
+		End
+
+		It 'POS|LEN|TEXT で pos:len:text を返すこと'
+			sx_str_rfind "fst:snd:" "a_b_c" "_" "$(($SX_STR_RFIND_POS | $SX_STR_RFIND_LEN | $SX_STR_RFIND_TEXT))"
+			Assert [ "$fst" = "3:1:_" ]
+			Assert [ "$snd" = "1:1:_" ]
+		End
+
+		It '出力形式未指定は POS|LEN と同じこと'
+			When call sx_str_rfind res "a_b_c" "_" 0
+			The status should be success
+			The variable res should equal "3:1 1:1"
+		End
+
+		It '空 needle で TEXT が空でも区切りを残すこと'
+			sx_str_rfind "fst:snd:" "abc" "" "$(($SX_STR_RFIND_POS | $SX_STR_RFIND_TEXT))"
+			Assert [ "$fst" = "3:" ]
+			Assert [ "$snd" = "2:" ]
+		End
+
+		It 'glob と POS|TEXT を併用できること'
+			sx_str_rfind "fst:snd:" "abc123" "[a-z]" "$(($SX_STR_RFIND_GLOB | $SX_STR_RFIND_POS | $SX_STR_RFIND_TEXT))"
+			Assert [ "$fst" = "2:c" ]
+			Assert [ "$snd" = "1:b" ]
+		End
 	End
 End

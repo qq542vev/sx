@@ -134,9 +134,13 @@ define([|M_STR_ISEP_POST|], [|4|])dnl
 define([|M_STR_FIND_GLOB|], [|1|])dnl
 define([|M_STR_FIND_OVERLAP|], [|2|])dnl
 define([|M_STR_FIND_TEXT|], [|4|])dnl
+define([|M_STR_FIND_POS|], [|8|])dnl
+define([|M_STR_FIND_LEN|], [|16|])dnl
 define([|M_STR_RFIND_GLOB|], [|1|])dnl
 define([|M_STR_RFIND_OVERLAP|], [|2|])dnl
 define([|M_STR_RFIND_TEXT|], [|4|])dnl
+define([|M_STR_RFIND_POS|], [|8|])dnl
+define([|M_STR_RFIND_LEN|], [|16|])dnl
 define([|M_STR_COUNT_GLOB|], [|1|])dnl
 define([|M_STR_COUNT_OVERLAP|], [|2|])dnl
 define([|M_STR_CHUNK_SKIP_SHORT|], [|1|])dnl

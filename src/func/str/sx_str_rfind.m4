@@ -13,8 +13,15 @@ pushdef([|CLEANUP|])dnl
 ##
 ##   フラグに SX_STR_RFIND_GLOB (1) を指定すると、検索文字列を glob パターンとして扱う。
 ##   フラグに SX_STR_RFIND_OVERLAP (2) を指定すると、重なり合う一致も検出する。
-##   フラグに SX_STR_RFIND_TEXT (4) を指定すると、出力が "index:len" の代わりに
-##   実際にマッチした文字列になる。
+##
+##   出力形式は SX_STR_RFIND_POS (8) / SX_STR_RFIND_LEN (16) /
+##   SX_STR_RFIND_TEXT (4) で指定する。指定されたフィールドだけを
+##   POS:LEN:TEXT の固定順で ':' 連結する。指定順は結果に影響しない。
+##   出力形式フラグを1つも指定しない場合は POS|LEN とみなし、
+##   従来どおり "index:len" を返す。
+##   例: POS|TEXT なら "pos:text"、LEN|POS なら "pos:len"、
+##   POS|LEN|TEXT なら "pos:len:text"。TEXT 単独はマッチ文字列のみ。
+##   空マッチで TEXT フィールドが空文字になっても区切り ':' は残す。
 ##   元文字列の長さに SX_CFG_NUM_RANGE による上限は設けない。
 ##
 ## 終了ステータス:

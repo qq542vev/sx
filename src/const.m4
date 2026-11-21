@@ -442,9 +442,13 @@ M_UNIT([|SX_ARG_COUNT_NOT|], [|src/const/arg/SX_ARG_COUNT_NOT.m4|])dnl
 M_UNIT([|SX_STR_FIND_GLOB|], [|src/const/str/SX_STR_FIND_GLOB.m4|])dnl
 M_UNIT([|SX_STR_FIND_OVERLAP|], [|src/const/str/SX_STR_FIND_OVERLAP.m4|])dnl
 M_UNIT([|SX_STR_FIND_TEXT|], [|src/const/str/SX_STR_FIND_TEXT.m4|])dnl
+M_UNIT([|SX_STR_FIND_POS|], [|src/const/str/SX_STR_FIND_POS.m4|])dnl
+M_UNIT([|SX_STR_FIND_LEN|], [|src/const/str/SX_STR_FIND_LEN.m4|])dnl
 M_UNIT([|SX_STR_RFIND_GLOB|], [|src/const/str/SX_STR_RFIND_GLOB.m4|])dnl
 M_UNIT([|SX_STR_RFIND_OVERLAP|], [|src/const/str/SX_STR_RFIND_OVERLAP.m4|])dnl
 M_UNIT([|SX_STR_RFIND_TEXT|], [|src/const/str/SX_STR_RFIND_TEXT.m4|])dnl
+M_UNIT([|SX_STR_RFIND_POS|], [|src/const/str/SX_STR_RFIND_POS.m4|])dnl
+M_UNIT([|SX_STR_RFIND_LEN|], [|src/const/str/SX_STR_RFIND_LEN.m4|])dnl
 M_UNIT([|SX_STR_COUNT_GLOB|], [|src/const/str/SX_STR_COUNT_GLOB.m4|])dnl
 M_UNIT([|SX_STR_COUNT_OVERLAP|], [|src/const/str/SX_STR_COUNT_OVERLAP.m4|])dnl
 M_UNIT([|SX_STR_CHUNK_SKIP_SHORT|], [|src/const/str/SX_STR_CHUNK_SKIP_SHORT.m4|])dnl

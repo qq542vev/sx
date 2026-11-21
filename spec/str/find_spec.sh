@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_str_find'
 	Include ./spec/support/run.sh
 	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
-	sxtest_run SX_STR_FIND_GLOB SX_STR_FIND_OVERLAP SX_STR_FIND_TEXT -- ''
+	sxtest_run SX_STR_FIND_GLOB SX_STR_FIND_OVERLAP SX_STR_FIND_TEXT SX_STR_FIND_POS SX_STR_FIND_LEN -- ''
 	sxtest_load ./build/modules/sx_str_find.sh
 
 	It '単一一致で index:len を返すこと'
@@ -275,5 +275,55 @@ Describe 'sx_str_find'
 	It 'TEXT+glob+overlapモードで全フラグを組み合わせられること'
 		sx_str_find "3fst:" "aaa" "a*" "$(($SX_STR_FIND_GLOB | $SX_STR_FIND_OVERLAP | $SX_STR_FIND_TEXT))"
 		Assert [ "$fst" = "'a' 'a' 'a'" ]
+	End
+
+	Context '出力形式フラグ'
+		It 'POS のみで位置のみを返すこと'
+			When call sx_str_find res "a_b_c" "_" "$SX_STR_FIND_POS"
+			The status should be success
+			The variable res should equal "1 3"
+		End
+
+		It 'LEN のみで一致長のみを返すこと'
+			When call sx_str_find res "a_b_c" "_" "$SX_STR_FIND_LEN"
+			The status should be success
+			The variable res should equal "1 1"
+		End
+
+		It 'POS|TEXT で pos:text を返すこと'
+			sx_str_find "fst:snd:" "a_b_c" "_" "$(($SX_STR_FIND_POS | $SX_STR_FIND_TEXT))"
+			Assert [ "$fst" = "1:_" ]
+			Assert [ "$snd" = "3:_" ]
+		End
+
+		It 'LEN|POS でも pos:len の順で返すこと'
+			When call sx_str_find res "a_b_c" "_" "$(($SX_STR_FIND_LEN | $SX_STR_FIND_POS))"
+			The status should be success
+			The variable res should equal "1:1 3:1"
+		End
+
+		It 'POS|LEN|TEXT で pos:len:text を返すこと'
+			sx_str_find "fst:snd:" "a_b_c" "_" "$(($SX_STR_FIND_POS | $SX_STR_FIND_LEN | $SX_STR_FIND_TEXT))"
+			Assert [ "$fst" = "1:1:_" ]
+			Assert [ "$snd" = "3:1:_" ]
+		End
+
+		It '出力形式未指定は POS|LEN と同じこと'
+			When call sx_str_find res "a_b_c" "_" 0
+			The status should be success
+			The variable res should equal "1:1 3:1"
+		End
+
+		It '空 needle で TEXT が空でも区切りを残すこと'
+			sx_str_find "fst:snd:" "abc" "" "$(($SX_STR_FIND_POS | $SX_STR_FIND_TEXT))"
+			Assert [ "$fst" = "0:" ]
+			Assert [ "$snd" = "1:" ]
+		End
+
+		It 'glob と POS|TEXT を併用できること'
+			sx_str_find "fst:snd:" "abc123" "[a-z]" "$(($SX_STR_FIND_GLOB | $SX_STR_FIND_POS | $SX_STR_FIND_TEXT))"
+			Assert [ "$fst" = "0:a" ]
+			Assert [ "$snd" = "1:b" ]
+		End
 	End
 End

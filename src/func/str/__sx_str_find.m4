@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_add_arith __sx_num_add_nat0 __sx_num_is_int_fit_dec __sx_var_bind __sx_var_bind_init __sx_var_ubind|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_add_arith __sx_num_add_nat0 __sx_num_is_int_fit_dec __sx_str_find_bind __sx_var_bind_init|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_find - 文字列から指定された文字列を前方一致で探す（内部用）
@@ -8,15 +8,38 @@ M_RENAME_QI([|dnl
 ##
 ## 説明:
 ##   sx_str_find の内部実装。引数チェックは行わない。
+##   出力形式フラグが未指定なら POS|LEN を既定とし、指定されていれば
+##   __sx_str_find_bind へ委譲して POS:LEN:TEXT 順で出力する。
+##   委譲時は各出力形式フラグを 1 または空文字列に正規化して渡す。
 
-define([|CLEANUP|], [|Q_bind Q_tgt Q_off Q_pre Q_sts Q_match Q_after Q_text Q_overlap Q_type Q_len|])dnl
+define([|CLEANUP|], [|Q_bind Q_tgt Q_off Q_pre Q_sts Q_match Q_after Q_fmt Q_overlap Q_type Q_len|])dnl
 
 __sx_str_find() {
 	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
 	Q_tgt="${2}"
-	Q_text=$((${4} & M_STR_FIND_TEXT))
+	Q_fmt=$((${4} & (M_STR_FIND_POS | M_STR_FIND_LEN | M_STR_FIND_TEXT)))
+
+	case "${Q_fmt}" in 0)
+		Q_fmt=$((M_STR_FIND_POS | M_STR_FIND_LEN))
+	esac
+
+	case $((Q_fmt & M_STR_FIND_POS)) in
+		0) set -- "${@}" '';;
+		*) set -- "${@}" 1;;
+	esac
+
+	case $((Q_fmt & M_STR_FIND_LEN)) in
+		0) set -- "${@}" '';;
+		*) set -- "${@}" 1;;
+	esac
+
+	case $((Q_fmt & M_STR_FIND_TEXT)) in
+		0) set -- "${@}" '';;
+		*) set -- "${@}" 1;;
+	esac
+
 	Q_overlap=$((${4} & M_STR_FIND_OVERLAP))
 	Q_off=0
 
@@ -35,10 +58,7 @@ __sx_str_find() {
 
 		# 空 needle: 全境界位置（0 〜 len）に長さ0で出力
 		while
-			case "${Q_text}" in
-				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:0";;
-				*) __sx_var_bind Q_bind "${Q_bind}" '';;
-			esac || break
+			__sx_str_find_bind Q_bind "${Q_bind}" "${5}" "${6}" "${7}" "${Q_off}" 0 '' || break
 
 			case "${Q_off}" in "${Q_len}")
 				break
@@ -60,10 +80,7 @@ __sx_str_find() {
 			"__sx_num_add_${Q_type}" Q_off "${Q_off}" "${#Q_pre}"
 			: "${Q_sts=M_EX_OK}"
 
-			case "${Q_text}" in
-				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:${Q_len}";;
-				*) __sx_var_bind Q_bind "${Q_bind}" "${Q_match}";;
-			esac || break
+			__sx_str_find_bind Q_bind "${Q_bind}" "${5}" "${6}" "${7}" "${Q_off}" "${Q_len}" "${Q_match}" || break
 
 			case "${Q_overlap}" in
 				0)
@@ -86,10 +103,7 @@ __sx_str_find() {
 			"__sx_num_add_${Q_type}" Q_off "${Q_off}" "${#Q_pre}"
 			: "${Q_sts=M_EX_OK}"
 
-			case "${Q_text}" in
-				0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_off}:${Q_len}";;
-				*) __sx_var_bind Q_bind "${Q_bind}" "${3}";;
-			esac || break
+			__sx_str_find_bind Q_bind "${Q_bind}" "${5}" "${6}" "${7}" "${Q_off}" "${Q_len}" "${3}" || break
 
 			case "${Q_overlap}" in
 				0)

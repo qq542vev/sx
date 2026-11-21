@@ -402,6 +402,7 @@ M_UNIT([|sx_str_ew|], [|src/func/str/sx_str_ew.m4|])dnl
 M_UNIT([|__sx_str_ew|], [|src/func/str/__sx_str_ew.m4|])dnl
 M_UNIT([|sx_str_find|], [|src/func/str/sx_str_find.m4|])dnl
 M_UNIT([|__sx_str_find|], [|src/func/str/__sx_str_find.m4|])dnl
+M_UNIT([|__sx_str_find_bind|], [|src/func/str/__sx_str_find_bind.m4|])dnl
 M_UNIT([|sx_str_has|], [|src/func/str/sx_str_has.m4|])dnl
 M_UNIT([|__sx_str_has|], [|src/func/str/__sx_str_has.m4|])dnl
 M_UNIT([|sx_str_incl|], [|src/func/str/sx_str_incl.m4|])dnl
