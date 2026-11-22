@@ -12,7 +12,7 @@ M_RENAME_QI([|dnl
 ##   __sx_str_find_bind へ委譲して POS:LEN:TEXT 順で出力する。
 ##   委譲時は各出力形式フラグを 1 または空文字列に正規化して渡す。
 
-define([|CLEANUP|], [|Q_bind Q_tgt Q_off Q_pre Q_sts Q_match Q_after Q_fmt Q_overlap Q_type Q_len|])dnl
+define([|CLEANUP|], [|Q_bind Q_tgt Q_off Q_pre Q_match Q_after Q_fmt Q_overlap Q_type Q_len|])dnl
 
 __sx_str_find() {
 	set -- "${1}" "${2-}" "${3-}" "${4:-0}"
@@ -53,7 +53,6 @@ __sx_str_find() {
 		M_STR_EQ([|"${3}"|], [|''|]) ||
 		{ M_NUM_BOOL([|${4} & M_STR_FIND_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
 	then
-		Q_sts=M_EX_OK
 		Q_len="${#Q_tgt}"
 
 		# 空 needle: 全境界位置（0 〜 len）に長さ0で出力
@@ -67,6 +66,8 @@ __sx_str_find() {
 			"__sx_num_add1_${Q_type}" Q_off "${Q_off}"
 			continue
 		do :; done
+
+		set -- 0
 	elif M_NUM_BOOL([|${4} & M_STR_FIND_GLOB|]); then
 		# ==== グロブモード ====
 		while M_STR_HAS([|"${Q_tgt}"|], [|${3}|]); do
@@ -78,7 +79,6 @@ __sx_str_find() {
 			Q_len="${#Q_match}"
 
 			"__sx_num_add_${Q_type}" Q_off "${Q_off}" "${#Q_pre}"
-			: "${Q_sts=M_EX_OK}"
 
 			__sx_str_find_bind Q_bind "${Q_bind}" "${5}" "${6}" "${7}" "${Q_off}" "${Q_len}" "${Q_match}" || break
 
@@ -93,6 +93,8 @@ __sx_str_find() {
 					;;
 			esac
 		done
+
+		set -- ${Q_pre+'0'}
 	else
 		# ==== リテラルモード ====
 		Q_len="${#3}"
@@ -101,7 +103,6 @@ __sx_str_find() {
 			Q_pre="${Q_tgt%%"${3}"*}"
 
 			"__sx_num_add_${Q_type}" Q_off "${Q_off}" "${#Q_pre}"
-			: "${Q_sts=M_EX_OK}"
 
 			__sx_str_find_bind Q_bind "${Q_bind}" "${5}" "${6}" "${7}" "${Q_off}" "${Q_len}" "${3}" || break
 
@@ -116,11 +117,12 @@ __sx_str_find() {
 					;;
 			esac
 		done
+
+		set -- ${Q_pre+'0'}
 	fi
 
-	set -- "${Q_sts-1}"
 	unset CLEANUP
-	return "${1}"
+	return "${1-1}"
 }
 |], [|str_find|])dnl
 popdef([|CLEANUP|])dnl
