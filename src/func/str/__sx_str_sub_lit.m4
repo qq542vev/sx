@@ -34,15 +34,6 @@ __sx_str_sub_lit() {
 			__sx_var_bind '' "${1}" "${Q_out}${Q_str}" "${Q_cnt}"
 			;;
 		0:-1)
-			while M_STR_NE([|"${Q_cnt}"|], [|"${5}"|]) && M_STR_HAS([|"${Q_str}"|], [|${3}|]); do
-				M_STR_APPEND([|Q_out|], [|"${Q_str%%${3}*}${4}"|])
-				Q_str="${Q_str#*${3}}"
-				"__sx_num_add1_${7}" Q_cnt "${Q_cnt}"
-			done
-
-			__sx_var_bind '' "${1}" "${Q_out}${Q_str}" "${Q_cnt}"
-			;;
-		*:1)
 			while M_STR_NE([|"${Q_cnt}"|], [|"${5}"|]) && M_STR_HAS([|"${Q_str}"|], [|"${3}"|]); do
 				M_STR_PREPEND([|Q_out|], [|"${4}${Q_str##*"${3}"}"|])
 				Q_str="${Q_str%"${3}"*}"
@@ -50,6 +41,15 @@ __sx_str_sub_lit() {
 			done
 
 			__sx_var_bind '' "${1}" "${Q_str}${Q_out}" "${Q_cnt}"
+			;;
+		*:1)
+			while M_STR_NE([|"${Q_cnt}"|], [|"${5}"|]) && M_STR_HAS([|"${Q_str}"|], [|${3}|]); do
+				M_STR_APPEND([|Q_out|], [|"${Q_str%%${3}*}${4}"|])
+				Q_str="${Q_str#*${3}}"
+				"__sx_num_add1_${7}" Q_cnt "${Q_cnt}"
+			done
+
+			__sx_var_bind '' "${1}" "${Q_out}${Q_str}" "${Q_cnt}"
 			;;
 		*)
 			while M_STR_NE([|"${Q_cnt}"|], [|"${5}"|]) && M_STR_HAS([|"${Q_str}"|], [|${3}|]); do
