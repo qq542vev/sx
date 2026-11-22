@@ -50,7 +50,7 @@ __sx_str_substr() {
 			"__sx_num_cmp_${Q_type}" "${Q_off_abs}" "${Q_slen}" || case "${?}${4-}" in
 				1*)
 					__sx_str_qm Q_qm "${Q_off_abs}"
-					Q_str="${Q_str#"${Q_str%${Q_qm}}"}"
+					Q_str="${Q_str##"${Q_str%${Q_qm}}"}"
 					;;
 				3[!-]*)
 					# 先頭より前の文字数を、明示された非負の長さから除く。
@@ -81,7 +81,7 @@ __sx_str_substr() {
 		?-*) M_VAR_SET([|${1}|]);;
 		1*)
 			__sx_str_qm Q_qm "${Q_len_abs}"
-			M_VAR_SET([|${1}|], [|${Q_str%"${Q_str#${Q_qm}}"}|])
+			M_VAR_SET([|${1}|], [|${Q_str%%"${Q_str#${Q_qm}}"}|])
 			;;
 		*) M_VAR_SET([|${1}|], [|${Q_str}|]);;
 	esac

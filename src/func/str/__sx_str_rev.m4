@@ -30,7 +30,7 @@ __sx_str_rev() {
 		-*)
 			while M_STR_MATCH([|"${Q_src}"|], [|${Q_pat}?*|]); do
 				Q_tmp="${Q_src%${Q_pat}}"
-				M_STR_APPEND([|Q_out|], [|"${Q_src#"${Q_tmp}"}"|])
+				M_STR_APPEND([|Q_out|], [|"${Q_src##"${Q_tmp}"}"|])
 				Q_src="${Q_tmp}"
 			done
 
@@ -39,7 +39,7 @@ __sx_str_rev() {
 		*)
 			while M_STR_MATCH([|"${Q_src}"|], [|${Q_pat}?*|]); do
 				Q_tmp="${Q_src#${Q_pat}}"
-				M_STR_PREPEND([|Q_out|], [|"${Q_src%"${Q_tmp}"}"|])
+				M_STR_PREPEND([|Q_out|], [|"${Q_src%%"${Q_tmp}"}"|])
 				Q_src="${Q_tmp}"
 			done
 

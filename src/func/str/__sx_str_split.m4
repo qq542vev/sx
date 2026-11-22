@@ -105,7 +105,7 @@ __sx_str_split() {
 					Q_mid="${Q_str#"${Q_val}"}"
 				esac
 
-				__sx_var_bind Q_bind "${Q_bind}" "${Q_val}" ${Q_mid+"${Q_mid%"${Q_rem}"}"} || {
+				__sx_var_bind Q_bind "${Q_bind}" "${Q_val}" ${Q_mid+"${Q_mid%%"${Q_rem}"}"} || {
 					unset CLEANUP
 					return
 				}
@@ -144,7 +144,7 @@ __sx_str_split() {
 					Q_mid="${Q_str%"${Q_val}"}"
 				esac
 
-				set -- ${Q_mid+"${Q_mid#"${Q_rem}"}"} "${Q_val}" "${@}"
+				set -- ${Q_mid+"${Q_mid##"${Q_rem}"}"} "${Q_val}" "${@}"
 
 				Q_str="${Q_rem}"
 				"${Q_type}" Q_lim "${Q_lim}"
