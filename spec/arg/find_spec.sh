@@ -8,7 +8,7 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_arg_find'
 	Include ./spec/support/run.sh
 	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
-	sxtest_run SX_ARG_FIND_NOT SX_ARG_FIND_GLOB SX_ARG_FIND_TEXT SX_ARG_FIND_CB -- ''
+	sxtest_run SX_ARG_FIND_NOT SX_ARG_FIND_GLOB SX_ARG_FIND_TEXT SX_ARG_FIND_CB SX_ARG_FIND_POS SX_ARG_RFIND_POS -- ''
 
 	# Exampleごとに対象だけを読み込み、再入とスタブは検証側に残す。
 	load_subject() {
@@ -294,6 +294,73 @@ Describe 'sx_arg_find'
 			When call sx_arg_find res b b 1 b
 			The status should be success
 			The variable res should equal '1 3'
+		End
+	End
+
+	Describe '出力形式フラグ (sx_arg_find)'
+		It 'POS のみでインデックスのみを返すこと'
+			load_subject sx_arg_find
+			When call sx_arg_find res "b" "$SX_ARG_FIND_POS" ::: a b c b
+			The status should be success
+			The variable res should equal '2 4'
+		End
+
+		It '出力形式未指定は POS と同じこと'
+			load_subject sx_arg_find
+			When call sx_arg_find res "b" 0 ::: a b c b
+			The status should be success
+			The variable res should equal '2 4'
+		End
+
+		It 'POS|TEXT で pos:text を返すこと'
+			load_subject sx_arg_find
+			sx_arg_find res "b" "$(($SX_ARG_FIND_POS | $SX_ARG_FIND_TEXT))" ::: a b c b
+			Assert [ "$res" = "'2:b' '4:b'" ]
+		End
+
+		It '指定順が POS:TEXT の順に影響しないこと'
+			load_subject sx_arg_find
+			sx_arg_find res "b" "$(($SX_ARG_FIND_TEXT | $SX_ARG_FIND_POS))" ::: a b c b
+			Assert [ "$res" = "'2:b' '4:b'" ]
+		End
+
+		It 'TEXT のみでは既存どおりクォートされた値を返すこと'
+			load_subject sx_arg_find
+			sx_arg_find res "b" "$SX_ARG_FIND_TEXT" ::: a b c b
+			Assert [ "$res" = "'b' 'b'" ]
+		End
+
+		It '空文字列の値でも区切りを残すこと'
+			load_subject sx_arg_find
+			sx_arg_find res "" "$(($SX_ARG_FIND_POS | $SX_ARG_FIND_TEXT))" ::: a '' c ''
+			Assert [ "$res" = "'2:' '4:'" ]
+		End
+
+		It '値にスペースを含む場合はクォートで復元できること'
+			load_subject sx_arg_find
+			sx_arg_find res "b*" "$(($SX_ARG_FIND_GLOB | $SX_ARG_FIND_POS | $SX_ARG_FIND_TEXT))" ::: a 'b c' d 'b d'
+			eval "set -- ${res}"
+			Assert [ "$1" = "2:b c" ]
+			Assert [ "$2" = "4:b d" ]
+		End
+
+		It 'GLOB と併用できること'
+			load_subject sx_arg_find
+			sx_arg_find res "*.txt" "$(($SX_ARG_FIND_GLOB | $SX_ARG_FIND_POS | $SX_ARG_FIND_TEXT))" ::: file.txt readme.md data.txt
+			Assert [ "$res" = "'1:file.txt' '3:data.txt'" ]
+		End
+
+		It 'CB と併用できること'
+			load_subject sx_arg_find
+			is_even() { [ $(($2 % 2)) -eq 0 ]; }
+			sx_arg_find res is_even "$(($SX_ARG_FIND_CB | $SX_ARG_FIND_POS | $SX_ARG_FIND_TEXT))" ::: 1 2 3 4
+			Assert [ "$res" = "'2:2' '4:4'" ]
+		End
+
+		It 'NOT と併用できること'
+			load_subject sx_arg_find
+			sx_arg_find res "b" "$(($SX_ARG_FIND_NOT | $SX_ARG_FIND_POS | $SX_ARG_FIND_TEXT))" ::: a b c b
+			Assert [ "$res" = "'1:a' '3:c'" ]
 		End
 	End
 

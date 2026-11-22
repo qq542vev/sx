@@ -38,7 +38,7 @@ Describe 'sx_arg_find 多倍長対応'
     Parameters:matrix
       0 1
       arith nat0
-      0 1 2 4 5 6
+      0 1 2 4 5 6 16 17 18 20 21 22
     End
 
     It '検証の有無によらずリテラル・glob・コールバックで添字と値を収集する'
@@ -47,12 +47,13 @@ Describe 'sx_arg_find 多倍長対応'
       select_find_path "$2"
       flags="$3"
       case "$flags" in
-        0 | 4) target='b a';;
-        1 | 5) target='b*';;
+        0 | 4 | 16 | 20) target='b a';;
+        1 | 5 | 17 | 21) target='b*';;
         *) target=is_b;;
       esac
       case "$flags" in
-        0 | 1 | 2) expected='2 4';;
+        0 | 1 | 2 | 16 | 17 | 18) expected='2 4';;
+        20 | 21 | 22) expected="'2:b a' '4:b a'";;
         *) expected="'b a' 'b a'";;
       esac
       When call sx_arg_find res "$target" "$flags" ::: other 'b a' '' 'b a'
@@ -219,6 +220,34 @@ Describe 'sx_arg_find 多倍長対応'
     }
     When call restore
     The status should be success
+  End
+
+  Context 'POS と TEXT の併用'
+    Parameters:matrix
+      0 1
+      arith nat0
+      20 21 22
+    End
+
+    It '添字と値の組を各数値経路で復元できる'
+      load_subject sx_arg_find
+      sxtest_run SX_CFG_SKIP_CHK -- 'sx_cfg_set "$@"' "SKIP_CHK=$1"
+      select_find_path "$2"
+      flags="$3"
+      case "$flags" in
+        20) target='b a';;
+        21) target='b*';;
+        *) target=is_b;;
+      esac
+      verify() {
+        sx_arg_find result "$target" "$flags" ::: other 'b a' '' 'b a' 'b a'
+        # shellcheck disable=SC2154
+        eval "set -- $result"
+        [ "$#" = 3 ] && [ "$1" = '2:b a' ] && [ "$2" = '4:b a' ] && [ "$3" = '5:b a' ]
+      }
+      When call verify
+      The status should be success
+    End
   End
 
   Context '8bit範囲の境界'

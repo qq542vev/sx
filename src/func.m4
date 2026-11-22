@@ -36,6 +36,9 @@ M_UNIT([|sx_arg_find|], [|src/func/arg/sx_arg_find.m4|])dnl
 M_UNIT([|__sx_arg_find|], [|src/func/arg/__sx_arg_find.m4|])dnl
 M_UNIT([|__sx_arg_find_cb|], [|src/func/arg/__sx_arg_find_cb.m4|])dnl
 M_UNIT([|__sx_arg_find_lit|], [|src/func/arg/__sx_arg_find_lit.m4|])dnl
+M_UNIT([|__sx_arg_find_emit4|], [|src/func/arg/__sx_arg_find_emit4.m4|])dnl
+M_UNIT([|__sx_arg_find_emit16|], [|src/func/arg/__sx_arg_find_emit16.m4|])dnl
+M_UNIT([|__sx_arg_find_emit20|], [|src/func/arg/__sx_arg_find_emit20.m4|])dnl
 M_UNIT([|sx_arg_fold|], [|src/func/arg/sx_arg_fold.m4|])dnl
 M_UNIT([|__sx_arg_fold|], [|src/func/arg/__sx_arg_fold.m4|])dnl
 M_UNIT([|sx_arg_isep|], [|src/func/arg/sx_arg_isep.m4|])dnl

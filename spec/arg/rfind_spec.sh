@@ -8,7 +8,7 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_arg_rfind'
 	Include ./spec/support/run.sh
 	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
-	sxtest_run SX_ARG_RFIND_CB SX_ARG_RFIND_GLOB SX_ARG_RFIND_TEXT SX_ARG_RFIND_NOT -- ''
+	sxtest_run SX_ARG_RFIND_CB SX_ARG_RFIND_GLOB SX_ARG_RFIND_TEXT SX_ARG_RFIND_NOT SX_ARG_RFIND_POS -- ''
 	sxtest_load ./build/modules/sx_arg_rfind.sh
 
 	Describe '後ろ向き検索 (sx_arg_rfind)'
@@ -219,6 +219,51 @@ Describe 'sx_arg_rfind'
 			When call sx_arg_rfind res b b 1 b
 			The status should be success
 			The variable res should equal '3 1'
+		End
+	End
+
+	Describe '出力形式フラグ (sx_arg_rfind)'
+		It 'POS のみでインデックスのみを末尾から返すこと'
+			When call sx_arg_rfind res "b" "$SX_ARG_RFIND_POS" ::: a b c b
+			The status should be success
+			The variable res should equal '4 2'
+		End
+
+		It '出力形式未指定は POS と同じこと'
+			When call sx_arg_rfind res "b" 0 ::: a b c b
+			The status should be success
+			The variable res should equal '4 2'
+		End
+
+		It 'POS|TEXT で pos:text を末尾から返すこと'
+			sx_arg_rfind res "b" "$(($SX_ARG_RFIND_POS | $SX_ARG_RFIND_TEXT))" ::: a b c b
+			Assert [ "$res" = "'4:b' '2:b'" ]
+		End
+
+		It '指定順が POS:TEXT の順に影響しないこと'
+			sx_arg_rfind res "b" "$(($SX_ARG_RFIND_TEXT | $SX_ARG_RFIND_POS))" ::: a b c b
+			Assert [ "$res" = "'4:b' '2:b'" ]
+		End
+
+		It '空文字列の値でも区切りを残すこと'
+			sx_arg_rfind res "" "$(($SX_ARG_RFIND_POS | $SX_ARG_RFIND_TEXT))" ::: a '' c ''
+			Assert [ "$res" = "'4:' '2:'" ]
+		End
+
+		It 'GLOB と併用できること'
+			sx_arg_rfind res "*.txt" "$(($SX_ARG_RFIND_GLOB | $SX_ARG_RFIND_POS | $SX_ARG_RFIND_TEXT))" ::: file.txt readme.md data.txt
+			Assert [ "$res" = "'3:data.txt' '1:file.txt'" ]
+		End
+
+		It 'CB と併用できること'
+			is_even() { [ $(($2 % 2)) -eq 0 ]; }
+			sx_arg_rfind res is_even "$(($SX_ARG_RFIND_CB | $SX_ARG_RFIND_POS | $SX_ARG_RFIND_TEXT))" ::: 1 2 3 4
+			Assert [ "$res" = "'4:4' '2:2'" ]
+		End
+
+		It 'NOT と併用できること'
+			sx_arg_rfind res "b" "$(($SX_ARG_RFIND_NOT | $SX_ARG_RFIND_POS | $SX_ARG_RFIND_TEXT))" ::: a b c b
+			Assert [ "$res" = "'3:c' '1:a'" ]
 		End
 	End
 

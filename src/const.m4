@@ -432,10 +432,12 @@ M_UNIT([|SX_ARG_FIND_GLOB|], [|src/const/arg/SX_ARG_FIND_GLOB.m4|])dnl
 M_UNIT([|SX_ARG_FIND_TEXT|], [|src/const/arg/SX_ARG_FIND_TEXT.m4|])dnl
 M_UNIT([|SX_ARG_FIND_CB|], [|src/const/arg/SX_ARG_FIND_CB.m4|])dnl
 M_UNIT([|SX_ARG_FIND_NOT|], [|src/const/arg/SX_ARG_FIND_NOT.m4|])dnl
+M_UNIT([|SX_ARG_FIND_POS|], [|src/const/arg/SX_ARG_FIND_POS.m4|])dnl
 M_UNIT([|SX_ARG_RFIND_GLOB|], [|src/const/arg/SX_ARG_RFIND_GLOB.m4|])dnl
 M_UNIT([|SX_ARG_RFIND_TEXT|], [|src/const/arg/SX_ARG_RFIND_TEXT.m4|])dnl
 M_UNIT([|SX_ARG_RFIND_CB|], [|src/const/arg/SX_ARG_RFIND_CB.m4|])dnl
 M_UNIT([|SX_ARG_RFIND_NOT|], [|src/const/arg/SX_ARG_RFIND_NOT.m4|])dnl
+M_UNIT([|SX_ARG_RFIND_POS|], [|src/const/arg/SX_ARG_RFIND_POS.m4|])dnl
 M_UNIT([|SX_ARG_COUNT_GLOB|], [|src/const/arg/SX_ARG_COUNT_GLOB.m4|])dnl
 M_UNIT([|SX_ARG_COUNT_CB|], [|src/const/arg/SX_ARG_COUNT_CB.m4|])dnl
 M_UNIT([|SX_ARG_COUNT_NOT|], [|src/const/arg/SX_ARG_COUNT_NOT.m4|])dnl

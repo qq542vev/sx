@@ -3,6 +3,8 @@
 # コールバックは検索関数から間接的に呼び出される。
 Describe 'sx_arg_find -efu 環境検証'
   Include ./spec/support/run.sh
+  # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_ARG_FIND_POS SX_ARG_FIND_TEXT SX_ARG_FIND_CB SX_ARG_RFIND_POS -- ''
   sxtest_load ./build/modules/sx_arg_find.sh
 
   It '正常動作'
@@ -18,6 +20,31 @@ Describe 'sx_arg_find -efu 環境検証'
 
   It 'SEP なしでは第2引数を検索対象にする'
     When run efu_run sx_arg_find res b a b
+    The status should be success
+  End
+
+  It '出力形式フラグを指定しても -efu 下で動作すること'
+    verify() {
+      sx_arg_find res 'b' "$((SX_ARG_FIND_POS | SX_ARG_FIND_TEXT))" ::: a b c b
+      [ "$res" = "'2:b' '4:b'" ] || return 1
+      check_no_leak
+    }
+    When run efu_run verify
+    The status should be success
+  End
+
+  It 'CB と POS|TEXT の併用で再入と変数漏洩がないこと'
+    verify() {
+      cb() {
+        sx_arg_find nested y "$((SX_ARG_FIND_POS | SX_ARG_FIND_TEXT))" ::: x y
+        case "$1" in b) return 0;; esac
+        return 77
+      }
+      sx_arg_find res cb "$((SX_ARG_FIND_CB | SX_ARG_FIND_POS | SX_ARG_FIND_TEXT))" ::: a b c b
+      [ "$res" = "'2:b' '4:b'" ] && [ "$nested" = "'2:y'" ] || return 1
+      check_no_leak
+    }
+    When run efu_run verify
     The status should be success
   End
 

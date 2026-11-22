@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec __sx_var_bind __sx_var_ubind|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_arg_find_emit4 __sx_arg_find_emit16 __sx_arg_find_emit20 __sx_num_add1_arith __sx_num_add1_nat0 __sx_num_is_int_fit_dec|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_find_lit - 引数リストから指定された値を探す（内部用: リテラル/glob照合）
@@ -10,6 +10,9 @@ M_RENAME_QI([|dnl
 ##   __sx_arg_find から呼ばれる。先頭から末尾に向かって検索する。
 ##   引数は正規化済み。引数チェックは行わない。
 ##   NOT フラグ指定時は一致しない要素を対象にする。
+##   出力形式は POS|TEXT で指定し、未指定なら POS を既定とする。
+##   フラグ値に対応する __sx_arg_find_emit<fmt> をループ前に選択し、
+##   ループ内では形式を検査せずにバインドする。
 ##   データ個数が算術域内なら算術、それ以外は多倍長で添字を更新する。
 ##   添字を0から開始し、各要素の処理前に増やして末尾の余分な加算を避ける。
 ##
@@ -17,15 +20,19 @@ M_RENAME_QI([|dnl
 ##    0  1つ以上の一致項目が見つかった (SX_EX_OK)
 ##    1  一致項目が見つからなかった
 
-define([|CLEANUP|], [|Q_bind Q_tgt Q_glob Q_text Q_not Q_i Q_arg Q_sts Q_type|])dnl
+define([|CLEANUP|], [|Q_bind Q_tgt Q_glob Q_fmt Q_not Q_i Q_arg Q_sts Q_type|])dnl
 
 __sx_arg_find_lit() {
 	Q_bind="${1}"
 	Q_tgt="${2}"
 	Q_glob=$((${3} & M_ARG_FIND_GLOB))
-	Q_text=$((${3} & M_ARG_FIND_TEXT))
+	Q_fmt=$((${3} & (M_ARG_FIND_POS | M_ARG_FIND_TEXT)))
 	Q_not=$((${3} & M_ARG_FIND_NOT))
 	Q_i=0
+
+	case "${Q_fmt}" in 0)
+		Q_fmt=M_ARG_FIND_POS
+	esac
 
 	shift 3
 
@@ -43,10 +50,7 @@ __sx_arg_find_lit() {
 			*) case "${Q_not}" in 0) continue;; esac;;
 		esac
 
-		case "${Q_text}" in
-			0) __sx_var_ubind Q_bind "${Q_bind}" "${Q_i}";;
-			*) __sx_var_bind Q_bind "${Q_bind}" "${Q_arg}";;
-		esac
+		"__sx_arg_find_emit${Q_fmt}" Q_bind "${Q_bind}" "${Q_i}" "${Q_arg}"
 
 		Q_sts=M_EX_OK
 

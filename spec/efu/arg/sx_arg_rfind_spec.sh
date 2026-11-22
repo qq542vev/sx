@@ -3,11 +3,38 @@
 # コールバックと検証用の差し替え関数は間接的に呼び出される。
 Describe 'sx_arg_rfind -efu 環境検証'
   Include ./spec/support/run.sh
+  # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_ARG_FIND_POS SX_ARG_RFIND_POS SX_ARG_RFIND_TEXT SX_ARG_RFIND_CB -- ''
   sxtest_load ./build/modules/sx_arg_rfind.sh
 
   It '正常動作'
 
     When run efu_run sx_arg_rfind res "b" ::: "a" "b" "c"
+    The status should be success
+  End
+
+  It '出力形式フラグを指定しても -efu 下で動作すること'
+    verify() {
+      sx_arg_rfind res 'b' "$((SX_ARG_RFIND_POS | SX_ARG_RFIND_TEXT))" ::: a b c b
+      [ "$res" = "'4:b' '2:b'" ] || return 1
+      check_no_leak
+    }
+    When run efu_run verify
+    The status should be success
+  End
+
+  It 'CB と POS|TEXT の併用で再入と変数漏洩がないこと'
+    verify() {
+      cb() {
+        sx_arg_rfind nested y "$((SX_ARG_RFIND_POS | SX_ARG_RFIND_TEXT))" ::: x y
+        case "$1" in b) return 0;; esac
+        return 77
+      }
+      sx_arg_rfind res cb "$((SX_ARG_RFIND_CB | SX_ARG_RFIND_POS | SX_ARG_RFIND_TEXT))" ::: a b c b
+      [ "$res" = "'4:b' '2:b'" ] && [ "$nested" = "'2:y'" ] || return 1
+      check_no_leak
+    }
+    When run efu_run verify
     The status should be success
   End
 
