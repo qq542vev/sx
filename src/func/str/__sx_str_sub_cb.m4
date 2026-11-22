@@ -34,8 +34,17 @@ __sx_str_sub_cb() {
 			*:*) Q_left="${2%${3}*}" Q_right="${2##*${3}}";;
 		esac
 
-		Q_match="${2#"${Q_left}"}"
-		Q_match="${Q_match%"${Q_right}"}"
+		# 試行回数が一致長ぶんで済むよう、長い側（前方は right、後方は left）を最長一致で除く。
+		case "${8}" in
+			1)
+				Q_match="${2%%"${Q_right}"}"
+				Q_match="${Q_match#"${Q_left}"}"
+				;;
+			*)
+				Q_match="${2##"${Q_left}"}"
+				Q_match="${Q_match%"${Q_right}"}"
+				;;
+		esac
 		"__sx_num_add1_${7}" Q_next "${10}"
 		set -- "${@}" "${Q_left}" "${Q_right}" "${Q_match}" "${Q_next}"
 		unset CLEANUP

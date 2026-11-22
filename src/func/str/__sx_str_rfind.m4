@@ -72,9 +72,9 @@ __sx_str_rfind() {
 		# ==== グロブモード ====
 		while M_STR_HAS([|"${Q_tgt}"|], [|${3}|]); do
 			Q_pre="${Q_tgt%${3}*}"
-			Q_match="${Q_tgt#"${Q_pre}"}"
+			Q_match="${Q_tgt##"${Q_pre}"}"
 			Q_after="${Q_match#${3}}"
-			Q_match="${Q_match%"${Q_after}"}"
+			Q_match="${Q_match%%"${Q_after}"}"
 			: "${Q_sts=M_EX_OK}"
 
 			__sx_str_find_bind Q_bind "${Q_bind}" "${5}" "${6}" "${7}" "${#Q_pre}" "${#Q_match}" "${Q_match}" || break

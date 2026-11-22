@@ -72,9 +72,9 @@ __sx_str_find() {
 		while M_STR_HAS([|"${Q_tgt}"|], [|${3}|]); do
 			# マッチ文字列を抽出（__sx_str_sub_cb と同じ手法）
 			Q_pre="${Q_tgt%%${3}*}"
-			Q_after="${Q_tgt#*${3}}"
 			Q_match="${Q_tgt#"${Q_pre}"}"
-			Q_match="${Q_match%"${Q_after}"}"
+			Q_after="${Q_match#${3}}"
+			Q_match="${Q_match%%"${Q_after}"}"
 			Q_len="${#Q_match}"
 
 			"__sx_num_add_${Q_type}" Q_off "${Q_off}" "${#Q_pre}"

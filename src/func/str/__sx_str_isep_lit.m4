@@ -33,7 +33,7 @@ __sx_str_isep_lit() {
 	case "${8}${7}" in
 		0?*)
 			while M_STR_NE([|"${Q_cnt}"|], [|"${5}"|]) && M_STR_MATCH([|"${Q_str}"|], [|${7}?*|]); do
-				M_STR_APPEND([|Q_out|], [|"${Q_str%"${Q_str#${7}}"}${3}"|])
+				M_STR_APPEND([|Q_out|], [|"${Q_str%%"${Q_str#${7}}"}${3}"|])
 				Q_str="${Q_str#${7}}"
 				"__sx_num_add1_${6}" Q_cnt "${Q_cnt}"
 			done
@@ -41,7 +41,7 @@ __sx_str_isep_lit() {
 		0) M_STR_APPEND([|Q_out|], [|"${Q_str}"|]);;
 		1?*)
 			while M_STR_NE([|"${Q_cnt}"|], [|"${5}"|]) && M_STR_MATCH([|"${Q_str}"|], [|${7}?*|]); do
-				M_STR_PREPEND([|Q_out|], [|"${3}${Q_str#"${Q_str%${7}}"}"|])
+				M_STR_PREPEND([|Q_out|], [|"${3}${Q_str##"${Q_str%${7}}"}"|])
 				Q_str="${Q_str%${7}}"
 				"__sx_num_add1_${6}" Q_cnt "${Q_cnt}"
 			done
