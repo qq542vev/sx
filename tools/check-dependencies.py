@@ -18,7 +18,7 @@ RW_LITERAL_NAMES = re.compile(
     r"(?<![A-Za-z0-9_])(?P<command>__sx_var_is_rw)"
     rf"(?:[ \t]+(?:{SHELL_NAME}|'{SHELL_NAME}'|\"{SHELL_NAME}\")(?=$|[ \t\n;&|()<>]))+"
 )
-DYNAMIC_FUNCTION = re.compile(r'"(__sx_num_[a-z0-9_]+_)\$\{')
+DYNAMIC_FUNCTION = re.compile(r'"(__sx_num_[a-z0-9_]+_|__sx_str_find_emit)\$\{')
 DYNAMIC_CONSTANT = re.compile(r"(?<![A-Za-z0-9_])(SX_[A-Z0-9_]*)\$\{")
 DYNAMIC_CONSTS = re.compile(
     r"M_DYNAMIC_CONSTS\(\[\|(?P<prefix>SX_[A-Z0-9_]+)\|\], "
@@ -84,8 +84,11 @@ def references(path, owners, generated=False):
     names = set(owners)
     refs = set(TOKEN.findall(code)) & names
     for prefix in DYNAMIC_FUNCTION.findall(code):
-        # 呼び出し元から渡す type は arith / nat0 の二択。
-        matches = {prefix + suffix for suffix in ("arith", "nat0") if prefix + suffix in names}
+        if prefix.startswith("__sx_num_"):
+            # 呼び出し元から渡す type は arith / nat0 の二択。
+            matches = {prefix + suffix for suffix in ("arith", "nat0") if prefix + suffix in names}
+        else:
+            matches = {name for name in names if name.startswith(prefix)}
         if not matches:
             raise ValueError(f"動的な関数名の提供元がありません: {path}: {prefix}")
         refs.update(matches)

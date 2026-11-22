@@ -402,7 +402,13 @@ M_UNIT([|sx_str_ew|], [|src/func/str/sx_str_ew.m4|])dnl
 M_UNIT([|__sx_str_ew|], [|src/func/str/__sx_str_ew.m4|])dnl
 M_UNIT([|sx_str_find|], [|src/func/str/sx_str_find.m4|])dnl
 M_UNIT([|__sx_str_find|], [|src/func/str/__sx_str_find.m4|])dnl
-M_UNIT([|__sx_str_find_bind|], [|src/func/str/__sx_str_find_bind.m4|])dnl
+M_UNIT([|__sx_str_find_emit4|], [|src/func/str/__sx_str_find_emit4.m4|])dnl
+M_UNIT([|__sx_str_find_emit8|], [|src/func/str/__sx_str_find_emit8.m4|])dnl
+M_UNIT([|__sx_str_find_emit12|], [|src/func/str/__sx_str_find_emit12.m4|])dnl
+M_UNIT([|__sx_str_find_emit16|], [|src/func/str/__sx_str_find_emit16.m4|])dnl
+M_UNIT([|__sx_str_find_emit20|], [|src/func/str/__sx_str_find_emit20.m4|])dnl
+M_UNIT([|__sx_str_find_emit24|], [|src/func/str/__sx_str_find_emit24.m4|])dnl
+M_UNIT([|__sx_str_find_emit28|], [|src/func/str/__sx_str_find_emit28.m4|])dnl
 M_UNIT([|sx_str_has|], [|src/func/str/sx_str_has.m4|])dnl
 M_UNIT([|__sx_str_has|], [|src/func/str/__sx_str_has.m4|])dnl
 M_UNIT([|sx_str_incl|], [|src/func/str/sx_str_incl.m4|])dnl

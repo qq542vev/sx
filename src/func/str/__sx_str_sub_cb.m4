@@ -26,8 +26,8 @@ __sx_str_sub_cb() {
 	# 12:left 13:right 14:match 15:次の回数 16:終了状態（失敗時だけ追加）
 	set -- "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" '' 0 ''
 
-	__sx_var_bind_init "${1}"
-
+	# 最終 bind の直前に cleanup と bind 初期化を行う。
+	# 再入コールバックが残した値を消し、bind 結果（Q_ret を含む）は消さない。
 	case "${6}:${8}" in
 		0:1)  # リテラル＋前方
 			while M_STR_NE([|"${10}"|], [|"${5}"|]) && M_STR_HAS([|"${2}"|], [|*"${3}"*|]); do
@@ -41,6 +41,8 @@ __sx_str_sub_cb() {
 				}
 			done
 
+			unset CLEANUP
+			__sx_var_bind_init "${1}"
 			__sx_var_bind '' "${1}" "${9}${2}" "${10}"
 			;;
 		0:-1)  # リテラル＋後方
@@ -55,6 +57,8 @@ __sx_str_sub_cb() {
 				}
 			done
 
+			unset CLEANUP
+			__sx_var_bind_init "${1}"
 			__sx_var_bind '' "${1}" "${2}${9}" "${10}"
 			;;
 		*:1)  # glob＋前方
@@ -73,6 +77,8 @@ __sx_str_sub_cb() {
 				}
 			done
 
+			unset CLEANUP
+			__sx_var_bind_init "${1}"
 			__sx_var_bind '' "${1}" "${9}${2}" "${10}"
 			;;
 		*)  # glob＋後方
@@ -91,11 +97,12 @@ __sx_str_sub_cb() {
 				}
 			done
 
+			unset CLEANUP
+			__sx_var_bind_init "${1}"
 			__sx_var_bind '' "${1}" "${2}${9}" "${10}"
 			;;
 	esac || :
 
-	unset CLEANUP
 	return "${16-0}"
 }
 |], [|str_sub_cb|])dnl
