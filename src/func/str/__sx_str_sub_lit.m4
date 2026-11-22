@@ -23,8 +23,8 @@ __sx_str_sub_lit() {
 	__sx_var_bind_init "${1}"
 	Q_str="${2}" Q_out='' Q_cnt=0
 
-	case "${8}:${6}" in
-		1:0)
+	case "${6}:${8}" in
+		0:1)
 			while M_STR_NE([|"${Q_cnt}"|], [|"${5}"|]) && M_STR_HAS([|"${Q_str}"|], [|"${3}"|]); do
 				M_STR_APPEND([|Q_out|], [|"${Q_str%%"${3}"*}${4}"|])
 				Q_str="${Q_str#*"${3}"}"
@@ -33,7 +33,7 @@ __sx_str_sub_lit() {
 
 			__sx_var_bind '' "${1}" "${Q_out}${Q_str}" "${Q_cnt}"
 			;;
-		1:*)
+		0:-1)
 			while M_STR_NE([|"${Q_cnt}"|], [|"${5}"|]) && M_STR_HAS([|"${Q_str}"|], [|${3}|]); do
 				M_STR_APPEND([|Q_out|], [|"${Q_str%%${3}*}${4}"|])
 				Q_str="${Q_str#*${3}}"
@@ -42,7 +42,7 @@ __sx_str_sub_lit() {
 
 			__sx_var_bind '' "${1}" "${Q_out}${Q_str}" "${Q_cnt}"
 			;;
-		*:0)
+		*:1)
 			while M_STR_NE([|"${Q_cnt}"|], [|"${5}"|]) && M_STR_HAS([|"${Q_str}"|], [|"${3}"|]); do
 				M_STR_PREPEND([|Q_out|], [|"${4}${Q_str##*"${3}"}"|])
 				Q_str="${Q_str%"${3}"*}"
@@ -51,7 +51,7 @@ __sx_str_sub_lit() {
 
 			__sx_var_bind '' "${1}" "${Q_str}${Q_out}" "${Q_cnt}"
 			;;
-		*:*)
+		*)
 			while M_STR_NE([|"${Q_cnt}"|], [|"${5}"|]) && M_STR_HAS([|"${Q_str}"|], [|${3}|]); do
 				M_STR_PREPEND([|Q_out|], [|"${4}${Q_str##*${3}}"|])
 				Q_str="${Q_str%${3}*}"
