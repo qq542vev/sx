@@ -16,6 +16,10 @@ define([|M_ARG_RFIND_TEXT|], [|4|])dnl
 define([|M_ARG_RFIND_CB|], [|2|])dnl
 define([|M_ARG_RFIND_NOT|], [|8|])dnl
 define([|M_ARG_RFIND_POS|], [|16|])dnl
+define([|M_ARG_RFIND_ICASE|], [|32|])dnl
+define([|M_ARG_RFIND_EQC|], [|64|])dnl
 define([|M_ARG_COUNT_GLOB|], [|1|])dnl
 define([|M_ARG_COUNT_CB|], [|2|])dnl
 define([|M_ARG_COUNT_NOT|], [|8|])dnl
+define([|M_ARG_COUNT_ICASE|], [|32|])dnl
+define([|M_ARG_COUNT_EQC|], [|64|])dnl

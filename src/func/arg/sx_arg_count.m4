@@ -8,9 +8,16 @@ pushdef([|CLEANUP|])dnl
 ##
 ## 説明:
 ##   引数リストから検索対象と一致する値の出現回数を数え、結果変数に非負整数で格納する。
-##   フラグの意味は sx_arg_find と同一（SX_ARG_COUNT_GLOB, SX_ARG_COUNT_CB, SX_ARG_COUNT_NOT）。
+##   フラグの意味は sx_arg_find と同一（SX_ARG_COUNT_GLOB, SX_ARG_COUNT_CB,
+##   SX_ARG_COUNT_NOT, SX_ARG_COUNT_ICASE, SX_ARG_COUNT_EQC）。
 ##   SX_ARG_COUNT_CB (2) を指定すると、検索対象をコールバック関数として扱う。
 ##   SX_ARG_COUNT_NOT (8) を指定すると、一致しない要素の個数を数える。
+##   SX_ARG_COUNT_ICASE (32) を指定すると、英字の大小を区別せずに照合する。
+##   SX_ARG_COUNT_EQC (64) を指定すると、全文字を等価クラスとして照合する。
+##   ICASE / EQC は検索対象をリテラルとして扱い、glob パターンとしては解釈しない。
+##   GLOB・CB・ICASE・EQC は相互排他で、2つ以上を同時に指定すると 64 を返す。
+##   NOT は GLOB・CB・ICASE・EQC のいずれとでも併用できる。
+##   EQC は全文字を変換するため、長い検索対象ではパターンが大きくなる。
 ##   コールバックシグネチャ: callback 値 インデックス 一致数
 ##     0 を返すと一致、非0 は不一致としてスキップ。
 ##     一致数は現在の要素より前で一致した件数（0開始）。
@@ -44,7 +51,7 @@ sx_arg_count() {
 		"${4+X${4}}")
 			__sx_num_is_nat0_safe "${3}" || return M_EX_USAGE
 
-			case "$(((${3} & M_ARG_COUNT_GLOB) * (${3} & M_ARG_COUNT_CB)))" in [!0])
+			case "$((1 < ((${3} & M_ARG_COUNT_GLOB) != 0) + ((${3} & M_ARG_COUNT_CB) != 0) + ((${3} & M_ARG_COUNT_ICASE) != 0) + ((${3} & M_ARG_COUNT_EQC) != 0)))" in 1)
 				return M_EX_USAGE
 			esac
 			;;

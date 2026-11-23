@@ -1,0 +1,2 @@
+M_REQUIRE([||])dnl
+M_CONST([|ARG_RFIND_EQC|])

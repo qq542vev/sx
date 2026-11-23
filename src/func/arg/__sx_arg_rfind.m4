@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SEP __sx_arg_rfind_cb __sx_arg_rfind_lit __sx_var_bind_init|])dnl
+M_REQUIRE([|SX_CFG_SEP __sx_arg_rfind_cb __sx_arg_rfind_lit __sx_glob_esc_eq __sx_glob_esc_icase __sx_var_bind_init|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_arg_rfind - 引数リストから指定された値を後ろ向きに探す（内部用: ディスパッチャ）
@@ -10,6 +10,9 @@ M_RENAME_QI([|dnl
 ## 説明:
 ##   ::: セパレータをパースし、フラグに応じて __sx_arg_rfind_lit または
 ##   __sx_arg_rfind_cb にディスパッチする。
+##   SX_ARG_RFIND_ICASE / SX_ARG_RFIND_EQC が指定された場合は
+##   __sx_glob_esc_icase / __sx_glob_esc_eq で検索対象をエスケープ済み
+##   glob パターンへ変換し、内部で GLOB フラグを立ててディスパッチする。
 ##   引数チェックは行わない。
 ##
 ## 終了ステータス:
@@ -30,6 +33,17 @@ __sx_arg_rfind() {
 		"${4+X${4}}")
 			Q_tgt="${2}" Q_flg="${3}"
 			shift 4
+
+			case 0 in
+				"$((!(Q_flg & M_ARG_RFIND_ICASE)))")
+					__sx_glob_esc_icase Q_tgt "${Q_tgt}"
+					Q_flg=$((${Q_flg} | M_ARG_RFIND_GLOB))
+					;;
+				"$((!(Q_flg & M_ARG_RFIND_EQC)))")
+					__sx_glob_esc_eq Q_tgt "${Q_tgt}"
+					Q_flg=$((${Q_flg} | M_ARG_RFIND_GLOB))
+					;;
+			esac
 			;;
 		*)
 			Q_tgt="${2-}"

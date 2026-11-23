@@ -4,7 +4,7 @@
 Describe 'sx_arg_rfind -efu 環境検証'
   Include ./spec/support/run.sh
   # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
-  sxtest_run SX_ARG_FIND_POS SX_ARG_RFIND_POS SX_ARG_RFIND_TEXT SX_ARG_RFIND_CB -- ''
+  sxtest_run SX_ARG_FIND_POS SX_ARG_RFIND_POS SX_ARG_RFIND_TEXT SX_ARG_RFIND_CB SX_ARG_RFIND_ICASE SX_ARG_RFIND_EQC -- ''
   sxtest_load ./build/modules/sx_arg_rfind.sh
 
   It '正常動作'
@@ -17,6 +17,19 @@ Describe 'sx_arg_rfind -efu 環境検証'
     verify() {
       sx_arg_rfind res 'b' "$((SX_ARG_RFIND_POS | SX_ARG_RFIND_TEXT))" ::: a b c b
       [ "$res" = "'4:b' '2:b'" ] || return 1
+      check_no_leak
+    }
+    When run efu_run verify
+    The status should be success
+  End
+
+  It 'ICASE / EQC を -efu 下で使用でき変数漏洩がないこと'
+    verify() {
+      sx_arg_rfind res 'cafe' "$SX_ARG_RFIND_ICASE" ::: 'CAFE' 'cafe'
+      [ "$res" = '2 1' ] || return 1
+      LC_ALL=C
+      sx_arg_rfind res2 'cafe' "$SX_ARG_RFIND_EQC" ::: 'cafe' 'CAFE'
+      [ "$res2" = '1' ] || return 1
       check_no_leak
     }
     When run efu_run verify

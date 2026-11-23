@@ -3,11 +3,26 @@
 # コールバックと検証用の差し替え関数は間接的に呼び出される。
 Describe 'sx_arg_count -efu 環境検証'
   Include ./spec/support/run.sh
+  # 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
+  sxtest_run SX_ARG_COUNT_ICASE SX_ARG_COUNT_EQC -- ''
   sxtest_load ./build/modules/sx_arg_count.sh
 
   It '正常動作'
 
     When run efu_run sx_arg_count res "b" ::: "a" "b" "c"
+    The status should be success
+  End
+
+  It 'ICASE / EQC を -efu 下で使用でき変数漏洩がないこと'
+    verify() {
+      sx_arg_count n 'cafe' "$SX_ARG_COUNT_ICASE" ::: 'CAFE' 'cafe'
+      [ "$n" = 2 ] || return 1
+      LC_ALL=C
+      sx_arg_count n2 'cafe' "$SX_ARG_COUNT_EQC" ::: 'cafe' 'CAFE'
+      [ "$n2" = 1 ] || return 1
+      check_no_leak
+    }
+    When run efu_run verify
     The status should be success
   End
 

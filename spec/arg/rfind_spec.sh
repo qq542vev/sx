@@ -8,7 +8,7 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_arg_rfind'
 	Include ./spec/support/run.sh
 	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
-	sxtest_run SX_ARG_RFIND_CB SX_ARG_RFIND_GLOB SX_ARG_RFIND_TEXT SX_ARG_RFIND_NOT SX_ARG_RFIND_POS -- ''
+	sxtest_run SX_ARG_RFIND_CB SX_ARG_RFIND_GLOB SX_ARG_RFIND_TEXT SX_ARG_RFIND_NOT SX_ARG_RFIND_POS SX_ARG_RFIND_ICASE SX_ARG_RFIND_EQC -- ''
 	sxtest_load ./build/modules/sx_arg_rfind.sh
 
 	Describe '後ろ向き検索 (sx_arg_rfind)'
@@ -264,6 +264,75 @@ Describe 'sx_arg_rfind'
 		It 'NOT と併用できること'
 			sx_arg_rfind res "b" "$(($SX_ARG_RFIND_NOT | $SX_ARG_RFIND_POS | $SX_ARG_RFIND_TEXT))" ::: a b c b
 			Assert [ "$res" = "'3:c' '1:a'" ]
+		End
+	End
+
+	Describe '大小無視検索 (SX_ARG_RFIND_ICASE)'
+		It '英字の大小を区別せずに末尾から一致する'
+			sx_arg_rfind res "cafe" "$SX_ARG_RFIND_ICASE" ::: "CAFE" "cafe" "Cafe" "tea"
+			Assert [ "$res" = "3 2 1" ]
+		End
+
+		It 'glob 特殊文字をリテラルとして扱う'
+			sx_arg_rfind res "*" "$SX_ARG_RFIND_ICASE" ::: "*" "abc"
+			Assert [ "$res" = "1" ]
+		End
+
+		It 'NOT と併用できる'
+			sx_arg_rfind res "cafe" "$(($SX_ARG_RFIND_ICASE | $SX_ARG_RFIND_NOT))" ::: "CAFE" "tea" "cafe"
+			Assert [ "$res" = "2" ]
+		End
+
+		It 'POS と TEXT を併用できる'
+			sx_arg_rfind res "cafe" "$(($SX_ARG_RFIND_ICASE | $SX_ARG_RFIND_POS | $SX_ARG_RFIND_TEXT))" ::: "CAFE" "tea" "cafe"
+			Assert [ "$res" = "'3:cafe' '1:CAFE'" ]
+		End
+	End
+
+	Describe '等価クラス検索 (SX_ARG_RFIND_EQC)'
+		It 'C ロケールではリテラル一致として動作する'
+			LC_ALL=C
+			sx_arg_rfind res "cafe" "$SX_ARG_RFIND_EQC" ::: "cafe" "CAFE" "café"
+			Assert [ "$res" = "1" ]
+		End
+
+		It 'glob 特殊文字をリテラルとして扱う'
+			LC_ALL=C
+			sx_arg_rfind res "*" "$SX_ARG_RFIND_EQC" ::: "*" "abc"
+			Assert [ "$res" = "1" ]
+		End
+
+		It 'NOT と併用できる'
+			LC_ALL=C
+			sx_arg_rfind res "cafe" "$(($SX_ARG_RFIND_EQC | $SX_ARG_RFIND_NOT))" ::: "cafe" "tea"
+			Assert [ "$res" = "2" ]
+		End
+	End
+
+	Describe '照合モードの排他'
+		It 'ICASE と EQC の同時指定は Usage Error'
+			When call sx_arg_rfind res a "$(($SX_ARG_RFIND_ICASE | $SX_ARG_RFIND_EQC))" ::: a b
+			The status should equal 64
+		End
+
+		It 'ICASE と GLOB の同時指定は Usage Error'
+			When call sx_arg_rfind res a "$(($SX_ARG_RFIND_ICASE | $SX_ARG_RFIND_GLOB))" ::: a b
+			The status should equal 64
+		End
+
+		It 'ICASE と CB の同時指定は Usage Error'
+			When call sx_arg_rfind res cb "$(($SX_ARG_RFIND_ICASE | $SX_ARG_RFIND_CB))" ::: a b
+			The status should equal 64
+		End
+
+		It 'EQC と GLOB の同時指定は Usage Error'
+			When call sx_arg_rfind res a "$(($SX_ARG_RFIND_EQC | $SX_ARG_RFIND_GLOB))" ::: a b
+			The status should equal 64
+		End
+
+		It 'EQC と CB の同時指定は Usage Error'
+			When call sx_arg_rfind res cb "$(($SX_ARG_RFIND_EQC | $SX_ARG_RFIND_CB))" ::: a b
+			The status should equal 64
 		End
 	End
 

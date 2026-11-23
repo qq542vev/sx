@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_arg_count'
 	Include ./spec/support/run.sh
 	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
-	sxtest_run SX_ARG_COUNT_CB SX_ARG_COUNT_GLOB SX_ARG_COUNT_NOT SX_ARG_FIND_TEXT -- ''
+	sxtest_run SX_ARG_COUNT_CB SX_ARG_COUNT_GLOB SX_ARG_COUNT_NOT SX_ARG_COUNT_ICASE SX_ARG_COUNT_EQC SX_ARG_FIND_TEXT -- ''
 	sxtest_load ./build/modules/sx_arg_count.sh
 
 	It '単一一致で1を返すこと'
@@ -136,6 +136,76 @@ Describe 'sx_arg_count'
 			When call sx_arg_count res "a" "$SX_ARG_COUNT_NOT" :::
 			The status should be success
 			The variable res should equal 0
+		End
+	End
+
+	Describe '大小無視検索 (SX_ARG_COUNT_ICASE)'
+		It '英字の大小を区別せずに数える'
+			When call sx_arg_count res "cafe" "$SX_ARG_COUNT_ICASE" ::: "CAFE" "cafe" "Cafe" "tea"
+			The status should be success
+			The variable res should equal 3
+		End
+
+		It 'glob 特殊文字をリテラルとして扱う'
+			When call sx_arg_count res "*" "$SX_ARG_COUNT_ICASE" ::: "*" "abc"
+			The status should be success
+			The variable res should equal 1
+		End
+
+		It 'NOT と併用できる'
+			When call sx_arg_count res "cafe" $((SX_ARG_COUNT_ICASE | SX_ARG_COUNT_NOT)) ::: "CAFE" "tea" "cafe"
+			The status should be success
+			The variable res should equal 1
+		End
+	End
+
+	Describe '等価クラス検索 (SX_ARG_COUNT_EQC)'
+		It 'C ロケールではリテラル一致として動作する'
+			LC_ALL=C
+			When call sx_arg_count res "cafe" "$SX_ARG_COUNT_EQC" ::: "cafe" "CAFE" "café"
+			The status should be success
+			The variable res should equal 1
+		End
+
+		It 'glob 特殊文字をリテラルとして扱う'
+			LC_ALL=C
+			When call sx_arg_count res "*" "$SX_ARG_COUNT_EQC" ::: "*" "abc"
+			The status should be success
+			The variable res should equal 1
+		End
+
+		It 'NOT と併用できる'
+			LC_ALL=C
+			When call sx_arg_count res "cafe" $((SX_ARG_COUNT_EQC | SX_ARG_COUNT_NOT)) ::: "cafe" "tea"
+			The status should be success
+			The variable res should equal 1
+		End
+	End
+
+	Describe '照合モードの排他'
+		It 'ICASE と EQC の同時指定は Usage Error'
+			When call sx_arg_count res a $((SX_ARG_COUNT_ICASE | SX_ARG_COUNT_EQC)) ::: a b
+			The status should equal 64
+		End
+
+		It 'ICASE と GLOB の同時指定は Usage Error'
+			When call sx_arg_count res a $((SX_ARG_COUNT_ICASE | SX_ARG_COUNT_GLOB)) ::: a b
+			The status should equal 64
+		End
+
+		It 'ICASE と CB の同時指定は Usage Error'
+			When call sx_arg_count res cb $((SX_ARG_COUNT_ICASE | SX_ARG_COUNT_CB)) ::: a b
+			The status should equal 64
+		End
+
+		It 'EQC と GLOB の同時指定は Usage Error'
+			When call sx_arg_count res a $((SX_ARG_COUNT_EQC | SX_ARG_COUNT_GLOB)) ::: a b
+			The status should equal 64
+		End
+
+		It 'EQC と CB の同時指定は Usage Error'
+			When call sx_arg_count res cb $((SX_ARG_COUNT_EQC | SX_ARG_COUNT_CB)) ::: a b
+			The status should equal 64
 		End
 	End
 
