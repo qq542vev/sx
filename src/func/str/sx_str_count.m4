@@ -7,7 +7,8 @@ pushdef([|CLEANUP|])dnl
 ##
 ## 説明:
 ##   元文字列から検索文字列の出現回数を数え、結果変数に非負整数で格納する。
-##   フラグの意味は sx_str_find と同一（SX_STR_COUNT_GLOB / SX_STR_COUNT_OVERLAP）。
+##   フラグの意味は sx_str_find と同一（SX_STR_COUNT_GLOB / SX_STR_COUNT_OVERLAP / SX_STR_COUNT_ICASE / SX_STR_COUNT_EQC）。
+##   GLOB / ICASE / EQC は 2 つ以上同時指定できず、重複すると 64 を返す。
 ##   空検索と Glob の * のみの検索は、元文字列の文字数＋1を直接取得する。
 ##   それ以外は __sx_str_find に委譲し、検索結果の個数を __sx_arg_len で取得する。
 ##   元文字列の長さと出現回数に SX_CFG_NUM_RANGE による上限は設けない。
@@ -29,6 +30,10 @@ sx_str_count() {
 	__sx_var_is_rw "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${4:+"${4}"} || return M_EX_USAGE
+
+	case ${4:+"$((!!(${4} & M_STR_COUNT_GLOB) + !!(${4} & M_STR_COUNT_ICASE) + !!(${4} & M_STR_COUNT_EQC)))"} in [!01])
+		return M_EX_USAGE
+	esac
 
 	__sx_str_count "${@}" || return
 }

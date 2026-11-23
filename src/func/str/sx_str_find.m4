@@ -17,6 +17,12 @@ pushdef([|CLEANUP|])dnl
 ##   例: "abc" から "?b" を検索すると "0:2" を返す。
 ##   グロブモードでは一致長にマッチした文字列（最短一致）の長さを使用する。
 ##
+##   フラグに SX_STR_FIND_ICASE (32) を指定すると、検索文字列を英字の
+##   大小を区別しない glob パターンとして扱う。SX_STR_FIND_EQC (64) を
+##   指定すると、ロケールの等価クラスに基づく glob パターンとして扱う。
+##   GLOB / ICASE / EQC は 2 つ以上同時指定できず、重複すると 64 を返す。
+##   NOT / OVERLAP / TEXT / POS / LEN とは併用可能である。
+##
 ##   フラグに SX_STR_FIND_OVERLAP (2) を指定すると、重なり合う一致も検出する。
 ##   例: "aaa" から "aa" を重複検索すると "0:2 1:2" を返す。
 ##
@@ -54,6 +60,10 @@ sx_str_find() {
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${4:+"${4}"} || return M_EX_USAGE
+
+	case ${4:+"$((!!(${4} & M_STR_FIND_GLOB) + !!(${4} & M_STR_FIND_ICASE) + !!(${4} & M_STR_FIND_EQC)))"} in [!01])
+		return M_EX_USAGE
+	esac
 
 	__sx_str_find "${@}" || return
 }

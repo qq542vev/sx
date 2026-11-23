@@ -3,6 +3,8 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_str_count'
+	Include ./spec/support/run.sh
+	sxtest_run SX_STR_COUNT_GLOB SX_STR_COUNT_OVERLAP SX_STR_COUNT_ICASE SX_STR_COUNT_EQC -- ''
 	sxtest_load ./build/modules/sx_str_count.sh
 
 	It '単一一致で1を返すこと'
@@ -162,5 +164,57 @@ Describe 'sx_str_count'
 		When call sx_str_count res "aaa" "a*" "$((1 | 2 | 4))"
 		The status should be success
 		The variable res should equal 3
+	End
+End
+
+Describe '大小無視検索 (SX_STR_COUNT_ICASE)'
+	Include ./spec/support/run.sh
+	sxtest_run SX_STR_COUNT_ICASE -- ''
+	sxtest_load ./build/modules/sx_str_count.sh
+
+	It '英字の大小を区別せずに出現回数を数えること'
+		When call sx_str_count res "Hello World" "hello" "$SX_STR_COUNT_ICASE"
+		The status should be success
+		The variable res should equal 1
+	End
+
+	It '不一致なら0を返すこと'
+		When call sx_str_count res "abc" "xyz" "$SX_STR_COUNT_ICASE"
+		The status should be success
+		The variable res should equal 0
+	End
+End
+
+Describe '等価クラス検索 (SX_STR_COUNT_EQC)'
+	Include ./spec/support/run.sh
+	sxtest_run SX_STR_COUNT_EQC -- ''
+	sxtest_load ./build/modules/sx_str_count.sh
+
+	It 'C ロケールではリテラル一致として動作すること'
+		LC_ALL=C
+		When call sx_str_count res "hello world" "hello" "$SX_STR_COUNT_EQC"
+		The status should be success
+		The variable res should equal 1
+	End
+End
+
+Describe '照合モードの排他'
+	Include ./spec/support/run.sh
+	sxtest_run SX_STR_COUNT_GLOB SX_STR_COUNT_ICASE SX_STR_COUNT_EQC -- ''
+	sxtest_load ./build/modules/sx_str_count.sh
+
+	It 'ICASE と EQC の同時指定は Usage Error になること'
+		When call sx_str_count res "abc" "a" "$((SX_STR_COUNT_ICASE | SX_STR_COUNT_EQC))"
+		The status should equal "64"
+	End
+
+	It 'ICASE と GLOB の同時指定は Usage Error になること'
+		When call sx_str_count res "abc" "a" "$((SX_STR_COUNT_ICASE | SX_STR_COUNT_GLOB))"
+		The status should equal "64"
+	End
+
+	It 'EQC と GLOB の同時指定は Usage Error になること'
+		When call sx_str_count res "abc" "a" "$((SX_STR_COUNT_EQC | SX_STR_COUNT_GLOB))"
+		The status should equal "64"
 	End
 End

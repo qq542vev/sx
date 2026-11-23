@@ -5,7 +5,7 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_str_rfind'
 	Include ./spec/support/run.sh
 	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
-	sxtest_run SX_STR_RFIND_GLOB SX_STR_RFIND_OVERLAP SX_STR_RFIND_TEXT SX_STR_RFIND_POS SX_STR_RFIND_LEN -- ''
+	sxtest_run SX_STR_RFIND_GLOB SX_STR_RFIND_OVERLAP SX_STR_RFIND_TEXT SX_STR_RFIND_POS SX_STR_RFIND_LEN SX_STR_RFIND_ICASE SX_STR_RFIND_EQC -- ''
 	sxtest_load ./build/modules/sx_str_rfind.sh
 
 	Context 'glob 検索で一致の前後にパターン文字がある場合'
@@ -411,5 +411,70 @@ Describe 'sx_str_rfind'
 			Assert [ "$fst" = "2:c" ]
 			Assert [ "$snd" = "1:b" ]
 		End
+	End
+End
+
+Describe '大小無視検索 (SX_STR_RFIND_ICASE)'
+	Include ./spec/support/run.sh
+	sxtest_run SX_STR_RFIND_ICASE -- ''
+	sxtest_load ./build/modules/sx_str_rfind.sh
+
+	It '英字の大小を区別せずに一致すること'
+		When call sx_str_rfind res "Hello World" "hello" "$SX_STR_RFIND_ICASE"
+		The status should be success
+		The variable res should equal "0:5"
+	End
+
+	It '末尾から一致位置を後方へ返すこと'
+		When call sx_str_rfind res "Hello World Hello" "hello" "$SX_STR_RFIND_ICASE"
+		The status should be success
+		The variable res should equal "12:5 0:5"
+	End
+
+	It '不一致なら空文字列を返すこと'
+		When call sx_str_rfind res "abc" "xyz" "$SX_STR_RFIND_ICASE"
+		The status should be failure
+		The variable res should equal ""
+	End
+End
+
+Describe '等価クラス検索 (SX_STR_RFIND_EQC)'
+	Include ./spec/support/run.sh
+	sxtest_run SX_STR_RFIND_EQC -- ''
+	sxtest_load ./build/modules/sx_str_rfind.sh
+
+	It 'C ロケールではリテラル一致として動作すること'
+		LC_ALL=C
+		When call sx_str_rfind res "hello world" "hello" "$SX_STR_RFIND_EQC"
+		The status should be success
+		The variable res should equal "0:5"
+	End
+
+	It 'C ロケールでは大小を区別して不一致になること'
+		LC_ALL=C
+		When call sx_str_rfind res "Hello World" "hello" "$SX_STR_RFIND_EQC"
+		The status should be failure
+		The variable res should equal ""
+	End
+End
+
+Describe '照合モードの排他'
+	Include ./spec/support/run.sh
+	sxtest_run SX_STR_RFIND_GLOB SX_STR_RFIND_ICASE SX_STR_RFIND_EQC -- ''
+	sxtest_load ./build/modules/sx_str_rfind.sh
+
+	It 'ICASE と EQC の同時指定は Usage Error になること'
+		When call sx_str_rfind res "abc" "a" "$((SX_STR_RFIND_ICASE | SX_STR_RFIND_EQC))"
+		The status should equal "64"
+	End
+
+	It 'ICASE と GLOB の同時指定は Usage Error になること'
+		When call sx_str_rfind res "abc" "a" "$((SX_STR_RFIND_ICASE | SX_STR_RFIND_GLOB))"
+		The status should equal "64"
+	End
+
+	It 'EQC と GLOB の同時指定は Usage Error になること'
+		When call sx_str_rfind res "abc" "a" "$((SX_STR_RFIND_EQC | SX_STR_RFIND_GLOB))"
+		The status should equal "64"
 	End
 End

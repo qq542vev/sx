@@ -12,6 +12,11 @@ pushdef([|CLEANUP|])dnl
 ##   第一引数には sx_arg_find と同様のバインド形式を指定できる。
 ##
 ##   フラグに SX_STR_RFIND_GLOB (1) を指定すると、検索文字列を glob パターンとして扱う。
+##   フラグに SX_STR_RFIND_ICASE (32) を指定すると、検索文字列を英字の
+##   大小を区別しない glob パターンとして扱う。SX_STR_RFIND_EQC (64) を
+##   指定すると、ロケールの等価クラスに基づく glob パターンとして扱う。
+##   GLOB / ICASE / EQC は 2 つ以上同時指定できず、重複すると 64 を返す。
+##   NOT / OVERLAP / TEXT / POS / LEN とは併用可能である。
 ##   フラグに SX_STR_RFIND_OVERLAP (2) を指定すると、重なり合う一致も検出する。
 ##
 ##   出力形式は SX_STR_RFIND_POS (8) / SX_STR_RFIND_LEN (16) /
@@ -40,6 +45,10 @@ sx_str_rfind() {
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_nat0_safe ${4:+"${4}"} || return M_EX_USAGE
+
+	case ${4:+"$((!!(${4} & M_STR_RFIND_GLOB) + !!(${4} & M_STR_RFIND_ICASE) + !!(${4} & M_STR_RFIND_EQC)))"} in [!01])
+		return M_EX_USAGE
+	esac
 
 	__sx_str_rfind "${@}" || return
 }
