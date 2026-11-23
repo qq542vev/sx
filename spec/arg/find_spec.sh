@@ -8,7 +8,7 @@ eval "$(shellspec - -c) exit 1"
 Describe 'sx_arg_find'
 	Include ./spec/support/run.sh
 	# 検証に使うフラグ定数は、対象モジュールの依存とは別に準備する。
-	sxtest_run SX_ARG_FIND_NOT SX_ARG_FIND_GLOB SX_ARG_FIND_TEXT SX_ARG_FIND_CB SX_ARG_FIND_POS SX_ARG_RFIND_POS -- ''
+	sxtest_run SX_ARG_FIND_NOT SX_ARG_FIND_GLOB SX_ARG_FIND_TEXT SX_ARG_FIND_CB SX_ARG_FIND_POS SX_ARG_FIND_ICASE SX_ARG_FIND_EQC SX_ARG_RFIND_POS -- ''
 
 	# Exampleごとに対象だけを読み込み、再入とスタブは検証側に残す。
 	load_subject() {
@@ -88,6 +88,87 @@ Describe 'sx_arg_find'
 			When call sx_arg_find res "*.txt" ::: "file.txt" "readme.md"
 			The status should be failure
 			The variable res should equal ""
+		End
+	End
+
+	Describe '大小無視検索 (SX_ARG_FIND_ICASE)'
+		It '英字の大小を区別せずに一致する'
+			load_subject sx_arg_find
+			sx_arg_find res "cafe" "$SX_ARG_FIND_ICASE" ::: "CAFE" "cafe" "Cafe" "tea"
+			Assert [ "$res" = "1 2 3" ]
+		End
+
+		It 'glob 特殊文字をリテラルとして扱う'
+			load_subject sx_arg_find
+			sx_arg_find res "*" "$SX_ARG_FIND_ICASE" ::: "*" "abc"
+			Assert [ "$res" = "1" ]
+		End
+
+		It 'NOT と併用できる'
+			load_subject sx_arg_find
+			sx_arg_find res "cafe" $((SX_ARG_FIND_ICASE | SX_ARG_FIND_NOT)) ::: "CAFE" "tea" "cafe"
+			Assert [ "$res" = "2" ]
+		End
+
+		It 'POS と TEXT を併用できる'
+			load_subject sx_arg_find
+			sx_arg_find res "cafe" $((SX_ARG_FIND_ICASE | SX_ARG_FIND_POS | SX_ARG_FIND_TEXT)) ::: "CAFE" "tea" "cafe"
+			Assert [ "$res" = "'1:CAFE' '3:cafe'" ]
+		End
+	End
+
+	Describe '等価クラス検索 (SX_ARG_FIND_EQC)'
+		It 'C ロケールではリテラル一致として動作する'
+			load_subject sx_arg_find
+			LC_ALL=C
+			sx_arg_find res "cafe" "$SX_ARG_FIND_EQC" ::: "cafe" "CAFE" "café"
+			Assert [ "$res" = "1" ]
+		End
+
+		It 'glob 特殊文字をリテラルとして扱う'
+			load_subject sx_arg_find
+			LC_ALL=C
+			sx_arg_find res "*" "$SX_ARG_FIND_EQC" ::: "*" "abc"
+			Assert [ "$res" = "1" ]
+		End
+
+		It 'NOT と併用できる'
+			load_subject sx_arg_find
+			LC_ALL=C
+			sx_arg_find res "cafe" $((SX_ARG_FIND_EQC | SX_ARG_FIND_NOT)) ::: "cafe" "tea"
+			Assert [ "$res" = "2" ]
+		End
+	End
+
+	Describe '照合モードの排他'
+		It 'ICASE と EQC の同時指定は Usage Error'
+			load_subject sx_arg_find
+			When call sx_arg_find res a $((SX_ARG_FIND_ICASE | SX_ARG_FIND_EQC)) ::: a b
+			The status should equal "64"
+		End
+
+		It 'ICASE と GLOB の同時指定は Usage Error'
+			load_subject sx_arg_find
+			When call sx_arg_find res a $((SX_ARG_FIND_ICASE | SX_ARG_FIND_GLOB)) ::: a b
+			The status should equal "64"
+		End
+
+		It 'ICASE と CB の同時指定は Usage Error'
+			load_subject sx_arg_find
+			When call sx_arg_find res cb $((SX_ARG_FIND_ICASE | SX_ARG_FIND_CB)) ::: a b
+			The status should equal "64"
+		End
+
+		It 'EQC と GLOB の同時指定は Usage Error'
+			load_subject sx_arg_find
+			When call sx_arg_find res a $((SX_ARG_FIND_EQC | SX_ARG_FIND_GLOB)) ::: a b
+			The status should equal "64"
+		End
+
+		It 'EQC と CB の同時指定は Usage Error'
+			load_subject sx_arg_find
+			When call sx_arg_find res cb $((SX_ARG_FIND_EQC | SX_ARG_FIND_CB)) ::: a b
+			The status should equal "64"
 		End
 	End
 

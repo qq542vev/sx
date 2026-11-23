@@ -9,6 +9,8 @@ define([|M_ARG_FIND_TEXT|], [|4|])dnl
 define([|M_ARG_FIND_CB|], [|2|])dnl
 define([|M_ARG_FIND_NOT|], [|8|])dnl
 define([|M_ARG_FIND_POS|], [|16|])dnl
+define([|M_ARG_FIND_ICASE|], [|32|])dnl
+define([|M_ARG_FIND_EQC|], [|64|])dnl
 define([|M_ARG_RFIND_GLOB|], [|1|])dnl
 define([|M_ARG_RFIND_TEXT|], [|4|])dnl
 define([|M_ARG_RFIND_CB|], [|2|])dnl

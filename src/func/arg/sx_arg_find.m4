@@ -15,7 +15,12 @@ pushdef([|CLEANUP|])dnl
 ##   フラグに SX_ARG_FIND_CB (2) を指定すると、検索対象をコールバック関数として扱う。
 ##   フラグに SX_ARG_FIND_NOT (8) を指定すると、一致しない要素を対象にする。
 ##   フラグに SX_ARG_FIND_POS (16) を指定すると、インデックスを明示的に出力する。
-##   NOT は GLOB・CB・TEXT・POS のいずれとでも併用できる（GLOB と CB の同時指定は不可）。
+##   フラグに SX_ARG_FIND_ICASE (32) を指定すると、英字の大小を区別せずに照合する。
+##   フラグに SX_ARG_FIND_EQC (64) を指定すると、全文字を等価クラスとして照合する。
+##   ICASE / EQC は検索対象をリテラルとして扱い、glob パターンとしては解釈しない。
+##   GLOB・CB・ICASE・EQC は相互排他で、2つ以上を同時に指定すると 64 を返す。
+##   NOT は GLOB・CB・TEXT・POS・ICASE・EQC のいずれとでも併用できる。
+##   EQC は全文字を変換するため、長い検索対象ではパターンが大きくなる。
 ##   出力形式は POS と TEXT で指定し、指定されたフィールドだけを
 ##   POS:TEXT の固定順で ':' 連結する。指定順は結果に影響しない。
 ##   出力形式フラグを1つも指定しない場合は POS とみなし、従来どおりインデックスを返す。
@@ -50,16 +55,16 @@ sx_arg_find() {
 
 	M_CFG_CHECK([|sx_arg_find|])
 
-		__sx_var_is_bind "${1-!}" || return M_EX_USAGE
+	__sx_var_is_bind "${1-!}" || return M_EX_USAGE
 
-		__sx_var_is_bindable "${1}" || return M_EX_NOPERM
+	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	case "X${SX_CFG_SEP}" in
 		"${2+X${2}}" | "${3+X${3}}") ;;
 		"${4+X${4}}")
 			__sx_num_is_nat0_safe "${3}" || return M_EX_USAGE
 
-			case "$(((${3} & M_ARG_FIND_GLOB) * (${3} & M_ARG_FIND_CB)))" in [!0])
+			case "$((1 < ((${3} & M_ARG_FIND_GLOB) != 0) + ((${3} & M_ARG_FIND_CB) != 0) + ((${3} & M_ARG_FIND_ICASE) != 0) + ((${3} & M_ARG_FIND_EQC) != 0)))" in 1)
 				return M_EX_USAGE
 			esac
 			;;

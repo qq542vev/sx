@@ -18,7 +18,7 @@ RW_LITERAL_NAMES = re.compile(
     r"(?<![A-Za-z0-9_])(?P<command>__sx_var_is_rw)"
     rf"(?:[ \t]+(?:{SHELL_NAME}|'{SHELL_NAME}'|\"{SHELL_NAME}\")(?=$|[ \t\n;&|()<>]))+"
 )
-DYNAMIC_FUNCTION = re.compile(r'"(__sx_num_[a-z0-9_]+_|__sx_str_find_emit)\$\{')
+DYNAMIC_FUNCTION = re.compile(r'"(__sx_num_[a-z0-9_]+_|__sx_str_find_emit|__sx_arg_find_emit)\$\{')
 DYNAMIC_CONSTANT = re.compile(r"(?<![A-Za-z0-9_])(SX_[A-Z0-9_]*)\$\{")
 DYNAMIC_CONSTS = re.compile(
     r"M_DYNAMIC_CONSTS\(\[\|(?P<prefix>SX_[A-Z0-9_]+)\|\], "

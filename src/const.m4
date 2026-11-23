@@ -433,6 +433,8 @@ M_UNIT([|SX_ARG_FIND_TEXT|], [|src/const/arg/SX_ARG_FIND_TEXT.m4|])dnl
 M_UNIT([|SX_ARG_FIND_CB|], [|src/const/arg/SX_ARG_FIND_CB.m4|])dnl
 M_UNIT([|SX_ARG_FIND_NOT|], [|src/const/arg/SX_ARG_FIND_NOT.m4|])dnl
 M_UNIT([|SX_ARG_FIND_POS|], [|src/const/arg/SX_ARG_FIND_POS.m4|])dnl
+M_UNIT([|SX_ARG_FIND_ICASE|], [|src/const/arg/SX_ARG_FIND_ICASE.m4|])dnl
+M_UNIT([|SX_ARG_FIND_EQC|], [|src/const/arg/SX_ARG_FIND_EQC.m4|])dnl
 M_UNIT([|SX_ARG_RFIND_GLOB|], [|src/const/arg/SX_ARG_RFIND_GLOB.m4|])dnl
 M_UNIT([|SX_ARG_RFIND_TEXT|], [|src/const/arg/SX_ARG_RFIND_TEXT.m4|])dnl
 M_UNIT([|SX_ARG_RFIND_CB|], [|src/const/arg/SX_ARG_RFIND_CB.m4|])dnl
