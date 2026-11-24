@@ -55,7 +55,7 @@ sx_arg_rfind() {
 		"${4+X${4}}")
 			__sx_num_is_nat0_safe "${3}" || return M_EX_USAGE
 
-			case "$((1 < ((${3} & M_ARG_RFIND_GLOB) != 0) + ((${3} & M_ARG_RFIND_CB) != 0) + ((${3} & M_ARG_RFIND_ICASE) != 0) + ((${3} & M_ARG_RFIND_EQC) != 0)))" in 1)
+			case "$((!!(${3} & M_ARG_RFIND_GLOB) + !!(${3} & M_ARG_RFIND_CB) + !!(${3} & M_ARG_RFIND_ICASE) + !!(${3} & M_ARG_RFIND_EQC)))" in [!01])
 				return M_EX_USAGE
 			esac
 			;;

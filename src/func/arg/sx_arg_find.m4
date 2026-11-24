@@ -64,7 +64,7 @@ sx_arg_find() {
 		"${4+X${4}}")
 			__sx_num_is_nat0_safe "${3}" || return M_EX_USAGE
 
-			case "$((1 < ((${3} & M_ARG_FIND_GLOB) != 0) + ((${3} & M_ARG_FIND_CB) != 0) + ((${3} & M_ARG_FIND_ICASE) != 0) + ((${3} & M_ARG_FIND_EQC) != 0)))" in 1)
+			case "$((!!(${3} & M_ARG_FIND_GLOB) + !!(${3} & M_ARG_FIND_CB) + !!(${3} & M_ARG_FIND_ICASE) + !!(${3} & M_ARG_FIND_EQC)))" in [!01])
 				return M_EX_USAGE
 			esac
 			;;

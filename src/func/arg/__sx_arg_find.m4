@@ -32,19 +32,19 @@ __sx_arg_find() {
 			shift 3
 			;;
 		"${4+X${4}}")
-			Q_tgt="${2}" Q_flg="${3}"
-			shift 4
-
 			case 0 in
-				"$((!(Q_flg & M_ARG_FIND_ICASE)))")
-					__sx_glob_esc_icase Q_tgt "${Q_tgt}"
-					Q_flg=$((${Q_flg} | M_ARG_FIND_GLOB))
+				"$((!(${3} & M_ARG_FIND_ICASE)))")
+					__sx_glob_esc_icase Q_tgt "${2}"
+					Q_flg=$((${3} | M_ARG_FIND_GLOB))
 					;;
-				"$((!(Q_flg & M_ARG_FIND_EQC)))")
-					__sx_glob_esc_eq Q_tgt "${Q_tgt}"
-					Q_flg=$((${Q_flg} | M_ARG_FIND_GLOB))
+				"$((!(${3} & M_ARG_FIND_EQC)))")
+					__sx_glob_esc_eq Q_tgt "${2}"
+					Q_flg=$((${3} | M_ARG_FIND_GLOB))
 					;;
+				*) Q_tgt="${2}" Q_flg="${3}";;
 				esac
+
+				shift 4
 			;;
 		*)
 			Q_tgt="${2-}"
