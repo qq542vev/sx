@@ -126,6 +126,8 @@ define([|M_STR_SPLIT_ICASE|], [|4|])dnl
 define([|M_STR_SPLIT_EQ|], [|8|])dnl
 define([|M_STR_SUB_GLOB|], [|1|])dnl
 define([|M_STR_SUB_CB|], [|2|])dnl
+define([|M_STR_SUB_ICASE|], [|32|])dnl
+define([|M_STR_SUB_EQC|], [|64|])dnl
 define([|M_STR_CAPITAL_KEEP|], [|1|])dnl
 define([|M_STR_CAPITAL_SENT|], [|2|])dnl
 define([|M_STR_ISEP_CB|], [|1|])dnl

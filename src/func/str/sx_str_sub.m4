@@ -17,6 +17,10 @@ pushdef([|CLEANUP|])dnl
 ##   回数制限が正の場合は前方から、負の場合は後方から指定された回数分だけ置換する。
 ##   0・+0・-0 の場合は置換しない。
 ##   フラグに SX_STR_SUB_GLOB を指定すると、検索パターンを glob パターンとして扱う。
+##   フラグに SX_STR_SUB_ICASE を指定すると、英字の大小を区別しない glob パターンとして扱う。
+##   フラグに SX_STR_SUB_EQC を指定すると、ロケールの等価クラスに基づく glob パターンとして扱う。
+##   GLOB / ICASE / EQC は 2 つ以上同時指定できず、重複すると 64 を返す。
+##   CB はどのフラグとも併用可能である。
 ##   フラグに SX_STR_SUB_CB を指定すると、第4引数をコールバック関数名として扱う。
 ##   コールバック関数は以下の形式で呼び出される:
 ##     関数名 結果変数名 マッチ文字列 left(未置換) right(未置換) マッチ回数(1〜)
@@ -44,6 +48,10 @@ sx_str_sub() {
 	__sx_var_is_bindable "${1}" || return M_EX_NOPERM
 
 	__sx_num_is_int_base10 ${5:+"${5}"} && __sx_num_is_nat0_safe ${6:+"${6}"} || return M_EX_USAGE
+
+	case ${6:+"$((!!(${6} & M_STR_SUB_GLOB) + !!(${6} & M_STR_SUB_ICASE) + !!(${6} & M_STR_SUB_EQC)))"} in [!01])
+		return M_EX_USAGE
+	esac
 
 	__sx_str_sub "${@}" || return
 }

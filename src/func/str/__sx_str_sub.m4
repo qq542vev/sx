@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_is_int_fit_dec __sx_str_isep __sx_str_sub_cb __sx_str_sub_isep_adapt __sx_str_sub_lit __sx_var_bind __sx_var_bind_init|])dnl
+M_REQUIRE([|SX_CFG_NUM_RANGE __sx_num_is_int_fit_dec __sx_str_isep __sx_str_sub_cb __sx_str_sub_isep_adapt __sx_str_sub_lit __sx_var_bind __sx_var_bind_init __sx_glob_esc_eq __sx_glob_esc_icase|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
 ### __sx_str_sub - 方向・上限・数値経路を準備して置換を振り分ける（内部用）
@@ -18,7 +18,7 @@ M_RENAME_QI([|dnl
 ##    0  成功
 ##   非0  コールバックの終了ステータス
 
-define([|CLEANUP|], [|Q_abs Q_dir Q_type Q_flags Q_cb|])dnl
+define([|CLEANUP|], [|Q_abs Q_dir Q_type Q_cb Q_pat Q_glob|])dnl
 
 __sx_str_sub() {
 	set -- "${1}" "${2-}" "${3-}" "${4-}" "${5-}" "${6:-0}"
@@ -30,14 +30,25 @@ __sx_str_sub() {
 	esac
 
 	Q_abs="${5#[+-]}"
-	Q_flags="${6}"
 	Q_dir=$((${5%%"${Q_abs}"}1))
 
+	case 0 in
+		"$((!(${6} & M_STR_SUB_ICASE)))")
+			__sx_glob_esc_icase Q_pat "${3}"
+			Q_glob=1
+			;;
+		"$((!(${6} & M_STR_SUB_EQC)))")
+			__sx_glob_esc_eq Q_pat "${3}"
+			Q_glob=1
+			;;
+		*) Q_pat="${3}" Q_glob=$((${6} & M_STR_SUB_GLOB));;
+	esac
+
 	if
-		M_STR_EQ([|"${3}"|], [|''|]) ||
-		{ M_NUM_BOOL([|Q_flags & M_STR_SUB_GLOB|]) && ! M_STR_HAS([|"${3}"|], [|*[!*]*|]); }
+		M_STR_EQ([|"${Q_pat}"|], [|''|]) ||
+		{ M_NUM_BOOL([|${6} & M_STR_SUB_GLOB|]) && ! M_STR_HAS([|"${Q_pat}"|], [|*[!*]*|]); }
 	then
-		set -- "${1}" "${2}" "${4}" "${Q_dir}" "${Q_abs}" "$((Q_flags & M_STR_SUB_CB))"
+		set -- "${1}" "${2}" "${4}" "${Q_dir}" "${Q_abs}" "$((${6} & M_STR_SUB_CB))"
 		unset CLEANUP
 
 		case "${6}" in
@@ -59,7 +70,7 @@ __sx_str_sub() {
 		Q_type=nat0
 	fi
 
-	set -- "${1}" "${2}" "${3}" "${4}" "${Q_abs}" "$((Q_flags & M_STR_SUB_GLOB))" "${Q_type}" "${Q_dir}" "$((Q_flags & M_STR_SUB_CB))"
+	set -- "${1}" "${2}" "${Q_pat}" "${4}" "${Q_abs}" "$((Q_glob))" "${Q_type}" "${Q_dir}" "$((${6} & M_STR_SUB_CB))"
 	unset CLEANUP
 
 	case "${9}" in
