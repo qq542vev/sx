@@ -20,6 +20,10 @@ pushdef([|CLEANUP|])dnl
 ##   フラグに SX_STR_SPLIT_INC を指定すると、分割に使用した区切り文字を結果に含める。
 ##   SX_STR_SPLIT_GLOB と併用した場合は、glob パターンに一致した実際の文字列を結果に含める。
 ##   INCで追加する区切り要素は、分割回数を増やさない。
+##   フラグに SX_STR_SPLIT_ICASE を指定すると、区切り文字を英字の大小を
+##   区別しない glob パターンとして扱う。SX_STR_SPLIT_EQ を指定すると、
+##   ロケールの等価クラスに基づく glob パターンとして扱う。
+##   GLOB / ICASE / EQ は 2 つ以上同時指定できず、重複すると 64 を返す。
 ##   フラグの形式と範囲は sx_num_is_int_safe_inv に従う。
 ##   空区切りと非空区切りの前方分割では、バインドが枯渇を返すと途中で終了する。
 ##   非空区切りの後方分割は、分割位置を確定してから前方順にバインドする。
@@ -42,6 +46,10 @@ sx_str_split() {
 	# 回数は空指定を省略扱いにし、桁数を制限せず10進表記だけを検査する。
 	# フラグはビット演算を行うため、シェルの算術で安全に扱える整数に制限する。
 	__sx_num_is_int_base10 ${4:+"${4}"} && __sx_num_is_int_safe_inv ${5+"${5}"} || return M_EX_USAGE
+
+	case ${5:+"$((!!(${5} & M_STR_SPLIT_GLOB) + !!(${5} & M_STR_SPLIT_ICASE) + !!(${5} & M_STR_SPLIT_EQ)))"} in [!01])
+		return M_EX_USAGE
+	esac
 
 	__sx_str_split "${@}"
 }

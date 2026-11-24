@@ -1,6 +1,7 @@
 # shellcheck disable=SC2016 # CMD内の変数は準備用シェルで展開する。
 Describe 'sx_str_split -efu 環境検証'
   Include ./spec/support/run.sh
+  sxtest_run SX_STR_SPLIT_GLOB SX_STR_SPLIT_ICASE SX_STR_SPLIT_EQ -- ''
   sxtest_load ./build/modules/sx_str_split.sh
 
   Context '多倍長の回数と直接バインド'
@@ -26,6 +27,18 @@ Describe 'sx_str_split -efu 環境検証'
   It '正常動作'
 
     When run efu_run sx_str_split "a:b:rem" "v1:v2:v3:v4" ":"
+    The status should be success
+  End
+
+  It 'ICASE と EQ フラグでも -efu 下で正常動作すること'
+    verify_icase_eqc() {
+      sx_str_split res "a1B2b3" "b" "" "$SX_STR_SPLIT_ICASE"
+      [ "$res" = "'a1' '2' '3'" ] || return 1
+      sx_str_split res "a1b2a3" "a" "" "$SX_STR_SPLIT_EQ"
+      [ "$res" = "'' '1b2' '3'" ] || return 1
+      check_no_leak
+    }
+    When run efu_run verify_icase_eqc
     The status should be success
   End
 End

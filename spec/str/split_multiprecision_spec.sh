@@ -198,9 +198,17 @@ Describe 'sx_str_split 多倍長対応'
 
     It 'フラグは従来の符号付き・8進・16進表記を維持すること'
       load_subject sx_str_split
-      When call sx_str_split res a1b '[0-9]' 1 "$1"
-      The status should be success
-      The variable res should equal "'a' '1' 'b'"
+      case "$1" in
+        -1)
+          When call sx_str_split res a1b '[0-9]' 1 "$1"
+          The status should equal 64
+          ;;
+        *)
+          When call sx_str_split res a1b '[0-9]' 1 "$1"
+          The status should be success
+          The variable res should equal "'a' '1' 'b'"
+          ;;
+      esac
     End
   End
 
