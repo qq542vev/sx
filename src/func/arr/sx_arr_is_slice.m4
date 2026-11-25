@@ -1,13 +1,13 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_is_spec|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_is_slice|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
-### sx_arr_is_spec - 文字列が配列要素指定 spec として有効か確認する
+### sx_arr_is_slice - 文字列が配列要素指定 slice として有効か確認する
 ##
 ## 使い方:
-##   sx_arr_is_spec [spec1 [spec2 ...]]
+##   sx_arr_is_slice [slice1 [slice2 ...]]
 ##
 ## 説明:
-##   引数で指定されたすべての文字列が、sx_arr_get の spec
+##   引数で指定されたすべての文字列が、sx_arr_get の slice
 ##   （整数 | [始点][:終点[:刻み]]）として有効かを確認する。
 ##   整数は符号付き10進整数（+1 / -1 の接頭辞可、前ゼロなし、-0 は 0 とみなす）。
 ##   第3要素（step）は 0 以外でなければならない。
@@ -20,12 +20,12 @@ M_RENAME_Q([|dnl
 ##    0  すべて有効な形式である (SX_EX_OK)
 ##    1  無効な形式が含まれる
 
-sx_arr_is_spec() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_spec "${@}" || return; return;; esac
+sx_arr_is_slice() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arr_is_slice "${@}" || return; return;; esac
 
-	M_CFG_CHECK([|sx_arr_is_spec|])
+	M_CFG_CHECK([|sx_arr_is_slice|])
 
-	__sx_arr_is_spec "${@}" || return
+	__sx_arr_is_slice "${@}" || return
 }
-|], [|arr_is_spec|])dnl
+|], [|arr_is_slice|])dnl
 popdef([|CLEANUP|])dnl

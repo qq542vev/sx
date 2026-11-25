@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_has __sx_arr_is_spec __sx_var_is_arr __sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_has __sx_arr_is_slice __sx_var_is_arr __sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_arr_has - 配列の全 spec が1要素以上に一致するか確認する
@@ -18,7 +18,7 @@ M_RENAME_Q([|dnl
 ##   単体・始点・終点は正確値に換算する（丸めなし）。
 ##   始点の省略時は t>0 なら 0、t<0 なら len-1 から開始する。
 ##   終点の省略時は t>0 なら末尾まで、t<0 なら先頭まで含む。
-##   spec の形式検査は sx_arr_is_spec と同一である。
+##   slice の形式検査は sx_arr_is_slice と同一である。
 ##   spec を指定しない場合は空真で成功する。
 ##
 ## 終了ステータス:
@@ -42,7 +42,7 @@ sx_arr_has() {
 	Q_arr="${1}"
 	shift
 
-	__sx_arr_is_spec "${@}" || {
+	__sx_arr_is_slice "${@}" || {
 		unset CLEANUP
 		return M_EX_USAGE
 	}

@@ -1,4 +1,4 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_get __sx_arr_is_bind __sx_arr_is_bindable __sx_arr_is_spec __sx_var_is_arr __sx_var_is_name|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arr_get __sx_arr_is_bind __sx_arr_is_bindable __sx_arr_is_slice __sx_var_is_arr __sx_var_is_name|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
 ### sx_arr_get - 配列から指定要素を順序保持で切り出して分配する
@@ -61,7 +61,7 @@ sx_arr_get() {
 	Q_arr="${2}"
 	shift 2
 
-	__sx_arr_is_spec "${@}" || {
+	__sx_arr_is_slice "${@}" || {
 		unset CLEANUP
 		return M_EX_USAGE
 	}
