@@ -7,54 +7,95 @@ Describe 'sx_num_range'
   Include ./spec/support/run.sh
   sxtest_load ./build/modules/sx_num_range.sh
 
-  It '0からN-1までの範囲を生成すること (Python方式: range(stop))'
+  It '単体整数 N は 0:N として生成すること'
     When call sx_num_range result 5
     The status should be success
     The variable result should equal "0 1 2 3 4"
   End
 
-  It '開始と終了(exclusive)を指定して範囲を生成すること (Python方式: range(start, stop))'
-    When call sx_num_range result 2 5
+  It '単体整数 0 は空範囲を生成すること'
+    When call sx_num_range result 0
+    The status should be success
+    The variable result should equal ""
+  End
+
+  It '単体負整数 N は 0:N (step 1) として空範囲を生成すること'
+    When call sx_num_range result -5
+    The status should be success
+    The variable result should equal ""
+  End
+
+  It '開始と終了(exclusive)を指定して範囲を生成すること'
+    When call sx_num_range result 2:5
     The status should be success
     The variable result should equal "2 3 4"
   End
 
-  It '開始、終了(exclusive)、増分を指定して範囲を生成すること (Python方式: range(start, stop, step))'
-    When call sx_num_range result 1 5 2
+  It '始点省略は 0 として扱うこと'
+    When call sx_num_range result :5
+    The status should be success
+    The variable result should equal "0 1 2 3 4"
+  End
+
+  It '開始、終了(exclusive)、増分を指定して範囲を生成すること'
+    When call sx_num_range result 1:5:2
     The status should be success
     The variable result should equal "1 3"
   End
 
-  It '負の増分で逆順の範囲を生成すること (Python方式: range(start, stop, step))'
-    When call sx_num_range result 5 1 -1
+  It '負の増分で逆順の範囲を生成すること'
+    When call sx_num_range result 5:1:-1
     The status should be success
     The variable result should equal "5 4 3 2"
   End
 
-  It '増分が0の場合は EX_USAGE を返すこと'
-    When call sx_num_range result 1 5 0
+  It '複数の slice を連結して生成すること'
+    When call sx_num_range result 0:2 5:7
+    The status should be success
+    The variable result should equal "0 1 5 6"
+  End
+
+  It '複数の単体整数 slice を連結して生成すること'
+    When call sx_num_range result 2 5
+    The status should be success
+    The variable result should equal "0 1 0 1 2 3 4"
+  End
+
+  It '増分が0の slice は EX_USAGE を返すこと'
+    When call sx_num_range result 1:5:0
     The status should equal 64
   End
 
   It '範囲外の場合は空文字を返すこと (増分正)'
-    When call sx_num_range result 5 2
+    When call sx_num_range result 5:2
     The status should be success
     The variable result should equal ""
   End
 
   It '範囲外の場合は空文字を返すこと (増分負)'
-    When call sx_num_range result 1 5 -1
+    When call sx_num_range result 1:5:-1
     The status should be success
     The variable result should equal ""
   End
 
-  It '引数が不正な場合に EX_USAGE を返すこと'
+  It 'spec がない場合は空文字を返すこと'
     When call sx_num_range result
+    The status should be success
+    The variable result should equal ""
+  End
+
+  It 'slice が不正な場合に EX_USAGE を返すこと'
+    When call sx_num_range result "a"
     The status should equal 64
   End
 
-  It '数値が不正な場合に EX_USAGE を返すこと'
-    When call sx_num_range result "a"
+  It '終点省略の slice は EX_USAGE を返すこと'
+    When call sx_num_range result "5:"
+    The status should equal 64
+  End
+
+  It '空文字列 slice は EX_USAGE を返すこと'
+    When call sx_num_range result ""
     The status should equal 64
   End
 
@@ -66,7 +107,7 @@ Describe 'sx_num_range'
 
   Describe 'bind機能'
     It '複数の変数に分配代入すること'
-      When call sx_num_range i:j:k 1 4
+      When call sx_num_range i:j:k 1:4
       The status should be success
       The variable i should equal 1
       The variable j should equal 2
@@ -74,32 +115,40 @@ Describe 'sx_num_range'
     End
 
     It '残りの要素を最後の変数に集約すること'
-      When call sx_num_range i:j 1 5
+      When call sx_num_range i:j 1:5
       The status should be success
       The variable i should equal 1
       The variable j should equal "2 3 4"
     End
 
     It '指定された変数分だけ取得して停止すること'
-      When call sx_num_range i:j: 1 10
+      When call sx_num_range i:j: 1:10
       The status should be success
       The variable i should equal 1
       The variable j should equal 2
     End
 
     It '空のセグメントで要素をスキップすること'
-      When call sx_num_range i::k 1 4
+      When call sx_num_range i::k 1:4
       The status should be success
       The variable i should equal 1
       The variable k should equal 3
     End
 
     It '負の増分でも分配代入ができること'
-      When call sx_num_range i:j:k: 5 1 -1
+      When call sx_num_range i:j:k: 5:1:-1
       The status should be success
       The variable i should equal 5
       The variable j should equal 4
       The variable k should equal 3
+    End
+
+    It '複数 slice を跨いで分配代入すること'
+      When call sx_num_range i:j:k: 0:2 10:20
+      The status should be success
+      The variable i should equal 0
+      The variable j should equal 1
+      The variable k should equal 10
     End
   End
 
@@ -108,34 +157,34 @@ Describe 'sx_num_range'
     Skip if '32bit算術シェル専用のため' arith_not32
 
     It 'INT32_MINを開始値とする範囲の先頭2要素を取得すること'
-      When call sx_num_range "i:j:" "-2147483648" "2147483647" 1
+      When call sx_num_range "i:j:" "-2147483648:2147483647:1"
       The status should be success
       The variable i should equal "-2147483648"
       The variable j should equal "-2147483647"
     End
 
     It '32bit全域spanの範囲の先頭2要素を取得すること'
-      When call sx_num_range "i:j:" "-2147483647" "2147483647" 1
+      When call sx_num_range "i:j:" "-2147483647:2147483647:1"
       The status should be success
       The variable i should equal "-2147483647"
       The variable j should equal "-2147483646"
     End
 
     It '終了値がINT32_MINの逆順範囲の先頭2要素を取得すること'
-      When call sx_num_range "i:j:" "5" "-2147483648" -1
+      When call sx_num_range "i:j:" "5:-2147483648:-1"
       The status should be success
       The variable i should equal "5"
       The variable j should equal "4"
     End
 
     It '増分がINT32_MINの範囲を取得すること (要素1件)'
-      When call sx_num_range r 5 0 -2147483648
+      When call sx_num_range r 5:0:-2147483648
       The status should be success
       The variable r should equal "5"
     End
 
     It '増分がINT32_MINの範囲を取得すること (要素2件)'
-      When call sx_num_range r 5 -2147483648 -2147483648
+      When call sx_num_range r 5:-2147483648:-2147483648
       The status should be success
       The variable r should equal "5 -2147483643"
     End
@@ -146,34 +195,34 @@ Describe 'sx_num_range'
     Skip if 'ホストの算術展開が64bit未満のため' arith_lt64
 
     It 'INT64_MINを開始値とする範囲の先頭2要素を取得すること'
-      When call sx_num_range "i:j:" "-9223372036854775808" "9223372036854775807" 1
+      When call sx_num_range "i:j:" "-9223372036854775808:9223372036854775807:1"
       The status should be success
       The variable i should equal "-9223372036854775808"
       The variable j should equal "-9223372036854775807"
     End
 
     It '64bit全域spanの範囲の先頭2要素を取得すること'
-      When call sx_num_range "i:j:" "-9223372036854775807" "9223372036854775807" 1
+      When call sx_num_range "i:j:" "-9223372036854775807:9223372036854775807:1"
       The status should be success
       The variable i should equal "-9223372036854775807"
       The variable j should equal "-9223372036854775806"
     End
 
     It '終了値がINT64_MINの逆順範囲の先頭2要素を取得すること'
-      When call sx_num_range "i:j:" "5" "-9223372036854775808" -1
+      When call sx_num_range "i:j:" "5:-9223372036854775808:-1"
       The status should be success
       The variable i should equal "5"
       The variable j should equal "4"
     End
 
     It '増分がINT64_MINの範囲を取得すること (要素1件)'
-      When call sx_num_range r 5 0 -9223372036854775808
+      When call sx_num_range r 5:0:-9223372036854775808
       The status should be success
       The variable r should equal "5"
     End
 
     It '増分がINT64_MINの範囲を取得すること (要素2件)'
-      When call sx_num_range r 5 -9223372036854775808 -9223372036854775808
+      When call sx_num_range r 5:-9223372036854775808:-9223372036854775808
       The status should be success
       The variable r should equal "5 -9223372036854775803"
     End
