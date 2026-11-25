@@ -3,7 +3,7 @@
 eval "$(shellspec - -c) exit 1"
 
 Describe 'sx_sh_is_param'
-  sxtest_load ./build/modules/SX_SH_PARAM_REJECT.sh ./build/modules/SX_SH_PARAM_ACCEPT.sh ./build/modules/sx_sh_is_param.sh
+  sxtest_load ./build/modules/SX_SH_REJECT_PARAM.sh ./build/modules/SX_SH_ACCEPT_PARAM.sh ./build/modules/sx_sh_is_param.sh
 
   It '特殊パラメータに対して成功を返すこと'
     When call sx_sh_is_param @ '*' '#' '?' '-' '$' '!'
@@ -60,15 +60,15 @@ Describe 'sx_sh_is_param'
     The status should be failure
   End
 
-  Describe 'SX_SH_PARAM_REJECT / SX_SH_PARAM_ACCEPT'
+  Describe 'SX_SH_REJECT_PARAM / SX_SH_ACCEPT_PARAM'
     is_param_eval() {
-      eval "case \"\$1\" in $SX_SH_PARAM_REJECT) return 1;; esac"
-      eval "case \"\$1\" in $SX_SH_PARAM_ACCEPT) return 0;; esac"
+      eval "case \"\$1\" in $SX_SH_REJECT_PARAM) return 1;; esac"
+      eval "case \"\$1\" in $SX_SH_ACCEPT_PARAM) return 0;; esac"
       return 1
     }
 
     rejects_only() {
-      eval "case \"\$1\" in $SX_SH_PARAM_REJECT) return 0;; esac"
+      eval "case \"\$1\" in $SX_SH_REJECT_PARAM) return 0;; esac"
       return 1
     }
 

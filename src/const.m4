@@ -471,8 +471,8 @@ M_UNIT([|SX_STR_CHUNK_SKIP_SHORT|], [|src/const/str/SX_STR_CHUNK_SKIP_SHORT.m4|]
 M_UNIT([|SX_STR_CHUNK_SKIP_LONG|], [|src/const/str/SX_STR_CHUNK_SKIP_LONG.m4|])dnl
 M_UNIT([|SX_STR_RCHUNK_SKIP_SHORT|], [|src/const/str/SX_STR_RCHUNK_SKIP_SHORT.m4|])dnl
 M_UNIT([|SX_STR_RCHUNK_SKIP_LONG|], [|src/const/str/SX_STR_RCHUNK_SKIP_LONG.m4|])dnl
-M_UNIT([|SX_SH_PARAM_REJECT|], [|src/const/sh/SX_SH_PARAM_REJECT.m4|])dnl
-M_UNIT([|SX_SH_PARAM_ACCEPT|], [|src/const/sh/SX_SH_PARAM_ACCEPT.m4|])dnl
+M_UNIT([|SX_SH_REJECT_PARAM|], [|src/const/sh/SX_SH_REJECT_PARAM.m4|])dnl
+M_UNIT([|SX_SH_ACCEPT_PARAM|], [|src/const/sh/SX_SH_ACCEPT_PARAM.m4|])dnl
 M_UNIT([|SX_SH_REJECT_POS|], [|src/const/sh/SX_SH_REJECT_POS.m4|])dnl
 M_UNIT([|SX_SH_ACCEPT_POS|], [|src/const/sh/SX_SH_ACCEPT_POS.m4|])dnl
 M_UNIT([|SX_VAR_REJECT_NAME|], [|src/const/var/SX_VAR_REJECT_NAME.m4|])dnl

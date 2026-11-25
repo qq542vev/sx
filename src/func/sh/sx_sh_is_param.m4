@@ -6,7 +6,7 @@ M_REQUIRE([|__sx_sh_is_param|])dnl
 ##
 ## 説明:
 ##   実処理は内部関数 __sx_sh_is_param に委譲する。
-##   同じ判定は SX_SH_PARAM_REJECT を評価してから SX_SH_PARAM_ACCEPT を
+##   同じ判定は SX_SH_REJECT_PARAM を評価してから SX_SH_ACCEPT_PARAM を
 ##   評価しても利用できる。定数は case のパターン列なので eval で埋め込む。
 ##   定数単独では判定できず、REJECT を通過したものだけを ACCEPT で判定する。
 ##
