@@ -475,6 +475,7 @@ M_UNIT([|SX_SH_PARAM_REJECT|], [|src/const/sh/SX_SH_PARAM_REJECT.m4|])dnl
 M_UNIT([|SX_SH_PARAM_ACCEPT|], [|src/const/sh/SX_SH_PARAM_ACCEPT.m4|])dnl
 M_UNIT([|SX_SH_REJECT_POS|], [|src/const/sh/SX_SH_REJECT_POS.m4|])dnl
 M_UNIT([|SX_SH_ACCEPT_POS|], [|src/const/sh/SX_SH_ACCEPT_POS.m4|])dnl
+M_UNIT([|SX_VAR_REJECT_NAME|], [|src/const/var/SX_VAR_REJECT_NAME.m4|])dnl
 M_UNIT([|SX_GLOB_SP_NORM|], [|src/const/glob/SX_GLOB_SP_NORM.m4|])dnl
 M_UNIT([|SX_GLOB_SP_NORM_ARGS|], [|src/const/glob/SX_GLOB_SP_NORM_ARGS.m4|])dnl
 M_UNIT([|SX_GLOB_SP_NORM_ESC_ARGS|], [|src/const/glob/SX_GLOB_SP_NORM_ESC_ARGS.m4|])dnl

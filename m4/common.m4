@@ -127,10 +127,12 @@ define([|M_NUM_BOOL|], [|M_STR_NE([|$(($1))|], 0)|])dnl
 define([|M_RENAME_Q|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Za-z]*\)|], [|\1__sx_$2_\2|])|])dnl
 define([|M_RENAME_QI|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Za-z]*\)|], [|\1__sx_$2_\2_|])|])dnl
 
-# 定数マクロのインクルード（依存関係順：str → num → uri → cfg → glob）
+# 定数マクロのインクルード（依存関係順：ex → str → var → sh → num → uri → cfg → glob → arg）
 # uri.m4 は M_STR_DIGIT, M_STR_XDIGIT を参照するため str.m4 より後に配置する。
+# var.m4 は M_STR_WORD を参照するため str.m4 より後に配置する。
 include([|m4/const/ex.m4|])dnl
 include([|m4/const/str.m4|])dnl
+include([|m4/const/var.m4|])dnl
 include([|m4/const/sh.m4|])dnl
 include([|m4/const/num.m4|])dnl
 

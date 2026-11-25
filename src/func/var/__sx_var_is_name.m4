@@ -17,7 +17,7 @@ define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_var_is_name() {
 	for Q_arg in "${@}"; do
-		case "${Q_arg}" in '' | [0-9]* | *[!"M_STR_WORD()"]*)
+		case "${Q_arg}" in M_VAR_REJECT_NAME)
 			unset CLEANUP
 			return 1
 		esac

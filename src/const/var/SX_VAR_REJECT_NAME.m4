@@ -1,0 +1,2 @@
+M_REQUIRE([||])dnl
+M_CONST([|VAR_REJECT_NAME|])
