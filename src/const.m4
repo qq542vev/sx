@@ -471,6 +471,8 @@ M_UNIT([|SX_STR_CHUNK_SKIP_SHORT|], [|src/const/str/SX_STR_CHUNK_SKIP_SHORT.m4|]
 M_UNIT([|SX_STR_CHUNK_SKIP_LONG|], [|src/const/str/SX_STR_CHUNK_SKIP_LONG.m4|])dnl
 M_UNIT([|SX_STR_RCHUNK_SKIP_SHORT|], [|src/const/str/SX_STR_RCHUNK_SKIP_SHORT.m4|])dnl
 M_UNIT([|SX_STR_RCHUNK_SKIP_LONG|], [|src/const/str/SX_STR_RCHUNK_SKIP_LONG.m4|])dnl
+M_UNIT([|SX_SH_PARAM_REJECT|], [|src/const/sh/SX_SH_PARAM_REJECT.m4|])dnl
+M_UNIT([|SX_SH_PARAM_ACCEPT|], [|src/const/sh/SX_SH_PARAM_ACCEPT.m4|])dnl
 M_UNIT([|SX_GLOB_SP_NORM|], [|src/const/glob/SX_GLOB_SP_NORM.m4|])dnl
 M_UNIT([|SX_GLOB_SP_NORM_ARGS|], [|src/const/glob/SX_GLOB_SP_NORM_ARGS.m4|])dnl
 M_UNIT([|SX_GLOB_SP_NORM_ESC_ARGS|], [|src/const/glob/SX_GLOB_SP_NORM_ESC_ARGS.m4|])dnl

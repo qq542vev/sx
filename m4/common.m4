@@ -131,6 +131,7 @@ define([|M_RENAME_QI|], [|patsubst([|$1|], [|\([^_A-Za-z]\)Q_\([_A-Za-z][_0-9A-Z
 # uri.m4 は M_STR_DIGIT, M_STR_XDIGIT を参照するため str.m4 より後に配置する。
 include([|m4/const/ex.m4|])dnl
 include([|m4/const/str.m4|])dnl
+include([|m4/const/sh.m4|])dnl
 include([|m4/const/num.m4|])dnl
 
 dnl URI エンコードの生成マクロ。uri_enc シンボルを守る。

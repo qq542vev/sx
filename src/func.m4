@@ -603,3 +603,6 @@ M_UNIT([|sx_uri_is_enc|], [|src/func/uri/sx_uri_is_enc.m4|])dnl
 M_UNIT([|__sx_uri_is_enc|], [|src/func/uri/__sx_uri_is_enc.m4|])dnl
 M_UNIT([|sx_uri_is_enc_safe|], [|src/func/uri/sx_uri_is_enc_safe.m4|])dnl
 M_UNIT([|__sx_uri_is_enc_safe|], [|src/func/uri/__sx_uri_is_enc_safe.m4|])dnl
+
+M_UNIT([|sx_sh_is_param|], [|src/func/sh/sx_sh_is_param.m4|])dnl
+M_UNIT([|__sx_sh_is_param|], [|src/func/sh/__sx_sh_is_param.m4|])dnl
