@@ -334,6 +334,8 @@ M_UNIT([|__sx_num_is_nzint_base8or16|], [|src/func/num/__sx_num_is_nzint_base8or
 M_UNIT([|sx_num_is_nzint_base10or16|], [|src/func/num/sx_num_is_nzint_base10or16.m4|])dnl
 M_UNIT([|__sx_num_is_nzint_base10or16|], [|src/func/num/__sx_num_is_nzint_base10or16.m4|])dnl
 M_UNIT([|__sx_num_is_nzint_base16|], [|src/func/num/__sx_num_is_nzint_base16.m4|])dnl
+M_UNIT([|sx_num_is_range_spec|], [|src/func/num/sx_num_is_range_spec.m4|])dnl
+M_UNIT([|__sx_num_is_range_spec|], [|src/func/num/__sx_num_is_range_spec.m4|])dnl
 M_UNIT([|sx_num_is_pint|], [|src/func/num/sx_num_is_pint.m4|])dnl
 M_UNIT([|__sx_num_is_pint|], [|src/func/num/__sx_num_is_pint.m4|])dnl
 M_UNIT([|sx_num_is_pint_base|], [|src/func/num/sx_num_is_pint_base.m4|])dnl
