@@ -606,5 +606,7 @@ M_UNIT([|__sx_uri_is_enc_safe|], [|src/func/uri/__sx_uri_is_enc_safe.m4|])dnl
 
 M_UNIT([|sx_sh_is_param|], [|src/func/sh/sx_sh_is_param.m4|])dnl
 M_UNIT([|__sx_sh_is_param|], [|src/func/sh/__sx_sh_is_param.m4|])dnl
+M_UNIT([|sx_sh_is_pos|], [|src/func/sh/sx_sh_is_pos.m4|])dnl
+M_UNIT([|__sx_sh_is_pos|], [|src/func/sh/__sx_sh_is_pos.m4|])dnl
 M_UNIT([|sx_sh_param_ref|], [|src/func/sh/sx_sh_param_ref.m4|])dnl
 M_UNIT([|__sx_sh_param_ref|], [|src/func/sh/__sx_sh_param_ref.m4|])dnl
