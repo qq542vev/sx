@@ -20,7 +20,7 @@ __sx_num_range() {
 	Q_bind="${1}"
 	shift
 
-	for Q_spec in "${@}"; do
+	for Q_spec in ${Q_bind:+"${@}"}; do
 		case "${Q_spec}" in
 			*:*:*)
 				Q_s="${Q_spec%%:*}"
