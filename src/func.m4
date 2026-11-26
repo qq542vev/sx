@@ -60,8 +60,6 @@ M_UNIT([|__sx_arg_pad_cb|], [|src/func/arg/__sx_arg_pad_cb.m4|])dnl
 M_UNIT([|__sx_arg_pad_lit|], [|src/func/arg/__sx_arg_pad_lit.m4|])dnl
 M_UNIT([|sx_arg_resize|], [|src/func/arg/sx_arg_resize.m4|])dnl
 M_UNIT([|__sx_arg_resize|], [|src/func/arg/__sx_arg_resize.m4|])dnl
-M_UNIT([|sx_arg_range|], [|src/func/arg/sx_arg_range.m4|])dnl
-M_UNIT([|__sx_arg_range|], [|src/func/arg/__sx_arg_range.m4|])dnl
 M_UNIT([|sx_arg_reach|], [|src/func/arg/sx_arg_reach.m4|])dnl
 M_UNIT([|__sx_arg_reach|], [|src/func/arg/__sx_arg_reach.m4|])dnl
 M_UNIT([|sx_arg_rfind|], [|src/func/arg/sx_arg_rfind.m4|])dnl
@@ -612,3 +610,5 @@ M_UNIT([|sx_sh_is_pos|], [|src/func/sh/sx_sh_is_pos.m4|])dnl
 M_UNIT([|__sx_sh_is_pos|], [|src/func/sh/__sx_sh_is_pos.m4|])dnl
 M_UNIT([|sx_sh_param_ref|], [|src/func/sh/sx_sh_param_ref.m4|])dnl
 M_UNIT([|__sx_sh_param_ref|], [|src/func/sh/__sx_sh_param_ref.m4|])dnl
+M_UNIT([|sx_sh_pos_ref|], [|src/func/sh/sx_sh_pos_ref.m4|])dnl
+M_UNIT([|__sx_sh_pos_ref|], [|src/func/sh/__sx_sh_pos_ref.m4|])dnl

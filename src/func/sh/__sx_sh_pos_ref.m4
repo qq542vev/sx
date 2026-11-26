@@ -1,13 +1,13 @@
 M_REQUIRE([|__sx_num_add_int __sx_num_divmod_int __sx_num_range __sx_num_sub_int __sx_sh_param_ref|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_QI([|dnl
-### __sx_arg_range - 位置パラメータの参照文字列を範囲指定で生成する（内部用）
+### __sx_sh_pos_ref - 位置パラメータの参照文字列を範囲指定で生成する（内部用）
 ##
 ## 使い方:
-##   __sx_arg_range 結果変数名 区切り文字 [spec ...]
+##   __sx_sh_pos_ref 結果変数名 区切り文字 [spec ...]
 ##
 ## 説明:
-##   sx_arg_range の内部実装。引数チェックは行わない。
+##   sx_sh_pos_ref の内部実装。引数チェックは行わない。
 ##   各 spec を解析し、出力対象のインデックスが 1 以上になるよう範囲を
 ##   事前計算してから __sx_num_range に渡す。
 ##   昇順では符号付き除算により等差数列のうち最初の 1 以上の要素を求め、
@@ -18,7 +18,7 @@ M_RENAME_QI([|dnl
 
 define([|CLEANUP|], [|Q_res Q_sep Q_spec Q_s Q_e Q_t Q_d Q_q Q_r Q_tmp|])dnl
 
-__sx_arg_range() {
+__sx_sh_pos_ref() {
 	Q_res="${1}"
 	Q_sep="${2-}"
 	Q_tmp=
@@ -66,5 +66,5 @@ __sx_arg_range() {
 
 	unset CLEANUP
 }
-|], [|arg_range|])dnl
+|], [|sh_pos_ref|])dnl
 popdef([|CLEANUP|])dnl

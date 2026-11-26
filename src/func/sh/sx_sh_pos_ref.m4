@@ -1,10 +1,10 @@
-M_REQUIRE([|SX_CFG_SKIP_CHK __sx_arg_range __sx_num_is_slice __sx_var_is_name __sx_var_is_rw|])dnl
+M_REQUIRE([|SX_CFG_SKIP_CHK __sx_sh_pos_ref __sx_num_is_slice __sx_var_is_name __sx_var_is_rw|])dnl
 pushdef([|CLEANUP|])dnl
 M_RENAME_Q([|dnl
-### sx_arg_range - 位置パラメータの参照文字列を範囲指定で生成する
+### sx_sh_pos_ref - 位置パラメータの参照文字列を範囲指定で生成する
 ##
 ## 使い方:
-##   sx_arg_range 結果変数名 区切り文字 [spec ...]
+##   sx_sh_pos_ref 結果変数名 区切り文字 [spec ...]
 ##
 ## 説明:
 ##   各 spec（整数 | [始点]:終点[:刻み]）を sx_num_range と同一の規則で解釈し、
@@ -25,10 +25,10 @@ M_RENAME_Q([|dnl
 
 define([|CLEANUP|], [|Q_res Q_sep|])dnl
 
-sx_arg_range() {
-	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_arg_range "${@}" || return; return;; esac
+sx_sh_pos_ref() {
+	case "${SX_CFG_SKIP_CHK-}" in 1) __sx_sh_pos_ref "${@}" || return; return;; esac
 
-	M_CFG_CHECK([|sx_arg_range|])
+	M_CFG_CHECK([|sx_sh_pos_ref|])
 
 	__sx_var_is_name "${1-}" || return M_EX_USAGE
 
@@ -43,8 +43,8 @@ sx_arg_range() {
 		return M_EX_USAGE
 	}
 
-	__sx_arg_range "${Q_res}" "${Q_sep}" "${@}"
+	__sx_sh_pos_ref "${Q_res}" "${Q_sep}" "${@}"
 	unset CLEANUP
 }
-|], [|arg_range|])dnl
+|], [|sh_pos_ref|])dnl
 popdef([|CLEANUP|])dnl
