@@ -3,7 +3,7 @@ Describe 'sx_arg_range -efu 環境検証'
 
   It '正常動作'
 
-    When run efu_run sx_arg_range result 3
+    When run efu_run sx_arg_range result ' ' -3:4
     The status should be success
   End
 End
