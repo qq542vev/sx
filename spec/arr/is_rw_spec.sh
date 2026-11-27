@@ -109,6 +109,11 @@ line2"
     The status should be failure
   End
 
+  It '引数なしでは成功すること'
+    When call sx_var_is_rw_deep
+    The status should be success
+  End
+
   It '無効な変数名に対して EX_USAGE を返すこと'
     When call sx_var_is_rw_deep "invalid-name"
     The status should equal 64

@@ -16,6 +16,10 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_fn_is_valid() {
+	case "${#}" in 0)
+		return M_EX_OK
+	esac
+
 	for Q_arg in "${@}"; do
 		case "${Q_arg}" in *=*)
 			__sx_var_is_name "${Q_arg%%=*}" && continue

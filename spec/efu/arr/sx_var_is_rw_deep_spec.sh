@@ -19,6 +19,11 @@ Describe 'sx_var_is_rw_deep -efu 環境検証'
     The status should be success
   End
 
+  It '引数なしで成功すること'
+    When run efu_run sx_var_is_rw_deep
+    The status should be success
+  End
+
   It '読み取り専用要素を検出できること'
     arr_len=1 arr_0=a
     readonly arr_0

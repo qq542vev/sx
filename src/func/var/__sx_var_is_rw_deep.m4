@@ -13,6 +13,10 @@ M_RENAME_QI([|dnl
 define([|CLEANUP|], [|Q_arg|])dnl
 
 __sx_var_is_rw_deep() {
+	case "${#}" in 0)
+		return M_EX_OK
+	esac
+
 	__sx_var_list_ro ''
 
 	for Q_arg in "${@}"; do
