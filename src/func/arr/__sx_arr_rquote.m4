@@ -13,14 +13,15 @@ M_RENAME_QI([|dnl
 ## 終了ステータス:
 ##    0  成功（バインド枯渇による早期終了を含む）
 
-define([|CLEANUP|], [|Q_bind Q_argi Q_arr Q_arri|])dnl
+define([|CLEANUP|], [|Q_bind Q_argi Q_arr Q_arri Q_tmp|])dnl
 
 __sx_arr_rquote() {
 	__sx_var_bind_init "${1}"
 	Q_bind="${1}"
+	shift
 	Q_argi="${#}"
 
-	while M_STR_NE([|"${Q_argi}"|], [|1|]); do
+	for Q_tmp in "${@}"; do
 		eval "Q_arr=\"\${${Q_argi}}\""
 		eval "Q_arri=\"\${${Q_arr}_len}\""
 

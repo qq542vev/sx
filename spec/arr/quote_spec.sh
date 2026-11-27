@@ -171,6 +171,25 @@ Describe 'sx_arr_rquote'
     cleanup
   End
 
+  It '配列名がない場合に空文字で成功すること'
+    When call sx_arr_rquote result
+    The status should be success
+    The variable result should equal ''
+    cleanup
+  End
+
+  It 'バインド枯渇時に残りの要素を破棄して成功すること'
+    setup
+    unset a b
+    When call sx_arr_rquote a:b: arr1 arr2
+    The status should be success
+    The variable a should equal '"double quotes"'
+    The variable b should equal 'back\slash'
+
+    cleanup
+    unset a b
+  End
+
   It '配列ではない引数が含まれる場合に EX_DATAERR を返すこと'
     setup
     not_arr="not an array"
