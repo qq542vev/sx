@@ -14,7 +14,7 @@ M_RENAME_QI([|dnl
 ## 終了ステータス:
 ##    0  成功 (SX_EX_OK)
 
-define([|CLEANUP|], [|Q_bind Q_i Q_type|])dnl
+define([|CLEANUP|], [|Q_bind Q_i Q_type Q_tmp|])dnl
 
 __sx_arg_rquote() {
 	__sx_var_bind_init "${1}"
@@ -33,16 +33,11 @@ __sx_arg_rquote() {
 		Q_type=nat0
 	fi
 
-	while
-		eval __sx_var_bind Q_bind '"${Q_bind}"' "\"\${${Q_i}}\""
-
-		case "${Q_bind:+${Q_i}}" in '' | 1)
-			break
-		esac
+	for Q_tmp in "${@}"; do
+		eval __sx_var_bind Q_bind '"${Q_bind}"' "\"\${${Q_i}}\"" || break
 
 		"__sx_num_sub1_${Q_type}" Q_i "${Q_i}"
-		continue
-	do :; done
+	done
 
 	unset CLEANUP
 }
