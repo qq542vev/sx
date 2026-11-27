@@ -47,25 +47,23 @@ __sx_num_div_nat0() {
 	#   dec = floor(余剰 × 10^dp ÷ den) を dp 桁にゼロ埋めした文字列（末尾 0 は除去）
 	Q_dec=
 
-	case "${Q_dp}${Q_r}" in [!0]*[!0]*)
+	case "${Q_dp}:${Q_r}" in [!0]*:[!0]*)
 		# "0"×dp は SX_NUM_ZR 定数（1〜37 桁）から参照し、超過時のみ str_rep で生成する
 		__sx_str_zr Q_zr "${Q_dp}"
 
 		# 小数部 = 余剰 × 10^dp ÷ den の整数商（この除算の余りは不要）
-		__sx_num_divmod_nat0 "Q_dec:" "${Q_r}${Q_zr}" "${Q_den}"
+		__sx_num_divmod_nat0 'Q_dec:' "${Q_r}${Q_zr}" "${Q_den}"
 
 		# dec が dp 桁未満の場合のみ先頭をゼロ埋めする（len == dp なら定数参照を丸ごとスキップ）
 		if M_STR_NE([|"${#Q_dec}"|], [|"${Q_dp}"|]); then
 			# 前置 "0"×dp から剥ぎ取る '?'×len(dec) は SX_NUM_QM 定数（1〜37 桁）から参照する
 			__sx_str_qm Q_qm "${#Q_dec}"
 
-			# "0"×dp を前置して '?'×len(dec) を剥ぎ、末尾 dp 桁だけを採用する
+			# 前置する "0"×dp から '?'×len(dec) を先に剥ぎ、必要なゼロだけを前置する
 			# （dec は高々 dp 桁のため、桁不足のときのみこのパスに来る）
-			M_STR_PREPEND([|Q_dec|], [|"${Q_zr}"|])
-
 			# '?'×len(dec) は ? がパターン一致として働く必要があるため、
 			# 内側の展開は意図的にクォートしない（クォートすると ? がリテラル化して剥ぎ取りが失敗する）
-			Q_dec="${Q_dec#${Q_qm}}"
+			M_STR_PREPEND([|Q_dec|], [|"${Q_zr#${Q_qm}}"|])
 		fi
 
 		# 小数部の末尾 0 を除去する

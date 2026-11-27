@@ -31,6 +31,18 @@ Describe 'sx_num_div_nat0'
     The variable d should equal "1"
   End
 
+  It '小数桁数が複数桁で余り0ならゼロ列を生成しないこと'
+    zr_called=0
+    __sx_str_zr() {
+      zr_called=1
+      eval "$1="
+    }
+    When call __sx_num_div_nat0 d 11 6 3
+    The status should be success
+    The variable zr_called should equal 0
+    The variable d should equal "2"
+  End
+
   It '除算が割り切れる場合は小数部を付けないこと'
     When call sx_num_div_nat0 d 2 100 4
     The status should be success
